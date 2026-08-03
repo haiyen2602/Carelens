@@ -1,7 +1,6 @@
 # Thuốc cảm lạnh, ho — raw
-
-Mỗi thuốc là 1 khối, các khối cách nhau bằng dòng `---`.
-Xem `data pharmacy/README.md` để biết danh sách tiêu đề được nhận diện.
+# Mỗi thuốc là 1 khối, các khối cách nhau bằng dòng `---`.
+# Xem `data pharmacy/README.md` để biết danh sách tiêu đề được nhận diện.
 
 Tên thuốc: Panadol Extra
 Hàm lượng: 500mg/65mg
