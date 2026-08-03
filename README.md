@@ -1,201 +1,143 @@
-# 🤖 AI20K Agent Template
+# AI Agent Nhắc Thuốc & Theo Dõi Tuân Thủ Điều Trị
 
-Template chính thức cho học viên **VinUni AI20K Build Phase** — cung cấp sẵn cấu trúc dự án, code mẫu, và hướng dẫn kỹ thuật chi tiết để xây dựng AI Agent đạt điểm cao (35+/50).
+> Mã đề: **VMEC-04** · Khối: Hệ thống y tế X – App Ứng dụng y tế X (AI y tế)
 
-> 📖 **Technical Guidebook:** [phoenix.note.transformerlabs.ai/technical-book](https://phoenix.note.transformerlabs.ai/technical-book)
+> Tóm tắt 1 câu: Bệnh nhân quên/uống sai thuốc → AI Agent nhắc lịch thông minh, xác nhận qua hội thoại, phát hiện bỏ liều & tác dụng phụ, escalate cho bác sĩ/người thân khi tuân thủ kém.
 
-## 🎯 Template này dùng để làm gì?
+## Vấn đề (Problem)
 
-Khi tham gia AI20K Build Phase, mỗi đội cần xây dựng một AI Agent hoàn chỉnh — từ kiến trúc, code, test, đến deploy. Thay vì bắt đầu từ con số không, template này cung cấp:
+- **Ai gặp vấn đề?** Bệnh nhân, đặc biệt người cao tuổi và người mắc bệnh mãn tính, đang điều trị theo đơn thuốc dài hạn.
+- **Biểu hiện:** Quên uống thuốc, uống sai liều/sai giờ, tự ý ngưng thuốc giữa chừng.
+- **Hậu quả:** Giảm hiệu quả điều trị, tăng nguy cơ tái nhập viện, khó theo dõi tuân thủ cho bác sĩ/điều dưỡng.
+- **Vì sao giải pháp hiện tại chưa đủ?** Nhắc lịch thủ công (báo thức, giấy) không thích ứng với thói quen bệnh nhân, không phát hiện được bỏ liều theo chuỗi, và không có cơ chế cảnh báo chủ động tới người thân/bác sĩ.
 
-- **Cấu trúc thư mục chuẩn** — đã được thiết kế theo best practices (separation of concerns)
-- **Code mẫu** cho các phần cốt lõi: LangGraph agent, FastAPI API, config, schemas
-- **Docker + CI/CD sẵn** — Dockerfile multi-stage, GitHub Actions workflow
-- **Hướng dẫn kỹ thuật 10 chương** — từ clone template đến nộp bài Demo Day
-- **Checklist 10 deliverables** — đảm bảo không bỏ sót yêu cầu BTC
-- **AI Usage Logging tự động** — Pre-configured hooks cho Claude Code, Cursor, Codex, Gemini CLI, Antigravity, và GitHub Copilot
+## Giải pháp (Solution)
 
-## ⚡ Quick Start
+AI Agent quản lý phác đồ dùng thuốc (từ đơn đã được bác sĩ nhập & duyệt), vận hành theo vòng lặp **thu thập → phân tích → giáo dục → escalate**:
 
-### Bước 1: Fork hoặc Clone
+- **Lập lịch nhắc thông minh:** Tự sinh lịch nhắc theo phác đồ đã duyệt, tối ưu giờ nhắc theo thói quen bệnh nhân (memory).
+- **Hội thoại xác nhận uống thuốc:** Agent hỏi & ghi nhận trạng thái uống thuốc qua hội thoại tự nhiên.
+- **Phát hiện bỏ liều & tác dụng phụ:** Theo dõi chuỗi bỏ liều, nhận diện phản hồi bất thường từ bệnh nhân.
+- **Escalate chủ động:** Cảnh báo người thân/điều dưỡng khi tuân thủ kém; cảnh báo an toàn và chuyển bác sĩ/cấp cứu khi phát hiện tác dụng phụ nghiêm trọng.
+- **Grounded & an toàn:** Trả lời dựa trên đơn thuốc đã duyệt và thông tin thuốc có nguồn (RAG), chống bịa liều/tương tác thuốc.
+
+### Ràng buộc & An toàn (bắt buộc)
+
+- **HITL bắt buộc:** Đơn thuốc/liều **chỉ** do bác sĩ tạo và duyệt. AI **không** tự kê đơn, tự đổi liều, hay khuyên ngưng thuốc.
+- Mọi thay đổi phác đồ phải được bác sĩ phê duyệt trước khi áp dụng.
+- Grounded trên đơn đã duyệt & dữ liệu thuốc có nguồn gốc rõ ràng — không bịa liều/tương tác.
+- Tác dụng phụ nghiêm trọng → cảnh báo an toàn ngay và chuyển bác sĩ/cấp cứu.
+- Bảo mật dữ liệu cá nhân/y tế (PII/PHI).
+- Luôn khuyến cáo bệnh nhân hỏi bác sĩ/dược sĩ khi có nghi ngờ; guardrails chặn agent kê đơn/đổi liều.
+
+## Target User
+
+- **Primary:** Bệnh nhân (đặc biệt người cao tuổi, bệnh mãn tính) đang điều trị theo đơn thuốc dài hạn.
+- **Secondary:** Bác sĩ (nhập & duyệt phác đồ, theo dõi dashboard tuân thủ), người thân/điều dưỡng (nhận cảnh báo khi tuân thủ kém hoặc tác dụng phụ nghiêm trọng).
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| AI Agent | LangGraph agent với scheduler & vòng lặp theo dõi tuân thủ |
+| RAG | Vector DB trên cơ sở dữ liệu thuốc mô phỏng (chỉ định, tác dụng phụ) |
+| Tools | Reminder/notification (email/web push), adherence tracker, escalation |
+| Guardrails | Chặn agent tự kê đơn/tự đổi liều |
+| Backend | FastAPI + Python 3.11+ + cron/Celery |
+| Frontend | React/Next.js — đăng nhập bệnh nhân, người thân, bác sĩ |
+| Database | PostgreSQL |
+| DevOps | Docker + GitHub Actions, deploy cloud |
+
+## Quick Start
 
 ```bash
-# Clone template
-git clone https://github.com/AI20K-Build-Cohort-2/starter-code-template.git team-YOUR_TEAM_NAME
-cd team-YOUR_TEAM_NAME
+# 1. Clone repo
+git clone https://github.com/a20-ai-thuc-chien/VMEC-04-medication-adherence.git
+cd VMEC-04-medication-adherence
 
-# Xóa git history cũ và khởi tạo lại
-rm -rf .git
-git init
-git add .
-git commit -m "feat: khởi tạo dự án từ template"
-```
+# 2. Setup environment
+cp .env.example .env
+# Điền API keys (LLM, DB, notification service) vào .env
 
-### Bước 2: Setup môi trường
-
-```bash
-# Tạo virtual environment
-python3.11 -m venv .venv
-source .venv/bin/activate
-
-# Cài dependencies
+# 3. Install dependencies
 pip install -e ".[dev]"
 
-# Cấu hình API keys
-cp .env.example .env
-# Mở .env và thêm OPENAI_API_KEY của bạn
-# Đồng thời cập nhật AI_LOG_API_KEY bằng key riêng từ link mời của BTC
-# (giá trị trong .env.example chỉ là placeholder)
-```
-
-### Bước 3: Cài AI Logging Hooks
-
-```bash
-# Linux / macOS / Git Bash
-bash scripts/setup_hooks.sh
-
-# Windows PowerShell
-# powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1
-```
-
-Hooks tự động log mọi AI prompt khi dùng Claude Code, Cursor, Codex, Gemini CLI, Antigravity, hoặc GitHub Copilot. Không cần thao tác thủ công.
-
-### Bước 4: Chạy server
-
-```bash
-# Chạy FastAPI backend
+# 4. Run development server
 uvicorn src.main:app --reload --port 8000
-
-# Mở Swagger UI
-# http://localhost:8000/docs
 ```
 
-### Bước 5: Đọc hướng dẫn
-
-📖 Mở **[Technical Guidebook](https://phoenix.note.transformerlabs.ai/technical-book)** và làm theo từng chương.
-
-## 📁 Cấu trúc dự án
+## Project Structure
 
 ```
 ├── src/
-│   ├── agents/           # 🧠 LangGraph Agent
-│   │   ├── graph.py      #    State graph (nodes + edges)
-│   │   ├── state.py      #    State schema (TypedDict)
-│   │   ├── nodes/        #    Node functions
-│   │   └── tools/        #    Agent tools (@tool)
-│   ├── api/              # 🌐 FastAPI Backend
-│   │   └── routes.py     #    API endpoints
-│   ├── models/           # 📋 Pydantic schemas
-│   ├── services/         # 🔧 Business logic (LLM, etc.)
-│   ├── config.py         # ⚙️ Pydantic Settings
-│   └── main.py           # 🚀 App entry point
-├── tests/                # 🧪 pytest suite
-│   ├── test_agents/      #    Agent/graph tests
-│   └── test_api/         #    API endpoint tests
-├── scripts/              # 🔌 AI Logging Hooks
-│   ├── log_hook.py       #    Auto-log cho Claude/Cursor/Codex/Gemini/Copilot
-│   ├── log_antigravity.py#    Antigravity IDE prompt scanner
-│   ├── log_manual.py     #    Manual log cho ChatGPT / web tools
-│   ├── submit_log.py     #    Submit logs on git push
-│   └── setup_hooks.sh    #    One-time hook installer
-├── .claude/ .codex/ .cursor/ .gemini/  # Per-tool hook configs
-├── .agents/              # Antigravity rules + workflows
-├── .ai-log/              # 📊 AI usage logs (auto-generated)
-├── docs/
-│   ├── guide/            # 📖 Technical Guidebook (10 chapters)
-│   └── architecture_diagram.md
-├── eval/                 # 📊 Evaluation results
-├── presentation/         # 🎤 Demo Day slides
-├── .github/workflows/    # ⚡ CI/CD (GitHub Actions)
-├── .github/hooks/        # 🪝 Copilot hook config
-├── Dockerfile            # 🐳 Multi-stage build
-├── docker-compose.yml    # 🐙 Full stack orchestration
-└── README_boilerplate.md # 📝 README template cho đội của bạn
+│   ├── agents/          # LangGraph agent definitions
+│   │   ├── graph.py     # Main graph (thu thập → phân tích → giáo dục → escalate)
+│   │   ├── state.py     # State schema (phác đồ, lịch nhắc, tuân thủ)
+│   │   ├── nodes/       # Nodes: scheduler, adherence check, escalation...
+│   │   └── tools/       # reminder/notification, adherence tracker, RAG lookup
+│   ├── api/             # FastAPI routes (bệnh nhân, bác sĩ, người thân)
+│   ├── models/          # Pydantic schemas (đơn thuốc, lịch nhắc, log tuân thủ)
+│   ├── services/        # Business logic (LLM, scheduling, guardrails)
+│   ├── config.py        # Settings
+│   └── main.py          # App entry point
+├── tests/               # Test suite
+├── docs/                # Documentation & architecture diagram
+├── eval/                # Evaluation results
+├── presentation/        # Demo materials
+├── Dockerfile           # Multi-stage build
+├── docker-compose.yml   # Full stack (API + DB + scheduler)
+└── .github/workflows/   # CI/CD pipelines
 ```
 
-## 📚 Technical Guidebook — 10 Chương
+## API Endpoints
 
-| Chương | Nội dung | Thời gian |
-|---------|----------|-----------|
-| 1 | Lời mở đầu — Mục tiêu, cách sử dụng | 15 phút |
-| 2 | Khởi tạo dự án — Clone, setup, git workflow | 4 giờ |
-| 3 | Thiết kế kiến trúc — 3-tier, diagrams, ADR | 6 giờ |
-| 4 | **LangGraph Agent** — State, nodes, edges, tools, RAG | 8 giờ |
-| 5 | FastAPI — Routes, validation, error handling, streaming | 6 giờ |
-| 6 | Giao diện — Next.js + Streamlit quickstart | 6 giờ |
-| 7 | DevOps — Docker, CI/CD, deploy, logging | 6 giờ |
-| 8 | Kiểm thử — Unit test, integration test, RAGAS | 4 giờ |
-| 9 | Demo Day — 10 deliverables, checklist, tips | 2 giờ |
-| 10 | Tài nguyên — Khóa học, docs, BMAD method | tham khảo |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /health | Health check |
+| POST | /api/v1/prescriptions | Bác sĩ tạo/duyệt phác đồ dùng thuốc |
+| GET | /api/v1/patients/{id}/schedule | Xem lịch nhắc thuốc của bệnh nhân |
+| POST | /api/v1/adherence/confirm | Bệnh nhân xác nhận đã uống thuốc |
+| POST | /api/v1/adherence/side-effect | Ghi nhận tác dụng phụ, kích hoạt escalate nếu nghiêm trọng |
+| GET | /api/v1/doctors/{id}/dashboard | Dashboard tuân thủ (tỉ lệ, chuỗi bỏ liều) cho bác sĩ |
+| POST | /api/v1/chat | Hội thoại xác nhận/uống thuốc với agent |
 
-📖 **Đọc online:** [phoenix.note.transformerlabs.ai/technical-book](https://phoenix.note.transformerlabs.ai/technical-book)
+## Yêu cầu cơ bản
 
-## 📋 10 Deliverables cho Demo Day
+- [ ] App deploy, ≥2 vai trò (bệnh nhân/bác sĩ, tùy chọn người thân)
+- [ ] Bác sĩ nhập & duyệt phác đồ, agent tạo lịch nhắc
+- [ ] Hội thoại xác nhận uống thuốc và ghi nhận
+- [ ] Hiển thị khuyến cáo & không tự đổi liều
 
-| # | Deliverable | File vị trí | Template có sẵn |
-|---|-------------|-------------|:---:|
-| 1 | Source Code | `src/` | ✅ |
-| 2 | README.md | `README_boilerplate.md` → copy thành `README.md` | ✅ |
-| 3 | Architecture Diagram | `docs/architecture_diagram.md` | ✅ |
-| 4 | AI Logs | LangSmith (3 env vars) + Auto AI Usage Logging | ✅ |
-| 5 | Live URL | Deploy lên Render/Vercel | ⚡ CI/CD sẵn |
-| 6 | Video Demo | `presentation/` | 📝 |
-| 7 | Pitch Deck | `presentation/` | 📝 |
-| 8 | Development Journal | `JOURNAL.md` | ✅ |
-| 9 | Worklog | `WORKLOG.md` | ✅ |
-| 10 | Evaluation Evidence | `eval/` | 📝 |
+## Yêu cầu nâng cao
 
-## 🛠 Tech Stack
+- [ ] Dashboard tuân thủ (tỉ lệ, chuỗi bỏ liều) cho bác sĩ
+- [ ] Cảnh báo tác dụng phụ nghiêm trọng → escalate
+- [ ] HITL để bác sĩ duyệt điều chỉnh lịch
+- [ ] Memory thói quen bệnh nhân tối ưu giờ nhắc
+- [ ] Báo cáo định kỳ
+- [ ] Xử lý lỗi khi bệnh nhân không phản hồi (nhắc lại/báo người thân)
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| AI Agent | LangGraph + LangChain | Latest |
-| Backend | FastAPI + Uvicorn | 0.100+ |
-| LLM | OpenAI GPT-4o-mini | API |
-| Frontend | Next.js / Streamlit | 14+ / 1.30+ |
-| Database | SQLite (dev) / PostgreSQL (prod) | — |
-| DevOps | Docker + GitHub Actions | — |
-| Testing | pytest + pytest-asyncio | 8+ |
+## Deliverables Checklist
 
-## 📊 AI Usage Logging
+- [x] Source Code (GitHub)
+- [x] README.md
+- [ ] Architecture Diagram (`docs/architecture_diagram.md`)
+- [ ] AI Logs (auto-collected)
+- [ ] Live URL / Deploy
+- [ ] Video Demo
+- [ ] Pitch Deck (`presentation/`)
+- [ ] Weekly Journal (`JOURNAL.md`)
+- [ ] Worklog (`WORKLOG.md`)
+- [ ] Evaluation Evidence (`eval/results/`)
 
-Template đã tích hợp sẵn auto-logging hooks cho 6 AI tools:
+## Team
 
-| Tool | Cơ chế | Config |
-|------|--------|--------|
-| Claude Code | `.claude/settings.json` hooks | Tự động |
-| Cursor | `.cursor/hooks.json` | Tự động |
-| OpenAI Codex CLI | `.codex/hooks.json` | Tự động |
-| Gemini CLI | `.gemini/settings.json` | Tự động |
-| GitHub Copilot | `.github/hooks/hooks.json` | Tự động |
-| Antigravity IDE | Pre-push scan transcript | Tự động trên `git push` |
+| Member | Role | Student ID |
+|--------|------|-----------|
+| [Tên] | [Vai trò] | [MSSV] |
+| [Tên] | [Vai trò] | [MSSV] |
+| [Tên] | [Vai trò] | [MSSV] |
 
-Tất cả prompts và tool calls được log vào `.ai-log/session.jsonl` và tự động submit lên grading server mỗi khi `git push`.
+## License
 
-**ChatGPT / web tools khác** — log thủ công:
-```bash
-bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "What you asked"
-```
-
-> ⚠️ Chạy `bash scripts/setup_hooks.sh` một lần sau khi clone để cài pre-push hook.
-
-## 📖 Đọc Technical Guidebook
-
-**Online (khuyến nghị):** [phoenix.note.transformerlabs.ai/technical-book](https://phoenix.note.transformerlabs.ai/technical-book)
-
-Đăng nhập bằng GitHub (cùng account đã được BTC mời vào org `AI20K-Build-Cohort-2`)
-→ chọn tab **Technical Book** ở sidebar trái → đọc 10 chương + topic sections,
-có table of contents bên phải, hỗ trợ light/dark/cyberpunk theme.
-
-**Offline:** mọi chương đều ở thư mục `docs/guide/` trong template này — mở bằng
-bất kỳ markdown viewer/editor nào (VS Code, Obsidian, GitHub UI, …).
-
-## 🔗 Liên kết
-
-- 📖 **Technical Guidebook:** [phoenix.note.transformerlabs.ai/technical-book](https://phoenix.note.transformerlabs.ai/technical-book)
-- 🏫 **AI20K Program:** VinUni AI20K Build Phase
-- 👨‍🏫 **Mentor:** Đặng Hải Lộc
-
-## 📄 License
-
-MIT — Sử dụng tự do cho mục đích giáo dục.
+MIT
