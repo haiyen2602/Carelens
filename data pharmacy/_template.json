@@ -1,0 +1,13 @@
+{
+  "ten_thuoc": "<Tên thương mại / biệt dược, vd: Panadol Extra>",
+  "ham_luong": "<vd: 500mg>",
+  "dang_thuoc": "<viên nén / viên nang / siro / kem bôi ...>",
+  "tong_so_luong": "<vd: 30 viên>",
+  "huong_dan_su_dung": "<Hướng dẫn sử dụng, dễ hiểu cho người bệnh>",
+  "lieu_dung": "<vd: 1 viên/lần, ngày 2 lần>",
+  "duong_dung": "<uống / tiêm / bôi ngoài da / đặt / nhỏ mắt-mũi ...>",
+  "thoi_diem_dung": "<vd: sau ăn, cách nhau 4-6 giờ>",
+  "luu_y_dac_biet": [
+    "<Lưu ý đặc biệt khi sử dụng, nếu có>"
+  ]
+}

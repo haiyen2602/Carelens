@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Thuoc",
+  "description": "Thông tin thuốc hiển thị cho người dùng (bệnh nhân) trong app nhắc thuốc.",
+  "type": "object",
+  "required": [
+    "ten_thuoc",
+    "ham_luong",
+    "dang_thuoc",
+    "tong_so_luong",
+    "huong_dan_su_dung",
+    "lieu_dung",
+    "duong_dung",
+    "thoi_diem_dung"
+  ],
+  "properties": {
+    "ten_thuoc": {
+      "type": "string",
+      "description": "Tên thương mại / biệt dược của thuốc. Ví dụ: 'Panadol Extra'."
+    },
+    "ham_luong": {
+      "type": "string",
+      "description": "Hàm lượng / nồng độ hoạt chất. Ví dụ: '500mg' hoặc '500mg/5ml'."
+    },
+    "dang_thuoc": {
+      "type": "string",
+      "description": "Dạng thuốc: viên nén, viên nang, siro, thuốc bột, kem bôi, dung dịch tiêm..."
+    },
+    "tong_so_luong": {
+      "type": "string",
+      "description": "Tổng số lượng thuốc trong hộp/đơn, để người dùng biết còn bao nhiêu. Ví dụ: '30 viên', '1 lọ 100ml'."
+    },
+    "huong_dan_su_dung": {
+      "type": "string",
+      "description": "Hướng dẫn sử dụng chi tiết, dễ hiểu cho người bệnh. Ví dụ: 'Uống nguyên viên với nhiều nước, không nhai'."
+    },
+    "lieu_dung": {
+      "type": "string",
+      "description": "Liều dùng mỗi lần / mỗi ngày. Ví dụ: '1 viên/lần, ngày 2 lần'."
+    },
+    "duong_dung": {
+      "type": "string",
+      "description": "Đường dùng: uống, tiêm, bôi ngoài da, đặt, nhỏ mắt/mũi..."
+    },
+    "thoi_diem_dung": {
+      "type": "string",
+      "description": "Thời điểm dùng: trước/sau ăn, sáng/trưa/tối, cách nhau bao lâu giữa các lần."
+    },
+    "luu_y_dac_biet": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Lưu ý đặc biệt khi sử dụng, nếu có. Không bắt buộc."
+    },
+    "id": {
+      "type": "string",
+      "description": "Định danh duy nhất, tự sinh từ tên thuốc (script điền, không cần gõ tay). Dùng để trích dẫn/liên kết khi RAG trả lời."
+    },
+    "danh_muc": {
+      "type": "string",
+      "description": "Tên nhóm/phân loại thuốc, tự lấy theo tên thư mục chứa file này (script điền, không cần gõ tay)."
+    }
+  }
+}
