@@ -45,6 +45,8 @@ OUTPUT_SCHEMA_KEYS = [
     "ham_luong",
     "dang_thuoc",
     "tong_so_luong",
+    "tac_dung",
+    "tac_dung_phu",
     "huong_dan_su_dung",
     "lieu_dung",
     "duong_dung",
@@ -55,12 +57,53 @@ OUTPUT_SCHEMA_KEYS = [
     "danh_muc",
 ]
 
+# Chuan hoa duong_dung tu dang_thuoc (dang bao che) - suy ra tu 1 field co cau
+# truc san co cua site, KHONG doan tu van ban tu do. Kiem tra theo thu tu tren
+# xuong (tu khoa cang dac thu dua len truoc) vi 1 chuoi dang_thuoc co the chua
+# nhieu tu khoa cung luc (vd "Vien nen bao phim" chi co "vien" -> Uong, khong
+# trung tu khoa nao khac).
+ROUTE_KEYWORDS: list[tuple[str, str]] = [
+    ("tiem", "Tiêm"),
+    ("nho mat", "Nhỏ mắt"),
+    ("nho mui", "Nhỏ mũi"),
+    ("nho tai", "Nhỏ tai"),
+    ("dat truc trang", "Đặt"),
+    ("dat am dao", "Đặt"),
+    ("dat hau mon", "Đặt"),
+    ("thuoc dat", "Đặt"),
+    ("xit", "Xịt"),
+    ("ngam", "Ngậm"),
+    ("mieng dan", "Dán ngoài da"),
+    ("cao dan", "Dán ngoài da"),
+    ("mo", "Bôi ngoài da"),
+    ("kem", "Bôi ngoài da"),
+    ("gel", "Bôi ngoài da"),
+    ("boi", "Bôi ngoài da"),
+]
+
+
+def classify_duong_dung(dang_thuoc: str) -> str:
+    """Map dang_thuoc (dang bao che, vd 'Vien nen bao phim', 'Thuoc mo') sang
+    1 gia tri duong dung chuan hoa. Mac dinh la 'Uong' vi da so dang bao che
+    khong khop tu khoa nao o tren (vien nen/nang, siro, bot pha uong, cốm...)
+    deu la duong uong. Dung \\b word-boundary thay vi substring "in" de tranh
+    khop nham (vd tu khoa ngan "mo", "gel" lot vao giua 1 tu khac)."""
+    normalized = strip_diacritics(dang_thuoc or "").lower()
+    for keyword, route in ROUTE_KEYWORDS:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", normalized):
+            return route
+    return "Uống"
+
 
 def strip_diacritics(text: str) -> str:
     # "d" (U+0111) khong co dang NFD phan ra "d" + dau, phai thay tay truoc.
     text = text.replace("đ", "d").replace("Đ", "D")
     nfkd = unicodedata.normalize("NFD", text)
-    return "".join(c for c in nfkd if unicodedata.category(c) != "Mn")
+    ascii_text = "".join(c for c in nfkd if unicodedata.category(c) != "Mn")
+    # Site nhieu khi chen \xa0 (non-breaking space) giua cac tu trong heading
+    # (vd "Chi\xa0dinh") - neu khong gom ve space thuong, cac cho so sanh
+    # substring theo tu khoa ("chi dinh" in ...) se khop nham that bai.
+    return re.sub(r"\s+", " ", ascii_text)
 
 
 def slugify(text: str) -> str:
@@ -123,6 +166,29 @@ def find_section(sections: dict[str, str], *keywords: str) -> str:
     return ""
 
 
+def normalize_product_name(name: str) -> str:
+    """Chuan hoa ten san pham ALL CAPS (vd 'ACICLOVIR 800MG MEYER - BPC 3X10')
+    thanh dang de doc hon ('Aciclovir 800mg Meyer - BPC 3x10'), khong dung
+    str.title() vi no viet hoa sai o token co chu so (vd '800Mg').
+
+    Quy tac tung tu, tach theo khoang trang:
+    - Tu co chu so (vd '800MG', '3X10') -> ha het thanh chu thuong.
+    - Tu toan chu, <=4 ky tu, dang ALL CAPS -> giu nguyen (coi la ten viet tat
+      nha san xuat, vd 'BPC', 'OPV', 'SPM').
+    - Tu toan chu con lai -> viet hoa chu dau, ha cac chu sau.
+    """
+    words = name.split()
+    out = []
+    for w in words:
+        if any(ch.isdigit() for ch in w):
+            out.append(w.lower())
+        elif w.isalpha() and w.isupper() and len(w) <= 4:
+            out.append(w)
+        else:
+            out.append(w[:1].upper() + w[1:].lower())
+    return " ".join(out)
+
+
 def strip_html(html: str) -> str:
     if not html:
         return ""
@@ -148,12 +214,38 @@ def extract_fields(next_data: dict) -> dict:
     content = page_props.get("content") or {}
     breadcrumbs = page_props.get("breadcrumbs") or []
 
-    ten_thuoc = product.get("webName") or product.get("name") or ""
+    # Dung ten ngan (product.name, vd "ACICLOVIR 800MG MEYER - BPC 3X10")
+    # thay vi webName (cau SEO day du kem cong dung + quy cach) vi schema
+    # yeu cau ten_thuoc la ten thuong mai ngan gon (vd "Panadol Extra"),
+    # khong phai mo ta cong dung. webName chi dung khi san pham thieu name.
+    raw_name = product.get("name") or product.get("webName") or ""
+    ten_thuoc = normalize_product_name(raw_name)
 
     dosage_html = content.get("dosage") or product.get("dosage") or ""
     dosage_sections = html_fragment_to_sections(dosage_html)
     huong_dan_su_dung = find_section(dosage_sections, "cach dung")
     lieu_dung = find_section(dosage_sections, "lieu dung")
+
+    # "usage" chua nhieu section gop chung (Chi dinh, Duoc luc hoc, Duoc dong
+    # hoc...) - chi lay rieng "Chi dinh" lam tac_dung, khong lay ca khoi vi
+    # 2 section con lai la kien thuc duoc ly chuyen sau, khong phai cong dung
+    # de hieu cho benh nhan.
+    usage_html = content.get("usage") or product.get("usage") or ""
+    usage_sections = html_fragment_to_sections(usage_html)
+    tac_dung = find_section(usage_sections, "chi dinh")
+    if not tac_dung and not usage_sections:
+        # 1 so trang khong dung <h2/h3/h4> de tach section (toan bo "usage"
+        # chi la 1 doan van ban chi dinh, khong co Duoc luc hoc/Duoc dong hoc
+        # di kem) - luc do lay thang ca doan, khong co gi de loc bo.
+        tac_dung = strip_html(usage_html)
+
+    # "adverseEffect" khong co the <h2/h3/h4> ngan cach section (khac voi
+    # dosage/usage/careful) nen khong dung html_fragment_to_sections duoc -
+    # lay thang toan bo doan van ban da lam sach.
+    tac_dung_phu = strip_html(content.get("adverseEffect") or product.get("adverseEffect") or "")
+
+    dang_thuoc = product.get("dosageForm") or ""
+    duong_dung = classify_duong_dung(dang_thuoc)
 
     careful_sections = html_fragment_to_sections(content.get("careful") or "")
     luu_y_dac_biet = [f"{heading}: {text}" for heading, text in careful_sections.items()]
@@ -172,14 +264,21 @@ def extract_fields(next_data: dict) -> dict:
     return {
         "ten_thuoc": ten_thuoc,
         "ham_luong": format_ingredient(product.get("ingredient")),
-        "dang_thuoc": product.get("dosageForm") or "",
+        "dang_thuoc": dang_thuoc,
         "tong_so_luong": product.get("specification") or "",
+        "tac_dung": tac_dung,
+        "tac_dung_phu": tac_dung_phu,
         "huong_dan_su_dung": huong_dan_su_dung,
         "lieu_dung": lieu_dung,
-        # Long Chau khong co field rieng cho "duong dung" / "thoi diem dung"
-        # (khong xuat hien tach biet trong du lieu san pham) - de trong thay
-        # vi tu suy dien tu van ban tu do, dung theo yeu cau cua de bai.
-        "duong_dung": "",
+        # duong_dung: suy ra tu dang_thuoc (field co cau truc, xem
+        # classify_duong_dung), khong phai doan tu van ban tu do.
+        "duong_dung": duong_dung,
+        # Long Chau khong co field rieng cho "thoi diem dung" (khong xuat
+        # hien tach biet trong du lieu san pham) nen luon de trong o day -
+        # KHONG tu suy dien tu van ban tu do. Field nay se duoc dien sau dua
+        # tren don thuoc bac si ke cho tung benh nhan cu the (nguon du lieu
+        # khac hoan toan voi cac field con lai - la du lieu ca nhan hoa theo
+        # don, khong phai du lieu tham chieu chung cua thuoc).
         "thoi_diem_dung": "",
         "huong_dan_bao_quan": strip_html(content.get("preservation") or ""),
         "luu_y_dac_biet": luu_y_dac_biet,

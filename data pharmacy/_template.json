@@ -3,10 +3,12 @@
   "ham_luong": "<vd: 500mg>",
   "dang_thuoc": "<viên nén / viên nang / siro / kem bôi ...>",
   "tong_so_luong": "<vd: 30 viên>",
+  "tac_dung": "<Công dụng / chỉ định: dùng để làm gì, điều trị bệnh gì>",
+  "tac_dung_phu": "<Tác dụng phụ / phản ứng bất lợi có thể gặp>",
   "huong_dan_su_dung": "<Hướng dẫn sử dụng, dễ hiểu cho người bệnh>",
   "lieu_dung": "<vd: 1 viên/lần, ngày 2 lần>",
-  "duong_dung": "<uống / tiêm / bôi ngoài da / đặt / nhỏ mắt-mũi ...>",
-  "thoi_diem_dung": "<vd: sau ăn, cách nhau 4-6 giờ>",
+  "duong_dung": "<Uống / Tiêm / Bôi ngoài da / Đặt / Nhỏ mắt / Nhỏ mũi / Nhỏ tai / Xịt / Ngậm / Dán ngoài da>",
+  "thoi_diem_dung": "<vd: sau ăn, cách nhau 4-6 giờ. LUU Y: field nay se duoc dien sau dua tren don thuoc bac si ke, khong phai du lieu tham chieu chung cua thuoc>",
   "huong_dan_bao_quan": "<Hướng dẫn bảo quản thuốc>",
   "luu_y_dac_biet": [
     "<Lưu ý đặc biệt khi sử dụng, nếu có>"
