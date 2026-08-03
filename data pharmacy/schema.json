@@ -46,6 +46,10 @@
       "type": "string",
       "description": "Thời điểm dùng: trước/sau ăn, sáng/trưa/tối, cách nhau bao lâu giữa các lần."
     },
+    "huong_dan_bao_quan": {
+      "type": "string",
+      "description": "Hướng dẫn bảo quản thuốc. Ví dụ: 'Bảo quản ở nơi khô ráo, tránh ánh sáng mặt trời'."
+    },
     "luu_y_dac_biet": {
       "type": "array",
       "items": { "type": "string" },
