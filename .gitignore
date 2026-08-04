@@ -58,3 +58,7 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Crawler resume state — internal checkpoint, not a deliverable
+crawler/**/*.progress.txt
+data pharmacy/**/*.progress.txt

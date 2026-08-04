@@ -69,13 +69,22 @@ FILTER_QUERY_KEYS = {
     "ingredient": "thanh-phan",
 }
 
-MIN_DELAY = 1.2
-MAX_DELAY = 2.2
+MIN_DELAY = 1.5
+MAX_DELAY = 3.0
 MAX_RETRIES = 3
+# Sau moi CHECKPOINT_EVERY san pham, nghi them 1 khoang dai hon MIN/MAX_DELAY
+# thuong (xem checkpoint_pause) - tranh gui request deu dan lien tuc hang
+# tram lan lien, la 1 pattern de bi WAF/rate-limit phat hien.
+CHECKPOINT_EVERY = 20
+CHECKPOINT_PAUSE = (8.0, 15.0)
 
 
 def polite_sleep() -> None:
     time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
+
+
+def checkpoint_pause() -> None:
+    time.sleep(random.uniform(*CHECKPOINT_PAUSE))
 
 
 def strip_diacritics(text: str) -> str:
@@ -126,13 +135,26 @@ def discover_products(session: requests.Session, category_url: str) -> tuple[dic
     print(f"[discover] trang goc: initTotalProducts={total}, SSR tra ve {len(products)} SP")
     polite_sleep()
 
-    filter_attrs = vd.get("filterAttributes") or []
+    # Sap xep filter co nhieu gia tri nhat truoc (trung binh moi bucket nho
+    # hon -> nhieu kha nang <=12 SP/bucket -> SSR tra ve day du hon) de dat
+    # do phu toi da cang som cang tot, giam so request thua khi danh muc lon.
+    filter_attrs = sorted(
+        vd.get("filterAttributes") or [],
+        key=lambda a: len(a.get("values", [])),
+        reverse=True,
+    )
+    requests_done = 0
     for attr in filter_attrs:
+        if len(products) >= total:
+            print(f"[discover] Da phu du {total}/{total} san pham - dung som, bo qua cac filter con lai.")
+            break
         code = attr.get("code")
         query_key = FILTER_QUERY_KEYS.get(code)
         if not query_key:
             continue  # khong biet tham so query cho filter nay (vd priceSystem)
         for value in attr.get("values", []):
+            if len(products) >= total:
+                break
             params = base_params + [(query_key, value)]
             fdata = get_json(session, category_url, params)
             fvd = fdata["props"]["pageProps"]["viewData"]
@@ -144,8 +166,12 @@ def discover_products(session: requests.Session, category_url: str) -> tuple[dic
                     new += 1
                 products[p["sku"]] = p
             warn = "  (BUCKET > 12, co the con sot SP)" if ftotal and ftotal > 12 else ""
-            print(f"[discover] {query_key}={value!r}: total={ftotal} got={len(fprods)} new={new}{warn}")
-            polite_sleep()
+            print(f"[discover] {query_key}={value!r}: total={ftotal} got={len(fprods)} new={new}{warn} (gom {len(products)}/{total})")
+            requests_done += 1
+            if requests_done % CHECKPOINT_EVERY == 0:
+                checkpoint_pause()
+            else:
+                polite_sleep()
 
     print(f"[discover] TONG HOP: {len(products)}/{total} san pham duy nhat tim duoc")
     if len(products) < total:
@@ -158,22 +184,90 @@ def discover_products(session: requests.Session, category_url: str) -> tuple[dic
     return products, total
 
 
-def crawl_details(session: requests.Session, listing_products: dict) -> list[dict]:
-    records = []
+def crawl_details(
+    session: requests.Session,
+    listing_products: dict,
+    danh_muc: str,
+    schema: dict,
+    out_path: Path,
+    resume: bool,
+) -> list[dict]:
+    """Crawl chi tiet tung san pham, LUU LUY TIEN (ghi lai out_path + 1 dong
+    progress) sau MOI san pham thanh cong - neu bi chan/mat mang giua chung,
+    chay lai dung lenh nay se tu tiep tuc thay vi crawl lai tu dau.
+    """
+    progress_path = out_path.parent / (out_path.name + ".progress.txt")
+
+    records: list[dict] = []
+    done_slugs: set[str] = set()
+    used_ids: set[str] = set()
+
+    if resume and out_path.exists() and progress_path.exists():
+        try:
+            records = json.loads(out_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            records = []
+        done_slugs = {ln.strip() for ln in progress_path.read_text(encoding="utf-8").splitlines() if ln.strip()}
+        used_ids = {r.get("id", "") for r in records if r.get("id")}
+        print(f"[resume] Da co {len(records)} san pham tu lan chay truoc, bo qua {len(done_slugs)} slug da xong.")
+    elif progress_path.exists():
+        progress_path.unlink()  # chay moi (--restart) - bo tien do cu
+
+    def save_progress(slug: str) -> None:
+        with progress_path.open("a", encoding="utf-8") as f:
+            f.write(slug + "\n")
+        with out_path.open("w", encoding="utf-8") as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+
     items = sorted(listing_products.values(), key=lambda p: p.get("slug", ""))
-    for i, item in enumerate(items, start=1):
+    todo = [item for item in items if item.get("slug") not in done_slugs]
+    print(f"[crawl] Con {len(todo)}/{len(items)} san pham can crawl chi tiet.")
+
+    requests_done = 0
+    for i, item in enumerate(todo, start=1):
         slug = item["slug"]
         url = f"{BASE_URL}/{slug}"
-        print(f"[{i}/{len(items)}] {url}")
+        print(f"[{i}/{len(todo)}] {url}")
         try:
             next_data = get_json(session, url)
+            record = extract_fields(next_data)
         except Exception as e:  # noqa: BLE001
             print(f"  [BO QUA] loi khi crawl: {e}", file=sys.stderr)
             polite_sleep()
             continue
-        record = extract_fields(next_data)
+
+        record["danh_muc"] = danh_muc
+        # extract_fields() da tu sinh 1 "id" gon tu ten ngan (product.name),
+        # chi doi lai neu bi trung id voi 1 SP khac (bao gom ca cac SP da
+        # crawl tu lan chay truoc, tinh qua used_ids).
+        base_id = record.get("id") or slugify(record.get("ten_thuoc", "")) or "thuoc"
+        out_id = base_id
+        n = 2
+        while out_id in used_ids:
+            out_id = f"{base_id}-{n}"
+            n += 1
+        used_ids.add(out_id)
+        record["id"] = out_id
+
+        errors = validate_record(record, schema)
+        if errors:
+            print(f"  [CANH BAO] '{record.get('ten_thuoc')}': {errors}", file=sys.stderr)
+
         records.append(record)
-        polite_sleep()
+        done_slugs.add(slug)
+        save_progress(slug)
+
+        requests_done += 1
+        if requests_done % CHECKPOINT_EVERY == 0:
+            print(f"  [checkpoint] Da luu {len(records)} san pham, nghi dai hon truoc khi tiep tuc...")
+            checkpoint_pause()
+        else:
+            polite_sleep()
+
+    if len(done_slugs) >= len(items):
+        progress_path.unlink(missing_ok=True)  # xong het, khong can file tien do nua
+
     return records
 
 
@@ -191,6 +285,11 @@ def main() -> int:
     parser.add_argument("category_url", help="URL trang danh muc tren nhathuoclongchau.com.vn")
     parser.add_argument("--danh-muc", required=True, help="Ten danh muc (dung cho field danh_muc va ten thu muc output)")
     parser.add_argument("--output", help="Duong dan file thuoc.json dau ra (mac dinh: data pharmacy/<danh-muc>/thuoc.json)")
+    parser.add_argument(
+        "--restart",
+        action="store_true",
+        help="Xoa tien do cu (neu co) va crawl lai tu dau, thay vi tu resume",
+    )
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -199,37 +298,23 @@ def main() -> int:
     schema_path = Path(__file__).resolve().parent.parent / "data pharmacy" / "schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
-
-    listing_products, total = discover_products(session, args.category_url)
-    records = crawl_details(session, listing_products)
-
-    used_slugs: set[str] = set()
-    for r in records:
-        r["danh_muc"] = args.danh_muc
-        # extract_fields() da tu sinh 1 "id" gon tu ten ngan (product.name),
-        # chi doi lai neu bi trung slug voi 1 SP khac trong cung lan crawl nay.
-        base_slug = r.get("id") or slugify(r.get("ten_thuoc", "")) or "thuoc"
-        slug = base_slug
-        n = 2
-        while slug in used_slugs:
-            slug = f"{base_slug}-{n}"
-            n += 1
-        used_slugs.add(slug)
-        r["id"] = slug
-
-        errors = validate_record(r, schema)
-        if errors:
-            print(f"  [CANH BAO] '{r.get('ten_thuoc')}': {errors}", file=sys.stderr)
-
     out_path = Path(args.output) if args.output else (
         Path(__file__).resolve().parent.parent / "data pharmacy" / args.danh_muc / "thuoc.json"
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
-        f.write("\n")
+
+    if args.restart:
+        progress_path = out_path.parent / (out_path.name + ".progress.txt")
+        out_path.unlink(missing_ok=True)
+        progress_path.unlink(missing_ok=True)
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": USER_AGENT})
+
+    listing_products, total = discover_products(session, args.category_url)
+    records = crawl_details(
+        session, listing_products, args.danh_muc, schema, out_path, resume=not args.restart
+    )
 
     print(f"[OK] Da crawl {len(records)}/{total} san pham -> {out_path}")
     return 0
