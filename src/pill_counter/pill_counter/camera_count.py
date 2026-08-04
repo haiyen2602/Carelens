@@ -26,7 +26,7 @@ os.chdir(BASE_DIR)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from predict import get_prediction  # noqa: E402
+from predict import get_prediction_details  # noqa: E402
 
 WINDOW_NAME = 'Pill Counter'
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -67,6 +67,15 @@ def draw_banner(image, lines, color=(0, 0, 0)):
         cv2.putText(image, line, (14, y), FONT, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
 
 
+def format_confidence(per_class, class_name):
+    '''
+    Chuoi ' (95.2%)' cho loai thuoc co trong ket qua, chuoi rong neu khong co vien nao
+    '''
+    if class_name not in per_class:
+        return ''
+    return f' ({per_class[class_name] * 100:.1f}%)'
+
+
 def show_popup(title, text):
     '''
     Hien hop thoai thong bao cua he dieu hanh, that bai thi bo qua
@@ -92,10 +101,10 @@ def show_popup(title, text):
 def count_pills(frame, output_dir):
     '''
     Chay model tren anh vua chup, luu anh ket qua,
-    tra ve (anh da ve, so vien nang, so vien nen, duong dan anh)
+    tra ve (anh da ve, so vien nang, so vien nen, do tu tin, duong dan anh)
     '''
-    # get_prediction ve truc tiep len anh nen truyen ban sao de giu anh goc
-    predicted_image, count_dict = get_prediction(frame.copy())
+    # get_prediction_details ve truc tiep len anh nen truyen ban sao de giu anh goc
+    predicted_image, count_dict, confidence_dict = get_prediction_details(frame.copy())
 
     capsules = count_dict.get('capsules', 0)
     tablets = count_dict.get('tablets', 0)
@@ -104,10 +113,10 @@ def count_pills(frame, output_dir):
     output_path = os.path.join(output_dir, time.strftime('%Y%m%d_%H%M%S') + '.jpg')
     cv2.imwrite(output_path, predicted_image)
 
-    return predicted_image, capsules, tablets, output_path
+    return predicted_image, capsules, tablets, confidence_dict, output_path
 
 
-def open_camera(index, width, height):
+#def open_camera(index, width, height):
     '''
     Mo camera, uu tien backend DirectShow tren Windows cho nhanh
     '''
@@ -126,6 +135,25 @@ def open_camera(index, width, height):
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     return capture
 
+
+def open_camera(index, width, height):
+    # Ép OpenCV sử dụng backend DirectShow trên Windows
+    if sys.platform == 'win32':
+        capture = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+    else:
+        capture = cv2.VideoCapture(index)
+
+    if not capture.isOpened():
+        return None
+
+    # QUAN TRỌNG: Ép định dạng khung hình sang MJPG để Camo truyền dữ liệu mượt mà, không bị đen màn hình
+    capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    
+    # Đặt độ phân giải
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    
+    return capture
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Dem thuoc bang camera')
@@ -230,21 +258,30 @@ def main():
         cv2.imshow(WINDOW_NAME, busy_image)
         cv2.waitKey(1)
 
-        predicted_image, capsules, tablets, output_path = count_pills(frame, args.output_dir)
+        predicted_image, capsules, tablets, confidence_dict, output_path = count_pills(
+            frame, args.output_dir)
         total = capsules + tablets
 
         if total == 0:
             result_lines = ['Khong tim thay vien thuoc nao', 'Nhan R hoac di chuyen de chup lai']
         else:
+            per_class = confidence_dict.get('per_class', {})
             result_lines = [
-                f'Tong cong: {total} vien',
-                f'Vien nang (capsules): {capsules} | Vien nen (tablets): {tablets}',
+                f"Tong cong: {total} vien - do tin cay {confidence_dict['mean'] * 100:.1f}%",
+                (f'Vien nang (capsules): {capsules}{format_confidence(per_class, "capsules")}'
+                 f' | Vien nen (tablets): {tablets}{format_confidence(per_class, "tablets")}'),
+                f"Vien co do tu tin thap nhat: {confidence_dict['min'] * 100:.1f}%",
                 'Nhan R hoac di chuyen de chup lai',
             ]
 
         print(f'Vien nang (capsules): {capsules}')
         print(f'Vien nen  (tablets) : {tablets}')
         print(f'Tong cong           : {total}')
+        if confidence_dict:
+            print(f"Do tin cay trung binh: {confidence_dict['mean'] * 100:.1f}%")
+            print(f"Do tin cay thap nhat : {confidence_dict['min'] * 100:.1f}%")
+            for name, value in confidence_dict['per_class'].items():
+                print(f'  - {name}: {value * 100:.1f}%')
         print(f'Da luu anh ket qua  : {output_path}\n')
 
         result_image = predicted_image

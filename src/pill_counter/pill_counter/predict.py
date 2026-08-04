@@ -24,12 +24,25 @@ def get_prediction(image):
     Gets image, makes predictions, counts predicted classes,
     draws dots on image, returns dict with counts and labelled image
     '''
+    predicted_image, count_dict, _ = get_prediction_details(image)
+    return predicted_image, count_dict
+
+
+def get_prediction_details(image):
+    '''
+    Nhu get_prediction nhung tra them do tu tin (confidence) cua model:
+    (anh da ve, dict so luong, dict thong ke do tu tin).
+
+    Dict thong ke co dang:
+        {'mean': 0.93, 'min': 0.81, 'per_class': {'tablets': 0.95, ...}}
+    Anh khong co vien thuoc nao -> dict rong.
+    '''
     prediction = model(image, verbose=False)
 
     masks = prediction[0].masks
     # Anh khong co vien thuoc nao -> masks la None
     if masks is None:
-        return image, {}
+        return image, {}, {}
 
     predicted_classes = prediction[0].boxes.cls
     prediction_confidences = prediction[0].boxes.conf
@@ -38,11 +51,25 @@ def get_prediction(image):
 
     indices_mask = remove_overlapping_polygons(polygons, prediction_confidences)
 
-    fixed_predicted_classes = predicted_classes[np.array(indices_mask, dtype=bool)]
+    keep = np.array(indices_mask, dtype=bool)
+    fixed_predicted_classes = predicted_classes[keep]
+    fixed_confidences = prediction_confidences[keep]
     fixed_polygons = [polygons[i] for i in range(len(indices_mask)) if indices_mask[i] == 1]
 
     unique, counts = fixed_predicted_classes.unique(return_counts=True)
     count_dict = {CLASSES[int(key)]: value for key, value in zip(unique.tolist(), counts.tolist())}
+
+    # Do tu tin: trung binh chung, thap nhat, va trung binh theo tung loai
+    confidence_dict = {}
+    if len(fixed_confidences) > 0:
+        confidence_dict = {
+            'mean': float(fixed_confidences.mean()),
+            'min': float(fixed_confidences.min()),
+            'per_class': {
+                CLASSES[int(key)]: float(fixed_confidences[fixed_predicted_classes == key].mean())
+                for key in unique.tolist()
+            },
+        }
 
     # Draw dots
     for polygon, predicted_class in zip(fixed_polygons, fixed_predicted_classes):
@@ -50,7 +77,7 @@ def get_prediction(image):
                               np.mean(polygon[:, 1], dtype=np.int32))  # x and y respectively
         cv2.circle(image, center_coordinates, 5, COLORS[int(predicted_class)], 2, cv2.LINE_AA)
 
-    return image, count_dict
+    return image, count_dict, confidence_dict
 
 
 def remove_overlapping_polygons(polygons, prediction_confidences):
@@ -110,13 +137,16 @@ def main():
         print(f'Khong doc duoc anh: {image_path}')
         sys.exit(1)
 
-    predicted_image, count_dict = get_prediction(image)
+    predicted_image, count_dict, confidence_dict = get_prediction_details(image)
 
     capsules = count_dict.get('capsules', 0)
     tablets = count_dict.get('tablets', 0)
     print(f'Vien nang (capsules): {capsules}')
     print(f'Vien nen  (tablets) : {tablets}')
     print(f'Tong cong           : {capsules + tablets}')
+    if confidence_dict:
+        print(f"Do tu tin trung binh: {confidence_dict['mean'] * 100:.1f}%")
+        print(f"Do tu tin thap nhat : {confidence_dict['min'] * 100:.1f}%")
 
     cv2.imwrite(output_path, predicted_image)
     print(f'Da luu anh ket qua  : {output_path}')
