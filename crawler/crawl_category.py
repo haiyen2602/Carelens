@@ -187,7 +187,7 @@ def discover_products(session: requests.Session, category_url: str) -> tuple[dic
 def crawl_details(
     session: requests.Session,
     listing_products: dict,
-    danh_muc: str,
+    danh_muc: str | None,
     schema: dict,
     out_path: Path,
     resume: bool,
@@ -237,7 +237,14 @@ def crawl_details(
             polite_sleep()
             continue
 
-        record["danh_muc"] = danh_muc
+        # Neu danh_muc duoc truyen vao (--danh-muc-co-dinh) thi ep tat ca ve 1
+        # ten chung; mac dinh (danh_muc=None) GIU NGUYEN danh muc cu the nhat
+        # ma extract_fields() da tu suy ra tu chinh du lieu san pham
+        # (product.categories[-1].name) - vd 1 thu muc gop nhieu danh muc con
+        # nho (thuoc chong dong mau, thuoc tri mo mau...) nhung moi thuoc van
+        # giu dung phan loai rieng cua no thay vi bi gan chung 1 ten.
+        if danh_muc:
+            record["danh_muc"] = danh_muc
         # extract_fields() da tu sinh 1 "id" gon tu ten ngan (product.name),
         # chi doi lai neu bi trung id voi 1 SP khac (bao gom ca cac SP da
         # crawl tu lan chay truoc, tinh qua used_ids).
@@ -283,7 +290,19 @@ def validate_record(data: dict, schema: dict) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("category_url", help="URL trang danh muc tren nhathuoclongchau.com.vn")
-    parser.add_argument("--danh-muc", required=True, help="Ten danh muc (dung cho field danh_muc va ten thu muc output)")
+    parser.add_argument("--danh-muc", required=True, help="Ten thu muc output duoi data pharmacy/")
+    parser.add_argument(
+        "--danh-muc-co-dinh",
+        action="store_true",
+        help=(
+            "Ep field danh_muc cua MOI thuoc ve dung 1 gia tri --danh-muc. "
+            "Mac dinh (KHONG truyen co nay) giu nguyen danh muc cu the nhat "
+            "ma tung san pham tu suy ra tu chinh du lieu cua no "
+            "(product.categories) - dung khi 1 thu muc output gop nhieu "
+            "danh muc con nho cua site (vd 'Thuoc tim mach va mau' gom "
+            "'Thuoc chong dong mau', 'Thuoc tri mo mau'...)."
+        ),
+    )
     parser.add_argument("--output", help="Duong dan file thuoc.json dau ra (mac dinh: data pharmacy/<danh-muc>/thuoc.json)")
     parser.add_argument(
         "--restart",
@@ -312,8 +331,9 @@ def main() -> int:
     session.headers.update({"User-Agent": USER_AGENT})
 
     listing_products, total = discover_products(session, args.category_url)
+    forced_danh_muc = args.danh_muc if args.danh_muc_co_dinh else None
     records = crawl_details(
-        session, listing_products, args.danh_muc, schema, out_path, resume=not args.restart
+        session, listing_products, forced_danh_muc, schema, out_path, resume=not args.restart
     )
 
     print(f"[OK] Da crawl {len(records)}/{total} san pham -> {out_path}")
