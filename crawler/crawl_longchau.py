@@ -225,6 +225,13 @@ def extract_fields(next_data: dict) -> dict:
     dosage_sections = html_fragment_to_sections(dosage_html)
     huong_dan_su_dung = find_section(dosage_sections, "cach dung")
     lieu_dung = find_section(dosage_sections, "lieu dung")
+    if not huong_dan_su_dung and not lieu_dung and not dosage_sections:
+        # Giong tac_dung ben duoi: 1 so trang khong dung <h2/h3/h4> de tach
+        # section. Khong the tach rieng "cach dung" khoi "lieu dung" tu 1
+        # doan van khong co tieu de, nen don ca doan vao huong_dan_su_dung
+        # (truong tong quat hon) va de lieu_dung trong, tranh trung lap
+        # noi dung o ca 2 field.
+        huong_dan_su_dung = strip_html(dosage_html)
 
     # "usage" chua nhieu section gop chung (Chi dinh, Duoc luc hoc, Duoc dong
     # hoc...) - chi lay rieng "Chi dinh" lam tac_dung, khong lay ca khoi vi
