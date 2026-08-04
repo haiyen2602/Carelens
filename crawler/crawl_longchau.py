@@ -64,6 +64,7 @@ OUTPUT_SCHEMA_KEYS = [
 # trung tu khoa nao khac).
 ROUTE_KEYWORDS: list[tuple[str, str]] = [
     ("tiem", "Tiêm"),
+    ("tra mat", "Nhỏ mắt"),
     ("nho mat", "Nhỏ mắt"),
     ("nho mui", "Nhỏ mũi"),
     ("nho tai", "Nhỏ tai"),
@@ -81,18 +82,33 @@ ROUTE_KEYWORDS: list[tuple[str, str]] = [
     ("boi", "Bôi ngoài da"),
 ]
 
+# Tu khoa xac nhan duong uong - CHI dung de KHANG DINH "Uong" khi co bang
+# chung ro rang, khong phai fallback mac dinh (xem ly do trong
+# classify_duong_dung). "hoan" = dang vien hoan y hoc co truyen, luon uong.
+ORAL_KEYWORDS = ("vien", "uong", "siro", "com", "hoan")
+
 
 def classify_duong_dung(dang_thuoc: str) -> str:
     """Map dang_thuoc (dang bao che, vd 'Vien nen bao phim', 'Thuoc mo') sang
-    1 gia tri duong dung chuan hoa. Mac dinh la 'Uong' vi da so dang bao che
-    khong khop tu khoa nao o tren (vien nen/nang, siro, bot pha uong, cốm...)
-    deu la duong uong. Dung \\b word-boundary thay vi substring "in" de tranh
-    khop nham (vd tu khoa ngan "mo", "gel" lot vao giua 1 tu khac)."""
+    1 gia tri duong dung chuan hoa. Dung \\b word-boundary thay vi substring
+    "in" de tranh khop nham (vd tu khoa ngan "mo", "gel" lot vao giua 1 tu
+    khac).
+
+    KHONG mac dinh "Uong" cho moi truong hop khong khop - lam vay se KHANG
+    DINH sai du lieu y te (vd 1 dang bao che moi/la ma khong nam trong danh
+    sach tu khoa se bi gan nham thanh "Uong" du co the la tiem/dat/boi...).
+    Thay vao do: chi tra "Uong" khi co tu khoa xac nhan ro rang (ORAL_KEYWORDS),
+    con lai (vd "Dang bot", "Hon dich" khong kem "uong"/"tiem") tra ve rong -
+    de trong bi validate_record() bao thieu truong bat buoc, buoc nguoi
+    dung kiem tra thu cong thay vi am tham sai."""
     normalized = strip_diacritics(dang_thuoc or "").lower()
     for keyword, route in ROUTE_KEYWORDS:
         if re.search(r"\b" + re.escape(keyword) + r"\b", normalized):
             return route
-    return "Uống"
+    for keyword in ORAL_KEYWORDS:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", normalized):
+            return "Uống"
+    return ""
 
 
 def strip_diacritics(text: str) -> str:
