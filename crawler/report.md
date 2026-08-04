@@ -62,9 +62,9 @@ người dùng cuộn trang thật trên trình duyệt. Script **không** gọi
 | `tong_so_luong` | ✅ | `product.specification` |
 | `tac_dung` | ✅ | tách từ `content.usage`, lấy riêng đoạn "Chỉ định" (bỏ Dược lực học/Dược động học vì đó là kiến thức chuyên sâu, không phải công dụng cho bệnh nhân đọc); fallback lấy nguyên đoạn nếu trang không tách section bằng heading |
 | `tac_dung_phu` | ✅ | `content.adverseEffect`, lấy nguyên văn đã làm sạch HTML (field này trên site không tách theo `<h3>` như các field khác) |
-| `huong_dan_su_dung` | ✅ | `content.dosage`, đoạn dưới tiêu đề "Cách dùng" |
+| `huong_dan_su_dung` | ✅ | `content.dosage`, đoạn dưới tiêu đề "Cách dùng"; fallback lấy nguyên đoạn nếu trang không tách section bằng heading (xem mục 8.1) |
 | `lieu_dung` | ✅ | `content.dosage`, đoạn dưới tiêu đề "Liều dùng" |
-| `duong_dung` | ✅ (suy luận có kiểm soát) | **không** lấy trực tiếp từ site (không có field riêng) — suy ra từ `dang_thuoc` qua bảng từ khoá cố định `ROUTE_KEYWORDS` (vd "mỡ/kem/gel/bôi" → "Bôi ngoài da", "tiêm" → "Tiêm"...), mặc định "Uống" nếu không khớp từ khoá nào. Đây là ánh xạ dựa trên 1 field có cấu trúc sẵn (`dang_thuoc`), không phải đoán từ văn bản mô tả tự do |
+| `duong_dung` | ✅ (suy luận có kiểm soát) | **không** lấy trực tiếp từ site (không có field riêng) — suy ra từ `dang_thuoc` qua bảng từ khoá cố định `ROUTE_KEYWORDS` (vd "mỡ/kem/gel/bôi" → "Bôi ngoài da", "tiêm" → "Tiêm"...). **Không còn mặc định "Uống"** khi không khớp từ khoá nào (xem mục 8.3) — chỉ trả "Uống" khi khớp 1 trong các từ khoá xác nhận dương tính (`ORAL_KEYWORDS`: viên/uống/siro/cốm/hoàn), còn lại để trống để `validate_record()` bắt lỗi thay vì khẳng định sai |
 | `thoi_diem_dung` | ❌ để `""` | Long Châu không có field/section riêng cho thời điểm dùng (trước/sau ăn...). Đây là dữ liệu thuộc về đơn thuốc bác sĩ kê cho từng bệnh nhân cụ thể — khác nguồn hoàn toàn với các field còn lại (dữ liệu tham chiếu chung của thuốc), nên **luôn** để trống dù trang có hay không có thông tin này |
 | `huong_dan_bao_quan` | ✅ | `content.preservation` |
 | `luu_y_dac_biet` | ✅ | tách `content.careful` theo từng `<h3>` (Chống chỉ định, Thận trọng khi sử dụng, Khả năng lái xe..., Thời kỳ mang thai, Thời kỳ cho con bú, Tương tác thuốc...) + `product.warning[]` |
@@ -150,6 +150,66 @@ Quy trình:
 - Vì `crawl_details()` gọi lại `extract_fields()` giống hệt crawl 1 trang, mọi ưu điểm/hạn chế
   ở mục 4-5 (field `thoi_diem_dung` luôn trống, rủi ro đổi schema `__NEXT_DATA__`...) áp dụng
   y hệt cho từng sản phẩm trong danh mục.
-- Thời gian crawl tỉ lệ với (số giá trị filter + số sản phẩm) × ~1.5s delay — với danh mục vài
-  chục sản phẩm và vài chục giá trị lọc, tổng thời gian có thể lên tới vài phút; nên cân nhắc
-  chạy nền (background) khi crawl danh mục lớn.
+- Thời gian crawl tỉ lệ với (số giá trị filter + số sản phẩm) × ~1.5-3s delay — với danh mục vài
+  trăm sản phẩm (vd "Thuốc tim mạch và máu" ~1000 SP), tổng thời gian có thể lên tới 15-20 phút;
+  nên cân nhắc chạy nền (background) khi crawl danh mục lớn.
+
+## 8. Các lỗi đã phát hiện và sửa (qua PR review, 2026-08-04)
+
+Sau khi crawl thật 4 danh mục (kháng virus, kháng sinh, kháng nấm→điều trị ung thư, tim mạch và
+máu — tổng ~1470 sản phẩm) và đưa lên PR review, phát hiện 3 lỗi thực tế trong code (không phải
+lỗi giả định) — dưới đây là mô tả và cách sửa, để biết code hiện tại **đã đáng tin hơn** ở
+những điểm nào so với bản đầu.
+
+### 8.1. Mất dữ liệu âm thầm khi trang không dùng heading `<h2/h3/h4>`
+
+`html_fragment_to_sections()` chỉ tách được section khi HTML có thẻ heading. Một số trang sản
+phẩm viết `dosage`/`usage` thành 1 đoạn văn liền, không có heading — trước khi sửa, các field
+này bị bỏ trống hoàn toàn dù nội dung vẫn có trong HTML. Xác nhận bằng số liệu thật: 28 sản phẩm
+(rải rác ở 3 danh mục lớn) bị thiếu `huong_dan_su_dung`/`lieu_dung`/`tac_dung` theo kiểu này.
+
+**Sửa:** nếu không tách được section nào, lấy nguyên đoạn text đã làm sạch HTML thay vì bỏ trống
+— áp dụng cho cả `tac_dung` (dồn vào 1 field) và `huong_dan_su_dung` (không tách được "cách
+dùng" khỏi "liều dùng" từ 1 đoạn không heading nên chỉ dồn vào `huong_dan_su_dung`, để
+`lieu_dung` trống thay vì trùng lặp nội dung ở cả 2 field).
+
+Ngoài ra còn 1 biến thể của lỗi này: 1 số heading chứa `\xa0` (non-breaking space) giữa các từ
+(vd `"Chỉ\xa0định"`), khiến so khớp từ khoá theo khoảng trắng thường thất bại. Sửa bằng cách gom
+mọi loại whitespace (kể cả `\xa0`) về 1 khoảng trắng chuẩn trong `strip_diacritics()`.
+
+### 8.2. `tra mắt` bị phân loại nhầm thành "Bôi ngoài da"
+
+`classify_duong_dung()` chỉ có từ khoá `"mo"` (mỡ) map sang "Bôi ngoài da", nên dạng bào chế
+`"Thuốc mỡ tra mắt"` (thuốc tra mắt, không phải bôi da) bị gán sai route. Sửa bằng cách thêm từ
+khoá `"tra mat"` → `"Nhỏ mắt"`, kiểm tra **trước** từ khoá `"mo"` chung chung.
+
+### 8.3. Mặc định "Uống" cho mọi dạng bào chế không nhận diện được — rủi ro dữ liệu y tế sai
+
+Đây là lỗi nghiêm trọng nhất trong 3 lỗi: bản gốc `classify_duong_dung()` trả về `"Uống"` cho
+**bất kỳ** `dang_thuoc` nào không khớp từ khoá đặc thù nào (tiêm/đặt/bôi/nhỏ...) — tức là khẳng
+định 1 đường dùng cụ thể dựa trên "loại trừ", không phải bằng chứng thật. Nguy hiểm hơn thiếu dữ
+liệu, vì thiếu thì còn biết mà kiểm tra, còn sai mà không ai để ý thì có thể gây nhầm lẫn thật
+(vd tưởng thuốc uống được trong khi thực chất là dạng khác).
+
+**Sửa:** đảo logic — chỉ trả `"Uống"` khi khớp 1 từ khoá xác nhận dương tính (`ORAL_KEYWORDS`:
+`vien`, `uong`, `siro`, `com`, `hoan`). Nếu không khớp bất kỳ từ khoá nào (route đặc thù lẫn
+oral), trả về `""` — để `validate_record()` tự báo thiếu trường bắt buộc, buộc review thủ công
+thay vì âm thầm sai. Đã verify với toàn bộ ~90 giá trị `dang_thuoc` thực tế xuất hiện trong 4
+danh mục đã crawl; chỉ còn 9 sản phẩm (dạng `"Dạng bột"`, `"Hỗn dịch"` không kèm từ "uống"/"tiêm"
+— thật sự mơ hồ ngay cả với người đọc) bị để trống thay vì đoán.
+
+### 8.4. Chống chặn khi crawl danh mục lớn
+
+`crawl_category.py` bổ sung `CHECKPOINT_PAUSE` — sau mỗi `CHECKPOINT_EVERY = 20` request, nghỉ
+thêm 8-15s (ngoài delay ngẫu nhiên 1.5-3s mỗi request) — tránh gửi request đều đặn hàng trăm lần
+liên tục, 1 pattern dễ bị WAF/rate-limit phát hiện khi crawl danh mục vài trăm-nghìn sản phẩm.
+
+### 8.5. Kết quả sau khi sửa + dọn dữ liệu
+
+Chạy lại phát hiện + crawl có mục tiêu (không crawl lại toàn bộ) để backfill 20/28 sản phẩm ở
+mục 8.1 bằng dữ liệu đúng; 8 sản phẩm còn thiếu 1 trong 2 field `huong_dan_su_dung`/`lieu_dung`
+sau backfill là do **trang nguồn thật sự chỉ có 1 trong 2 mục con đó** (không phải bug nữa). Sau
+đó loại bỏ toàn bộ sản phẩm còn thiếu bất kỳ field bắt buộc nào (trừ `thoi_diem_dung`, luôn để
+trống theo thiết kế — xem mục 4) khỏi dữ liệu đã ship, để đảm bảo mọi bản ghi trong
+`data pharmacy/*/thuoc.json` đều đầy đủ field. Kết quả: 1469 → 1418 sản phẩm hoàn chỉnh trên 4
+danh mục.
