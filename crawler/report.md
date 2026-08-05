@@ -129,10 +129,14 @@ Quy trình:
    với `crawl_longchau.py` (import trực tiếp, không lặp code) để lấy đầy đủ field.
 3. Có delay ngẫu nhiên 1.2-2.2s giữa các request (`polite_sleep`) và retry tối đa 3 lần với
    backoff khi lỗi mạng/parse, để giảm rủi ro bị chặn khi crawl số lượng lớn trang.
-4. Tự sinh `id`, chống trùng slug trong cùng 1 lần crawl (thêm hậu tố `-2`, `-3`...), gán
-   `danh_muc` theo tham số `--danh-muc` truyền vào (không dùng lại `danh_muc` mà
-   `extract_fields()` tự suy ra từ từng trang, để đảm bảo mọi thuốc trong file cùng 1 tên danh
-   mục thống nhất theo tên thư mục output).
+4. Tự sinh `id`, chống trùng id trong cùng 1 lần crawl (thêm hậu tố `-2`, `-3`...). Mặc định
+   **giữ nguyên** `danh_muc` mà `extract_fields()` tự suy ra riêng cho từng sản phẩm
+   (`product.categories[-1].name` — danh mục con cụ thể nhất của chính trang đó), để 1 thư mục
+   output có thể gộp nhiều danh mục con nhỏ của site (vd thư mục `Thuốc tim mạch và máu/` chứa
+   cả `Thuốc chống đông máu`, `Thuốc trị mỡ máu`, `Thuốc tăng cường tuần hoàn não`...) mà mỗi
+   thuốc vẫn giữ đúng phân loại riêng của nó. Chỉ khi truyền cờ `--danh-muc-co-dinh` thì mới ép
+   `danh_muc` của **mọi** thuốc về đúng 1 giá trị `--danh-muc` (dùng khi thư mục output tương
+   ứng 1-1 với 1 danh mục duy nhất của site, không cần tách nhỏ thêm).
 5. Ghi toàn bộ ra 1 file `thuoc.json` (JSON array) trong đúng thư mục nhóm của `data pharmacy/`.
 
 ## 7. Đánh giá khả năng mở rộng — crawl cả danh mục
