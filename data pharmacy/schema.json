@@ -50,7 +50,7 @@
     },
     "duong_dung": {
       "type": "string",
-      "description": "Đường dùng, chuẩn hóa theo 1 trong các giá trị: 'Uống', 'Tiêm', 'Bôi ngoài da', 'Đặt', 'Nhỏ mắt', 'Nhỏ mũi', 'Nhỏ tai', 'Xịt', 'Ngậm', 'Dán ngoài da'. Suy ra từ dang_thuoc (dạng bào chế), không suy diễn từ văn bản tự do."
+      "description": "Đường dùng, chuẩn hóa theo 1 trong các giá trị: 'Uống', 'Tiêm', 'Tiêm truyền', 'Bôi ngoài da', 'Đặt', 'Nhỏ mắt', 'Nhỏ mũi', 'Nhỏ tai', 'Xịt', 'Ngậm', 'Dán ngoài da'. Suy ra từ dang_thuoc (dạng bào chế), không suy diễn từ văn bản tự do. 'Tiêm truyền' dành riêng cho dịch truyền tĩnh mạch (khác 'Tiêm' thông thường)."
     },
     "thoi_diem_dung": {
       "type": "string",

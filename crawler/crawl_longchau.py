@@ -63,6 +63,10 @@ OUTPUT_SCHEMA_KEYS = [
 # nhieu tu khoa cung luc (vd "Vien nen bao phim" chi co "vien" -> Uong, khong
 # trung tu khoa nao khac).
 ROUTE_KEYWORDS: list[tuple[str, str]] = [
+    # "truyen" phai kiem tra TRUOC "tiem" - vi "tiem truyen"/"dung dich tiem
+    # truyen" chua ca 2 tu, can uu tien nhan dien dung "Tiem truyen" (dich
+    # truyen tinh mach) thay vi rung xuong "Tiem" chung chung.
+    ("truyen", "Tiêm truyền"),
     ("tiem", "Tiêm"),
     ("tra mat", "Nhỏ mắt"),
     ("nho mat", "Nhỏ mắt"),
@@ -100,9 +104,20 @@ def classify_duong_dung(dang_thuoc: str) -> str:
     Thay vao do: chi tra "Uong" khi co tu khoa xac nhan ro rang (ORAL_KEYWORDS),
     con lai (vd "Dang bot", "Hon dich" khong kem "uong"/"tiem") tra ve rong -
     de trong bi validate_record() bao thieu truong bat buoc, buoc nguoi
-    dung kiem tra thu cong thay vi am tham sai."""
+    dung kiem tra thu cong thay vi am tham sai.
+
+    "Nhu tuong (Gel)" la 1 truong hop mo ho da xac nhan thuc te: cung 1 chuoi
+    dang_thuoc nay xuat hien o ca thuoc nho mat (Genteal), gel boi mieng
+    (Zytee), gel dat hau mon tri tao bon (Bibonlax) LAN nhu tuong tiem
+    truyen tinh mach (Nirpid) - nen khi co "nhu tuong" kem theo tu khoa ket
+    cau chung chung ("gel"/"kem"/"mo"), KHONG duoc suy ra "Boi ngoai da";
+    chi giu lai ket qua neu co tu khoa route manh hon di kem (vd "tiem",
+    "uong nho giot" trong chinh dang_thuoc)."""
     normalized = strip_diacritics(dang_thuoc or "").lower()
+    is_ambiguous_emulsion = "nhu tuong" in normalized
     for keyword, route in ROUTE_KEYWORDS:
+        if is_ambiguous_emulsion and route == "Bôi ngoài da":
+            continue
         if re.search(r"\b" + re.escape(keyword) + r"\b", normalized):
             return route
     for keyword in ORAL_KEYWORDS:

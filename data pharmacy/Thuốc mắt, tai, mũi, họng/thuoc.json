@@ -1762,29 +1762,6 @@
     "danh_muc": "Thuốc trị tăng nhãn áp"
   },
   {
-    "ten_thuoc": "Genteal 10g",
-    "ham_luong": "Hypromellose 3mg; Carbomer 2.2mg",
-    "dang_thuoc": "Nhũ tương (Gel)",
-    "tong_so_luong": "Hộp x 10g",
-    "tac_dung": "Thuốc GenTeal Gel được chỉ định trong các trường hợp: GenTeal Gel làm dịu cảm giác khô do đeo kính áp tròng, khói, gió, sử dụng màn hình máy tính nhiều hoặc các kích ứng khác bằng cách làm ướt và bôi trơn bề mặt của mắt.",
-    "tac_dung_phu": "Khi sử dụng Genteal Gel bạn có thể gặp một số tác dụng không mong muốn (ADR). Không rõ tần suất Mắt: Cảm giác bỏng, châm chích, phản ứng dị ứng, mờ mắt thoáng qua hoặc đỏ mắt sau khi dùng thuốc. Hướng dẫn cách xử trí ADR Genteal thường được dung nạp tốt. Tuy nhiên, nếu gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời.",
-    "huong_dan_su_dung": "Giữ ống thuốc thẳng đứng và nhỏ gel vào túi kết mạc của mắt bị ảnh hưởng.",
-    "lieu_dung": "Người lớn 1 - 2 giọt/lần. Tần suất dùng thuốc phụ thuộc vào mức độ nghiêm trọng của tình trạng bệnh, trung bình là 1 - 3 lần/ngày. Nếu cần, có thể sử dụng Genteal Gel thường xuyên hơn. Người cao tuổi Không cần chỉnh liều lượng ở người cao tuổi. Trẻ em Chưa có nghiên cứu về dùng thuốc ở trẻ em. Lưu ý: Liều dùng trên chỉ mang tính chất tham khảo. Liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh. Để có liều dùng phù hợp, bạn cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế.",
-    "duong_dung": "Bôi ngoài da",
-    "thoi_diem_dung": "",
-    "huong_dan_bao_quan": "Bảo quản ở nhiệt độ dưới 25 o C. Đóng chặt ống thuốc sau khi sử dụng. Bỏ phần thuốc còn lại sau 4 tuần kể từ ngày mở nắp.",
-    "luu_y_dac_biet": [
-      "Chống chỉ định: Genteal Gel chống chỉ định trong trường hợp: Bệnh nhân mẫn cảm với bất kỳ thành phần nào của thuốc.",
-      "Thận trọng khi sử dụng: Trong quá trình sử dụng, nếu bệnh nhân bị đau mắt, thay đổi thị lực, đỏ mắt kéo dài hoặc kích ứng mắt, cần ngưng sử dụng Genteal ngay lập tức và hỏi ý kiến bác sĩ. Không nên tiếp tục sử dụng nếu sản phẩm Genteal Gel thay đổi màu sắc hoặc trở nên vẩn đục. Không dùng Genteal Gel bằng đường tiêm. Không tiêm thuốc vào dưới kết mạc cũng như không đưa trực tiếp thuốc vào tiền phòng của mắt. Không dùng Genteal trong suốt quá trình phẫu thuật. Bệnh nhân cần tránh để đầu nhỏ giọt của chai thuốc tiếp xúc trực tiếp với mắt và vùng da xung quanh vì có thể làm nhiễm bẩn gel thuốc. Nếu cần dùng nhiều loại thuốc nhỏ mắt, phải sử dụng cách nhau ít nhất 5 phút. Nên nhỏ Genteal Gel cuối cùng. Cần kiểm tra sự nguyên vẹn của niêm phong trên nắp chai trước khi sử dụng lần đầu.",
-      "Khả năng lái xe và vận hành máy móc: Bệnh nhân đang bị mờ tầm nhìn không nên lái xe hoặc vận hành máy móc.",
-      "Thời kỳ mang thai: Chưa có nghiên cứu tính an toàn và hiệu quả của Genteal đối với phụ nữ mang thai.",
-      "Thời kỳ cho con bú: Chưa có nghiên cứu tính an toàn và hiệu quả của Genteal đối với phụ nữ đang cho con bú.",
-      "Tương tác thuốc: Có thể sử dụng Genteal Gel với kính áp tròng mềm. Genteal Gel có khả năng tương thích với các vật liệu lotrafilcon, tefilcon và vifilcon được sử dụng làm kính áp tròng, tương tự với dung dịch nhỏ mắt Genteal."
-    ],
-    "id": "genteal-10g",
-    "danh_muc": "Thuốc nhỏ mắt"
-  },
-  {
     "ten_thuoc": "Glycerin Borat 3% F.t Pharma 10ml",
     "ham_luong": "Natri tetraborat 300mg",
     "dang_thuoc": "Dung dịch",
@@ -5725,28 +5702,5 @@
     ],
     "id": "xylogen-duoc-khoa-15ml",
     "danh_muc": "Thuốc tai mũi họng"
-  },
-  {
-    "ten_thuoc": "Zytee 10ml",
-    "ham_luong": "Choline 9%; Benzalkonium 0.02%",
-    "dang_thuoc": "Nhũ tương (Gel)",
-    "tong_so_luong": "Tuýp x 10ml",
-    "tac_dung": "Thuốc Zytee RB được chỉ định dùng trong các trường hợp sau: Ðiều trị giảm đau răng, viêm lưỡi, viêm miệng, loét miệng , các tổn thương khác ở miệng và kích ứng răng giả.",
-    "tac_dung_phu": "Chưa có báo cáo về tác dụng phụ của thuốc. Hướng dẫn cách xử trí ADR Thông báo cho bác sĩ những tác dụng không mong muốn gặp phải khi sử dụng thuốc.",
-    "huong_dan_su_dung": "Nhỏ một hay hai giọt keo thuốc lên đầu ngón tay trỏ và chấm xoa nhẹ lên vùng bị tổn thương. Có thể lặp lại mỗi 3 - 4 giờ một lần nếu cần, hay theo chỉ dẫn của thầy thuốc. Lưu ý: Liều dùng trên chỉ mang tính chất tham khảo. Liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh. Để có liều dùng phù hợp, bạn cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế.",
-    "lieu_dung": "Nhỏ một hay hai giọt keo thuốc lên đầu ngón tay trỏ và chấm xoa nhẹ lên vùng bị tổn thương. Có thể lặp lại mỗi 3 - 4 giờ một lần nếu cần, hay theo chỉ dẫn của thầy thuốc. Lưu ý: Liều dùng trên chỉ mang tính chất tham khảo. Liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh. Để có liều dùng phù hợp, bạn cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế.",
-    "duong_dung": "Bôi ngoài da",
-    "thoi_diem_dung": "",
-    "huong_dan_bao_quan": "Bảo quản dưới 25 0 C. Để xa tầm tay trẻ em.",
-    "luu_y_dac_biet": [
-      "Chống chỉ định: Thuốc Zytee chống chỉ định trong các trường hợp sau: Mẫn cảm với bất kỳ thành phần nào của thuốc.",
-      "Thận trọng khi sử dụng: Không dùng thuốc quá hạn ghi trên nhãn.",
-      "Khả năng lái xe và vận hành máy móc: Không có báo cáo.",
-      "Thời kỳ mang thai: Không có báo cáo.",
-      "Thời kỳ cho con bú: Không có báo cáo.",
-      "Tương tác thuốc: Không có báo cáo."
-    ],
-    "id": "zytee-10ml",
-    "danh_muc": "Thuốc bôi răng miệng"
   }
 ]
