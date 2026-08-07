@@ -50,7 +50,7 @@ import cv2
 import numpy as np
 
 from config import Settings, load_api_key
-from prompts import COUNT_KEYS, COUNT_LABELS_ASCII
+from prompts import COUNT_KEYS, COUNT_LABELS_ASCII, NON_DRUG_KEY
 from providers import BASE_URL_PRESETS, BackendError
 from vlm_client import CountResult, PillCounter
 
@@ -186,8 +186,11 @@ def print_result(result: CountResult, index: int, image_path: Path | None = None
     print(f"  Tuýp thuốc : {counts['tuyp_thuoc']}")
     print(f"  Lọ thuốc   : {counts['lo_thuoc']}")
     print(f"  Hộp thuốc  : {counts['hop_thuoc']}")
+    print(f"  Gói thuốc  : {counts['goi_thuoc']}")
     print(f"  ---------------------------------")
     print(f"  Tổng số viên (nang + nén): {result.total_pills}")
+    if result.khong_phai_thuoc:
+        print(f"  Đã loại ra : {result.khong_phai_thuoc} viên kẹo / không phải thuốc")
     print(f"  Độ tin cậy : {_CONFIDENCE_TEXT.get(result.do_tin_cay, result.do_tin_cay)}")
     if result.ghi_chu:
         print(f"  Ghi chú    : {result.ghi_chu}")
@@ -333,7 +336,10 @@ def draw_overlay(
     frozen: bool = False,
 ):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    panel_h = 190
+    # Panel cao vừa đủ số dòng thực sự vẽ: mỗi loại 1 dòng, cộng dòng tổng, dòng
+    # độ tin cậy, và dòng "đã loại ra" chỉ xuất hiện khi có kẹo bị loại.
+    show_non_drug = result is not None and result.ok and result.khong_phai_thuoc > 0
+    panel_h = 26 * (len(COUNT_KEYS) + 2 + int(show_non_drug)) + 14
     # Vẽ lên bản sao: khung hình gốc còn được StabilityWatcher so sánh ở vòng
     # lặp sau, vẽ đè lên nó sẽ bị tính là chuyển động.
     frame = frame.copy()
@@ -359,6 +365,13 @@ def draw_overlay(
         cv2.putText(frame, f"Tong vien : {result.total_pills}", (12, y),
                     font, 0.6, (0, 255, 255), 2, cv2.LINE_AA)
         y += 26
+        if show_non_drug:
+            cv2.putText(
+                frame,
+                f"{COUNT_LABELS_ASCII[NON_DRUG_KEY]}: {result.khong_phai_thuoc} (loai ra)",
+                (12, y), font, 0.5, (150, 150, 245), 1, cv2.LINE_AA,
+            )
+            y += 26
         color = _CONFIDENCE_COLOR.get(result.do_tin_cay, (200, 200, 200))
         cv2.putText(frame, f"Do tin cay: {result.do_tin_cay}", (12, y),
                     font, 0.55, color, 1, cv2.LINE_AA)

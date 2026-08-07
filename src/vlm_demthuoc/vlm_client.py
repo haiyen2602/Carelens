@@ -21,6 +21,7 @@ import numpy as np
 from prompts import (
     CONFIDENCE_LEVELS,
     COUNT_KEYS,
+    NON_DRUG_KEY,
     USER_PROMPT,
     build_system_prompt,
 )
@@ -39,6 +40,17 @@ RESULT_SCHEMA: dict[str, Any] = {
         "tuyp_thuoc": {"type": "integer", "description": "Số tuýp thuốc bôi"},
         "lo_thuoc": {"type": "integer", "description": "Số chai/lọ thuốc"},
         "hop_thuoc": {"type": "integer", "description": "Số hộp giấy/carton"},
+        "goi_thuoc": {
+            "type": "integer",
+            "description": "Số gói thuốc bột/cốm/sủi (sachet), bao bì mềm hàn kín mép",
+        },
+        NON_DRUG_KEY: {
+            "type": "integer",
+            "description": (
+                "Số vật thể trông giống viên thuốc nhưng KHÔNG phải thuốc: kẹo cao su "
+                "xylitol, kẹo bạc hà, kẹo ngậm, kẹo dẻo. Không cộng vào các trường trên."
+            ),
+        },
         "do_tin_cay": {
             "type": "string",
             "enum": list(CONFIDENCE_LEVELS),
@@ -49,7 +61,7 @@ RESULT_SCHEMA: dict[str, Any] = {
             "description": "Mô tả ngắn bằng tiếng Việt về tình trạng ảnh",
         },
     },
-    "required": [*COUNT_KEYS, "do_tin_cay", "ghi_chu"],
+    "required": [*COUNT_KEYS, NON_DRUG_KEY, "do_tin_cay", "ghi_chu"],
     "additionalProperties": False,
 }
 
@@ -62,6 +74,9 @@ class CountResult:
 
     ok: bool
     counts: dict[str, int] = field(default_factory=lambda: {k: 0 for k in COUNT_KEYS})
+    # Kẹo / thực phẩm bị nhận nhầm thành thuốc. Tách riêng khỏi `counts` để không
+    # bao giờ lọt vào tổng số viên.
+    khong_phai_thuoc: int = 0
     do_tin_cay: str = "thap"
     ghi_chu: str = ""
     error: str = ""
@@ -82,6 +97,7 @@ class CountResult:
     def to_dict(self) -> dict[str, Any]:
         return {
             **self.counts,
+            NON_DRUG_KEY: self.khong_phai_thuoc,
             "do_tin_cay": self.do_tin_cay,
             "ghi_chu": self.ghi_chu,
             "tong_vien": self.total_pills,
@@ -163,26 +179,29 @@ def _first_json_object(text: str) -> Any:
     raise ValueError(f"JSON bị thiếu dấu đóng ngoặc: {text[:200]!r}")
 
 
-def _coerce(payload: dict[str, Any]) -> tuple[dict[str, int], str, str]:
-    """Ép kiểu / vệ sinh dữ liệu model trả về (phòng trường hợp bất thường)."""
-    counts: dict[str, int] = {}
-    for key in COUNT_KEYS:
-        value = payload.get(key, 0)
-        try:
-            number = int(value)
+def _to_count(value: Any) -> int:
+    """Ép một giá trị bất kỳ về số nguyên không âm."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        try:  # một số model trả "3.0" hoặc " 3 "
+            number = int(float(str(value).strip()))
         except (TypeError, ValueError):
-            try:  # một số model trả "3.0" hoặc " 3 "
-                number = int(float(str(value).strip()))
-            except (TypeError, ValueError):
-                number = 0
-        counts[key] = max(0, number)
+            number = 0
+    return max(0, number)
+
+
+def _coerce(payload: dict[str, Any]) -> tuple[dict[str, int], int, str, str]:
+    """Ép kiểu / vệ sinh dữ liệu model trả về (phòng trường hợp bất thường)."""
+    counts = {key: _to_count(payload.get(key, 0)) for key in COUNT_KEYS}
+    non_drug = _to_count(payload.get(NON_DRUG_KEY, 0))
 
     confidence = str(payload.get("do_tin_cay", "")).strip().lower().replace(" ", "_")
     if confidence not in CONFIDENCE_LEVELS:
         confidence = "thap"
 
     note = str(payload.get("ghi_chu", "")).strip()
-    return counts, confidence, note
+    return counts, non_drug, confidence, note
 
 
 class PillCounter:
@@ -257,10 +276,11 @@ class PillCounter:
         except ValueError as exc:
             return CountResult(ok=False, error=f"Không đọc được JSON: {exc}", latency_sec=latency)
 
-        counts, confidence, note = _coerce(payload)
+        counts, non_drug, confidence, note = _coerce(payload)
         return CountResult(
             ok=True,
             counts=counts,
+            khong_phai_thuoc=non_drug,
             do_tin_cay=confidence,
             ghi_chu=note,
             latency_sec=latency,
