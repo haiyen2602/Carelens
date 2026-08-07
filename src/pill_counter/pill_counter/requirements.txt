@@ -1,5 +1,0 @@
-pyTelegramBotAPI>=4.14
-ultralytics>=8.3
-opencv-python>=4.8
-shapely>=2.0
-numpy>=1.24
