@@ -80,6 +80,7 @@ ROUTE_KEYWORDS: list[tuple[str, str]] = [
     ("ngam", "Ngậm"),
     ("mieng dan", "Dán ngoài da"),
     ("cao dan", "Dán ngoài da"),
+    ("dung ngoai", "Bôi ngoài da"),  # "dung dich dung ngoai" = khang dinh ro rang, khong mo ho nhu "gel"
     ("mo", "Bôi ngoài da"),
     ("kem", "Bôi ngoài da"),
     ("gel", "Bôi ngoài da"),
