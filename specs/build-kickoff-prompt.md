@@ -131,18 +131,30 @@ còn 1 điểm tổng hợp.
 **Test bắt buộc:** với redflag xuất hiện giữa chừng, trace phải cho thấy đúng bước nào bị cắt ngang, không
 phải trace rỗng hoặc trace giả như luồng chạy hết bình thường.
 
-### Phase 6 — FastAPI endpoint + persist audit log
-- `POST /api/v1/conversation` — chạy LangGraph, ghi `AuditLogDTO` vào `audit_log`, trả response
-- Test: mọi nhánh kết thúc (kể cả `REFUSE`, kể cả redflag `HIGH`) đều ghi đủ trace, không có nhánh nào bỏ sót
-- **Bắt buộc — phát hiện ở review Phase 5b (2026-08-08), ghi lại để không quên khi wiring thật:**
-  - `run_conversation(escalate_fn=...)` hiện là optional (`None` = không escalate, degrade im lặng —
-    đúng cho test, nhưng nguy hiểm nếu wiring production quên truyền). Thêm 1 **startup check ở tầng
-    FastAPI app** (không phải bên trong `run_conversation()`) fail-fast lúc khởi động nếu `escalate_fn`
-    thật chưa được cấu hình — không được để lỗi này chỉ lộ ra qua 1 dòng `escalated_to: []` nằm im trong
-    audit log lúc có bệnh nhân cần cấp cứu thật.
-  - `src/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` hiện là **placeholder** (xem TODO trong file) —
-    PHẢI dừng lại xin PM + mentor duyệt nội dung thật (mục 10 #5 `chatbot-rag-design.md`) trước khi cho
-    endpoint này nhận traffic thật với bệnh nhân, không tự thay bằng câu khác cũng không tự cho qua.
+### Phase 6 — FastAPI endpoint + persist audit log ✅ (2026-08-08)
+- `POST /api/v1/chat` (đổi từ `/api/v1/conversation` ghi ở đây ban đầu — khớp `api-contracts.md` §4, nguồn
+  contract thật; xem lịch sử review) — chạy LangGraph 2 giai đoạn (`intent_classification` → toàn bộ node
+  còn lại của cả 3 nhánh, mỗi node tự bảo vệ theo `state["intent"]`), ghi `AuditLogDTO` vào `audit_log`,
+  trả response đúng shape `ChatResponse` (`reply`, `classification`, `severity` LOW/MEDIUM/HIGH,
+  `safety_flag`, `needs_clarification`, `sources`)
+- Test: mọi nhánh kết thúc (drug_info, today_schedule, dose_confirmation, `REFUSE`, redflag `HIGH`) đều ghi
+  đủ trace + audit log — `tests/test_chat_routes.py`
+- **Đã giải quyết (không còn treo):**
+  - `escalate_fn` không còn là tham số optional có thể quên truyền — route handler luôn tự dựng
+    `build_db_escalate_fn(db)` (ghi thật vào bảng `escalation`, không stub) ngay trong `chat()`, không có
+    đường nào gọi `run_conversation()` mà thiếu nó nữa. Startup-check riêng không còn cần thiết.
+  - `safety_flag` trả cho FE giờ hợp nhất **cả 2 nguồn HIGH** (`severity_en == "HIGH"`), không chỉ nguồn
+    safety_layer redflag — sửa đúng theo BR-3.5 (trước đó nếu chỉ map thẳng `state["safety_flag"]`, ca HIGH
+    từ SEVERITY→LEVEL sẽ không bật overlay cấp cứu cho FE).
+- **Vẫn còn treo, chưa tự quyết:**
+  - `src/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` vẫn là **placeholder** (xem TODO trong file) — PHẢI
+    dừng lại xin PM + mentor duyệt nội dung thật (mục 10 #5 `chatbot-rag-design.md`) trước khi cho endpoint
+    này nhận traffic thật với bệnh nhân.
+  - `patient_id` hiện nhận thẳng trong request body (`ConversationChatRequest`) thay vì đọc từ JWT — vì
+    `auth-api` (`api-contracts.md` §1) chưa được xây trong repo này. Cần thay bằng JWT `sub` claim khi
+    auth-api có thật, xoá field này khỏi body.
+  - Prompt LLM thật (`src/services/classification.py`: classify_intent/classify_dose/classify_severity/
+    generate_answer) là **bản nháp đầu tiên**, chưa qua eval (Phase 7) — không coi là đã tối ưu.
 
 ### Phase 7 — Eval harness (`eval/`)
 - Tập câu hỏi có ground truth (đúng thuốc, đúng `field_group` kỳ vọng)

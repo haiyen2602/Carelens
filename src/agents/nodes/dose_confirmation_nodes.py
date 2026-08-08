@@ -24,7 +24,13 @@ from sqlalchemy.orm import Session
 from src.agents.nodes.conversation_nodes import _append_trace
 from src.agents.state import ConversationState
 from src.agents.tools.personal_tools import tra_cuu_dose_event_ca_nhan
-from src.services.escalation import HIGH_OVERLAY_MESSAGE, EscalateFn, trigger_emergency_escalation
+from src.services.escalation import (
+    HIGH_OVERLAY_MESSAGE,
+    TRIGGER_MISSED_DOSE,
+    TRIGGER_SIDE_EFFECT,
+    EscalateFn,
+    trigger_emergency_escalation,
+)
 from src.services.retrieval import get_chunks_by_drug_id
 from src.services.severity import combine_severity
 
@@ -58,9 +64,22 @@ class SeverityClassifyFn(Protocol):
 def build_classify_node(classify_fn: DoseClassifyFn, model_name: str = "gpt-4o-mini"):
     """FEAT-005. Ghi ca `raw_result` (nhan LLM thuc te tra ve) LAN `result`
     (None neu confidence thap - khong dung nhan nay) vao trace - audit duoc
-    ca truong hop he thong chon KHONG hanh dong theo phan loai cua LLM."""
+    ca truong hop he thong chon KHONG hanh dong theo phan loai cua LLM.
+
+    Tu bao ve theo `state["intent"]` (Phase 6, None duoc chap nhan de tuong
+    thich test goi thang node - xem conversation_nodes.py cho cung idiom) -
+    tranh ton 1 lan goi LLM cho utterance khong phai dose_confirmation."""
 
     async def node(state: ConversationState) -> dict:
+        if state.get("intent") not in (None, "dose_confirmation"):
+            entry = {
+                "step": "dose_classification",
+                "skipped": True,
+                "reason": f"intent={state.get('intent')!r}",
+                "duration_ms": 0.0,
+            }
+            return {"trace": _append_trace(state, entry)}
+
         t0 = time.monotonic()
         label, confidence = classify_fn(state["utterance"])
         duration_ms = (time.monotonic() - t0) * 1000
@@ -169,10 +188,18 @@ def build_level_action_node(escalate_fn: EscalateFn):
 
         urgent = severity == "Nguy hiểm"
         action = HIGH_ACTION if urgent else MEDIUM_ACTION
+        trigger = TRIGGER_SIDE_EFFECT if classification == "SIDE_EFFECT" else TRIGGER_MISSED_DOSE
+        reason = f"SEVERITY={severity} tu classification={classification!r} (BR-3.1-3.6)"
 
         t0 = time.monotonic()
         await trigger_emergency_escalation(
-            escalate_fn, state["patient_id"], state.get("dose_event_id"), severity, urgent
+            escalate_fn,
+            state["patient_id"],
+            state.get("dose_event_id"),
+            severity,
+            urgent,
+            trigger,
+            reason,
         )
         duration_ms = (time.monotonic() - t0) * 1000
 

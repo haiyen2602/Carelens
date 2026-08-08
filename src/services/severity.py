@@ -14,6 +14,13 @@ from __future__ import annotations
 SEVERITY_RANK: dict[str, int] = {"Nhẹ": 1, "Trung bình": 2, "Nguy hiểm": 3}
 _RANK_TO_SEVERITY: dict[int, str] = {v: k for k, v in SEVERITY_RANK.items()}
 
+# Phase 6: api-contracts.md (§4 chat-api, §6 escalation-api) dung quy uoc
+# tieng Anh LOW|MEDIUM|HIGH cho severity trong moi DTO huong ra ngoai (FE,
+# EscalationDTO) - KHAC voi ConversationState.severity noi bo (tieng Viet,
+# chot o chatbot-rag-design.md muc 9). Chi 1 noi chuyen doi, dung o bien
+# FastAPI/escalate_fn, khong de 2 quy uoc lan nhau trong logic nghiep vu.
+SEVERITY_VI_TO_EN: dict[str, str] = {"Nhẹ": "LOW", "Trung bình": "MEDIUM", "Nguy hiểm": "HIGH"}
+
 
 def combine_severity(rag_severity: str | None, fallback_severity: str) -> str:
     """Ket hop danh gia RAG per-thuoc (nguon chinh, tu tac_dung/tac_dung_phu

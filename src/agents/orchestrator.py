@@ -26,7 +26,12 @@ import asyncio
 from collections.abc import Awaitable, Callable
 
 from src.agents.state import ConversationState
-from src.services.escalation import HIGH_OVERLAY_MESSAGE, EscalateFn, trigger_emergency_escalation
+from src.services.escalation import (
+    HIGH_OVERLAY_MESSAGE,
+    TRIGGER_SAFETY_REDFLAG,
+    EscalateFn,
+    trigger_emergency_escalation,
+)
 from src.services.safety import SafetyFlag
 
 SafetyCheckFn = Callable[[str], Awaitable[SafetyFlag]]
@@ -86,7 +91,7 @@ async def run_conversation(
         if safety_task.done():
             flag = safety_task.result()
             if flag.is_redflag:
-                escalated = await _maybe_escalate(escalate_fn, current_state)
+                escalated = await _maybe_escalate(escalate_fn, current_state, flag)
                 return _apply_redflag(current_state, flag, last_completed_step, escalated)
 
         update = await node(current_state)  # type: ignore[arg-type]
@@ -98,7 +103,7 @@ async def run_conversation(
     # cuoi dang chay va xong ngay sau do.
     flag = await safety_task
     if flag.is_redflag:
-        escalated = await _maybe_escalate(escalate_fn, current_state)
+        escalated = await _maybe_escalate(escalate_fn, current_state, flag)
         return _apply_redflag(current_state, flag, last_completed_step, escalated)
 
     entry = {"step": "safety_layer", "keyword_hit": False, "llm_flag": False, "matched_group": None}
@@ -107,13 +112,21 @@ async def run_conversation(
     return current_state  # type: ignore[return-value]
 
 
-async def _maybe_escalate(escalate_fn: EscalateFn | None, current_state: ConversationState) -> bool:
+async def _maybe_escalate(escalate_fn: EscalateFn | None, current_state: ConversationState, flag: SafetyFlag) -> bool:
     if escalate_fn is None:
         return False
+    reason = (
+        f"Safety layer redflag - nhom={flag.matched_group!r}, tu khoa/nguon={flag.matched_keyword!r}, "
+        f"phat hien qua {flag.source}"
+    )
     await trigger_emergency_escalation(
         escalate_fn,
         current_state.get("patient_id", ""),
         current_state.get("dose_event_id"),
+        severity="Nguy hiểm",
+        urgent=True,
+        trigger=TRIGGER_SAFETY_REDFLAG,
+        reason=reason,
     )
     return True
 

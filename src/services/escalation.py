@@ -15,6 +15,11 @@ from __future__ import annotations
 import asyncio
 from typing import Protocol
 
+from sqlalchemy.orm import Session
+
+from src.db.models import Escalation
+from src.services.severity import SEVERITY_VI_TO_EN
+
 # TODO [CẦN CHỐT — chatbot-rag-design.md muc 10 #5]: day la PLACEHOLDER, KHONG
 # PHAI noi dung da duyet. Muc 10 #5 ghi ro noi dung overlay cho nhom redflag
 # "nguy co lieu dung bat thuong" (BR-6.7/6.8) can PM + Pham Thanh Dat quyet -
@@ -31,9 +36,22 @@ HIGH_OVERLAY_MESSAGE = (
 )
 
 
+# trigger ∈ missed_dose | side_effect | safety_redflag | photo_mismatch (api-contracts.md §6)
+TRIGGER_SAFETY_REDFLAG = "safety_redflag"
+TRIGGER_MISSED_DOSE = "missed_dose"
+TRIGGER_SIDE_EFFECT = "side_effect"
+
+
 class EscalateFn(Protocol):
     async def __call__(
-        self, target: str, patient_id: str, dose_event_id: str | None, severity: str, urgent: bool
+        self,
+        target: str,
+        patient_id: str,
+        dose_event_id: str | None,
+        severity: str,
+        urgent: bool,
+        trigger: str,
+        reason: str,
     ) -> None: ...
 
 
@@ -43,11 +61,77 @@ async def trigger_emergency_escalation(
     dose_event_id: str | None,
     severity: str = "Nguy hiểm",
     urgent: bool = True,
+    trigger: str = TRIGGER_SAFETY_REDFLAG,
+    reason: str = "",
 ) -> None:
     """Goi `escalate_fn` cho CA family LAN doctor SONG SONG qua
     `asyncio.gather` (BR-3.5: "khong xep hang cho nguoi than xu ly truoc" -
-    gui thang ca 2). Dung chung cho CA 2 nguon kich hoat HIGH o tren."""
+    gui thang ca 2). Dung chung cho CA 2 nguon kich hoat HIGH o tren.
+
+    `trigger`/`reason` do NGUOI GOI (orchestrator.py hoac
+    dose_confirmation_nodes.py) tinh - chi ho moi biet CHINH XAC vi sao
+    escalate kich hoat (tu khoa redflag nao, hay classification/severity
+    nao) - escalate_fn khong tu suy dien nguoc lai duoc tu severity/urgent
+    don thuan (vd urgent=True co the la ca safety_redflag LAN severity=Nguy
+    hiem tu SEVERITY node, khong phan biet duoc chi tu 2 co nay)."""
     await asyncio.gather(
-        escalate_fn("family", patient_id, dose_event_id, severity, urgent),
-        escalate_fn("doctor", patient_id, dose_event_id, severity, urgent),
+        escalate_fn("family", patient_id, dose_event_id, severity, urgent, trigger, reason),
+        escalate_fn("doctor", patient_id, dose_event_id, severity, urgent, trigger, reason),
     )
+
+
+def build_db_escalate_fn(db: Session) -> EscalateFn:
+    """`escalate_fn` ghi THAT vao bang `escalation` (api-contracts.md §6/§8)
+    thay vi push/SMS that (chua co ha tang do trong repo nay - xem cau hoi
+    da xac nhan voi Architect 2026-08-08: build toi thieu bang that thay vi
+    stub log-only). `trigger_emergency_escalation()` goi ham nay 2 LAN qua
+    `asyncio.gather` (1 lan/target) cho CUNG 1 su kien escalate - gop lai
+    thanh DUNG 1 dong Escalation (notified=["caregiver","doctor"]) thay vi 2
+    dong trung lap, bang 1 dict nho trong closure de nho row vua tao o lan
+    goi dau.
+
+    GIA DINH KY THUAT (ghi ro vi day la diem de sai sau nay): than ham ben
+    duoi la I/O DONG BO (SQLAlchemy Session thuong, khong async driver) -
+    KHONG co `await` thuc su nao ben trong. 1 coroutine khong co diem await
+    noi bo thi `asyncio.gather()` van chay no CHAY HET TUAN TU (khong xen
+    ke that giua 2 task) - nen lan goi 'family' luon INSERT xong TRUOC KHI
+    lan goi 'doctor' doc lai `_pending`. Neu sau nay escalate_fn doi sang
+    goi API push/SMS THAT (co await/network I/O ben trong), gia dinh nay
+    KHONG con dung nua - can dong bo hoa ro rang (vd lock) truoc khi doi."""
+    _pending: dict[str, str] = {}  # f"{patient_id}:{dose_event_id}" -> escalation.id
+
+    async def escalate_fn(
+        target: str,
+        patient_id: str,
+        dose_event_id: str | None,
+        severity: str,
+        urgent: bool,
+        trigger: str,
+        reason: str,
+    ) -> None:
+        key = f"{patient_id}:{dose_event_id}"
+        notified_target = "caregiver" if target == "family" else target
+        severity_en = SEVERITY_VI_TO_EN.get(severity, severity)
+
+        existing_id = _pending.get(key)
+        if existing_id is not None:
+            row = db.get(Escalation, existing_id)
+            if row is not None and notified_target not in row.notified:
+                row.notified = [*row.notified, notified_target]
+                db.commit()
+            return
+
+        row = Escalation(
+            patient_id=patient_id,
+            dose_event_id=dose_event_id,
+            severity=severity_en,
+            trigger=trigger,
+            reason=reason,
+            status="OPEN",
+            notified=[notified_target],
+        )
+        db.add(row)
+        db.commit()
+        _pending[key] = row.id
+
+    return escalate_fn

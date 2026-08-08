@@ -8,6 +8,10 @@
     khop PrescriptionDTO/DoseEventDTO (api-contracts.md §2, §3); `items`/
     `expected_items` luu JSON thay vi bang con rieng - don gian hoa hop ly cho
     MVP, KHONG phai quyet dinh kien truc cuoi cung cho FEAT-001-004 that.
+  - escalation: them o Phase 6 - noi that de escalate_fn (src/services/
+    escalation.py) ghi vao, khop EscalationDTO (api-contracts.md §6/§8). Day
+    la NGUON DUY NHAT cho ca 2 duong kich hoat HIGH (safety_layer redflag VA
+    SEVERITY -> LEVEL = "Nguy hiểm") - khong xay bang rieng cho tung duong.
 
 KHONG duoc UPDATE/DELETE audit_log o tang ung dung - xem ghi chu trong
 migrations/versions/, chi duoc INSERT.
@@ -124,3 +128,29 @@ class DoseEvent(Base):
     status: Mapped[str] = mapped_column(String, nullable=False)  # PENDING|TAKEN|MISSED|DELAYED|CANCELLED
     expected_items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class Escalation(Base):
+    """Khop EscalationDTO (api-contracts.md §6, §8). 1 dong = 1 canh bao
+    HIGH/MEDIUM da kich hoat, du tu safety_layer redflag (trigger=
+    'safety_redflag') hay tu SEVERITY->LEVEL (trigger='missed_dose'|
+    'side_effect' tuy classification). `severity` luu theo quy uoc
+    api-contracts.md (LOW|MEDIUM|HIGH, tieng Anh) - KHAC voi
+    ConversationState.severity noi bo (Nhẹ|Trung bình|Nguy hiểm, tieng Viet) -
+    xem SEVERITY_VI_TO_EN trong src/services/severity.py, chuyen doi ngay
+    truoc khi ghi vao bang nay, khong luu lan 2 quy uoc trong cung 1 cot."""
+
+    __tablename__ = "escalation"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    dose_event_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    severity: Mapped[str] = mapped_column(String, nullable=False)  # LOW|MEDIUM|HIGH
+    trigger: Mapped[str] = mapped_column(String, nullable=False)  # missed_dose|side_effect|safety_redflag|photo_mismatch
+    raw_utterance: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="OPEN")  # OPEN|ACKED|RESOLVED
+    # Vd ["caregiver", "doctor"] - target "family" noi bo cua escalate_fn map
+    # sang "caregiver" o day de khop dung tu vung EscalationDTO.
+    notified: Mapped[list] = mapped_column(JSON, nullable=False, default=list)

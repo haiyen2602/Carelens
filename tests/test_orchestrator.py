@@ -133,8 +133,8 @@ async def test_redflag_triggers_shared_escalation_handler_not_a_separate_one():
     than + bac si) khong duoc thuc hien tren duong nay."""
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
-        calls.append((target, patient_id, dose_event_id, severity, urgent))
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        calls.append((target, patient_id, dose_event_id, severity, urgent, trigger, reason))
 
     async def instant_redflag(utterance: str) -> SafetyFlag:
         return SafetyFlag(is_redflag=True, matched_group="clinical", matched_keyword="đau ngực", source="keyword")
@@ -147,7 +147,8 @@ async def test_redflag_triggers_shared_escalation_handler_not_a_separate_one():
     )
 
     assert {c[0] for c in calls} == {"family", "doctor"}, "phai goi CA family LAN doctor"
-    assert all(c[1] == "p1" and c[2] == "dose-9" and c[4] is True for c in calls)
+    assert all(c[1] == "p1" and c[2] == "dose-9" and c[4] is True and c[5] == "safety_redflag" for c in calls)
+    assert all(c[6] for c in calls), "reason khong duoc rong - phai giai thich duoc vi sao escalate"
     safety_entry = result["trace"][0]
     assert set(safety_entry["escalated_to"]) == {"family", "doctor"}
 

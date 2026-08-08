@@ -294,7 +294,7 @@ async def test_severity_node_uses_dose_event_drug_not_rag_results_from_other_bra
 async def test_level_taken_logs_only_no_escalation():
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         calls.append(target)
 
     node = build_level_action_node(escalate_fn=spy_escalate)
@@ -309,7 +309,7 @@ async def test_level_taken_logs_only_no_escalation():
 async def test_level_nhe_logs_and_monitors_no_escalation():
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         calls.append(target)
 
     node = build_level_action_node(escalate_fn=spy_escalate)
@@ -324,7 +324,7 @@ async def test_level_nhe_logs_and_monitors_no_escalation():
 async def test_level_trung_binh_escalates_family_and_doctor():
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         calls.append((target, urgent))
 
     node = build_level_action_node(escalate_fn=spy_escalate)
@@ -342,7 +342,7 @@ async def test_level_trung_binh_escalates_family_and_doctor():
 async def test_level_nguy_hiem_escalates_urgent_and_sets_overlay_response():
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         calls.append((target, urgent))
 
     node = build_level_action_node(escalate_fn=spy_escalate)
@@ -359,7 +359,7 @@ async def test_level_nguy_hiem_escalates_urgent_and_sets_overlay_response():
 async def test_level_no_severity_and_not_taken_takes_no_action():
     calls: list = []
 
-    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         calls.append(target)
 
     node = build_level_action_node(escalate_fn=spy_escalate)
@@ -385,7 +385,7 @@ async def test_escalation_to_family_and_doctor_runs_in_parallel_not_sequential()
     huong, khong phai benchmark production)."""
     delay_s = 0.3
 
-    async def slow_escalate(target, patient_id, dose_event_id, severity, urgent):
+    async def slow_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
         await asyncio.sleep(delay_s)
 
     node = build_level_action_node(escalate_fn=slow_escalate)

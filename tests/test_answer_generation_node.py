@@ -14,6 +14,7 @@ import pytest  # noqa: E402
 from src.agents.nodes.conversation_nodes import (  # noqa: E402
     CAVEAT_LIEU_DUNG,
     CAVEAT_THOI_DIEM_MISSING,
+    NO_SOURCE_MESSAGE,
     build_answer_generation_node,
 )
 from src.services.retrieval import DrugInfoResult  # noqa: E402
@@ -125,12 +126,24 @@ async def test_both_caveats_inserted_simultaneously_when_both_conditions_true():
 
 
 @pytest.mark.asyncio
-async def test_no_caveats_when_no_rag_results():
-    node = build_answer_generation_node(generate_fn=lambda u, r: "Không có thông tin.")
+async def test_empty_rag_results_refuses_instead_of_calling_llm_with_no_grounding():
+    """BR-7.3 (muc 4.4): rag_results rong -> tu choi NGAY, KHONG goi
+    generate_fn - phat hien 2026-08-08 (review Phase 6): ban truoc goi
+    thang generate_fn ngay ca khi khong co nguon nao, rui ro bia thong tin
+    ma khong bi bat vi khong co test nao lo ra qua danh sach node day du."""
+    generate_fn_called = False
+
+    def spy_generate(u, r):
+        nonlocal generate_fn_called
+        generate_fn_called = True
+        return "Không có thông tin."
+
+    node = build_answer_generation_node(generate_fn=spy_generate)
     state = _base_state(rag_results=[], prescription_instruction=None)
 
     result = await node(state)
     entry = result["trace"][-1]
 
-    assert entry["caveat_lieu_dung_inserted"] is False
-    assert entry["caveat_thoi_diem_missing_inserted"] is False
+    assert generate_fn_called is False, "khong duoc goi LLM khi khong co nguon nao de dua vao prompt"
+    assert entry["step"] == "refuse"
+    assert result["response"] == NO_SOURCE_MESSAGE
