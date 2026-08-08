@@ -31,9 +31,9 @@ from src.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
     build_level_action_node,
     build_severity_node,
 )
-from src.agents.orchestrator import HIGH_OVERLAY_MESSAGE  # noqa: E402
 from src.db.base import SessionLocal, engine  # noqa: E402
 from src.db.models import DoseEvent, DrugChunk, Prescription  # noqa: E402
+from src.services.escalation import HIGH_OVERLAY_MESSAGE  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Nhom 1 - CLASSIFY node, thuan, khong can DB.

@@ -121,3 +121,47 @@ async def test_redflag_arriving_before_any_node_starts_stops_immediately():
     assert steps_in_trace == ["safety_layer"]
     safety_entry = result["trace"][0]
     assert safety_entry["interrupted_after_step"] is None
+
+
+@pytest.mark.asyncio
+async def test_redflag_triggers_shared_escalation_handler_not_a_separate_one():
+    """Diem bat buoc (code review Phase 5b, 2026-08-08): safety_layer redflag
+    va SEVERITY -> LEVEL = "Nguy hiểm" (xem test_dose_confirmation_nodes.py)
+    PHAI cung goi 1 ham escalate dung chung (src/services/escalation.py),
+    khong duoc code rieng 2 lan. Truoc fix nay, redflag chi set response/
+    severity ma KHONG bao gio thuc su goi escalate_fn - BR-3.5 (gui nguoi
+    than + bac si) khong duoc thuc hien tren duong nay."""
+    calls: list = []
+
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent):
+        calls.append((target, patient_id, dose_event_id, severity, urgent))
+
+    async def instant_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group="clinical", matched_keyword="đau ngực", source="keyword")
+
+    result = await run_conversation(
+        {"patient_id": "p1", "dose_event_id": "dose-9", "utterance": "test", "trace": []},
+        nodes=[],
+        safety_check=instant_redflag,
+        escalate_fn=spy_escalate,
+    )
+
+    assert {c[0] for c in calls} == {"family", "doctor"}, "phai goi CA family LAN doctor"
+    assert all(c[1] == "p1" and c[2] == "dose-9" and c[4] is True for c in calls)
+    safety_entry = result["trace"][0]
+    assert set(safety_entry["escalated_to"]) == {"family", "doctor"}
+
+
+@pytest.mark.asyncio
+async def test_redflag_without_escalate_fn_does_not_crash_and_marks_not_escalated():
+    """escalate_fn la optional (None mac dinh, vd test/chua wiring Phase 6) -
+    khong duoc crash, va trace phai the hien trung thuc la CHUA escalate
+    (escalated_to rong), khong duoc gia vo da lam."""
+
+    async def instant_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group="clinical", matched_keyword="đau ngực", source="keyword")
+
+    result = await run_conversation(_make_state(), nodes=[], safety_check=instant_redflag)
+
+    safety_entry = result["trace"][0]
+    assert safety_entry["escalated_to"] == []

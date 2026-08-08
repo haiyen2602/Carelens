@@ -11,7 +11,14 @@ do hat hop ly cho kien truc node-based (LangGraph) - "cat ngang" thuc su o
 muc do nay da du chung minh redflag khong bi bo lo du toi luc nao trong
 luong chinh (ADR-0009 rang buoc #3), khong phai chi kiem tra truoc khi bat
 dau (tuc "gan nhu luon lo di 1 nua neu redflag toi giua chung").
-"""
+
+HIGH_OVERLAY_MESSAGE va viec goi escalate_fn deu lay tu
+src/services/escalation.py - DUNG CHUNG voi duong HIGH con lai (SEVERITY ->
+LEVEL = "Nguy hiểm", src/agents/nodes/dose_confirmation_nodes.py). Khong
+duoc dinh nghia rieng o day (phat hien 2026-08-08: truoc do file nay tu dinh
+nghia overlay message rieng va KHONG he goi escalate_fn nao - safety_layer
+redflag chi set response/severity, chua bao gio thuc su bao nguoi than/bac
+si, du BR-3.5 yeu cau ca 2 duong HIGH deu phai lam viec do)."""
 
 from __future__ import annotations
 
@@ -19,24 +26,25 @@ import asyncio
 from collections.abc import Awaitable, Callable
 
 from src.agents.state import ConversationState
+from src.services.escalation import HIGH_OVERLAY_MESSAGE, EscalateFn, trigger_emergency_escalation
 from src.services.safety import SafetyFlag
 
 SafetyCheckFn = Callable[[str], Awaitable[SafetyFlag]]
 NodeFn = Callable[[ConversationState], Awaitable[dict]]
 
-HIGH_OVERLAY_MESSAGE = (
-    "⚠️ Đây có thể là tình huống khẩn cấp. Vui lòng liên hệ cấp cứu 115 ngay. "
-    "Người thân và bác sĩ của bạn đã được thông báo."
-)
+__all__ = ["HIGH_OVERLAY_MESSAGE", "run_conversation", "default_safety_check"]
 
 
-def _apply_redflag(state: ConversationState, flag: SafetyFlag, interrupted_after_step: str | None) -> ConversationState:
+def _apply_redflag(
+    state: ConversationState, flag: SafetyFlag, interrupted_after_step: str | None, escalated: bool
+) -> ConversationState:
     entry = {
         "step": "safety_layer",
         "keyword_hit": flag.source in ("keyword", "keyword+llm"),
         "llm_flag": flag.source in ("llm", "keyword+llm"),
         "matched_group": flag.matched_group,
         "interrupted_after_step": interrupted_after_step,
+        "escalated_to": ["family", "doctor"] if escalated else [],
     }
     trace = [*state.get("trace", []), entry]
     return {
@@ -52,12 +60,18 @@ async def run_conversation(
     state: ConversationState,
     nodes: list[NodeFn],
     safety_check: SafetyCheckFn,
+    escalate_fn: EscalateFn | None = None,
 ) -> ConversationState:
     """Chay `nodes` tuan tu, song song voi `safety_check(state["utterance"])`
     chay nhu 1 asyncio.Task doc lap ngay tu dau. Kiem tra task nay giua moi
     cap node lien tiep - redflag o bat ky diem kiem tra nao deu dung luong
     chinh ngay, ghi ro trace dung sau buoc nao (khong phai trace rong hay
-    gia vo chay het binh thuong)."""
+    gia vo chay het binh thuong).
+
+    `escalate_fn` (optional - None = khong escalate, dung cho test/truong
+    hop chua wiring that o Phase 6) duoc goi qua CUNG 1 ham dung chung
+    src/services/escalation.py voi duong HIGH con lai (SEVERITY -> LEVEL,
+    xem dose_confirmation_nodes.py) - ca 2 duong PHAI hoi tu ve 1 cho."""
     safety_task = asyncio.create_task(safety_check(state["utterance"]))
     current_state = dict(state)
     last_completed_step: str | None = None
@@ -72,7 +86,8 @@ async def run_conversation(
         if safety_task.done():
             flag = safety_task.result()
             if flag.is_redflag:
-                return _apply_redflag(current_state, flag, last_completed_step)
+                escalated = await _maybe_escalate(escalate_fn, current_state)
+                return _apply_redflag(current_state, flag, last_completed_step, escalated)
 
         update = await node(current_state)  # type: ignore[arg-type]
         current_state = {**current_state, **update}
@@ -83,12 +98,24 @@ async def run_conversation(
     # cuoi dang chay va xong ngay sau do.
     flag = await safety_task
     if flag.is_redflag:
-        return _apply_redflag(current_state, flag, last_completed_step)
+        escalated = await _maybe_escalate(escalate_fn, current_state)
+        return _apply_redflag(current_state, flag, last_completed_step, escalated)
 
     entry = {"step": "safety_layer", "keyword_hit": False, "llm_flag": False, "matched_group": None}
     current_state["trace"] = [*current_state.get("trace", []), entry]
     current_state["safety_flag"] = False
     return current_state  # type: ignore[return-value]
+
+
+async def _maybe_escalate(escalate_fn: EscalateFn | None, current_state: ConversationState) -> bool:
+    if escalate_fn is None:
+        return False
+    await trigger_emergency_escalation(
+        escalate_fn,
+        current_state.get("patient_id", ""),
+        current_state.get("dose_event_id"),
+    )
+    return True
 
 
 async def default_safety_check(utterance: str) -> SafetyFlag:

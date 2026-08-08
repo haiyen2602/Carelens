@@ -16,16 +16,15 @@ LEVEL: 3 nhanh hanh dong (business-rules.md §3) - Nhe/Trung binh/Nguy hiem.
 
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Protocol
 
 from sqlalchemy.orm import Session
 
 from src.agents.nodes.conversation_nodes import _append_trace
-from src.agents.orchestrator import HIGH_OVERLAY_MESSAGE
 from src.agents.state import ConversationState
 from src.agents.tools.personal_tools import tra_cuu_dose_event_ca_nhan
+from src.services.escalation import HIGH_OVERLAY_MESSAGE, EscalateFn, trigger_emergency_escalation
 from src.services.retrieval import get_chunks_by_drug_id
 from src.services.severity import combine_severity
 
@@ -54,12 +53,6 @@ class DoseClassifyFn(Protocol):
 
 class SeverityClassifyFn(Protocol):
     def __call__(self, combined_text: str) -> str | None: ...
-
-
-class EscalateFn(Protocol):
-    async def __call__(
-        self, target: str, patient_id: str, dose_event_id: str | None, severity: str, urgent: bool
-    ) -> None: ...
 
 
 def build_classify_node(classify_fn: DoseClassifyFn, model_name: str = "gpt-4o-mini"):
@@ -149,11 +142,12 @@ def build_severity_node(db: Session, classify_severity_fn: SeverityClassifyFn):
 
 def build_level_action_node(escalate_fn: EscalateFn):
     """LEVEL -> 3 nhanh hanh dong (business-rules.md §3). Trung binh/Nguy
-    hiem goi `escalate_fn` cho family VA doctor SONG SONG qua
-    `asyncio.gather` (khong xep hang - BR-3.5 "gui thang ca nguoi than va
-    bac si"), do `duration_ms` thuc te de kiem tra kha nang dat SLA (<2' cho
-    Nguy hiem) - o day chi la mo phong (escalate_fn injectable), khong phai
-    do tren ha tang push that."""
+    hiem goi `trigger_emergency_escalation()` (src/services/escalation.py -
+    DUNG CHUNG voi duong HIGH tu safety_layer redflag, xem orchestrator.py)
+    de goi `escalate_fn` cho family VA doctor SONG SONG (khong xep hang -
+    BR-3.5 "gui thang ca nguoi than va bac si"), do `duration_ms` thuc te de
+    kiem tra kha nang dat SLA (<2' cho Nguy hiem) - o day chi la mo phong
+    (escalate_fn injectable), khong phai do tren ha tang push that."""
 
     async def node(state: ConversationState) -> dict:
         classification = state.get("classification")
@@ -177,9 +171,8 @@ def build_level_action_node(escalate_fn: EscalateFn):
         action = HIGH_ACTION if urgent else MEDIUM_ACTION
 
         t0 = time.monotonic()
-        await asyncio.gather(
-            escalate_fn("family", state["patient_id"], state.get("dose_event_id"), severity, urgent),
-            escalate_fn("doctor", state["patient_id"], state.get("dose_event_id"), severity, urgent),
+        await trigger_emergency_escalation(
+            escalate_fn, state["patient_id"], state.get("dose_event_id"), severity, urgent
         )
         duration_ms = (time.monotonic() - t0) * 1000
 
