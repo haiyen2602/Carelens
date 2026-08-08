@@ -44,6 +44,25 @@ def tra_cuu_lich_uong_ca_nhan(db: Session, patient_id: str, on_date: datetime | 
     ]
 
 
+def tra_cuu_dose_event_ca_nhan(db: Session, patient_id: str, dose_event_id: str) -> dict | None:
+    """1 dose_event cu the CUA DUNG patient_id (dung boi node SEVERITY -
+    Phase 5b - de biet dang xac nhan lieu nao/thuoc gi). Loc CA HAI dieu kien
+    id VA patient_id trong CUNG 1 cau query - tra ve None neu dose_event
+    khong ton tai HOAC ton tai nhung thuoc ve benh nhan khac, KHONG phan biet
+    2 truong hop nay qua response (tranh lo kenh phu "dose_event nay co ton
+    tai nhung khong phai cua ban")."""
+    stmt = select(DoseEvent).where(DoseEvent.id == dose_event_id, DoseEvent.patient_id == patient_id)
+    row = db.execute(stmt).scalar_one_or_none()
+    if row is None:
+        return None
+    return {
+        "id": row.id,
+        "prescription_id": row.prescription_id,
+        "status": row.status,
+        "expected_items": row.expected_items,
+    }
+
+
 def tra_cuu_don_thuoc_ca_nhan(db: Session, patient_id: str, drug_id: str) -> dict | None:
     """Tim `thoi_diem_dung` (va cac field khac cua item) trong don thuoc DANG
     ACTIVE cua DUNG patient_id co chua drug_id nay. Tra ve None neu benh nhan

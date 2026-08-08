@@ -369,7 +369,7 @@ flowchart TD
     NOSRC -->|Có| MERGE["Ghép với thoi_diem_dung từ<br/>PrescriptionDTO.items[] nếu có đơn active<br/>chứa thuốc này (mục 3.1)<br/>→ ghi trace step 'prescription_lookup'"]
     MERGE --> ANSWER["Trả lời kèm nguồn trích dẫn<br/>(DrugInfoDTO[] đủ 3 điểm số, mục 5.1)<br/>→ ghi trace step 'answer_generation'"]
 
-    CLASSIFY -->|Missed hoặc Delayed| SEVERITY["FEAT-007: đánh giá mức nghiêm trọng<br/>RAG (tac_dung) + fallback muc_nghiem_trong<br/>(BR-3.6, không hạ mức, chỉ nâng)"]
+    CLASSIFY -->|Missed hoặc Delayed| SEVERITY["FEAT-007: đánh giá mức nghiêm trọng<br/>RAG (cong_dung + tac_dung_phu) + fallback muc_nghiem_trong<br/>(BR-3.6, không hạ mức, chỉ nâng)"]
     CLASSIFY -->|Taken| LOG1["Ghi audit log, kết thúc"]
     CLASSIFY -->|SideEffect ẩn trong câu nói| SEVERITY
 
@@ -396,8 +396,13 @@ flowchart TD
   chính đang ở bước nào (ADR-0009 ràng buộc #3).
 - **`INTENT`** là 1 bước phân loại nhẹ (có thể gộp vào cùng lần gọi LLM với `CLASSIFY` nếu ngữ cảnh đang mở
   1 `dose_event`, để tiết kiệm 1 lần gọi — `[CẦN CHỐT khi code]`).
-- **`SEVERITY`** dùng `tac_dung` của đúng thuốc (qua RAG filter theo `drug_id`, không phải hybrid search tự
-  do) làm nguồn chính, `muc_nghiem_trong` chỉ là fallback khi RAG không đủ rõ (BR-3.6).
+- **`SEVERITY`** dùng RAG filter theo `drug_id` (không phải hybrid search tự do), **gộp cả 2 chunk**
+  `cong_dung` (chứa field `tac_dung` — công dụng chung của thuốc) **và** `tac_dung_phu` (rủi ro/tác dụng
+  phụ) làm nguồn chính — sửa 2026-08-08: bản trước chỉ ghi "`tac_dung`", nhưng theo mapping ở mục 3.1,
+  field đó nằm trong chunk `cong_dung`, còn `tac_dung_phu` (rủi ro khi dùng) mới là nguồn hợp lý hơn cho
+  việc đánh giá mức nghiêm trọng nếu chỉ dùng 1 chunk — gộp cả 2 để không phải chọn 1 (xem
+  `SEVERITY_SOURCE_FIELD_GROUPS` trong `src/agents/nodes/dose_confirmation_nodes.py`). `muc_nghiem_trong`
+  chỉ là fallback khi RAG không đủ rõ (BR-3.6).
 - Mọi nhánh cuối cùng đều ghi `AUDIT` (append-only, BR-7.5) — **luôn kèm `trace` đầy đủ**, kể cả khi trả lời
   bằng đường không-LLM (`DB`) để giữ tính nhất quán của audit log.
 

@@ -17,6 +17,13 @@ env/
 .env.local
 .env.production
 
+# API keys / secrets accidentally dropped at repo root (incident 2026-08-08:
+# api.txt held a live key, was untracked but never verified safe until this
+# pattern was added - see report.md for the rotation note)
+api.txt
+*api_key*.txt
+secrets.txt
+
 # IDE
 .vscode/
 .idea/
