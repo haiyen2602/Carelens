@@ -356,6 +356,23 @@ async def test_level_nguy_hiem_escalates_urgent_and_sets_overlay_response():
 
 
 @pytest.mark.asyncio
+async def test_level_partial_escalation_failure_is_visible_in_trace_not_hidden():
+    """Code review 2026-08-08: cung invariant voi orchestrator - 1 kenh loi
+    khong duoc bien mat khoi trace, phai hien ro kenh nao/vi sao."""
+
+    async def family_fails(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        if target == "family":
+            raise RuntimeError("push family that bai (mo phong)")
+
+    node = build_level_action_node(escalate_fn=family_fails)
+    result = await node(_base_state(classification="MISSED", severity="Nguy hiểm"))
+
+    entry = result["trace"][-1]
+    assert entry["escalated_to"] == ["doctor"], "doctor thanh cong khong duoc bi an di"
+    assert "family" in entry["escalation_failed"]
+
+
+@pytest.mark.asyncio
 async def test_level_no_severity_and_not_taken_takes_no_action():
     calls: list = []
 

@@ -30,6 +30,7 @@ from src.services.escalation import (
     HIGH_OVERLAY_MESSAGE,
     TRIGGER_SAFETY_REDFLAG,
     EscalateFn,
+    EscalationOutcome,
     trigger_emergency_escalation,
 )
 from src.services.safety import SafetyFlag
@@ -41,7 +42,7 @@ __all__ = ["HIGH_OVERLAY_MESSAGE", "run_conversation", "default_safety_check"]
 
 
 def _apply_redflag(
-    state: ConversationState, flag: SafetyFlag, interrupted_after_step: str | None, escalated: bool
+    state: ConversationState, flag: SafetyFlag, interrupted_after_step: str | None, escalation: EscalationOutcome | None
 ) -> ConversationState:
     entry = {
         "step": "safety_layer",
@@ -49,7 +50,12 @@ def _apply_redflag(
         "llm_flag": flag.source in ("llm", "keyword+llm"),
         "matched_group": flag.matched_group,
         "interrupted_after_step": interrupted_after_step,
-        "escalated_to": ["family", "doctor"] if escalated else [],
+        # escalated_to CHI liet ke target THUC SU thanh cong (khong phai "da
+        # goi") - escalation_failed ghi ro target nao that bai + vi sao, de
+        # co the goi lai thu cong neu can (phat hien 2026-08-08: 1 kenh loi
+        # khong duoc lam mat dau vet cua kenh do trong audit log).
+        "escalated_to": escalation.succeeded if escalation else [],
+        "escalation_failed": escalation.failed if escalation else {},
     }
     trace = [*state.get("trace", []), entry]
     return {
@@ -91,8 +97,8 @@ async def run_conversation(
         if safety_task.done():
             flag = safety_task.result()
             if flag.is_redflag:
-                escalated = await _maybe_escalate(escalate_fn, current_state, flag)
-                return _apply_redflag(current_state, flag, last_completed_step, escalated)
+                escalation = await _maybe_escalate(escalate_fn, current_state, flag)
+                return _apply_redflag(current_state, flag, last_completed_step, escalation)
 
         update = await node(current_state)  # type: ignore[arg-type]
         current_state = {**current_state, **update}
@@ -112,14 +118,16 @@ async def run_conversation(
     return current_state  # type: ignore[return-value]
 
 
-async def _maybe_escalate(escalate_fn: EscalateFn | None, current_state: ConversationState, flag: SafetyFlag) -> bool:
+async def _maybe_escalate(
+    escalate_fn: EscalateFn | None, current_state: ConversationState, flag: SafetyFlag
+) -> EscalationOutcome | None:
     if escalate_fn is None:
-        return False
+        return None
     reason = (
         f"Safety layer redflag - nhom={flag.matched_group!r}, tu khoa/nguon={flag.matched_keyword!r}, "
         f"phat hien qua {flag.source}"
     )
-    await trigger_emergency_escalation(
+    return await trigger_emergency_escalation(
         escalate_fn,
         current_state.get("patient_id", ""),
         current_state.get("dose_event_id"),
@@ -128,7 +136,6 @@ async def _maybe_escalate(escalate_fn: EscalateFn | None, current_state: Convers
         trigger=TRIGGER_SAFETY_REDFLAG,
         reason=reason,
     )
-    return True
 
 
 async def default_safety_check(utterance: str) -> SafetyFlag:

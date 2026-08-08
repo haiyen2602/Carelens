@@ -192,7 +192,7 @@ def build_level_action_node(escalate_fn: EscalateFn):
         reason = f"SEVERITY={severity} tu classification={classification!r} (BR-3.1-3.6)"
 
         t0 = time.monotonic()
-        await trigger_emergency_escalation(
+        outcome = await trigger_emergency_escalation(
             escalate_fn,
             state["patient_id"],
             state.get("dose_event_id"),
@@ -206,7 +206,12 @@ def build_level_action_node(escalate_fn: EscalateFn):
         entry = {
             "step": "level_action",
             "action": action,
-            "escalated_to": ["family", "doctor"],
+            # CHI liet ke target THUC SU thanh cong, khong phai "da goi" -
+            # escalation_failed ghi ro target nao that bai + vi sao (phat
+            # hien 2026-08-08: escalate cap cuu can biet chinh xac kenh nao
+            # loi, khong duoc gop chung thanh 1 trang thai "da escalate").
+            "escalated_to": outcome.succeeded,
+            "escalation_failed": outcome.failed,
             "parallel": True,
             "duration_ms": duration_ms,
         }

@@ -166,3 +166,26 @@ async def test_redflag_without_escalate_fn_does_not_crash_and_marks_not_escalate
 
     safety_entry = result["trace"][0]
     assert safety_entry["escalated_to"] == []
+
+
+@pytest.mark.asyncio
+async def test_redflag_partial_escalation_failure_is_visible_in_trace_not_hidden():
+    """Code review 2026-08-08: neu 1 kenh (vd doctor) that bai luc escalate,
+    trace PHAI the hien ro kenh nao that bai va vi sao - khong duoc gop
+    chung "da escalate" nhu truoc, vi voi cap cuu biet dung kenh nao loi
+    quan trong hon RAG rat nhieu (can goi lai thu cong neu khong ai nhan
+    duoc canh bao)."""
+
+    async def doctor_fails(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        if target == "doctor":
+            raise RuntimeError("push doctor that bai (mo phong)")
+
+    async def instant_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group="clinical", matched_keyword="đau ngực", source="keyword")
+
+    result = await run_conversation(_make_state(), nodes=[], safety_check=instant_redflag, escalate_fn=doctor_fails)
+
+    safety_entry = result["trace"][0]
+    assert safety_entry["escalated_to"] == ["family"], "family thanh cong khong duoc bi an di"
+    assert "doctor" in safety_entry["escalation_failed"], "doctor that bai phai hien ro trong trace, khong duoc giau"
+    assert "that bai" in safety_entry["escalation_failed"]["doctor"] or safety_entry["escalation_failed"]["doctor"]

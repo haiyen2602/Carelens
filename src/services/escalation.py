@@ -13,6 +13,7 @@ review Phase 5b)."""
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from sqlalchemy.orm import Session
@@ -55,6 +56,23 @@ class EscalateFn(Protocol):
     ) -> None: ...
 
 
+@dataclass
+class EscalationOutcome:
+    """Ket qua THAT cua trigger_emergency_escalation() - PHAN BIET ro target
+    nao thanh cong/that bai, khong gop chung thanh 1 trang thai tong (phat
+    hien 2026-08-08, code review Phase 6): voi escalate CAP CUU, biet CHINH
+    XAC kenh nao that bai quan trong hon nhieu so voi RAG - neu bac si
+    khong nhan duoc canh bao ma audit log chi ghi chung chung "da escalate",
+    khong ai biet de goi lai thu cong."""
+
+    succeeded: list[str] = field(default_factory=list)
+    failed: dict[str, str] = field(default_factory=dict)  # target -> loi (str(exception))
+
+    @property
+    def all_succeeded(self) -> bool:
+        return not self.failed
+
+
 async def trigger_emergency_escalation(
     escalate_fn: EscalateFn,
     patient_id: str,
@@ -63,21 +81,37 @@ async def trigger_emergency_escalation(
     urgent: bool = True,
     trigger: str = TRIGGER_SAFETY_REDFLAG,
     reason: str = "",
-) -> None:
+) -> EscalationOutcome:
     """Goi `escalate_fn` cho CA family LAN doctor SONG SONG qua
-    `asyncio.gather` (BR-3.5: "khong xep hang cho nguoi than xu ly truoc" -
-    gui thang ca 2). Dung chung cho CA 2 nguon kich hoat HIGH o tren.
+    `asyncio.gather(..., return_exceptions=True)` (BR-3.5: "khong xep hang
+    cho nguoi than xu ly truoc" - gui thang ca 2). Dung chung cho CA 2 nguon
+    kich hoat HIGH o tren.
 
-    `trigger`/`reason` do NGUOI GOI (orchestrator.py hoac
-    dose_confirmation_nodes.py) tinh - chi ho moi biet CHINH XAC vi sao
+    `return_exceptions=True` la CO Y (phat hien 2026-08-08, code review
+    Phase 6): escalate cap cuu can BEST-EFFORT, khong phai ALL-OR-NOTHING -
+    1 kenh loi (vd ghi DB that bai cho doctor) KHONG duoc lam MAT luon ket
+    qua cua kenh con lai (family) hay lam sap ca request HTTP dang xu ly.
+    Nguoi goi (orchestrator.py/dose_confirmation_nodes.py) PHAI doc
+    `EscalationOutcome.failed` va ghi vao trace - khong duoc coi
+    `escalated_to` la ca 2 target mac dinh.
+
+    `trigger`/`reason` do NGUOI GOI tinh - chi ho moi biet CHINH XAC vi sao
     escalate kich hoat (tu khoa redflag nao, hay classification/severity
     nao) - escalate_fn khong tu suy dien nguoc lai duoc tu severity/urgent
     don thuan (vd urgent=True co the la ca safety_redflag LAN severity=Nguy
     hiem tu SEVERITY node, khong phan biet duoc chi tu 2 co nay)."""
-    await asyncio.gather(
-        escalate_fn("family", patient_id, dose_event_id, severity, urgent, trigger, reason),
-        escalate_fn("doctor", patient_id, dose_event_id, severity, urgent, trigger, reason),
+    targets = ["family", "doctor"]
+    results = await asyncio.gather(
+        *(escalate_fn(t, patient_id, dose_event_id, severity, urgent, trigger, reason) for t in targets),
+        return_exceptions=True,
     )
+    outcome = EscalationOutcome()
+    for target, result in zip(targets, results, strict=True):
+        if isinstance(result, BaseException):
+            outcome.failed[target] = str(result)
+        else:
+            outcome.succeeded.append(target)
+    return outcome
 
 
 def build_db_escalate_fn(db: Session) -> EscalateFn:
