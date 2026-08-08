@@ -155,7 +155,7 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
   Hệ quả: bất kỳ ai gọi endpoint đều đọc/ghi được dữ liệu của `patient_id` bất kỳ họ tự gõ vào — vô hiệu hoá
   toàn bộ test cách ly 2 bệnh nhân đã làm kỹ ở Phase 5b (test đó chỉ đúng ở tầng tool, không có gì chặn ở
   tầng endpoint). **Không cho ai ngoài phạm vi thử nghiệm nội bộ chạm vào `/api/v1/chat` (kể cả demo) cho
-  tới khi có tối thiểu 1 cơ chế xác thực chặn giữa request và `patient_id` được tin dùng.** **Cập nhật 2026-08-08:** đã thêm mitigation tạm (`src/api/security.py::require_internal_secret`, shared-secret header `X-Internal-Secret` đọc qua env var `INTERNAL_AUTH_SECRET`) — không phải auth thật, chỉ hạ mức rủi ro trong lúc chờ `auth-api`, xem chi tiết ở `chatbot-rag-design.md` mục 10 #10.
+  tới khi có tối thiểu 1 cơ chế xác thực chặn giữa request và `patient_id` được tin dùng.** **Cập nhật 2026-08-08:** đã thêm mitigation tạm (`src/api/security.py::require_internal_secret`, shared-secret header `X-Internal-Secret` đọc qua env var `INTERNAL_AUTH_SECRET`) — không phải auth thật, chỉ hạ mức rủi ro trong lúc chờ `auth-api`. Fail-closed thật (không chỉ log cảnh báo) — thiếu secret thì app không khởi động được, xem chi tiết ở `chatbot-rag-design.md` mục 10 #10.
 
 - **Vẫn còn treo, chưa tự quyết (mức thường, không chặn thử nghiệm nội bộ):**
   - `src/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` vẫn là **placeholder** (xem TODO trong file) — PHẢI

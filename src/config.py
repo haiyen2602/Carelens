@@ -1,8 +1,15 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Sentinel PUBLIC (nam trong repo, KHONG phai bi mat that) - dung de PHAT
+# HIEN "chua ai dat INTERNAL_AUTH_SECRET that" trong _internal_auth_secret_
+# must_be_configured() ben duoi. Chinh vi gia tri nay cong khai trong source
+# (va trong .env.example) nen KHONG duoc phep dung lam gia tri chay that -
+# validator raise ngay neu con bang gia tri nay, khong chi log roi cho qua.
+_UNSET_INTERNAL_SECRET_SENTINEL = "unset-temp-auth-gate-CHANGE-ME-for-any-shared-env"
 
 
 class Settings(BaseSettings):
@@ -40,16 +47,33 @@ class Settings(BaseSettings):
     # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO
     # BAO MAT CHAN PRODUCTION, khong phai CAN CHOT can PM duyet - day chi la
     # bien phap giam nhe ky thuat) - KHONG PHAI auth that (khong biet request
-    # tu ai, chi biet co dung 1 chuoi bi mat hay khong). Gia tri mac dinh
-    # duoi day CHI dung cho local dev/test (ro rang khong phai bi mat that) -
-    # BAT BUOC dat INTERNAL_AUTH_SECRET that qua env var cho bat ky moi
-    # truong nao chia se ngoai may ca nhan. XOA dependency nay (src/api/
-    # security.py::require_internal_secret) khoi route NGAY khi auth-api
-    # (JWT that) duoc xay - day la rao can tam, khong phai giai phap cuoi.
+    # tu ai, chi biet co dung 1 chuoi bi mat hay khong). BAT BUOC dat
+    # INTERNAL_AUTH_SECRET that qua env var (.env, KHONG commit gia tri that)
+    # - fail-closed THAT (xem validator ben duoi), khong chi canh bao roi
+    # van chay: neu con la sentinel/rong, Settings() raise NGAY luc doc
+    # config (app/test suite khong khoi dong duoc), khong doi toi luc co
+    # request that moi phat hien. Ap dung ke ca local dev/test - "chi la
+    # local" khong phai ly do mien tru, dung y "phong ve ky thuat dang tin
+    # hon tri nho tap the" da thong nhat 2026-08-08. XOA dependency nay
+    # (src/api/security.py::require_internal_secret) khoi route NGAY khi
+    # auth-api (JWT that) duoc xay - day la rao can tam, khong phai giai
+    # phap cuoi.
     internal_auth_secret: str = Field(
-        default="unset-temp-auth-gate-CHANGE-ME-for-any-shared-env",
+        default=_UNSET_INTERNAL_SECRET_SENTINEL,
         description="TEMP: xem chatbot-rag-design.md muc 10 #10, retire khi auth-api that co",
     )
+
+    @field_validator("internal_auth_secret")
+    @classmethod
+    def _internal_auth_secret_must_be_configured(cls, v: str) -> str:
+        if not v or v == _UNSET_INTERNAL_SECRET_SENTINEL:
+            raise ValueError(
+                "INTERNAL_AUTH_SECRET chua duoc cau hinh that (con rong hoac la sentinel cong khai "
+                f"{_UNSET_INTERNAL_SECRET_SENTINEL!r} - gia tri nay NAM SAN TRONG SOURCE nen KHONG "
+                "duoc dung de chay that). Dat INTERNAL_AUTH_SECRET trong .env (khong commit gia tri "
+                "that) truoc khi khoi dong app hoac chay test - xem chatbot-rag-design.md muc 10 #10."
+            )
+        return v
 
 
 @lru_cache
