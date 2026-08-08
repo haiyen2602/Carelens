@@ -13,7 +13,11 @@ LangGraph agent (Phase 5/5b) theo 2 giai doan CUNG 1 patient utterance:
 `escalate_fn` LUON la ham that (build_db_escalate_fn(db), khong injectable
 rieng) - loai bo hoan toan rui ro "quen wire escalate_fn" ma
 build-kickoff-prompt.md Phase 6 da ghi lai can kiem tra (khong con duong
-nao goi run_conversation() ma thieu escalate_fn tu route nay)."""
+nao goi run_conversation() ma thieu escalate_fn tu route nay).
+
+Depends(require_internal_secret) - RAO CAN TAM (chatbot-rag-design.md muc
+10 #10), KHONG PHAI auth that - xem src/api/security.py. XOA dong nay khi
+auth-api that co."""
 
 from __future__ import annotations
 
@@ -37,6 +41,7 @@ from src.agents.nodes.dose_confirmation_nodes import (
 from src.agents.orchestrator import run_conversation
 from src.agents.state import ConversationState
 from src.api.chat_deps import ChatServices, get_chat_services
+from src.api.security import require_internal_secret
 from src.db.base import get_db
 from src.db.models import AuditLog
 from src.models.schemas import ClassificationOut, ConversationChatRequest, ConversationChatResponse, SourceOut
@@ -46,7 +51,7 @@ from src.services.severity import SEVERITY_VI_TO_EN
 chat_router = APIRouter()
 
 
-@chat_router.post("/chat", response_model=ConversationChatResponse)
+@chat_router.post("/chat", response_model=ConversationChatResponse, dependencies=[Depends(require_internal_secret)])
 async def chat(
     request: ConversationChatRequest,
     db: Session = Depends(get_db),

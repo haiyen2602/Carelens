@@ -37,6 +37,20 @@ class Settings(BaseSettings):
     nguong_vector: float = Field(default=0.5, description="TODO: chua chot, can do thuc nghiem")
     nguong_lexical: float = Field(default=0.3, description="TODO: chua chot, can do thuc nghiem")
 
+    # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO
+    # BAO MAT CHAN PRODUCTION, khong phai CAN CHOT can PM duyet - day chi la
+    # bien phap giam nhe ky thuat) - KHONG PHAI auth that (khong biet request
+    # tu ai, chi biet co dung 1 chuoi bi mat hay khong). Gia tri mac dinh
+    # duoi day CHI dung cho local dev/test (ro rang khong phai bi mat that) -
+    # BAT BUOC dat INTERNAL_AUTH_SECRET that qua env var cho bat ky moi
+    # truong nao chia se ngoai may ca nhan. XOA dependency nay (src/api/
+    # security.py::require_internal_secret) khoi route NGAY khi auth-api
+    # (JWT that) duoc xay - day la rao can tam, khong phai giai phap cuoi.
+    internal_auth_secret: str = Field(
+        default="unset-temp-auth-gate-CHANGE-ME-for-any-shared-env",
+        description="TEMP: xem chatbot-rag-design.md muc 10 #10, retire khi auth-api that co",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
