@@ -1,0 +1,194 @@
+[
+  {
+    "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về thuốc Vizicin 125 Hasan 30 GÓI và không bịa thêm thông tin. Nó nêu rõ các chỉ định điều trị nhiễm khuẩn đường hô hấp, nhiễm trùng da, mô mềm và bệnh lây nhiễm qua đường sinh dục như đã nêu trong nguồn. Nếu có thiếu sót nào, câu trả lời không tự bịa mà chỉ nêu rõ phần đó nằm trong thông tin đã cung cấp."
+  },
+  {
+    "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+    "old_grounded": false,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời chứa thông tin về tác dụng phụ của Vizicin mà không có căn cứ trong context cung cấp. Không có thông tin nào trong context đề cập đến các tác dụng phụ cụ thể như rối loạn tiêu hóa, nhức đầu, giảm thính lực hay bất thường về gan."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI, và đã đề cập rõ ràng rằng liều dùng chỉ mang tính chất tham khảo và cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế, do đó không có thông tin nào được bịa thêm."
+  },
+  {
+    "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản Vizicin 125 Hasan 30 GÓI và không thêm thông tin nào không có căn cứ."
+  },
+  {
+    "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ được chỉ định của thuốc Bluepine 5mg BLUE 6x10 để điều trị tăng huyết áp và dự phòng đau thắt ngực ổn định mà không bịa thêm thông tin."
+  },
+  {
+    "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+    "old_grounded": false,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời đã nêu rõ rằng không có thông tin về tác dụng phụ của Bluepine 5mg BLUE 6x10 trong nguồn thông tin được cung cấp, và do đó không thể trả lời câu hỏi. Đây là một hành vi đúng và không phải là tự bịa thêm thông tin."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không thêm thông tin không có căn cứ. Ngoài ra, câu trả lời cũng đã nhấn mạnh việc tham khảo ý kiến bác sĩ, điều này không vi phạm các yêu cầu về grounding."
+  },
+  {
+    "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Bluepine 5mg và không tự bịa thêm thông tin nào. Mặc dù câu trả lời không đầy đủ như trong context, nhưng nó vẫn chính xác và dựa trên các thông tin đã cung cấp."
+  },
+  {
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về chỉ định điều trị của Fluopas 0.025% Quảng BÌNH 10g mà không thêm bịa đặt thông tin nào khác."
+  },
+  {
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ ra rõ ràng rằng thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác, do đó vẫn được coi là grounded."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context đã cung cấp, không bịa thêm và đã nêu rõ cách dùng và liều dùng của Fluopas 0.025%, cũng như thông tin về việc cạo lông tại vị trí có lông, tóc. Không có khẳng định nào không có căn cứ."
+  },
+  {
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời tuy cung cấp thông tin về việc bảo quản ở nơi khô mát và nhiệt độ dưới 30°C, nhưng không có căn cứ trong context cho việc bảo quản thuốc Fluopas 0.025%. Context không có thông tin nào về yêu cầu bảo quản cụ thể cho thuốc này, do đó câu trả lời chứa khẳng định không có căn cứ."
+  },
+  {
+    "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê chính xác các bệnh được điều trị bằng Vitamin B1 250mg Domesco 100v như đã nêu trong nguồn."
+  },
+  {
+    "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+    "old_grounded": false,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời chứa thông tin không có căn cứ trong context, cụ thể là các tác dụng phụ như 'sốc quá mẫn', 'tăng huyết áp cấp tính', 'ban da', và 'khó thở' không được nhắc đến trong nguồn cung cấp."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời sử dụng thông tin có trong context về cách dùng và liều dùng của Vitamin B1 250 mg Domesco, đồng thời nhấn mạnh rằng liều dùng cụ thể phụ thuộc vào thể trạng và cần tham khảo ý kiến bác sĩ, điều này hoàn toàn phù hợp với thông tin trong context."
+  },
+  {
+    "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời sử dụng thông tin có sẵn trong context về cách bảo quản Vitamin B1 250mg Domesco, không thêm thông tin không có căn cứ."
+  },
+  {
+    "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về chỉ định của thuốc Noklot 75 Cadila 3x10, không bịa thêm thông tin nào và không thiếu thông tin quan trọng."
+  },
+  {
+    "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời đã nhấn mạnh rằng thông tin về tác dụng phụ không có trong nguồn cung cấp, và khuyên người hỏi nên tham khảo ý kiến bác sĩ hoặc dược sĩ. Điều này cho thấy câu trả lời không tự bịa thông tin mà chỉ rõ phần thiếu, do đó vẫn được coi là grounded."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm, đồng thời đã nêu rõ rằng liều dùng cụ thể cần tham khảo ý kiến bác sĩ, điều này là hợp lý và đúng với thông tin đã cung cấp."
+  },
+  {
+    "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời đã sử dụng thông tin có trong context về cách bảo quản thuốc Noklot 75 Cadila 3x10 mà không thêm thông tin nào không có căn cứ. Không có phần nào trong câu trả lời là bịa đặt hay không đúng với thông tin đã cung cấp."
+  },
+  {
+    "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và đã nêu rõ các chỉ định điều trị của AME Prazol 40mg OPV 2x7 mà không bịa thêm thông tin. Đây là hành vi đúng, vì không có phần nào trong câu trả lời là khẳng định không có căn cứ."
+  },
+  {
+    "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+    "old_grounded": true,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời chứa nhiều tác dụng phụ không được đề cập trong context, ví dụ như 'phù ngoại biên, mất ngủ, chóng mặt, dị cảm, ngủ gà, khô miệng, tăng men gan, viêm da, ngứa, nổi mẩn, mề đay', không có căn cứ trong thông tin đã cho."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+    "old_grounded": false,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, và đã chỉ rõ phần thông tin chi tiết về liều lượng cho các tình trạng khác không có trong nguồn cung cấp."
+  },
+  {
+    "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời hoàn toàn dựa trên thông tin có trong context, cụ thể là cách bảo quản của thuốc AME Prazol 40mg OPV 2x7, mà không thêm thắt thông tin nào không có căn cứ."
+  },
+  {
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin từ context về công dụng của Lotemax 0.5% Bausch LOMB 5ml và không bịa thêm thông tin nào. Mặc dù có thể không đầy đủ so với toàn bộ thông tin trong context, nhưng không có khẳng định nào không có căn cứ."
+  },
+  {
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+    "old_grounded": true,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời chứa nhiều thông tin về tác dụng phụ không có căn cứ trong context đã cung cấp. Ví dụ, việc nêu rõ 'đục thủy tinh thể dưới bao sau', 'nhiễm khuẩn mắt thứ cấp', và các tác dụng phụ như 'đau đầu, viêm mũi, viêm họng' không được đề cập trong context và do đó không có cơ sở. Câu trả lời cũng không chỉ ra rõ ràng rằng những thông tin này không có trong nguồn."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời đã sử dụng thông tin có trong context mà không tự bịa thêm, và đã chỉ rõ rằng liều dùng cụ thể có thể thay đổi tùy thuộc vào tình trạng sức khỏe của người dùng, khuyến khích tham khảo ý kiến bác sĩ."
+  },
+  {
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời sử dụng thông tin đúng từ context và không bịa thêm thông tin nào. Nó nêu rõ cách bảo quản Lotemax 0.5% Bausch LOMB 5ml như đã được chỉ định trong nguồn."
+  },
+  {
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về công dụng của Xaravix 20mg, cụ thể là điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE), cũng như phòng ngừa đột quỵ ở các bệnh nhân bị rung nhĩ không do bệnh lý van tim. Không có thông tin nào bị bịa thêm và nếu có gì không đầy đủ, câu trả lời không tự ý thêm thông tin mà vẫn trung thực với nguồn."
+  },
+  {
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+    "old_grounded": false,
+    "new_grounded": false,
+    "new_ly_do": "Câu trả lời chứa nhiều thông tin về tác dụng phụ mà không có căn cứ trong context đã cung cấp. Context không đề cập đến bất kỳ tác dụng phụ nào của Xaravix 20mg, trong khi câu trả lời liệt kê rất nhiều tác dụng phụ cụ thể như thiếu máu, chóng mặt, xuất huyết não, và nhiều phản ứng khác mà model tự bịa ra."
+  },
+  {
+    "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+    "old_grounded": false,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời sử dụng thông tin có trong context và chỉ thêm một phần thông tin về cách nghiền viên thuốc, điều này có thể là một biện pháp hợp lý nhưng không có trong nguồn. Tuy nhiên, nó không làm sai lệch thông tin chính về cách dùng và liều dùng, đồng thời đã chỉ rõ rằng thông tin về liều dùng cho các đối tượng đặc biệt không có trong nguồn."
+  },
+  {
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+    "old_grounded": true,
+    "new_grounded": true,
+    "new_ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản thuốc Xaravix 20mg. Mặc dù thông tin về việc bảo quản trong bao bì kín, nơi khô và nhiệt độ không quá 30°C không được nêu cụ thể cho Xaravix, nhưng nó là thông tin có thể suy ra từ các thuốc cùng thành phần hoạt chất trong context. Do đó, câu trả lời vẫn được coi là grounded."
+  }
+]

@@ -48,17 +48,20 @@ def db_session():
 def test_word_similarity_threshold_guc_is_set_not_just_similarity_threshold(db_session):
     """Regression test cho bug 2026-08-08: goi lai dung ham lexical_search()
     (khong tu tao SQL rieng) tren 1 truong hop that da xac nhan word_similarity
-    nam giua NGUONG_LEXICAL (0.3) va gia tri mac dinh cua GUC thu 2 (0.6) -
+    nam giua 1 nguong thap (0.3) va gia tri mac dinh cua GUC thu 2 (0.6) -
     'paracetamol...' + 'ha sot' co word_similarity = 0.4286 (da do bang tay).
     Neu word_similarity_threshold GUC quen SET (con 0.6 mac dinh), dieu kien
     <% se loai chunk nay TRUOC CA KHI toi buoc sap xep/LIMIT - kiem tra truc
     tiep dieu kien SQL (khong qua LIMIT 50 de tranh nhieu do canh tranh diem
-    cao khac, xem lich su phat hien bug)."""
-    from src.config import get_settings
+    cao khac, xem lich su phat hien bug).
 
-    settings = get_settings()
-    db_session.execute(text("SET pg_trgm.similarity_threshold = :t"), {"t": settings.nguong_lexical})
-    db_session.execute(text("SET pg_trgm.word_similarity_threshold = :t"), {"t": settings.nguong_lexical})
+    COI Y dung 0.3 CO DINH o day, KHONG doc settings.nguong_lexical - test
+    nay kiem tra co CHE (2 GUC deu duoc SET dung), khong kiem tra GIA TRI
+    threshold production hien tai (da doi thanh 0.55 sau Phase 7 eval,
+    src/config.py) - neu dung settings.nguong_lexical, test se gay am tham
+    moi lan threshold production duoc tune lai, du co che GUC van dung."""
+    db_session.execute(text("SET pg_trgm.similarity_threshold = :t"), {"t": 0.3})
+    db_session.execute(text("SET pg_trgm.word_similarity_threshold = :t"), {"t": 0.3})
 
     matched = db_session.execute(
         text(

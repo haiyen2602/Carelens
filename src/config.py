@@ -37,12 +37,24 @@ class Settings(BaseSettings):
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
-    # Retrieval (specs/chatbot-rag-design.md muc 4) — gia tri de xuat, CHUA CHOT
-    # (can do phan phoi that tren tap out-of-domain o Phase 7, xem build-kickoff-prompt.md muc 4).
+    # Retrieval (specs/chatbot-rag-design.md muc 4) — DA CHOT bang so lieu that
+    # Phase 7 (2026-08-08, eval/run_eval.py + eval/eval_report.json), khong con
+    # la doan mo hinh nua. O gia tri cu (0.5/0.3), 15/15 cau out-of-domain
+    # (thuoc khong ton tai, go sai nghiem trong, van ban khong lien quan) DEU
+    # lot qua nguong (100% false-accept) - BR-7.3 "khong co nguon -> tu choi"
+    # khong hoat dong. 0.60/0.55 giam false-accept tong the tu 100% -> ~47%
+    # (con "thuoc khong ton tai" van kho o ~83%, xem chatbot-rag-design.md
+    # muc 10 #12 - can them lop phong ve khac, khong chi tune nguong), doi lai
+    # GT recall giam tu ~100% xuong 81.2% (26/32 cau) - xem muc 10 #1/#8 cho
+    # chi tiet day du + bang trade-off cac muc khac da can nhac.
     rrf_k: int = 60
     retrieval_top_k: int = 5
-    nguong_vector: float = Field(default=0.5, description="TODO: chua chot, can do thuc nghiem")
-    nguong_lexical: float = Field(default=0.3, description="TODO: chua chot, can do thuc nghiem")
+    nguong_vector: float = Field(
+        default=0.60, description="Chot 2026-08-08 tu eval/ Phase 7 - xem chatbot-rag-design.md muc 10 #1"
+    )
+    nguong_lexical: float = Field(
+        default=0.55, description="Chot 2026-08-08 tu eval/ Phase 7 - xem chatbot-rag-design.md muc 10 #8"
+    )
 
     # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO
     # BAO MAT CHAN PRODUCTION, khong phai CAN CHOT can PM duyet - day chi la

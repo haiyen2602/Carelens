@@ -164,13 +164,18 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
   - Prompt LLM thật (`src/services/classification.py`: classify_intent/classify_dose/classify_severity/
     generate_answer) là **bản nháp đầu tiên**, chưa qua eval (Phase 7) — không coi là đã tối ưu.
 
-### Phase 7 — Eval harness (`eval/`)
-- Tập câu hỏi có ground truth (đúng thuốc, đúng `field_group` kỳ vọng)
-- **Bắt buộc có tập câu hỏi out-of-domain cố ý** (thuốc không tồn tại trong 3688 bản ghi, gõ sai nghiêm
-  trọng) — dùng tập này để đo phân phối `cosine_similarity`/`trigram_similarity` thật, từ đó chọn
-  `NGUONG_VECTOR`/`NGUONG_LEXICAL` bằng số liệu, không đoán
-- Đo riêng: retrieval precision/recall, tỷ lệ hallucination (câu trả lời không grounded vào chunk nào),
-  tỷ lệ caveat bị thiếu khi đáng lẽ phải có
+### Phase 7 — Eval harness (`eval/`) ✅ (2026-08-08)
+- `eval/ground_truth.json` (32 câu, 8 thuốc thật × 4 field_group, trải đều 3 mức độ nghiêm trọng + 8 danh
+  mục) + `eval/out_of_domain.json` (15 câu: 6 thuốc xác nhận không tồn tại trong 3562 bản ghi thật, 4 tên
+  thuốc thật gõ sai nghiêm trọng, 5 văn bản không liên quan) — `eval/run_eval.py` đo phân phối
+  `cosine_similarity`/trigram thật, chọn `NGUONG_VECTOR=0.60`/`NGUONG_LEXICAL=0.55` bằng số liệu (xem
+  `chatbot-rag-design.md` mục 10 #8 cho đầy đủ evidence + trade-off)
+- Đã đo: retrieval precision/recall (recall@5=87.5%, precision@1=40.6% — mục 10 #14), hallucination rate
+  (mục 10 #13b — **phát hiện quan trọng hơn cả con số:** LLM-judge tự động không đáng tin ở cấu hình đầu,
+  verify tay phát hiện toàn bộ case bị flag đều là judge sai, không phải model bịa), missing-caveat rate
+  (0/8, sạch)
+- 3688 ghi trong bản kickoff gốc ở đây là số liệu trước khi dọn dữ liệu (Phase 2-3) — số thật hiện tại là
+  3562 thuốc riêng biệt, đã cập nhật đúng trong `eval/`
 
 ---
 
