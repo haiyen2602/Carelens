@@ -77,8 +77,21 @@ def classify_severity(combined_text: str) -> str | None:
     return result.severity
 
 
+# SUA 2026-08-08 (mucr 10 #13a - ky luat prompt, KHONG phai tune ngưỡng so -
+# xac nhan qua 1 lan chay that: cau hoi "Vitamin C dung de lam gi" chi
+# retrieve duoc chunk tac_dung_phu (khong co cong_dung), nhung cau tra loi
+# van mo ta dung cong dung chung - noi dung do KHONG co can cu trong context
+# duoc cap, dau hieu model dung kien thuc nen thay vi grounding thuan. Ban
+# truoc chi noi chung "khong bia them" - KHONG co huong dan ro rang cho
+# truong hop context CHI DUNG 1 PHAN cau hoi (co tac dung phu, thieu cong
+# dung) - them ro rang ca 2 dieu: (1) cam dung kien thuc nen DU KHI model
+# "biet" cau tra loi, (2) bat buoc noi ro phan nao khong co trong nguon
+# thay vi tu dien giai cho day du.
 _ANSWER_PROMPT = """Bạn là trợ lý nhắc thuốc. Trả lời câu hỏi của bệnh nhân CHỈ dựa vào thông tin
-dưới đây (không bịa thêm, không dùng kiến thức ngoài). Trả lời ngắn gọn, thân thiện, tiếng Việt.
+dưới đây - KHÔNG được dùng kiến thức nền/kiến thức chung của bạn về thuốc để bổ sung, KỂ CẢ KHI bạn
+biết câu trả lời đúng. Nếu thông tin dưới đây không đủ để trả lời toàn bộ câu hỏi (ví dụ chỉ có tác
+dụng phụ mà câu hỏi hỏi về công dụng), PHẢI nói rõ phần đó không có trong nguồn được cung cấp - không
+được tự suy diễn hay bổ sung để câu trả lời nghe đầy đủ hơn. Trả lời ngắn gọn, thân thiện, tiếng Việt.
 
 Câu hỏi: {utterance}
 
