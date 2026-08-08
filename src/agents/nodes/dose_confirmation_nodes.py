@@ -52,6 +52,22 @@ LOW_ACTION = "log_and_monitor_48h"
 MEDIUM_ACTION = "escalate_family_and_doctor"
 HIGH_ACTION = "escalate_emergency"
 
+# TODO [CẦN CHỐT — noi dung chua duyet chinh thuc]: phat hien 2026-08-08 qua
+# 1 lan chay that qua /api/v1/chat - CA 3 nhanh duoi day (TAKEN, Nhẹ, Trung
+# bình) truoc do KHONG set `response` gi ca, khien benh nhan nhan ve chuoi
+# rong sau khi bao "toi chua uong lieu" - im lang tuyet doi, khong phan biet
+# duoc voi app loi/crash (te hon ca placeholder xau). KHAC voi
+# HIGH_OVERLAY_MESSAGE (src/services/escalation.py) - do la noi dung MAN
+# HINH KHUNG HOANG, can PM+mentor duyet ky vi rui ro tam ly cao; 3 cau duoi
+# day chi la XAC NHAN DA GHI NHAN, rui ro chon sai cau chu THAP hon nhieu -
+# van danh dau CAN CHOT (chua phai final chinh thuc) nhung KHONG chan viec
+# co 1 phan hoi thay vi im lang.
+TAKEN_RESPONSE = "Đã ghi nhận bạn đã uống thuốc lần này. Cảm ơn bạn đã xác nhận!"
+LOW_ACTION_RESPONSE = (
+    "Đã ghi nhận thông tin của bạn. Đây là mức độ nhẹ, hệ thống sẽ tiếp tục theo dõi trong 48 giờ tới."
+)
+MEDIUM_ACTION_RESPONSE = "Đã ghi nhận thông tin của bạn. Người thân và bác sĩ đã được thông báo để theo dõi thêm."
+
 
 class DoseClassifyFn(Protocol):
     def __call__(self, utterance: str) -> tuple[str, float]: ...
@@ -174,17 +190,20 @@ def build_level_action_node(escalate_fn: EscalateFn):
 
         if classification == "TAKEN":
             entry = {"step": "level_action", "action": "log_only", "duration_ms": 0.0}
-            return {"trace": _append_trace(state, entry)}
+            return {"response": TAKEN_RESPONSE, "trace": _append_trace(state, entry)}
 
         if severity is None:
             # Hoac dang cho lam ro (CLASSIFY confidence thap - da hoi lai o
-            # buoc truoc), hoac nhanh nay khong ap dung - khong hanh dong.
+            # buoc truoc, response da duoc set boi CLASSIFY roi), hoac nhanh
+            # nay khong ap dung (intent khac, response da duoc set boi node
+            # cua nhanh do roi) - khong hanh dong, KHONG set response o day
+            # (se ghi de mat response da co tu buoc truoc).
             entry = {"step": "level_action", "action": "none", "reason": "no_severity", "duration_ms": 0.0}
             return {"trace": _append_trace(state, entry)}
 
         if severity == "Nhẹ":
             entry = {"step": "level_action", "action": LOW_ACTION, "duration_ms": 0.0}
-            return {"trace": _append_trace(state, entry)}
+            return {"response": LOW_ACTION_RESPONSE, "trace": _append_trace(state, entry)}
 
         urgent = severity == "Nguy hiểm"
         action = HIGH_ACTION if urgent else MEDIUM_ACTION
@@ -216,8 +235,7 @@ def build_level_action_node(escalate_fn: EscalateFn):
             "duration_ms": duration_ms,
         }
         result: dict = {"trace": _append_trace(state, entry)}
-        if urgent:
-            result["response"] = HIGH_OVERLAY_MESSAGE
+        result["response"] = HIGH_OVERLAY_MESSAGE if urgent else MEDIUM_ACTION_RESPONSE
         return result
 
     return node

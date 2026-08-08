@@ -26,7 +26,10 @@ from src.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
     ASK_AGAIN_MESSAGE,
     HIGH_ACTION,
     LOW_ACTION,
+    LOW_ACTION_RESPONSE,
     MEDIUM_ACTION,
+    MEDIUM_ACTION_RESPONSE,
+    TAKEN_RESPONSE,
     build_classify_node,
     build_level_action_node,
     build_severity_node,
@@ -303,6 +306,11 @@ async def test_level_taken_logs_only_no_escalation():
     assert calls == []
     entry = result["trace"][-1]
     assert entry["action"] == "log_only"
+    assert result["response"], (
+        "TAKEN khong duoc tra ve response rong - phat hien 2026-08-08 qua 1 lan chay that: "
+        "benh nhan bao 'da uong roi' ma nhan ve im lang tuyet doi, khong phan biet duoc voi app loi"
+    )
+    assert result["response"] == TAKEN_RESPONSE
 
 
 @pytest.mark.asyncio
@@ -318,6 +326,7 @@ async def test_level_nhe_logs_and_monitors_no_escalation():
     assert calls == []
     entry = result["trace"][-1]
     assert entry["action"] == LOW_ACTION
+    assert result["response"] == LOW_ACTION_RESPONSE, "Nhẹ khong duoc de trong response - cung 1 lo hong voi TAKEN"
 
 
 @pytest.mark.asyncio
@@ -335,7 +344,13 @@ async def test_level_trung_binh_escalates_family_and_doctor():
     entry = result["trace"][-1]
     assert entry["action"] == MEDIUM_ACTION
     assert set(entry["escalated_to"]) == {"family", "doctor"}
-    assert "response" not in result, "chi Nguy hiem moi ghi de response bang overlay cap cuu"
+    # Phat hien 2026-08-08 qua 1 lan chay that: ban truoc day assert
+    # "response" not in result o day - dung, nhung khong ai hoi nguoc lai
+    # "vay benh nhan thay gi" - hoa ra la KHONG THAY GI CA (chuoi rong).
+    # Danh dau lai dung invariant MOI: Trung binh PHAI co response (khac
+    # HIGH_OVERLAY_MESSAGE, khong phai overlay cap cuu).
+    assert result["response"] == MEDIUM_ACTION_RESPONSE
+    assert result["response"] != HIGH_OVERLAY_MESSAGE, "Trung binh khong duoc dung chung cau voi Nguy hiem"
 
 
 @pytest.mark.asyncio
