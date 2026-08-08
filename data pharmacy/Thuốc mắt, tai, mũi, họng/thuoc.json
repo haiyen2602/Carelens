@@ -20,7 +20,8 @@
       "Tương tác thuốc: Có khả năng mẫn cảm chéo với acid acetylsalicylic, dẫn xuất của acid phenylacetic và các thuốc kháng viêm không steroid khác. Vì vậy nên thận trọng khi điều trị cho những bệnh nhân đã có biểu hiện mẫn cảm với thuốc này. Dung dịch nhỏ mắt Acular tỏ ra an toàn khi phối hợp với các thuốc khác dùng trong nhãn khoa như kháng sinh, thuốc phong bế beta, thuốc ức chế anhydrase carbonic, thuốc làm liệt cơ thể mi và thuốc làm giãn đồng tử."
     ],
     "id": "acular-allergan-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Acuvail Allergan 30 ỐNG X 0.4ml",
@@ -43,7 +44,8 @@
       "Tương tác thuốc: Dung dịch nhỏ mắt Acuvail có thể dùng đồng thời với các thuốc nhỏ mắt dùng tại chỗ khác như các thuốc chủ vận alpha, kháng sinh, thuốc chẹn beta, thuốc ức chế carbonic anhydrase, thuốc làm liệt cơ thể mi và thuốc giãn đồng tử. Cần nhỏ Acuvail cách xa các thuốc này ít nhất 5 phút."
     ],
     "id": "acuvail-allergan-30-ong-x-0-4ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Adacast Mometasone Furoate Meraplion 60 LIỀU",
@@ -65,7 +67,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu tương tác thuốc chính thức nào được thực hiện với thuốc xịt mũi mometasone furoate 50 mcg. Các nghiên cứu đã chỉ ra rằng mometasone furoate được chuyển hóa chủ yếu ở gan tạo thành nhiều chất chuyển hóa. Các nghiên cứu in vitro đã xác định vai trò chính của Cytochrom P450 3A4 trong quá trình chuyển hóa mometasone furoate. Sử dụng đồng thời các thuốc ức chế CYP3A4 có thể ức chế chuyển hóa và tăng phơi nhiễm toàn thân với mometasone furoate và có khả năng làm tăng nguy cơ tác dụng phụ toàn thân của corticosteroid. Cần thận trọng khi xem xét việc dùng chung thuốc xịt mũi Adacast với các chất ức chế CYP3A4 mạnh (ví dụ: Ketoconazole, ritonavir, các sản phẩm có chứa cobicistat, atazanavir, clarithromycin, indinavir, Itraconazole, nefazodone, nelfinavir, saquinavir, telithromycin). Cân nhắc lợi ích của việc sử dụng thuốc đồng thời so với nguy cơ xuất hiện tác dụng toàn thân của corticosteroid. Trong trường hợp đó bệnh nhân cần được theo dõi tác dụng phụ toàn thân của corticosteroid."
     ],
     "id": "adacast-mometasone-furoate-meraplion-60-lieu",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Alegysal Santen 5ml",
@@ -89,7 +92,8 @@
       "Tương tác thuốc: Hiện tại, chưa có báo cáo về tương tác của thuốc Alegysal với các thuốc khác. Nên tham khảo ý kiến bác sĩ nếu dùng đồng thời với các thuốc khác."
     ],
     "id": "alegysal-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Alphagan P Allergan 5ml",
@@ -112,7 +116,8 @@
       "Tương tác thuốc: Mặc dù các nghiên cứu về tương tác thuốc đặc hiệu với Alphagan chưa được thực hiện, cần xem xét khả năng có thể có tác dụng phụ trợ hoặc làm mạnh thêm các thuốc ức chế thần kinh trung ương (rượu, barbiturat, thuốc phiện, thuốc an thần hoặc thuốc gây mê). Alphagan là chất chủ vận alpha nên có thể làm giảm mạch và huyết áp. Cần thận trọng khi sử dụng đồng thời với các thuốc như chẹn beta (nhỏ mắt hoặc toàn thân), thuốc chống tăng huyết áp và /hoặc các glycoside trợ tim. Chưa rõ việc sử dụng đồng thời thuốc chống trầm cảm ba vòng với Alphagan có thể tương tác về tác dụng hạ nhãn áp hay không."
     ],
     "id": "alphagan-p-allergan-5ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Anginovag Ferrer 10ml",
@@ -136,7 +141,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "anginovag-ferrer-10ml",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Anoro Ellipta 62.5/25mcg Glaxo 30 Doses",
@@ -158,7 +164,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Các thuốc chẹn beta Các thuốc chẹn beta-adrenergic có thể làm suy yếu hoặc đối kháng tác dụng của các chất chủ vận beta2, ví dụ vilanterol. Nên tránh sử dụng đồng thời Anoro Ellipta với các thuốc chẹn beta-adrenergic chọn lọc hoặc không chọn lọc, trừ khi có các lý do thuyết phục cho việc sử dụng kết hợp đó. Các tương tác trên kênh vận chuyển và chuyển hóa Vilanterol là một cơ chất của cytochrome P450 3A4 (CYP3A4). Việc sử dụng đồng thời các chất ức chế mạnh CYP3A4 (ví dụ như ketoconazole, clarithromycin, itraconazole, ritonavir, telithromycin) có thể gây ức chế sự chuyển hóa và gây tăng phơi nhiễm toàn thân với vilanterol. Sử dụng đồng thời với ketoconazole (400 mg) trên người tình nguyện khỏe mạnh làm tăng AUC(0-t) và Cmax vilanterol trung bình lần lượt là 65% và 22%. Sự tăng phơi nhiễm với vilanterol không có liên quan với sự tăng thuốc chủ vận beta-adrenergic liên quan đến các tác động toàn thân trên nhịp tim, kali máu, hoặc khoảng QT (hiệu chỉnh bằng phương pháp Fridericia). Nên thận trọng khi sử dụng kết hợp umeclidinium/vilanterol với ketoconazole và các chất ức chế CYP3A4 mạnh khác bởi vì có khả năng gây tăng phơi nhiễm toàn thân với vilanterol, điều này có thể dẫn đến tăng khả năng gây ra các tác dụng không mong muốn. Verapamil, một chất ức chế CYP3A4 trung bình, không có tác động đáng kể đến dược động học của vilanterol. Umeclidinium là một cơ chất của cytochrome P450 2D6 (CYP2D6). Dược động học bền vững của umeclidinium đã được đánh giá trên người tình nguyện khỏe mạnh thiếu CYP2D6 (chuyển hóa kém). Không có tác động lên AUC hoặc Cmax của umeclidinium được ghi nhận ở liều cao gấp 8 lần. AUC của umeclidinium tăng khoảng 1,3 lần được ghi nhận ở liều cao gấp 16 lần, trong khi Cmax không bị ảnh hưởng. Dựa trên mức độ quan trọng của những thay đổi này, không có tương tác thuốc trên lâm sàng được dự đoán khi sử dụng kết hợp umeclidinium/vilanterol với các chất ức chế CYP2D6 hoặc khi sử dụng cho các bệnh nhân có yếu tố di truyền thiếu hoạt tính CYP2D6 (chuyển hóa kém). Cả umeclidinium và vilanterol là các cơ chất của kênh vận chuyển P-glycoprotein (P-gp). Tác động của chất ức chế P-gp trung bình verapamil (240 mg một lần mỗi ngày) lên dược động học ổn định của umeclidinium và vilanterol đã được đánh giá ở người tình nguyện khỏe mạnh. Không có tác động của verapamil lên Cmax của umeclidinium hay vilanterol được ghi nhận. Đã ghi nhận được AUC của umeclidinium tăng khoảng 1,4 lần trong khi AUC của vilanterol không thay đổi. Dựa trên mức độ quan trọng của những thay đổi này, không có tương tác thuốc trên lâm sàng được dự đoán khi sử dụng kết hợp umeclidinium/vilanterol với các chất ức chế P-gp. Các thuốc kháng muscarinic và kích thích thần kinh giao cảm khác Việc sử dụng đồng thời umeclidinium/vilanterol với các thuốc kháng muscarinic tác dụng kéo dài khác, các thuốc chủ vận beta2-adrenergic tác dụng kéo dài hoặc các thuốc khác có chứa một trong số các chất này, vẫn chưa được nghiên cứu và không được khuyến cáo vì điều này có thể làm tăng khả năng xảy ra các tác dụng không mong muốn đã biết khi sử dụng các chất đối kháng muscarinic dạng hít hoặc các chất chủ vận beta2-adrenergic. Giảm kali huyết Sử dụng thuốc giảm kali huyết đồng thời với các dẫn xuất methylxanthine, steroid, hoặc các thuốc lợi tiểu không giữ kali có thể làm tăng khả năng giảm kali huyết của chất chủ vận beta2-adrenergic, do vậy nên sử dụng thận trọng (xem mục Cảnh báo và thận trọng). Các thuốc điều trị COPD khác Mặc dù chưa có các nghiên cứu chính thức về tương tác thuốc in vivo được thực hiện, nhưng khi dùng đồng thời umeclidinium/vinalterol dạng hít với các thuốc COPD khác, bao gồm các thuốc giãn phế quản kích thích thần kinh giao cảm tác dụng ngắn và corticosteroid dạng hít, không thấy có bằng chứng lâm sàng về tương tác thuốc."
     ],
     "id": "anoro-ellipta-62-5-25mcg-glaxo-30-doses",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Auricularum 10mg",
@@ -181,7 +188,8 @@
       "Tương tác thuốc: Không có."
     ],
     "id": "auricularum-10mg",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Avamys 27.5mcg GSK 60 DOSE",
@@ -205,7 +213,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "avamys-27-5mcg-gsk-60-dose",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Azarga Novartis 5ml",
@@ -228,7 +237,8 @@
       "Tương tác thuốc: Hỗn dịch nhỏ mắt Azarga có chứa brinzolamid, một chất ức chế carbonic anhydrase và mặc dù dùng nhỏ tại mắt, thuốc vẫn được hấp thu toàn thân. Rối loạn cân bằng acid-base đã được báo cáo với các thuốc ức chế carbonic anhydrase đường uống. Nguy cơ xảy ra tương tác cần được cân nhắc ở các bệnh carbonic anhydrase đường uống. Phản ứng tăng huyết áp khi ngừng clonidin đột ngột có thể trầm trọng hơn khi đang sử dụng các thuốc chẹn beta. Nguy cơ xảy ra tác dụng chẹn beta toàn thân (như giảm nhịp tim, trầm cảm) đã được báo cáo khi kết hợp điều trị thuốc ức chế CYP2D6 (như quinidin, fluoxetin, paroxetin) và timolol. Các thuốc chẹn beta có thể làm tăng tác dụng hạ đường huyết của các thuốc chống đái tháo đường. Có thể có tác dụng hiệp đồng dẫn tới hạ huyết áp và/hoặc chậm nhịp tim đáng kể khi dùng đồng thời các dung dịch nhỏ mắt chẹn beta với các thuốc chẹn kênh calci, chẹn beta-adrenergic, các thuốc chống loạn nhịp (bao gồm amiodaron), hoặc glycosid tim loại digitalis, các thuốc giả cường giao cảm đường uống. Giãn đồng tử do sử dụng đồng thời thuốc tra mắt chẹn beta và adrenalin (epinephrin). Các thuốc chẹn beta có thể làm giảm đáp ứng với adrenalin được dùng để điều trị các phản ứng quá mẫn. Cần đặc biệt thận trọng ở bệnh nhân có tiền sử dị ứng hoặc sốc phản vệ."
     ],
     "id": "azarga-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Azopt Alcon 5ml",
@@ -251,7 +261,8 @@
       "Tương tác thuốc: Các nghiên cứu về tương tác cụ thể giữa Azopt và các thuốc khác chưa được thực hiện. Trong các thử nghiệm lâm sàng, không có bằng chứng về các tương tác bất lợi khi sử dụng đồng thời Azopt với các chất tương tự prostaglandin và các chế phẩm nhỏ mắt chứa timolol. Sự phối hợp giữa Azopt và các thuốc co đồng tử hoặc các thuốc chủ vận adrenergic trong suốt liệu pháp điều trị bổ trợ bệnh glôcôm chưa được đánh giá. Azopt là thuốc ức chế carbonic anhydrase và mặc dù dùng tại chỗ, thuốc được hấp thu toàn thân. Đã có báo cáo về các rối loạn cân bằng adid - base với các thuốc ức chế carbonic anhydrase đường uống. Phải xem xét đến khả năng tương tác thuốc trên các bệnh nhân dùng hỗn dịch nhỏ mắt Azopt. Có thể có tác dụng phụ ngoài các tác dụng toàn thân đã biết của việc ức chế carbonic anhydrase ở những bệnh nhân dùng thuốc ức chế CA đường uống và Azopt. Không khuyến cáo dùng đồng thời Azopt và các thuốc ức chế CA đường uống. Các isoenzym Cytochrom P - 450 có vai trò trong chuyển hóa brinzolamid bao gồm CYP3A4 (vai trò chính), CYP2A6, CYP2C8 và CYP2C9. Các chất ức chế CYP3A4 như ketoconazol, itraconazol, clotrimazol, ritonavir và troleandomycin được dự đoán sẽ ức chế quá trình chuyển hóa brinzolamid thông qua CYP3A4. Do đó cần thận trọng khi sử dụng đồng thời với các chất ức chế CYP3A4. Dường như không có sự tích lũy của brinzolamid do thuốc thải trừ chính qua thận. Brinzolamid không phải là chất ức chế isoenzym Cytochrom P - 450."
     ],
     "id": "azopt-alcon-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bambuterol 10mg A.t 3x10",
@@ -276,7 +287,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "bambuterol-10mg-a-t-3x10",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Benita Merap 120 LIỀU",
@@ -299,7 +311,8 @@
       "Tương tác thuốc: Dùng đồng thời ketoconazol 200 mg uống ngày 1 lần với budesonid dạng uống (3 mg liều duy nhất) làm tăng trung bình gấp 6 lần nồng độ budesonid trong huyết tương. Khi ketoconazol được dùng sau khi dùng budesonid 12 giờ thì nồng độ budesonid tăng lên gấp 3 lần. Không có thông tin về tương tác này khi sử dụng budesonid dạng xịt mũi, nhưng nồng độ budesonid cũng được dự kiến tăng đáng kể trong những trường hợp này. Tránh việc dùng kết hợp vì không có dữ liệu cho phép dùng các liều khuyến cáo đường mũi. Nếu phải dùng kết hợp thì khoảng cách dùng budesonid và ketoconazol càng xa càng tốt. Cũng nên xem xét giảm liều budesonid. Các chất ức chế CYP3A4 mạnh khác có thể làm tăng đáng kể nồng độ của budesonid trong huyết tương."
     ],
     "id": "benita-merap-120-lieu",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Benita XYLO 0,1% Meraplion 50 LIỀU",
@@ -321,7 +334,8 @@
       "Tương tác thuốc: Sự hấp thu toàn thân của xylometazoline sau khi dùng đường mũi là rất thấp, vì vậy tương tác với các thuốc dùng qua đường khác được coi là không có khả năng xảy ra. Không có các nghiên cứu tương tác thuốc được thực hiện."
     ],
     "id": "benita-xylo-0-1-meraplion-50-lieu",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betadine SÚC HỌNG 125ml",
@@ -343,7 +357,8 @@
       "Tương tác thuốc: Phức hợp povidon - iod có tác dụng ở pH từ 2,0 đến 7,0. Có khả năng phức hợp này sẽ phản ứng lại với protein và các hợp chất hữu cơ chưa bão hòa khác, dẫn đến sự giảm sút tác dụng của phức hợp. Sử dụng đồng thời với các sản phẩm có chứa thành phần enzyme, hydrogen peroxide, bạc và taurolidine dẫn đến làm giảm tác dụng của cả hai hoạt chất. Sử dụng cùng lúc với các sản phẩm chứa thủy ngân có thể dẫn đến sự hình thành một hoạt chất gây hại cho da. Điều trị với povidon - iod có thể ảnh hưởng đến các thử nghiệm chức năng tuyến giáp và có thể ảnh hưởng đến kế hoạch điều trị tuyến giáp với iod. Sau khi kết thúc điều trị, nên tuân theo khoảng cách 1 - 2 tuần trước khi thực hiện nhấp nháy đồ mới. Sự hiện diện của povidon - iod trong một số thử nghiệm tìm vết máu trong phân hoặc máu trong nước tiểu có thể dẫn đến các kết quả dương tính giả."
     ],
     "id": "betadine-suc-hong-125ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betoptic S Alcon 5ml",
@@ -366,7 +381,8 @@
       "Tương tác thuốc: Có thể có tác dụng hiệp đồng dẫn tới hạ huyết áp hoặc chậm nhịp tim đáng kể khi dùng đồng thời các dung dịch nhỏ mắt chẹn beta với các thuốc chẹn kênh calci, chẹn beta-adrenergic, các thuốc chống loạn nhịp (bao gồm amiodaron) hoặc glycosid tim loại digitalis. Các thuốc chẹn beta có thể làm giảm đáp ứng với adrenalin được dùng để điều trị các phản ứng quá mẫn. Cần đặc biệt thận trọng ở bệnh nhân có tiền sử dị ứng hoặc sốc phản vệ."
     ],
     "id": "betoptic-s-alcon-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Biracin-e Bidiphar 5ml",
@@ -389,7 +405,8 @@
       "Tương tác thuốc: Hiện chưa tìm thấy tương tác thuốc trong các tài liệu."
     ],
     "id": "biracin-e-bidiphar-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bralcib 3mg ATCO 5ml",
@@ -411,7 +428,8 @@
       "Tương tác thuốc: Hiện vẫn chưa có thông tin báo cáo về tương tác thuốc của dạng dùng nhỏ mắt Ofloxacin. Trong trường hợp dùng đồng thời với một thuốc nhỏ mắt khác, nên nhỏ cách nhau 15 phút."
     ],
     "id": "bralcib-3mg-atco-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Britop Bharat 5ml",
@@ -433,7 +451,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "britop-bharat-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bronuck Senju 5ml",
@@ -456,7 +475,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu đặc biệt nào với bromfenac được thực hiện."
     ],
     "id": "bronuck-senju-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Brusonex Bruschettini",
@@ -478,7 +498,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "brusonex-bruschettini",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Buderen 200 DOSE 10ml",
@@ -501,7 +522,8 @@
       "Tương tác thuốc: Ketoconazole và chất ức chế CYP3A4 mạnh khác: Giảm chuyển hóa Budesonid."
     ],
     "id": "buderen-200-dose-10ml",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Candid EAR Drops Glenmark 15ml",
@@ -524,7 +546,8 @@
       "Tương tác thuốc: Chưa có thông tin về tương tác thuốc với clotrimazole dùng nhỏ tại. Vì thuốc rất ít hấp thu, tương tác với các thuốc dùng đường toàn thân là hầu như không xảy ra."
     ],
     "id": "candid-ear-drops-glenmark-15ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cepmox-clav 875mg /125mg Imexpharm 2x7",
@@ -546,7 +569,8 @@
       "Tương tác thuốc: Thuốc chống đông máu đường uống Thuốc chống đông máu dùng đường uống và các kháng sinh nhóm penicillin đã được sử dụng rộng rãi trong thực tế mà không ghi nhận bất kỳ tương tác nào. Tuy nhiên, trong các y văn có đề cập đến việc tăng chỉ số bình thường hóa quốc tế (INR) ở những bệnh nhân dùng acenocoumarol hoặc warfarin đồng thời với amoxicilin. Nếu cần thiết phải dùng đồng thời, nên theo dõi cần thận thời gian prothrombin hoặc INR khi bắt đầu hoặc ngưng dùng amoxicilin/acid clavulanic. Có thể điều chỉnh liều thuốc chống đông máu nếu cần. Methotrexat: Penicilin làm giảm bài tiết methotrexat, do đó làm tăng độc tính của methotrexat. Probenecid: Tránh dùng đồng thời với probenecid. Probenecid làm giảm bài tiết amoxicilin ở ống thận, vì vậy, làm tăng và kéo dài nồng độ amoxicilin trong máu nhưng không ảnh hưởng đến acid clavulanic. Mycophenolat mofetil: Ở những bệnh nhân đang dùng mycophenolat mofetil, đã có báo cáo về sự giảm 50% nồng độ trước liều của chất chuyển hóa có hoạt tính acid mycophenolic (MPA) sau khi điều trị với amoxicilin/acid clavulanic. Sự thay đổi nồng độ trước liều này có thể không biểu hiện chính xác những thay đổi về mức phơi nhiễm MPA tổng thể. Do đó, không cần thiết điều chỉnh liều mycophenolat mofetil khi chưa có bằng chứng lâm sàng về rối loạn chức năng thải ghép. Tuy nhiên, nên theo dõi lâm sàng chặt chẽ trong suốt quá trình dùng thuốc và thêm một thời gian ngắn sau khi ngừng điều trị với kháng sinh. Ảnh hưởng đối với các xét nghiệm: Nên sử dụng phương pháp glucose oxidase enzym khi cần xét nghiệm glucose trong nước tiểu vi các phương pháp không enzym có thể cho kết quả dương tính giả. Acid clavulanic gây nên sự gắn kết không đặc hiệu của lgG và albumin lên màng tế bảo hồng cầu dẫn đến kết quả dương tính giả của xét nghiệm Coombs. Thuốc có thể gây dương tính giả xét nghiệm Bio-Rad Laboratories Platelia Aspergillus ElAdo phản ứng chéo với các polysaccharid và polyfuranose không phải là Aspergillus. Do đó, đối với bệnh nhân đang dùng amoxicilin/acid clavulanic, nên thận trọng khi đọc kết quả nếu có kết quả dương tính khi xét nghiệm bằng phương pháp này và nên xác định lại bằng phương pháp chẩn đoán khác. Tương kỵ của thuốc: Do chưa có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "cepmox-clav-875mg-125mg-imexpharm-2x7",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cetimed 10mg Medochemie 1x10",
@@ -568,7 +592,8 @@
       "Tương tác thuốc: Không có tương tác đáng kể nào giữa cetirizine dihydrochloride và các thuốc khác được ghi nhận trên các nghiên cứu dược động học, dược lực học. Trên thực tế quan sát không thấy có bằng chứng cho thấy tương tác dược động học khi dùng cetirizine và các thuốc khác như với pseudoepherine, theophylline (với liều 400 mg/ ngày). Trong nghiên cứu đa liều theophylline (liều 400 mg ngày 1 lần) và cetirizine dihydrochloride đã thấy có sự giảm nhẹ (16%) độ thanh thải của cetirizine hydrochloride; trong khi đó mức độ phân bố của theophylline không bị ảnh hưởng khi dùng đồng thời với cetirizine dihydrochloride. Thức ăn không làm độ hấp thu của cetirizine dihydrochloride mặc dù tốc độ hấp thu giảm 1 giờ. Đối với bệnh nhân nhạy cảm, dùng đồng thời cetirizine dihydrochloride với thức ăn và đồ uống chứa cồn hoặc với thuốc ức chế thần kinh trung ương khác sẽ làm tăng ảnh hưởng đến hệ thần kinh là suy giảm sự tỉnh táo và khả năng hoạt động. Tương kỵ thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc nên không trộn lẫn Cetimed 10mg với các thuốc khác."
     ],
     "id": "cetimed-10mg-medochemie-1x10",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ciloxan Alcon 5ml",
@@ -584,7 +609,8 @@
     "huong_dan_bao_quan": "Bảo quản nơi khô ráo thoáng mát, tránh ánh nắng mặt trời, đậy kín nắp sau khi sử dụng.",
     "luu_y_dac_biet": [],
     "id": "ciloxan-alcon-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cineline 250ml",
@@ -604,7 +630,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "cineline-250ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ciprofloxacin 0.3% Bidiphar 5ml",
@@ -627,7 +654,8 @@
       "Tương tác thuốc: Hiện nay, chưa có báo cáo cụ thể về sự tương tác giữa thuốc Ciprofloxacin 0.3% với các thuốc khác. Do đó, trước và trong quá trình sử dụng thuốc, liên hệ với bác sĩ và cung cấp thông tin về các loại thuốc đang dùng để được tư vấn dùng thuốc hợp lý nhất."
     ],
     "id": "ciprofloxacin-0-3-bidiphar-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ciprofloxacin 0.3% F.t 5ml",
@@ -650,7 +678,8 @@
       "Tương tác thuốc: Chưa có thông tin về tương tác thuốc ciprofloxacin nhỏ mắt – tai."
     ],
     "id": "ciprofloxacin-0-3-f-t-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Clesspra DX 5ml",
@@ -676,7 +705,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "clesspra-dx-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Coldi-b DNH NAM HÀ 15ml",
@@ -702,7 +732,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "coldi-b-dnh-nam-ha-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Collydexa GOLD HÀ NỘI 5ml",
@@ -722,7 +753,8 @@
       "Tương tác thuốc: Tránh dùng với các loại kháng sinh khác."
     ],
     "id": "collydexa-gold-ha-noi-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Collydexa HÀ NỘI 5ml",
@@ -745,7 +777,8 @@
       "Tương tác thuốc: Liên quan đến chloramphenicol: Chloramphenicol ức chế enzym cytochrom P450 ở gan, là enzym chịu trách nhiêm về chuyển hóa của nhiều thuốc. Chloramphenicol có thể tác động tới chuyển hóa của clorpropamid, dicumarol, phenytoin và tolbutamid do ức chế hoạt tính các men của microsom, và như vậy có thể kéo dài nửa đời huyết tương và làm tăng tác dụng của những thuốc này; do đó phải hiệu chỉnh một cách phù hợp liều lượng những thuốc này. Ngoài ra, Chloramphenicol có thể kéo dài thời gian prothrombin ở người bệnh nhận liệu pháp chống đông vì tác động tới sự sinh sản vitamin K của vi khuẩn đường ruột. Dùng đồng thời chloramphenicol và phenobarbital có thể dẫn đến giảm nồng độ thuốc kháng sinh trong huyết tương vì phenobarbital gây cảm ứng enzym cytochrom P450 có khả năng phá hủy chloramphenicol. Khi dùng đồng thời với những chế phẩm sắt, vitamin B12 hoặc các acid folic, chloramphenicol có thể làm chậm đáp ứng với những thuốc này. Do đó, nếu có thể được, nên tránh liệu pháp cloramphenicol ở người bệnh thiếu máu dùng chế phẩm sắt, vitamin B12 hoặc acid folic. Vì rifampin gây cảm ứng những enzym của microsom cần cho chuyển hóa chloramphenicol, dùng đồng thời những thuốc này có thể dẫn đến giảm nồng độ chloramphenicol trong huyết tương. Nên tránh dùng đồng thời chloramphenicol với những thuốc có thể gây suy giảm tủy xương. Liên quan đến dexamethason natri phosphat: Tránh dùng đồng thời dexamethason với các thuốc sau đây: Everolimus, natalizumab, nilotinib, nisoldipin, ranolazin, tolvaptan, vắc xin (sống). Tăng tác dụng độc tính: Dexamethason có thể làm tăng tác dụng của amphotericin B, các chất ức chế acetylcholinesterase, cyclosporin, lenalidomid, thuốc lợi tiểu quai, natalizumab, thalidomid, thuốc chống viêm không steroid (chất ức chế COX - 2), thuốc chống viêm không steroid (không chọn lọc), thuốc lợi tiểu quai, thưốc lợi tiểu thiazid, vắc xin (sống), warfarin. Tác dụng của dexamethason có thể tăng bởi: Aprepitant, asparaginase; các chất chẹn kênh calci (không dihydropyridin, các chất chống nấm (các dẫn xuất azol, tác dụng toàn thân); các chất ức chế CYP3A4 (vừa); các chất ức chế CYP3A4 (mạnh); các dẫn xuất estrogen; các chất phong bế thần kinh cơ (không khử cực); các chất ức chế P - glycoprotein; các kháng sinh quinolone, dasatinib, sallicylat; trastuzumab. Dexamethason có thể làm giảm tác dụng của các chất nền CYP3A4, các chất nền P - glycoprotein; các tác nhân chống đái tháo đường; calcitriol; caspofungin; corticorelin; dabigatran etexilat; everolimus; isoniazid; maraviroc; nilotinib; ranolazin; các salicylat; sorafenib; tovaptan; vắc xin (bất hoạt). Tác dụng của dexamethason có thể giảm bởi: Aminoglutethimid; barbiturate; các chất thu giữ acid mật; các chất cảm ứng CYP3A4 (mạnh); các chất gây cảm ứng P - glycoprotein; các chất kháng acid; các dẫn xuất rifamycin, deferasirox; primidon. Dùng liệu pháp corticosteroid tác dụng toàn thân có thể cần chế độ ăn uống tăng lượng kali, vitamin A, vitamin B6, C, D, folat, calci, kẽm và phospho và giảm natri. Các barbiturate, phenytoin, rifampicin, rifabutin, carbamazepin, ephedrine, aminoglutethimid có thể làm tăng thanh thải corticosteroid nên làm giảm tác dụng điều trị. Corticoid đối kháng tác dụng của các tác nhân gây hạ đường huyết (kể cả insulin), thuốc hạ huyết áp và thuốc lợi tiểu. Corticosteroid làm tăng tác dụng hạ kali huyết của acetazolamid, các thiazid lợi tiểu quai, carbenoxolon. Hiệu lực của các dẫn chất curmarin chống đông máu có thể tăng khi dùng đồng thời với corticoid, nên cần kiểm tra chặt thời gian prothrombin để tránh chảy máu tự phát. Sự thanh thải salicylat tăng khi dùng đồng thời với corticoid, vì vậy khi ngừng corticoid dễ bị ngộ độc salicylat. Các thuốc lợi tiểu làm giảm kali huyết (ví dụ thiazid, furosemid) và amphotericin B có thể làm tăng tác dụng giảm kali huyết của glucocorticoid. Nguy cơ tăng nhãn áp khi phối hợp điều trị corticoid kéo dài với sử dụng đồng thời các thuốc kháng cholinergic đặc biệt là atropine và các hoạt chất liên quan. Nguy cơ mờ, đục giác mạc có thể xảy ra ở bệnh nhân có giác mạc bị tổn thương và sử dụng đồng thời với thuốc mắt có chứa phosphat khác. Liên quan đến naphazolin nitrat: Sử dụng các thuốc giống thần kinh giao cảm nói chung cũng như naphazolin cho bệnh nhân đang dùng các thuốc ức chế monoamin oxidase, maprotilin, hoặc các thuốc chống trầm cảm ba vòng có thể gây phản ứng tăng huyết áp nặng. Naphazolin hiệp đồng tác dụng với các thuốc giống thần kinh giao cảm khác và làm giảm tác dụng của lobenguan I 123. Tác dụng của naphazolin có thể tăng khi dùng đồng thời với atomoxetin, cannabinoid, các thuốc ức chế monoamin oxidase hoặc các thuốc chống trầm cảm ba vòng. Chưa có báo cáo về tương tác với một thuốc mắt khác khi sử dụng đồng thời nhưng khuyến cáo là sử dụng cách 15 phút khi dùng các thuốc khác. Liên quan đến riboflavin: Đã gặp một số ca “thiếu riboflavin” ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin."
     ],
     "id": "collydexa-ha-noi-5ml",
-    "danh_muc": "Thuốc Mắt, Tai, Mũi, Họng"
+    "danh_muc": "Thuốc Mắt, Tai, Mũi, Họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Combigan Allergan 5ml",
@@ -768,7 +801,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu về tương tác thuốc được thực hiện với Combigan™. Mặc dù các nghiên cứu vế tương tác thuốc đặc hiệu chưa được thực hiện với Combigan™, cần xem xét khả năng trên lý thuyết về tác dụng phụ trợ hoặc làm mạnh thêm các thuốc ức chế hệ thần kinh trung ương (rượu, barbiturat, thuốc phiện, thuốc an thần hoặc thuốc gây mê). Có khả năng có tác dụng phụ trợ dẫn đến hạ huyết áp, và/ hoặc nhịp tim chậm rõ rệt khi thuốc nhỏ mắt chẹn beta được dùng đồng thời với các thuốc chẹn kênh calci dùng đường uống, guanethidin, hoặc thuốc chẹn beta, thuốc chống loạn nhịp (bao gồm amiodaron), các glycosid digitalis, các thuốc giống thần kinh phó giao cảm và thuốc hạ huyết áp khác. Sau khi dùng brimonidin, rất hiếm trường hợp hạ huyết áp (< 1/ 10.000) được ghi nhận. Vì vậy nên thận trọng khi dùng Combigan™ với các thuốc trị tăng huyết áp dùng đường toàn thân. Mặc dù timolol ít tác dụng hoặc không ảnh hưởng đến trên kích thước của đồng tử, thỉnh thoảng đã ghi nhận có giãn đồng tử khi timolol được dùng với các thuốc làm giãn đồng tử như adrenalin. Các thuốc chẹn beta có thể làm tăng tác dụng làm hạ đường huyết của các thuốc chống đái tháo đường. Các thuốc chẹn beta có thể che lấp các dấu hiệu và triệu chứng của hạ đường huyết (xem phần Thận trọng khi sử dụng). Phản ứng gây tăng huyết áp khi ngừng dùng clonidin đột ngột có thể được làm mạnh lên khi đang dùng các thuốc chẹn beta. Đã ghi nhận tác dụng chẹn beta toàn thân được làm mạnh lên (ví dụ nhịp tim chậm, trầm cảm) trong khi điều trị kết hợp thuốc ức chế CYP2D6 [ví dụ quinidin, thuốc ức chế tái hấp thu serotonin chọn lọc (SSRI)] với timolol, có thể là do quinidin ức chế sự chuyển hóa của timolol qua enzym P450 là CYP2D6. Dùng đồng thời một thuốc chẹn beta với thuốc gây mê có thế làm giảm nhịp tim nhanh bù trừ và làm tăng nguy cơ hạ huyết áp (xem phần Thận trọng khi sử dụng), vì vậy phải thông báo cho bác sĩ gây mê biết nếu bệnh nhân đang dùng Combigan™. Phải thận trọng nếu Combigan™ được dùng đồng thời với thuốc cản quang có iod hoặc lidocain dùng đường tĩnh mạch. Cimetidin, hydralazin và rượu có thể làm tăng nồng độ timolol trong huyết tương. Thuốc chống trầm cảm 3 vòng đã được báo cáo làm giảm tác dụng hạ huyết áp của clonidin dùng toàn thân. Chưa rõ liệu việc sử dụng đồng thời các thuốc này với Combigan™ ở người có thể dẫn đến can thiệp vào tác dụng làm giảm áp suất nội nhãn hay không. Chưa có dữ liệu về mức catecholamin trong tuần hoàn sau khi dùng Combigan™ Tuy nhiên, cần thận trọng ở những bệnh nhân đang dùng thuốc chống trầm cảm 3 vòng có thể ảnh hưởng đến sự chuyển hóa và thu nhận các amin trong tuần hoàn, ví dụ như clorpromazin, methylphenidat, reserpin. Nên thận trọng khi bắt đầu dùng đồng thời (hoặc thay đổi liều dùng) một thuốc dùng đường toàn thân (bất kể dạng bào chế) có thể tương tác với các chất chủ vận α-adrenergic hoặc ngăn cản hoạt động của chúng tức là các chất chủ vận hoặc chất đối kháng thụ thể adrenergic (ví dụ như isoprenalin, prazosin). Mặc dù các nghiên cứu về tương tác thuốc đặc hiệu chưa được thực hiện với Combigan™, cần xem xét khả năng trên lý thuyết về tác dụng hạ áp suất nội nhãn thêm khi dùng với prostamid, prostaglandin, thuốc ức chế carbonic anhydrase và pilocarpin . Chống chỉ định dùng đồng thời với các chất ức chế MAO (xem phần Chống chỉ định). Những bệnh nhân đang điều trị chất ức chế MAO phải chờ 14 ngày sau khi ngừng thuốc trước khi bắt đầu điều trị bằng Combigan™. Cần theo dõi những bệnh nhân đang dùng một thuốc chẹn beta - adrenergic dùng toàn thân (ví dụ đường uống hoặc tiêm tĩnh mạch) và Combigan™ về khả năng có tác dụng cộng thêm về sự chẹn beta, trên cả huyết áp toàn thân và áp suất nội nhãn Khả năng gây ung thư, gây đột biến, suy giảm khả năng sinh sản Các dữ liệu về độ an toàn ở mắt và toàn thân đối với các thành phần riêng lẻ đã được xác định rõ. Các dữ liệu tiền lâm sàng không phát hiện nguy cơ nào đặc biệt đối với người dựa trên các nghiên cứu thường quy đối với các thành phần riêng lẻ về dược lý an toàn, độc tính liều nhắc lại, độc tính gen, và các nghiên cứu về tính gây ung thư. Các nghiên cứu thêm về độc tính liều nhắc lại đối với mắt khi dùng Combigan™ không cho thấy nguy cơ nào đặc biệt đối với người. Brimonidin Brimonidin tartrat không gây ra bất kỳ tác dụng gây quái thai nào ở động vật, nhưng đã làm sẩy thai ở thỏ khi dùng liều gấp khoảng 37 lần so với khi điều trị ở người và giảm phát triển sau khi sinh ở chuột cống khi dùng liều gấp khoảng 134 lần so với khi điều trị ở người. Timolol Trong các nghiên cứu ở động vật, đã ghi nhận các thuốc chẹn beta làm giảm lưu lượng máu qua rốn, giảm tăng trưởng thai, chậm cốt hóa và tăng tử vong thai và sau sinh, nhưng không gây quái thai. Với timolol, đã ghi nhận độc tính phôi (tiêu phôi) ở thỏ và độc tính thai (cốt hóa chậm) ở chuột cống khi dùng liều cao cho vật mẹ. Các nghiên cứu về gây quái thai ở chuột nhắt, chuột cống và thỏ với liều uống timolol lên đến 4200 lần liều Combigan™ hàng ngày ở người, không cho thấy biểu hiện về dị dạng thai."
     ],
     "id": "combigan-allergan-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Copdumilast Armephaco 3x10",
@@ -790,7 +824,8 @@
       "Tương tác thuốc: Các thuốc kích thích CYP P450: Các thuốc ức chế mạnh men CYP P450 làm giảm lượng thuốc trong máu dẫn tới giảm hiệu quả điều trị của roflumilast. Do đó, việc dùng đồng thời các thuốc kích thích CYP P450 (như rifampicin, phenobarbital, carbamazepine, và phenytoin) là không khuyến cáo. Các thuốc ức chế CYP P450: Việc dùng đồng thời các thuốc ức chế CYP3A4 hoặc cả CYP3A4 và CYP1A2 (như erythromycin, ketoconazole, fluvoxamine, enoxacin, cimetidine) có thể làm tăng nồng độ thuốc trong máu dẫn tới tăng tác dụng phụ của thuốc. Cần phải đánh giá nguy cơ và lợi ích trước khi chỉ định phối hợp này. Các thuốc tránh thai đường uống có gestodene và ethinyl estradiol: Việc dùng đồng thời các thuốc này với roflumilast có thể làm tăng nồng độ của roflumilast trong máu và làm tăng nguy cơ xảy ra tác dụng phụ. Do đó, cần cân nhắc giữa nguy cơ và lợi ích khi chỉ định kết hợp."
     ],
     "id": "copdumilast-armephaco-3x10",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cosopt-s 25mg/ml Santen 3 VỈ X 20 ỐNG X 0.2ml",
@@ -812,7 +847,8 @@
       "Tương tác thuốc: Các nghiên cứu tương tác thuốc cụ thể chưa được thực hiện với Cosopt-S. Trong một nghiên cứu lâm sàng, thuốc này đã được sử dụng đồng thời với các thuốc dùng đường toàn thân sau đây mà không có bằng chứng của các tương tác bất lợi: các thuốc ức chế ACE, thuốc chẹn kênh calci, thuốc lợi tiểu, thuốc chống viêm không steroid kể cả aspirin, và hormon (ví dụ: estrogen, insulin, thyroxin). Có khả năng có tác dụng hiệp đồng dẫn đến hạ huyết áp và/hoặc nhịp tim chậm đáng kể khi dung dịch nhỏ mắt chẹn beta được dùng đồng thời với các thuốc chẹn kênh calci đường uống, thuốc giảm catecholamin hoặc thuốc chẹn beta-adrenergic, thuốc chống loạn nhịp (bao gồm amiodaron), digitalis glycosid, các thuốc giả phó giao cảm, guanethidin, thuốc gây nghiện và các thuốc ức chế monoamin oxidase (MAO). Tăng tác dụng chẹn beta toàn thân (ví dụ: giảm nhịp tim, trầm cảm) đã được báo cáo trong quá trình điều trị kết hợp các thuốc ức chế CYP2D6 (ví dụ: quinidin, fluoxetin, paroxetin) và timolol. Mặc dù một mình Cosopt (công thức có chất bảo quản) có rất ít hoặc không có tác dụng đối với kích thước đồng tử, giãn đồng tử do sử dụng đồng thời các thuốc nhãn khoa chẹn beta và adrenalin (epinephrin) thỉnh thoảng đã được báo cáo. Thuốc chẹn beta có thể tăng tác dụng hạ đường huyết của thuốc chữa đái tháo đường. Các thuốc chẹn beta-adrenergic đường uống có thể làm trầm trọng thêm tăng huyết áp dội ngược sau khi ngưng dùng clonidin. Tần suất gặp các phản ứng bất lợi viêm mắt, kể cả sung huyết kết mạc, tăng lên trong một thử nghiệm lâm sàng dùng đồng thời timolol maleat và dung dịch nhỏ mắt omidenepag isopropyl. Do đó, thận trọng khi dùng đồng thời timolol maleat với dung dịch nhỏ mắt omidenepag isopropyl. Tương kỵ Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "cosopt-s-25mg-ml-santen-3-vi-x-20-ong-x-0-2ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cosopt Santen 5ml",
@@ -835,7 +871,8 @@
       "Tương tác thuốc: Các nghiên cứu tương tác thuốc cụ thể chưa được thực hiện với COSOPT. Trong các nghiên cứu lâm sàng, thuốc này đã được sử dụng đồng thời với các thuốc dùng đường toàn thân sau mà không có bằng chứng của các tương tác bất lợi: các thuốc ức chế ACE, thuốc chẹn kênh canxi, thuốc lợi tiểu, thuốc chống viêm không steroid kể cả aspirin, và hormon (ví dụ, estrogen, insulin, thyroxin). Có khả năng có tác dụng hiệp đồng dẫn đến hạ huyết áp và/ hoặc nhịp tim chậm đáng kể khi dung dịch nhỏ mắt chẹn beta được dùng đồng thời với các thuốc chẹn kênh canxi đường uống, thuốc giảm catecholamin hoặc thuốc chẹn beta-adrenergic, thuốc chống loạn nhịp (bao gồm amiodaron), các digitalis glycosid, các thuốc giả phó giao cảm, guanethidin, thuốc gây nghiện, và các thuốc ức chế monoamin oxidase (MAO). Tăng tác dụng chẹn beta toàn thân (ví dụ, giảm nhịp tim, trầm cảm) đã được báo cáo trong quá trình điều trị kết hợp các thuốc ức chế CYP2D6 (ví dụ quinidin, fluoxetin, paroxetin) và timolol. Mặc dù một mình COSOPT có rất ít hoặc không có tác dụng đối với kích thước đồng tử, giãn đồng tử do sử dụng đồng thời các thuốc nhãn khoa chẹn beta và adrenalin (epinephrin) thỉnh thoảng đã được báo cáo. Thuốc chẹn beta có thể tăng tác dụng hạ đường huyết của thuốc chữa đái tháo đường. Các thuốc chẹn beta-adrenergic đường uống có thể làm trầm trọng thêm tăng huyết áp dội ngược sau khi ngưng dùng clonidin. Tần suất gặp các phản ứng bất lợi viêm mắt kể cả xung huyết kết mạc tăng lên trong một thử nghiệm lâm sàng dùng đồng thời timolol maleat và dung dịch nhỏ mắt omidenepag isopropyl. Do đó, thận trọng khi dùng đồng thời timolol maleat với dung dịch nhỏ mắt omidenepag isopropyl. Tương kỵ Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "cosopt-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cravit 1.5% Santen 5ml",
@@ -858,7 +895,8 @@
       "Tương tác thuốc: Chưa được biết."
     ],
     "id": "cravit-1-5-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cravit 0.5% Saten 5ml",
@@ -881,7 +919,8 @@
       "Tương tác thuốc: Chưa có thông tin."
     ],
     "id": "cravit-0-5-saten-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Daigaku 15ml",
@@ -904,7 +943,8 @@
       "Tương tác thuốc: Không có báo cáo."
     ],
     "id": "daigaku-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Daiticol F.t 10ml",
@@ -927,7 +967,8 @@
       "Tương tác thuốc: Chưa có thông tin."
     ],
     "id": "daiticol-f-t-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Desloratadine 5mg Genepharm 2x15",
@@ -949,7 +990,8 @@
       "Tương tác thuốc: Không quan sát thấy tương tác có ý nghĩa lâm sàng khi dùng kết hợp viên nén desloratadin với erythromycin hoặc ketoconazol trong các thử nghiệm lâm sàng. Với trẻ em Các nghiên cứu về tương tác thuốc chỉ được thực hiện trên người lớn. Trong một thử nghiệm lâm sàng về dược động học, desloratadin khi uống cùng với rượu không có hiệu quả làm giảm tác dụng của rượu. Tuy nhiên, các trường hợp không dung nạp và ngộ độc rượu đã được báo cáo trong suốt quá trình sử dụng sau khi lưu hành thuốc. Vì lẽ đó, nên khuyến cáo khi dùng desloratadin cùng với rượu."
     ],
     "id": "desloratadine-5mg-genepharm-2x15",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dextear 20mg/ml Samchundang 10ml",
@@ -971,7 +1013,8 @@
       "Tương tác thuốc: Các nghiên cứu về tương tác thuốc chưa được thực hiện và các tương tác liên quan đến lâm sàng chưa được biết. Nếu dùng chung với các loại thuốc nhãn khoa dùng tại chỗ khác, sử dụng Dextear sau thuốc khác ít nhất 5 phút. Thuốc mỡ tra mắt nên được dùng sau cùng."
     ],
     "id": "dextear-20mg-ml-samchundang-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Diquas 5ml",
@@ -994,7 +1037,8 @@
       "Tương tác thuốc: Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "diquas-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dophazolin DƯỢC KHOA 15ml",
@@ -1019,7 +1063,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "dophazolin-duoc-khoa-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hylaform 0.1% 1ml cpc1 4x5 ỐNG",
@@ -1041,7 +1086,8 @@
       "Tương tác thuốc: Không thấy có hiện tượng tương tác thuốc trong các tài liệu tham khảo được."
     ],
     "id": "hylaform-0-1-1ml-cpc1-4x5-ong",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH NHỎ MẮT Moxieye 50mg 10m",
@@ -1063,7 +1109,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu về tương tác thuốc của dung dịch nhỏ mắt chứa moxifloxacin. Các nghiên cứu in vitro cho thấy moxifloxacin không kìm hãm CYP3A4, CYP2D6, CYP2C9, CYP2C19 hay CYP1A2 vì vậy thuốc có ít khả năng ảnh hưởng đến dược động học của các thuốc chuyển hóa bởi cytochrom P450."
     ],
     "id": "dung-dich-nho-mat-moxieye-50mg-10m",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH NHỎ MẮT Moxieye 50mg cpc1 10ml",
@@ -1085,7 +1132,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-nho-mat-moxieye-50mg-cpc1-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH NHỎ MẮT Moxikune Makcur 5ml",
@@ -1107,7 +1155,8 @@
       "Tương tác thuốc: Không có nghiên cứu cụ thể về các tương tác của moxifloxacin 0,5%w/v với các thuốc khác. Tuy nhiên, sau khi dùng thuốc nhỏ mắt, nồng độ moxifloxacin trong huyết tương rất thấp nên tương tác thuốc ít có khả năng xảy ra. Do không có nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "dung-dich-nho-mat-moxikune-makcur-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH NHỎ MẮT VÔ Trùng Ofxacin 0.3% DK Pharma 5ml",
@@ -1129,7 +1178,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-nho-mat-vo-trung-ofxacin-0-3-dk-pharma-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Duotrav Alcon 2.5ml",
@@ -1152,7 +1202,8 @@
       "Tương tác thuốc: Tác dụng chẹn beta toàn thân (giảm nhịp tim, trầm cảm) đã được báo cáo khi kết hợp điều trị thuốc ức chế CYP2D6 (như quinidine, fluoxetine, paroxetine) và timolol. Có thể có tác dụng hiệp đồng dẫn tới hạ huyết áp và/hoặc chậm nhịp tim rõ rệt khi dùng đồng thời dung dịch nhỏ mắt chẹn beta với các thuốc chẹn kênh calci đường uống, thuốc chẹn beta-adrenergic, thuốc chống loạn nhịp (bao gồm amiodarone), glycoside tim loại digitalis, các thuốc giả phó giao cảm hoặc guanethidine. Có khả năng tăng huyết áp khi ngừng đột ngột clonidine khi dùng các thuốc chẹn beta. Các thuốc chẹn beta có thể làm tăng tác dụng hạ đường huyết của thuốc điều trị đái tháo đường do có thể che dấu các dấu hiệu và triệu chứng của hạ đường huyết. Các thuốc chẹn beta có thể làm giảm đáp ứng với adrenaline, là thuốc được dùng trong điều trị sốc phản vệ. Cần đặc biệt thận trọng đối với các bệnh nhân có tiền sử dị ứng sốc phản vệ. Giãn đồng tử do sử dụng đồng thời thuốc tra mắt chẹn beta và adrenaline (epinephrine) đôi khi đã được báo cáo."
     ],
     "id": "duotrav-alcon-2-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Efticol 0.9% F.t 10ml",
@@ -1174,7 +1225,8 @@
       "Tương tác thuốc: Chưa thấy báo cáo. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "efticol-0-9-f-t-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Elossy 0.05% DK 5ml - Thuốc NHỎ MŨI TRẺ EM",
@@ -1200,7 +1252,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "elossy-0-05-dk-5ml-thuoc-nho-mui-tre-em",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "EMAS 1% HÀ NỘI 12ml",
@@ -1223,7 +1276,8 @@
       "Tương tác thuốc: Chưa có báo cáo về tương tác của thuốc với các thuốc khác."
     ],
     "id": "emas-1-ha-noi-12ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eporon Samchundang 5ml",
@@ -1246,7 +1300,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể làm thay đổi khả năng hoạt động của thuốc hoặc gia tăng ảnh hưởng của các tác dụng phụ. Tốt nhất là bạn viết một danh sách những thuốc bạn đang dùng (bao gồm thuốc được kê toa, không kê toa và thực phẩm chức năng) và cho bác sĩ hoặc dược sĩ xem. Không được tự ý dùng thuốc, ngưng hoặc thay đổi liều lượng của thuốc mà không có sự cho phép của bác sĩ. Chưa có báo cáo về tương tác giữa Eporon và các thuốc khác."
     ],
     "id": "eporon-samchundang-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ESHA Mediplantex 50v",
@@ -1271,7 +1326,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "esha-mediplantex-50v",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eskar DK 15ml",
@@ -1295,7 +1351,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "eskar-dk-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyal-q Samil 5ml",
@@ -1318,7 +1375,8 @@
       "Tương tác thuốc: Chưa có dữ liệu nào về tương tác của natri hyaluronat với thuốc khác."
     ],
     "id": "eyal-q-samil-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyaren Samil 10ml",
@@ -1344,7 +1402,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "eyaren-samil-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyecool 15ml SCD",
@@ -1368,7 +1427,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "eyecool-15ml-scd",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyedin DX Makcur 5ml",
@@ -1391,7 +1451,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "eyedin-dx-makcur-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyedin Makcur 5ml",
@@ -1414,7 +1475,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "eyedin-makcur-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyelight COOL DHG 10ml",
@@ -1439,7 +1501,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "eyelight-cool-dhg-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyelight VITA b1b2pp DHG 10ml",
@@ -1464,7 +1527,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "eyelight-vita-b1b2pp-dhg-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyetamin Bidiphar 10ml",
@@ -1486,7 +1550,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "eyetamin-bidiphar-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyflox Ophthalmic Ointment 10.5mg Samil 3.5g",
@@ -1508,7 +1573,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "eyflox-ophthalmic-ointment-10-5mg-samil-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eytanac Samil 5ml",
@@ -1531,7 +1597,8 @@
       "Tương tác thuốc: Không nên dùng đồng thời với tropicamid. Có thể xảy ra hiện tượng kết tủa khi sử dụng natri diclofenac cùng với tropicamid. Nên sử dụng thuốc 15 phút trước hoặc sau khi dùng các thuốc nhỏ mắt khác để thuốc tránh bị pha loãng."
     ],
     "id": "eytanac-samil-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Fabamox 1000dt VIÊN Trung ƯƠNG 1 3x7",
@@ -1553,7 +1620,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "fabamox-1000dt-vien-trung-uong-1-3x7",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Fitôrhi-f FITO Pharma 40v - TRỊ VIÊM Xoang, VIÊM MŨI DỊ ỨNG",
@@ -1575,7 +1643,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "fitorhi-f-fito-pharma-40v-tri-viem-xoang-viem-mui-di-ung",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Flarex Alcon 5ml",
@@ -1594,7 +1663,8 @@
       "Thận trọng khi sử dụng: Nhỏ mắt liều cao/hoặc kéo dài Fluorometholon làm tăng nguy cơ biến chứng mắt và có thể gây ra các ADR toàn thân. Nếu phản ứng viêm không giảm trong một thời gian hợp lý, nên ngừng và thay điều trị. Dùng corticosteroid tại chỗ có thể làm giảm bài tiết cortisol trong nước tiểu cũng như làm giảm nồng độ trong huyết tương. Corticoid làm trẻ em chậm lớn, đặc biệt khi dùng liều cao và kéo dài. Dùng corticosteroid nhỏ mắt kéo dài có thể gây tăng nhãn áp hoặc glôcôm kèm theo tổn thương dây thần kinh thị giác, giảm thị lực, tạo đục thủy tinh thể dưới bao sau. Khi dùng corticoid nhỏ mắt, phải kiểm tra thường xuyên nhãn áp. Các thuốc corticoid có thể che đậy nhiễm khuẩn hoặc làm nặng thêm nhiễm khuẩn đã có. Phải dùng kháng sinh thích hợp để tránh bội nhiễm. Sau khi điều trị kéo dài với corticoid ở mắt, phải kiểm tra kĩ nhiễm nấm dai dẳng giác mạc. Dùng thận trọng và duy nhất phối hợp với liệu pháp kháng virus để điều trị viêm giác mạc chất đệm hoặc viêm màng mạch nho do Herpes simplex, cần thiết phải khám định kỳ bằng đèn khe. Không ngừng điều trị sớm vì có thể gây ra một đợt viêm mới nếu ngừng đột ngột khi đang dùng liều cao. Trong khi điều trị, không nên mang kính sát tròng (cứng hay dẻo). Khả năng lái xe và vận hành máy móc Chưa có báo cáo. Thời kỳ mang thai và cho con bú Thời kỳ mang thai Độ an toàn của thuốc này trong thời kỳ mang thai chưa được xác định. Tránh dùng Fluorometholon kéo dài hoặc thường xuyên cho phụ nữ mang thai hoặc có khả năng mang thai. Thời kỳ cho con bú Dùng thận trọng đối với người đang cho con bú. Tương tác thuốc Trong trường hợp dùng thêm các chế phẩm nhỏ mắt khác, chờ 15 phút giữa các lần nhỏ các thuốc. Chưa có nghiên cứu tương tác thuốc nào được thực hiện."
     ],
     "id": "flarex-alcon-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Flumetholon 0.02% Santen 5ml",
@@ -1617,7 +1687,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "flumetholon-0-02-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Flumetholon 0.1% Santen 5ml",
@@ -1643,7 +1714,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "flumetholon-0-1-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "FML Liquifilm 0.1% Allergan 5ml",
@@ -1665,7 +1737,8 @@
       "Tương tác thuốc: Chưa được biết."
     ],
     "id": "fml-liquifilm-0-1-allergan-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Formonide 200 Zydus 120 Doses",
@@ -1688,7 +1761,8 @@
       "Tương tác thuốc: Tương tác dược động học Các chất ức chế mạnh CYP3A4 (như ketoconazol, itraconazol, voriconazol, posaconazol, clarithromycin, telithromycin, nefazodon và thuốc ức chế protease HIV) có thể làm tăng đáng kể nồng độ budesonid huyết tương và nên tránh dùng đồng thời các thuốc này. Nếu không thể thì khoảng thời gian giữa việc dùng chất ức chế và budesonid nên càng cách xa càng tốt. Không khuyến cáo dùng liệu pháp điều trị duy trì và giảm triệu chứng hen bằng Formonide ở bệnh nhân dùng chất ức chế CYP3A4 mạnh. Tương tác dược lực học Thuốc chẹn beta có thể làm giảm hoặc ức chế tác động của formoterol. Vì vậy, Formonide không nên dùng với thuốc chẹn beta (kể cả thuốc nhỏ mắt) trừ phi có lý do thuyết phục. Dùng đồng thời với quinidin, disopyramid, procainamid, phenothiazin, thuốc kháng histamin (terfenadin), và chất chống trầm cảm 3 vòng có thể làm kéo dài khoảng QTc và gia tăng nguy cơ loạn nhịp thất. Hơn nữa, L-Dopa, L-thyroxin, oxytocin và rượu có thể ảnh hưởng tính dung nạp của tim đối với thuốc cường giao cảm beta-2. Dùng đồng thời với IMAO kể cả những tác nhân có đặc tính tương tự như furazolidon và procarbazin có thể thúc đẩy phản ứng tăng huyết áp. Tăng nguy cơ loạn nhịp tim ở bệnh nhân đang gây mê với hydrocarbon halogen hóa. Dùng đồng thời với các thuốc cường giao cảm beta khác hoặc các thuốc kháng cholinergic có thể có tác động giãn phế quản cộng hợp mạnh. Giảm kali máu có thể làm tăng khuynh hướng loạn nhịp tim ở bệnh nhân điều trị bằng digitalis glycosid. Giảm kali máu có thể do dùng chất chủ vận beta-2 và có thể do dùng đồng thời với các dẫn xuất xanthin, corticosteroid và lợi tiểu."
     ],
     "id": "formonide-200-zydus-120-doses",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Fosmicin-s FOR OTIC Meiji 300mg",
@@ -1713,7 +1787,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "fosmicin-s-for-otic-meiji-300mg",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Fumeron 5ml",
@@ -1736,7 +1811,8 @@
       "Tương tác thuốc: Trong trường hợp dùng thêm các chế phẩm nhỏ mắt khác, chờ 15 phút giữa các lần nhỏ các thuốc. Chưa có nghiên cứu tương tác thuốc nào được thực hiện."
     ],
     "id": "fumeron-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ganfort Allergan 3ml",
@@ -1759,7 +1835,8 @@
       "Tương tác thuốc: Thuốc chẹn beta - adrenergic đường toàn thân: Tác dụng cộng gộp chẹn beta. Thuốc chẹn kênh calci đường uống, guanethidin , thuốc chống loạn nhịp, digitalis glycosid, thuốc có tác dụng giống phó giao cảm và thuốc chống tăng huyết áp khác: Tác dụng cộng thêm dẫn đến hạ huyết áp hoặc nhịp tim chậm rõ rệt. Thuốc ức chế CYP2D6: Tác dụng chẹn beta toàn thân mạnh thêm."
     ],
     "id": "ganfort-allergan-3ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Glycerin Borat 3% F.t Pharma 10ml",
@@ -1781,7 +1858,8 @@
       "Tương tác thuốc: Chưa có thông tin được báo cáo."
     ],
     "id": "glycerin-borat-3-f-t-pharma-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hadocort-d HÀ TÂY 15ml",
@@ -1807,7 +1885,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "hadocort-d-ha-tay-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Halixol 30mg EGIS 2x10",
@@ -1833,7 +1912,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "halixol-30mg-egis-2x10",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hameron 5ml",
@@ -1859,7 +1939,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hameron-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hanvidon Hanlim 10ml",
@@ -1881,7 +1962,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "hanvidon-hanlim-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HỖN DỊCH XỊT MŨI Moslve Drogsan HỘP 18g",
@@ -1903,7 +1985,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "hon-dich-xit-mui-moslve-drogsan-hop-18g",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hyaluron EYE Drops 0.1% Hanlim 30 ỐNG X 0.88ml",
@@ -1926,7 +2009,8 @@
       "Tương tác thuốc: Chưa có dữ liệu cụ thể."
     ],
     "id": "hyaluron-eye-drops-0-1-hanlim-30-ong-x-0-88ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hyranplus Samchundang 5ml",
@@ -1948,7 +2032,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "hyranplus-samchundang-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Illixime 0.3% Hanlim 5ml - NHỎ TAI",
@@ -1968,7 +2053,8 @@
       "Tương tác thuốc: Các nghiên cứu về tương tác thuốc chưa được thực hiện."
     ],
     "id": "illixime-0-3-hanlim-5ml-nho-tai",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Indocollyre 0.1% 5ml",
@@ -1993,7 +2079,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "indocollyre-0-1-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Jazxylo Meracine 10ml",
@@ -2019,7 +2106,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "jazxylo-meracine-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Kamistad-gel N Stada 10g",
@@ -2043,7 +2131,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "kamistad-gel-n-stada-10g",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "KARY UNI Santen 5ml",
@@ -2068,7 +2157,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "kary-uni-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ketofen-drop cpc1hn 10 ỐNG X 0.4ml",
@@ -2090,7 +2180,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "ketofen-drop-cpc1hn-10-ong-x-0-4ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Laci-eye 0.3% cpc1 10ml",
@@ -2112,7 +2203,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "laci-eye-0-3-cpc1-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Liposic Bausch LOMB 10g",
@@ -2135,7 +2227,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "liposic-bausch-lomb-10g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
@@ -2159,7 +2252,8 @@
       "Tương tác thuốc: Chưa có thông tin."
     ],
     "id": "lotemax-0-5-bausch-lomb-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lumigan 0.01% Allergan 3ml",
@@ -2182,7 +2276,8 @@
       "Tương tác thuốc: Không có nghiên cứu về tương tác được thực hiện. Không chắc có tương tác thuốc ở người do nồng độ của bimatoprost rất thấp (dưới 0,2ng/ml) đã được quan sát trong tuần hoàn toàn thân sau khi nhỏ mắt liều bimatoprost 0,01%. Bimatoprost được chuyển dạng sinh học bằng nhiều enzyme và nhiều cách, và không có ảnh hưởng trên các enzyme chuyển hóa thuốc ở gan, đã được quan sát thấy trong các nghiên cứu tiền lâm sàng trên chuột và khỉ. Trong các nghiên cứu lâm sàng, dung dịch nhỏ mắt Lumigan - dung dịch nhỏ mắt bimatoprost 0,03% (đa liều) đã được sử dụng đồng thời với một số thuốc nhỏ mắt mà không có bằng chứng nào về tương tác. Sử dụng chung Lumigan với các thuốc nhỏ mắt điều trị Glaucoma không phải loại ức chế beta đã không được đánh giá trong trị liệu Glaucoma. Tác dụng làm giảm áp suất nội nhãn IOP của các chất tương tự prostaglandin (ví dụ Lumigan có thể giảm ở bệnh nhân bị Glaucoma hay bị tăng nhãn áp khi sử dụng chung với các chất tương tự prostaglandin khác."
     ],
     "id": "lumigan-0-01-allergan-3ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Lumigan 0.03% Allergan 3ml",
@@ -2202,7 +2297,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "lumigan-0-03-allergan-3ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Maxitrol Novartis 3.5g",
@@ -2228,7 +2324,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "maxitrol-novartis-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Maxitrol Novartis 5ml",
@@ -2253,7 +2350,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "maxitrol-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mediclovir 3% 5g",
@@ -2277,7 +2375,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "mediclovir-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Melevo 5mg/ml Merap",
@@ -2300,7 +2399,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu đầy đủ về tương tác thuốc của thuốc nhỏ mắt Levofloxacin. Nồng độ định của Levofloxacin trong huyết tương sau khi nhỏ mắt thấp hơn 1000 lần so với khi uống, do đó tương tác khi dùng levofloxacin theo đường toàn thân không có ý nghĩa khi dùng levofloxacin nhỏ mắt. Nếu sử dụng đồng thời với các thuốc nhỏ mắt khác, nên nhỏ 2 loại cách nhau ít nhất 15 phút."
     ],
     "id": "melevo-5mg-ml-merap",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Melyptol F.t 5ml",
@@ -2326,7 +2426,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "melyptol-f-t-5ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mepatyl Merap 10ml",
@@ -2348,7 +2449,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "mepatyl-merap-10ml",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mepoly Merap 10ml",
@@ -2374,7 +2476,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "mepoly-merap-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Meseca 60 LIỀU Merap",
@@ -2399,7 +2502,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "meseca-60-lieu-merap",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Meseca Advanced Meraplion 120 LIỀU",
@@ -2415,7 +2519,8 @@
     "huong_dan_bao_quan": "",
     "luu_y_dac_biet": [],
     "id": "meseca-advanced-meraplion-120-lieu",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Meseca Advanced Meraplion 60 LIỀU",
@@ -2437,7 +2542,8 @@
       "Tương tác thuốc: Tương tác với các chất ức chế CYP3A4 Fluticasone furoate được thải trừ nhanh bởi chuyển hóa bước đầu khá nhiều qua trung gian cytochrome P450 3A4. Dựa trên dữ liệu của fluticasone propionate, một glucocorticoid chuyển hóa bởi CYP3A4, không khuyến cáo sử dụng đồng thời fluticasone furoate với ritonavir do nguy cơ tăng phơi nhiễm toàn thân. Cần thận trọng khi sử dụng đồng thời fluticasone furoate với các chất ức chế CYP3A mạnh, bao gồm các sản phẩm chứa cobicistat, do có thể làm tăng nguy cơ gặp các tác dụng không mong muốn toàn thân. Nên tránh dùng đồng thời trừ khi lợi ích vượt trội so với nguy cơ tăng tác dụng không mong muốn toàn thân của corticosteroid, và trong trường hợp này, bệnh nhân cần được theo dõi các tác dụng không mong muốn toàn thân của corticosteroid. Trong một nghiên cứu về tương tác thuốc giữa fluticasone furoate xịt mũi với chất ức chế mạnh CYP3A4 là ketoconazole, số lượng bệnh nhân với nồng độ fluticasone furoate có thể đo được trong huyết tương ở nhóm dùng ketoconazole (6 trên 20 bệnh nhân) cao hơn so với nhóm dùng giả dược (1 trên 20 bệnh nhân). Sự tăng nhẹ nồng độ này không dẫn đến khác biệt có ý nghĩa thống kê về các mức cortisol huyết thanh trong 24 giờ giữa hai nhóm. Các dữ liệu về ức chế enzyme và cảm ứng enzyme gợi ý rằng không có cơ sở lý thuyết để dự đoán tương tác chuyển hóa giữa fluticasone furoate và sự chuyển hóa qua trung gian cytochrome P450 của các hợp chất khác ở những liều xịt mũi thích hợp trên lâm sàng. Do đó, chưa có nghiên cứu lâm sàng được thực hiện để khảo sát sự tương tác thuốc giữa fluticasone furoate với các thuốc khác."
     ],
     "id": "meseca-advanced-meraplion-60-lieu",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Metobra 3mg/ml Merap",
@@ -2460,7 +2566,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu tương tác đặc hiệu nào được tiến hành với thuốc nhỏ mắt tobramycin. Đã có các báo cáo tương tác với aminoglycoside dùng đường toàn thân, tuy nhiên, sau khi nhỏ aminoglycoside hấp thụ rất ít vào tuần hoàn chung và nguy cơ xảy ra tương tác là rất nhỏ. Cần thông báo với bác sỹ bất kỳ khi nào được sử dụng đồng thời."
     ],
     "id": "metobra-3mg-ml-merap",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Metodex 5ml",
@@ -2483,7 +2590,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "metodex-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "MOME AIR SAVA 6ml",
@@ -2505,7 +2613,8 @@
       "Tương tác thuốc: Thuốc nước để xịt mũi Mome Air đã được dùng đồng thời với loratadin hoặc các chất chuyển hóa chính của nó trong huyết tương. Nồng độ mometason furoat trong huyết tương là không phát hiện được. Điều trị phối hợp được dung nạp tốt."
     ],
     "id": "mome-air-sava-6ml",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Motarute Daewoo 5ml",
@@ -2527,7 +2636,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "motarute-daewoo-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mouth Paste Medipharco 5g",
@@ -2550,7 +2660,8 @@
       "Tương tác thuốc: Tương tác của thuốc Barbiturat, phenyltoin, rifampicin, ributin, carbamazepin, primidon và aminoglytethimid làm tăng chuyển hóa, thanh thải corticoid, gây giảm tác dụng điều trị. Dùng đồng thời với các thuốc chống đông máu cumarin làm tăng tác dụng của thuốc chống đông máu. Cần kiểm tra thời gian đông máu hoặc thời gian prothrombin để tránh chảy máu tự phát. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "mouth-paste-medipharco-5g",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Naphacollyre NAM HÀ 8ml",
@@ -2573,7 +2684,8 @@
       "Tương tác thuốc: Thuốc tác dụng tại chỗ, không tương tác với các thuốc dùng qua đường khác."
     ],
     "id": "naphacollyre-nam-ha-8ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Naphazolin Danapha 10ml - DUNG DỊCH NHỎ MŨI",
@@ -2596,7 +2708,8 @@
       "Tương tác thuốc: Sử dụng các thuốc giống giao cảm nói chung cũng như naphazolin cho người bệnh đang dùng các thuốc ức chế monoamin oxidase, maprotilin hoặc các thuốc chống trầm cảm 3 vòng có thể gây phản ứng tăng huyết áp nặng."
     ],
     "id": "naphazolin-danapha-10ml-dung-dich-nho-mui",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Naphazolin Danapha 5ml - DUNG DỊCH NHỎ MŨI - Naphazolin - 0.05%",
@@ -2618,7 +2731,8 @@
       "Tương tác thuốc: Sử dụng các thuốc giống giao cảm nói chung cũng như naphazolin cho người bệnh đang dùng các thuốc ức chế monoamin oxidase, maprotilin hoặc các thuốc chống trầm cảm 3 vòng có thể gây phản ứng tăng huyết áp nặng."
     ],
     "id": "naphazolin-danapha-5ml-dung-dich-nho-mui-naphazolin-0-05",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Bidiphar 10ml",
@@ -2640,7 +2754,8 @@
       "Tương tác thuốc: Chưa có khuyến cáo. Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "natri-clorid-0-9-bidiphar-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% MẮT MŨI Pharmedic 10ml",
@@ -2663,7 +2778,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Chưa thấy báo cáo về tương tác thuốc. Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "natri-clorid-0-9-mat-mui-pharmedic-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% NAM HÀ 10ml",
@@ -2686,7 +2802,8 @@
       "Tương tác thuốc: Không có báo cáo."
     ],
     "id": "natri-clorid-0-9-nam-ha-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% F.t 500ml DUNG DỊCH SÚC Miệng",
@@ -2702,7 +2819,8 @@
     "huong_dan_bao_quan": "Bảo quản nơi khô ráo, thoáng mát, tránh ánh sáng trực tiếp từ mặt trời. Để xa tầm tay trẻ em.",
     "luu_y_dac_biet": [],
     "id": "natri-clorid-0-9-f-t-500ml-dung-dich-suc-mieng",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Haipharco 10 CHAI X 10ml",
@@ -2725,7 +2843,8 @@
       "Tương tác thuốc: Không có thông tin từ nhà sản xuất."
     ],
     "id": "natri-clorid-0-9-haipharco-10-chai-x-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Pharmedic 500ml",
@@ -2748,7 +2867,8 @@
       "Tương tác thuốc: Chưa thấy báo cáo. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "natri-clorid-0-9-pharmedic-500ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Traphaco 10ml",
@@ -2771,7 +2891,8 @@
       "Tương tác thuốc: Chưa thấy báo cáo. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "natri-clorid-0-9-traphaco-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% F.t 1000ml",
@@ -2794,7 +2915,8 @@
       "Tương tác: Chưa có báo cáo."
     ],
     "id": "natri-clorid-0-9-f-t-1000ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% F.t 500ml DUNG DỊCH VÔ Khuẩn",
@@ -2817,7 +2939,8 @@
       "Tương tác thuốc: Không áp dụng."
     ],
     "id": "natri-clorid-0-9-f-t-500ml-dung-dich-vo-khuan",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nemydexan 8ml",
@@ -2840,7 +2963,8 @@
       "Tương tác thuốc: Thuốc nhỏ mắt có tác dụng tại chỗ nên không có tương tác với các thuốc dùng theo đường khác."
     ],
     "id": "nemydexan-8ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Neocin Pharmedic 5ml",
@@ -2863,7 +2987,8 @@
       "Tương tác thuốc: Có thể xảy ra dị ứng chéo với các aminoglycosid khác. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "neocin-pharmedic-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Neodex Pharmedic 5ml",
@@ -2886,7 +3011,8 @@
       "Tương tác thuốc: Có thể xảy ra dị ứng chéo với các aminoglycoside khác."
     ],
     "id": "neodex-pharmedic-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HỖN DỊCH NHỎ MẮT Nevanac Novartis 5ml",
@@ -2909,7 +3035,8 @@
       "Tương tác thuốc: Các nghiên cứu in vitro đã chứng minh thuốc này rất ít có khả năng tương tác với các thuốc khác hoặc tương tác với các protein liên kết. Sử dụng đồng thời các thuốc NSAIDs và các sterorid tại chỗ có thể làm tăng nguy cơ trong quá trình lành vết thương. Sử dụng đồng thời hỗn dịch nhỏ mắt Nevanac với các thuốc kéo dài thời gian chảy máu có thể làm tăng nguy cơ xuất huyết."
     ],
     "id": "hon-dich-nho-mat-nevanac-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nostravin 0.05% Traphaco 8ml",
@@ -2933,7 +3060,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "nostravin-0-05-traphaco-8ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Novotane Ultra cpc1 5ml",
@@ -2955,7 +3083,8 @@
       "Tương tác thuốc: Chưa có dữ liệu nào về tương tác thuốc được báo cáo."
     ],
     "id": "novotane-ultra-cpc1-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nozeytin Meracine 15ml",
@@ -2978,7 +3107,8 @@
       "Tương tác thuốc: Sử dụng đồng thời Azelastin xịt mũi với rượu hoặc thuốc ức chế thần kinh trung ương có thể gây giảm sự tỉnh táo hoặc giảm tác dụng của thuốc ức chế thần kinh trung ương."
     ],
     "id": "nozeytin-meracine-15ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "NƯỚC SÚC Miệng THÁI Dương BẠC HÀ 500ml",
@@ -3001,7 +3131,8 @@
       "Tương tác thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "nuoc-suc-mieng-thai-duong-bac-ha-500ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ocumox Remington 3.5g",
@@ -3023,7 +3154,8 @@
       "Tương tác thuốc: Nghiên cứu tương tác thuốc chưa được tiến hành với Ocumox. Các nghiên cứu in vitro cho thấy moxifloxacin không ức chế eznyme CYP3A4, CYP2D6, CYP2C9, CYP2C19, hoặc CYP2A2, cho thấy moxifloxacin không làm biến đổi dược động học của các thuốc được chuyển hóa bởi các enzym Cytochrom P450 này."
     ],
     "id": "ocumox-remington-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Oflovid Santen 3.5g",
@@ -3047,7 +3179,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "oflovid-santen-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Oflovid Santen 5ml",
@@ -3070,7 +3203,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu về tương tác thuốc đã được thực hiện cho đến nay. Tuy nhiên, do có thể xảy ra hấp thu toàn thân sau khi dùng ofloxacin tại mắt, không thể loại trừ khả năng có các tương tác thuốc như đã được báo cáo với một số kháng sinh nhóm quinolon dùng đường toàn thân (như tương tác với theophylin , cafein, các thuốc chống đông máu đường uống, cyclosporin)."
     ],
     "id": "oflovid-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ofloxacin 0.3% Hanlim Pharm 5ml",
@@ -3093,7 +3227,8 @@
       "Tương tác thuốc: Các nghiên cứu tương tác thuốc cụ thể chưa được tiến hành với thuốc nhỏ mắt OFLOXACIN. Một số quinolon tác dụng toàn thân ức chế quá trình thanh thải chuyển hóa của caffein và theophyllin. Nghiên cứu tương tác thuốc được tiến hành sử dụng ofloxacin tác dụng toàn thân đã chứng minh rằng độ thanh thải chuyển hóa caffein và theophyllin không bị ảnh hưởng đáng kể bởi ofloxacin. Mặc dù đã có những báo cáo về một sự tăng độc tính thần kinh trung ương với liều dùng tác dụng toàn thân của fluoroquinolon khi sử dụng đồng thời với các thuốc kháng viêm không steroid toàn thân (NSAIDs), tuy nhiên điều này chưa được báo cáo khi sử dụng đồng thời NSAID và ofloxacin. Ofloxacin, giống như các fluoroquinolon khác, nên được sử dụng thận trọng ở những bệnh nhân đang dùng các thuốc được biết đến để kéo dài khoảng QT (ví dụ thuốc chống loạn nhịp tim nhóm IA và III, thuốc chống trầm cảm ba vòng, macrolid, thuốc chống loạn thần)."
     ],
     "id": "ofloxacin-0-3-hanlim-pharm-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ofloxacin 0.3% Traphaco",
@@ -3116,7 +3251,8 @@
       "Tương tác thuốc: Chưa có tương tác thuốc được ghi nhận khi sử dụng dưới dạng nhỏ mắt."
     ],
     "id": "ofloxacin-0-3-traphaco",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Olevid Olopatadine 5ml",
@@ -3138,7 +3274,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu tương tác nào được thực hiện. Các nghiên cứu in vitro cho thấy olopatadine không ức chế các phản ứng của isozyme cytochrome P-450 1A2, 2C8, 2C9, 2C19, 2D6, 2E1 và 3A4. Do đó, olopatadine không ảnh hưởng đến chuyển hóa của các thuốc được chuyển hóa bởi các enzym trên. Trường hợp dùng đồng thời với các thuốc nhỏ mắt khác, hai thuốc cần được nhỏ cách nhau ít nhất là 15 phút. Thuốc mỡ tra mắt nên được sử dụng cuối cùng."
     ],
     "id": "olevid-olopatadine-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Olopat OD 0.2% Ajanta 3ml",
@@ -3161,7 +3298,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu tương tác lâm sàng nào của olopatadin được biết. Các nghiên cứu trên in vitro cho thấy olopatadin không gây ức chế lên những phản ứng trao đổi chất, có liên quan đến những isozym 1A2, 2C8, 2C9, 2C19, 2D6, 2E1 và 3A4 của cytochrome P450. Những kết quả này cho thấy olopatadin dường như không ảnh hưởng đến chuyển hóa của các thuốc khác khi dùng đồng thời."
     ],
     "id": "olopat-od-0-2-ajanta-3ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Olotedin EYE Drops 5ml",
@@ -3184,7 +3322,8 @@
       "Tương tác thuốc: Khi sử dụng đồng thời với các thuốc nhỏ mắt khác nên dùng cách nhau ít nhất 5 phút."
     ],
     "id": "olotedin-eye-drops-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ỐNG HÍT Inhaler Pharmedic 1x5",
@@ -3207,7 +3346,8 @@
       "Tương tác thuốc: Chưa có thông tin."
     ],
     "id": "ong-hit-inhaler-pharmedic-1x5",
-    "danh_muc": "Ống hít mũi"
+    "danh_muc": "Ống hít mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ỐNG HÍT SAO VÀNG Danapha 1.5g",
@@ -3229,7 +3369,8 @@
       "Tương tác thuốc: Không có thông tin."
     ],
     "id": "ong-hit-sao-vang-danapha-1-5g",
-    "danh_muc": "Ống hít mũi"
+    "danh_muc": "Ống hít mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Opesinkast 4mg OPV 3x10",
@@ -3251,7 +3392,8 @@
       "Tương tác thuốc: Có thể dùng montelukast với các thuốc thường dùng khác trong dự phòng và điều trị mạn tính bệnh hen và điều trị viêm mũi dị ứng. Trong các nghiên cứu về tương tác thuốc, liều khuyến cáo lâm sàng của montelukast không có ảnh hưởng đáng kể tới dược động học của các thuốc sau: Theophyllin, prednison, prednisolon, thuốc uống ngừa thai (norethindron 1mg /ethinylestradiol 35mcg), terfenadin, digoxin và warfarin. Vùng dưới đường cong (AUC) của montelukast giảm khoảng 40% ở người dùng đồng thời với phenobarbital. Vì montelukast được chuyển hóa bởi CYP 3A4, cần thận trọng, nhất là ở trẻ em khi montelukast dùng đồng thời với các thuốc được chuyển hóa bởi CYP 3A4 như phenytoin, phenobarbital và rifampicin."
     ],
     "id": "opesinkast-4mg-opv-3x10",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Optive Allergan 15ml",
@@ -3274,7 +3416,8 @@
       "Tương tác thuốc: Chưa có tương tác thuốc nào được biết. Các thuốc nhỏ mắt được dùng đồng thời nên cách lần nhỏ Optive ít nhất 5 phút để tránh thuốc bị rửa trôi."
     ],
     "id": "optive-allergan-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Optive UD Allergan 30 ỐNG 0.4ml",
@@ -3297,7 +3440,8 @@
       "Tương tác thuốc: Các thuốc tra mắt dùng đồng thời nên dùng cách lần tra Optive UD ít nhất 5 phút để tránh thuốc bị rửa trôi."
     ],
     "id": "optive-ud-allergan-30-ong-0-4ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Oracortia 0.1% Patana 5g",
@@ -3320,7 +3464,8 @@
       "Tương tác thuốc: Không có thông tin có ý nghĩa."
     ],
     "id": "oracortia-0-1-patana-5g",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Oracortia Nakorn 50 GÓI X 1g",
@@ -3345,7 +3490,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "oracortia-nakorn-50-goi-x-1g",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "OSLA Merap 15ml",
@@ -3368,7 +3514,8 @@
       "Tương tác thuốc: Chưa có báo cáo"
     ],
     "id": "osla-merap-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ospay HẢI Phòng 15ml",
@@ -3388,7 +3535,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "ospay-hai-phong-15ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Oteotan 1mg/0.5ml Lesvi 20 TUÝP",
@@ -3410,7 +3558,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "oteotan-1mg-0-5ml-lesvi-20-tuyp",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otifar Pharmedic 8ml",
@@ -3433,7 +3582,8 @@
       "Tương tác thuốc: Không có."
     ],
     "id": "otifar-pharmedic-8ml",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otilin 0.05% tw1-pharbaco 8ml",
@@ -3456,7 +3606,8 @@
       "Tương tác thuốc: Sử dụng các thuốc giống giao cảm nói chung cũng như xylometazolin cho bệnh nhân đang dùng các thuốc ức chế monoamin oxidase, maprotilin hoặc các thuốc chống trầm cảm ba vòng có thể gây phản ứng tăng huyết áp nặng."
     ],
     "id": "otilin-0-05-tw1-pharbaco-8ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otilin 0.1% Pharbaco 15ml",
@@ -3479,7 +3630,8 @@
       "Tương tác thuốc: Sử dụng các thuốc giống giao cảm nói chung cũng như xylometazolin cho bệnh nhân đang dùng các thuốc ức chế monoanin oxidase, maprotilin hoặc các thuốc chống trầm cảm ba vòng có thể gây tăng huyết áp nặng."
     ],
     "id": "otilin-0-1-pharbaco-15ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otipax Biocodex 15ml",
@@ -3502,7 +3654,8 @@
       "Tương tác thuốc: Các dữ liệu hiện chưa cho thấy tương tác đáng kể nào trên lâm sàng. Nhằm tránh các tương tác thuốc có thể xảy ra, cần báo cho bác sĩ hoặc dược sĩ biết mọi điều trị khác đang thực hiện."
     ],
     "id": "otipax-biocodex-15ml",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otofa Bouchara 10ml",
@@ -3525,7 +3678,8 @@
       "Tương tác thuốc: Nhằm tránh các tương tác có thể có giữa nhiều thuốc, cần báo cho bác sĩ hoặc dược sĩ biết các điều trị đang theo."
     ],
     "id": "otofa-bouchara-10ml",
-    "danh_muc": "Thuốc nhỏ tai"
+    "danh_muc": "Thuốc nhỏ tai",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otrera 0.1% AN Thiên 10ml",
@@ -3547,7 +3701,8 @@
       "Tương tác thuốc: Giống như các thuốc cường giao cảm khác, không loại trừ khả năng tác dụng toàn thân của xylometazoline được tăng cường khi sử dụng đồng thời với các chất ức chế MAO, thuốc chống trầm cảm ba vòng, bốn vòng, đặc biệt trong trường hợp quá liều."
     ],
     "id": "otrera-0-1-an-thien-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otrivin 0.05% Nasal Drops Haleon 10ml",
@@ -3570,7 +3725,8 @@
       "Tương tác thuốc: Sử dụng đồng thời xylometazoline với chất ức chế MAO hoặc thuốc chống trầm cảm 3, 4 vòng có thể gây cơn tăng huyết áp do ảnh hưởng đến tim mạch của những chất này (xem phần Cảnh báo và thận trọng)."
     ],
     "id": "otrivin-0-05-nasal-drops-haleon-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otrivin 0.05% Nasal Spray Haleon 10ml",
@@ -3592,7 +3748,8 @@
       "Tương tác thuốc: Sử dụng đồng thời xylometazoline với chất ức chế MAO hoặc thuốc chống trầm cảm 3, 4 vòng có thể gây cơn tăng huyết áp do các chất này ảnh hưởng đến tim mạch."
     ],
     "id": "otrivin-0-05-nasal-spray-haleon-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otrivin 0.1% Nasal Drops Haleon 10ml",
@@ -3614,7 +3771,8 @@
       "Tương tác thuốc: Sử dụng đồng thời xylometazoline với chất ức chế MAO hoặc thuốc chống trầm cảm 3, 4 vòng có thể gây cơn tăng huyết áp do các chất này ảnh hưởng đến tim mạch."
     ],
     "id": "otrivin-0-1-nasal-drops-haleon-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Otrivin 0.1% Nasal Spray Haleon 10ml",
@@ -3636,7 +3794,8 @@
       "Tương tác thuốc: Sử dụng đồng thời xylometazoline với chất ức chế MAO hoặc thuốc chống trầm cảm 3, 4 vòng có thể gây cơn tăng huyết áp do các chất này ảnh hưởng đến tim mạch."
     ],
     "id": "otrivin-0-1-nasal-spray-haleon-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pandex DK 5ml",
@@ -3659,7 +3818,8 @@
       "Tương tác thuốc: Nếu sử dụng đồng thời Tobamycin tại chỗ ở mắt và những kháng sinh toàn thân khác thuộc nhóm aminoglycosid sẽ tăng độc tính trên cơ quan thính giác và thận. Vì vậy nên thận trọng theo dõi nồng độ thuốc trong huyết thanh."
     ],
     "id": "pandex-dk-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pataday DROP 0.2% Alcon 2.5ml",
@@ -3682,7 +3842,8 @@
       "Tương tác thuốc: Chưa có các tương tác lâm sàng liên quan nào đã được mô tả."
     ],
     "id": "pataday-drop-0-2-alcon-2-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Phileo 5ml",
@@ -3704,7 +3865,8 @@
       "Tương tác thuốc: Không có tương tác thuốc của dạng nhỏ mắt nào được ghi nhận. Tuy nhiên đối với dạng dùng toàn thân của vài Quinolon khác thì gặp một số tương tác sau: Làm tăng nồng độ Theophylin trong huyết tương, ngăn chặn sự chuyển hóa của Caffein, tăng tác dụng chống đông máu của Warfarin dạng uống và các dẫn chất của nó."
     ],
     "id": "phileo-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Philoclex Hanlim Pharm 5ml",
@@ -3726,7 +3888,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "philoclex-hanlim-pharm-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Picado OPC 10g",
@@ -3749,7 +3912,8 @@
       "Tương tác thuốc: Cho đến nay chưa có thông tin báo cáo về tương tác thuốc."
     ],
     "id": "picado-opc-10g",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Polkab 0.15% Samchundang Pharm 60 ỐNG",
@@ -3771,7 +3935,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "polkab-0-15-samchundang-pharm-60-ong",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Polydeson Vidipha 5ml",
@@ -3794,7 +3959,8 @@
       "Tương tác thuốc: Do neomycin sulfat Dùng tại chỗ lâu có thể có hiện tượng kháng chéo giữa neomycin và kanamycin, framycetin, gentamicin. Gây giảm hấp thu phenoxymetylpenicilin, digoxin , methotrexat. Tăng nguy cơ độc với thận, thính giác khi dùng đồng thời với các thuốc lợi tiểu mạnh như acid ethacrynic, furosemid. Tăng tác dụng ức chế thần kinh - cơ khi dùng đồng thời với tác nhân ức chế thần kinh cơ. Do dexamethason natri phosphat Bị giảm tác dụng do các barbiturat, phenytoin, rifampicin , rifabutin, carbamazepin, ephedrin, aminoglutetimid. Làm tăng tác dụng hạ kali huyết của acetazolamid, các thiazid lợi tiểu quai, carbenoxolon. Đối kháng tác dụng với các tác nhân gây hạ đường huyết, hạ huyết áp, thuốc lợi tiểu."
     ],
     "id": "polydeson-vidipha-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Polydexa Bouchara 10.5ml",
@@ -3816,7 +3982,8 @@
       "Tương tác thuốc: Tương tác của thuốc Không có. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "polydexa-bouchara-10-5ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Polydoxancol Hataphar 5ml",
@@ -3839,7 +4006,8 @@
       "Tương tác thuốc: Không nên dùng đồng thời cloramphenicol với các thuốc diệt khuẩn (penicillin, cephalosporin, gentamicin, tetracyclin, polymycin B, vancomycin hoặc sulphadiazin). Cũng không nên dùng đồng thời với các thuốc điều trị toàn thân có tác dụng phụ trên hệ tạo máu. Các thuốc sulphonylurea, các dẫn xuất của coumarin, thuốc hydantoins và methotrexat. Mặc dù ít quan trọng, cũng nên cân nhắc các tương tác thuốc đã biết đối với các corticoid dùng toàn thân. Sử dụng các thuốc giống giao cảm nói chung cũng như naphazolin cho người bệnh đang dùng các thuốc ức chế monoamin oxidase, maprotilin hoặc các thuốc chống trầm cảm 3 vòng có thể gây phản ứng tăng huyết áp nhẹ."
     ],
     "id": "polydoxancol-hataphar-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Posod 10ml",
@@ -3862,7 +4030,8 @@
       "Tương tác thuốc: Chưa có tương tác thuốc nào được báo cáo."
     ],
     "id": "posod-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "PRED Forte Allergan 5ml",
@@ -3885,7 +4054,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "pred-forte-allergan-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Refresh Liquigel Allergan 15ml",
@@ -3908,7 +4078,8 @@
       "Tương tác thuốc: Chưa được ghi nhận."
     ],
     "id": "refresh-liquigel-allergan-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Refresh Tears Abbvie 15ml",
@@ -3931,7 +4102,8 @@
       "Tương tác thuốc: Chưa được ghi nhận."
     ],
     "id": "refresh-tears-abbvie-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Relestat 5ml",
@@ -3954,7 +4126,8 @@
       "Tương tác thuốc: Chưa có các nghiên cứu về tương tác thuốc được thực hiện. Không có các tương tác thuốc - thuốc được dự đoán trên người vì nồng độ epinastine toàn thân rất thấp sau khi nhỏ mắt. Hơn nữa, ở người, epinastine chủ yếu được thải trừ dưới dạng không đổi cho thấy mức chuyển hóa tối thiểu."
     ],
     "id": "relestat-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Restasis 0.05% Allergan 1x30 ỐNG",
@@ -3976,7 +4149,8 @@
       "Tương tác thuốc: Trong khi các thuốc tác dộng đến sự chuyển hóa P-450 đã được biết là gây biến đổi chuyển hóa cyclosporine toàn thân, phơi nhiễm toàn thân của Restasis™ (nhũ tương nhỏ mắt cyclosporine) là tối thiểu. Vì vậy, không chắc có tương tác nào xảy ra giữa thuốc nhỏ mắt Restasis™ với các thuốc dùng đường toàn thân. Có ít thông tin về sự tương tác giữa các thuốc nhỏ mắt khi sử dụng cùng với thuốc nhỏ mắt cyclosporine."
     ],
     "id": "restasis-0-05-allergan-1x30-ong",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Rhinassin OPC 5x10 - VIÊN MŨI Xoang",
@@ -4001,7 +4175,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "rhinassin-opc-5x10-vien-mui-xoang",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Rhinex Uphace 15ml - DD NHỎ MŨI",
@@ -4024,7 +4199,8 @@
       "Tương tác thuốc: Có thể gây tăng huyết áp nếu dùng thuốc trong khi đang điều trị bằng IMAO, thuốc chống trầm cảm ba vòng, maprotilin."
     ],
     "id": "rhinex-uphace-15ml-dd-nho-mui",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Rhinex Uphace 15ml - XỊT MŨI",
@@ -4047,7 +4223,8 @@
       "Tương tác thuốc: Có thể gây tăng huyết áp nếu dùng thuốc trong khi đang diều trị bằng IMAO, thuốc chống trầm cảm ba vòng, maprotilin."
     ],
     "id": "rhinex-uphace-15ml-xit-mui",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Rhinocort AQUA 64mcg Mcneil 120 LIỀU",
@@ -4069,7 +4246,8 @@
       "Tương tác thuốc: Budesonide chưa cho thấy tương tác với các thuốc khác được sử dụng để điều trị viêm mũi Budesonide được chuyển hóa chủ yếu qua trung gian CYP3A4. Dùng đồng thời với các chất ức chế CYP3A, bao gồm ketoconazole, itraconazole, ritonavir và các sản phẩm chứa cobicistat được dự đoán làm tăng nguy cơ các tác dụng phụ toàn thân. Sự phối hợp nên tránh trừ khi lợi ích vượt trội sự gia tăng nguy cơ các dụng phụ toàn thân của corticosteroid, trong các trường hợp này bệnh nhân nên được theo dõi các tác dụng phụ toàn thân của corticosteroid. Ketoconazole 200mg uống ngày 1 lần làm tăng nồng độ trong huyết tương của budesonide dạng uống (3 mg liều duy nhất) trung bình gấp 6 lần khi dùng đồng thời. Khi ketoconazole đường uống được dùng sau 12 giờ dùng budesonide thì nồng độ của budesonide tăng trung bình 3 lần. Không có thông tin về tương tác này đối với budesonide đường mũi, nhưng tuy nhiên nồng độ trong huyết tương tăng đáng kể cũng được dự kiến. Nên tránh việc dùng kết hợp vì không có các dữ liệu khuyến cáo về liều dùng qua đường mũi. Nếu phải dùng kết hợp thì khoảng cách dùng budesonide và ketoconazole càng xa càng tốt, và cũng nên xem xét việc giảm liều budesonide. Các chất ức chế CYP3A4 mạnh khác có thể làm tăng đáng kể nồng độ của budesonide trong huyết tương. Sự gia tăng nồng độ trong huyết tương và tác dụng của corticosteroid đã được quan sát thấy ở phụ nữ điều trị với oestrogen và tránh thai steroid, nhưng không thấy ảnh hưởng nào khi dùng budesonide đồng thời với viên thuốc tránh thai liều thấp dạng kết hợp. Vì chức năng tuyến thượng thận có thể bị ức chế, xét nghiệm kích thích tiết ACTH để chẩn đoán suy tuyến yễn có thể cho kết quả không chính xác (giá trị thấp)."
     ],
     "id": "rhinocort-aqua-64mcg-mcneil-120-lieu",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "V.rohto Antibacterial 13ml",
@@ -4092,7 +4270,8 @@
       "Tương tác thuốc: Trừ trường hợp có chỉ định của bác sĩ, tránh dùng cùng lúc với các loại thuốc nhỏ mắt khác."
     ],
     "id": "v-rohto-antibacterial-13ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sancoba Santen 5ml",
@@ -4115,7 +4294,8 @@
       "Tương tác thuốc: Chưa có dữ liệu."
     ],
     "id": "sancoba-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sanlein 0.1% Santen 5ml",
@@ -4137,7 +4317,8 @@
       "Tương tác thuốc: Không có tương tác thuốc. Nếu bệnh nhân cần dùng nhiều hơn một thuốc nhỏ mắt, phải nhỏ cách nhau ít nhất 5 phút. Không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "sanlein-0-1-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sanlein 0.3% Santen 5ml",
@@ -4160,7 +4341,8 @@
       "Tương tác thuốc: Chưa được biết."
     ],
     "id": "sanlein-0-3-santen-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sanlein MINI 0.1% Santen 30 ỐNG X 0.4ml",
@@ -4182,7 +4364,8 @@
       "Tương tác thuốc: Không có tương tác thuốc. Nếu bệnh nhân cần dùng nhiều hơn một thuốc nhỏ mắt, phải nhỏ cách nhau ít nhất 5 phút. Không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "sanlein-mini-0-1-santen-30-ong-x-0-4ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Scofi Merap 10ml",
@@ -4204,7 +4387,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu về tương tác thuốc được thực hiện. Sử dụng đồng thời với các steroid và NSAID tại chỗ có thể làm tăng nguy cơ gặp các vấn đề về phục hồi giác mạc. Các thuốc ức chế CYP3A4 (bao gồm ritonavir và cobicistat) có thể làm giảm thải trừ dexamethasone, gây tăng tác dụng ức chế tuyến thượng thận/hội chứng Cushing. Nên tránh sử dụng đồng thời với các thuốc này, trừ khi lợi ích vượt trội so với nguy cơ tăng các tác dụng không mong muốn toàn thân của corticosteroid. Trong các trường hợp này, bệnh nhân cần được giám sát các tác dụng toàn thân của corticosteroid. Sử dụng đồng thời và/hoặc ngay sau khi dùng aminoglycosid (neomycin) với các thuốc có độc tính trên thần kinh, tai hoặc thận đường toàn thân hay tại chỗ khác có thể gây tăng độc tính. Nếu sử dụng nhiều hơn một thuốc nhỏ mắt , các thuốc này phải nhỏ cách nhau ít nhất 5 phút và thuốc mỡ tra mắt nên được sử dụng cuối cùng."
     ],
     "id": "scofi-merap-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Simbrinza Novartis 5ml",
@@ -4226,7 +4410,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc đặc hiệu được thực hiện với Simbrinza. Chống chỉ định dùng Simbrinza cho bệnh nhân đang dùng các thuốc ức chế monoamin oxidase và bệnh nhân đang dùng các thuốc chống trầm cảm có ảnh hưởng đến dẫn truyền noradrenergic (như các thuốc chống trầm cảm ba vòng và mianserin). Thuốc chống trầm cảm ba vòng có thể làm giảm đáp ứng hạ nhãn áp của Simbrinza. Nên thận trọng do khả năng tác dụng cộng hợp hoặc tác dụng tăng cường ức chế thần kinh trung ương (như rượu, các barbiturat, dẫn chất thuốc phiện, thuốc an thần hoặc thuốc gây mê). Không có các dữ liệu về nồng độ các catecholamin trong tuần hoàn sau khi dùng Simbrinza. Tuy nhiên, bệnh nhân dùng các thuốc ảnh hưởng đến chuyển hóa và hấp thu các amin trong tuần hoàn (như chlorpromazin, methylphenidat, reserpin, các thuốc ức chế tái thu hồi serotonin-noradrenalin) cần thận trọng. Nhóm chất chủ vận α-adrenergic (như brimonidin tartrat) có thể làm giảm nhịp tim và huyết áp. Huyết áp giảm nhẹ đã được ghi nhận ở một số bệnh nhân sau khi dùng Simbrinza. Thận trọng khi sử dụng các thuốc như thuốc điều trị tăng huyết áp hoặc các glycosid tim đồng thời với Simbrinza. Cần thận trọng khi bắt đầu (hoặc thay đổi liều) thuốc dùng đồng thời có tác dụng toàn thân (không phân biệt dạng bào chế) có thể tương tác với chất chủ vận α-adrenergic hoặc ảnh hưởng đến tác dụng của các thuốc này như hiệp đồng hoặc đối kháng với thụ thể adrenergic (như isoprenalin, prazosin). Brinzolamid là một chất ức chế carbonic anhydrase mặc dù dùng tại chỗ nhưng được hấp thu toàn thân. Rối loạn cân bằng acid-base đã được ghi nhận với các thuốc ức chế carbonic anhydrase đường uống. Cần cân nhắc đến khả năng tương tác ở bệnh nhân dùng Simbrinza. Có khả năng có tác dụng hiệp đồng trên tác dụng toàn thân đã được biết của chất ức chế carbonic anhydrase ở bệnh nhân dùng một thuốc ức chế carbonic anhydrase đường uống và brinzolamid dùng tại chỗ. Không khuyến cáo sử dụng đồng thời Simbrinza với các thuốc ức chế carbonic anhydrase đường uống. Các isozym cytochrom P-450 tham gia vào quá trình chuyển hóa brinzolamid bao gồm CYP3A4 (enzym chính), CYP2A6, CYP2B6, CYP2C8 và CYP2C9. Dự kiến các thuốc ức chế CYP3A4 như ketoconazol, itraconazol, clotrimazol, ritonavir và troleandomycin sẽ ức chế quá trình chuyển hóa của brinzolamid thông qua CYP3A4. Cần thận trọng khi dùng đồng thời với các thuốc ức chế CYP3A4. Tuy nhiên, không có sự tích lũy brinzolamid do thải trừ qua thận là con đường thải trừ chính. Brinzolamid không ức chế các isozym cytochrom P-450."
     ],
     "id": "simbrinza-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SÚC Miệng HỌNG Medoral Merap 250ml",
@@ -4249,7 +4434,8 @@
       "Tương tác thuốc: Chlorhexidin là không tương thích với các tác nhân anion."
     ],
     "id": "suc-mieng-hong-medoral-merap-250ml",
-    "danh_muc": "Dung dịch súc miệng"
+    "danh_muc": "Dung dịch súc miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sunapred 20mg ĐỒNG NAI 30v",
@@ -4272,7 +4458,8 @@
       "Tương tác thuốc: Prednisolon gây cảm ứng enzym cytochrom P450 và là cơ chất của enzym P450 CYP 3A, do đó thuốc này tác động đến chuyển hóa của ciclosporin, erythromycin, phenobarbital, phenytoin, carbamazepin, ketoconazol, rifampicin. Phenobarbital , phenytoin, rifampicin và các thuốc lợi tiểu giảm kali huyết có thể làm giảm hiệu lực của prednisolon. Prednisolon có thể gây tăng glucose huyết, do đó cần điều chỉnh liều insulin cao hơn khi dùng chung. Tránh dùng đồng thời prednisolon với thuốc chống viêm không steroid vì có thể gây loét dạ dày tá tràng."
     ],
     "id": "sunapred-20mg-dong-nai-30v",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Syseye Merap 10ml",
@@ -4295,7 +4482,8 @@
       "Tương tác thuốc: Chưa có báo cáo. Trong trường hợp điều trị đồng thời với các sản phẩm nhỏ mắt khác, cần nhỏ hai thuốc cách nhau 10 đến 15 phút. Thuốc mỡ tra mắt nên dùng cuối cùng."
     ],
     "id": "syseye-merap-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Systane Ultra Alcon 10ml",
@@ -4317,7 +4505,8 @@
       "Tương tác thuốc: Tương tác giữa Systane Ultra và các thuốc khác vẫn chưa được đánh giá một cách cụ thể. Căn cứ vào các thành phần của thuốc, Systane Ultra hầu như không tương tác với các loại thuốc khác."
     ],
     "id": "systane-ultra-alcon-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Systane Ultra Alcon 5ml",
@@ -4339,7 +4528,8 @@
       "Tương tác thuốc: Chưa có các tương tác thuốc liên quan đến lâm sàng được mô tả."
     ],
     "id": "systane-ultra-alcon-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Taflotan Ophthalmic Santen 2.5ml",
@@ -4362,7 +4552,8 @@
       "Tương tác thuốc: Không có tương tác nào được dự đoán ở người, khi nồng độ của tafluprost trong cơ thể rất thấp sau liều nhỏ mắt. Vì vậy, các nghiên cứu chuyên biệt về tương tác của tafluorost với các thuốc khác đã không được thực hiện. Trong các nghiên cứu lâm sàng, không thấy có sự tương tác rõ rệt nào cả khi tafluprost đã được sử dụng đồng thời với timolol."
     ],
     "id": "taflotan-ophthalmic-santen-2-5ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Taflotan-s DUNG DỊCH NHỎ MẮT Santen 30 LỌ X 0.3ml",
@@ -4384,7 +4575,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "taflotan-s-dung-dich-nho-mat-santen-30-lo-x-0-3ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Taptiqom 5mg/ml Santen 3 VỈ X 10 ỐNG X 0.3ml",
@@ -4406,7 +4598,8 @@
       "Tương tác thuốc: Chưa có các nghiên cứu về tương tác thuốc được thực hiện. Có thể có tác dụng hiệp đồng dẫn tới hạ huyết áp và/hoặc chậm nhịp tim đáng kể khi dùng đồng thời các dung dịch nhỏ mắt chẹn beta với các thuốc chẹn kênh calci, chẹn beta-adrenergic, các thuốc chống loạn nhịp (bao gồm amiodaron), glycosid tim loại digitalis, các thuốc giả phó giao cảm, guanethidin đường uống. Các thuốc chẹn beta-adrenergic đường uống có thể làm trầm trọng thêm tăng huyết áp dội ngược do ngưng điều trị với clonidin. Tác dụng chẹn beta toàn thân tăng (như giảm nhịp tim, trầm cảm) đã được báo cáo khi kết hợp điều trị thuốc ức chế CYP2D6 (như quinidin, fluoxetin, paroxetin) và timolol. Giãn đồng tử do sử dụng đồng thời thuốc nhỏ mắt chẹn beta và adrenalin (epinephrin) đôi khi đã được báo cáo. Tương kỵ Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "taptiqom-5mg-ml-santen-3-vi-x-10-ong-x-0-3ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tearbalance Senju 5ml",
@@ -4429,7 +4622,8 @@
       "Tương tác thuốc: Chưa có các nghiên cứu khoa học nào chỉ ra có xảy ra tương tác thuốc thuốc gây nguy hiểm đến người bệnh khi sử dụng thuốc nhỏ mắt Tearbalance."
     ],
     "id": "tearbalance-senju-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tetracain 0.5% F.t 10ml",
@@ -4452,7 +4646,8 @@
       "Tương tác thuốc: Tetracain được thuỷ phân trong cơ thể thành acid paraaminobenzoic và có thể đối kháng với tác động của sulfonamid. Các chất ức chế cholinesterase có thể ức chế chuyển hóa của tetracain , dẫn đến tăng nguy cơ gây ngộ độc toàn thân."
     ],
     "id": "tetracain-0-5-f-t-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tetracyclin 1% Medipharco 5g",
@@ -4475,7 +4670,8 @@
       "Tương tác thuốc: Do thuốc dùng dưới dạng tra mắt nên sự tương tác giữa thuốc với các thuốc khác ít xảy ra. Nếu sử dụng đồng thời với các thuốc khác nên dùng cách khoảng 30 - 60 phút."
     ],
     "id": "tetracyclin-1-medipharco-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thông Xoang NAM DƯỢC 15ml",
@@ -4498,7 +4694,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "thong-xoang-nam-duoc-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thông Xoang TÁN NAM DƯỢC 50v",
@@ -4522,7 +4719,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "thong-xoang-tan-nam-duoc-50v",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobradex Novartis 3.5g",
@@ -4548,7 +4746,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tobradex-novartis-3-5g",
-    "danh_muc": "Thuốc tra mắt"
+    "danh_muc": "Thuốc tra mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Biloxcin EYE Bidiphar 5ml",
@@ -4570,7 +4769,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu đặc hiệu về tương tác thuốc được thực hiện với ofloxacin nhỏ mắt. Mặc dù có những báo cáo về tăng độc tính lên hệ thần kinh trung ương khi kết hợp đồng thời liều tác dụng toàn thân của fluoroquinolon và thuốc kháng viêm non-steroid, nhưng tác dụng này không được báo cáo khi kết hợp sử dụng liều NSAIDs và ofloxacin tác dụng toàn thân. Một số quinolon tác dụng toàn thân ức chế độ thanh thải của caffein và theophyllin đã được báo cáo. Các nghiên cứu về tương tác thuốc tiến hành với ofloxacin tác dụng toàn thân đã chứng minh rằng độ thanh thải của caffein và theophyllin bị ảnh hưởng không đáng kể bởi ofloxacin. Ofloxacin cũng như các fluoroquinolon khác nên sử dụng thận trọng ở những bệnh nhân đang sử dụng các thuốc kéo dài khoảng QT (như thuốc chống loạn nhịp tim nhóm IA và III, thuốc chống trầm cảm ba vòng, macrolid, thuốc chống loạn thần)."
     ],
     "id": "biloxcin-eye-bidiphar-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc NHỎ MẮT Daenase Ophthalmic Solution Alti-allergics Reyon 6ml",
@@ -4592,7 +4792,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "thuoc-nho-mat-daenase-ophthalmic-solution-alti-allergics-reyon-6ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc NHỎ MẮT Dexalevo DROP cpc1 5ml",
@@ -4614,7 +4815,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu chính xác về tương tác của levofloxacin dưới dạng thuốc nhỏ mắt với các thuốc khác. Tuy nhiên, khi dùng một số quinolon theo đường toàn thân gây tăng nồng độ theophyllin huyết tương, can thiệp vào chuyển hóa caffein, tăng tác dụng của thuốc chống đông đường uống warfarin và dẫn xuất của nó, có liên quan đến sự tăng cao tạm thời trong huyết tương của creatinin ở bệnh nhân uống cyclosporin khi dùng đồng thời. Dexamethason natri phosphat tương kỵ với daunorubicin, doxorubicin, vancomycin, không dùng phối hợp với các thuốc này."
     ],
     "id": "thuoc-nho-mat-dexalevo-drop-cpc1-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc NHỎ MẮT Ketofen-drop cpc1hn 5ml",
@@ -4636,7 +4838,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "thuoc-nho-mat-ketofen-drop-cpc1hn-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "NHỎ MẮT MŨI Natri Clorid HẢI Dương 10ml",
@@ -4658,7 +4861,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "nho-mat-mui-natri-clorid-hai-duong-10ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Telodrop EYE Drops lọ-15ml",
@@ -4681,7 +4885,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "telodrop-eye-drops-lo-15ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc NHỎ MẮT Vitol Merap 12ml",
@@ -4703,7 +4908,8 @@
       "Tương tác thuốc: Chưa có báo cáo. Trong trường hợp điều trị đồng thời với các sản phẩm nhỏ mắt khác, cần nhỏ hai thuốc cách nhau 10 đến 15 phút. Thuốc mỡ tra mắt nên dùng cuối cùng."
     ],
     "id": "thuoc-nho-mat-vitol-merap-12ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc NHỎ Thekatadexan 8ml",
@@ -4725,7 +4931,8 @@
       "Tương tác thuốc: Chưa có dữ liệu."
     ],
     "id": "thuoc-nho-thekatadexan-8ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ratida 400mg Film-coated Tablets KRKA 1x5",
@@ -4747,7 +4954,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "ratida-400mg-film-coated-tablets-krka-1x5",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dentanalgi OPC 7ml - Thuốc TRỊ ĐAU RĂNG",
@@ -4771,7 +4979,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "dentanalgi-opc-7ml-thuoc-tri-dau-rang",
-    "danh_muc": "Thuốc bôi răng miệng"
+    "danh_muc": "Thuốc bôi răng miệng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Avamys 27.5mcg GSK 120 DOSE",
@@ -4795,7 +5004,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "avamys-27-5mcg-gsk-120-dose",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "XỊT MŨI Nozeytin-f Meracine 15ml",
@@ -4817,7 +5027,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "xit-mui-nozeytin-f-meracine-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc XỊT MŨI THÁI Dương 20ml",
@@ -4840,7 +5051,8 @@
       "Tương tác thuốc: Tương tác thuốc : Chưa có báo cáo. Tương kỵ : Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "thuoc-xit-mui-thai-duong-20ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc Xoang NHẤT NHẤT 3x10",
@@ -4862,7 +5074,8 @@
       "Tương tác thuốc: Do không có các nghiên cứu về tính tương tác, tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "thuoc-xoang-nhat-nhat-3x10",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ticoldex Danapha 5ml",
@@ -4885,7 +5098,8 @@
       "Tương tác thuốc: Tránh dùng phối hợp Ticoldex với các loại thuốc tra mắt có chứa kháng sinh khác hoặc sulfamid. Nên thông báo cho Bác sĩ điều trị biết tất cả các liều thuốc đang sử dụng trước khi dùng bất cứ một loại thuốc nào khác."
     ],
     "id": "ticoldex-danapha-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Timolol Alcon 5ml",
@@ -4908,7 +5122,8 @@
       "Tương tác thuốc: Đã có báo cáo về nguy cơ tăng tác dụng chẹn beta toàn thân (như nhịp tim chậm, trầm cảm) khi sử dụng đồng thời các thuốc ức CYP2D6 (như quinidin, fluoxetin , paroxetin) với timolol. Sử dụng đồng thời dung dịch nhỏ mắt chứa hoạt chất chẹn beta với các thuốc chẹn kênh calci đường uống, các thuốc chẹn beta khác, các thuốc chống loạn nhịp tim (gồm cả amiodaron), các glycosid trợ tim hoặc các thuốc giả phó giao cảm có khả năng gây ra các tác dụng phụ như hạ huyết áp và/hoặc nhịp tim chậm rõ rệt. Đã có báo cáo thỉnh thoảng có giãn đồng từ khi sử dụng đồng thời các thuốc chẹn beta nhỏ mắt với adrenalin (epinephrin). Thuốc mê: Tăng nguy cơ trụy tim mạch và hạ huyết áp do ức chế đáp ứng của tim với phản xạ kích thích giao cảm. Cimetidin, hydralazin, phenothiazin và rượu có thể làm tăng nồng độ của timolol trong máu."
     ],
     "id": "timolol-alcon-5ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Tobcol F.t 5ml",
@@ -4931,7 +5146,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Giống như gentamicin, nếu sử dụng đồng thời hoặc tiếp theo với các chất khác gây độc cơ quan thính giác và thận, có thể làm tăng tính độc của các aminoglycosid. Sử dụng đồng thời tobramycin với các chất chẹn thần kinh – cơ sẽ phong bế thần kinh – cơ và gây liệt hô hấp. Dùng kháng sinh beta-lactam (penicilin và cephalosporin) với tobramycin có thể gây mất hoạt tính lẫn nhau một cách đáng kể."
     ],
     "id": "tobcol-f-t-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobcol - DEX F.t.pharma 5ml",
@@ -4954,7 +5170,8 @@
       "Tương tác thuốc: Sử dụng đồng thời hoặc tiếp theo với các chất khác gây độc cơ quan thính giác và thận, có thể làm tăng tính độc của các aminoglycosid. Sử dụng đồng thời tobramycin với các chất chẹn thần kinh – cơ sẽ phong bế thần kinh – cơ và gây liệt hô hấp."
     ],
     "id": "tobcol-dex-f-t-pharma-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobicom 100mg ICA 18x10",
@@ -4977,7 +5194,8 @@
       "Tương tác thuốc: Natri chondroitin sulfat Chondroitin làm tăng tác dụng chống đông máu của các thuốc kháng đông (warfarin). Điều này có thể gây chảy máu nghiêm trọng, do đó không nên dùng thuốc khi dùng warfarin. Cholin hydrotartrat Cholin phối hợp với các vitamin B6, B12 và acid folic có vai trò trong chuyển hóa homocysteine. Methotrexate làm giảm các chất chuyển hóa của cholin khi dùng chung với thuốc này, ngược lại nghiên cứu trên chuột cũng cho thấy cholin làm tái nhiễm mỡ ở gan gây bởi methotrexate. Retinol palmitat (vitamin A) Neomycin, cholestyramin, paraffin lỏng làm giảm hấp thu vitamin A. Các thuốc uống tránh thai có thể làm tăng nồng độ vitamin A trong huyết tương và có tác dụng không thuận lợi cho sự thụ thai. Điều này giải thích vì sao đôi khi khả năng thụ thai bị giảm trong thời gian ngay sau khi ngừng dùng thuốc tránh thai steroid. Vitamin A và isotretinoin dùng đồng thời thì có thể dẫn đến tình trạng như dùng vitamin A quá liều. Cần tránh dùng đồng thời hai thuốc trên như tránh dùng vitamin A liều cao. Riboflavin Đã gặp một số ca \"thiếu riboflavin” ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Thiamin hydroclorid Thiamin có thể làm sai lệch một số xét nghiệm (gồm xét nghiệm acid uric máu, urobilinogen niệu). Vì vậy cần thông báo cho bác sĩ xét nghiệm và bác sĩ điều trị của bạn biết khi có sử dụng vitamin này. Tương tác khác Trong thành phần thuốc có sự hiện diện của dl - alpha tocopherol (vitamin E). Vitamin E làm giảm hiệu quả của vitamin K và làm tăng hiệu quả của thuốc chống đông máu. Dùng đồng thời vitamin E và acid acetylsalicyclic có nguy cơ gây chảy máu. Vitamin E có thể làm tăng hấp thu, sử dụng và dự trữ vitamin A. Vitamin E bảo vệ vitamin A khỏi bị thoái hóa do oxy hóa làm cho nồng độ vitamin A trong tế bào tăng lên; vitamin E cũng bảo vệ chống lại tác dụng của chứng thừa vitamin A. Tuy nhiên, các tác dụng này còn đang tranh luận."
     ],
     "id": "tobicom-100mg-ica-18x10",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobidex Bidiphar 5ml",
@@ -5000,7 +5218,8 @@
       "Tương tác thuốc: Nếu sử dụng đồng thời thuốc với các kháng sinh aminoglycosid toàn thân khác cần theo dõi nồng độ kháng sinh trong huyết thanh."
     ],
     "id": "tobidex-bidiphar-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobradex Novartis 5ml",
@@ -5023,7 +5242,8 @@
       "Tương tác thuốc: Sử dụng đồng thời steroid dùng tại chỗ với thuốc chống viêm không steroid (NSAIDs) tại chỗ có thể làm tăng nguy cơ đối với vấn đề hồi phục vết thương giác mạc."
     ],
     "id": "tobradex-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobramycin 0.3% HÀ TÂY 5ml",
@@ -5046,7 +5266,8 @@
       "Tương tác thuốc: Giống như gentamicin nếu sử dụng đồng thời hoặc tiếp theo với các chất khác gây độc cơ quan thính giác và thận, có thể làm tăng tính độc của các aminoglycosid. Sử dụng đồng thời tobramycin với các chất chẹn thần kinh - cơ sẽ phong bế thần kinh - cơ và gây liệt hô hấp."
     ],
     "id": "tobramycin-0-3-ha-tay-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobramycin 0.3% Traphaco 7ml",
@@ -5068,7 +5289,8 @@
       "Tương tác thuốc: Cũng giống như đa số thuốc trên thị trường, vẫn có tình trạng tương tác xảy ra khi sử dụng đồng thời thuốc nhỏ mắt Tobramycin 0.3% 5ml với các sản phẩm khác. Do vậy không sử dụng đồng thời với các chất gây độc trên thính giác và thận, các thuốc ức chế thần kinh – cơ hay các kháng sinh nhóm beta – lactam trong điều trị vì sẽ gây ảnh hưởng đến sức khỏe người dùng. Trên đây chưa phải là tất cả các tương tác của thuốc Tobramycin, hãy thông báo với bác sĩ về tất cả những thuốc bạn đang dùng để lựa chọn và thay thế thuốc phù hợp, đảm bảo an toàn cho người bệnh."
     ],
     "id": "tobramycin-0-3-traphaco-7ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobramycin 0.3% Traphaco 6ml",
@@ -5091,7 +5313,8 @@
       "Tương tác thuốc: Chưa có báo cáo nào về tương tác thuốc khi dùng Tobramycin nhỏ mắt. Trong trường hợp dùng đồng thời với các thuốc nhỏ mắt khác, dùng các thuốc cách nhau 5 – 10 phút."
     ],
     "id": "tobramycin-0-3-traphaco-6ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tobrex Novartis 5ml",
@@ -5114,7 +5337,8 @@
       "Tương tác thuốc: Không có các tương tác liên quan trên lâm sàng được mô tả đối với dạng thuốc nhỏ mắt tại chỗ."
     ],
     "id": "tobrex-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Top-pirex NAM HÀ 5ml",
@@ -5137,7 +5361,8 @@
       "Tương tác thuốc: Nếu thuốc nhỏ mắt Tobramycin được dùng đồng thời với các kháng sinh aminoglycosid khác dùng theo đường toàn thân, thì khả năng sẽ gây tăng độc tính với cơ thể. Vì vậy, cần theo dõi nồng độ thuốc trong huyết thanh. Tránh không để nồng độ thuốc trong huyết thanh trên 12 mcg/ml kéo dài. Mặc dù thuốc Tobramycin nhỏ mắt hấp thu vào cơ thể với hàm lượng rất thấp những vẫn cần thiết phải theo dõi tình trạng phổi ở những bệnh nhân đang dùng thuốc gây mê . Sử dụng đồng thời Tobramycin với các chất chẹn thần kinh – cơ sẽ phong bế thần kinh – cơ và gây liệt hô hấp. Ghi chú: Thông báo cho bác sỹ những tác dụng không mong muốn gặp phải khi sử dụng thuốc."
     ],
     "id": "top-pirex-nam-ha-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Torexvis-d Meracine 5ml",
@@ -5159,7 +5384,8 @@
       "Tương tác thuốc: Không có tương tác đặc hiệu nào được báo cáo đối với dạng thuốc nhỏ mắt. Sử dụng đồng thời steroid và NSAIDs tại chỗ có thể làm tăng nguy cơ loét giác mạc."
     ],
     "id": "torexvis-d-meracine-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Travatan Novartis 2.5ml",
@@ -5182,7 +5408,8 @@
       "Tương tác thuốc: Các nghiên cứu về tương tác thuốc chưa được thực hiện. Tuy nhiên, dự kiến không có các tương tác liên quan về mặt lâm sàng."
     ],
     "id": "travatan-novartis-2-5ml",
-    "danh_muc": "Thuốc trị tăng nhãn áp"
+    "danh_muc": "Thuốc trị tăng nhãn áp",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Travatan Alcon 2.5ml",
@@ -5204,7 +5431,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "travatan-alcon-2-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Travodrop Rafarm 2.5ml",
@@ -5224,7 +5452,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "travodrop-rafarm-2-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tux-asol 60mg Medisun 3x10",
@@ -5246,7 +5475,8 @@
       "Tương tác thuốc: Không quan sát thấy tương tác nào giữa levodropropizin và các benzodiazepin trong các thử nghiệm lâm sàng. Tuy nhiên nên thận trọng khi dùng thuốc đồng thời với các thuốc an thần, đặc biệt trên bệnh nhân nhạy cảm do nguy cơ gây an thần của thuốc (xem mục Cảnh báo và thận trọng khi dùng thuốc). Các nghiên cứu lâm sàng cho thấy không có tương tác nào giữa levodropropizin và thuốc điều trị các bệnh phế quản-phổi như thuốc đối kháng thụ thể beta-2, methylxanthin và dẫn xuất, corticosteroid, kháng sinh, thuốc tiêu đờm và thuốc kháng histamin."
     ],
     "id": "tux-asol-60mg-medisun-3x10",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "TỶ VIÊM NANG Khang MINH 60v",
@@ -5271,7 +5501,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "ty-viem-nang-khang-minh-60v",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ultibro Breezhaler 110/50 MCG 3x10",
@@ -5293,7 +5524,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu tương tác thuốc - thuốc đặc hiệu được thực hiện trên Ultibro Breezhaler. Thông tin về khả năng tương tác của Ultibro Breezhaler dựa trên khả năng gây tương tác của từng thành phần của thuốc. Tương tác liên quan đến indacaterol: Không nên dùng Ultibro Breezhaler cùng các thuốc chẹn beta-adrenergic (bao gồm cả các thuốc nhỏ mắt). Trong trường hợp cần thiết, nên ưu tiên lựa chọn các thuốc chẹn beta-adrenergic chọn lọc trên tim, nhưng nên sử dụng thận trọng. Thận trọng khi sử dụng với các thuốc có khả năng kéo dài khoảng QTc (thuốc ức chế monoamine oxidase, thuốc chống trầm cảm ba vòng...) vì có thể làm tăng nguy cơ gây loạn nhịp thất. Sử dụng đồng thời với các thuốc cường giao cảm khác (đơn độc hoặc ở trong dạng phối hợp) có thể làm tăng tác dụng bất lợi của indacaterol. Sử dụng đồng thời với các dẫn chất methylxanthin, các steroid, các thuốc lợi tiểu không giữ kali có thể làm tăng tác dụng hạ kali máu của các thuốc đồng vận beta2-adrenergic. Tương tác liên quan đến chuyển hóa và vận chuyển thuốc: Mức độ phơi nhiễm thuốc tăng do tương tác thuốc với các thuốc ức chế mạnh và đặc hiệu CYP3A4 và P-gp (như ketoconazol, erythromycin, verapamil và ritonavir) nhưng không có bất kỳ ảnh hưởng nào đến độ an toàn của thuốc. Tương tác liên quan đến glycopyrronium: Sử dụng đồng thời Ultibro BreezhaIer với các thuốc kháng cholinergic dạng hít không được khuyến cáo. Dự kiến không có tương tác thuốc khi dùng glycopyrrinium đồng thời với cimetidin hoặc các thuốc ức chế hệ vận chuyển cation hữu cơ khác."
     ],
     "id": "ultibro-breezhaler-110-50-mcg-3x10",
-    "danh_muc": "Thuốc xịt hen suyễn"
+    "danh_muc": "Thuốc xịt hen suyễn",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "V.rohto KIDS 13ml",
@@ -5316,7 +5548,8 @@
       "Tương tác thuốc: Trừ trường hợp có chỉ định của bác sĩ, tránh dùng cùng lúc với các loại thuốc nhỏ mắt khác."
     ],
     "id": "v-rohto-kids-13ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ventinos 64mcg DHG 10ml",
@@ -5338,7 +5571,8 @@
       "Tương tác thuốc: Budesonid không có tương tác với bất kỳ loại thuốc nào được sử dụng để điều trị viêm mũi. Sự chuyển hóa của budesonid chủ yếu qua trung gian CYP3A4, một phân họ của cytochrom P450. Chất ức chế enzym này, ví dụ: Ketoconazol, itraconazol, cyclosporin, ethinyl estradiol và troleandomycin, có thể làm tăng tiếp xúc toàn thân với budesonid vài lần. Vì không có dữ liệu để hỗ trợ khuyến cáo liều lượng, nên tránh kết hợp. Nếu điều này là không thể, thời gian giữa các lần điều trị phải càng lâu càng tốt và việc giảm liều budesonid cũng có thể được xem xét. Trong bối cảnh điều trị ngắn hạn, điều này có ý nghĩa lâm sàng hạn chế. Tuy nhiên, việc dùng đồng thời cimetidin và budesonid có thể làm tăng nồng độ budesonid trong huyết tương một ít, điều này không có ý nghĩa lâm sàng. Nồng độ trong huyết tương tăng và tác dụng tăng cường của corticosteroid đã được quan sát thấy ở những phụ nữ cũng được điều trị bằng oestrogen và steroid tránh thai, nhưng không có tác dụng nào được ghi nhận khi sử dụng đồng thời budesonid và thuốc tránh thai phối hợp liều thấp. Điều trị đồng thời với các chất ức chế CYP3A, bao gồm các sản phẩm có chứa cobicistat, được cho là sẽ làm tăng nguy cơ mắc các tác dụng phụ toàn thân. Nên tránh phối hợp thuốc trừ khi lợi ích mang lại cao hơn nguy cơ gia tăng tác dụng phụ corticosteroid toàn thân, trong trường hợp này bệnh nhân cần được theo dõi về tác dụng phụ toàn thân của corticosteroid. Vì chức năng tuyến thượng thận có thể bị ức chế, xét nghiệm kích thích ACTH để chẩn đoán suy tuyến yên có thể cho kết quả sai (giá trị thấp)."
     ],
     "id": "ventinos-64mcg-dhg-10ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc VIÊM Xoang CAP Abipha 3x10",
@@ -5360,7 +5594,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "thuoc-viem-xoang-cap-abipha-3x10",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vigadexa 5ml",
@@ -5383,7 +5618,8 @@
       "Tương tác thuốc: Sử dụng đồng thời steroid dùng tại chỗ với thuốc chống viêm không steroid (NSAIDs) tại chỗ có thể làm tăng nguy cơ đối với vấn đề hồi phục vết thương giác mạc."
     ],
     "id": "vigadexa-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vigamox Novartis 5ml",
@@ -5406,7 +5642,8 @@
       "Tương tác thuốc: Các nghiên cứu về tương tác thuốc-thuốc chưa được tiến hành với dung dịch nhỏ mắt Vigamox. Các nghiên cứu in vitro cho thấy moxifloxacin không ức chế CYP3A4, CYP2D6, CYP2C9, CYP2C19 hay CYP1A2, vì vậy thuốc ít có khả năng ảnh hưởng đến dược động học của các thuốc chuyển hoá bởi các isoenzyme cytochrom P450 này. Do sau khi nhỏ mắt thuốc này, nồng độ toàn thân của moxifloxacin thấp nên tương tác thuốc - thuốc hầu như không xảy ra."
     ],
     "id": "vigamox-novartis-5ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vismed EYE Drops TRB Chemedica 0.3ml",
@@ -5429,7 +5666,8 @@
       "Tương tác thuốc: Không dùng Vismed đồng thời với bất kỳ thuốc nào khác hoặc sản phẩm khác nhỏ vào mắt vì thuốc có thể làm thay đổi tác dụng của những chất này. Nếu sử dụng nhiều hơn một loại thuốc nhỏ mắt, dùng cách nhau ít nhất 5 phút. Tránh sử dụng Vismed với hợp chất amoni bậc bốn."
     ],
     "id": "vismed-eye-drops-trb-chemedica-0-3ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "NEW V.rohto 13ml",
@@ -5452,7 +5690,8 @@
       "Tương tác thuốc: Tương tác của thuốc: Thuốc nhỏ mắt New V rohto có tác động tại chỗ, chưa có tài liệu báo cáo về tương tác thuốc."
     ],
     "id": "new-v-rohto-13ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "V.rohto COOL 12ml",
@@ -5475,23 +5714,8 @@
       "Tương tác thuốc: Thuốc nhỏ mắt có tác động tại chỗ, chưa có tài liệu báo cáo về tương tác thuốc."
     ],
     "id": "v-rohto-cool-12ml",
-    "danh_muc": "Thuốc nhỏ mắt"
-  },
-  {
-    "ten_thuoc": "NHỎ MẮT V.rohto Dryeye 13ml - HỖ TRỢ BÔI TRƠN Mắt, BỔ SUNG NƯỚC MẮT NHÂN TẠO",
-    "ham_luong": "hydroxyethylcellulose 78mg; Sodium Chondroitin Sulfate; Boric acid; Polysorbate 80; Sodium Chloride; Potassium Chloride; Disodium edetase; Nước tinh khiết; Sodium borate",
-    "dang_thuoc": "Dung dịch",
-    "tong_so_luong": "Hộp x 13ml",
-    "tac_dung": "Dung dịch nhỏ mắt V.Rohto Dryeye giúp bạn chăm sóc đôi mắt hằng ngày với công dụng chính: Bổ sung nước mắt nhân tạo, bôi trơn và bảo vệ bề mặt giác mạc, tạo độ ẩm cho mắt khô, mắt mỏi, giúp giảm khô mắt hiệu quả. Làm dịu ngay tình trạng khô mắt, cảm giác nóng rát, khó chịu, cộm, xốn mắt do tiếp xúc với gió, ánh nắng và các thiết bị điện tử trong thời gian dài, nhờ đó phòng ngừa kích ứng mắt.",
-    "tac_dung_phu": "",
-    "huong_dan_su_dung": "Cách dùng Nhỏ vào mắt mỗi lần 1-2 giọt. Có thể nhỏ nhiều lần trong ngày tùy vào tình trạng khô mắt, mỏi mắt và khó chịu của mắt. Đối tượng sử dụng Phù hợp cho người thường xuyên bị khô mắt hoặc sau phẫu thuật khúc xạ. Có thể sử dụng cho người không đeo kính áp tròng, đang đeo hoặc sau khi tháo kính áp tròng.",
-    "lieu_dung": "",
-    "duong_dung": "",
-    "thoi_diem_dung": "",
-    "huong_dan_bao_quan": "Bảo quản nơi khô mát (dưới 30°C), tránh ánh nắng trực tiếp.",
-    "luu_y_dac_biet": [],
-    "id": "nho-mat-v-rohto-dryeye-13ml-ho-tro-boi-tron-mat-bo-sung-nuoc-mat-nhan-tao",
-    "danh_muc": "Dụng cụ y tế"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "V.rohto Lycee 13ml",
@@ -5514,7 +5738,8 @@
       "Tương tác thuốc: Thuốc nhỏ mắt có tác động tại chỗ, chưa có tài liệu báo cáo về tương tác thuốc."
     ],
     "id": "v-rohto-lycee-13ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "V.rohto Vitamin 13ml",
@@ -5537,7 +5762,8 @@
       "Tương tác thuốc: Trừ trường hợp có chỉ định của bác sĩ, tránh dùng cùng lúc với các loại thuốc nhỏ mắt khác."
     ],
     "id": "v-rohto-vitamin-13ml",
-    "danh_muc": "Thuốc nhỏ mắt"
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Wizosone Dkpharma 120 LIỀU XỊT",
@@ -5559,7 +5785,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "wizosone-dkpharma-120-lieu-xit",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Aladka Nasal Spray DƯỢC KHOA 15ml",
@@ -5584,7 +5811,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "aladka-nasal-spray-duoc-khoa-15ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Xoang Spray Nature 50ml",
@@ -5607,7 +5835,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "xoang-spray-nature-50ml",
-    "danh_muc": "Thuốc xịt mũi"
+    "danh_muc": "Thuốc xịt mũi",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "XỊT Tenafin 1% VCP 20ml",
@@ -5629,7 +5858,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "xit-tenafin-1-vcp-20ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Xoang VẠN XUÂN 10x10",
@@ -5653,7 +5883,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "xoang-van-xuan-10x10",
-    "danh_muc": "Thuốc trị viêm xoang"
+    "danh_muc": "Thuốc trị viêm xoang",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Xylofar Pharmedic 10ml",
@@ -5676,7 +5907,8 @@
       "Tương tác thuốc: Dùng cùng thuốc IMAO, những thuốc chống trầm cảm 3 vòng có thể gây phản ứng tăng huyết áp. Để tránh những tương tác bất lợi của Xylofar 10ml với các thuốc khác, hãy chia sẻ cho bác sĩ danh sách các thuốc và thực phẩm hỗ trợ điều trị mà bạn đang sử dụng đồng thời (nếu có)."
     ],
     "id": "xylofar-pharmedic-10ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Xylogen DƯỢC KHOA 15ml",
@@ -5701,6 +5933,7 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "xylogen-duoc-khoa-15ml",
-    "danh_muc": "Thuốc tai mũi họng"
+    "danh_muc": "Thuốc tai mũi họng",
+    "muc_nghiem_trong": "Nhẹ"
   }
 ]

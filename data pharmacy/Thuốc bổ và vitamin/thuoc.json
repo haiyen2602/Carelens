@@ -19,7 +19,8 @@
       "Tương tác thuốc: Liên quan tới pyridoxin: Isoniazid, penicillamin, thuốc ngừa thai đường uống có thể làm thay đổi sự chuyển hóa hoặc tính khả dụng sinh học của vitamin B6. Vitamin B6 ức chế tác dụng của levodopa. Colchicine, acid para-aminosalicylic và nghiện rượu quá 2 tuần có thể dẫn đến kém hấp thuvitamin B12. Để tránh tương tác thuốc, thông báo cho bác sỹ hoặc dược sỹ về những thuốc đang sử dụng."
     ],
     "id": "3b-agi-neurin-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "A.t Ascorbic Syrup AN Thiên 30 GÓI X 5ml - DUNG DỊCH UỐNG",
@@ -43,7 +44,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "a-t-ascorbic-syrup-an-thien-30-goi-x-5ml-dung-dich-uong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Agi-calci Agimexpharm 20x10",
@@ -67,7 +69,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "agi-calci-agimexpharm-20x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Agifivit 200mg Agimexpharm 10x10",
@@ -90,7 +93,8 @@
       "Tương tác thuốc: Thuốc làm giảm hấp thu penicillamin, tetracyclin, levodopa, methyldopa, các quinolon, các hormon tuyến giáp và các muối kẽm nếu dùng chung. Các thuốc kháng acid như calci carbonat, natri carbonat, và magnesi trisilicat; trà có thể làm giảm hấp thu sắt nếu dùng cùng lúc. Nếu dùng acid folic để nhằm bổ sung thiếu folat có thể do thuốc chống co giật gây ra thì nồng độ thuốc chống co giật trong huyết thanh có thể bị giảm. Cotrimoxazol làm giảm tác dụng điều trị thiếu máu nguyên hồng cầu khổng lồ của acid folic. Các thuốc tránh thai uống làm giảm chuyển hoá của folat, gây giảm folat và vitamin B12."
     ],
     "id": "agifivit-200mg-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Aginfolix 5 Agimexpharm 10x10",
@@ -113,7 +117,8 @@
       "Tương tác thuốc: Folat và sulphasalazin: Hấp thu folat có thể bị giảm. Folat và thuốc tránh thai uống: Các thuốc tránh thai uống làm giảm chuyển hóa của folat và gây giảm folat và vitamin B12 ở một mức độ nhất định. Acid folic và các thuốc chống co giật: Nếu acid folic được dùng để bổ sung thiếu folat có thể do thuốc chống co giật gây ra thì nồng độ thuốc chống co giật trong huyết thanh có thể bị giảm. Acid folic và cotrimoxazol: Cotrimoxazol làm giảm tác dụng điều trị thiếu máu nguyên hồng cầu khổng lồ của acid folic."
     ],
     "id": "aginfolix-5-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Agirenyl Agimexpharm 10x10",
@@ -138,7 +143,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "agirenyl-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Amino XL CMPS 3x10",
@@ -160,7 +166,8 @@
       "Tương tác thuốc: Tương tác của thuốc: Chưa có thông tin về tương tác của thuốc. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "amino-xl-cmps-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Amkuk Mebiphar 100ml",
@@ -182,7 +189,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "amkuk-mebiphar-100ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "AMMG 3b Trường THỌ 5x10",
@@ -205,7 +213,8 @@
       "Tương tác thuốc: Vitamin B6 có thể làm tăng chuyển hóa ngoại biên của levodopa, do đó làm giảm tác dụng của levodopa. Vitamin B6 với liều 200mg/ngày có thể làm giảm 40 – 50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Thuốc tránh thai có thể làm tăng nhu cầu về vitamin B6."
     ],
     "id": "ammg-3b-truong-tho-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "AN CUNG NGƯU Hoàng HOÀN HỘP GỖ 3v",
@@ -228,7 +237,8 @@
       "Tương tác thuốc: Thông báo cho bác sĩ hoặc dược sĩ của bạn về tất cả các loại thuốc mà bạn đang sử dụng, bao gồm cả các thuốc kê đơn hoặc không kê đơn, để tránh có khả năng thuốc gây tương tác giữa các thuốc với nhau. Khi dùng thuốc nên có chế độ ăn uống hợp lý, tránh các thức ăn chua cay hoặc có chất béo vì có thể làm sinh nhiều nội nhiệt và nhiều đờm."
     ],
     "id": "an-cung-nguu-hoang-hoan-hop-go-3v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "AN CUNG NGƯU Hoàng Hoàn Hongjitang 1 VIÊN X 3g",
@@ -251,7 +261,8 @@
       "Tương tác thuốc: Thông báo cho bác sĩ hoặc dược sĩ của bạn về tất cả các loại thuốc mà bạn đang sử dụng, bao gồm cả các thuốc kê đơn hoặc không kê đơn, để tránh có khả năng thuốc gây tương tác giữa các thuốc với nhau. Khi dùng thuốc nên có chế độ ăn uống hợp lý, tránh các thức ăn chua cay hoặc có chất béo vì có thể làm sinh nhiều nội nhiệt và nhiều đờm."
     ],
     "id": "an-cung-nguu-hoang-hoan-hongjitang-1-vien-x-3g",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Anbaluti 330mg Phương ĐÔNG 9x10",
@@ -274,7 +285,8 @@
       "Tương tác thuốc: Thuốc có thể làm tăng tác dụng của các thuốc chống đông máu (như warfarin)."
     ],
     "id": "anbaluti-330mg-phuong-dong-9x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "A.t Ascorbic Syrup AN Thiên 30 ỐNG X 10ml - DUNG DỊCH UỐNG",
@@ -299,7 +311,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "a-t-ascorbic-syrup-an-thien-30-ong-x-10ml-dung-dich-uong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "A.t Calci PLUS AN Thiên 30 ỐNG X 10ml - Hương CAM",
@@ -324,7 +337,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "a-t-calci-plus-an-thien-30-ong-x-10ml-huong-cam",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "A.t Calcium CORT AN Thiên 30 ỐNG X 10ml",
@@ -346,7 +360,8 @@
       "Tương tác thuốc: Calcium glucoheptonate Calci làm giảm hấp thụ một số thuốc như các fluoroquinolone, tetracycline vì thế thuốc phải được uống tối thiểu cách thuốc khác ít nhất 3 giờ. Các corticosteroid làm giảm hấp thu calci. Thuốc có thể làm giảm đáp ứng của verapamil và các thuốc chẹn kênh calci khác. Tăng calci máu khi dùng kết hợp với thuốc lợi tiểu thiazide. Ascorbic acid (vitamin C) Dùng đồng thời vitamin C với aspirin làm tăng tiết vitamin C và giảm tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazine dẫn đến giảm nồng độ fluphenazine huyết tương. Sự acid hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxy hóa khử. Sự có mặt của vitamin C trong nước tiểu làm tăng giả lượng glucose (hay kết quả âm tính giả) nếu định lượng bằng phương pháp glucose oxidase. Nicotinamide (vitamin PP) Nguy cơ bị bệnh cơ hoặc tiêu cơ vân có thể gia tăng khi dùng nicotinamide với các thuốc nhóm statin. Nicotinamide có thể làm giảm sự dung nạp glucose do đó có thể làm tăng nhu cầu đối với insulin hoặc các thuốc hạ đường huyết đường uống. Nicotinamide có thể làm tăng nồng độ carbamazepine huyết tương. Tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "a-t-calcium-cort-an-thien-30-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Atisyrup ZINC 20mg/10ml AN Thiên 30 ỐNG X 10ml",
@@ -368,7 +383,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "atisyrup-zinc-20mg-10ml-an-thien-30-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "auvit-b50 Meyer-bpc 3x10",
@@ -390,7 +406,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "auvit-b50-meyer-bpc-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "B-coenzyme DƯỢC PHẨM Tv.pharm 10x10",
@@ -413,7 +430,8 @@
       "Tương tác thuốc: Vitamin B1 (Thiamin): Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ. Vitamin B2 (Riboflavin): Không dùng vitamin B2 cùng với hoặc trong vòng 12 giờ sau khi dùng neostigmin hoặc những thuốc tác dụng giống thần kinh đối giao cảm khác. Tuy không quan trọng về lâm sàng, nhưng tác dụng co đồng tử của các chế phẩm kháng cholinesterase dùng cho mắt (ví dụ: ecothiophat iodid, isoflurophat) có thể tăng lên do acid pantothenic. Không dùng vitamin B2 trong vòng 1 giờ sau khi dùng sucinylcholin, vì vitamin B2 có thể kéo dài tác dụng gây giãn cơ của sucinylcholin. Vitamin B5 (Acid pantothenic): Một số trường hợp dùng clopromazin, imipramin, amitriptylin và adriamycin dẫn đến thiếu vitamin B5. Rượu có thể cản trở hấp thu vitamin B5 ở ruột. Sử dụng đồng thời với probenecid sẽ làm giảm hấp thu vitamin B5 ở dạ dày, ruột. Vitamin B6 (Pyridoxin): B6 làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa-carbidopa hoặc levodopa-benserazid. Liều dùng 200 mg/ngày có thể gây giảm 40-50 % nồng độ phenytoin phenobarbital trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ dùng thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về pyridoxin. * Vitamin PP (Nicotinamid): Sử dụng nicotinamid đồng thời với các chất ức chế men khử HGM-CoA có thể làm tăng nguy cơ gây tiêu cơ vân. Sử dụng nicotinamid đồng thời với các thuốc chẹn alpha-adrenergic có thể dẫn đến hạ huyết áp quá mức. Cần điều chỉnh khẩu phần ăn và/hoặc liều lượng thuốc hạ đường huyết hoặc insulin khi sử dụng đồng thời với Vitamin PP. Sử dụng đồng thời Vitamin PP với các thuốc có độc tính với gan sẽ làm tăng độc tính với gan. Không dùng đồng thời vitamin PP với carbamazepin sẽ làm tăng nồng độ carbamazepin trong huyết tương."
     ],
     "id": "b-coenzyme-duoc-pham-tv-pharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "B Complex C Vidipha 100v",
@@ -437,7 +455,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "b-complex-c-vidipha-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "B Complex C Vidipha 10x10",
@@ -460,7 +479,8 @@
       "Tương tác thuốc: Dùng đồng thời B Complex C với aspirin, làm tăng bài tiết vitamin C và làm giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và Fluphenazin dẫn đến giảm nồng độ Fluphenazin huyết tương. Sự acid hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vì vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxi hóa - khử. Sự có mặt vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thử đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase. Sử dụng Nicotinamid đồng thời với chất ức chế men khử HMG - CoA có thể làm tăng nguy cơ gây tiêu cơ vân (Rhabdomyolysis). Sử dụng Nicotinamid đồng thời với thuốc chẹn Alpha-adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Sử dụng nicotinamid đồng thời với các thuốc có độc tính với gan có thể làm tăng thêm tác hại độc cho gan. Không nên dùng đồng thời Nicotinamid với Carbamazepin vì gây tăng nồng độ Carbamazepin huyết tương dẫn đến tăng độc tính. Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về Pyridoxin. Đã gặp một số ca “thiếu Riboflavin” ở người đã dùng Clopromazin, Imipramin, Amitriptylin và Adriamycin. Rượu có thể gây cản trở hấp thu Riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu Riboflavin ở dạ dày, ruột."
     ],
     "id": "b-complex-c-vidipha-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "b12 Ankermann Worwag 2x25",
@@ -482,7 +502,8 @@
       "Tương tác thuốc: Sự hấp thu vitamin B12 có thể bị giảm do thuốc ức chế bơm proton (ví dụ: Omeprazol), thuốc đối kháng histamin H2 (ví dụ: Cimetidin), colchicin, neomycin, cholestyramin, KCL, methyldopan và acid para-amino-salicylic. Nồng độ trong huyết thanh cũng có thể bị giảm do thuốc tránh thai đường uống, nhưng sự tương tác này không có ý nghĩa lâm sàng. Chloramphenicol có thể làm giảm tác dụng của vitamin B12 trong thiếu máu. Các thuốc steroid, như prednison, đã được báo cáo là làm tăng hấp thu vitamin B12 ở bệnh nhân thiếu máu ác tính. Nitrous Oxid (N2O) gây thiếu hụt vitamin B12. Nhóm Biguanid (như: Metformin) có thể làm tformin) giảm nồng độ vitamin B12 trong huyết thanh. Các chất chống chuyển hóa và hầu hết các loại kháng sinh làm vô hiệu phương pháp định lượng vitamin B12 bằng vi sinh."
     ],
     "id": "b12-ankermann-worwag-2x25",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "BABI B.o.n 12ml - Vitamin D",
@@ -506,7 +527,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "babi-b-o-n-12ml-vitamin-d",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bequantene 100mg Mediplantex 2x10",
@@ -530,7 +552,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "bequantene-100mg-mediplantex-2x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Berocca Bayer 10v",
@@ -556,7 +579,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "berocca-bayer-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betalgine Nadyphar 80v",
@@ -579,7 +603,8 @@
       "Tương tác thuốc: Liên quan đến vitamin B 6 Pyridoxin làm giảm tác động của levodopa trong điều trị bệnh Parkinson, liều pyridoxin 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbital trong máu người bệnh. Pyridoxin làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Hydralazin, isoniazid, penicilamin, thuốc uống tránh thai làm tăng nhu cầu về pyridoxin. Liên quan đến vitamin B 12 Neomycin, acid aminosalicylic, chất đối kháng histamin H 2 và colchicin làm giảm sự hấp thu của vitamin B 12 . Cloramphenicol làm giảm tác dụng của vitamin B 12 trong điều trị bệnh thiếu máu."
     ],
     "id": "betalgine-nadyphar-80v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betex 100mg Favorex 5x10",
@@ -604,7 +629,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "betex-100mg-favorex-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bicimax Stella 10v",
@@ -630,7 +656,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "bicimax-stella-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "BIDI BC Complex 300mg 100v",
@@ -652,7 +679,8 @@
       "Tương tác thuốc: Vitamin PP: Sử dụng đồng thời với chất ức chế men khử HGM - CoA có thể làm tăng nguy cơ gây tiêu cơ vẫn (rhabdomyolysis). Sử dụng nicotinamid đồng thời với thuốc chẹn alpha - adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Khẩu phần ăn và/hoặc liều lượng thuốc uống hạ đường huyết hoặc insulin có thể cần phải điều chỉnh khi sử dụng đồng thời với nicotinamid. Vitamin C: Dùng đồng thời vitamin C với aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid - hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vì vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxy hóa - khử. Sự có mặt vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thủ đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase. Vitamin B2: Đã gặp một số ca \"thiếu riboflavin\" ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Vitamin B6: Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa benserazid. Pyridoxin có the làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai."
     ],
     "id": "bidi-bc-complex-300mg-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bidicorbic 500mg Bidiphar 100v",
@@ -675,7 +703,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "bidicorbic-500mg-bidiphar-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bidiferon Bidiphar 10x10",
@@ -698,7 +727,8 @@
       "Tương tác thuốc: Liên quan đến sắt Phối hợp không nên sử dụng Sắt (dạng muối) (đường uống): Gây ngất xỉu, thậm chí sốc do giải phóng nhanh sắt từ dạng phức hợp và do bão hòa siderophilin. Phối hợp cần được xem xét Acetohydroxamic acid: Giảm sự hấp thu đường tiêu hóa của hai thuốc này do tạo sắt chelat. Phối hợp thận trọng khi sử dụng Biphosphonat (uống): Giảm hấp thu của diphosphonat. Dùng các thuốc này cách nhau từ ít nhất 30 phút đến hơn 2 giờ nếu có thể. Calci: Giảm hấp thu đường tiêu hóa của muối sắt. Dùng muối sắt cách xa bữa ăn và khi không có calci. Cyclin (uống): Giảm hấp thu cyclin do tạo thành phức hợp. Dùng các thuốc này cách nhau ít nhất 2 giờ. Entecapon : Giảm hấp thu của entecapon và sắt do sự chelat hóa của entacapon. Dùng các thuốc này cách nhau ít nhất 2 giờ. Fluoroquinolon: Sắt làm giảm hấp thu của các fluoroquinolon. Dùng các thuốc này nên cách nhau ít nhất 2 giờ. Thyroid hormon: Giảm hấp thu của thyroid hormon. Dùng các thuốc này cách nhau ít nhất 2 giờ. Levodopa/Carbidopa: Giảm hấp thu của levodopa/carbidopa. Dùng các thuốc này cách nhau ít nhất 2 giờ. Methyldopa: Giảm hấp thu methyldopa do tạo thành phức hợp. Dùng các thuốc này cách nhau ít nhất 2 giờ. Penicilamin : Giảm hấp thu của penicilamin. Dùng các thuốc này cách nhau ít nhất 2 giờ. Strontium: Giảm hấp thu của strontium. Dùng các thuốc này cách nhau ít nhất 2 giờ. Kẽm: Giảm hấp thu của kẽm. Dùng các thuốc này cách nhau ít nhất 2 giờ. Muối, oxyd, hydroxyd của Mg, Al, Ca (bao phủ niêm mạc dạ dày-ruột): Làm giảm hấp thu đường tiêu hóa của muối sắt. Dùng các thuốc này cách xa nhau 2 giờ. Cholestyramin : Giảm hấp thu của sắt. Dùng sắt trước khi dùng cholestyramin 1 - 2 giờ hoặc sau khi dùng cholestyramin 4 giờ. Các dạng tương tác khác: Acid phytic (ngũ cốc nguyên hạt), đậu, polyphenol (trà, cà phê, rượu vang đỏ), calci (sữa, các sản phẩm từ sữa) và một số protein (trứng) ức chế đáng kể sự hấp thu sắt. Dùng sắt cách xa các thực phẩm này ít nhất 2 giờ. Liên quan đến acid folic Phenobarbital, primidon, phenytoin, fosphenytoin: Giảm nồng độ huyết tương của thuốc chống co giật bằng cách tăng chuyên hóa gan, trong đó acid folic được cho là một trong những yếu tố đồng vận. Theo dõi lâm sàng, kiểm soát nồng độ thuốc chống co giật trong huyết tương và, khi thích hợp, điều chỉnh liều thuốc chống động kinh trong khi bổ sung và sau khi ngưng folic. Tương kỵ của thuốc : Chưa tìm thấy thông tin tưởng kỵ của thuốc."
     ],
     "id": "bidiferon-bidiphar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bioketoca HERA 5x10",
@@ -720,7 +750,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "bioketoca-hera-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Biosoft 10mg cpc1 6x15",
@@ -742,7 +773,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "biosoft-10mg-cpc1-6x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Biotin 5mg Mediplantex 2x10",
@@ -767,7 +799,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "biotin-5mg-mediplantex-2x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "BIPP ZINC Powder 70mg DHG 24 GÓI X 1.5g",
@@ -789,7 +822,8 @@
       "Tương tác thuốc: Các kháng sinh nhóm tetracyclin, các kháng sinh nhóm fluoroquinolon, các chế phẩm có chứa sắt, đồng làm giảm hấp thu kẽm. Kẽm gluconat khi dùng chung với hai nhóm kháng sinh trên có thể làm giảm hấp thu của các kháng sinh dùng chung."
     ],
     "id": "bipp-zinc-powder-70mg-dhg-24-goi-x-1-5g",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bivantox 200 TAB Pharbaco 3x10",
@@ -811,7 +845,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "bivantox-200-tab-pharbaco-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bluemint 500mg PHIL 12x5",
@@ -837,7 +872,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "bluemint-500mg-phil-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bocalso NTB 500mg Hataphar 6 VỈ X 5 ỐNG",
@@ -859,7 +895,8 @@
       "Tương tác thuốc: Tình trạng tăng calci huyết có thể xảy ra khi dùng đồng thời các muối calci với thuốc lợi tiểu thiazid hoặc vitamin D. Thuốc lợi tiểu u thiazid làm giảm thải trừ calci trong nước tiểu. Nên kiểm soát nồng độ calci trong huyết tương ở những bệnh nhân có dùng chung những thuốc này với nhau. Vitamin D làm tăng hấp thu calci qua đường tiêu hóa. Các corticosteroid làm giảm hấp thu calci. Calci tăng cường tác dụng và có thể làm tăng độc tính trên tim của các glycosid trợ tim. Các muối calci làm giảm hấp thu một số thuốc khác như các bisphosphonat, fluorid, một vài fluoroquinolon và tetracyclin; nên dùng cách xa ít nhất 3 giờ với các thuốc này."
     ],
     "id": "bocalso-ntb-500mg-hataphar-6-vi-x-5-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bofit F 162mg DHG 3x10",
@@ -882,7 +919,8 @@
       "Tương tác thuốc: Thận trọng khi phối hợp với các thuốc: Quinolon, penicillamine, tetracyclin, methyldopa, các hormon tuyến giáp và các thuốc kháng acid như: Calci carbonat, natri carbonat, magnesi trisilicat."
     ],
     "id": "bofit-f-162mg-dhg-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Boncinco HÀ NAM 20 ỐNG X 7.5ml",
@@ -904,7 +942,8 @@
       "Tương tác thuốc: Vitamin B6 có thể làm giảm hiệu quả của L-Dopa bằng cách tăng decarboxy hóa ngoại biên. Thuốc lợi tiểu thiazid làm giảm bài tiết calci thận. Do đó điều trị đồng thời với thiazid có nguy cơ tăng calci máu nên cần phải theo dõi nồng độ calci huyết thanh thường xuyên."
     ],
     "id": "boncinco-ha-nam-20-ong-x-7-5ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Btozka 300mg Hamedi 3x10",
@@ -926,7 +965,8 @@
       "Tương tác thuốc: Điều trị đồng thời cùng acid thioctic làm mất tác dụng của cisplatin. Tác dụng hạ đường huyết của insulin hoặc thuốc trị đái tháo đường đường uống có thể tăng lên. Do đó, đặc biệt là trong giai đoạn đầu điều trị bằng acid thioctic, theo dõi chặt chẽ đường huyết. Trong những trường hợp cụ thể, có thể cần giảm liều insulin hoặc liều thuốc trị đái tháo đường đường uống để tránh các triệu chứng hạ đường huyết. Acid thioctic là một chất tạo phức chelat với ion kim loại và do đó không nên dùng đồng thời với các hợp chất kim loại (ví dụ như các sản phẩm bổ sung sắt, magie, các sản phẩm từ sữa do có chứa calci vì nó có thể dẫn đến mất tác dụng). Khi dùng liều acid thioctic mỗi ngày 30 phút trước khi ăn sáng, có thể bổ sung thêm sắt và magie cho bữa trưa hoặc bữa tối. Thường xuyên dùng rượu là tác nhân nguy cơ cao đối với sự phát triển và tiến triển của các bệnh thần kinh, và vì thế có thể làm giảm tác dụng điều trị với acid thioctic. Vì vậy, bệnh nhân bị bệnh viêm đa dây thần kinh do đái tháo đường cần khuyến cáo tránh sử dụng rượu. Điều này cũng cần được khuyến cáo trong khoảng thời gian không sử dụng thuốc."
     ],
     "id": "btozka-300mg-hamedi-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "C Calci OPC 10v",
@@ -951,7 +991,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "c-calci-opc-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "CAC 1000 Sandoz 10v",
@@ -977,7 +1018,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "cac-1000-sandoz-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calcimax OPV 20 ỐNG X 10ml",
@@ -1000,7 +1042,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "calcimax-opv-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calcium Geral Usa-nic Pharma 20 GÓI X 15ml",
@@ -1022,7 +1065,8 @@
       "Tương tác thuốc: Vitamin D Không dùng đồng thời với cholestyramin hoặc cholesipol hydroclorid vì làm giảm hấp thu vitamin D ở ruột, dầu khoáng làm giảm hấp thu vitamin D. Dùng đồng thời với thuốc lợi niệu thiazid làm tăng calci huyết. Không dùng vitamin D với phenobarbitan hoặc/và phenytoin (và có thể với những thuốc gây cảm ứng men gan) vì những thuốc này làm giảm nồng độ 25- hydroxyergocalciferol và 25- hydroxyl-colecalciferol trong huyết tương và tăng chuyển hóa vitamin D thành những chất không có hoạt tính. Không dùng đồng thời với corticoid vì corticoid làm giảm tác dụng vitamin D. Không dùng đồng thời với các glycozid trợ tim sẽ làm tăng độc tính glycozid ở tim. Tricalci phosphat Không dùng đồng thời với các thiazid, clopamid, ciprofloxacin, clorthalidon, thuốc chống co giật vì ức chế thải trừ calci qua thận. Calci làm giảm hấp thu các tetracyclin, kháng sinh nhóm quinolon, sắt kẽm và các khoáng chất thiết yếu khác. Calci làm tăng độc tính với tim của các glycozid digitalis."
     ],
     "id": "calcium-geral-usa-nic-pharma-20-goi-x-15ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calcium - NIC PLUS 20 ỐNG X 10ml",
@@ -1042,7 +1086,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "calcium-nic-plus-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calciumboston Ascorbic 20 ỐNG X 10ml",
@@ -1065,7 +1110,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "calciumboston-ascorbic-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calsource 600mg+400iu Vitamin d3 SỦI GSK 10v",
@@ -1085,7 +1131,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "calsource-600mg-400iu-vitamin-d3-sui-gsk-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Calvin PLUS Biopharm 10x6",
@@ -1107,7 +1154,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "calvin-plus-biopharm-10x6",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cardioton LIPA 6x10",
@@ -1129,7 +1177,8 @@
       "Tương tác thuốc: Thuốc có thể làm tăng tác dụng của thuốc lợi tiểu, các thuốc glycoside trợ tim và nitrate. Ngoài ra thuốc có thể làm giảm nguy cơ xuất hiện các triệu chứng ảnh hưởng suy giảm lên cơ tim của các thuốc nhóm giải phóng adrenolytic bêta, kìm hãm tác dụng chống đông của warpharin và làm giảm độc tính của các kháng sinh chống ung thư thuộc nhóm antracycline. Thuốc làm tăng sự hấp thu, sử dụng và dự trữ vitamin A và có thể chống lại bệnh thừa vitamin A, tuy nhiên những tác dụng này hiện vẫn còn nhiều ý kiến tranh cãi. Thuốc và một trong những chất chuyển hoá của nó có tác dụng chống lại tác dụng của vitamin K. Sử dụng quá nhiều dầu khoáng có thể làm giảm sự hấp thu của thuốc. Thuốc có thể làm tăng tác dụng ức chế kết tập tiểu cầu của aspirin."
     ],
     "id": "cardioton-lipa-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Casmorin Prime 10x10",
@@ -1152,7 +1201,8 @@
       "Tương tác thuốc: Thành phần thuốc có chứa vitamin A nên các thuốc tránh thai có thể làm tăng nồng độ vitamin A trong huyết tương và có tác dụng không thuận lợi cho sự thụ thai. Vitamin A và Isotretinoin dùng đồng thời thì có thể dẫn đến tình trạng như dùng Vitamin A quá liều. Cần tránh dùng đồng thời hai thuốc trên như tránh dùng vitamin A liều cao. Ngoài ra, Neomycin, Cholestyramine , Paraffin lỏng làm giảm hấp thu vitamin A."
     ],
     "id": "casmorin-prime-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Celivite Celogen 6x10",
@@ -1175,7 +1225,8 @@
       "Tương tác thuốc: Vitamin A khi dùng đồng thời với neomycin, cholestyramin sẽ ngăn cản sự hấp thụ vitamin A. Do đó, hai loại thuốc này nên dùng cách nhau 1 - 2 giờ. Dùng đồng thời Vitamin A với các kháng sinh nhóm cyclin như tetracyclin, docycyclin , clotetracyclin có thể dẫn đến tăng áp lực sọ não. Do đó không nên dùng đồng thời Celevite với nhóm kháng sinh này."
     ],
     "id": "celivite-celogen-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cezinco 110mg/5ml Allomed 30 ỐNG X 5ml",
@@ -1197,7 +1248,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "cezinco-110mg-5ml-allomed-30-ong-x-5ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Circuton PHIL Inter Pharma 12x5",
@@ -1219,7 +1271,8 @@
       "Tương tác thuốc: Không dùng cùng thuốc chống đông máu, chống vón kết tiểu cầu, thuốc chỉ huyết, thuốc chống động kinh, thuốc chống trầm cảm , pha nhồi máu não cấp, tim cấp."
     ],
     "id": "circuton-phil-inter-pharma-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cistinic 500/50mg Usa-nic Pharma 5x10",
@@ -1241,7 +1294,8 @@
       "Tương tác thuốc: L-Cystin: Chưa có thông tin. Vitamin B6: Làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson."
     ],
     "id": "cistinic-500-50mg-usa-nic-pharma-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Colonic 2000mg Usa-nic 20 ỐNG X 10ml",
@@ -1263,7 +1317,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "colonic-2000mg-usa-nic-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cysmona 500mg US Pharma 6x10",
@@ -1288,7 +1343,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "cysmona-500mg-us-pharma-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cystin b6 TNP 10x10",
@@ -1311,7 +1367,8 @@
       "Tương tác thuốc: Tương tác: Chưa có dữ liệu báo cáo. Tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "cystin-b6-tnp-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cystine b6 Bailleul 1x20",
@@ -1337,7 +1394,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "cystine-b6-bailleul-1x20",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "D-cure 25000iu SMB 1x4",
@@ -1360,7 +1418,8 @@
       "Tương tác thuốc: Dùng đồng thời với thuốc chống co giật (như phenytoin) hoặc nhóm barbiturat (và các thuốc khác gây cảm ứng enzym gan) có thể làm giảm tác dụng của vitamin D3 do gây bất hoạt chuyển hóa. Điều trị với thuốc lợi tiểu thiazid làm giảm đào thải calci qua thận, do đó khuyến cáo theo dõi nồng độ calci huyết thanh. Dùng đồng thời với glucocorticoid có thể làm giảm tác dụng của vitamin D. Trong trường hợp điều trị với thuốc digitalis và các glycosid tim khác, sử dụng vitamin D có thể làm tăng nguy cơ độc tính của digitalis (gây rối loạn nhịp tim). Cần phải giám sát chặt chẽ, cùng với theo dõi nồng độ calci huyết thanh và điện tâm đồ nếu cần thiết. Điều trị đồng thời với nhựa trao đổi ion như cholestyramin, colestipol hydrochlorid, orlistat hoặc thuốc nhuận tràng như dầu paraffin có thể làm giảm hấp thu vitamin D ở đường tiêu hóa. Thuốc gây độc tế bào actinomycin và thuốc chống nấm imidazol gây cản trở hoạt động của vitamin D bằng cách ức chế sự biến đổi 25 - hydroxy vitamin D thành 1, 25 - dihydroxy vitamin D bởi enzym ở thận 25 - hydroxy vitamin D - 1 - hydroxylase."
     ],
     "id": "d-cure-25000iu-smb-1x4",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dactus 300mg Remedica 5x10",
@@ -1382,7 +1441,8 @@
       "Tương tác thuốc: Vì nhiều thuốc tương tác với ferrous gluconat và không nên dùng đồng thời. Tuy nhiên một số thuốc có thể được dùng đồng thời dưới sự thận trọng đặc biệt. Trong trường hợp này, có thể thay đổi liều và áp dụng các bước thận trọng khác nếu cần. Đặc biệt là với các thuốc như penicillamin, thuốc kháng acid, cholestyramin, thyroxin, chloramphenicol."
     ],
     "id": "dactus-300mg-remedica-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Denesity 200mg cpc1 2x15",
@@ -1406,7 +1466,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "denesity-200mg-cpc1-2x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dipartate Cophavina 5x10",
@@ -1428,7 +1489,8 @@
       "Tương tác thuốc: Dipartate ức chế hấp thu tetracyclin, muối sắt và natri florid. Cần dùng Dipartate cách các thuốc trên ít nhất là 3 giờ khi dùng đồng thới với thuốc lợi tiểu giữ Kali hoặc/và các thuốc ức chế men chuyển (ACEi) do có thể dẫn tăng kali huyết."
     ],
     "id": "dipartate-cophavina-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Drimy 1000iu USP 10x10",
@@ -1451,7 +1513,8 @@
       "Tương tác thuốc: Sử dụng đồng thời với thuốc chẹn alpha-adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức, với các thuốc có độc tính với gan có thể làm tăng thêm tác hại cho gan, với carbamazepin huyết tương dẫn đến tăng độc tính. Vitamin A và isotretionin dùng đồng thời có thể dẫn đến tình trạng như dùng vitamin A quá liều. Không dùng thuốc với cholestyramin, không dùng đồng thời với phenobarbital , corticosteroid. Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa - benserazid. Liều dùng pyridoxin 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbiton trong máu ở một số nguời bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về pyridoxin. Đã gặp một số ca \"thiếu riboflavin\" ở người đã dùng clopromazin, imipramin , amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Những thuốc sau đây ức chế thải trừ calci qua thận: Các thiazid, clopamid, ciprofloxacin , clorthalidon, thuốc chống co giật. Calci làm tăng độc tính của digoxin đối với tim. Nồng độ calci trong máu tăng làm tăng tác dụng ức chế enzym Na+-K+- ATPase của glycosid trợ tim. Tránh dùng phối hợp thuốc với ofloxacin, ciprofloxacin, norfloxacin, uống đồng thời với các thuốc kháng acid như calci carbonat, natri carbonat và magnesi trisilicat, hoặc với nước chè có thể làm giảm sự hấp thu sắt. Sắt có thể chelat hóa với các tetracyclin và làm giảm hấp thu của cả hai loại thuốc. Truờng hợp phải điều trị phối hợp với tetracycline đường uống thì phải dùng 2 loại thuốc cách khoảng nhau ít nhất 3 giờ. Sắt có thể làm giảm hấp thu của penicilamin, carbidopa/levodopa, methyldopa, các quinolon, các hormon tuyến giáp và các muối kẽm."
     ],
     "id": "drimy-1000iu-usp-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH UỐNG Atigimin AN Thiên 1000mg 30 ỐNG X 10ml",
@@ -1473,7 +1536,8 @@
       "Tương tác thuốc: Nồng độ insulin trong huyết tương do sự kích thích của arginine có thể tăng cao hơn bởi các thuốc lợi tiểu thiazid, xylitol và aminophyllin. Dùng các thuốc trị đái tháo đường sulfonylurea đường uống trong thời gian dài có thể ức chế đáp ứng của glucagon huyết tương với arginine. Khi những bệnh nhân không dung nạp glucose được cho sử dụng glucose, phenytoin làm giảm sự đáp ứng của insulin trong huyết tương với arginine. Tăng kali huyết có thể xảy ra khi dùng arginine điều trị chứng nhiễm kiềm chuyển hóa cho những bệnh nhân bệnh gan nặng mới dùng spironolacton gần đây. Tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "dung-dich-uong-atigimin-an-thien-1000mg-30-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "DUNG DỊCH UỐNG Novocal Novocare 20 ỐNG X 10ml",
@@ -1495,7 +1559,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-uong-novocal-novocare-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Dưỡng TÂM KIỆN TỲ HOÀN BẢO LONG 10 GÓI X 4g",
@@ -1518,7 +1583,8 @@
       "Tương tác thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác. Nếu có sử dụng thuốc khác, nên dùng cách nhau ít nhất 2 giờ."
     ],
     "id": "duong-tam-kien-ty-hoan-bao-long-10-goi-x-4g",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ellenzym 100mg USP 3x10",
@@ -1540,7 +1606,8 @@
       "Tương tác thuốc: Tương tác của thuốc: Một số nghiên cứu cho thấy ubidecarenon có thể làm giảm tác dụng của thuốc chống đông máu nhóm coumarin (đối kháng vitamin K) (warfarin, phenprocoumon, acenocoumarol) ở một số bệnh nhân. Nên kiểm tra thời gian đông máu (INR) vài tuần sau khi bắt đầu và kết thúc điều trị bằng ubidecarenon 100 mg để xác định xem có cần điều chinh liều của thuốc chống đông máu hay không. Một thử nghiệm lâm sàng trên 21 bệnh nhân được điều trị bằng liệu pháp warfarin ổn định cho thấy uống 1 viên ubidecarenon 100 mg mỗi ngày trong 4 tuần không ảnh hưởng đến INR. Ubidecarenon có thể gây giảm huyết áp ở bệnh nhân tăng huyết áp. Nên theo dõi huyết áp ở bệnh nhân dùng thuốc chống tăng huyết áp trong khi điều trị bằng ubidecarenon. Sử dụng đồng thời với vitamin E liều cao (350 mg) làm giảm sự gia tăng dự kiến về nồng độ ubidecarenon trong máu. Trong các thử nghiệm lâm sảng, 34 bệnh nhân đái tháo đường type I được điều trị bằng insulin và uống 1 viên ubidecarenon 100 mg hoặc giả dược mỗi ngày trong 3 tháng; và 24 bệnh nhân đái tháo đường type 2 được điều trị bằng chế độ ăn kiêng hoặc kết hợp chế độ ăn kiêng và thuốc sulfonylurea nhóm II uống 2 viên ubidecarenon 100 mg mỗi ngày trong 6. tháng và điều này không ảnh hưởng đến việc kiểm soát đường huyết của người bệnh. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "ellenzym-100mg-usp-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Elnitine Stella 20 ỐNG",
@@ -1562,7 +1629,8 @@
       "Tương tác thuốc: Không dùng chung với natri polystyren sulphonat do thuốc có chứa sorbitol. Các muối magnesi uống làm giảm sự hấp thu của tetracyclin và bisphosphonat, và nên uống các thuốc này cách nhau vài giờ. Tăng calci huyết đã xảy ra khi các muối calci được dùng chung với các thuốc lợi tiểu thiazid hoặc vitamin D. Vitamin D làm tăng sự hấp thụ qua đường tiêu hóa của calci và thuốc lợi tiểu thiazid làm giảm bài tiết calci qua nước tiểu. Nên theo dõi nồng độ calci ở bệnh nhân sử dụng đồng thời các loại thuốc trên. Cám ngũ cốc làm giảm sự hấp thu qua đường tiêu hóa của calci, và do đó có thể làm giảm hiệu quả của việc bổ sung calci. Corticosteroid cũng làm giảm hấp thu calci. Các muối calci làm giảm sự hấp thu của một số thuốc khác như bisphosphonat, fluorid, một số fluoroquinolon và các tetracyclin; các liều nên uống các thuốc này cách nhau ít nhất 3 giờ. Do calci làm tăng tác dụng của các digitalis glycosid trên tim và có thể gây ngộ độc cấp, nên tránh sử dụng calci cho bệnh nhân đang điều trị với glycosid tim."
     ],
     "id": "elnitine-stella-20-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Elovess 500mg Uspharma 12x5",
@@ -1587,7 +1655,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "elovess-500mg-uspharma-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Emzinc 20mg 10x10",
@@ -1609,7 +1678,8 @@
       "Tương tác thuốc: Trước khi dùng Emzinc, bạn nên lưu ý một số điều sau: Thông báo cho bác sĩ và dược sĩ nếu bạn bị dị ứng với Emzinc, bất kỳ loại thuốc nào khác hoặc bất kỳ thành phần trong thuốc. Bạn cũng có thể hỏi dược sĩ để biết danh sách các thành phần. Thuốc khác: Sự hấp thu của kẽm có thể bị giảm bởi thuốc bổ sung sắt và Canxi Tetracycline và các hợp chất chứa phospho, trong khi đo Kẽm có thể làm giảm hấp thu sắt, Tetracycline , Fluoroquinolone. Thực phẩm: Nghiên cứu dùng đồng thời kẽm với thức ăn được thực hiện ở người tình nguyện khỏe mạnh cho thấy thức ăn làm chậm hấp thu kẽm (bao gồm bánh mì, trứng luộc, cà phê và sữa). Những hợp chất trong thực phẩm, đặc biệt là thức ăn có nguồn gốc từ thực vật và có xơ, bám vào kẽm và ngăn không cho nó vào tế bào ruột. Tuy nhiên, Protein dường như cản trở ít nhất."
     ],
     "id": "emzinc-20mg-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ENAT 400 MEGA 3x10",
@@ -1632,7 +1702,8 @@
       "Tương tác thuốc: Vitamin E có thể làm thay đổi hiệu lực của vitamin K lên các yếu tố đông máu dẫn đến sự gia tăng hiệu ứng giảm prothrombin huyết đối với warfarin và có thể làm giảm đáp ứng huyết học đối với sắt ở trẻ em mắc chứng thiếu máu do thiếu sắt. Vitamin E có thể làm tăng tác dụng của thuốc chống đông, warfarin hay các thuốc làm loãng máu loại Indandione. Vitamin E có thể làm tăng tác dụng ngăn cản sự ngưng kết tiểu cầu của aspirin. Cholestyramine , Colestipol, Isoniazid và dầu khoáng có thể làm giảm sự hấp thu của vitamin E. Sucrafate can thiệp vào sự hấp thu cùa vitamin E. Neomycin có thể làm giảm hiệu lực của vitamin E."
     ],
     "id": "enat-400-mega-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Enzicoba 4x15",
@@ -1657,7 +1728,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "enzicoba-4x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eroleucin Cophavina 21 GÓI",
@@ -1679,7 +1751,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "eroleucin-cophavina-21-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eskafolvit Sk+f 15x6",
@@ -1701,7 +1774,8 @@
       "Tương tác thuốc: Uống đồng thời với các thuốc kháng acid chứa carbonat và magnesi trisilicat, hoặc với nước chè có thể làm giảm sự hấp thu sắt. Sắt có thể chelat hoá với các tetracyclin và làm giảm sự hấp thu của cả hai loại thuốc. Đáp ứng với sắt có thể chậm hơn nếu dùng chung với chloramphenicol. Muối sắt cũng được ghi nhận làm giảm hấp thu và do đó làm giảm sinh khả dụng và hiệu quả lâm sàng của penicillamin, carbidopa/levodopa, methyldopa, các quinolon. Không nên uống các chế phẩm có chứa sắt cùng lúc hoặc trong vòng 2 giờ sau khi dùng các thuốc trên. Trứng, sữa làm giảm hấp thu sắt nếu dùng cùng lúc."
     ],
     "id": "eskafolvit-sk-f-15x6",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Eyebi 50mg PHIL 3x10",
@@ -1727,7 +1801,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "eyebi-50mg-phil-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Farzincol 10mg Pharmedic 10x10",
@@ -1749,7 +1824,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể làm thay đổi khả năng hoạt động của thuốc hoặc gia tăng ảnh hưởng của các tác dụng phụ. Tốt nhất là bạn viết một danh sách những thuốc bạn đang dùng (bao gồm thuốc được kê toa, không kê toa và thực phẩm chức năng) và cho bác sĩ hoặc dược sĩ xem. Không được tự ý dùng thuốc, ngưng hoặc thay đổi liều lượng của thuốc mà không có sự cho phép của bác sĩ, đặc biệt là: Dùng cùng tetracyclin , ciprofloxacin, các chế phẩm chứa sắt, đồng, làm giảm hấp thu kẽm. Hãy tham khảo ý kiến bác sĩ về việc uống thuốc cùng thức ăn, rượu và thuốc lá. Tình trạng sức khỏe của bạn có thể ảnh hưởng đến việc sử dụng thuốc này. Báo cho bác sĩ biết nếu bạn có bất kỳ vấn đề sức khỏe nào."
     ],
     "id": "farzincol-10mg-pharmedic-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Farzincol 10mg Pharmedic 100v",
@@ -1772,7 +1848,8 @@
       "Tương tác thuốc: Sự hấp thu kẽm có thể giảm do bổ sung sắt, penicillamin, các chế phẩm có chứa phospho và tetracyclin. Kẽm bổ sung làm giảm hấp thu đồng, fluorquinolon, sắt, penicillamin và tetracyclin."
     ],
     "id": "farzincol-10mg-pharmedic-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Fatig Abbott 20 ỐNG",
@@ -1798,7 +1875,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "fatig-abbott-20-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Feliccare Trường THỌ 10x10",
@@ -1822,7 +1900,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "feliccare-truong-tho-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Femalto cpc1hn 30ml",
@@ -1844,7 +1923,8 @@
       "Tương tác thuốc: Nghiên cứu trên chuột không cho thấy tương tác giữa sắt (III) hydroxyd polymaltose với các thuốc sau: Tetracyclin, nhôm hydroxyd, acetylsalicylat, sulfasalazin, calci carbonat, calci acetat, calci phosphat phối hợp với vitamin D3, bromazepam, magnesi aspartat, D-penicillinamin, methyldopa, paracetamol, auranofin. Tương tự, không có tương tác giữa sắt (III) hydroxyd polymaltose với thức ăn chứa acid phytic, acid oxalic, tannin, natri alginat, cholin và các muối cholin, vitamin A, vitamin D3, vitamin E, dầu đậu nành trong các nghiên cứu in vitro. Có thể sử dụng sắt (III) hydroxyd polymaltose trong hoặc ngay sau bữa ăn. Tương tác giữa sắt (III) hydroxyd polymaltose và tetracyclin hoặc nhôm hydroxyd đã được đánh giá qua 3 nghiên cứu trên người (nghiên cứu chéo, 22 bệnh nhân/nghiên cứu). Không có sự giảm đáng kể về mức độ hấp thu của tetracyclin. Nồng độ tetracyclin trong huyết tương đủ để có tác dụng không bị giảm. Mức độ hấp thu sắt từ sắt (III) hydroxyd polymaltose cũng không bị giảm bởi nhôm hydroxyd và tetracyclin. Do đó có thể sử dụng đồng thời sắt (III) hydroxyd polymaltose với tetracyclin hoặc các hợp chất phenolic và các muối nhôm hydroxyd. Không chỉ định dùng đồng thời các chế phẩm bổ sung sắt đường tiêm và Femalto do sự hấp thu sắt qua đường uống có thể bị ức chế và chỉ sử dụng đường tiêm khi đường uống không thích hợp."
     ],
     "id": "femalto-cpc1hn-30ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ferricure 150mg 2x14",
@@ -1866,7 +1946,8 @@
       "Tương tác thuốc: Các thuốc kháng acid làm giảm hấp thu sắt. Sắt có thể làm rối loạn sự hấp thu cũng như làm ảnh hưởng đến sinh khả dụng của Tetracyclin, Cholestyramin , kháng sinh Quinolon, Penicillamin, Thyroxin, Levodopa, Carbodopa, Alpha- methyldopa. Nên dùng Ferricure 100mg/5ml cách 2 - 3 giờ trước hoặc sau khi dùng những thuốc kể trên."
     ],
     "id": "ferricure-150mg-2x14",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ferrovit MEGA 5x10",
@@ -1889,7 +1970,8 @@
       "Tương tác thuốc: Sắt fumarate, kết hợp của hơn 200 mg Vitamin C mỗi 30 mg sắt nguyên tố làm tăng sự hấp thu đường uống của sắt. Sự hấp thu đường uống của sắt và tetracyclin giảm khi dùng chung hai thuốc này với nhau. Sự hấp thu của các fluoroquinolon, levodopa, methyldopa , và penicillamin có thể bị giảm do hình thành phức hợp ion sắt-quinolon. Sử dụng đồng thời thuốc kháng acid, thuốc kháng histamin H2 (cimetidin), hoặc ức chế bơm proton có thể làm giảm hấp thu của sắt. Sự đáp ứng với liệu pháp sắt có thề bị trì hoãn bởi chloramphenicol. Acid folic có thể làm giảm nồng độ của phenytoin, và hiệu quả điều trị của raltitrexed . Tác dụng của Vitamin B12 có thể giảm khi dùng đồng thời với chloramphenicol."
     ],
     "id": "ferrovit-mega-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Fogyma cpc1 4x5 ỐNG",
@@ -1914,7 +1996,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "fogyma-cpc1-4x5-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Folacid 5mg Pharmedic 4x20",
@@ -1936,7 +2019,8 @@
       "Tương tác thuốc: Dùng chung folat với sulphasalazin, thuốc tránh thai: Hấp thu folat có thể bị giảm. Dùng chung Acid folic với thuốc chống co giật: Nồng độ thuốc chống co giật trong huyết thanh có thể bị giảm. Cotrimoxazol làm giảm tác dụng điều trị thiếu máu nguyên hồng cầu khổng lồ của acid folic."
     ],
     "id": "folacid-5mg-pharmedic-4x20",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Folihem Remedica 10x10",
@@ -1959,7 +2043,8 @@
       "Tương tác thuốc: Dùng thuốc đồng thời làm giảm hiệu lực của các fluoroquinolone, levodopa, carbidopa, thyroxine và các bisphosphonate. Sắt làm giảm hấp thu penicillamine. Dùng thuốc đồng thời với tetracycline dẫn đến giảm hấp thu tetracycline và sắt. Dùng đồng thời với antacid làm giảm hấp thu sắt. Nồng độ thuốc chống động kinh trong huyết thanh có thế giảm bởi acid folic. Thông báo cho bác sĩ các thuốc đang sử dụng trước khi dùng thuốc."
     ],
     "id": "folihem-remedica-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Gadacal 200mg Hataphar 20 ỐNG X 10ml",
@@ -1984,7 +2069,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "gadacal-200mg-hataphar-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "GEL UỐNG Tumegas Hadiphar 20 GÓI",
@@ -2007,7 +2093,8 @@
       "Tương tác thuốc: Chưa có thông tin."
     ],
     "id": "gel-uong-tumegas-hadiphar-20-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Geotonik 3x10",
@@ -2030,7 +2117,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu đầy đủ về tương tác thuốc của sản phẩm kết hợp nhân sâm, multi-vitamin và khoáng chất (viên nang mềm Geotonik), tuy nhiên các tương tác đơn lẻ của một số hoạt chất trong thuốc đã được báo cáo: Vitamin A (retinol palmitat): Neomycin, cholesterol, parafin lỏng làm giảm hấp thu vitamin A. Các thuốc uống tránh thai có thể làm tăng nồng độ vitamin A trong huyết tương và có tác dụng không thuận lợi cho sự thụ thai. Vitamin A và isotretinoin dùng đồng thời thì có thể dẫn đến tình trạng như dùng vitamin A quá liều. Vitamin E (alpha-tocopherol acetat): Vitamin E liều cao có thể suy giảm khả năng hấp thu của dạ dày đối với vitamin A và vitamin K. Vitamin E cũng có thể làm suy giảm tác dụng của vitamin K đối với quá trình tái tạo prothrombin và do vậy nó có thể làm cho warfarin phát huy tác dụng. Vitamin D3 (cholecalciferol): Không nên điều trị đồng thời vitamin D với cholestyramin hoặc colestipol hydroclorid, vì có thể dẫn đến giảm hấp thu vitamin D ở ruột. Không nên dùng đồng thời vitamin D với corticosteroid do cản trở tác dụng của vitamin D. Calcium pantothenat: Vitamin B5 tương tác với một số hoạt chất đối kháng như avidin, biotin, sulffon, desthiobiotin và một vài acid imidazolidon carboxylic. Vitamin B2 (riboflavin): Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Vitamin PP (nicotinamid): Sử dụng nicotinamid đồng thời với chất ức chế men khử HGM-CoA có thể làm tăng nguy cơ gây tiêu cơ vân. Sử dụng nicotinamid đồng thời với thuốc chẹn alpha-adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Khẩu phần ăn và/hoặc liều lượng uống thuốc hạ đường huyết hoặc insulin có thể cần phải điều chỉnh khi sử dụng đồng thời với nicotinamid. Sử dụng nicotinamid đồng thời với các thuốc có độc tính với gan có thể làm tăng thêm tác hại độc cho gan. Không nên dùng đồng thời nicotinamid với carbamazepin vì gây tăng nồng độ carbamazepin huyết tương dẫn đến tăng độc tính. Vitamin B6 (pyridoxin hydroclorid): Vitamin B6 làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson. Vitamin C (ascorbic acid): Dùng đồng thời vitamin C với aspirin làm tăng bài tiết vitamin C và làm giảm aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Calci: Những thuốc sau đây ức chế thải trừ calci qua thận: Các thiazid, clopamid, ciprofloxacin, chlorthalidon, thuốc chống co giật. Calci làm giảm hấp thu demeclocylin, doxycyclin, metacylin, minocyclin, sắt, kẽm và những chất khoáng thiết yếu khác. Thuốc lợi niệu thiazid làm tăng nồng độ calci huyết."
     ],
     "id": "geotonik-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Glucozinc S 10mg Phapharco 30 GÓI",
@@ -2052,7 +2140,8 @@
       "Tương tác thuốc: Sự hấp thu của kẽm giảm khi dùng đồng thời với chất sắt, penicillamin, các chế phẩm có chứa phốt pho, tương tác với nhóm kháng sinh nhóm quinolon và tetracyclin."
     ],
     "id": "glucozinc-s-10mg-phapharco-30-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Green PAM Green PAM Medica Korea 6x10 6x10",
@@ -2076,7 +2165,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "green-pam-green-pam-medica-korea-6x10-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Greenramin HÀ TÂY 10 LỌ X 15ml",
@@ -2098,7 +2188,8 @@
       "Tương tác thuốc: Sắt có thể làm rối loạn sự hấp thu cũng như làm ảnh hưởng đến sinh khả dụng của tetracycline, biphosphonate, kháng sinh quinolone, penicillamine, thyroxine, levodopa, carbodopa, alpha- methyldopa. Nên dùng thuốc này cách 2 giờ trước hoặc sau khi dùng những thuốc kể trên. Sự hấp thu sắt có thể tăng lên khi sử dụng đồng thời thuốc này với trên 200mg acid ascorbic hay giảm xuống khi sử dụng đồng thời những thuốc kháng acid. Khi dùng đồng thời chloramphenicol có thể làm chậm sự đáp ứng của liệu pháp điều trị dùng sắt. Không có báo cáo nào về tương tác dược lý khi sử dụng đồng thời thuốc này với những thuốc đối kháng histamin H2. Những phức hợp có chứa sắt như phosphat, phytat và oxalat có chứa trong nhiều loại rau, sữa, cà phê và trà có khả năng ức chế sự hấp thu sắt. Nên dùng thuốc này cách 2 giờ trước hoặc sau khi dùng những thức ăn và thức uống kể trên."
     ],
     "id": "greenramin-ha-tay-10-lo-x-15ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HÀ THỦ Ô Domesco 3x10",
@@ -2121,7 +2212,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Dùng ở liều chỉ định chưa có báo cáo về tương tác thuốc."
     ],
     "id": "ha-thu-o-domesco-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HÀ THỦ Ô Traphaco 5x20",
@@ -2147,7 +2239,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "ha-thu-o-traphaco-5x20",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Haneuvit Hasan 10x10",
@@ -2171,7 +2264,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể làm thay đổi khả năng hoạt động của thuốc hoặc gia tăng ảnh hưởng của các tác dụng phụ. Tốt nhất là bạn viết một danh sách những thuốc bạn đang dùng (bao gồm thuốc được kê toa, không kê toa và thực phẩm chức năng) và cho bác sĩ hoặc dược sĩ xem. Không được tự ý dùng thuốc, ngưng hoặc thay đổi liều lượng của thuốc mà không có sự cho phép của bác sĩ, đặc biệt là: Vitamin B6. Với levodopa: Vitamin B6 kích hoạt Enzym Dopadecarboxylase ngoại biên. Do đó không được dùng Vitamin B6 chung với Levodopa nếu chất này không có phối hợp chung với chất ức chế Dopadecarboxylase. Liều dùng Vitamin B6 200mg/ngày có thể gây giảm 40 - 50% nồng độ của Phenytoin và Phenobarbital trong máu ở một số người bệnh. Vitamin B6 có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai dạng uống, Isoniazid, Penicillamin có thể làm tăng nhu cầu về Vitamin B6. Vitamin B12. Sự hấp thu Vitamin B12 qua đường dạ dày-ruột bị giảm bởi Neomycin, Acid Aminosalicylic, thuốc kháng Histamin H2 và colchicin. Nồng độ Vitamin B12 trong huyết tương có thể bị giảm khi dùng đồng thời với thuốc ngừa thai. Cloramphenicol dạng tiêm có thể làm giảm hiệu quả của Vitamin B12 trong điều trị bệnh thiếu máu. Thức ăn và rượu bia Hãy tham khảo ý kiến bác sĩ về việc uống thuốc cùng thức ăn, rượu và thuốc lá. Tình trạng sức khỏe Tình trạng sức khỏe của bạn có thể ảnh hưởng đến việc sử dụng thuốc này. Báo cho bác sĩ biết nếu bạn có bất kỳ vấn đề sức khỏe nào."
     ],
     "id": "haneuvit-hasan-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hasanvit Hasan 20v",
@@ -2197,7 +2291,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hasanvit-hasan-20v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hemafolic 100mg Nadyphar 10 ỐNG X 10ml",
@@ -2219,7 +2314,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Liên quan đến phức hợp hydroxyd sắt (III) và polymaltose: Không có tương tác với thức ăn và các thuốc khác do sắt tồn tại ở dạng phức hợp với polymaltose nên không bị ion hóa. Liên quan đến acid folic: Dùng đồng thời acid folic với các thuốc chống co giật có thể làm giảm nồng độ thuốc chống co giật trong huyết thanh. Folat và sulfasalazin: Hấp thu folat có thể bị giảm. Folat và thuốc tránh thai uống: Làm giảm chuyển hóa của folat và gây giảm folat và vitamin B, ở một mức độ nhất định. Acid folic và cotrimoxazol: Cotrimoxazol làm giảm tác dụng điều trị thiếu máu nguyên hồng cầu khổng lồ của acid folic."
     ],
     "id": "hemafolic-100mg-nadyphar-10-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hemifere 100mg 3x10",
@@ -2243,7 +2339,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "hemifere-100mg-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HOÀN BÁT VỊ BỔ THẬN Dương OPC 240v",
@@ -2268,7 +2365,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "hoan-bat-vi-bo-than-duong-opc-240v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "HOÀN BỔ THẬN ÂM NAM HÀ 10 GÓI X 5g",
@@ -2291,7 +2389,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "hoan-bo-than-am-nam-ha-10-goi-x-5g",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Homapine 1000mg Aenova 28v",
@@ -2313,7 +2412,8 @@
       "Tương tác thuốc: Tương tác Các thuốc chống đông máu đường uống: Xem mục Cảnh báo và thận trọng khi dùng thuốc. Không xảy ra hiện tượng xuất huyết khi dùng thuốc đồng thời với warfarin. Tuy nhiên, khi dùng thuốc đồng thời với warfarin hoặc khi ngừng điều trị với thuốc, bệnh nhân cần được kiểm tra thời gian prothrombin. Tương kỵ Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "homapine-1000mg-aenova-28v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Homtamin Ginseng Korea United 12x5",
@@ -2337,7 +2437,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "homtamin-ginseng-korea-united-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ideos 500mg/400iu Innotech 4 TUÝP X 15 VIÊN NHAI",
@@ -2361,7 +2462,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "ideos-500mg-400iu-innotech-4-tuyp-x-15-vien-nhai",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ipec-plus Aristo 3x10",
@@ -2383,7 +2485,8 @@
       "Tương tác thuốc: Không tìm thấy tương tác nào giữa sắt polymaltose và thức ăn hoặc giữa sắt polymaltose và các thuốc khác do nó là dạng không ionic tự nhiên."
     ],
     "id": "ipec-plus-aristo-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Kakama 150mg PV 60v",
@@ -2407,7 +2510,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "kakama-150mg-pv-60v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "KALI Clorid 10% 500mg/5ml Vinphaco 10 X 5 ỐNG",
@@ -2429,7 +2533,8 @@
       "Tương tác thuốc: Kali clorid có thể tương tác với amphotericin B, corticosteroid, glucocorticoid, corticotropin, ACTH (adrenocorticotropic hormon), gentamicin, penicilin (kể cả azlocilin, carbenicilin, mezlocilin, piperacilin, ticarcilin), polymycin B. Nhu cầu kali có thể tăng ở những người dùng những thuốc trên, do tăng bài tiết kali qua thận, cần theo dõi chặt chẽ kali huyết. Các thuốc ức chế men chuyển, thuốc chống viêm không steroid (NSAID), các tác nhân chẹn beta giao cảm, máu từ ngân hàng máu (có thể chứa tới 30 mmol/ lít huyết tương hoặc tới 65 mmol/ lít máu khi bảo quản quá 10 ngày), cyclosporin, thuốc lợi tiểu ít thải kali, heparin, sữa có ít muối, chất thay thế muối, sử dụng đồng thời với kali clorid có thể tăng nồng độ kali huyết, làm tăng kali huyết nặng dẫn tới ngừng tim, đặc biệt trong suy thận và khi sử dụng các chất chống viêm không steroid cùng với kali clorid có thể tăng nguy cơ tác dụng phụ đối với dạ dày - ruột. Kali clorid cần sử dụng thận trọng ở những người dùng muối calci đường tiêm, vì có nguy cơ gây loạn nhịp tim. Khi dùng kali clorid kết hợp với thuốc lợi tiểu thiazid (làm mất nhiều kali), có nguy cơ tăng kali huyết nếu ngừng thuốc lợi tiểu. Kali clorid dùng đồng thời với insulin hoặc natri bicarbonat gây giảm kali huyết thanh do thúc đẩy ion kali vào trong tế bào. Không phối hợp với glucose khi bắt đầu điều trị hạ kali huyết bằng kali vì glucose có thể làm giảm nồng độ kali trong huyết tương. Thận trọng khi dùng kali cùng các chế phẩm làm tăng kali huyết như thuốc lợi tiểu quai, thuốc ức chế men chuyển, cyclosporin và các thuốc chứa kali như kali penicillin. Kali clorid không được dùng đồng thời ở người bị block tim hoàn toàn hoặc nặng đang dùng digitalis (ví dụ như digoxin), tuy nhiên nếu phải bổ sung kali để đề phòng hoặc điều trị hạ kali huyết ở những người dùng digitalis thì phải theo dõi chặt chẽ nồng độ kali huyết."
     ],
     "id": "kali-clorid-10-500mg-5ml-vinphaco-10-x-5-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Kalium Chloratum Biomedica 10x10",
@@ -2452,7 +2557,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "kalium-chloratum-biomedica-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Kidney CAP OPC 5x10",
@@ -2478,7 +2584,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "kidney-cap-opc-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Kidneyton OPC 5x10",
@@ -2502,7 +2609,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "kidneyton-opc-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "KIỆN NHI OP SURE 90ml OPC",
@@ -2527,7 +2635,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "kien-nhi-op-sure-90ml-opc",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "L-cystine 500mg Inter Pharma 12x5",
@@ -2549,7 +2658,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "l-cystine-500mg-inter-pharma-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "L-cystine 500mg Medisun PHIL 12x5",
@@ -2575,7 +2685,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "l-cystine-500mg-medisun-phil-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "L-cystine Phils-lin 500mg PHIL 12x5",
@@ -2601,7 +2712,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "l-cystine-phils-lin-500mg-phil-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Linezin 4mg/ml HÀ NAM 20 ỐNG",
@@ -2623,7 +2735,8 @@
       "Tương tác thuốc: Các chất tạo phức như trientine, D-penicillamine, dimercaptopropanesulfonic acid (DMPS), dimercaptosuccinic acid (DMSA), ethylenediaminetetraacetic acid (EDTA) có thể làm giảm hấp thu hoặc tăng bài tiết kẽm. Nếu dùng đồng thời kẽm với phosphate, các muối iron, copper và calci thì khả năng hấp thu kẽm có thể bị giảm. Kẽm có thể ảnh hưởng đến khả dụng của đồng. Lượng kẽm trong máu cao có thể làm giảm sự hấp thu và dự trữ iron. Kẽm làm giảm sự hấp thu của các tetracycline và các quinolon (như ciprofloxacin, levofloxacin, moxifloxacin, norfloxacin và ofloxacin). Do đó, nên có khoảng cách ít nhất 3 giờ giữa việc uống kẽm và các loại thuốc kể trên. Thực phẩm có hàm lượng phytin cao (như các sản phẩm ngũ cốc, các loại đậu, quả hạch) làm giảm sự hấp thu kẽm. Có một số bằng chứng cho thấy cà phê ảnh hưởng đến sự hấp thu kẽm."
     ],
     "id": "linezin-4mg-ml-ha-nam-20-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "LINH CHI OPC 2x10",
@@ -2648,7 +2761,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "linh-chi-opc-2x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "LINH CHI Domesco 4x10",
@@ -2672,7 +2786,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "linh-chi-domesco-4x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "LINH Chi-f FITO 40v",
@@ -2696,7 +2811,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "linh-chi-f-fito-40v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lipofundin 10 Braun 250ml",
@@ -2719,7 +2835,8 @@
       "Tương tác thuốc: Heparin Heparin được dùng trong các liều lâm sàng gây ra sự giải phóng nhất thời lipoprotein lipase vào máu. Điều này bước đầu có thể dẫn đến việc phân giải lipid huyết tương tăng lên, sau đó là giảm nhất thời sự thanh thải triglyceride. Các dẫn xuất của coumarin Dầu đậu tương có một hàm lượng tự nhiên vitamin K1. Tuy nhiên, hàm lượng này là rất thấp trong Lipofundin MCT/LCT đến mức nó không ảnh hưởng đáng kể đến quá trình đông máu ở các bệnh nhân được điều trị bằng các dẫn xuất của coumarin. Nhưng tình trạng đông máu phải được theo dõi ở các bệnh nhân được điều trị đồng thời bằng coumarin."
     ],
     "id": "lipofundin-10-braun-250ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lipofundin Mct/lct 20 Bbraun 100ml - DÙNG CHO TIÊM Truyền TĨNH MẠCH",
@@ -2742,7 +2859,8 @@
       "Tương tác/Tương kỵ thuốc: Tương tác thuốc Heparin được dùng trong các liều lâm sàng gây ra sự giải phóng nhất thời lipoprotein lipase vào máu. Điều này bước đầu có thể dẫn đến việc phân giải lipid huyết tương tăng lên, sau đó là giảm nhất thời sự thanh thải triglyceride. Dầu đậu tương có một hàm lượng tự nhiên vitamin K1. Tuy nhiên, hàm lượng này là rất thấp trong Lipofundin MCT/LCT đến mức nó không ảnh hưởng đáng kể đến quá trình đông máu ở các bệnh nhân được điều trị bằng các dẫn xuất của coumarin. Nhưng, tình trạng đông máu phải được theo dõi ở các bệnh nhân được điều trị đồng thời bằng coumarin. Tương kỵ thuốc Không được sử dụng Lipofundin MCT/LCT làm dung dịch dẫn truyền cho các dung dịch điện giải hoặc các thuốc khác, cũng không được trộn nhũ tương với các dung dịch truyền khác theo cách không được kiểm soát, vì tính ổn định đầy đủ của nhũ tương sẽ không còn được đảm bảo. Chỉ được phối hợp trong nuôi dưỡng qua đường tĩnh mạch sau khi đã kiểm soát và đảm bảo tính tương hợp của các thuốc."
     ],
     "id": "lipofundin-mct-lct-20-bbraun-100ml-dung-cho-tiem-truyen-tinh-mach",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Logpatat PHIL 6x10",
@@ -2767,7 +2885,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "logpatat-phil-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "LONG Huyết PH 2x12 - TAN BẦM TÍM GIẢM PHÙ NỀ",
@@ -2791,7 +2910,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "long-huyet-ph-2x12-tan-bam-tim-giam-phu-ne",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lubirine PHIL Inter Pharma 10x10",
@@ -2813,7 +2933,8 @@
       "Tương tác thuốc: Chưa có báo cáo về tương tác của thuốc này và các thuốc khác."
     ],
     "id": "lubirine-phil-inter-pharma-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "LỤC VỊ AGI Agimexpharm 30 GÓI X 5ml",
@@ -2835,7 +2956,8 @@
       "Tương tác thuốc: Tương tác: Vẫn chưa phát hiện được việc uống chung Lục vị Agi với các thuốc khác có gây ra những tác dụng không mong muốn hay không. Tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "luc-vi-agi-agimexpharm-30-goi-x-5ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lumbrotine tw3 3x10",
@@ -2857,7 +2979,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "lumbrotine-tw3-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Maecran Genupharma 12x5",
@@ -2880,7 +3003,8 @@
       "Tương tác thuốc: Thuốc Maecran có thể tương tác với thuốc nào? Tương tác thuốc có thể làm thay đổi khả năng hoạt động của thuốc hoặc gia tăng ảnh hưởng của các tác dụng phụ. Tốt nhất là bạn viết một danh sách những thuốc bạn đang dùng (bao gồm thuốc được kê toa, không kê toa và thực phẩm chức năng) và cho bác sĩ hoặc dược sĩ xem. Không được tự ý dùng thuốc, ngưng hoặc thay đổi liều lượng của thuốc mà không có sự cho phép của bác sĩ, đặc biệt là: Dùng thuốc đồng thời với antialdorteron hoặc triamteron, tăng oxalate niệu có thể xảy ra. Không dùng đồng thời với những thuốc sau: Muối phosphate, muối calcium, tetracycline, thuốc kháng acid. Không uống trà có chứa tanin trong thời gian dùng thuốc. Thức ăn và rượu bia có tương tác với thuốc Maecran không? Hãy tham khảo ý kiến bác sĩ về việc uống thuốc cùng thức ăn, rượu và thuốc lá. Tình trạng sức khỏe nào ảnh hưởng tới thuốc Maecran? Tình trạng sức khỏe của bạn có thể ảnh hưởng đến việc sử dụng thuốc này. Báo cho bác sĩ biết nếu bạn có bất kỳ vấn đề sức khỏe nào."
     ],
     "id": "maecran-genupharma-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Maginew 470mg/5mg Agimexpharm 10x10",
@@ -2906,7 +3030,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "maginew-470mg-5mg-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magne b6 Corbiere Sanofi 5x10",
@@ -2933,7 +3058,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "magne-b6-corbiere-sanofi-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magne - b6 Stella 5x10",
@@ -2958,7 +3084,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "magne-b6-stella-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magnes b6 470mg Tipharco 10x10",
@@ -2982,7 +3109,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "magnes-b6-470mg-tipharco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magnesi - b6 Khapharco 10x10",
@@ -3006,7 +3134,8 @@
       "Đối tượng cần thận trọng: Trẻ em dưới 12 tuổi"
     ],
     "id": "magnesi-b6-khapharco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magnesi - b6 Stella Tablet 10x10",
@@ -3031,7 +3160,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "magnesi-b6-stella-tablet-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Magnesium - b6 Tvpharm 10x10",
@@ -3058,7 +3188,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "magnesium-b6-tvpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Maipochi PHIL Inter Pharma 12x5",
@@ -3081,7 +3212,8 @@
       "Tương tác thuốc: Trong trường hợp dùng chung với tetracyclin thì sẽ giảm khả năng hấp thu của nhau. Loại thuốc có chứa phosphat hoặc calci sẽ ảnh hưởng đến sự hấp thu magnesi. Magnesi sẽ làm giảm sự hấp thu sắt. Nếu sử dụng đồng thời cùng với thuốc chứa sắt thì tác dụng của vitamin E sẽ bị giảm. Cholestyramin và liquid paraffin sẽ làm giảm sự hấp thu của những vitamin tan trong dầu."
     ],
     "id": "maipochi-phil-inter-pharma-12x5",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mazzgin DHG Pharma 10x10",
@@ -3103,7 +3235,8 @@
       "Tương tác thuốc: Tránh dùng kết hợp magnesi với các chế phẩm có chứa phosphat hoặc muối calci, là các chất ức chế quá trình hấp thu magnesi tại ruột non."
     ],
     "id": "mazzgin-dhg-pharma-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Medi-neuro Ultra Mediplantex 10x10",
@@ -3126,7 +3259,8 @@
       "Tương tác thuốc: Liên quan đến thiamin (vitamin B1) Vitamin B1 có thể làm tăng tác dụng của thuốc chẹn thần kinh-cơ. Các chất đối kháng thiamin như thiosemicarbazone và 5-fluorouracil có thể làm giảm tác dụng của thiamin, do đó có thể cần hiệu chỉnh liều thiamin khi dùng cùng các thuốc này. Thiamin có thể cho kết quả dương tính giả để xác định urobilinogen bởi phản ứng của Ehrlich. Liều cao của thiamin có thể can thiệp với các xét nghiệm quang phổ của nồng độ theophyllin trong huyết tương. Liên quan đến pyridoxin (vitamin B6) Vitamin B6 làm giảm tác dụng của levodopa, điều này không xảy ra nếu chế phẩm là hỗn hợp Levodopa-carbidopa hoặc Levodopa-benserazid. Một số thuốc có thể làm tăng nhu cầu về pyridoxin như hydralazin, isoniazid, penicilamin và thuốc tránh thai uống. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ đang dùng thuốc tránh thai. Liên quan đến cobalamin (vitamin B12) Hấp thu vitamin B12 từ đường tiêu hóa có thể bị giảm khi dùng cùng neomycin, acid aminosalicylic, các thuốc kháng thụ thể histamin H và colchicin. Nồng độ trong huyết thanh có thể bị giảm khi dùng đồng thời với thuốc tránh thai đường uống. Cloramphenicol dùng ngoài đường tiêu hóa có thể làm tác dụng của B12 trong bệnh thiếu máu. Tác dụng điều trị của vitamin B12 có thể bị giảm khi dùng đồng thời với omeprazol."
     ],
     "id": "medi-neuro-ultra-mediplantex-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mediphylamin 500mg Mediplantex 10x10",
@@ -3147,7 +3281,8 @@
       "Tương tác thuốc: Chưa có phát hiện nào về tác dụng phụ và hiện tượng tương tác."
     ],
     "id": "mediphylamin-500mg-mediplantex-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Meza-calci d3 Hataphar 6x10",
@@ -3169,7 +3304,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "meza-calci-d3-hataphar-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Moriamin Forte Resantis 10x10",
@@ -3192,7 +3328,8 @@
       "Tương tác thuốc: Cholestyramine, parafin ngăn cản sự hấp thu vitamin A và D tại ruột. Sử dụng vitamin C đồng thời với Fluphenazine dẫn đến giảm nồng độ fluphenazine huyết tương. Aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Sử dụng nicotinamide đồng thời với Thuốc chẹn alpha - adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Các thuốc có độc tính với gan có thể làm tăng thêm tác hại cho gan. Không nên dùng cùng với carbamazepine vì gây tăng nồng độ carbamazepine huyết tương dẫn đến tăng độc tính. Để tránh các tương tác có thể xảy ra, phải luôn báo bác sĩ hoặc dược sĩ mọi thuốc khác đang dùng."
     ],
     "id": "moriamin-forte-resantis-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Mumcal Phương ĐÔNG 4x5 ỐNG",
@@ -3216,7 +3353,8 @@
       "Đối tượng cần thận trọng: Tiểu đường"
     ],
     "id": "mumcal-phuong-dong-4x5-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Myhemo Reliv 3x10",
@@ -3238,7 +3376,8 @@
       "Tương tác thuốc: Sắt bị chelat hóa khi dùng kết hợp với tetracyclin và sự hấp thu của cả hai chất đều bị giảm, nếu cần dùng kết hợp 2 thuốc thì phải dùng cách xa khoảng 2-3 giờ. Sắt cũng chelat hóa với acid acetohydroxamic làm giảm sự hấp thụ của cả hai thuốc. Sự hấp thu sắt có thể bị giảm khi có sự hiện diện của các thuốc kháng acid và thuốc ức chế bơm proton làm giảm acid dạ dày. Sự hấp thu sắt cũng có thể bị giảm khi có thức ăn (như trà, cà phê, ngũ cốc nguyên hạt, trứng và sữa), neomycin và cholestyramine. Các bicacbonate, cacbonate, oxalate hoặc phosphat có thể làm giảm sự hấp thu sắt do tạo thành các phức chất không hòa tan. Sự hấp thụ sắt có thể tăng do acid ascorbic hoặc acid citric. Sự hấp thu sắt có thể bị giảm do calci, các muối magnesi đường uống và các chất bổ sung khoáng chất khác, kẽm và trientine. Nếu việc điều trị bằng sắt và trientine là cần thiết, cần phải dùng cách xa một khoảng thời gian thích hợp. Sự đáp ứng với sắt có thể bị chậm ở những bệnh nhân dùng chloramphenicol toàn thân. Chloramphenicol làm chậm sự thanh thải sắt trong huyết tương và sự kết hợp sắt vào các tế bào hồng cầu do ảnh hưởng sự tạo hồng cầu. Sắt làm giảm tác dụng làm hạ huyết áp của methyldopa. Nên tránh sử dụng đồng thời sắt và dimercaprol vì có thể hình thành chất phức hợp độc. Sắt làm giảm sự hấp thu của các fluoroquinolone, levodopa, carbidopa, entacapone, các bisphosphonate, penicillamine, hormone tuyến giáp như levothyroxin (cho dùng cách nhau ít nhất 2 giờ), mycophenolate, cefdinir và kẽm. Sắt có thể làm giảm sự hấp thu của eltrombopag (cho dùng cách nhau ít nhất 4 giờ). Nồng độ thuốc chống co giật trong huyết thanh có thể giảm khi dùng chung với folate, như folic acid có thể làm giảm nồng độ trong huyết tương của phenobarbital, phenytoin và primidone. Nên tránh sử dụng đồng thời folic acid với raltitrexed. Sự hấp thu folic acid có thể bị giảm bởi sulfasalazine."
     ],
     "id": "myhemo-reliv-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nadyfer Nadyphar 20 ỐNG",
@@ -3261,7 +3400,8 @@
       "Tương tác thuốc: Không nên phối hợp với muối sắt dạng tiêm chích vì có thể gây sốc do giải phóng sắt nhanh từ dạng phức hợp. Sắt gluconat làm giảm hấp thu: Ciprofloxacin, tetracyclin, diphosphat, đường uống. Sắt kết hợp tanin tạo kết tủa tanat sắt. Muối, oxyd, hydroxyd của magnesi, nhôm, calci phủ niêm mạc dạ dày-ruột làm giảm hấp thu đường tiêu hóa của sắt gluconat."
     ],
     "id": "nadyfer-nadyphar-20-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Neutri FORE Bidiphar 10x10",
@@ -3285,7 +3425,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "neutri-fore-bidiphar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nhiệt Miệng PV 5x10",
@@ -3309,7 +3450,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "nhiet-mieng-pv-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Notired EFF Strawberry 456/426mg Bidiphar 5x4",
@@ -3331,7 +3473,8 @@
       "Tương tác thuốc: Cần thận trọng khi kết hợp với các thuốc Fluroquinolones, thuốc thuộc nhóm cyclines, diphosphonate, khuyến cáo nên uống cách nhau ít nhất 3 giờ, cần thận trọng với các thuốc băng dạ dày có chứa chất alumine. Khi kết hợp với các thuốc lợi tiểu thiazid (indapamide, xipamide,... ) cần lưu ý đến nguy cơ tăng calci máu do giảm đào thải calci qua nước tiểu."
     ],
     "id": "notired-eff-strawberry-456-426mg-bidiphar-5x4",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Novobion cpc1 2x15",
@@ -3353,7 +3496,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "novobion-cpc1-2x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Obibebe 470mg HÀ TÂY 4x5 ỐNG",
@@ -3377,7 +3521,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "obibebe-470mg-ha-tay-4x5-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Obimin United 3x10",
@@ -3400,7 +3545,8 @@
       "Tương tác thuốc: Neomycins, cholestyramin, parafin lỏng làm giảm hấp thu vitamin A. Tránh dùng đồng thời vitamin A và isotretinoin. Sử dụng dầu khoáng quá mức có thể cản trở hấp thu vitamin D ở ruột. Không nên dùng đồng thời vitamin D với các glycoside trợ tim vì làm tăng độc tính của glycoside trợ tim do tăng calci huyết. Dùng đồng thời vitamin C và aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazine dẫn đến giảm nồng độ fluphenazine huyết tương. Dùng đồng thời niacinamide với chất ức chế khử HMG-CoA có thể làm tăng nguy cơ gây tiêu cơ vân. Dùng đồng thời niacinamide với thuốc chẹn alpha-adrenergic trị cao huyết áp có thể gây hạ huyết áp quá mức. Không nên dùng đồng thời niacinamide với carbamazepin vì gây tăng nồng độ carbamazepin huyết tương dẫn đến tăng độc tính."
     ],
     "id": "obimin-united-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Op.calife OPC 5x10",
@@ -3423,7 +3569,8 @@
       "Tương tác thuốc: Tránh cùng các đồ ăn, thức uống có tính kích thích dạ dày như: Cà phê, rượu bia và trà đậm. Hạn chế ăn nhiều thức ăn có hàm lượng cacbonhydrat và chất béo cao."
     ],
     "id": "op-calife-opc-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Opecalcium - OPV HỘP 20 ỐNG X 10ml",
@@ -3445,7 +3592,8 @@
       "Tương tác thuốc: Không dùng chung với thuốc tetracyclin (nên uống cách nhau ít nhất 3 giờ). Dùng đồng thời acid ascorbic với aspirin làm tăng bài tiết acid ascorbic và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời acid ascorbic và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Thuốc lợi tiểu nhóm thiazid ức chế thải trừ calci qua thận. Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "opecalcium-opv-hop-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ossizan C 1000mg Trường THỌ 10v",
@@ -3467,7 +3615,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Dùng đồng thời theo tỷ lệ trên 200 mg vitamin C với 30 mg sắt nguyên tố làm tăng hấp thu sắt qua đường dạ dày - ruột; tuy vậy, đa số người bệnh đều có khả năng hấp thu sắt uống vào một cách đầy đủ mà không phải dùng đồng thời vitamin C. Dùng đồng thời vitamin C với aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid - hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vitamin C liều cao có thể phá hủy vitamin B12; cần khuyên người bệnh tránh uống vitamin C liều cao trong vòng một giờ trước hoặc sau khi uống vitamin B12. Vì vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxy hóa - khử. Sự có mặt vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thử đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase."
     ],
     "id": "ossizan-c-1000mg-truong-tho-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Osteomed Meyer 2x15",
@@ -3491,7 +3640,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "osteomed-meyer-2x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Paluzine 10mg Apimed 20 ỐNG X 5ml",
@@ -3511,7 +3661,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "paluzine-10mg-apimed-20-ong-x-5ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pepevit 50mg Nadyphar 100v",
@@ -3536,7 +3687,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "pepevit-50mg-nadyphar-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Photomit 500mg/10ml 20 ỐNG X 10ml",
@@ -3558,7 +3710,8 @@
       "Tương tác thuốc: Calci có thể làm giảm sự hấp thu các kháng sinh nhóm tetracyclin hoặc fluorid uống, do đó nếu dùng đồng thời các chế phẩm này thì phải dùng cách xa ít nhất là 3 giờ. Khi dùng đồng thời, vitamin D làm tăng hấp thu Calci. Ở những bệnh nhân đang dùng digitalis, dùng liều cao Calci uống có thể làm tăng nguy cơ loạn nhịp tim."
     ],
     "id": "photomit-500mg-10ml-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thuốc Piascledine 300mg Hyphens (1 VỈ X 15 Viên) - ĐIỀU TRỊ VIÊM Xương KHỚP HÔNG VÀ KHỚP GỐI",
@@ -3583,7 +3736,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "thuoc-piascledine-300mg-hyphens-1-vi-x-15-vien-dieu-tri-viem-xuong-khop-hong-va-khop-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pokemine Medisun 20x10ml",
@@ -3606,7 +3760,8 @@
       "Tương tác thuốc: Vì sắt trong IPC ở dạng liên kết phức hợp nên các tương tác giữa ion sắt với các thành phần của thức ăn (như phytin, oxalat, tannin, vv...) và các thuốc uống cùng khác (tetracyclin, các thuốc kháng acid) ít xảy ra. Như các thuốc chứa sắt khác, IPC cũng có thể làm giảm hấp thu của một số thuốc. IPC không được uống trong vòng 2 giờ sau khi dùng các thuốc sau: Tetracyclin, fluoroquinolon, cloramphenicol, cimetidin, levodopa, levothyroxin, methyldopa hay penicillamin. Các thuốc kháng acid gắn kết có thể tách ra được với IPC trong khoảng pH 3 đến 8, khác với các muối sắt vô cơ là gắn kết bền vững không tách ra được, nhưng các thuốc kháng acid có thể làm giảm hấp thu IPC. Không được dùng thuốc kháng acid trong vòng 2 giờ sau khi dùng IPC. Không thấy có tương tác giữa các hormon và IPC (giống như các thuốc chứa sắt thông thường)."
     ],
     "id": "pokemine-medisun-20x10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Polyhema HÀ NAM 40 ỐNG X 10ml",
@@ -3628,7 +3783,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "polyhema-ha-nam-40-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pomatat Hataphar 6x10",
@@ -3650,7 +3806,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Khi dùng đồng thời Pomatat với các thuốc lợi tiểu giữ Kali và/hoặc các thuốc ức chế enzym chuyển đối angiotensin, có thể dẫn đến tăng kali huyết. Pomatat ức chế hấp thu tetracyclin uống, các muối sắt và natri fluorid. Khoảng cách dùng giữa POMATAT với các thuốc này là 3 giờ."
     ],
     "id": "pomatat-hataphar-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Procare Diamond 216mg Catalent 30v",
@@ -3674,7 +3831,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "procare-diamond-216mg-catalent-30v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Procare Pregnancy Breastfeeding 30v",
@@ -3697,7 +3855,8 @@
       "Tương tác thuốc: Các thuốc kháng giáp: Dùng kết hợp với I-ốt có thể dẫn tới giảm hoạt động tuyến giáp, và gây ra bệnh suy giáp."
     ],
     "id": "procare-pregnancy-breastfeeding-30v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pyridol cpc1 HN 20 ỐNG X 10ml",
@@ -3719,7 +3878,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "pyridol-cpc1-hn-20-ong-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Quazimin OPV 5ml",
@@ -3743,7 +3903,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "quazimin-opv-5ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Queenmin 12x5 PHIL Inter Pharma",
@@ -3769,7 +3930,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "queenmin-12x5-phil-inter-pharma",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Regatonic PHIL 6x10",
@@ -3792,7 +3954,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "regatonic-phil-6x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Saferon Glenmark 3x10",
@@ -3815,7 +3978,8 @@
       "Tương tác thuốc: IPC: Vì sắt trong IPC ở dạng liên kết phức hợp nên các tương tác giữa ion sắt với các thành phần của thức ăn (như phytin, oxalat, tannin, v.v...) và các thuốc uống cùng khác (tetracyclin, các thuốc kháng acid) ít xảy ra. Như các thuốc chứa sắt khác, IPC cũng có thể làm giảm hấp thu của một số thuốc. IPC không được uống trong vòng 2 giờ sau khi dùng các thuốc sau: Tetracyclin , fluoroquinolon, chloramphenicol, cimetidine, levodopa, levothyroxin, methyl dopa, penicillamin. Các thuốc kháng acid gắn kết có thể tách ra được với IPC trong khoảng pH 3 đến 8, khác với các muối sắt vô cơ là gắn kết bền vững không tách được; nhưng các thuốc kháng acid có thể làm giảm hấp thu IPC. Không được dùng thuốc kháng acid trong vòng 2 giờ sau khi dùng IPC. Không thấy có tương tác giữa các hormon và IPC (giống như các thuốc chứa sắt thông thường). Acid folic: Tình trạng thiếu acid folic có thể gây ra bởi một số thuốc như thuốc chống động kinh, thuốc tránh thai đường uống, thuốc chống lao, rượu, các thuốc kháng acid folic như methotrexat, pyrimethamin, triamteren, trimethoprim và sulfonamide. Trong một số trường hợp như khi dùng thuốc chống động kinh và methotrexat, có thể cần trị liệu bằng acid folinic hay acid folic để phòng ngừa xuất hiện thiếu máu hồng cầu to. Bổ sung acid folic đã được báo cáo làm giảm nồng độ phenytoin huyết thanh ở một vài trường hợp, và có thể cũng xảy ra với các thuốc barbiturat dùng chống động kinh."
     ],
     "id": "saferon-glenmark-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Saferon Glenmark 100ml",
@@ -3839,7 +4003,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "saferon-glenmark-100ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Safoli Avisure 2x15",
@@ -3862,7 +4027,8 @@
       "Tương tác thuốc: Liên quan tới sắt Phối hợp không được khuyến cáo: Sắt (các dạng muối) đường tiêm: Ngất xỉu hoặc sốc do giải phóng nhanh chóng sắt từ dạng phức hợp và bão hòa transferrin. Phối hợp cần được cân nhắc: Acid acetohydroxamic: Giảm hấp thu cả hai thuốc do hình thành phức chelat với ion sắt. Phối hợp cần thận trong khi sử dụng: Các biphosphonat: Giảm hấp thu các biphosphonat khi dùng kèm với các muối sắt dùng đường uống. Dùng các muối sắt cách xa thời gian dùng các biphosphonat (từ tối thiểu 30 phút cho đến trên 2 giờ, nếu có thể, phụ thuộc vào từng loại biphosphonat). Calci: Giảm hấp thu các muối sắt dùng đường uống. Dùng các muối sắt xa bữa ăn và không dùng cùng calci. Các cyclin (đường uống): Giảm hấp thu các cyclin đường uống (do hình thành phức hợp). Dùng các muối sắt cách xa thời gian dùng các cyclin (trên 2 giờ nếu có thể). Entacapon: Giảm hấp thu entacapon do hình thành phức chelat giữa hai chất. Dùng các muối sẳt cách xa thời gian dùng entacapon (trên 2 giờ, nếu có thể). Các kháng sinh fluoroquinolon, hormon tuyến giáp, levodopa/carbidopa, penicillamin, kẽm: Giảm hấp thu các thuốc này. Dùng các muối sắt cách xa thời gian dùng các thuốc này (trên 2 giờ, nếu có thể). Methyldopa: Giảm hấp thu methyldopa (do hình thành phức hợp). Dùng các muối sắt cách xa thời gian dùng methyldopa (trên 2 giờ, nếu có thể). Các dạng muối, oxyd và hydroxid của magnesi, nhôm và calci (dùng tại chỗ đường tiêu hóa): Giảm hấp thu các muối sắt. Dùng các muối sắt cách xa thời gian dùng các thuốc này (trên 2 giờ, nếu có thể). Cholestyramin: Giảm hấp thu các muối sắt. Dùng các muối sắt cách xa thời gian dùng cholestyramin (trước 1-2 giờ hoặc sau 4 giờ). Liên quan tới acid folic Phenobarbital, primidon, phenytoin, fosphenytoin: Giảm nồng độ trong huyết tương của các thuốc chống co giật do tăng chuyển hóa các thuốc này qua gan, trong đó acid folic là một cơ chất kết hợp. Giám sát trên lâm sàng và theo dõi nồng độ của các thuốc chống co giật trong huyết tương và hiệu chỉnh liều các thuốc này nếu cần thiết, trong suốt thời gian bố sung acid folic và sau khi ngừng thuốc."
     ],
     "id": "safoli-avisure-2x15",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SÁNG MẮT Traphaco 10x10",
@@ -3885,7 +4051,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "sang-mat-traphaco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SÁNG MẮT Traphaco 3x10",
@@ -3908,7 +4075,8 @@
       "Tương tác thuốc: Chưa phát hiện thấy tương tác của thuốc với các thuốc khác."
     ],
     "id": "sang-mat-traphaco-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Savprocal D SAVI 3x10",
@@ -3930,7 +4098,8 @@
       "Tương tác thuốc: Thực phẩm cần tránh khi sử dụng thuốc Thực phẩm giàu acid oxalic, phosphat, acid phytic (ngũ cốc) nên ăn cách thời điểm uống thuốc 2 giờ. Thuốc cần tránh khi sử dụng thuốc này Thuốc lợi tiểu thiazid: Có thể làm giảm bài tiết calci nên làm tăng nguy cơ tăng calci huyết. Một số thực phẩm giàu acid oxalie, phosphat, acid phytinic: Có thể làm giảm sự hấp thu calci. Phenytoin, barbiturat: Có thể ảnh hưởng đến sự chuyển hóa của vitamin D thành các chất chuyển hóa có hoạt tính. Do đó làm giảm tác dụng của vitamin D khi sử dụng đồng thời. Glucocorticoid: Có thể làm giảm tác dụng của vitamin D. Digitalis và các glyoosid tim khác: Các thuốc uống kết hợp calci và vitamin D có thể làm tăng tác dụng của digitalis và các glycosid tim khác. Do đó người bệnh cần được theo dõi y tế chặt chẽ, nếu cần có thể theo dõi điện tâm đồ (ECG: Electro-cardiography) và calci. Muối calci có thể làm giảm sự hấp thu của thyroxin, bisphosphonat, natri fluorid, quinolon, tetracyclin và sắt. Nên uống các thuốc này cách nhau khoảng 4 tiếng."
     ],
     "id": "savprocal-d-savi-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sibemag Pharmedic 3x10",
@@ -3956,7 +4125,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "sibemag-pharmedic-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sitar Traphaco 10 GÓI",
@@ -3979,7 +4149,8 @@
       "Tương tác thuốc: Chưa có tương tác thuốc nào khác được ghi nhận."
     ],
     "id": "sitar-traphaco-10-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Stimol Biocodex 18 GÓI X 10ml",
@@ -4004,7 +4175,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "stimol-biocodex-18-goi-x-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Surbex-z Abbott 10x10",
@@ -4029,7 +4201,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "surbex-z-abbott-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "TAM THẤT OPC 2x10",
@@ -4053,7 +4226,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tam-that-opc-2x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tardyferon b9 3x10",
@@ -4076,7 +4250,8 @@
       "Tương tác thuốc: Phối hợp không khuyên dùng Sắt (muối) (đường tiêm) Ngất, thậm chí bị sốc, cho là do sắt được giải phóng nhanh từ dạng phức hợp và bão hòa transferrin. Phối hợp cần lưu ý Vì các ion sắt ức chế hấp thu các cyclin uống, tránh dùng thuốc này đồng thời với các cyclin. Cần dùng Tardyferon B9 cách cyclin một khoảng thời gian thích hợp (ví dụ: 2 giờ). Tăng nguy cơ gây độc của D-penicillamin khi ngưng dùng điều trị với sắt. Có thể làm giảm hấp thu sắt khi dùng đồng thời với các chất bảo vệ tế bào. Cần dùng Tardyferon B9 cách các thuốc chống acid một khoảng thời gian thích hợp (ví dụ: 2 giờ). Để tránh tương tác thuốc có thể xảy ra với nhiều loại thuốc khác, nhất là muối sắt đường tiêm, phải thông báo cho bác sĩ hoặc dược sĩ bất kỳ loại thuốc điều trị nào khác hiện đang sử dụng."
     ],
     "id": "tardyferon-b9-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tarfloz 300mg Celogen 3x10",
@@ -4100,7 +4275,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "tarfloz-300mg-celogen-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "VIÊN UỐNG TÂY THI THÁI Dương 10 GÓI",
@@ -4125,7 +4301,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vien-uong-tay-thi-thai-duong-10-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "VIÊN HOÀN CỨNG TÂY THI THÁI Dương 30 GÓI",
@@ -4150,7 +4327,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vien-hoan-cung-tay-thi-thai-duong-30-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Teaves Vianpharma 25 GÓI",
@@ -4172,7 +4350,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "teaves-vianpharma-25-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "AN THẢO NAM DƯỢC 5x10",
@@ -4197,7 +4376,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "an-thao-nam-duoc-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tieukhatling CAPS Kahng MINH 10x10",
@@ -4222,7 +4402,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tieukhatling-caps-kahng-minh-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tomikan NHẤT NHẤT 2x10",
@@ -4247,7 +4428,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tomikan-nhat-nhat-2x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tothema 2x10 ỐNG 10ml",
@@ -4270,7 +4452,8 @@
       "Tương tác thuốc: Không nên phối hợp Chế phẩm sắt (dạng muối; đường tiêm): Xỉu, thậm chí sốc do giải phóng nhanh sắt từ dạng phức hợp và do bão hòa siderophiline. Thận trọng khi phối hợp Ciprofloxacine: Sắt làm giảm sinh khả dụng của ciprofloxacin, dùng các thuốc này cách xa nhau trên 2 giờ. Cyclin (đường uống), Diphosphonat (đường uống): Sắt làm giảm hấp thu của các thuốc này ở đường tiêu hóa, cần dùng các thuốc này cách xa nhau trên 2 giờ. Muối, oxyd, hydroxyd của Mg, AI và Ca (bao phủ niêm mạc dạ dày- ruột) làm giảm hấp thu đường tiêu hóa của muối sắt. Dùng các thuốc này cách xa nhau trên 2 giờ."
     ],
     "id": "tothema-2x10-ong-10ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "TRÀ Casoran Traphaco 10 GÓI",
@@ -4296,7 +4479,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tra-casoran-traphaco-10-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Traluvi Traphaco 100ml",
@@ -4321,7 +4505,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "traluvi-traphaco-100ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Trineuron 250mg Pymepharco 5x10",
@@ -4344,7 +4529,8 @@
       "Tương tác thuốc: Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa - benserazid. Liều dùng pyridoxin 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbiton trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu pyridoxin."
     ],
     "id": "trineuron-250mg-pymepharco-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Uniferon b9 Mediplantex 3x10 - VIÊN BAO Đường",
@@ -4367,7 +4553,8 @@
       "Tương tác thuốc: Folate và sulfasalazine: Hấp thu folate có thể bị giảm. Folate và thuốc tránh thai uống: Các thuốc tránh thai uống làm giảm chuyển hóa của folate và gây giảm folate và vitamin B12 ở một mức độ nhất định. Acid folic và các thuốc chống co giật: Nếu dùng acid folic nhằm bổ sung thiếu folate có thể do thuốc chống co giật gây ra thì nồng độ thuốc chống co giật trong huyết thanh có thể bị giảm. Acid folic và cotrimoxazole: Cotrimoxazole làm giảm tác dụng điều trị thiếu máu nguyên hồng cầu khổng lồ của acid folic. Tránh dùng phối hợp thuốc với kháng sinh quinolone như ofloxacin, ciprofloxacin, norfloxacin . Uống đồng thời với các thuốc kháng acid như calci carbonate, natri carbonate và magnesi trisilicate, hoặc với nước chè có thể làm giảm sự hấp thu sắt. Sắt có thể chelate hóa với các tetracycline và làm giảm hấp thu của cả hai loại thuốc."
     ],
     "id": "uniferon-b9-mediplantex-3x10-vien-bao-duong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Upsa-c 10v",
@@ -4391,7 +4578,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "upsa-c-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Extracap OPC 5x10 - VIÊN HÀ THỦ Ô",
@@ -4414,7 +4602,8 @@
       "Tương tác thuốc: Chưa tìm thấy thông tin tương tác thuốc."
     ],
     "id": "extracap-opc-5x10-vien-ha-thu-o",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "VIÊN SÁNG MẮT Traphaco 10 GÓI",
@@ -4437,7 +4626,8 @@
       "Tương tác thuốc: Chưa phát hiện thấy tương tác với các thuốc khác."
     ],
     "id": "vien-sang-mat-traphaco-10-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vigahom Phương ĐÔNG 20 ỐNG X 10ml DUNG DỊCH UỐNG",
@@ -4459,7 +4649,8 @@
       "Tương tác thuốc: Không nên phối hợp: Chế phẩm sắt (dạng muối, đường tiêm): xỉu, thậm chí sốc do giải phóng nhanh sắt từ dạng phức hợp và do bão hòa sidérophiline. Thận trọng khi phối hợp: Ciprofloxacine: sắt làm giảm sinh khả dụng của ciprofloxacin, dùng các thuốc này cách xa nhau trên 2 giờ. Cyclin (đường uống), Diphosphonat (đường uống): sắt làm giảm hấp thu của các thuốc này ở đường tiêu hóa, cần dùng các thuốc này cách xa nhau trên 2 giờ. Muối, oxyd, hydroxyd của Mg, Al và Ca (bao phủ niêm mạc dạ dày-ruột) làm giảm hấp thu đường tiêu hóa của muối sắt. Dùng các thuốc này cách xa nhau 2 giờ."
     ],
     "id": "vigahom-phuong-dong-20-ong-x-10ml-dung-dich-uong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "VITA C Glucose Mekophar 24v - HỘP 46 GÓI",
@@ -4484,7 +4675,8 @@
       "Đối tượng cần thận trọng: Tiểu đường"
     ],
     "id": "vita-c-glucose-mekophar-24v-hop-46-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin A 5000iu Mekophar 10x10",
@@ -4508,7 +4700,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-a-5000iu-mekophar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin A-d HÀ TÂY 100v",
@@ -4533,7 +4726,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "vitamin-a-d-ha-tay-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin A-d Hdpharma 10x10",
@@ -4555,7 +4749,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "vitamin-a-d-hdpharma-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin A-d Hdpharma 5x10",
@@ -4580,7 +4775,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-a-d-hdpharma-5x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin AD OPC 4x10",
@@ -4605,7 +4801,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-ad-opc-4x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Admed Mediplantex 10x10",
@@ -4630,7 +4827,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "admed-mediplantex-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 100mg F.t 10x10 ỐNG",
@@ -4653,7 +4851,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "vitamin-b1-100mg-f-t-10x10-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 250mg Domesco 100v",
@@ -4676,7 +4875,8 @@
       "Tương tác thuốc: Thiamin có thể làm tăng tác dụng của thuốc chẹn thần kinh cơ. Các chất đối kháng thiamin, thiosemicarbazon và 5-fluorouracil có thể vô hiệu hóa hiệu quả của thiamin. Bệnh nhân sử dụng bất kỳ những phương pháp điều trị này có thể cần điều chỉnh liều thiamin. Thiamin có thể cho kết quả dương tính giả trong việc xác định urobilinogen theo phản ứng Ehrlich. Thiamin liều cao có thể cản trở các xét nghiệm quang phổ nồng độ theophylin trong huyết tương. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b1-250mg-domesco-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 250mg Vidipha 10x10",
@@ -4699,7 +4899,8 @@
       "Tương tác thuốc: Thiamin có thể làm tăng tác dụng của thuốc chẹn thần kinh cơ. Các chất đối kháng thiamin, thiosemicarbazon và 5-fluorouracil có thể vô hiệu hóa hiệu quả của thiamin. Bệnh nhân sử dụng bất kỳ những phương pháp điều trị này có thể cần điều chỉnh liều thiamin. Thiamin có thể cho kết quả dương tính giả trong việc xác định urobilinogen theo phản ứng Ehrlich. Thiamin liều cao có thể cản trở các xét nghiệm quang phổ nồng độ theophylin trong huyết tương. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b1-250mg-vidipha-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 250mg Mekophar 10x10",
@@ -4722,7 +4923,8 @@
       "Tương tác thuốc: Thiamin có thể làm tăng tác dụng của thuốc chẹn thần kinh cơ. Các chất đối kháng thiamin, thiosemicarbazon và 5-fluorouracil có thể vô hiệu hóa hiệu quả của thiamin. Bệnh nhân sử dụng bất kỳ những phương pháp điều trị này có thể cần điều chỉnh liều thiamin. Thiamin có thể cho kết quả dương tính giả trong việc xác định urobilinogen theo phản ứng Ehrlich. Thiamin liều cao có thể cản trở các xét nghiệm quang phổ nồng độ theophylin trong huyết tương. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b1-250mg-mekophar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 250mg Mekophar 100v",
@@ -4745,7 +4947,8 @@
       "Tương tác thuốc: Vitamin B1 có thể được dùng phối hợp với vitamin B6 và vitamin B12 , phối hợp trong viên nén, viên bao đường với các vitamin khác và các muối khoáng."
     ],
     "id": "vitamin-b1-250mg-mekophar-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 250mg Domesco 20x10",
@@ -4768,7 +4971,8 @@
       "Tương tác thuốc: Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ."
     ],
     "id": "vitamin-b1-250mg-domesco-20x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 50mg Mekophar 100v",
@@ -4791,7 +4995,8 @@
       "Tương tác thuốc: Thiamin có thể làm tăng tác dụng của thuốc chẹn thần kinh cơ. 5-fluorouracil và thiosemicarbazon đối kháng thiamin, có thể làm mất tác dụng của thiamin. Bệnh nhân sử dụng bất kỳ những điều trị này có thể cần phải điều chỉnh liều thiamin. Thiamin có thể đưa ra kết quả dương tính giả cho việc xác định trobilinogen với phản ứng Ehrlich. Thiamin liều cao có thể cản trở việc phân tích quang phổ nồng độ theophylin huyết tương. Tương kỵ thuốc Vitamin B1 có thể phối hợp trong viên nén, viên bao đường với các vitamin khác và các muối khoáng. Chưa có đầy đủ thông tin về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b1-50mg-mekophar-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1b6b12 Mekophar 10x10",
@@ -4814,7 +5019,8 @@
       "Tương tác thuốc, tương kỵ của thuốc: Tương tác của thuốc: Isoniazid, penicilamin, các thuốc ngừa thai đường uống có thể làm thay đổi sự chuyển hóa hoặc tính khả dụng sinh học của vitamin B6. Vitamin B6 làm giảm tác dụng của levodopa, trừ khi được kết hợp với chất ức chế men dopadecarboxylase. Dùng vitamin B6 liều 200mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Aminoglycosid, cloramphenicol, cimetidin làm giảm sự hấp thu của vitamin B6: Hấp thu vitamin B12 từ đường tiêu hóa có thể bị giảm khi dùng cùng neomycin, acid aminosalicylic, các thuốc kháng thụ thể histamin H2 và colchicin. Nồng độ trong huyết thanh có thể bị giảm khi dùng đồng thời với thuốc tránh thai đường uống. Cloramphenicol dùng ngoài đường tiêu hóa có thể làm giảm tác dụng của vitamin B12 trong bệnh thiếu máu. Tác dụng điều trị của vitamin B12 có thể bị giảm khi dùng đồng thời với omeprazol. Omeprazol làm giảm acid dịch vị, nên làm giảm hấp thu vitamin B12. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b1b6b12-mekophar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b1 50mg Nadyphar 100v",
@@ -4837,7 +5043,8 @@
       "Tương tác thuốc: Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ. Các chất đối kháng với thiamin như thiosemicarbazon và 5-fluorouracil có thể làm mất hiệu quả của thiamin. Dùng đồng thời các thuốc này có thể phải chỉnh liều thiamin. Thiamin có thể cho kết quả dương tính giả khi định tính urobilinogen theo phản ứng của Ehrlich. Liều cao thiamin có thể ảnh hưởng tới kết quả định lượng nồng độ theophyllin trong huyết tương bằng quang phổ."
     ],
     "id": "vitamin-b1-50mg-nadyphar-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b2 2mg Traphaco 6x30",
@@ -4859,7 +5066,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Đã gặp một số ca “thiếu Vitamin B,” ở người đã dùng Clopromazin, Imipramin, Amitriptylin và Adriamycin. Rượu có thể gây cản trở hấp thu Vitamin B2 ở ruột."
     ],
     "id": "vitamin-b2-2mg-traphaco-6x30",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b6 250mg Domesco 100v",
@@ -4881,7 +5089,8 @@
       "Tương tác thuốc: Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson. Pyridoxin với liều dùng 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về pyridoxin."
     ],
     "id": "vitamin-b6-250mg-domesco-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b6 250mg Mekophar 10x10",
@@ -4904,7 +5113,8 @@
       "Tương tác thuốc: Pyridoxine làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa–carbidopa hoặc levodopa –benserazide. Liều dùng 200 mg/ngày có thể gây giảm 40–50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Một số thuốc có thể làm tăng nhu cầu về pyridoxine như hydralazine, isoniazid, penicillamine và thuốc tránh thai uống. Pyridoxine có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vitamin-b6-250mg-mekophar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin b6 250mg Domesco 20x10",
@@ -4927,7 +5137,8 @@
       "Tương tác thuốc: Pyridoxin làm giảm tác dụng của Levodopa trong điều trị bệnh Parkinson , điều này không xảy ra đối với chế phẩm là hỗn hợp levodopa-carbodopa hoặc levodopa-benserazid. Dùng liều thông thường 200 mg có thể gây giảm 40-50% nồng độ phenytoin và phenobarbiton trong máu ở một số người bệnh. Một số thuốc có thể làm tăng nhu cầu về pyridoxin như hydralazin, isoniazid, penicilamin và thuốc tránh thai uống. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai."
     ],
     "id": "vitamin-b6-250mg-domesco-20x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin B.vitab b12 Danapha 100v BĐ",
@@ -4950,7 +5161,8 @@
       "Tương tác thuốc: Thiamin mononitrat (Vitamin B1): Không có thông tin. Riboflavin (Vitamin B2): Đã gặp một số ca thiếu Riboflavin ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Pyridoxin (Vitamin B6): Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson. Liều dùng 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbiton trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về pyridoxin. Sử dụng đồng thời nicotinamid với các thuốc độc tính cho gan có thể làm tăng thêm tác hại cho gan."
     ],
     "id": "vitamin-b-vitab-b12-danapha-100v-bd",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 1000mg OPC 10v",
@@ -4974,7 +5186,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-1000mg-opc-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 100mg Vidipha 200v",
@@ -4998,7 +5211,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-100mg-vidipha-200v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 100mg/2ml Vidipha 100 ỐNG",
@@ -5022,7 +5236,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "vitamin-c-100mg-2ml-vidipha-100-ong",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 1g Stella 1 TUÝP X 10 VIÊN NÉN",
@@ -5046,7 +5261,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-1g-stella-1-tuyp-x-10-vien-nen",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 1g Stella 4x4",
@@ -5070,7 +5286,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-1g-stella-4x4",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Vidipha 100v",
@@ -5094,7 +5311,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-vidipha-100v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Khapharco 10x10",
@@ -5117,7 +5335,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-khapharco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Khapharco 200v",
@@ -5140,7 +5359,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-khapharco-200v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Quapharco 10x10",
@@ -5164,7 +5384,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-quapharco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg tw3 10x10",
@@ -5187,7 +5408,8 @@
       "Tương tác thuốc: Dùng đồng thời theo tỷ lệ trên 200mg vitamin C và 30mg sắt nguyên tố làm tăng hấp thu sắt qua đường dạ dày – ruột. Tuy vậy, đa số người bệnh đều có khả năng hấp thu sắt uống vào một cách đầy đủ mà không phải dùng đồng thời vitamin C. Dùng đồng thời với aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời với fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid hoá nước tiểu sau khi dùng vitamin C làm thay đổi sự bài tiết của các thuốc khác. Vitamin C liều cao có thể phá huỷ vitamin B12, cần tránh uống vitamin C liều cao trong vòng một giờ trước hoặc sau khi uống vitamin B12. Vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxy hoá – khử. Sự có mặt vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thử đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase. Với các xét nghiệm khác, cần tham khảo tài liệu chuyên biệt về ảnh hưởng của vitamin C."
     ],
     "id": "vitamin-c-500mg-tw3-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Vidipha 10x10 BAO PHIM",
@@ -5211,7 +5433,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-vidipha-10x10-bao-phim",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C 500mg Mekophar 20x10",
@@ -5235,7 +5458,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vitamin-c-500mg-mekophar-20x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin E 400iu OPC 4x10",
@@ -5258,7 +5482,8 @@
       "Tương tác thuốc: Vitamin E đối kháng với tác dụng của vitamin K, nên làm tăng thời gian đông máu. Nồng độ vitamin E thấp ở người bị kém hấp thu do thuốc (như kém hấp thu khi dùng cholestyramin).Vitamin E làm tăng tác dụng của thuốc chống đông, warfarin , aspirin."
     ],
     "id": "vitamin-e-400iu-opc-4x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin E 400iu Imexpharm 10x10",
@@ -5281,7 +5506,8 @@
       "Tương tác thuốc: Vitamin E đối kháng với tác dụng của vitamin K, nên làm tăng thời gian đông máu. Nồng độ vitamin E thấp ở người bị kém hấp thu do thuốc (như kém hấp thu khi dùng cholestyramin)."
     ],
     "id": "vitamin-e-400iu-imexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin PP 500 Pharmedic 10x10",
@@ -5306,7 +5532,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "vitamin-pp-500-pharmedic-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin PP 500mg Mekophar 10x10",
@@ -5331,7 +5558,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "vitamin-pp-500mg-mekophar-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin PP 50mg Pharmedic 60v",
@@ -5351,7 +5579,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "vitamin-pp-50mg-pharmedic-60v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin PP 50mg Traphaco 6x30",
@@ -5375,7 +5604,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "vitamin-pp-50mg-traphaco-6x30",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitarals Pharmedic 20ml",
@@ -5400,7 +5630,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "vitarals-pharmedic-20ml",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitatrum C 1000mg Reliv 10v",
@@ -5422,7 +5653,8 @@
       "Tương tác thuốc: Vitamin C làm tăng hấp thu sắt qua đường tiêu hóa. Dùng đồng thời Vitamin C với Aspirin làm giảm bài tiết Aspirin và tăng bài tiết Vitamin C. Dùng đồng thời Vitamin C với Fluphenazin làm giảm nồng độ Fluphenazin trong huyết tương. Sự acid hóa nước tiểu sau khi dùng Vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vitamin C liều cao làm phá hủy Vitamin B12, nên dùng cách xa ra 1 giờ. Vitamin C là chất khử mạnh có thể ảnh hưởng đến các xét nghiệm sinh hóa nước tiểu như xét nghiệm glucose và một số xét nghiệm khác."
     ],
     "id": "vitatrum-c-1000mg-reliv-10v",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vivace 500mg Pymepharco 10x10",
@@ -5445,7 +5677,8 @@
       "Tương tác thuốc: Một số thuốc có thể xảy ra tương tác với Vivace mà bạn nên tham khảo bao gồm: Aspirin, Fluphenazin, Amygdalin, Deferoxamine, Indinavir, Vitamin B12, thuốc tiêm penicillin G kali."
     ],
     "id": "vivace-500mg-pymepharco-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ZINC 10 Agimexpharm 10x10",
@@ -5467,7 +5700,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "zinc-10-agimexpharm-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "ZINC 70mg DHG 10x10",
@@ -5490,7 +5724,8 @@
       "Tương tác thuốc: Tetracyclin, ciprofloxacin , các chế phẩm có chứa sắt, đồng làm giảm hấp thu kẽm."
     ],
     "id": "zinc-70mg-dhg-10x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Zinc-kid 70mg NAM HÀ 25 GÓI",
@@ -5513,7 +5748,8 @@
       "Tương tác thuốc: Bổ sung kẽm làm giảm sự hấp thu của đồng, nhóm kháng sinh tetracyclin và nhóm quinolon. Sắt có thể làm giảm hấp thu kẽm, mặc dù sự tác động chỉ xuất hiện ở tỷ lệ sắt rất cao so với kẽm."
     ],
     "id": "zinc-kid-70mg-nam-ha-25-goi",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "zy-10 Forte 100mg Y-med 3x10",
@@ -5535,7 +5771,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "zy-10-forte-100mg-y-med-3x10",
-    "danh_muc": "Thuốc bổ"
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "A.t Ascorbic Syrup AN Thiên 30 ỐNG X 5ml",
@@ -5559,7 +5796,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "a-t-ascorbic-syrup-an-thien-30-ong-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Alphavimin DƯỢC HÀ TĨNH 20 ỐNG X 10ml",
@@ -5583,7 +5821,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "alphavimin-duoc-ha-tinh-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Aquadetrim Polpharma 10ml",
@@ -5608,7 +5847,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "aquadetrim-polpharma-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "B Complex C Vidipha 90ml",
@@ -5633,7 +5873,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "b-complex-c-vidipha-90ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betasiphon Nadyphar 2x9",
@@ -5656,7 +5897,8 @@
       "Tương tác thuốc: Do tác dụng lợi tiểu (cao lỏng Actisô, cao lỏng Râu Mèo) nên Betasiphon có thể rút ngắn thời gian di chuyển của các thuốc uống cùng, do đó làm giảm sự hấp thu của các thuốc uống cùng, vì vậy nên uống cách xa những thuốc này."
     ],
     "id": "betasiphon-nadyphar-2x9",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bifehema Bidiphar 20 ỐNG X 10ml",
@@ -5679,7 +5921,8 @@
       "Tương tác thuốc: Không nên phối hợp Chế phẩm sắt (dạng muối; đường tiêm): Xỉu, thậm chí sốc do giải phóng nhanh sắt từ dạng phức hợp và do bão hòa siderophilin. Thận trọng khi phối hợp Cyclin (uống): Giảm hấp thu cyclin do tạo thành phức hợp. Dùng các thuốc này cách nhau ít nhất 2 giờ. Fluoroquinolon: Sắt làm giảm hấp thu của các fluoroquinolon. Dùng các thuốc này nên cách nhau 2 giờ. Muối, oxyd, hydroxyd cùa Mg, Al, Ca (bao phủ niêm mạc dạ dày - ruột): Làm giảm hấp thu đường tiêu hóa cùa muối sắt. Dùng các thuốc này cách xa nhau 2 giờ. Diphosphonat (uống): Giảm hấp thu của diphosphonat. Dùng các thuốc này cách nhau ít nhất 2 giờ. Penicilamin: Giảm hấp thu của penicilamin. Dùng các thuốc này cách nhau ít nhất 2 giờ. Thyroxin (uống): Giảm hấp thu của thyroxin. Dùng các thuốc này cách nhau ít nhất 2 giờ. Thức ăn: Dùng nhiều trà làm giảm hấp thu sắt. Dùng muối sắt với trà cách xa nhau."
     ],
     "id": "bifehema-bidiphar-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bosuzinc 10mg Bepharco 20 GÓI X 5ml",
@@ -5701,7 +5944,8 @@
       "Tương tác thuốc: Báo cho thầy thuốc biết các thuốc bạn đang dùng để tránh tương tác. Dùng cùng tetracyclin, ciprofloxacin, các chế phẩm chứa sắt, đồng, làm giảm hấp thu kẽm. Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "bosuzinc-10mg-bepharco-20-goi-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Catefat Cho-a 20 ỐNG X 10ml",
@@ -5727,7 +5971,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "catefat-cho-a-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "C.c LIFE 100mg/5ml Foripharm 60ml",
@@ -5752,7 +5997,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "c-c-life-100mg-5ml-foripharm-60ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ceelin United 60ml",
@@ -5778,7 +6024,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "ceelin-united-60ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ceelin United 120ml",
@@ -5804,7 +6051,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "ceelin-united-120ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ceelin + Z United 60ml",
@@ -5826,7 +6074,8 @@
       "Tương tác thuốc: Vitamin C: Vitamin C có thể làm tăng đáng kể hấp thu và chuyển hóa sắt. Dùng đồng thời vitamin C với fluphenazine dẫn đến giảm nồng độ fluphenazine huyết tương. Vitamin C sử dụng cùng lúc với acid acetylsalicylic (aspirin) có thể làm tăng bài tiết vitamin C và làm giảm bài tiết acid acetylsalicylic trong nước tiểu. Kẽm: Kẽm có thể ngăn cản sự hấp thu của tetracycline. Để tránh sự tương tác thuốc này, nên dùng kẽm 2 giờ trước hoặc 4 giờ sau khi uống tetracycline."
     ],
     "id": "ceelin-z-united-60ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Duchat cpc1 4x5 7.5ml",
@@ -5852,7 +6101,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "duchat-cpc1-4x5-7-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Exopan 50mg/ml HÀ NAM 30ml",
@@ -5874,7 +6124,8 @@
       "Tương tác thuốc: Nghiên cứu trên chuột tương tác với tetracyclin, nhôm hydroxyd, acetylsalicy-late, sulfasalazine, calci carbonate, calci acetate, canxi photphat kết hợp với vitamin D3, bromazepam, magie aspartate, D-penicillinamine, methyldopa, paracetamol không được tìm thấy. Tương tự như thế, không có tương tác giữa phức hợp sắt (III) hydroxyd polymaltose với các thành phần như acid phytic, acid oxalic, tannin, natri alginat, cholin và muối, vitamin A, vitamin D3, vitamin E, dầu đậu nành, bột đậu nành. Có thể sử dụng chế phẩm ngay sau khi ăn. Tương tác giữa sắt (III) hydroxyd polymaltose với tetracyclin hoặc nhôm hydroxyd được nghiên cứu trên 3 nghiên cứu ở người (thiết kế chéo, 22 bệnh nhân mỗi nghiên cứu). Không có sự giảm đáng kể trong việc hấp thu tetracyclin. Nồng độ của tetracyclin trong huyết tương không tăng quá hiệu quả điều trị. Sự hấp thu sắt từ phức hợp sắt (III) hydroxyd polymaltose không bị giảm khi sử dụng cùng tetracyclin hoặc nhôm hydroxyd. Do đó, phức hợp sắt (III) hydroxyd polymaltose có thể sử dụng cùng tetracyclin hoặc nhôm hydroxyd. Phối hợp chế phẩm sắt đường tiêm và chế phẩm sắt đường uống không được khuyến cáo, vì làm giảm sự hấp thu của chế phẩm sắt đường uống. Chỉ nên sử dụng các chế phẩm sắt đường tiêm nếu sử dụng đường uống không hiệu quả."
     ],
     "id": "exopan-50mg-ml-ha-nam-30ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Farzincol Pharmedic 90ml",
@@ -5900,7 +6151,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "farzincol-pharmedic-90ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ferlatum HỘP 10 LỌ 15ml",
@@ -5923,7 +6175,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "ferlatum-hop-10-lo-15ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Grazincure Gracure 100ml",
@@ -5945,7 +6198,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "grazincure-gracure-100ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hemopoly Cho-a 20 ỐNG X 5ml",
@@ -5969,7 +6223,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "hemopoly-cho-a-20-ong-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Lycalci OPV 20 ỐNG",
@@ -5991,7 +6246,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "lycalci-opv-20-ong",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Minigadine Raptakos Brett 120ml - SIRO TRẺ EM",
@@ -6014,7 +6270,8 @@
       "Tương tác thuốc: Các glucocorticoid, phenytoin, thức ăn có chứa phytat, oxalat làm giảm sự hấp thụ calci ở ruột."
     ],
     "id": "minigadine-raptakos-brett-120ml-siro-tre-em",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "MỒ HÔI TRỘM ĐỨC Thịnh 125ml",
@@ -6039,7 +6296,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "mo-hoi-trom-duc-thinh-125ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Nutrohadi F Hadiphar 20 ỐNG X 10ml",
@@ -6062,7 +6320,8 @@
       "Tương tác thuốc: Nên dùng cách xa (2 - 3 giờ) với kháng sinh nhóm tetracyclin, phenytoin, các quinolon, các khoáng chất (sắt, kẽm, magnesium...), các oxalate, glucocorticoid. Không nên phối hợp: Các thiazid, các dẫn xuất digitalis, levodopa."
     ],
     "id": "nutrohadi-f-hadiphar-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pecaldex Nadyphar 10 ỐNG X 10ml",
@@ -6085,7 +6344,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "pecaldex-nadyphar-10-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pecaldex Nadyphar 18 ỐNG X 5ml",
@@ -6109,7 +6369,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "pecaldex-nadyphar-18-ong-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SÂM QUI ĐẠI BỔ OPC 250ml - BỔ Dưỡng KHÍ Huyết",
@@ -6133,7 +6394,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "sam-qui-dai-bo-opc-250ml-bo-duong-khi-huyet",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO Astymin Tablets 60ml",
@@ -6156,7 +6418,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "siro-astymin-tablets-60ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO Atzinc AN Thiên 30 ỐNG X 5ml",
@@ -6180,7 +6443,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "siro-atzinc-an-thien-30-ong-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO Nic-vita NIC 20 ỐNG X 10ml",
@@ -6204,7 +6468,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "siro-nic-vita-nic-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO Obikiton HÀ TÂY HỘP 20 ỐNG X 7.5ml",
@@ -6227,7 +6492,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "siro-obikiton-ha-tay-hop-20-ong-x-7-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Snapcef 16mg/10ml HẢI Dương 20 ỐNG X 10ml",
@@ -6251,7 +6517,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "snapcef-16mg-10ml-hai-duong-20-ong-x-10ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO UỐNG Kidvita-tdf HÀ NAM 20 ỐNG X 15ml",
@@ -6273,7 +6540,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "siro-uong-kidvita-tdf-ha-nam-20-ong-x-15ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO UỐNG Kidvita-tdf HÀ NAM 20 ỐNG X 7.5ml",
@@ -6295,7 +6563,8 @@
       "Tương tác thuốc: Chưa có dữ liệu."
     ],
     "id": "siro-uong-kidvita-tdf-ha-nam-20-ong-x-7-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "SIRO Zinbebe HÀ TÂY 60ml",
@@ -6319,7 +6588,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "siro-zinbebe-ha-tay-60ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Sterogyl Desma 20ml",
@@ -6343,7 +6613,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "sterogyl-desma-20ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Supodatin 2500iu Phương ĐÔNG 30 ỐNG X 5ml",
@@ -6366,7 +6637,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "supodatin-2500iu-phuong-dong-30-ong-x-5ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Ubinutro NAM HÀ 120ml",
@@ -6391,7 +6663,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "ubinutro-nam-ha-120ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Zedcal Meyer 100ml",
@@ -6415,7 +6688,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "zedcal-meyer-100ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Zedcal Meyer 200ml",
@@ -6439,7 +6713,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "zedcal-meyer-200ml",
-    "danh_muc": "Siro bổ"
+    "danh_muc": "Siro bổ",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Alputine 80 Arlico 6x10",
@@ -6465,7 +6740,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "alputine-80-arlico-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Althax 120 Mediplantex 3x10",
@@ -6488,7 +6764,8 @@
       "Tương tác thuốc: Thuốc làm giảm một số tác dụng không mong muốn của thuốc hóa trị liệu ở bệnh nhân ung thư."
     ],
     "id": "althax-120-mediplantex-3x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Antikans Armephaco 3x10",
@@ -6510,7 +6787,8 @@
       "Tương tác thuốc: Các peptid hoặc dẫn chất protein mạch ngắn từ tuyến ức được dùng phối hợp với các hóa trị liệu cho những bệnh nhân bị ung thư. Một nghiên cứu khi dùng phối hợp thymomodulin với hóa trị liệu cho thấy làm giảm vài tác dụng không mong muốn của hóa trị liệu và tăng thời gian sống sót so với khi chỉ dùng hóa trị liệu."
     ],
     "id": "antikans-armephaco-3x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bentarcin 80 Kolmar 6x10",
@@ -6535,7 +6813,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "bentarcin-80-kolmar-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Betnapin 80 6x10",
@@ -6560,7 +6839,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "betnapin-80-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Bisufat 50mg PHIL 20x5",
@@ -6583,7 +6863,8 @@
       "Tương tác thuốc: Dùng đồng thời vitamin C với sắt nguyên tố làm tăng hấp thụ sắt qua đường dạ dày – ruột. Dùng đồng thời vitamin C với aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid – hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của thuốc khác. Vitamin C liều cao có thể phá hủy vitamin B, cần khuyên người bệnh tránh uống vitamin C liều cao trong vòng một giờ trước hoặc sau khi uống vitamin B."
     ],
     "id": "bisufat-50mg-phil-20x5",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Broncho Vaxom Adults 7mg 1x10",
@@ -6605,7 +6886,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "broncho-vaxom-adults-7mg-1x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Cetigam OPV 20 ỐNG X 10ml",
@@ -6627,7 +6909,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "cetigam-opv-20-ong-x-10ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Chymotase 60mg/10ml Cho-a 20 ỐNG x10ml",
@@ -6649,7 +6932,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "chymotase-60mg-10ml-cho-a-20-ong-x10ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Citropholi 500mg MỘC HOA TRÀM 10x10",
@@ -6675,7 +6959,8 @@
       "Đối tượng cần thận trọng: Trẻ em"
     ],
     "id": "citropholi-500mg-moc-hoa-tram-10x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Enervon C United 10x10",
@@ -6699,7 +6984,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "enervon-c-united-10x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Etexbenkis 80mg ETEX 6x10",
@@ -6719,7 +7005,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "etexbenkis-80mg-etex-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Greenpam 80mg Medica Korea 6x10",
@@ -6741,7 +7028,8 @@
       "Tương tác thuốc: Các peptid hoặc dẫn chất protein mạch ngắn từ tuyến ức được dùng phối hợp với các hóa trị liệu cho những bệnh nhân bị ung thư. Một nghiên cứu cho thấy khi dùng phối hợp thymomodulin với hóa trị liệu làm giảm một số tác dụng không mong muốn của hóa trị liệu và kéo dài thời gian sống của bệnh nhân so với khi chỉ dùng hóa trị liệu."
     ],
     "id": "greenpam-80mg-medica-korea-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Hepedon 80 Hankook 10x10",
@@ -6764,7 +7052,8 @@
       "Tương tác thuốc: Các peptide hoặc các dẫn xuất protein mạch ngắn từ tuyến ức dùng phối hợp với các thuốc hóa trị từ tuyến ức được dùng cho những bệnh nhân bị ung thư. Một nghiên cứu khi dùng phối hợp thymomodulin với hóa trị liệu cho thấy làm giảm vài tác dụng không mong muốn của hóa trị liệu và tăng thời gian sống sót so với khi chỉ dùng hóa trị liệu."
     ],
     "id": "hepedon-80-hankook-10x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Immutes Capsule 80mg Austin 6x10",
@@ -6787,7 +7076,8 @@
       "Tương tác thuốc: Các peptid hoặc dẫn chất protein mạch ngắn từ tuyến ức được dùng phối hợp với các hoá trị liệu cho những bệnh nhân bị ung thư. Một nghiên cứu khi dùng phối hợp thymomodulin với hoá trị liệu cho thấy làm giảm vài tác dụng không mong muốn của hoá trị liệu và tăng thời gian sống sót so với khi chỉ dùng hoá trị liệu."
     ],
     "id": "immutes-capsule-80mg-austin-6x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Palkids Apimed 20 ỐNG X 10ml",
@@ -6809,7 +7099,8 @@
       "Tương tác thuốc: Chưa có dữ liệu."
     ],
     "id": "palkids-apimed-20-ong-x-10ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Palkids Apimed 20 ỐNG X 5ml",
@@ -6831,7 +7122,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "palkids-apimed-20-ong-x-5ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Pgisycap 250mg Mediplantex 3x10",
@@ -6854,7 +7146,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "pgisycap-250mg-mediplantex-3x10",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Plurivica Nadyphar 80g - CỐM TRẺ EM",
@@ -6877,7 +7170,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "plurivica-nadyphar-80g-com-tre-em",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Semozine Capsule 80mg",
@@ -6903,7 +7197,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "semozine-capsule-80mg",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thioserin Cho-a 20 ỐNG X 10ml",
@@ -6926,7 +7221,8 @@
       "Tương tác thuốc: Chưa có ghi nhận nào về tương tác của thymomodulin với các thuốc khác."
     ],
     "id": "thioserin-cho-a-20-ong-x-10ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Thytodux 60mg/10ml Trung ƯƠNG 3 - 4x5 ỐNG 10ml",
@@ -6950,7 +7246,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "thytodux-60mg-10ml-trung-uong-3-4x5-ong-10ml",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Unikids ZINC 70 DHG 24 GÓI X 1.5g",
@@ -6972,7 +7269,8 @@
       "Tương tác thuốc: Các kháng sinh nhóm tetracyclin, các kháng sinh nhóm fluoroquinolon, các chế phẩm có chứa sắt, đồng làm giảm hấp thu kẽm."
     ],
     "id": "unikids-zinc-70-dhg-24-goi-x-1-5g",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Vitamin C Fresenius KABI 500mg/5ml 6 ỐNG",
@@ -6995,7 +7293,8 @@
       "Tương tác thuốc: Dùng đồng thời theo tỷ lệ trên 200 mg vitamin C với 30 mg sắt nguyên tố làm tăng hấp thu sắt qua đường dạ dày - ruột. Dùng đồng thời vitamin C với aspirin làm giảm hấp thu và tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Vitamin C liều cao có thể phá hủy vitamin B12 . Vitamin C có thể làm tăng tác dụng của nhôm hydroxyd và làm giảm tác dụng amphetamin . Vì vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ứng oxy-hóa khử. Sự có mặt của vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thử đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase. Với các xét nghiệm khác, cần phải tham khảo tài liệu chuyên biệt về ảnh hưởng của vitamin C. Liều cao vitamin C có thể làm giảm tác dụng của các thuốc chống đông máu đường uống. Các thuốc làm giảm sự bão hòa vitamin C trong mô gồm aspirin, nicotin từ thuốc lá, alcohol, sắt, phenytoin, một số thuốc chống co giật , tetracyclin, estrogen trong thuốc tránh thai đường uống, một số thuốc gây chán ăn. Dùng liều cao vitamin C có thể gây acid hóa nước tiểu gây tái hấp thu ở ống thận các thuốc có tính acid, tạo ra phản ứng quá liều. Ngược lại, liều cao vitamin C làm giảm tái hấp thu ở ống thận các loại thuốc có tính base, dẫn đến giảm hiệu quả điều trị. Dùng kết hợp acid ascorbic với desferrioxamin ở bệnh nhân quá tải sắt để làm tăng sự thải trừ sắt có thể làm trầm trọng thêm việc ngộ độc sắt , đặc biệt là lên tim ở giai đoạn đầu của điều trị khi nồng độ sắt trong mô quá lớn. Vì vậy, khuyến cáo các bệnh nhân có chức năng tim bình thường không nên bổ sung acid ascorbic ở tháng đầu tiên sau khi bắt đầu dùng desferrioxamin. Không nên dùng kết hợp acid ascorbic với desferrioxamin ở bệnh nhân rối loạn chức năng tim. Bệnh nhân bị suy thận sử dụng thuốc kháng acid có chứa nhôm và citrat đường uống có thể gây phát triển bệnh não gây tử vong tiềm tàng do làm tăng nồng độ nhôm trong máu. Có bằng chứng vitamin C cũng có thể gây tương tác tương tự. Thuốc tránh thai đường uống làm giảm nồng độ acid ascorbic trong huyết tương. Tương kỵ của thuốc: Thuốc tiêm vitamin C tương kỵ về mặt vật lý với thuốc tiêm penicilin G kali. Acid ascorbic không tương thích với các muối sắt, nguyên tố oxy hóa và muối của các kim loại nặng đặc biệt là đồng. Thuốc tiêm acid ascorbic đã được báo cáo là không tương thích với aminophyllin, bleomycin sulfat, erythromycin lactobionat, natri nafcillin, natri nitrofurantoin, estrogen kết hợp, natri bicarbonat và sulphafurazon diethanolamin. Không tương thích thường xuyên, tùy thuộc vào pH và nồng độ đã xảy ra với cloramphenicol natri succinat."
     ],
     "id": "vitamin-c-fresenius-kabi-500mg-5ml-6-ong",
-    "danh_muc": "Thuốc tăng cường sức đề kháng"
+    "danh_muc": "Thuốc tăng cường sức đề kháng",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "VIÊN Xương KHỚP Fengshi OPC 5x10",
@@ -7021,7 +7320,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "vien-xuong-khop-fengshi-opc-5x10",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Morinda Domesco 50v",
@@ -7046,7 +7346,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "morinda-domesco-50v",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Phong TÊ THẤP BÀ Giằng 250v",
@@ -7071,7 +7372,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "phong-te-thap-ba-giang-250v",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Phong TÊ THẤP PV 100v",
@@ -7097,7 +7399,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "phong-te-thap-pv-100v",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Revmaton 300mg Danapha 3x10",
@@ -7122,7 +7425,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "revmaton-300mg-danapha-3x10",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Rheumapain-f FITO 40v",
@@ -7147,7 +7451,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "rheumapain-f-fito-40v",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "TIMI Roitin PHIL 24x5",
@@ -7173,7 +7478,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "timi-roitin-phil-24x5",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Trixlazi DAVI 3x10",
@@ -7197,7 +7503,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "trixlazi-davi-3x10",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Tuzamin Mediplantex 3x10",
@@ -7221,7 +7528,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tuzamin-mediplantex-3x10",
-    "danh_muc": "Bổ xương khớp"
+    "danh_muc": "Bổ xương khớp",
+    "muc_nghiem_trong": "Nhẹ"
   },
   {
     "ten_thuoc": "Compound Sodium Lactate Intravenous Infusion B.p B.braun 500ml",
@@ -7244,7 +7552,8 @@
       "Tương tác thuốc: Sử dụng hỗn hợp sodium lactate theo chỉ định và chống chỉ định được khuyến nghị không làm tăng nồng độ các chất điện giải có trong huyết thanh. Trường hợp có sự gia tăng nồng độ chất điện giải nào là do các lý do khác theo các tương tác sau đây cần được xem xét. Liên quan đến natri: Corticoids/Steroids và carbenoxoline có thể liên quan đến việc giữ natri và nước (với phù và tăng huyết áp). Liên quan đến kali: Suxamethonium, lợi tiểu tiết kiệm kali (amilorid, spironolactone, triamteren, sử dụng một mình hoặc kết hợp), ACEi (ví dụ: Captopril, enalapril), ức chế thụ thể angiotensin II (ví dụ: Valsartan, losartan), tacrolimus, cyclosporine có thể làm tăng nồng độ kali trong huyết thanh và dẫn đến tăng kali máu tiềm ẩn gây tử vong đáng chú ý trong trường hợp suy thận tăng tác dụng của kali. Liên quan đến calci Digitalis glycosides (glycoside tim) có thể làm tăng tác dụng của chúng trong tình trạng tăng calci và dẫn đến rối loạn nhịp tim nghiêm trọng hoặc tử vong. Lợi tiểu thiazide và vitamin D sử dụng đồng thời với calci có thể gây tăng calci huyết: Nếu biphosphonates, flourides, một số flouroquinolones và tetracyclin sử dụng đồng thời với dung dịch chứa calci, sinh khả dụng ( giảm hấp thu) của các chế phẩm thuốc có thể bị giảm."
     ],
     "id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
-    "danh_muc": "Thuốc bù điện giải"
+    "danh_muc": "Thuốc bù điện giải",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Oresol 245 Domesco 20 GÓI",
@@ -7266,7 +7575,8 @@
       "Tương tác thuốc: Tránh dùng thức ăn hoặc dịch khác chứa các chất điện giải như nước trái cây hoặc thức ăn có muối cho tới khi ngừng điều trị, để tránh dùng quá nhiều chất điện giải hoặc tránh tiêu chảy do thẩm thấu. Dung dịch bù nước không được pha loãng với nước vì pha loãng làm giảm tính hấp thu của hệ thống đồng vận chuyển glucose-natri. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc dùng đường uống, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "oresol-245-domesco-20-goi",
-    "danh_muc": "Thuốc bù điện giải"
+    "danh_muc": "Thuốc bù điện giải",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Silverzinc 50 OPV 10x10",
@@ -7288,7 +7598,8 @@
       "Tương tác thuốc: Tương tác thuốc: Sự hấp thu của kẽm có thể giảm bởi các chất bổ sung sắt, penicilamin, các hợp chất có chứa phốt pho và tetracyclin. Các chất bổ sung kẽm làm giảm hấp thu đồng, fluoroquinolon, sắt, penicilamin, và tetracyclin. Tương kỵ thuốc: Không áp dụng."
     ],
     "id": "silverzinc-50-opv-10x10",
-    "danh_muc": "Thuốc bù điện giải"
+    "danh_muc": "Thuốc bù điện giải",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Aminoplasmal 10% Braun 250ml",
@@ -7312,7 +7623,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "aminoplasmal-10-braun-250ml",
-    "danh_muc": "Dinh dưỡng"
+    "danh_muc": "Dinh dưỡng",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Glucose 10% Braun 500ml",
@@ -7334,7 +7646,8 @@
       "Tương tác thuốc: Chưa được biết đến. Tương kỵ Trước khi pha thêm bất cứ một thuốc gì vào dung dịch glucose để truyền phải kiểm tra xem có phù hợp không. Dung dịch chứa glucose và có pH < 6 có thể gây kết tủa indomethacin ."
     ],
     "id": "glucose-10-braun-500ml",
-    "danh_muc": "Dinh dưỡng"
+    "danh_muc": "Dinh dưỡng",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Glucose 20% Braun 500ml",
@@ -7357,7 +7670,8 @@
       "Tương tác thuốc: Cần tính toán đến ảnh hưởng của dung dịch glucose lên đường huyết và cân bằng nước, điện giải khi sử dụng cho những bệnh nhân đang điều trị các thuốc khác mà có tác dụng kiểm soát đường huyết, cân bằng dịch, điện giải."
     ],
     "id": "glucose-20-braun-500ml",
-    "danh_muc": "Dinh dưỡng"
+    "danh_muc": "Dinh dưỡng",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Glucose 30% Braun 500ml",
@@ -7380,7 +7694,8 @@
       "Tương tác thuốc: Cả hai tác dụng trên đường huyết của glucose truyền tĩnh mạch và ảnh hưởng của nó trên cân bằng nước và điện giải nên được lưu ý khi sử dụng glucose truyền tĩnh mạch ở bệnh nhân được điều trị với các chất khác có tác dụng đến kiểm soát đường huyết, hoặc cân bằng dịch và/hoặc điện giải."
     ],
     "id": "glucose-30-braun-500ml",
-    "danh_muc": "Dinh dưỡng"
+    "danh_muc": "Dinh dưỡng",
+    "muc_nghiem_trong": "Trung bình"
   },
   {
     "ten_thuoc": "Ritsu Levocarnitin 1000mg Medisun 20 ỐNG X 10ml",
@@ -7402,6 +7717,7 @@
       "Tương tác thuốc: Thuốc có thể làm tăng tác dụng của các thuốc chống đông máu (như warfarin)."
     ],
     "id": "ritsu-levocarnitin-1000mg-medisun-20-ong-x-10ml",
-    "danh_muc": "Dinh dưỡng"
+    "danh_muc": "Dinh dưỡng",
+    "muc_nghiem_trong": "Trung bình"
   }
 ]

@@ -13,7 +13,8 @@
     "huong_dan_su_dung",
     "lieu_dung",
     "duong_dung",
-    "thoi_diem_dung"
+    "thoi_diem_dung",
+    "muc_nghiem_trong"
   ],
   "properties": {
     "ten_thuoc": {
@@ -56,6 +57,11 @@
       "type": "string",
       "description": "Thời điểm dùng: trước/sau ăn, sáng/trưa/tối, cách nhau bao lâu giữa các lần. LUU Y: trang nguồn (nhathuoclongchau.com.vn) không tách riêng field này nên crawler luôn để trống - dữ liệu này sẽ được bổ sung sau dựa trên đơn thuốc bác sĩ kê cho từng bệnh nhân (không phải dữ liệu tham chiếu chung của thuốc), khác nguồn với các field còn lại."
     },
+    "muc_nghiem_trong": {
+      "type": "string",
+      "enum": ["Nhẹ", "Trung bình", "Nguy hiểm"],
+      "description": "Mức nghiêm trọng nếu bệnh nhân bỏ lỡ liều thuốc này — dùng làm prior/fallback cho FEAT-007 (đánh giá mức nghiêm trọng theo ngữ cảnh RAG), KHÔNG thay thế đánh giá per-thuốc, chỉ nâng lên chứ không hạ xuống (business-rules.md BR-3.6). Suy ra rule-based từ danh_muc (tiểu mục gốc của trang nguồn) theo bảng tra cứu cố định trong scripts/classify_severity.py — không suy diễn từ văn bản tự do, không gọi LLM."
+    },
     "huong_dan_bao_quan": {
       "type": "string",
       "description": "Hướng dẫn bảo quản thuốc. Ví dụ: 'Bảo quản ở nơi khô ráo, tránh ánh sáng mặt trời'."
@@ -71,7 +77,7 @@
     },
     "danh_muc": {
       "type": "string",
-      "description": "Tên nhóm/phân loại thuốc, tự lấy theo tên thư mục chứa file này (script điền, không cần gõ tay)."
+      "description": "Tiểu mục thuốc, lấy từ chính phân loại chi tiết của trang nguồn (product.categories[-1].name) khi crawl - KHÔNG phải tên thư mục chứa file này (2 cái có thể khác nhau, vd nhiều tiểu mục 'Thuốc tim mạch huyết áp'/'Thuốc trị mỡ máu'/'Thuốc chống đông máu' đều nằm trong thư mục 'Thuốc tim mạch và máu'). Tiểu mục chi tiết hơn nên dùng làm khoá tra cứu muc_nghiem_trong."
     }
   }
 }

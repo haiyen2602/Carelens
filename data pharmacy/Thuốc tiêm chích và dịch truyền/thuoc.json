@@ -19,7 +19,8 @@
       "Tương tác thuốc: Thận trọng dùng cùng các thuốc đang được chỉnh liều và được chuyển hóa qua CYP450, CYP3A4, CYP1A2 hoặc CYP2C9 (như atorvastatin, chẹn kênh canxi, theophyllin , warfarin, phenytoin , cyclosporin, hoặc benzodiazepines) khi bắt đầu hoặc ngừng điều trị với tocilizumab."
     ],
     "id": "actemra-162mg-0-9ml-roche-4-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Adrenalin 1mg Vinphaco 5x10 ỐNG",
@@ -43,7 +44,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "adrenalin-1mg-vinphaco-5x10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Adrenalin 1mg Vinphaco 2 VỈ X 5 ỐNG",
@@ -64,7 +66,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "adrenalin-1mg-vinphaco-2-vi-x-5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alphachymotripsin 5000iu Bidiphar 3x2",
@@ -87,7 +90,8 @@
       "Tương tác thuốc: Hiện chưa tìm thấy trong các tài liệu."
     ],
     "id": "alphachymotripsin-5000iu-bidiphar-3x2",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ampicillin 1g INJ Mekophar",
@@ -110,7 +114,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "ampicillin-1g-inj-mekophar",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Atileucine INJ 500mg/5ml AN Thiên 2x5 ỐNG",
@@ -132,7 +137,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "atileucine-inj-500mg-5ml-an-thien-2x5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Bedouza 1000 F.t 10x10 ỐNG",
@@ -155,7 +161,8 @@
       "Tương tác thuốc: Nếu dùng trong thời gian dài với phenobarbital, phenytoin và các viên thuốc uống tránh thai thì nồng độ vitamin B12 trong huyết tương có thể bị giảm."
     ],
     "id": "bedouza-1000-f-t-10x10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Thuốc BỘT ĐÔNG KHÔ PHA TIÊM A.t Hydrocortisone AN Thiên 5 ỐNG DM + 5 LỌ BỘT",
@@ -177,7 +184,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "thuoc-bot-dong-kho-pha-tiem-a-t-hydrocortisone-an-thien-5-ong-dm-5-lo-bot",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "BỘT ĐÔNG KHÔ PHA TIÊM Atisolu 40 INJ AN Thiên 5 LỌ BỘT + 5 ỐNG DM",
@@ -199,7 +207,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "bot-dong-kho-pha-tiem-atisolu-40-inj-an-thien-5-lo-bot-5-ong-dm",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Botox Botulinum Toxin TYPE A Allergan 100 Units",
@@ -222,7 +231,8 @@
       "Tương tác thuốc: Về mặt lý thuyết, tác dụng của độc tố botulinum có thể được tăng cường bởi thuốc kháng sinh aminoglycoside hoặc spectinomycin, hoặc các sản phẩm thuốc khác can thiệp vào sự dẫn truyền thần kinh cơ (ví dụ: Chất ngăn chặn thần kinh cơ). Tác dụng của việc sử dụng các loại huyết thanh độc tố thần kinh botulinum khác nhau cùng một lúc hoặc trong vòng vài tháng cách nhau vẫn chưa được biết rõ. Suy nhược thần kinh cơ quá mức có thể trầm trọng hơn khi sử dụng một độc tố botulinum khác trước khi giải quyết các tác động của độc tố botulinum đã dùng trước đó. Không có nghiên cứu tương tác nào được thực hiện. Không có tương tác nào có ý nghĩa lâm sàng được báo cáo. Không có sẵn dữ liệu về việc sử dụng đồng thời thuốc kháng cholinergic với tiêm botox trong việc kiểm soát bàng quang hoạt động quá mức."
     ],
     "id": "botox-botulinum-toxin-type-a-allergan-100-units",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Bricanyl 0.5mg/ml Astra 1x5 ỐNG",
@@ -241,7 +251,8 @@
       "Đối tượng cần thận trọng: Tiểu đường"
     ],
     "id": "bricanyl-0-5mg-ml-astra-1x5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Buscopan 20mg/1ml Boehringer 2x5 ỐNG",
@@ -265,7 +276,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "buscopan-20mg-1ml-boehringer-2x5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Butapenem 500 HQ Pharma 10 LỌ",
@@ -287,7 +299,8 @@
       "Tương tác thuốc: Acid valproic: Doripenem làm giảm nồng độ acid valproic xuống dưới giới hạn điều trị mong muốn, có thể làm tăng nguy cơ bị cơn động kinh, cần thận trọng khi dùng phối hợp. Cơ chế tương tác chưa được biết, tuy nhiên carbapenem có thể ức chế thủy phân glucuronid của acid valproic. Probenecid: Probenecid làm giảm bài tiết doripenem qua ống thận, làm tăng nồng độ thuốc trong máu và kéo dài thời gian thải trừ thuốc. Nên tránh sử dụng đồng thời. Các thuốc kháng sinh khác: Nghiên cứu in vitro cho thấy ít có khả năng doripenem đối kháng hoặc bị đối kháng tác dụng bởi các kháng sinh khác (như amikacin, co - trimoxazol, daptomycin, levofloxacin, linezolid, vancomycin). Các thuốc ảnh hưởng tới hoặc chuyển hóa bởi enzym microsom gan. Nghiên cứu in vitro cho thấy không có khả năng xảy ra tương tác. Các thuốc chuyển hóa bởi uridin diphosphat - glucuronosyl - transferase 1A1 (UGT 1A1). Nghiên cứu in vitro cho thấy doripenem không gây cảm ứng UGT 1A1. Tương kỵ: Ngoài dung dịch natri clorid 0,9% hoặc glucose 5%, không được trộn doripenem với bất kỳ thuốc nào khác."
     ],
     "id": "butapenem-500-hq-pharma-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Calci Clorid Vidipha 100 ỐNG X 5ml",
@@ -312,7 +325,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "calci-clorid-vidipha-100-ong-x-5ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cefotaxone 1g Bidiphar 10 LỌ",
@@ -334,7 +348,8 @@
       "Tương tác thuốc: Dùng phối hợp Cephalosporin và Colistin có thể làm tăng nguy cơ bị tổn thương thận. Dùng thuốc đồng thời với Azlocilin người bệnh bị suy thận có thể bị bệnh về não và bị cơn động kinh cục bộ. Dùng đồng thời với các Ureido -penicilin (Azlocilin hay Mezlocilin) sẽ làm giảm độ thanh thải Cefotaxim ở người bệnh có chức năng thận bình thường cũng như ở người bệnh bị suy chức năng thận do đó phải giảm liều Cefotaxim. Cefotaxim làm tăng tác dụng độc đối với thận của Cyclosporin. Tính tương kỵ: Thuốc không tương hợp với các dung dịch kiềm như dung dịch Natri bicarbonat. Tiêm thuốc riêng rẽ, không tiêm cùng với Aminoglycosid hay Metronidazol. Không được trộn lẫn thuốc với các kháng sinh khác trong cùng một bơm tiêm hay cùng một bộ dụng cụ truyền tĩnh mạch."
     ],
     "id": "cefotaxone-1g-bidiphar-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cefoxitin 2g Panpharma 25 LỌ",
@@ -356,7 +371,8 @@
       "Tương tác thuốc: Nhiều trường hợp khi sử dụng kháng sinh kết hợp với thuốc chống đông máu đường uống làm tăng hoạt tính của các thuốc chống đông máu. Các yếu tố như quá trình viêm, nhiễm khuẩn, tuổi, sức khỏe tổng thể của bệnh nhân được đánh giá là các yếu tố nguy cơ. Trong những trường hợp này, khó để nhận biết xem quá trình nhiễm khuẩn hay việc điều trị là yếu tố gây ra mất cân bằng INR - nhiên, một vài nhóm kháng sinh được cho là liên quan nhiều hơn, như các fluoroquinolon, macrohd, tetracyclin, cotrimoxazol, và một vài cephalosporin."
     ],
     "id": "cefoxitin-2g-panpharma-25-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cernevit 3500iu Baxter 10 LỌ",
@@ -381,7 +397,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "cernevit-3500iu-baxter-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cevita 500 F.t 10x10 ỐNG",
@@ -406,7 +423,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "cevita-500-f-t-10x10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Corora 60mg/ml Amgen",
@@ -422,7 +440,8 @@
     "huong_dan_bao_quan": "",
     "luu_y_dac_biet": [],
     "id": "corora-60mg-ml-amgen",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cravit 500mg/100ml Daiichi-sankyo",
@@ -446,7 +465,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "cravit-500mg-100ml-daiichi-sankyo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dalacin C 600mg Pfizer 4ml",
@@ -470,7 +490,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "dalacin-c-600mg-pfizer-4ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Deca-durabolin 50mg Organon 1ml",
@@ -493,7 +514,8 @@
       "Tương tác thuốc: Liều cao Deca-Durabolin có thể gây tăng tác dụng chống đông máu của các thuốc nhóm coumarin, do đó cần giảm liều các thuốc này. Có thể giảm nhu cầu sử dụng insulin hoặc các thuốc uống điều trị đái tháo đường (xem mục thận trọng khi sử dụng). Kết hợp Deca-durabolin (liều 50-100mg/tuần) với rhEPO (hormone tái tổ hợp kích thích phát triển hồng cầu người), đặc biệt là ở phụ nữ và nam giới trẻ tuổi, có thể gây ra giảm liều rhEPO chống thiếu máu."
     ],
     "id": "deca-durabolin-50mg-organon-1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DEPO Medrol 40mg Pfizer",
@@ -518,7 +540,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "depo-medrol-40mg-pfizer",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dexamethason KABI 4mg Bidiphar 50 ốngx1ml",
@@ -543,7 +566,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "dexamethason-kabi-4mg-bidiphar-50-ongx1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dexamethasone 4mg Vinphaco 10 ỐNG",
@@ -567,7 +591,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "dexamethasone-4mg-vinphaco-10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dexamethasone 4mg Hdpharma 50 ỐNG X 1ml",
@@ -590,7 +615,8 @@
       "Tương tác thuốc: Phenytoin , phenobarbital, ephedrine, rifampicin có thể làm tăng chuyển hóa, thải trừ của các corticosteroid dẫn đến nồng độ thuốc trong máu giảm và giảm hoạt tính sinh học, do đó cần phải điều chỉnh liều của corticosteroid. Những tương tác thuốc trên có thể ảnh hưởng tới Test ức chế do dexamethason (DST), điều đó được thận trọng trong suốt thời gian điều trị bằng các thuốc trên. Có những báo cáo về tác dụng âm tính giả trong test ức chế do dexamethasone (DST) ở những bệnh nhân được điều trị bằng indomethacin. Do đó kết quả của những DST nên được xem xét thận trọng trên những bệnh nhân sử dụng indomethacin. Kiểm tra thời gian prothrombin thường xuyên trên những bệnh nhân sử dụng corticosteroid và thuốc chống đông máu coumarin cùng một lúc bởi vì có những báo cáo về việc corticosteroid làm thay đổi đáp ứng của các thuốc chống đông máu. Một số nghiên cứu chỉ ra rằng tác dụng thông thường khi sử dụng đồng thời các corticosteroid là ức chế đáp ứng đối với các coumarin, mặc dù có các báo cáo mâu thuẫn. Khi sử dụng đồng thời các corticosteroid với các thuốc lợi niệu làm giảm kali, bệnh nhân cần phải được giám sát chặt chẽ do tình trạng hạ kali huyết tiến triển."
     ],
     "id": "dexamethasone-4mg-hdpharma-50-ong-x-1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Diclofenac 75mg/3ml Vinphaco 1 X 10 ỐNG X 3ml",
@@ -612,7 +638,8 @@
       "Tương tác thuốc: Không nên dùng diclofenac phối hợp với: Thuốc chống đông theo đường uống và heparin: Nguy cơ gây xuất huyết nặng. Kháng sinh nhóm quinolon: Diclofenac và các thuốc chống viêm không steroid khác có thể làm tăng tác dụng không mong muốn lên hệ thần kinh trung ương của kháng sinh nhóm quinolon, dẫn đến co giật (nhưng cần nghiên cứu thêm). Aspirin và các NSAIDs khác hoặc glucocorticoid: Làm giảm nồng độ diclofenac trong huyết tương và làm tăng nguy cơ cũng như làm tăng nghiêm trọng tổn thương dạ dày - ruột. Diflunisal: Dùng diflunisal đồng thời với diclofenac có thể làm tăng nồng độ diclofenac trong huyết tương, làm giảm độ thanh lọc diclofenac và có thể gây chảy máu rất nặng ở đường tiêu hóa. Lithi: Diclofenac có thể làm tăng nồng độ lithi trong huyết thanh đến mức gây độc. Nếu buộc phải dùng đồng thời thì cần theo dõi người bệnh thật cẩn thận để phát hiện kịp thời dấu hiệu ngộ độc lithi và phải theo dõi nồng độ lithi trong máu một cách thường xuyên. Phải điều chỉnh liều lithi trong và sau điều trị bằng diclofenac. Digoxin: Diclofenac có thể làm tăng nồng độ digoxin trong huyết thanh và kéo dài thời gian bán thải của digoxin. Cần định lượng nồng độ digoxin trong máu và cần giảm liều digoxin nếu dùng đồng thời cả 2 thuốc. Ticlopidin: Dùng cùng diclofenac làm tăng nguy cơ chảy máu. Dụng cụ tránh thai đặt trong tử cung: Có tài liệu nói dùng diclofenac làm mất tác dụng tránh thai. Methotrexat: Diclofenac làm tăng độc tính của methotrexat. Sử dụng đồng thời các glycosid trợ tim với diclofenac có thể làm trầm trọng thêm tình trạng suy tim. Phối hợp tacrolimus với diclofenac có thể làm tăng nguy cơ nhiễm độc thận. Phối hợp zidovudin với diclofenac có thể làm tăng nguy cơ độc tính về huyết học. Nguy cơ xuất huyết tiêu hóa và viêm loét tăng lên khi sử dụng diclofenac với các thuốc ức chế thu hồi serotonin (SSRIs) Có thể dùng diclofenac cùng với các thuốc sau nhưng phải theo dõi sát người bệnh: Các thuốc được biết là nguyên nhân làm tăng kali huyết thanh: Khi dùng đồng thời với thuốc lợi tiểu giữ kali huyết, cyclosporin, tacrolimus hoặc trimethoprim có thể đi kèm với tăng nồng độ kali huyết thanh, do đó cần được theo dõi cẩn thận. Cyclosporin: Nguy cơ bị ngộ độc cyclosporin. Cần thường xuyên theo dõi chức năng thận của người bệnh. Thuốc lợi niệu: Diclofenac và lợi niệu có thể làm tăng nguy cơ suy thận thứ phát do giảm lưu lượng máu đến thận vì diclofenac ức chế prostaglandin. Thuốc chữa tăng huyết áp (thuốc ức chế men chuyển, thuốc chẹn beta): Diclofenac có thể làm giảm hiệu quả điều trị của các thuốc này. Dùng thuốc chống toan có thể làm giảm kích ứng ruột bởi diclofenac nhưng lại có thể làm giảm nồng độ diclofenac trong huyết thanh. Cimetidin có thể làm nồng độ diclofenac huyết thanh giảm đi một chút nhưng không làm giảm tác dụng chống viêm của thuốc. Cimetidin bảo vệ tá tràng khỏi tác dụng có hại của diclofenac. Probenecid có thể làm nồng độ diclofenac tăng lên gấp đôi nếu được dùng đồng thời. Ðiều này có thể có tác dụng lâm sàng tốt ở người bị bệnh khớp nhưng lại có thể xảy ra ngộ độc diclofenac, đặc biệt ở những người bị suy giảm chức năng thận. Tác dụng thải acid uric - niệu không bị ảnh hưởng. Nếu cần thì giảm liều diclofenac. Khi sử dụng đồng thời diclofenac và thuốc điều trị đái tháo đường, nên thường xuyên giám sát lượng đường huyết. Colestipol và cholestyramin làm giảm hấp thu diclofenac. Do đó, nên sử dụng diclofenac trước ít nhất 1 giờ hoặc 4 - 6 giờ sau khi uống colestipol và cholestyramin. Các chất ức chế CYP2C9 mạnh (như sulfinpyrazon và voriconazol) khi sử dụng đồng thời có thể làm gia tăng đáng kể nồng độ đỉnh trong huyết tương do ức chế chuyển hóa diclofenac. Diclofenac ức chế tổng hợp prostaglantin, do đó có thể làm giảm hiệu quả điều trị của mifepriston. Tương kỵ thuốc: Ðể tiêm truyền tĩnh mạch, phải pha loãng thuốc tiêm diclofenac chứa 25 mg/ml thành dung dịch chứa 5 mg/ml bằng dung dịch tiêm natri clorid đẳng trương và phải truyền với tốc độ chậm (25 mg trong 10 phút)."
     ],
     "id": "diclofenac-75mg-3ml-vinphaco-1-x-10-ong-x-3ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dimedrol Hdpharma 100 ỐNG X 1 ML",
@@ -634,7 +661,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "dimedrol-hdpharma-100-ong-x-1-ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Diprospan INJ (5+2)mg/ml Organon",
@@ -657,7 +685,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "diprospan-inj-5-2-mg-ml-organon",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Diprospan INJ (5+2)mg/ml",
@@ -681,7 +710,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "diprospan-inj-5-2-mg-ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dodevifort 10mg/2ml Medlac 6 ỐNG",
@@ -703,7 +733,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "dodevifort-10mg-2ml-medlac-6-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dimedrol VĨNH PHÚC 100 ỐNG",
@@ -727,7 +758,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "dimedrol-vinh-phuc-100-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền Levofloxacin KABI Fresenius KABI HỘP 1 CHAI 100ml",
@@ -749,7 +781,8 @@
       "Tương tác thuốc: Các thuốc làm kéo dài khoảng QT: Có tác dụng hiệp đồng làm kéo dài khoảng QT. Tránh dùng đồng thời levofloxacin với thuốc chống loạn nhịp nhóm IA (ví dụ: Quinidin, procainamid) hoặc nhóm III (ví dụ: amiodaron, sotalol). Thuốc chống trầm cảm: Levofloxacin có tương tác dược học tiềm tàng với fluoxetin hoặc imipramid làm kéo dài khoảng QT. Corticosteroid: Dùng đồng thời levofloxacin với corticosteroid làm tăng nguy cơ rối loạn gần nặng (viêm gân, đứt gân), đặc biệt ở người già trên 60 tuổi. Cần thận trọng khi dùng đồng thời hai thuốc này. Theophylin: Một số nghiên cứu trên người tình nguyện khỏe mạnh cho thấy không có tương tác. Tuy nhiên do nồng độ trong huyết tương và AUC theophylin thường bị tăng khi sử dụng đồng thời với quinolon khác, vẫn cần giám sát chặt chẽ nồng độ theophylin và hiệu chỉnh liều nếu cần khi sử dụng đồng thời với levofloxacin. Warfarin: Do đã có thông báo warfarin tăng tác dụng khi dùng cùng với levofloxacin, cần giám sát các chỉ số về đông máu khi dùng đồng thời 2 thuốc này. Cyclosporin và tacrolimus: Tương tác dược levofloxacin và cyclosporin hoặc tacrolimus làm tăng AUC của các thuốc ức chế miễn dịch, tương tác không có ý nghĩa lâm sàng, do đó không cần chỉnh liều các thuốc này khi dùng đồng thời với levofloxacin. Tuy nhiên nên kiểm soát nồng độ trong huyết tương của các thuốc này khi dùng đồng thời với levofloxacin. Các thuốc chống viêm không steroid: Có khả năng làm tăng nguy cơ kích thích thần kinh trung ương và co giật khi dùng đồng thời với levofloxacin. Các thuốc hạ đường huyết: Dùng đồng thời với levofloxacin có thể làm tăng nguy cơ rối loạn đường huyết, cần giám sát chặt chẽ. Probenecid: Tương tác dược động học giữa probenecid và levofloxacin (tăng nhẹ thời gian bán thải levofloxacin) không có ý nghĩa về mặt lâm sàng, không yêu cầu điều chỉnh liều khi dùng đồng thời hai thuốc này. Ở những bệnh nhân được điều trị với levofloxacin, xác định opiat trong nước tiểu có thể cho kết quả dương tính giả. Nên sử dụng phương pháp đặc hiệu hơn để xác định lượng opiat dương tính."
     ],
     "id": "dung-dich-tiem-truyen-levofloxacin-kabi-fresenius-kabi-hop-1-chai-100ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền Mg-tan INJ TÚI 480ml",
@@ -771,7 +804,8 @@
       "Tương tác thuốc: Cho đến nay vẫn chưa ghi nhận được các tương tác thuốc có ý nghĩa lâm sàng, tuy vậy cũng đã có một số các báo cáo về các hiện tượng như sau: Khi dùng cùng với insulin có thể gây ảnh hưởng đến hệ enzym lipase. Trên lâm sàng, liều dùng heparin có thể tăng lên nhất thời do lượng lipoprotein lipase trong tuần hoàn tăng lên. Sự tăng lên nhất thời của lipolysis huyết tương ở giai đoạn ban đầu khi dùng thuốc là do sự giảm tốc độ thanh thải triglycerid. Do dầu đậu nành có chứa vitamin K1 nên có thể gây ảnh hưởng đến tác dụng của các thuốc chống đông máu dẫn xuất của coumarin, vì vậy cần theo dõi các bệnh nhân phải sử dụng các thuốc này trong khi đang điều trị với MG-TAN Inj. Các xét nghiệm bilirubin, lactat dehydrogenase, oxy bão hòa, hemoglobin,... ở các mẫu máu được lấy xét nghiệm trong thời gian tiêm truyền MG-TAN Inj có thể cho kết quả không chính xác do bị ảnh hưởng bởi thành phần lipid. Hầu hết các bệnh nhân, các mẫu máu được lấy sau khi tiêm truyền tĩnh mạch từ 5 - 6 giờ đều không gây ảnh hưởng đến kết quả các xét nghiệm này."
     ],
     "id": "dung-dich-tiem-truyen-mg-tan-inj-tui-480ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền TĨNH MẠCH Paracetamol 10mg Allomed CHAI 100ml",
@@ -793,7 +827,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-tiem-truyen-tinh-mach-paracetamol-10mg-allomed-chai-100ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền Treeton Farmak 5 ỐNG",
@@ -815,7 +850,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-tiem-truyen-treeton-farmak-5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "FDP Medlac 5g 1 LỌ + 1 ỐNG DUNG MÔI",
@@ -837,7 +873,8 @@
       "Tương tác thuốc: Không thấy có dấu hiệu tương tác với các thuốc khác."
     ],
     "id": "fdp-medlac-5g-1-lo-1-ong-dung-moi",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Gentamicin Hdpharma 1x10 ỐNG",
@@ -861,7 +898,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "gentamicin-hdpharma-1x10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Gentamicin 80mg/2ml Vidipha 10 ỐNG",
@@ -885,7 +923,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "gentamicin-80mg-2ml-vidipha-10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Gentamicin 80mg/2ml Fresenius 100 ỐNG",
@@ -909,7 +948,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "gentamicin-80mg-2ml-fresenius-100-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glucose KABI 30% Fresenius KABI 50 ỐNG X 5ml",
@@ -933,7 +973,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "glucose-kabi-30-fresenius-kabi-50-ong-x-5ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glutaone 600 1 LỌ BỘT VÀ 1 ỐNG NƯỚC CẤT Bidiphar",
@@ -958,7 +999,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "glutaone-600-1-lo-bot-va-1-ong-nuoc-cat-bidiphar",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hadumedrol 10mg/ml Hdpharma 100 ỐNG X 1ml",
@@ -981,7 +1023,8 @@
       "Tương tác thuốc: Thuốc ức chế hệ thần kinh trung ương: Tác dụng ức chế hệ thần kinh trung ương có thể tăng khi dùng đồng thời thuốc kháng histamin như diphenhydramin với các thuốc ức chế hệ thần kinh trung ương khác gồm barbiturat, thuốc an thần và rượu. Thuốc ức chế monoamin oxydase (IMAO) kéo dài và làm tăng tác dụng kháng cholinergic của thuốc kháng histamin như diphenhydramin. Chống chỉ định dùng thuốc ở người đang dùng thuốc IMAO."
     ],
     "id": "hadumedrol-10mg-ml-hdpharma-100-ong-x-1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Humalog MIX 25 Kwikpen Lilly 5 CÂY X 3ml",
@@ -1004,7 +1047,8 @@
       "Tương tác thuốc: Nhu cầu insulin có thể tăng do những loại thuốc có tác dụng tăng glucose máu, như các thuốc tránh thai dạng uống, các corticosteroid, hoặc liệu pháp thay thế hormon tuyến giáp, danazol các chất kích thích beta₂ (như ritodrin, salbutamol, terbutalin). Nhu cầu insulin có thể giảm do những loại thuốc có tác dụng hạ glucose máu, như các thuốc hạ glucose máu dạng uống, các salicylat (ví dụ, acid acetylsalicylic), các kháng sinh sulpha, một số thuốc chống trầm cảm (các thuốc ức chế monoamin oxidase, các thuốc ức chế tái hấp thu serotonin chọn lọc), một số thuốc ức chế men chuyển angiotensin (captopril, enalapril), các thuốc chẹn thụ thể angiotensin II, chẹn beta, octreotid hoặc rượu. Việc trộn Humalog Mix25 với các chế phẩm insulin khác chưa được nghiên cứu. Nên tham khảo ý kiến bác sĩ khi sử dụng các thuốc khác cùng với Humalog Mix25 Kwikpen (xem mục “Cảnh báo đặc biệt và thận trọng khi dùng”). Không có nghiên cứu về việc trộn Humalog Mix25 với các insulin khác. Khi không có nghiên cứu về khả năng tương thích, không nên trộn các thuốc này với các thuốc khác."
     ],
     "id": "humalog-mix-25-kwikpen-lilly-5-cay-x-3ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hyalgan 20mg/2ml Fidia",
@@ -1028,7 +1072,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hyalgan-20mg-2ml-fidia",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hydrocortison Bidiphar 2ml",
@@ -1053,7 +1098,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hydrocortison-bidiphar-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Invanz 1g MSD 15ml",
@@ -1075,7 +1121,8 @@
       "Tương tác thuốc: Khi phối hợp ertapenem với probenecid, probenecid cạnh tranh dẫn đến ức chế sự đào thải chủ động ertapenem qua ống thận, nên làm tăng tuy ít nhưng có ý nghĩa thống kê về thời gian bán thải (tăng 19%) và nồng độ của ertapenem trong cơ thể (25%). Không cần điều chỉnh liều ertapenem khi phối hợp với probenecid. Vì tác dụng không đáng kể tới thời gian bán thải của ertapenem, nên không khuyến cáo dùng phối hợp probenecid để kéo dài thời gian bán thải của ertapenem. Nghiên cứu in vitro cho thấy ertapenem không ức chế sự vận chuyển digoxin hoặc vinblastin qua trung gian P-glycoprotein và ertapenem không phải là chất nền dùng trong sự vận chuyển qua trung gian P-glycoprotein. Nghiên cứu in vitro trên microsom gan người thấy ertapenem không ức chế chuyển hóa của thuốc khác qua xúc tác của 6 đồng dạng cytochrom p450 (CYP) chủ yếu là: 1A2, 2C9, 2C19, 2D6, 2E1 và 3A4. Chưa chắc có tương tác thuốc với ertapenem qua cơ chế ức chế thanh thải thuốc qua trung gian của P-glycoprotein hoặc qua xúc tác của cytochrom p450. (xem Dược động học, Phân phối và Chuyển hóa). Ngoài probenecid, chưa thực hiện các nghiên cứu chuyên biệt khác về tương tác trên lâm sàng. Những bài viết trên y văn về các trường hợp riêng lẻ cho thấy sử dụng carbapenems, bao gồm ertapenem đồng thời với acid valproic hoặc divalproex sodium sẽ làm giảm nồng độ acid valproic. Nồng độ acid valproic có thể bị giảm thấp hơn nồng độ trị liệu do tương tác này, do đó làm tăng nguy cơ bộc phát cơn co giật. Mặc dù cơ chế của tương tác này chưa được biết rõ, dữ liệu từ các nghiên cứu trên động vật và in vitro cho thấy carbapenems có thể ức chế sự thủy phân chất chuyển hóa glucuronide của acid valproic (VPA-g) thành acid valproic, do đó làm giảm nồng độ huyết thanh của acid valproic (xem Thận trọng)."
     ],
     "id": "invanz-1g-msd-15ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lidocain 40mg/2ml Vinphaco 100 ỐNG X 2ml",
@@ -1099,7 +1146,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "lidocain-40mg-2ml-vinphaco-100-ong-x-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lidocain Hydroclorid 40mg/2ml HD Pharma 100 ỐNG X 2ml",
@@ -1121,7 +1169,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "lidocain-hydroclorid-40mg-2ml-hd-pharma-100-ong-x-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lidocain KABI 2% Fresenius KABI 100 ỐNG X 2ml",
@@ -1145,7 +1194,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "lidocain-kabi-2-fresenius-kabi-100-ong-x-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lilonton INJ SIU GUAN CHEM 1000mg/5ml 10 ỐNG",
@@ -1168,7 +1218,8 @@
       "Tương tác thuốc: Tương tác dược động học Khả năng tương tác thuốc do thay đổi dược động học của piracetam được cho là thấp, do khoảng 90% liều dùng được bài tiết ra nước tiểu ở dạng không thay đổi. In vitro, piracetam không ức chế các dạng cytochrome P450 ở người CYP 1A2, 2B6, 2C8, 2C9, 2C19, 2D6, 2E1 và 4A9/11 ở nồng độ 142, 426 và 1422 µg/ml. Ở nồng độ 1422µg/ml thấy có tác dụng ức chế rất nhẹ trên dạng CYP 2A6 (21%) và 3A4/5 (11%). Tuy nhiên, giá trị Ki về ức chế 2 dạng này rất tốt ở nồng độ 1422µg/ml. Vì vậy, piracetam không có tương tác chuyển hóa với các thuốc khác. Hormon tuyến giáp Đã có báo cáo về tình trạng mơ hồ, kích thích và rối loạn giấc ngủ khi điều trị đồng thời với hormone tuyến giáp (T3 + T4). Acenocoumarol Trong một nghiên cứu mù đơn ở bệnh nhân bị huyết khối tĩnh mạch tái phát nặng, dùng piracetam 9,6 g/ngày không thay đổi liều dùng cần thiết của acenocoumarol để đạt chỉ số INR ở mức 2,5 đến 3,5; nhưng so sánh với hiệu quả khi chỉ dùng một mình acenocoumarol, việc dùng thêm piracetam 9,6 g/ngày làm giảm đáng kể sự kết tập tiểu cầu, sự phóng thích β-thromboglobulin, mức fibrinogen và các yếu tố Willebrand (VIII: C; VIII: vW: Ag; VIII: vW: RCo) và độ nhớt của máu và huyết tương. Thuốc chống động kinh Dùng piracetam 20 g/ngày trong 4 tuần không làm thay đổi nồng độ tối đa và tối thiểu của các thuốc chống động kinh (phenytoin, carbamazepine, phenobarbital, valproate) ở các bệnh nhân động kinh đang dùng thuốc ở liều ổn định. Rượu Dùng rượu đồng thời không ảnh hưởng đến nồng độ huyết thanh của piracetam, nồng độ rượu không bị ảnh hưởng khi dùng piracetam ở liều uống 1,6g."
     ],
     "id": "lilonton-inj-siu-guan-chem-1000mg-5ml-10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lincomycin KABI 600mg Bidiphar 50 ỐNG X 2ml",
@@ -1193,7 +1244,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lincomycin-kabi-600mg-bidiphar-50-ong-x-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lipovenoes 10% PLR KABI 250ml",
@@ -1216,7 +1268,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "lipovenoes-10-plr-kabi-250ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lovenox 4000 Sanofi 2 ỐNG",
@@ -1239,7 +1292,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lovenox-4000-sanofi-2-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lovenox 6000 Sanofi 2 ỐNG",
@@ -1264,7 +1318,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lovenox-6000-sanofi-2-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Luotai Strength 200mg KPC HỘP 1 LỌ BỘT + 1 ỐNG DUNG MÔI",
@@ -1286,7 +1341,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "luotai-strength-200mg-kpc-hop-1-lo-bot-1-ong-dung-moi",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Magnesi Sulfat 15% Presenius KABI 1x10",
@@ -1309,7 +1365,8 @@
       "Tương tác thuốc: Thuốc Magnesi Sulfat có thể tương tác với thuốc nào? Tương tác thuốc có thể làm thay đổi khả năng hoạt động của thuốc hoặc gia tăng ảnh hưởng của các tác dụng phụ. Tốt nhất là bạn viết một danh sách những thuốc bạn đang dùng (bao gồm thuốc được kê toa, không kê toa và thực phẩm chức năng) và cho bác sĩ hoặc dược sĩ xem. Không được tự ý dùng thuốc, ngưng hoặc thay đổi liều lượng của thuốc mà không có sự cho phép của bác sĩ, đặc biệt là: Tiêm magnesi sulfat ảnh hưởng đến sự cạnh tranh và ức chế khử cực thần kinh cơ. Ức chế thần kinh cơ của tiệm magnesi sulfat và kháng sinh aminoglycosid có thể được tăng lên. Tương tự như vậy, tiêm magnesi sulfat và nifedipin đã được báo cáo là làm tăng tác dụng. Thức ăn và rượu bia có tương tác với thuốc Magnesi Sulfat không? Hãy tham khảo ý kiến bác sĩ về việc uống thuốc cùng thức ăn, rượu và thuốc lá. Tình trạng sức khỏe nào ảnh hưởng tới thuốc Magnesi Sulfat? Tình trạng sức khỏe của bạn có thể ảnh hưởng đến việc sử dụng thuốc này. Báo cho bác sĩ biết nếu bạn có bất kỳ vấn đề sức khỏe nào."
     ],
     "id": "magnesi-sulfat-15-presenius-kabi-1x10",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Meronem 1g ACS Dobfar 10 LỌ X 30ml",
@@ -1331,7 +1388,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "meronem-1g-acs-dobfar-10-lo-x-30ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Methycobal 500mcg Eisai INJ 1mlx10 ỐNG",
@@ -1356,7 +1414,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "methycobal-500mcg-eisai-inj-1mlx10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Metoclopramid KABI 10mg 12x2ml",
@@ -1380,7 +1439,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "metoclopramid-kabi-10mg-12x2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Mobic 15mg/1.5ml Boehringer 1x5",
@@ -1407,7 +1467,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "mobic-15mg-1-5ml-boehringer-1x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Naatrapyl 3g Pymepharco 4 ỐNG X 15ml",
@@ -1432,7 +1493,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "naatrapyl-3g-pymepharco-4-ong-x-15ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Neupogen 30mu/0.5ml Amgen",
@@ -1454,7 +1516,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "neupogen-30mu-0-5ml-amgen",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Neutrivit 5000 Bidiphar 4 CẶP",
@@ -1477,7 +1540,8 @@
       "Tương tác thuốc: Không dùng chung với levodopa (vitamin B6 làm giảm tác động của Levodopa do kích thích dopadecarboxylase ngoại biên)."
     ],
     "id": "neutrivit-5000-bidiphar-4-cap",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nexium 40mg INJ Astrazeneca",
@@ -1502,7 +1566,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "nexium-40mg-inj-astrazeneca",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nicardipine Aguettant 10mg/10ml 10 ỐNG",
@@ -1527,7 +1592,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "nicardipine-aguettant-10mg-10ml-10-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nisitanol 20mg/2ml Vinphaco 1x10",
@@ -1551,7 +1617,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "nisitanol-20mg-2ml-vinphaco-1x10",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nootropil 3g/15ml Aesica 1x4 ỐNG",
@@ -1576,7 +1643,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "nootropil-3g-15ml-aesica-1x4-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Novocain 3% 2ml Hdpharma 100 ỐNG",
@@ -1597,7 +1665,8 @@
       "Đối tượng cần thận trọng: Lái tàu xe"
     ],
     "id": "novocain-3-2ml-hdpharma-100-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nucleo C.m.p Forte 3 CẶP ỐNG",
@@ -1621,7 +1690,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "nucleo-c-m-p-forte-3-cap-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "NƯỚC CẤT PHA TIÊM Fresenius KABI 500ml Thùng 20 CHAI",
@@ -1644,7 +1714,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "nuoc-cat-pha-tiem-fresenius-kabi-500ml-thung-20-chai",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "NƯỚC CẤT PHA TIÊM F.t 10x10 ỐNG 5ml",
@@ -1667,7 +1738,8 @@
       "Tương tác thuốc: Chưa có báo cáo."
     ],
     "id": "nuoc-cat-pha-tiem-f-t-10x10-ong-5ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "NƯỚC CẤT PHA TIÊM 5ml Bidiphar 10x5",
@@ -1690,7 +1762,8 @@
       "Tương tác thuốc: Cần xem xét các tương tác lâm sàng có thể xảy ra giữa các chế phẩm thuốc khác nhau được hòa tan."
     ],
     "id": "nuoc-cat-pha-tiem-5ml-bidiphar-10x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "NƯỚC CẤT TIÊM Vinphaco 10x5 ỐNG",
@@ -1713,7 +1786,8 @@
       "Tương tác thuốc: Không có."
     ],
     "id": "nuoc-cat-tiem-vinphaco-10x5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Oraptic Bidiphar 1 LỌ BỘT X 1 ỐNG DUNG MÔI 10ml",
@@ -1738,7 +1812,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "oraptic-bidiphar-1-lo-bot-x-1-ong-dung-moi-10ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ozempic 0.25mg-0.5mg NOVO Nordisk 1.5ml",
@@ -1760,7 +1835,8 @@
       "Tương tác thuốc: Semaglutide chậm làm rỗng dạ dày và có tiềm năng tác động lên tốc độ hấp thu của các thuốc viên được dùng đồng thời. Semaglutide nên được dùng thận trọng ở các bệnh nhân dùng sản phẩm thuốc uống cần hấp thu nhanh ở đường tiêu hoá. Paracetamol Semaglutide chậm làm rỗng dạ dày khi được đánh giá bằng dược động học của paracetamol trong suốt thử nghiệm bữa ăn chuẩn. Paracetamol AUC 0-60min và C max giảm lần lượt là 27% và 23%, sau khi dùng đồng thời semaglutide 1mg. Tổng diện tích dưới đường cong paracetamol (AUC 0-5h ) không bị ảnh hưởng. Không cần chỉnh liều paracetamol khi dùng với semaglutide. Thuốc tránh thai dạng uống Semaglutide không cho thấy giảm hiệu quả của thuốc tránh thai uống vì semaglutide không làm thay đổi diện tích dưới đường cong của ethinylestradiol và levonorgestrel có ý nghĩa lâm sàng khi sản phẩm thuốc tránh thai phối hợp dạng uống (0,03mg ethinylestradiol/0,15mg levonorgestrel) được dùng đồng thời với semaglutide. Diện tích dưới đường cong của ethinylestradiol không bị ảnh hưởng; diện tích dưới đường cong của levonorgestrel tăng lên 20% tại trạng thái ổn định. C max không bị ảnh hưởng. Atorvastatin Semaglutide không thay đổi diện tích dưới đường cong của atorvastatin khi dùng liều đơn atorvastatin (40mg). C max của Atorvastatin giảm 38%. Điều này được đánh giá là không có ý nghĩa lâm sàng. Digoxin Semaglutide không thay đổi diện tích dưới đường cong hoặc Cmax của digoxin khi dùng liều đơn digoxin (0,5mg). Metformin Semaglutide không thay đổi diện tích dưới đường cong hoặc Cmax của metformin khi dùng liều 500mg hai lần 1 ngày trong 3,5 ngày. Danh sách tá dược Disodium phosphate dihydrate, propylene glycol, phenol, hydrochloric acid (để điều chỉnh pH), sodium hydroxide (để điều chỉnh pH) và nước pha tiêm. Tương kỵ Vì không thực hiện các nghiên cứu về tính tương thích, sản phẩm thuốc này không được trộn với các sản phẩm thuốc khác."
     ],
     "id": "ozempic-0-25mg-0-5mg-novo-nordisk-1-5ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ozempic 1mg NOVO Nordisk 3ml",
@@ -1782,7 +1858,8 @@
       "Tương tác thuốc: Semaglutide chậm làm rỗng dạ dày và có tiềm năng tác động lên tốc độ hấp thu của các thuốc viên được dùng đồng thời. Semaglutide nên được dùng thận trọng ở các bệnh nhân dùng sản phẩm thuốc uống cần hấp thu nhanh ở đường tiêu hoá. Paracetamol Semaglutide chậm làm rỗng dạ dày khi được đánh giá bằng dược động học của paracetamol trong suốt thử nghiệm bữa ăn chuẩn. Paracetamol AUC 0-60min và C max giảm lần lượt là 27% và 23%, sau khi dùng đồng thời semaglutide 1mg. Tổng diện tích dưới đường cong paracetamol (AUC 0-5h ) không bị ảnh hưởng. Không cần chỉnh liều paracetamol khi dùng với semaglutide. Thuốc tránh thai dạng uống Semaglutide không cho thấy giảm hiệu quả của thuốc tránh thai uống vì semaglutide không làm thay đổi diện tích dưới đường cong của ethinylestradiol và levonorgestrel có ý nghĩa lâm sàng khi sản phẩm thuốc tránh thai phối hợp dạng uống (0,03mg ethinylestradiol/0,15mg levonorgestrel) được dùng đồng thời với semaglutide. Diện tích dưới đường cong của ethinylestradiol không bị ảnh hưởng; diện tích dưới đường cong của levonorgestrel tăng lên 20% tại trạng thái ổn định. C max không bị ảnh hưởng. Atorvastatin Semaglutide không thay đổi diện tích dưới đường cong của atorvastatin khi dùng liều đơn atorvastatin (40mg). C max của Atorvastatin giảm 38%. Điều này được đánh giá là không có ý nghĩa lâm sàng. Digoxin Semaglutide không thay đổi diện tích dưới đường cong hoặc Cmax của digoxin khi dùng liều đơn digoxin (0,5mg). Metformin Semaglutide không thay đổi diện tích dưới đường cong hoặc Cmax của metformin khi dùng liều 500mg hai lần 1 ngày trong 3,5 ngày. Danh sách tá dược Disodium phosphate dihydrate, propylene glycol, phenol, hydrochloric acid (để điều chỉnh pH), sodium hydroxide (để điều chỉnh pH) và nước pha tiêm. Tương kỵ Vì không thực hiện các nghiên cứu về tính tương thích, sản phẩm thuốc này không được trộn với các sản phẩm thuốc khác."
     ],
     "id": "ozempic-1mg-novo-nordisk-3ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Pentaglobin Biotest Pharma GMBH 50ml",
@@ -1804,7 +1881,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "pentaglobin-biotest-pharma-gmbh-50ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Redditux 500mg Dr. Reddy's 50ml",
@@ -1820,7 +1898,8 @@
     "huong_dan_bao_quan": "",
     "luu_y_dac_biet": [],
     "id": "redditux-500mg-dr-reddy-s-50ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Repatha 140mg Amgen 1 BÚT TIÊM X 1ml",
@@ -1843,7 +1922,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc chính thức nào được thực hiện cho Repatha. Tương tác dược động học giữa statin và evolocumab được đánh giá trong các thử nghiệm lâm sàng Repatha. Độ thanh thải của evolocumab tăng khoảng 20% quan sát thấy ở những bệnh nhân dùng statin. Sự tăng thanh thải này một phần qua trung gian do statin làm tăng nồng độ Proprotein Convertase Subtilisin/Kexin Type 9 (PCSK9). Tương tác này không ảnh hưởng bất lợi đến tác dụng dược lực học của evolocumab trên lipid. Không cần điều chỉnh liều statin khi sử dụng kết hợp với Repatha. Không có nghiên cứu về tương tác dược động học và dược lực học giữa Repatha và các thuốc giảm lipid khác ngoại trừ với statin và ezetimibe đã được tiến hành. Tương kỵ Do chưa có các nghiên cứu về tính tương kỵ, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "repatha-140mg-amgen-1-but-tiem-x-1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Saizen 6 mg/1.03ml Merck 1 ỐNG",
@@ -1865,7 +1945,8 @@
       "Tương tác thuốc: Điều trị đồng thời với glucocorticoid ức chế hiệu quả điều trị của somatropin. Bệnh nhân bị thiếu hụt ACTH phải điều trị thay thế bằng glucocorticoid cần phải chỉnh liều cẩn thận để tránh ức chế tác dụng của hormon tăng trưởng. Hormone tăng trưởng làm giảm sự chuyển đổi cortisone thành cortisol và có thể làm bộc lộ chứng giảm năng tuyến thượng thận trung tâm mà trước đây chưa được phát hiện hoặc làm cho liều thay thế glucocorticoid thấp không hiệu quả. Có thể cần liều hormone tăng trưởng cao hơn để đạt được mục tiêu điều trị ở phụ nữ đang dùng liệu pháp thay thế oestrogen đường uống. Số liệu từ một nghiên cứu về sự tương tác được tiến hành trên người lớn bị thiếu hormon tăng trưởng cho thấy sử dụng somatropin có thể làm tăng sự thanh thải các chất được chuyển hóa bởi cytochrome P450. Độ thanh thải các chất chuyển hóa qua cytochrome P450 3A4 (ví dụ: Các steroid sinh dục, corticosteroid, các thuốc chống động kinh và cyclosporine) có thể tăng lên dẫn đến nồng độ các chất này trong máu thấp, vì vậy cần phải theo dõi hiệu quả lâm sàng của những thuốc này. Tương kỵ: Do không có thông tin về tương kỵ, không được trộn Saizen® với bất kỳ thuốc nào khác."
     ],
     "id": "saizen-6-mg-1-03ml-merck-1-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Soli-medon 40 Bidiphar 1 CẶP",
@@ -1889,7 +1970,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "soli-medon-40-bidiphar-1-cap",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Solu-medrol 40mg Pfizer 10 LỌ",
@@ -1914,7 +1996,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "solu-medrol-40mg-pfizer-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Somazina 1000mg 1x5",
@@ -1939,7 +2022,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "somazina-1000mg-1x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Supvizyn Hdpharma 10 ỐNG 2ml",
@@ -1963,7 +2047,8 @@
       "Đối tượng cần thận trọng: Suy gan"
     ],
     "id": "supvizyn-hdpharma-10-ong-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Synagis 100mg/1ml Astrazeneca",
@@ -1985,7 +2070,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác chính thức nào với các thuốc khác được thực hiện. Trong nghiên cứu IMpact-RSV pha III trên quần thể bệnh nhi sinh non và bị loạn sản phế quản phổi, tỷ lệ bệnh nhân trong các nhóm giả dược và palivizumab đã nhận vắc xin trẻ em thường quy, vắc xin cúm, thuốc giãn phế quản hoặc corticosteroid thì tương tự và không gia tăng thêm các phản ứng bất lợi được quan sát trong số những bệnh nhân đang nhận thuốc này. Bởi vì kháng thể đơn dòng đặc hiệu đối với RSV, palivizumab không được kỳ vọng can thiệp vào đáp ứng miễn dịch với vắc xin. Palivizumab có thể ảnh hưởng các xét nghiệm chẩn đoán RSV dựa trên miễn dịch, như xét nghiệm dựa trên phát hiện kháng nguyên. Ngoài ra, palivizumab gây ức chế sao chép virus trong nuôi cấy tế bào và vì vậy cũng có thể gây nhiễu xét nghiệm nuôi cấy virus. Palivizumab không ảnh hưởng vào các xét nghiệm dựa trên phản ứng chuỗi polymerase phiên mã ngược. Sự ảnh hưởng này có thể dẫn đến kết quả xét nghiệm chẩn đoán RSV âm tính giả. Vì vậy, khi thu được kết quả xét nghiệm chẩn đoán, nên sử dụng kết hợp với các phát hiện trên lâm sàng để định hướng các quyết định y khoa."
     ],
     "id": "synagis-100mg-1ml-astrazeneca",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Synagis 50mg/0.5ml Astrazeneca",
@@ -2007,7 +2093,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác chính thức nào với các thuốc khác được thực hiện. Trong nghiên cứu IMpact-RSV pha III trên quần thể bệnh nhi sinh non và bị loạn sản phế quản phổi, tỷ lệ bệnh nhân trong các nhóm giả dược và palivizumab đã nhận vắc xin trẻ em thường quy, vắc xin cúm, thuốc giãn phế quản hoặc corticosteroid thì tương tự và không gia tăng thêm các phản ứng bất lợi được quan sát trong số những bệnh nhân đang nhận thuốc này. Bởi vì kháng thể đơn dòng đặc hiệu đối với RSV, palivizumab không được kỳ vọng can thiệp vào đáp ứng miễn dịch với vắc xin. Palivizumab có thể ảnh hưởng các xét nghiệm chẩn đoán RSV dựa trên miễn dịch, như xét nghiệm dựa trên phát hiện kháng nguyên. Ngoài ra, palivizumab gây ức chế sao chép virus trong nuôi cấy tế bào và vì vậy cũng có thể gây nhiễu xét nghiệm nuôi cấy virus. Palivizumab không ảnh hưởng vào các xét nghiệm dựa trên phản ứng chuỗi polymerase phiên mã ngược. Sự ảnh hưởng này có thể dẫn đến kết quả xét nghiệm chẩn đoán RSV âm tính giả. Vì vậy, khi thu được kết quả xét nghiệm chẩn đoán, nên sử dụng kết hợp với các phát hiện trên lâm sàng để định hướng các quyết định y khoa."
     ],
     "id": "synagis-50mg-0-5ml-astrazeneca",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tanganil 500mg/5ml HỘP 5 ỐNG",
@@ -2031,7 +2118,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tanganil-500mg-5ml-hop-5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tezspire 210mg Astrazeneca 1 BÚT TIÊM X 1.91ml",
@@ -2054,7 +2142,8 @@
       "Đối tượng cần thận trọng: Trẻ em dưới 12 tuổi"
     ],
     "id": "tezspire-210mg-astrazeneca-1-but-tiem-x-1-91ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Fenidel 20mg/ml Vinphaco 1x10",
@@ -2076,7 +2165,8 @@
       "Tương tác thuốc: Nguy cơ tăng kali máu: Một số thuốc khi phối hợp với piroxicam làm tăng nguy cơ rối loạn kali máu như: Muối kali, thuốc lợi tiểu, thuốc ức chế men chuyển angiotensin, thuốc ức chế thụ thể angiotensin, thuốc chống viêm không steroid, heparin (trọng lượng phân tử thấp và không phân đoạn), ciclosporin và tacrolimus. Nguy cơ tăng kali máu có thể phụ thuộc vào nhiều yếu tố khác nhau. Vì vậy, khi phối hợp piroxicam với các thuốc trên cần phải theo dõi chặt chẽ các dấu hiệu lâm sàng và xét nghiệm kali máu trên bệnh nhân. Các phối hợp chống chỉ định: Các NSAID khác và các thuốc chống đông: Không được sử dụng đồng thời với piroxicam. Thuốc chống đông loại coumarin và các thuốc có liên kết protein cao như warfarin: Cần theo dõi người bệnh chặt chẽ để điều chỉnh liều dùng của các thuốc cho phù hợp, vì liên kết với protein cao, piroxicam có thể đẩy các thuốc khác ra khỏi protein của huyết tương. Aspirin: Không nên điều trị thuốc đồng thời vì như vậy sẽ hạ thấp nồng độ của piroxicam trong huyết tương (khoảng 80% khi điều trị với 3,9 g aspirin), và không tốt hơn so với khi chỉ điều trị với aspirin, mà lại làm tăng ADR. Các phối hợp không nên khuyến cáo sử dụng: Heparin trọng lượng phân tử thấp, không phân đoạn (ở liều điều trị hoặc ở người cao tuổi): Vì có nguy cơ tăng chảy máu (do ức chế chức năng tiểu cầu). Lithi: Sẽ tăng độc tính lithi do làm tăng nồng độ của lithi trong huyết tương, vì vậy cần theo dõi chặt chẽ nồng độ của lithi trong huyết tương. Methotrexat sử dụng liều cao trên 15 mg/tuần: Phải thận trọng vì piroxicam làm giảm độ thanh thải của methotrexat dẫn đến tăng nồng độ methotrexat trong huyết tương, làm tăng độc tính của thuốc này, đặc biệt khi sử dụng liều cao. Pemetrexed (bệnh nhân có suy giảm chức năng thận trung bình với Clcr từ 45 ml/phút đến 80 ml/phút): Tăng độc tính của pemetrexed (do NSAID giảm độ thanh thải qua thận). Các phối hợp cần thận trọng khi sử dụng: Thuốc lợi tiểu: Làm giảm bài tiết natri qua nước tiểu, làm tăng nguy cơ suy thận. Methotrexat sử dụng liều thấp hơn 15 mg/tuần: Tăng độc tính của methotrexat trên huyết học (do NSAID giảm độ thanh thải qua thận của methotrexat). Pemetrexed (Bệnh nhân có suy giảm chức năng thận bình thường): Tăng nguy cơ độc tính của pemetrexed (do NSAID giảm độ thanh thải qua thận). Theo dõi chức năng thận. Các phối hợp cần lưu ý: Acid acetylsalicylic: Liều chống kết tập (từ 50 mg đến 375 mg mỗi ngày, sử dụng 1 hoặc nhiều liều), tăng nguy cơ loét và xuất huyết tiêu hóa. Glucocorticoid đường uống (trừ liệu pháp thay thế hydrocortison): Gia tăng nguy cơ loét và xuất huyết tiêu hóa. Thuốc chống kết tập tiểu cầu và thuốc ức chế chọn lọc thu hồi serotonin (SSRI): Gia tăng nguy cơ xuất huyết tiêu hóa. Heparin không phân đoạn, trọng lượng phân tử thấp (sử dụng liều dự phòng): Gia tăng nguy cơ chảy máu. Các thuốc chẹn beta (trừ esmolol): Giảm tác dụng hạ huyết áp (do NSAID ức chế prostaglandin giãn mạch và giữ natri). Ciclosporin, tacrolimus: Nguy cơ gây độc cho thận, đặc biệt ở người cao tuổi. Theo dõi chức năng thận khi bắt đầu điều trị với thuốc NSAID."
     ],
     "id": "fenidel-20mg-ml-vinphaco-1x10",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cerebrolysin 10ml 1x5",
@@ -2101,7 +2191,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "cerebrolysin-10ml-1x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cerebrolysin 5ml 1x5",
@@ -2125,7 +2216,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "cerebrolysin-5ml-1x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Thuốc TIÊM Truyền Rovajec PHIL Inter 10 LỌ",
@@ -2147,7 +2239,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "thuoc-tiem-truyen-rovajec-phil-inter-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Trikaxon Pharbaco 1g 1 LỌ + 1 NƯỚC CẤT",
@@ -2169,7 +2262,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "trikaxon-pharbaco-1g-1-lo-1-nuoc-cat",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tygacil 50mg Pfizer 10 LỌ",
@@ -2191,7 +2285,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "tygacil-50mg-pfizer-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Venocity Venus 5 ỐNG",
@@ -2213,7 +2308,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "venocity-venus-5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vincozyn PLUS Vinphaco 1x10 ỐNG X 2ml",
@@ -2235,7 +2331,8 @@
       "Tương tác thuốc: Liên quan vitamin B 1 : Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ. Liên quan vitamin B 2 : Đã gặp một số ca \"thiếu riboflavin\" ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Liên quan vitamin PP: Sử dụng nicotinamid đồng thời với chất ức chế men khử HGM - CoA có thể làm tăng nguy cơ gây tiêu cơ vân. Sử dụng nicotinamid đồng thời với thuốc chẹn alpha - adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Khẩu phần ăn và/hoặc liều lượng thuốc uống hạ đường huyết hoặc insulin có thể cần phải điều chỉnh khi sử dụng đồng thời với nicotinamid. Sử dụng nicotinamid đồng thời với các thuốc có độc tính với gan có thể làm tăng thêm tác hại độc cho gan. Không nên dùng đồng thời nicotinamid với carbamazepin vì gây tăng nồng độ carbamazepin huyết tương dẫn đến tăng độc tính Liên quan vitamin B 6 : Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson; điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa - benserazid. Liều dùng 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Một số thuốc có thể làm tăng nhu cầu về pyridoxin như hydralazin, isoniazid, penicilamin và thuốc tránh thai uống. Liên quan vitamin B 5 : Không dùng dexpanthenol cùng hoặc trong vòng 12 giờ sau khi dùng neostigmin hoặc những thuốc tác dụng giống thần kinh đối giao cảm khác. Không dùng dexpanthenol trong vòng 1 giờ sau khi dùng sucinylcholin, vì dexpanthenol có thể kéo dài tác dụng gây giãn cơ của sucinylcholin. Một số hiếm trường hợp dị ứng, không rõ nguyên nhân đã xảy ra khi sử dụng đồng thời thuốc tiêm dexpanthenol với thuốc kháng sinh, thuốc opiat và barbiturat."
     ],
     "id": "vincozyn-plus-vinphaco-1x10-ong-x-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vinphacine 250 Vinphaco 1x10",
@@ -2257,7 +2354,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "vinphacine-250-vinphaco-1x10",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vinphacine 500mg/2ml VĨNH PHÚC 2x5",
@@ -2281,7 +2379,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "vinphacine-500mg-2ml-vinh-phuc-2x5",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vinphason 100mg Vinphaco HỘP 1 LỌ + 1 ỐNG DUNG MÔI 2ml",
@@ -2303,7 +2402,8 @@
       "Tương tác thuốc: Đã có báo cáo co giật xảy ra khi sử dụng đồng thời corticosteroid với cclosporin. Việc sử dụng đồng thời các thuốc này dẫn đến sự ức chế lẫn nhau quá trình trao đổi chất, có thể xảy ra co giật và các tác dụng phụ khác liên quan đến từng thuốc riêng lẻ. Các thuốc cảm ứng enzym gan như rifampicin, rifabutin, carbamazepin, phenobarbiton, phenytoin, primidon và aminoglutethimid làm tăng chuyển hóa của corticosteroid và có thể làm giảm các tác dụng điều trị của thuốc. Các thuốc ức chế enzym CYP3A4 như ametidin, erythromycin, ketoconazol, itraconazol, diltiazem và mibefradil có thể làm giảm tốc độ chuyển hóa của corticosteroid và do đó làm tăng nồng độ thuốc trong huyết thanh. Steroid có thể làm giảm tác dụng của các thuốc kháng cholinesterase trong bệnh nhược cơ. Steroid có thể làm tăng tác dụng mong muốn của thuốc điều trị đái tháo đường (kể cả insulin), thuốc chống tăng huyết áp và thuốc lợi tiểu bị đối kháng bởi corticosteroid, và tác dụng hạ kali huyết của acetazolamid, thuốc lợi tiểu quai, thuốc lợi tiểu thiazid và carbenoxolon khi sử dụng đồng thời. Corticosteroid có thể làm tăng hiệu quả của thuốc chống đông coumarin khi điều trị đồng thời, do đó cần theo dõi chặt chẽ INR hoặc thời gian prothrombin để tránh chảy máu tự phát. Khi sử dụng đồng thời corticosteroid với salisylat có thể làm tăng sự thanh thải salicylat ở thận, và khi ngừng sử dụng steroid có thể dẫn đến nhiễm độc salicylat. Salicylat và các NSAIDs nên được sử dụng thận trọng khi kết hợp với corticosteroid trong bệnh giảm prothrombin máu. Steroid đã được báo cáo là tương tác với các thuốc chẹn thần kinh cơ như pancuronium làm đảo ngược một phần chẹn thần kinh cơ. Tương kỵ thuốc: Không được trộn lẫn thuốc với các thuốc khác, trừ các dung dịch pha loãng."
     ],
     "id": "vinphason-100mg-vinphaco-hop-1-lo-1-ong-dung-moi-2ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vinrolac 30mg/2ml Vinphaco 1x10",
@@ -2325,7 +2425,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "vinrolac-30mg-2ml-vinphaco-1x10",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vintanil 500mg/5ml Vinphaco 1x5 ỐNG",
@@ -2348,7 +2449,8 @@
       "Tương tác thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "vintanil-500mg-5ml-vinphaco-1x5-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vitamin b1 Vinphaco 100 ỐNG",
@@ -2370,7 +2472,8 @@
       "Tương tác thuốc: Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ. Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "vitamin-b1-vinphaco-100-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vitamin b12 KABI 1000mcg 100 ỐNG X 1ml",
@@ -2392,7 +2495,8 @@
       "Tương tác thuốc: Sử dụng đồng thời vitamin B12 với cloramphenicol có thể làm giảm tác dụng điều trị lên huyết học của vitamin B2 ở bệnh nhân thiếu máu. Cần phải giám sát chặt chẽ khi dùng kết hợp hai thuốc này. Methotrexat, pyrimethamin và hầu hết kháng sinh có nguy cơ ảnh hưởng đến các xét nghiệm chẩn đoán vi khuẩn do thiếu hụt vitamin B12. Tương kỵ: Có thể trộn vitamin B12 trong dung dịch với vitamin B1, B6, hoặc với sắt fumarat, acid ascorbic, acid folic, đồng sulfat hoặc với fructose sắt và acid folic trong một số dạng thuốc tiêm. Cyanocobalamin tương kỵ với dung dịch natri warfarin tiêm."
     ],
     "id": "vitamin-b12-kabi-1000mcg-100-ong-x-1ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vitamin b12 Vinphaco 100 ỐNG",
@@ -2414,7 +2518,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Thuốc tránh thai đường uống: Giảm nồng độ Vitamin B12 trong huyết thanh. Cloramphenicol: Khi dùng ngoài đường tiêu hóa có thể làm giảm tác dụng của Vitamin B12 trong bệnh thiếu máu."
     ],
     "id": "vitamin-b12-vinphaco-100-ong",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Xeomin 100 Units MERZ",
@@ -2436,7 +2541,8 @@
       "Tương tác thuốc: Việc dùng đồng thời Xeomin và kháng sinh nhóm aminoglycoside hoặc các thuốc khác can thiệp vào sự dẫn truyền thần kinh cơ, ví dụ thuốc giãn cơ nhóm tubocurarin, chỉ nên được thực hiện với sự thận trọng vì những thuốc này có thể làm tăng tác dụng của độc tố."
     ],
     "id": "xeomin-100-units-merz",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Xolair 150mg Novartis",
@@ -2461,7 +2567,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "xolair-150mg-novartis",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zavicefta 2g/0.5g Pfizer 10 LỌ",
@@ -2483,7 +2590,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "zavicefta-2g-0-5g-pfizer-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zinforo 600mg Pfizer 10 LỌ",
@@ -2505,7 +2613,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "zinforo-600mg-pfizer-10-lo",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zoruxa 5mg MEGA 100ml",
@@ -2527,7 +2636,8 @@
       "Tương tác thuốc: Chưa có nghiên cứu được tiến hành về tương tác thuốc đặc hiệu với acid zoledronic. Cần thận trọng khi dùng phối hợp Zoruxa với các thuốc có ảnh hưởng đáng kể đến chức năng thận (aminoglycosid hoặc các thuốc lợi tiểu có thể gây mất nước). Lưu ý khi dùng phối hợp với các thuốc gây độc thận như thuốc kháng viêm non-steroid."
     ],
     "id": "zoruxa-5mg-mega-100ml",
-    "danh_muc": "Thuốc tiêm chích"
+    "danh_muc": "Thuốc tiêm chích",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "A.t Cetam 200mg/ml AN Thiên 60ml",
@@ -2549,7 +2659,8 @@
       "Tương tác thuốc: Tương tác dược động học: Tương tác thuốc có khả năng dẫn đến những thay đổi về dược động học của piracetam được dự đoán là thấp vì khoảng 90% liều piracetam thải trừ qua nước tiểu ở dưới dạng không đổi. In vitro, piracetam không ức chế các đồng phân của cytochrom P450 ở gan người CYP1A2, 2B6, 2C8, 2C9, 2C19, 2D6, 2E1 và 4A9/11 ở các nồng độ 142, 426 và 1422 µg/ml. Ở nồng độ 1422 µg/ml, quan sát thấy tác động ức chế nhẹ lên CYP2A6 (21%) và 3A4/5 (11%). Tuy nhiên, các giá trị K i để ức chế hai dạng đồng phân CYP này là tốt khi nồng độ vượt quá 1422 µg/ml. Do đó, tương tác chuyển hóa của piracetam với các thuốc khác gần như không có. Các hormon tuyến giáp: Lú lẫn, dễ kích thích và rối loạn giấc ngủ đã được báo cáo khi dùng đồng thời với các chiết xuất của tuyến giáp (T3 + T4). Acenocoumarol: Trong 1 nghiên cứu mù đơn đã được công bố ở những bệnh nhân bị huyết khối tĩnh mạch tái phát nặng, piracetam liều 9,6 g/ngày không làm thay đổi liều acenocoumarol cần thiết để đạt INR 2,5 đến 3,5, nhưng so với tác dụng của acenocoumarol dùng đơn độc, việc bổ sung piracetam 9,6 g/ngày làm giảm đáng kể kết tập tiểu cầu, phóng thích B-thromboglobulin, nồng độ fibrinogen và các yếu tố von Willebrand (VIII: C; VIll: vW: Ag; VIll: vW: Rco) và độ nhớt của máu toàn phần và huyết tương. Các thuốc chống động kinh: Liều hàng ngày 20 g piracetam trên 4 tuần không làm thay đổi nồng độ đỉnh và nồng độ đáy trong huyết thanh của các thuốc chống động kinh (carbamazepin, phenytoin, phenobarbital, valproat) ở bệnh nhân bị bệnh động kinh đang dùng liều ổn định. Rượu: Việc uống rượu cùng lúc không ảnh hưởng đến nồng độ piracetam trong huyết thanh và nồng độ cồn không bị thay đổi bởi một liều uống piracetam 1,6 g. Tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "a-t-cetam-200mg-ml-an-thien-60ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aclasta 5mg Sandoz 100ml",
@@ -2571,7 +2682,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "aclasta-5mg-sandoz-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Albiomin 20% 200g Biotest 50ml",
@@ -2593,7 +2705,8 @@
       "Tương tác thuốc: Yếu tố hoạt hóa đông máu (prekallikrein) có trong một số loại chế phẩm có thể kích thích biến đổi kininogen trong máu người thành kinin gây hạ huyết áp. Dung dịch Albumin nhiễm nhôm có thể gây độc cho những người suy thận đã được truyền lượng lớn Albumin, dẫn đến loạn dưỡng xương và bệnh lý về não. Tương tác với thực phẩm Thức ăn, rượu và thuốc lá có thể tương tác với vài loại thuốc nhất định. Hãy tham khảo ý kiến bác sĩ về việc uống thuốc cùng thức ăn, rượu và thuốc lá. Tình trạng sức khỏe ảnh hưởng đến Albiomin 20 Tình trạng sức khỏe của bạn có thể ảnh hưởng đến việc sử dụng thuốc này. Báo cho bác sĩ biết nếu bạn có bất kỳ vấn đề sức khỏe nào."
     ],
     "id": "albiomin-20-200g-biotest-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Albutein 20% Grifols 50ml",
@@ -2616,7 +2729,8 @@
       "Tương tác thuốc: Không có tương tác cụ thể nào của albumin người với các sản phẩm thuốc khác được biết đến."
     ],
     "id": "albutein-20-grifols-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Albutein 25% Grifols 100ml",
@@ -2639,7 +2753,8 @@
       "Tương tác thuốc: Yếu tố hoạt hóa đông máu (prekallikrein) có trong một số lô chế phẩm có thể kích thích biến đổi kininogen trong máu người thành kinin gây hạ huyết áp. Dung dịch albumin nhiễm nhôm có thể gây độc cho những người suy thận đã được truyền lượng lớn albumin, dẫn đến loạn dưỡng xương và bệnh lý về não."
     ],
     "id": "albutein-25-grifols-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Albutein 25% Grifols 50ml",
@@ -2662,7 +2777,8 @@
       "Tương tác thuốc: Yếu tố hoạt hóa đông máu (prekallikrein) có trong một số lô chế phẩm có thể kích thích biến đổi kininogen trong máu người thành kinin gây hạ huyết áp. Dung dịch albumin nhiễm nhôm có thể gây độc cho những người suy thận đã được truyền lượng lớn albumin, dẫn đến loạn dưỡng xương và bệnh lý về não."
     ],
     "id": "albutein-25-grifols-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alexan 500mg Ebewe 10ml",
@@ -2682,7 +2798,8 @@
       "Tương tác thuốc: Tham khảo thông tin tờ HDSD."
     ],
     "id": "alexan-500mg-ebewe-10ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aminoplasmal 10% Braun 500ml",
@@ -2704,7 +2821,8 @@
       "Tương tác thuốc: Chưa có báo cáo về tương tác thuốc Aminoplasmal."
     ],
     "id": "aminoplasmal-10-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Biseko 5% Biotest 50ml",
@@ -2727,7 +2845,8 @@
       "Tương tác thuốc: Làm yếu đi các vaccine hoạt động: Dùng Biseko có thể làm giảm hiệu quả hoạt động của các vaccine ngừa virus bệnh sởi, thủy đậu, quai bị trong thời gian từ 6 tuần đến 3 tháng. Tương tác với các thử nghiệm huyết thanh học Sau khi dùng Biseko, việc gia tăng tạm thời các kháng thể vận chuyển thụ động trong máu người bệnh có thể tạo nên những kết quả dương tính trong các thử nghiệm huyết thanh học. Những kết quả này dựa trên những kháng thể vận chuyển (sự miễn dịch thụ động) và các bác sĩ nên tính toán đến khả năng này. Biseko thích hợp với việc phân tán trở lại hồng cầu bị cô đặc. Tương kỵ Không được trộn chung Biseko với các sản phẩm thuốc khác. Tuy nhiên, Biseko có thể trộn lẫn với dung dịch nước muối sinh lý khi truyền."
     ],
     "id": "biseko-5-biotest-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Chiamin-s Injection TM Sohaco 250ml",
@@ -2749,7 +2868,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "chiamin-s-injection-tm-sohaco-250ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ciprofloxacin KABI 200mg Fresenius KABI 100ml",
@@ -2771,7 +2891,8 @@
       "Tương tác thuốc: Các floroquinolon, bao gồm ciprofloxacin ức chế hệ enzyme cytochrome P450 CYP1A2 và có thể làm tăng nồng độ trong huyết thanh của các thuốc chuyển hóa qua hệ enzyme này như clozapine, ropinirol, theophylin, và tizanidin. Chống chỉ định sử dụng đồng thời ciprofloxacin và tizanidin, khi sử dụng đồng thời với theophylin phải giảm liều theophylin và kiểm soát nồng độ trong huyết thanh. Clozapin hay ropinizol có thể sử dụng đồng thời với ciprofloxacin nhưng phải giám sát các biểu hiện lâm sàng kèm theo hiệu chỉnh liều nếu cần. Ciprofloxacin đã được báo cáo là làm tăng tác dụng của thuốc điều trị đái tháo đường dùng đường uống glibenclamid. Hạ đường huyết nặng, đôi khi gây tử vong đã xảy ra trên bệnh nhân dùng đồng thời với glibenclamid. Ciprofloxacin có thể ức chế sự bài tiết ở ống thận và làm tăng độc tính của methotrexate. Một số floroquinolon có khả năng kéo dài khoảng QT và do đó tránh dùng cho bệnh nhân đang sử dụng các thuốc chống loại nhịp như quinidine, procainamide hay amiodaron và sotalol. Ngoài ra, nên thận trọng khi sử dụng đồng thời với các thuốc khác cũng có tác dụng này (như kháng histamin astemizol và terfenadin, cisapride, erythromycin, pentamidin, phenothiazine hoặc thuốc chống trầm cảm 3 vòng). Dùng đồng thời các thuốc kháng viêm không steroid (ibuprofen, indomethacin...) sẽ làm tăng tác dụng phụ của Ciprofloxacin. Độ hấp thu Ciprofloxacin có thể bị giảm đi 1⁄2 nếu dùng đồng thời một số thuốc gây độc tế bào (Cyclophosphamid, Vincristin, Doxorubicin, Cytosine, Arabinosid, Mitozantron). Ciprofloxacin và ciclosporin dùng đồng thời có thể gây tăng nhất thời creatinin huyết thanh. Nên kiểm tra creatinin huyết thanh mỗi tuần 2 lần. Probenecid làm giảm mức lọc cầu thận và giảm bài tiết ở ống thận, do đó làm giảm đào thải thuốc qua nước tiểu. Warfarin phối hợp với ciprofloxacin có thể gây hạ prothrombin. Cần kiểm tra thường xuyên prothrombin huyết và điều chỉnh liều thuốc chống đông máu."
     ],
     "id": "ciprofloxacin-kabi-200mg-fresenius-kabi-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Combilipid MCT PERI Injection 375ml - TIÊM Truyền TĨNH MẠCH",
@@ -2793,7 +2914,8 @@
       "Tương tác thuốc: Một số thuốc, như insulin, có thể ảnh hưởng đến hệ thống lipase của cơ thể. Tuy nhiên loại tương tác này có vẻ như chỉ bị hạn chế về ý nghĩa lâm sàng. Dùng heparin ở liều điều trị gây giải phóng nhẹ lipoprotein lipase vào tuần hoàn. Điều này ban đầu có thể làm tăng sự phân giải lipid trong huyết tương sau đó là giảm nhẹ thanh thải triglycerid. Dầu đậu nành có chứa vitamin K1 tự nhiên. Điều này có thể ảnh hưởng đến hiệu quả điều trị của các dẫn xuất cumarin là các chất nên được kiểm tra chặt chẽ ở những bệnh nhân được điều trị bằng các thuốc này."
     ],
     "id": "combilipid-mct-peri-injection-375ml-tiem-truyen-tinh-mach",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Decazone 12g Amvipharm 60ml",
@@ -2816,7 +2938,8 @@
       "Tương tác thuốc: Vẫn có thể tiếp tục phương pháp điều trị kinh điển nghiện rượu (các vitamin và thuốc an thần) trong trường hợp người bệnh bị thiếu vitamin hoặc kích động mạnh. Đã có trường hợp tương tác giữa piracetam và tinh chất tuyến giáp khi dùng đồng thời: Lú lẫn, bị kích thích và rối loạn giấc ngủ. Ở một người bệnh thời gian prothrombin đã được ổn định bằng warfarin lại tăng lên khi dùng piracetam."
     ],
     "id": "decazone-12g-amvipharm-60ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glucose 5% Fresenius KABI 500ml",
@@ -2839,7 +2962,8 @@
       "Tương tác thuốc: Cần tính toán đến ảnh hưởng của dung dịch glucose lên đường huyết và cân bằng nước, điện giải khi sử dụng cho những bệnh nhân đang điều trị các thuốc khác mà có tác dụng kiểm soát đường huyết, cân bằng dịch, điện giải. Dùng đồng thời với catecholamin và steroid làm giảm hấp thu glucose. Tương kỵ: Trước khi pha thêm bất kỳ một thuốc gì vào dung dịch glucose để truyền phải kiểm tra xem có phù hợp không. Dung dịch chứa glucose và có pH < 6 có thể gây kết tủa indomethacin."
     ],
     "id": "glucose-5-fresenius-kabi-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Braun 500ml",
@@ -2862,7 +2986,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi; thiếu natri có thể thúc đẩy lithi bị giữ lại và tăng nguy cơ gây độc, người bệnh dùng lithi không được ăn nhạt."
     ],
     "id": "natri-clorid-0-9-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DỊCH Truyền TĨNH MẠCH Natri Clorid 0.9% Braun 250ml",
@@ -2884,7 +3009,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi; thiếu natri có thể thúc đẩy lithi bị giữ lại và tăng nguy cơ gây độc, người bệnh dùng lithi không được ăn nhạt."
     ],
     "id": "dich-truyen-tinh-mach-natri-clorid-0-9-braun-250ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Glucose 5% Braun 500ml",
@@ -2907,7 +3033,8 @@
       "Tương tác thuốc: Thận trọng trên các bệnh nhân được điều trị với: Lithium: Độ thanh thải natri và lithium của thận có thể tăng lên trong khi truyền và dẫn đến giảm nồng độ của lithium. Corticosteroid: Liên quan đến giữ natri và nước (trong trường hợp phù nề và tăng huyết áp ) Thuốc lợi tiểu, beta - 2 agonists hoặc insulin làm tăng nguy cơ hạ kali máu."
     ],
     "id": "natri-clorid-0-9-glucose-5-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aminoplasmal 5% Braun 500ml",
@@ -2930,7 +3057,8 @@
       "Tương tác: Chưa được biết đến."
     ],
     "id": "aminoplasmal-5-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "glucolyte-2 Otsuka CHAI 500ml",
@@ -2952,7 +3080,8 @@
       "Tương tác thuốc: Tương tác thuốc: Không có dữ liệu được ghi nhận. Tương kỵ: Pha trộn Glucolyte-2 với các dung dịch có chứa Canxi trong quá trình sử dụng có thể tạo nên tủa Canxi phosphate."
     ],
     "id": "glucolyte-2-otsuka-chai-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền Paracetamol 1000mg KABI AD 10 LỌ X 100ml",
@@ -2974,7 +3103,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-tiem-truyen-paracetamol-1000mg-kabi-ad-10-lo-x-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH TIÊM Truyền Sodium Chloride Injection 500ml Shijiazhuang",
@@ -2997,7 +3127,8 @@
       "Tương tác thuốc: Sử dụng thận trọng dung dịch natri clorid tiêm cho bệnh nhân đang dùng corticosteroid hoặc corticotropin. Các nghiên cứu không được tiến hành để đánh giá thêm các tương tác thuốc thêm vào/ thuốc hoặc thuốc/thực phẩm với dung dịch natri clorid tiêm. Cần thận trọng ở bệnh nhân điều trị lithi. Natri thận và độ thanh thải của lithi có thể tăng lên khi dùng natri chlorid 0,9%. Dùng natri chlorid 0,9% có thể dẫn đến giảm nồng độ lithi. Do không có nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "dung-dich-tiem-truyen-sodium-chloride-injection-500ml-shijiazhuang",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "DUNG DỊCH Truyền TĨNH MẠCH 5% Dextrose IN Water Codupha 500ml",
@@ -3019,7 +3150,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dung-dich-truyen-tinh-mach-5-dextrose-in-water-codupha-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Flexbumin 20% Baxalta 50ml",
@@ -3041,7 +3173,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "flexbumin-20-baxalta-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glucose 10% Fresenius KABI 500ml",
@@ -3064,7 +3197,8 @@
       "Tương tác thuốc: Cần tính toán đến ảnh hưởng của dung dịch glucose lên đường huyết và cân bằng nước, điện giải khi sử dụng cho những bệnh nhân đang điều trị các thuốc khác mà có tác dụng kiểm soát đường huyết, cân bằng dịch, điện giải. Dùng đồng thời thuốc catecholamine và steroids làm giảm sự hấp thu glucose."
     ],
     "id": "glucose-10-fresenius-kabi-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glucose 5% Braun 500ml",
@@ -3087,7 +3221,8 @@
       "Tương tác thuốc: Cả hai tác dụng trên đường huyết của Glucose 5% truyền tĩnh mạch và ảnh hưởng của nó lên cân bằng nước và điện giải nên được lưu ý khi sử dụng glucose truyền tĩnh mạch ở bệnh nhân được điều trị với các chất khác có ảnh hưởng đến kiểm soát đường huyết, hoặc cân bằng dịch hoặc điện giải. Truyền đồng thời với các catecholamine và steroid làm giảm hấp thu glucose. Không có nghiên cứu tương tác nào đã được tiến hành. Tương kỵ Trước khi pha thêm bất cứ một thuốc gì vào dung dịch glucose để truyền phải kiểm tra xem có phù hợp không. Dung dịch chứa glucose và có pH < 6 có thể gây kết tủa indomethacin."
     ],
     "id": "glucose-5-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glucose Intravenous Infusion B.p 5% B.braun 500ml",
@@ -3109,7 +3244,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "glucose-intravenous-infusion-b-p-5-b-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Human Albumin 200g/l 20% Takeda 50ml",
@@ -3132,7 +3268,8 @@
       "Tương tác thuốc: Chưa thấy có tương tác đặc biệt nào giữa Human Albumin và các thuốc khác."
     ],
     "id": "human-albumin-200g-l-20-takeda-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Intratect Biotest 50ml",
@@ -3154,7 +3291,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "intratect-biotest-50ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Mannitol Fresenius KABI 250ml",
@@ -3177,7 +3315,8 @@
       "Tương tác thuốc: Người bệnh đang điều trị bằng lithi cần phải theo dõi đáp ứng với thuốc khi dùng manitol. Tương kỵ: Không được truyền manitol cùng với máu toàn phần."
     ],
     "id": "mannitol-fresenius-kabi-250ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Metronidazol KABI 500mg 100 ML",
@@ -3199,7 +3338,8 @@
       "Tương tác thuốc: Metronidazol tăng tác dụng của thuốc uống chống đông máu (đặc biệt warfarin), vecuronium. Metronidazol có tác dụng kiểu disulfiram. Vì vậy không dùng đồng thời 2 thuốc này để tránh tác dụng độc trên thần kinh như loạn thần, lú lẫn. Phenobarbital làm tăng chuyển hoá metronidazol. Dùng metronidazol cho người bệnh đang dùng lithi sẽ làm nồng độ lithi huyết thanh tăng lên, gây độc."
     ],
     "id": "metronidazol-kabi-500mg-100-ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Morihepamin AY Pharmaceuticals 500ml",
@@ -3222,7 +3362,8 @@
       "Tương tác thuốc: Không có báo cáo chỉ ra sự tương tác với các thuốc khác."
     ],
     "id": "morihepamin-ay-pharmaceuticals-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nanokine 2000iu/1ml Nanogen 1ml",
@@ -3244,7 +3385,8 @@
       "Tương tác thuốc: Dùng các thuốc ức chế men chuyển đồng thời với erythropoietin có thể làm tăng nguy cơ bị tăng kali huyết, đặc biệt ở người bệnh giảm chức năng thận. Chưa có những tương tác lâm sàng quan trọng giữa Erythropoietin alfa và các thuốc khác. Tuy nhiên hiệu quả của Erythropoietin alfa tăng khi sử dụng đồng thời với sắt sulfat khi có triệu chứng thiếu sắt."
     ],
     "id": "nanokine-2000iu-1ml-nanogen-1ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% KABI 100ml",
@@ -3266,7 +3408,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi; thiếu natri có thể thúc đầy Iithi bị giữ lại và tăng nguy cơ gây ngộ độc; người bệnh dùng lithi không được ăn nhạt."
     ],
     "id": "natri-clorid-0-9-kabi-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% KABI 500ml",
@@ -3288,7 +3431,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi; thiếu natri có thể thúc đầy Iithi bị giữ lại và tăng nguy cơ gây ngộ độc; người bệnh dùng lithi không được ăn nhạt."
     ],
     "id": "natri-clorid-0-9-kabi-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 3% KABI 100ml",
@@ -3311,7 +3455,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi, thiếu natri có thể thúc đẩy lithi bị giữ lại và tăng nguy cơ gây độc, người bệnh dùng lithi không được ăn nhạt. Nước muối ưu trương dùng đồng thời với oxytocin có thể gây tăng trương lực tử cung, có thể gây vỡ tử cung hoặc rách cổ tử cung. Cần theo dõi khi dùng đồng thời."
     ],
     "id": "natri-clorid-3-kabi-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Natri Clorid 0.9% Braun 100ml",
@@ -3334,7 +3479,8 @@
       "Tương tác thuốc: Thừa natri làm tăng bài tiết lithi. Thiếu natri có thể thúc đẩy lithi bị giữ lại và tăng nguy cơ gây độc, người bệnh dùng lithi không được ăn nhạt."
     ],
     "id": "natri-clorid-0-9-braun-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nephrosteril 250ml",
@@ -3357,7 +3503,8 @@
       "Tương tác thuốc: Nên tránh việc bổ sung các thuốc khác vì các chất bổ sung có thể dẫn đến các thay đổi lý hoá trong dung dịch acid amin và như vậy có thể có các phản ứng độc tính. Nếu như buộc phải bổ sung các thuốc khác vào, cần lưu ý bảo đảm tiệt trùng, trộn lẫn hoàn toàn và các thay đổi khác trong dung dịch cũng như tính tương thích nói chung."
     ],
     "id": "nephrosteril-250ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "NHŨ Tương Truyền TĨNH MẠCH Kabiven Peripheral 1000 KCAL TÚI 3 NGĂN 1440ml",
@@ -3379,7 +3526,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "nhu-tuong-truyen-tinh-mach-kabiven-peripheral-1000-kcal-tui-3-ngan-1440ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Pantogen 500ml",
@@ -3402,7 +3550,8 @@
       "Tương tác thuốc: Glucose Chưa thấy có. Thiamine Chưa thấy có. Riboflavin - 5 - phosphate natri. Đã gặp một số ca \"thiếu riboflavin\" ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cùng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Pyridoxin Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson, điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa - benserazid. Liều dùng 200mpg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbiton trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Thuốc tránh thai uống có thể làm tăng nhu cầu về pyridoxin. Acid ascorbic Dùng đồng thời theo tỷ lệ trên 200mg vitamin C với 30mg sắt nguyên tố làm tăng hấp thu sắt qua đường da dày - ruột, tuy vậy, đa số người bệnh đều có khả năng hấp thu sắt uống vào một cách đầy đủ mà không phải dùng đồng thời vitamin C. Dùng đồng thời vitamin C với aspirin làm tăng bài tiết vitamin C và giảm bài tiết aspirin trong nước tiểu. Dùng đồng thời vitamin C và fluphenazin dẫn đến giảm nồng độ fluphenazin huyết tương. Sự acid - hóa nước tiểu sau khi dùng vitamin C có thể làm thay đổi sự bài tiết của các thuốc khác. Vitamin C liều cao có thể phá hủy vitamin B12, cần khuyên người bệnh tránh uống vitamin C liều cao trong vòng một giờ trước hoặc sau khi uống vitamin B12. Vì vitamin C là một chất khử mạnh, nên ảnh hưởng đến nhiều xét nghiệm dựa trên phản ửng oxy hóa - khử. Sự có mặt vitamin C trong nước tiểu làm tăng giả tạo lượng glucose nếu định lượng bằng thuốc thử đồng (II) sulfat và giảm giả tạo lượng glucose nếu định lượng bằng phương pháp glucose oxydase Với các xét nghiệm khác, cần phải tham khảo tài liệu chuyên biệt về ảnh hưởng của vitamin C. Nicotinamid Sử dụng nicotinamid đồngng thời với chất ức chế men khử HGM - CoA có thể làm tăng nguy cơ gây tiêu cơ vân (rhabdomyolysis). Sử dụng nicotinamid đồng thời với thuốc chẹn alpha - adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Khẩu phần ăn hoặc liều lượng thuốc uống hạ đường huyết hoặc insulin có thể cần phải điều chỉnh khi sử dụng đồng thời với nicotinamid. Sử dụng nicotinamid đồng thời với các thuốc có độc tính với gan có thể làm tăng thêm tác hại độc cho gan. Không nên dùng đồng thời nicotinamid với carbamazepin vì gây tăng nồng độ carbamazepin huyết tương dẫn đến tăng độc tính. D - Pantothenol Không dùng dexpanthenol cùng với hoặc trong vòng 12 giờ sau khi dùng neostigmin hoặc những thuốc tác dụng giống thần kinh đối giao cảm khác. Tuy không quan trọng về lâm sàng, nhưng tác dụng co đồng tử của các chế phẩm kháng cholinesterase dùng cho mắt (ví dụ: Ecothiophat iodid, isoflurophat có thể tăng lên do acid pantothenic). Không dùng dexpanthenol trong vòng 1 giờ sau khi dùng sucinylcholin, vì dexpanthenol có thể kéo dài tác dụng gây giãn cơ của sucinylcholin. Một số hiếm trường hợp dị ứng, không rõ nguyên nhân đã xảy ra khi sử dụng đồng thời thuốc tiêm dexpanthenol với thuốc kháng sinh, thuốc opiat và barbiturat."
     ],
     "id": "pantogen-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Paracetamol KABI 1000mg Frensenius KABI 48 CHAI X 100ml",
@@ -3426,7 +3575,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "paracetamol-kabi-1000mg-frensenius-kabi-48-chai-x-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Piracetam KABI 12g 60ml",
@@ -3449,7 +3599,8 @@
       "Tương tác thuốc: Đã có 1 trường hợp có tương tác giữa piracetam và tính chất tuyến giáp khi dùng đồng thời: Lú lẫn, bị kích thích và rối loạn giác ngủ. Ở một người bệnh thời gian prothrombin đã được ổn định bằng warfarin lại tăng lên khi dùng piracetam."
     ],
     "id": "piracetam-kabi-12g-60ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Reamberin Polysan 400ml",
@@ -3473,7 +3624,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "reamberin-polysan-400ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ringer Lactate Intravenous Infusion 500ml - DD TIÊM Truyền",
@@ -3496,7 +3648,8 @@
       "Tương tác thuốc/Tương kỵ: Tương tác thuốc: Chưa được biết đến. Tương kỵ: Các thuốc chứa phosphat, carbonat, bicarbonat, sulphat, tartrat có thể gây kết tủa với Canxi Clorid trong dịch truyền tĩnh mạch Ringer lactat. Dịch truyền tĩnh mạch Ringer Lactat chứa Kali clorid nên không được pha vào manitol, máu hoặc các sản phẩm máu hoặc dung dịch có chứa amino acid hoặc có chứa lipid vì có thể làm kết tủa những chất này hoặc gây tan hồng cầu khi truyền vào."
     ],
     "id": "ringer-lactate-intravenous-infusion-500ml-dd-tiem-truyen",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Saphnelo 300mg Astrazeneca 2ml",
@@ -3518,7 +3671,8 @@
       "Tương tác thuốc: Không có nghiên cứu chính thức nào về tương tác thuốc đã được thực hiện. Anifrolumab được cho là không chuyển hóa qua enzyme tại gan hoặc thải trừ qua thận. Đáp ứng miễn dịch Sử dụng đồng thời anifrolumab với vắc xin chưa được nghiên cứu. Tương kỵ của thuốc Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "saphnelo-300mg-astrazeneca-2ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Sodium Chloride Intravenous Infusion B.p 0.9% B.braun 100ml",
@@ -3540,7 +3694,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "sodium-chloride-intravenous-infusion-b-p-0-9-b-braun-100ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Sodium Chloride Intravenous Infusion B.p 0.9% B.braun 500ml",
@@ -3562,7 +3717,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "sodium-chloride-intravenous-infusion-b-p-0-9-b-braun-500ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Soliris 300mg Astrazeneca 30ml",
@@ -3585,7 +3741,8 @@
       "Tương tác thuốc: Tương tác của thuốc: Không có nghiên cứu tương tác nào đã được thực hiện. Dựa trên tác dụng ức chế tiềm tàng của eculizumab đối với độc tế bào phụ thuộc vào bổ thể của rituximab, eculizumab có thể làm giảm các tác dụng dược lực học dự kiến của rituximab. Điều trị mạn tính immunoglobulin người tiêm tĩnh mạch (IVIg) có thể can thiệp vào cơ chế tái sinh thụ thể Fc sơ sinh nội sinh (FcRn) của các kháng thể đơn dòng như eculizumab và do đó làm giảm nồng độ eculizumab trong huyết thanh. Sử dụng đồng thời eculizumab với immunoglobulin tiêm tĩnh mạch (IVIg) có thể làm giảm hiệu quả của eculizumab. Theo dõi chặt chẽ để phát hiện giảm hiệu quả của eculizumab. Sử dụng đồng thời eculizumab với thuốc chẹn thụ thể Fc sơ sinh (FcRn) có thể làm giảm nồng độ toàn thân và giảm hiệu quả của eculizumab. Theo dõi chặt chẽ để phát hiện giảm hiệu quả của eculizumab. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác, ngoại trừ các thuốc được liệt kê ở phần Chuẩn bị trong mục Cách dùng, liều dùng."
     ],
     "id": "soliris-300mg-astrazeneca-30ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Levogolds 750mg Inforlife 150ml",
@@ -3607,7 +3764,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "levogolds-750mg-inforlife-150ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Morihepamin AY Pharmaceuticals 200ml",
@@ -3630,7 +3788,8 @@
       "Tương tác thuốc: Không có báo cáo chỉ ra sự tương tác với các thuốc khác."
     ],
     "id": "morihepamin-ay-pharmaceuticals-200ml",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vitaplex Injection 500ml SIU GUAN Chemical",
@@ -3655,7 +3814,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "vitaplex-injection-500ml-siu-guan-chemical",
-    "danh_muc": "Dịch truyền"
+    "danh_muc": "Dịch truyền",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Heparin-belmed 5000iu/ml Belmedpreparaty RUE 5 LỌ X 5ml",
@@ -3677,7 +3837,8 @@
       "Tương tác thuốc: Tác dụng chống đông máu của heparin được tăng cường bởi dipyridamol, hydroxychloroquin, axit acetylsalicylic, dextran, phenylbutazon, indometacin, warfarin (nguy cơ chảy máu tăng lên), bị giảm đi - bởi glycosid tim, tetracyclin, thuốc kháng histamin, nicotinic acid, acid etacrynic. Khi dùng đồng thời heparin với thuốc đối kháng thụ thể angiotensin II và ức chế men chuyển angiotensin, chứng tăng kali máu có thể xảy ra. Tác dụng chống đông của heparin có thể giảm liên quan đến dùng nitro-glycerin đường tĩnh mạch. Theo các dữ liệu thử nghiệm lâm sàng thực hiện trên người khỏe mạnh, clopidogrel không làm thay đổi nhu cầu chung về heparin. Dùng đồng thời heparin không làm thay đổi tác dụng ức chế của clopidogrel trên tổng số lượng tiểu cầu. Tuy nhiên sự an toàn của kiểu kết hợp này vẫn chưa được đánh giá và việc dùng đồng thời các thuốc này cần thận trọng."
     ],
     "id": "heparin-belmed-5000iu-ml-belmedpreparaty-rue-5-lo-x-5ml",
-    "danh_muc": "Dung dịch tiêm"
+    "danh_muc": "Dung dịch tiêm",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Meloxicam 15mg/1.5ml Danapha 10 ỐNG",
@@ -3699,7 +3860,8 @@
       "Tương tác thuốc: Nguy cơ liên quan đến tăng kali máu Một số loại thuốc có khả năng làm tăng kali máu: Muối kali, thuốc lợi tiểu tăng kali máu, thuốc ức chế men chuyển, thuốc đối kháng thụ thể angiotensin II, thuốc chống viêm không steroid, heparin (trọng lượng phân tử thấp hoặc không phân đoạn), cyclosporin, tacrolimus và trimethoprim. Việc khởi phát tăng kali máu có thể phụ thuộc vào các yếu tố liên quan. Nguy cơ này tăng lên khi các loại thuốc nêu trên được dùng kết hợp với meloxicam. Tương tác dược lực học Các NSAID khác và aspirin Không khuyến cáo sử dụng đồng thời meloxicam với các NSAID khác hoặc aspirin với liều > 500 mg/lần hoặc >3 g/ngày. Corticosteroid (ví dụ như glucocorticoid) Cần thận trọng khi sử dụng đồng thời với corticosteroid do tăng nguy cơ loét và chảy máu đường tiêu hóa. Thuốc chống đông máu hoặc heparin Tăng đáng kể nguy cơ chảy máu, do ức chế chức năng tiểu cầu và làm tổn thương niêm mạc dạ dày – tá tràng. Các NSAID có thể làm tăng tác dụng của thuốc chống đông máu, như warfarin. Không khuyến cáo sử dụng các NSAID đồng thời với thuốc chống đông máu hoặc heparin ở người cao tuổi hoặc với liều điều trị. Trong các trường hợp khác (ví dụ: Với liều dự phòng), cần thận trọng khi dùng heparin vì làm tăng nguy cơ chảy máu. Thuốc làm tan huyết khối và thuốc chống kết tập tiểu cầu Tăng nguy cơ chảy máu, do ức chế chức năng tiểu cầu và tổn thương niêm mạc dạ dày tá tràng. Các chất ức chế tái hấp thu serotonin chọn lọc (SSRI) Tăng nguy cơ xuất huyết tiêu hóa. Thuốc lợi tiểu, thuốc ức chế men chuyển và thuốc đối kháng thụ thể angiotensin II NSAID có thể làm giảm tác dụng của thuốc lợi tiểu và các thuốc hạ huyết áp khác. Ở một số bệnh nhân suy giảm chức năng thận (ví dụ: Bệnh nhân mất nước hoặc người cao tuổi), việc kết hợp thuốc ức chế men chuyển hoặc thuốc đối kháng thụ thể angiotensin II với các phương pháp điều trị ức chế cyclo-oxygenase có thể làm suy giảm thêm chức năng thận, bao gồm cả suy thận cấp, thường có thể hồi phục. Do đó, cần thận trọng đặc biệt ở người cao tuổi. Bệnh nhân cần được cung cấp đủ nước và theo dõi chức năng thận khi bắt đầu điều trị và định kỳ. Các thuốc hạ huyết áp khác (bao gồm thuốc chẹn beta) Có thể làm giảm tác dụng hạ huyết áp của thuốc chẹn beta (do ức chế các prostaglandin làm giãn mach). Thuốc ức chế calcineurin (ví dụ: Cyclosporin, tacrolimus) NSAID có thể làm tăng độc tính trên thận của các chất ức chế calcineurin, thông qua các tác dụng phụ thuộc vào prostaglandin trên thận. Khi sử dụng kết hợp, cần theo dõi chức năng thận, đặc biệt ở người cao tuổi. Deferasirox Cần thận trọng khi dùng đồng thời meloxicam và deferasirox vì có thể làm tăng nguy cơ các tác dụng phụ trên đường tiêu hóa. Tương tác dược động học Ảnh hưởng của meloxicam lên dược động học của các thuốc khác: Lithi Các NSAID đã được ghi nhận làm tăng nồng độ lithi huyết tương (do làm giảm tiết lithi qua thận), có thể dẫn đến mức gây độc. Không khuyến cáo sử dụng đồng thời lithi và NSAID. Nếu cần thiết phải kết hợp, cần theo dõi nồng độ lithi trong huyết tương cần thận trong giai đoạn đầu, điều chỉnh và ngưng điều trị meloxicam. Methotrexat Các NSAID có thể làm giảm bài tiết methotrexat qua ống thận dẫn đến tăng nồng độ methotrexat trong huyết tương. Do đó, không khuyến cáo sử dụng NSAID ở những bệnh nhân điều trị bằng methotrexat liều cao (> 15 mg/tuần). Nguy cơ tương tác giữa NSAID và methotrexat cũng nên được xem xét ở những bệnh nhân điều trị bằng methotrexat liều thấp hơn, đặc biệt ở bệnh nhân suy giảm chức năng thận. Nếu dùng kết hợp, cần theo dõi công thức máu và chức năng thận. Đặc biệt cần thận trọng khi dùng đồng thời methotrexat và NSAID trong ba ngày liên tiếp, do nguy cơ độc tính khi nồng độ methotrexat trong huyết tương tăng lên. Pemetrexed Ở bệnh nhân có độ thanh thải creatinin từ 45 đến 79 ml/phút, không nên dùng meloxicam ít nhất năm ngày trước, cùng ngày và ít nhất hai ngày sau khi dùng pemetrexed. Nếu cần thiết phải sử dụng đồng thời meloxicam và pemetrexed, bệnh nhân nên được theo dõi cần thận, do nguy cơ suy tủy và các phản ứng có hại trên đường tiêu hóa. Ở bệnh nhân suy thận nặng (độ thanh thải creatinin <45 ml/phút), không khuyến cáo dùng đồng thời meloxicam và pemetrexed. Ở những bệnh nhân chức năng thận bình thường (độ thanh thải creatinin ≥ 80 ml/phút), liều 15 mg meloxicam có thể làm giảm độ thanh thải của pemetrexed, do đó, làm tăng sự xuất hiện của các tác dụng phụ. Do đó, cần thận trọng khi dùng đồng thời liều 15 mg meloxicam với pemetrexed ở các bệnh nhân này. Ảnh hưởng của các thuốc khác lên dược động học của meloxicam Cholestyramin Cholestyramin đẩy nhanh quá trình thải trừ meloxicam bằng cách ngừng chu trình gan ruột, do đó làm tăng độ thanh thải của meloxicam lên 50 % và giảm thời gian bán thải xuống còn 13 ± 3 giờ. Ảnh hưởng của việc kết hợp meloxicam với các thuốc khác trên được động học Thuốc chống đái tháo đường đường uống (sulfonylurea, nateglinid) Meloxicam được thải trừ chủ yếu qua chuyển hóa ở gan, trong đó khoảng 2/3 qua trung gian của các enzym cytochrom (CYP) P450 (phần lớn CYP2C9 và một phần CYP3A4) và 1/3 qua các cơ chế khác như quá trình oxy hóa bởi peroxidase. Cần xem xét đến nguy cơ tương tác dược động học khi dùng đồng thời meloxicam với các thuốc ức chế hoặc được chuyển hóa bởi CYP2C9 và/hoặc CYP3A4. Tương tác qua CYP2C9 có thể xảy ra khi dùng kết hợp với các thuốc chống đái tháo đường đường uống (sulfonylurea, nateglinid), vì có thể làm tăng nồng độ của các thuốc này và meloxicam trong huyết tương. Bệnh nhân sử dụng meloxicam đồng thời với sulfonylurea hoặc nateglinid nên được theo dõi chặt chẽ về nguy cơ hạ đường huyết. Không có tương tác dược động học trực tiếp có ý nghĩa lâm sàng với các thuốc kháng acid, cimetidin và digoxin. Trẻ em Các nghiên cứu tương tác chưa được thực hiện ở trẻ em."
     ],
     "id": "meloxicam-15mg-1-5ml-danapha-10-ong",
-    "danh_muc": "Dung dịch tiêm"
+    "danh_muc": "Dung dịch tiêm",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vincozyn PLUS Vinphaco 2x5 ỐNG",
@@ -3721,6 +3883,7 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Liên quan vitamin B1: Thiamin có thể tăng tác dụng của thuốc chẹn thần kinh cơ. Liên quan vitamin B2: Đã gặp một số ca \"thiếu riboflavin\" ở người đã dùng clopromazin, imipramin, amitriptylin và adriamycin. Rượu có thể gây cản trở hấp thu riboflavin ở ruột. Probenecid sử dụng cũng riboflavin gây giảm hấp thu riboflavin ở dạ dày, ruột. Liên quan vitamin PP: Sử dụng nicotinamid đồng thời với chất ức chế men khử HGM - CoA có thể làm tăng nguy cơ gây tiêu cơ vân. Sử dụng nicotinamid đồng thời với thuốc chẹn alpha - adrenergic trị tăng huyết áp có thể dẫn đến hạ huyết áp quá mức. Khẩu phần ăn và/hoặc liều lượng thuốc uống hạ đường huyết hoặc insulin có thể cần phải điều chỉnh khi sử dụng đồng thời với nicotinamid. Sử dụng nicotinamid đồng thời với các thuốc có độc tính với gan có thể làm tăng thêm tác hại độc cho gan. Không nên dùng đồng thời nicotinamid với carbamazepin vì gây tăng nồng độ carbamazepin huyết tương dẫn đến tăng độc tính. Liên quan vitamin B6: Pyridoxin làm giảm tác dụng của levodopa trong điều trị bệnh Parkinson, điều này không xảy ra với chế phẩm là hỗn hợp levodopa - carbidopa hoặc levodopa - benserazid. Liều dùng 200 mg/ngày có thể gây giảm 40 - 50% nồng độ phenytoin và phenobarbital trong máu ở một số người bệnh. Pyridoxin có thể làm nhẹ bớt trầm cảm ở phụ nữ uống thuốc tránh thai. Một số thuốc có thể làm tăng nhu cầu về pyridoxin như hydralazin, isoniazid, penicilamin và thuốc tránh thai uống. Liên quan vitamin B5: Không dùng dexpanthenol cùng hoặc trong vòng 12 giờ sau khi dùng neostigmin hoặc những thuốc tác dụng giống thần kinh đối giao cảm khác. Không dùng dexpanthenol trong vòng 1 giờ sau khi dùng sucinylcholin, vì dexpanthenol có thể kéo dài tác dụng gây giãn cơ của sucinylcholin. Một số hiếm trường hợp dị ứng, không rõ nguyên nhân đã xảy ra khi sử dụng đồng thời thuốc tiêm dexpanthenol với thuốc kháng sinh, thuốc opiat và barbiturat."
     ],
     "id": "vincozyn-plus-vinphaco-2x5-ong",
-    "danh_muc": "Dung dịch tiêm"
+    "danh_muc": "Dung dịch tiêm",
+    "muc_nghiem_trong": "Nguy hiểm"
   }
 ]

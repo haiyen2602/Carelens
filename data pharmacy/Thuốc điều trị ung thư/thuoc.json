@@ -19,7 +19,8 @@
       "Tương tác thuốc: Ảnh hưởng của thức ăn Việc dùng thuốc cùng với thức ăn làm gia tăng đáng kể việc hấp thu abirateron acetat. Hiệu quả và an toàn khi dùng chung với thức ăn chưa được thiết lập do đó thuốc này không được dùng cùng với thức ăn. Tương tác với các thuốc khác Tiềm ẩn ảnh hưởng của các thuốc khác đến abirateron Trong một nghiên cứu tương tác dược động học lâm sàng trên những đối tượng khỏe mạnh đã được điều trị trước đó bằng rifampicin cảm ứng CYP3A4 mạnh, 600 mg/ngày trong 6 ngày, sau đó dùng một liều đơn abirateron acetat 1000 mg, AUC ∞ plasma trung bình của abirateron đã giảm 55%. Nên tránh dùng những thuốc cảm ứng mạnh CYP3A4 (như phenytoin, carbamazepin, rifampicin, rifabutin, rifapentin, phenobarbital, St John's wort [Hypericum perforatum]) trong quá trình điều trị, ngoại trừ không còn chọn lựa điều trị nào khác. Trong một nghiên cứu tương tác dược động học lâm sàng riêng rẽ trên những đối tượng khỏe mạnh, phối hợp với ketoconazol, một chất ức chế CYP3A4 mạnh, không cho thấy có ảnh hưởng lâm sàng có ý nghĩa trên dược động học của abirateron. Tiềm ẩn ảnh hưởng với các thuốc khác Abirateron là một chất ức chế các enzym chuyển hóa thuốc tại gan CYP2D6 và CYP2C8. Trong một nghiên cứu để xác định hiệu quả của abirateron acetat (kết hợp với prednison) lên liều đơn của một cơ chất CYP2D6 là dextromethorphan, AUC của dextromethorphan đã tăng lên khoảng 2,9 lần. AUC 24 cho dextrorphan, một chất chuyển hóa có hoạt tính của dextromethorphan, tăng lên khoảng 33%. Khuyến cáo nên thận trọng khi sử dụng cùng với các thuốc được hoạt hóa hoặc được chuyển hóa bởi CYP2D6, đặc biệt với các thuốc có chỉ số điều trị (therapeutic index) hẹp. Nên xem xét giảm liều các thuốc có chỉ số điều trị hẹp được chuyển hóa bởi CYP2D6. Ví dụ các thuốc được chuyển hóa bởi CYP2D6 gồm metoprolol, propranolol, desipramin, venlafaxin, haloperidol, risperidon, propafenon, flecainid, codein, oxycodon và tramadol (3 thuốc sau cũng cần CYP2D6 để tạo chất chuyển hóa có hoạt tính giảm đau). Trong một thử nghiệm tương tác thuốc - thuốc CYP2C8 trên những đối tượng khỏe mạnh, AUC của pioglitazon đã tăng 46% và các AUC cho M-III và M-IV, là các chất chuyển hoá có hoạt tính của pioglitazon, mỗi AUC tăng 10% khi pioglitazon được dùng cùng với một liều đơn abirateron acetat 1000mg. Mặc dù những kết quả này cho thấy không tặng việc tiếp xúc có ý nghĩa về mặt lâm sàng được dự đoán khi abirateron phối hợp với những thuốc được thải trừ chủ yếu bởi CYP2C8, bệnh nhân vẫn nên được theo dõi các dấu hiệu độc tính liên quan đến cơ chất CYP2C8 có chỉ số điều trị hẹp nếu sử dụng đồng thời. In vitro, các chất chuyển hóa chủ yếu của abirateron sulphat và N-oxide abirateron sulphat biểu hiện có ngăn cản chất vận chuyển hấp thu của gan OATP1B1 và như là một hệ quả, nó có thể gây tăng nồng độ của các thuốc được thải trừ bởi OATP1B1. Không có dữ liệu lâm sàng có sẵn để khẳng định chất vận chuyển dựa trên sự tương tác. Sử dụng cùng với các thuốc được biết làm kéo dài khoảng QT Vì việc điều trị loại bỏ androgen có thể kéo dài khoảng QT, khuyến cáo nên thận trọng khi sử dụng abirateron cùng với các thuốc được biết có kéo dài khoảng QT hoặc các thuốc có khả năng gây xoắn dinh cấp độ IA (ví dụ như quinidin, disopyramid) hoặc cấp độ III (ví dụ như amiodaron, sotalol, dofetilid, ibutilid), thuốc chống loạn nhịp tim, methadon, moxifloxacin, antipsychotics,... Sử dụng cùng với Spironolacton Spironolacton liên kết với thụ thể androgen và có thể làm tăng nồng độ kháng nguyên đặc hiệu tiền liệt tuyến (PSA). Việc sử dụng với abirateron không được đề nghị."
     ],
     "id": "abiratred-250mg-dr-reddy-120v",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Adcetris 50mg Takeda",
@@ -41,7 +42,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "adcetris-50mg-takeda",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Afinitor 10mg Novartis 3x10",
@@ -63,7 +65,8 @@
       "Tương tác thuốc: Everolimus là một cơ chất của CYP3A4 và cũng là một cơ chất và chất ức chế trung bình của P-glycoprotein (PgP) là bơm đẩy thuốc nhiều loại thuốc. Vì vậy, sự hấp thu và thải trừ sau đó của everolimus có thể bị ảnh hưởng bởi các sản phẩm ảnh hưởng đến CY3A4 và/hoặc PgP. In vitro, everolimus là một chất ức chế cạnh tranh của CYP3A4 và là chất ức chế hỗn hợp của CYP2D6. Các chất có thể làm tăng nồng độ everolimus trong máu Nồng độ everolimus trong máu có thể tăng lên do các chất ức chế hoạt tính của CYP3A4 và do đó làm giảm chuyển hóa everolimus. Nồng độ everolimus trong máu có thể tăng lên do các chất ức chế PgP có thể làm giảm sự đẩy thuốc everolimus ra khỏi tế bào ruột. Nên tránh điều trị đồng thời với các chất ức chế mạnh CYP3A4 hoặc PgP (bao gồm nhưng không giới hạn ở các thuốc ketoconazole, itraconazole, ritonavir, clarithromycin và telithromycin). Có sự tăng đáng kể về nồng độ everolimus (nồng độ cao nhất trong huyết tương (Cmax) tăng 3,9 lần và diện tích dưới đường cong (AUC) tăng 15 lần) ở những người khỏe mạnh khi everolimus được dùng kết hợp với ketoconazole (chất ức chế mạnh CYP3A4 và PgP). Cần thận trọng khi điều trị đồng thời với chất ức chế trung bình CYP3A4 (bao gồm nhưng không giới hạn ở các thuốc erythromycin, verapamil, ciclosporin, fluconazole, diltiazem,amprenavir, fosamprenavir hoặc aprepitant) và chất ức chế PgP. Giảm liều Afinitor nếu dùng kết hợp với chất ức chế trung bình CYP3A4/PgP (xem các phần LIỀU LƯỢNG VÀ CÁCH DÙNG và CẢNH BÁO VÀ THẬN TRỌNG). Có sự tăng mức tiếp xúc với everolimus ở những người khỏe mạnh khi everolimus được dùng kết hợp với: Erythromycin (chất ức chế trung bình CYP3A4 và chất ức chế PgP; Cmax tăng 2 lần và AUC tăng 4,4 lần). Verapamil (chất ức chế trung bình CYP3A4 và chất ức chế PgP; Cmax tăng 2,3 lần và AUC tăng 3,5 lần). Ciclosporin (cơ chất của CYP3A4 và chất ức chế PgP; Cmax tăng 1,8 lần và AUC tăng 2,7 lần). Nên tránh dùng bưởi, nước bưởi, khế, cam Seville và các thức ăn khác đã biết ảnh hưởng đến hoạt tính của cytochrome P450 và PgP trong thời gian điều trị. Không có sự khác biệt rõ về nồng độ thấp nhất trong huyết tương (Cmin) của everolimus khi được dùng cùng với hoặc không cùng với cơ chất của CYP3A4 và/hoặc PgP sau khi điều trị với liều 10 mg hoặc 5 mg mỗi ngày. Sử dụng đồng thời chất ức chế yếu CYP3A4 cùng hoặc không cùng với chất ức chế PgP không có ảnh hưởng rõ đến Cmin của everolimus sau khi dùng chế độ điều trị với liều 10 mg hoặc 5 mg mỗi ngày. Các chất có thể làm giảm nồng độ everolimus trong máu Những chất là chất gây cảm ứng CYP3A4 hoặc PgP có thể làm giảm nồng độ everolimus trong máu do làm tăng sự chuyển hóa hoặc đẩy thuốc everolimus ra khỏi tế bào ruột. Nên tránh điều trị đồng thời với các chất gây cảm ứng mạnh CYP3A4 hoặc PgP. Nếu phải dùng kết hợp Afinitor với một chất gây cảm ứng mạnh CYP3A4 hoặc PgP (ví dụ: rifampicin và rifabutin), có thể cần phải điều chỉnh liều Afinitor (xem các phần LIỀU LƯỢNG VÀ CÁCH DÙNG và CẢNH BÁO VÀ THẬN TRỌNG). Điều trị trước cho những người khỏe mạnh với nhiều liều rifampicin (1 chất cảm CYP3A4 và PgP) 600 mg/ngày trong 8 ngày, tiếp theo là một liều đơn everolimus thải của liều uống everolimus tăng gần 3 lần, Cmax giảm 58% và AUC giảm 63%. Các chất gây cảm ứng mạnh khác của CYP3A4 và/hoặc PgP có thể làm tăng sự chuyển hóa của everolimus và làm giảm nồng độ everolimus trong máu bao gồm cỏ St. John's wort (Hypericum perforatum), thuốc chống co giật (ví dụ: carbamazepine, phenobarbital, phenytoin) và các thuốc kháng HIV (ví dụ: efavirenz, nevirapine). Các chất mà nồng độ huyết tương có thể bị thay đổi bởi everolimus Các nghiên cứu ở người khỏe mạnh cho thấy không có tương tác dược động học có ý nghĩa lâm sàng giữa Afinitor và atorvastatin là chất ức chế HMG-CoA reductase (cơ chất của CYP3A4) và pravastatin (không phải cơ chất của CYP3A4) và các phân tích dược động học theo nhóm bệnh nhân cũng phát hiện simvastatin (cơ chất của CYP3A4) không ảnh hưởng đến độ thanh thải của Afinitor. In vitro, everolimus ức chế cạnh tranh sự chuyển hóa của ciclosporin là cơ chất của CYP3A4 và là một chất ức chế hỗn hợp của dextromethorphan là cơ chất của CYP2D6. Cmạx trung bình của everolimus ở trạng thái ổn định với liều uống 10 mg/ngày hoặc 70 mg/tuần thấp hơn 12-36 lần trị số Ki của sự ức chế in vitro. Vì vậy, everolimus được cho là khó có thể ảnh hưởng đến sự chuyển hóa của các cơ chất CYP3A4 và CYP2D6. Một nghiên cứu trên những người khỏe mạnh cho thấy dùng kết hợp một liều uống midazolam (cơ chất của CYP3A4) với everolimus dẫn đến Cmax của midazolam tăng 25% và AUC (0-inf) của midazolam tăng 30%, trong khi tỷ số chuyển hóa AUC (0-inf) (1-hydroxy-midazolam/midazolam) và t 1/2 cuối của midazolam không bị ảnh hưởng. Điều này cho thấy sự tăng nồng độ midazolam là do tác dụng của everolimus ở hệ tiêu hóa khi cả hai thuốc được dùng đồng thời. Vì vậy, everolimus có thể ảnh hưởng đến sinh khả dụng của các thuốc là cơ chất của CYP3A4 được dùng kết hợp đường uống. Everolimus khó có thể ảnh hưởng đến nồng độ của các thuốc khác là cơ chất của CYP3A4 được dùng không qua đường uống như đường tĩnh mạch, tiêm dưới da và qua da (xem phần CẢNH BÁO VÀ THẬN TRỌNG). Sử dụng kết hợp everolimus và octreotide depot làm tăng Cmin của octreotide với tỷ số trung bình nhân (everolimus/giả dược) là 1,47 (khoảng tin cậy (CI) 90%: 1,32 - 1,64) khó có thể ảnh hưởng có ý nghĩa lâm sàng trên đáp ứng hiệu quả với everolimus ở bệnh nhân bị khối u thần kinh nội tiết tiến xa. Hoạt chất tương tác Sự tương tác - thay đổi tỉ số trung bình nhân AUC/Cmax của everolimus (giới hạn ghi nhận được) Khuyến cáo khi phối hợp các thuốc Chất ức chế CYP 3A4/PgP mạnh Ketoconazole AUC tăng gấp 15,3 lần (11,2 -22,5). Cmax tăng gấp 4,1 lần (2,6 - 7,0). Không khuyến cáo sử dụng đồng thời Afinitor với các chất ức chế mạnh. Itraconazol, posaconazole, voriconazole Chưa nghiên cứu. Nồng độ everolimus có thể tăng cao. Telithromycin, clarithromycin Nefazodone Ritonavir, atazanavir, saquinavir, darunavir, indinavir, nelfinavir Chất ức chế CYP 3A4/PgP trung bình Erythromycin AUC tăng gấp 4,4 lần (2,0 - 12,6). Cmax tăng gấp 2 lần (0,9 - 3,5). Sử dụng cẩn trọng khi cần phải dùng đồng thời với chất ức chế CYP3A4 trung bình hoặc chất ức chế PgP. Nếu bệnh nhân phải dùng đồng thời với chất ức chế CYP3A4 hoặc PgP trung bình, có thể cân nhắc giảm liều còn 5 mg mỗi ngày hoặc 5 mg cách ngày. Tuy nhiên không có dữ liệu lâm sàng cho sự điều chỉnh liều này. Do sự khác nhau giữa các đối tượng dùng thuốc, sự điều chỉnh liều khuyến cáo không thể tối ưu cho tất cả các cá nhân, vì vậy nên theo dõi chặt chẽ các tác dụng phụ. Verapamil AUC tăng gấp 3,5 lần (2,2 - 6,3). Cmax tăng 2,3 lần (1,3 - 3,8). Ciclosporin uống AUC tăng gấp 2,7 lần (1,5 - 4,7). Cmax tăng gấp 1,8 lần (1,3 - 2,6). Fluconazole Chưa nghiên cứu. Có thể tăng nồng độ. Diltiazem Amprenavi, fosamprenavir Chưa nghiên cứu. Có thể tăng nồng độ. Nước ép bưởi hoặc các thức ăn ảnh hưởng lên CYP 3A4 / PgP. Chưa nghiên cứu. Có thể tăng nồng độ (tác dụng thay đổi rất khác nhau). Không nên phối hợp. Rifampicin AUC giảm 63% (0 - 80%). Cmax giảm 58% (10 - 70%). Tránh dùng đồng thời với chất cảm ứng mạnh CYP 3A4. Nếu bệnh nhân cần dùng đồng thời một chất cảm ứng mạnh CYP3A4, nên cân nhắc tăng liều Afinitor từ 10 mg mỗi ngày đến 20 mg mỗi ngày bằng cách dùng thêm 5 mg vào ngày thứ 4 và thứ 8 sau khi bắt đầu dùng chất cảm ứng. Liều này được dự đoán dùng để điều chỉnh AUC đến khoảng ghi nhận được khi không sử dụng chất cảm ứng. Tuy nhiên không có dữ liệu lâm sàng cho sự điều chỉnh liều này. Nếu ngưng dùng chất cảm ứng thì sử dụng Afinitor với liều trước khi dùng phối hợp. Corticosteroids (ví dụ: dexamethason, prednisone, prednisolone) Chưa nghiên cứu. Có thể nồng độ bị giảm. Carbamazepine, phenobarbital, phenytoin Chưa nghiên cứu. Có thể nồng độ bị giảm. Efavirenz, nevirapine Chưa nghiên cứu. Có thể nồng độ bị giảm. St John's wort (Hypericum perforatum) Chưa nghiên cứu. Có thể nồng độ bị giảm mạnh. Không nên dùng chế phẩm chứa St. John's wort trong quá trình điều trị bằng everolimus. Bảng 3. Ảnh hưởng của các hoạt chất khác lên everolimus Sử dụng kết hợp everolimus và exemestane làm tăng Cmin của exemestane là 45% và tăng C 2h của exemestane là 71%. Tuy nhiên, nồng độ estradiol tương ứng ở trạng thái ổn định (4 tuần) không khác nhau giữa 2 nhóm điều trị. Không quan sát thấy tăng biến cố bất lợi liên quan với exemestane ở bệnh nhân bị ung thư vú tiến xa có thụ thể hormone dương tính sử dụng điều trị phối hợp này. Nồng độ exemestane tăng khó có thể ảnh hưởng đến hiệu quả hoặc tính an toàn. Tiêm chủng Các chất ức chế miễn dịch có thể ảnh hưởng đến đáp ứng với sự tiêm chủng, vì vậy việc tiêm chủng trong thời gian điều trị bằng Afinitor có thể kém hiệu quả hơn. Cần tránh sử dụng vaccine sống trong khi điều trị bằng Afinitor (xem phần CẢNH BÁO VÀ THẬN TRỌNG). Các ví dụ về vaccine sống là vaccine cúm dùng trong mũi, vaccine sởi, vaccine quai bị, vaccine rubella, vaccine bại liệt dạng uống, vaccine BCG, vaccine sốt vàng, vaccine thủy đậu và vaccine thương hàn TY21a."
     ],
     "id": "afinitor-10mg-novartis-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alecensa 150mg Roche 28x8",
@@ -84,7 +87,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "alecensa-150mg-roche-28x8",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alimta 100mg ELI Lilly",
@@ -106,7 +110,8 @@
       "Tương tác thuốc: Hãy báo với bác sỹ điều trị nếu bạn đang uống bất cứ thuốc giảm đau hoặc chống viêm (sưng), như các loại thuốc được gọi là “thuốc chống viêm không steroid” (NSAIDs), bao gồm cả các loại thuốc mua không theo đơn của bác sỹ (như ibuprofen). Có rất nhiều các loại NSAIDs với thời gian tác dụng khác nhau. Dựa trên thời gian dự định truyền ALIMTA và/ hoặc dựa trên tình trạng chức năng thận, bác sỹ điều trị cần khuyên bạn loại thuốc bạn có thể dùng và khi nào bạn có thể dùng các loại đó. Nếu bạn không chắc, hỏi bác sỹ hoặc dược sỹ nếu bất kỳ loại thuốc nào bạn đang dùng là NSAIDs. Hãy báo với bác sỹ hoặc dược sỹ khoa dược nếu bạn đang dùng hoặc vừa dùng bất cứ thuốc nào, bao gồm cả các thuốc không cần kê đơn."
     ],
     "id": "alimta-100mg-eli-lilly",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alimta 500mg ELI Lilly",
@@ -128,7 +133,8 @@
       "Tương tác thuốc: Pemetrexed được thải trừ chủ yếu ở dạng không đổi qua thận nhờ bài tiết ở ống thận và một phần nhờ lọc ở cầu thận. Việc dùng đồng thời với các thuốc độc trên thận (như aminoglycosid, thuốc lợi tiểu quai, hợp chất platin, cyclosporin) có thể làm chậm sự thanh thải pemetrexed. Cần thận trọng khi phối hợp các thuốc này. Nếu cần dùng, phải theo dõi chặt chẽ độ thanh thải creatinin. Việc dùng đồng thời với các chất cũng được bài tiết bởi ống thận (như probenecid, penicilin) có khả năng làm chậm sự thanh thải pemetrexed. Phải thận trọng khi dùng các thuốc này kết hợp với pemetrexed. Nếu cần dùng, phải theo dõi chặt chẽ độ thanh thải creatinin. Ở bệnh nhân có chức năng thận bình thường (độ thanh thải creatinin ≥ 80 ml/phút), liều cao các thuốc chống viêm không steroid (NSAID, như ibuprofen > 1.600 mg/ngày) và aspirin ở liều cao (≥ 1,3 g/ngày) có thể làm giảm sự thải trừ pemetrexed, và do đó làm tăng các tác dụng không mong muốn của pemetrexed. Vì vậy, phải thận trọng khi dùng liều cao NSAID, hoặc aspirin đồng thời với pemetrexed cho bệnh nhân có chức năng thận bình thường (độ thanh thải creatinin ≥ 80 ml/phút). Ở bệnh nhân có suy thận nhẹ đến vừa (độ thanh thải creatinin từ 45 đến 79 ml/phút), phải tránh dùng đồng thời NSAID (như ibuprofen), hoặc aspirin ở liều cao trong 2 ngày trước, ngày dùng, và 2 ngày sau khi dùng pemetrexed. Trong khi không có dữ liệu về nguy cơ tương tác với NSAID có nửa đời thải trừ dài hơn như piroxicam hoặc rofecoxib, phải tránh dùng đồng thời với pemetrexed trong ít nhất 5 ngày trước ngày dùng, và ít nhất 2 ngày sau khi dùng pemetrexed. Nếu cần phải dùng đồng thời với các thuốc NSAID, cần theo dõi chặt chẽ độc tính, đặc biệt là suy tủy và nhiễm độc đường tiêu hóa. Pemetrexed ít được chuyển hóa ở gan. Các kết quả nghiên cứu in vitro với microsom gan người cho thấy pemetrexed có thể không gây ức chế có ý nghĩa lâm sàng sự chuyển hóa của các thuốc được chuyển hóa bởi CYP3A, CYP2D6, CYP2C9, và CYP1A2. Tương tác hay gặp với tất cả thuốc gây độc tế bào: Vì nguy cơ huyết khối tăng lên ở bệnh nhân ung thư, liệu pháp chống đông thường được dùng. Do có sự dao động lớn giữa các cá thể về tình trạng đông máu trong các bệnh và do khả năng tương tác giữa các thuốc chống đông máu đường uống với hóa trị liệu chống ung thư nên cần phải theo dõi INR (International Normalised Ratio: tỷ số bình thường hóa quốc tế) thường xuyên hơn, nếu quyết định sử dụng các thuốc chống động đường uống cho bệnh nhân. Chống chỉ định dùng đồng thời với vắc xin sốt vàng: Nguy cơ tử vong vì bệnh do vaccin phát triển toàn thân. Không khuyến cáo dùng đồng thời với vắc xin sống giảm tính độc (trừ sốt vàng, chống chỉ định dùng đồng thời): Nguy cơ bệnh toàn thân, có thể gây tử vong. Nguy cơ tăng lên ở các đối tượng đã bị suy giảm miễn dịch bởi bệnh tiềm ẩn. Dùng vắc xin bất hoạt nếu có (bệnh bại liệt)."
     ],
     "id": "alimta-500mg-eli-lilly",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Arimidex 1mg Astrazeneca 2x14",
@@ -151,7 +157,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "arimidex-1mg-astrazeneca-2x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aromasin 25mg Pfizer 2x15",
@@ -176,7 +183,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "aromasin-25mg-pfizer-2x15",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aslem 0.3mg/1ml Vinphaco 1x10 - TĂNG Cường MIỄN DỊCH",
@@ -201,7 +209,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "aslem-0-3mg-1ml-vinphaco-1x10-tang-cuong-mien-dich",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Avastin 100mg/4ml Roche 4ml",
@@ -223,7 +232,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "avastin-100mg-4ml-roche-4ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Avastin 400mg/16ml Roche",
@@ -243,7 +253,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "avastin-400mg-16ml-roche",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Bavencio 200mg Merck 10ml",
@@ -265,7 +276,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "bavencio-200mg-merck-10ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Benivatib 100mg Benovas 60v",
@@ -287,7 +299,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "benivatib-100mg-benovas-60v",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Calquence 100mg Astrazeneca 10x6",
@@ -307,7 +320,8 @@
       "Tương tác thuốc: Chưa có dữ liệu"
     ],
     "id": "calquence-100mg-astrazeneca-10x6",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Casodex 50mg Astrazeneca 2x14",
@@ -330,7 +344,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "casodex-50mg-astrazeneca-2x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Certican 0.5mg Novartis 6x10",
@@ -352,7 +367,8 @@
       "Tương tác thuốc: Everolimus được chuyển hóa chủ yếu ở gan và ở một mức độ nào đó ở thành ruột non nhờ CYP3A4. Nó còn là một cơ chất đối với P-glycoprotein (PgP) là chất bơm cho sự thoát ra của nhiều thuốc. Vì vậy, sự hấp thụ và thải trừ sau đó của everolimus được hấp thu toàn thân có thể bị ảnh hưởng bởi các thuốc ảnh hưởng đến CYP3A4 và/hoặc PgP. Không khuyến cáo điều trị đồng thời với các chất ức chế và/hoặc gây cảm ứng mạnh CYP3A4. Các chất ức chế PgP có thể làm giảm sự thoát ra của everolimus từ tế bào ruột non và làm tăng nồng độ everolimus trong máu. In vitro, everolimus là một chất ức chế cạnh tranh của CYP3A4 và CYP2D6, làm tăng mạnh nồng độ của các thuốc được thải trừ bởi các enzyme này. Vì vậy, cần thận trọng khi dùng phối hợp everolimus với các cơ chất của CYP3A4 và CYP2D6 có chỉ số điều trị hẹp. Tất cả các nghiên cứu về tương tác thuốc in vivo đã được thực hiện mà không dùng phối hợp với ciclosporin. Ciclosporin (chất ức chế CYP3A4/PgF) Sinh khả dụng của everolimus tăng đáng kể khi dùng phối hợp với ciclosporin. Trong một nghiên cứu dùng liều đơn ở những người khỏe mạnh, ciclosporin dạng vì nhũ tương (Neoral) đã làm tăng diện tích dưới đường cong nồng độ (AUC) của everolimus là 168% (trong khoảng 46% - 365%), và nồng độ cao nhất trong huyết tương (Cmax) là 82% (trong khoảng 25% - 158%) khi so với dùng everolimus đơn thuần. Có thể cần phải điều chỉnh liều everolimus nếu thay đổi liều ciclosporin. Certican chỉ có ảnh hưởng lâm sàng nhẹ đối với dược động học của ciclosporin ở bệnh nhân ghép thận và ghép tim đang dùng ciclosporin dạng vi nhũ tương. Rifampicin (chất gây cảm ứng CYP3A4) Những bệnh nhân khỏe mạnh được điều trị trước đó với nhiều liều rifampicin, sau đó dùng một liễu đơn Certican đã tăng hệ số thanh thải everolimus gần gấp 3 lần, giảm nồng độ cao nhất trong huyết tương (Cmax) là 58% và giảm diện tích dưới đường cong nồng độ (AUC) là 63%. Không khuyến cáo dùng phối hợp với rifampicin. Atorvastatin (cơ chất của CYP3A4) và pravastatin (cơ chất của PgP) Dùng liều đơn Certican với atorvastatin hoặc pravastatin cho những người khỏe mạnh không làm ảnh hưởng đến dược động học của atorvastatin, pravastatin và everolimus, cũng như độ phản ứng sinh học của HMG-CoA reductase toàn phần trong huyết tương đến một mức độ có liên quan về lâm sàng. Tuy nhiên, những kết quả này không thể suy ra đối với các chất ức chế HMG-CoA reductase khác. Bệnh nhân phải được theo dõi về sự phát triển bệnh tiêu cơ vân và các phản ứng phụ khác như đã mô tả trong Thông tin kê đơn về các chất ức chế HMG-CoA reductase. Midazolam (cơ chất của CYP3A4A) Trong một nghiên cứu tương tác thuốc chéo hai giai đoạn, trình tự cố định, 25 người khỏe mạnh nhận được liều đơn 4 mg midazolam đường uống trong giai đoạn 1. Trong giai đoạn 2, họ uống 10 mg everolimus, 1 lần/ngày trong 5 ngày và liều đơn 4 mg midazolam với liều cuối cùng của everolimus. Cmax của midazolam tăng 1,25 lần (90% CI, 1,14-1,37) và AUCin tăng 1,30 lần (1,22-1,39). Thời gian bán hủy của midazolam không thay đổi. Nghiên cứu này chỉ ra rằng everolimus là một chất ức chế yếu của CYP3A4. Các tương tác khác có thể gặp Các chất ức chế trung bình của CYP3A4 và PgP có thể làm tăng nồng độ everolimus trong máu (ví dụ các chất kháng nấm. fluconazole, các kháng sinh nhóm macrolide erythromycin; thuốc chẹn kênh calci: Verapamil, nicardipin, diltiazem; thuốc ức chế protease nelfinavir, indinavir, amprenavir). Các chất gây cảm ứng CYP3A4 có thể làm tăng sự chuyển hóa everolimus và làm giảm nồng độ everolimus trong máu (ví dụ: St.John's wort (Hypericum perforatum), thuốc chống co giật carbamazepine, phenobarbital, phenytoin, thuốc chống virus gây suy giảm miễn dịch mắc phải ở người (HIV): 'efavirenz, nevirapine). Quả bưởi và nước bưởi ảnh hưởng đến hoạt động của cytochrome P450 và PgP, vì vậy nên tránh sử dụng. Sự tiêm chủng Các thuốc ức chế miễn dịch có thể ảnh hưởng đến đáp ứng đối với sự tiêm chủng và vì vậy sự tiêm chủng trong khi điều trị bằng Certican it có hiệu quả. Nên tránh sử dụng vacxin sống."
     ],
     "id": "certican-0-5mg-novartis-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Chemodox 2mg/ml SUN Pharma 10ml",
@@ -374,7 +390,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc chính thức với doxorubicin dạng liposome, mặc dù các thử nghiệm kết hợp giai đoạn II với các tác nhân hóa trị thông thường đã được báo cáo ở bệnh nhân có khối u ác tính phụ khoa. Cẩn thận trong việc sử dụng đồng thời các sản phẩm thuốc có tương tác với doxorubicin hydrochlorid chuẩn. Doxorubicin dạng liposome, giống như các chế phẩm doxorubicin hydrochlorid khác, có thể làm tăng độc tính của các liệu pháp chống ung thư khác. Trong các nghiên cứu lâm sàng được báo cáo ở những bệnh nhân có khối u rắn (bao gồm ung thư vú và buồng trứng), những người đã từng dùng cyclophosphamid hoặc taxanes, không có độc tính mới phát sinh được ghi nhận. Ở bệnh nhân AIDS, cơn kịch phát viêm bàng quang xuất huyết do cyclophosphamid và sự gia tăng độc tính gan của 6-mercaptopurin đã được báo cáo với doxorubicin hydrochlorid chuẩn. Phải thận trọng khi chỉ định đồng thời bất kỳ tác nhân gây độc tế bào nào khác, đặc biệt là các thuốc gây độc trên tủy. Tương ky của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "chemodox-2mg-ml-sun-pharma-10ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Darzalex 400mg Janssen 20ml",
@@ -396,7 +413,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "darzalex-400mg-janssen-20ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Decitabine 50mg Dr.reddy",
@@ -418,7 +436,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc chính thức nào với decitabine được tiến hành. Tương tác thuốc-thuốc có thể xảy ra với các thuốc cũng bị hoạt hóa bằng quá trình phosphoryl hóa (qua hoạt động của các phosphokinase nội bào) và/hoặc chuyển hóa bằng men làm bất hoạt tác dụng của decitabine (ví dụ cytidine deaminase). Do vậy, thận trọng khi phối hợp các thuốc này với decitabine. Ảnh hưởng của các thuốc phối hợp đối với decitabine Tương tác với những thuốc chuyển hóa qua trung gian Cytochrome (CYP) 450 không xảy ra với decitabine vì decitabine không chuyển hóa qua hệ thống này, mà chuyển hóa theo cơ chế khử amin oxy hóa. Ảnh hưởng của decitabine đối với các thuốc dùng đồng thời Do tỷ lệ gắn protein huyết tương trên in vitro thấp (<1%), decitabine ít có khả năng cạnh tranh vị trí gắn với thuốc gắn kết với protein huyết tương. Decitabine cũng cho thấy có tác dụng ức chế yếu trên hệ thống vận chuyển qua trung gian P-gp trên in vitro, do vậy cũng không ảnh hưởng tới các thuốc vận chuyển qua trung gian P-gp."
     ],
     "id": "decitabine-50mg-dr-reddy",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Diphereline P.r. 3.75mg Ipsen",
@@ -440,7 +459,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "diphereline-p-r-3-75mg-ipsen",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Diphereline P.r. 11.25mg Ipsen",
@@ -462,7 +482,8 @@
       "Tương tác thuốc: Phải đặc biệt thận trọng khi triptorelin được sử dụng cùng với các thuốc làm thay đổi sự bài tiết các hormon hướng sinh dục của tuyến yên và khuyến cáo theo dõi chặt chẽ qua các xét nghiệm định lượng hormon. Thực tế là liệu pháp ức chế androgen có thể gây nên kéo dài khoảng QT, phải đánh giá cẩn thận khi dùng đồng thời Diphereline với các thuốc đã biết mà gây nên kéo dài khoảng QT hoặc các thuốc có thể gây nên xoắn dính như các thuốc chống loạn nhịp nhóm IA (quinidine, disopyramide) hoặc nhóm III (amiodarone, sotalol, dotetilide, ibutilide), methadone, moxifloxacin, thuốc chống loạn thần."
     ],
     "id": "diphereline-p-r-11-25mg-ipsen",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Domide 50mg TTY Biopharm 6x10",
@@ -484,7 +505,8 @@
       "Tương tác thuốc: Tương tác thuốc và các dạng tương tác khác Thalidomid được báo cáo là làm tăng tính an thần của các thuốc barbiturat, rượu, clopromazin, và reserpin. Bệnh thần kinh ngoại biên: Các thuốc được biết là có liên quan đến bệnh thần kinh ngoại biên nên được sử dụng thận trọng ở các bệnh nhân dùng thalidomid. Thuốc ngừa thai uống: Ở 10 phụ nữ khỏe mạnh, dược động học của norethindron và ethinyl estradiol sau khi dùng 1 liều đơn được nghiên cứu. Kết quả là tương đương nhau khi có hoặc không có uống thalidomid 200 mg/ngày ở trạng thái ổn định. Tương tác thuốc quan trọng không phải là Thalidomid Các thuốc ảnh hưởng đến thuốc ngừa thai hormon Dùng thuốc ngừa thai hormon đồng thời với các thuốc ức chế HIV protease, griseofulvin, modafinil, penicillin, rifampin, rifabutin, phenytonin, carbamazepin, hoặc một số thảo dược như St. John's Wort có thể làm giảm hiệu quả của thuốc ngừa thai lên đến 1 tháng sau khi ngưng dùng các thuốc này. Vì thế các phụ nữ dùng một hay nhiều các thuốc này phải dùng hai biện pháp ngừa thai hữu hiệu hoặc các biện pháp hữu hiệu cao hoặc kiêng quan hệ tình dục khác giới trong thời gian dùng thalidomid. Tính gây ung thư, đột biến, ảnh hưởng đến sự sinh sản Các nghiên cứu tính gây ung thư trong 2 năm đã được tiến hành ở chuột đực và cái. Không thấy có tác dụng tạo khối u ở liều dùng cao nhất 3000 mg/kg/ngày ở chuột nhất đực và cái (cao gấp 38 lần liều dùng cao nhất ở người là 400 mg dựa trên diện tích bề mặt cơ thể (BSA]), và 3000 mg/kg/ngày ở chuột cổng cái (cao gấp 75 lần liều dùng tôi đa ở người dựa trên I3SA), và 300 mg/kg/ngày ở chuột cống đực (cao gấp 7.5 lần liều dùng tối đa ở người dựa trên BSA). Thalidomid không gây đột biến hoặc độc tính gien theo các thử nghiệm: Thử nghiệm đột biến vi khuẩn Ames (S.typhimurium va E.coli), thử nghiệm đột biến tế bào trứng trên chuột lang. (AS52/XPRT) và thử nghiệm nhân sinh sản ở chuột in vivo Các nghiên cứu trên sự sinh sản đã được tiến hành ở thỏ đực và cái, không thấy tác dụng của thuốc đối với sự giao phối và thụ tinh ở liều uống cao nhất 100 mg/kg/ngày đối với thỏ cải và 500 mg/kg/ngày đối với thỏ đực (cao gấp 5 và 25 lần so với liều dùng tối đa ở người dựa trên BSA). Tác dụng trên mô học và bệnh lý học của tỉnh hoàn đã được thấy ở thỏ đực ở liều > 30 mg/kg/ngày (khoảng. 1.5 lần liều dùng tối đa ở người dựa trên BSA). Sử dụng ở bệnh nhi Tính an toàn và hiệu quả ở bệnh nhi dưới 12 tuổi chưa được thiết lập. Sử dụng ở người cao tuổi: Trong tổng số người tham gia vào thử nghiệm lâm sàng phối hợp thalidomid và dexamethason, 50% > 65 tuổi và 15% > 75 tuổi. Không có sự khác biệt về tính an toàn và hiệu quả giữa những bệnh nhân này và các bệnh nhân trẻ hơn, và trong một báo cáo khác chưa thấy có sự khác biệt về đáp ứng giữa người cao tuổi, và người trẻ hơn, nhưng không thể loại trừ việc vài người cao tuổi mẫn cảm hơn với thuốc ."
     ],
     "id": "domide-50mg-tty-biopharm-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Erbitux 5mg/ml Merck 20ml",
@@ -506,7 +528,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "erbitux-5mg-ml-merck-20ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Faslodex 250mg Astrazeneca Zeneca 2 ỐNG X 5ml",
@@ -528,7 +551,8 @@
       "Tương tác thuốc: Một nghiên cứu lâm sàng về tương tác với midazolam (chất nền của CYP3A4) cho thấy fulvestrant không ức chế CYP3A4. Các nghiên cứu lâm sàng tương tác với rifampicin (chất cảm ứng CYP3A4) và ketoconazole (chất ức chế CYP3A4) cho thấy không có các thay đổi trên lâm sàng liên quan đến độ thanh thải fulvestrant. Do đó, không cần điều chỉnh liều ở bệnh nhân dùng fulvestrant đồng thời với các thuốc ức chế hay cảm ứng CYP3A4. Tương kỵ Do không có nghiên cứu trên tính tương ky, thuốc này không được trộn lẫn với các thuốc khác."
     ],
     "id": "faslodex-250mg-astrazeneca-zeneca-2-ong-x-5ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Femara 2.5mg Novartis 3x10",
@@ -552,7 +576,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "femara-2-5mg-novartis-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Gazyva 1000mg Roche 40ml",
@@ -574,7 +599,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "gazyva-1000mg-roche-40ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Gefitinib 250mg Sandoz 3x10",
@@ -594,7 +620,8 @@
       "Tương tác thuốc: Tham khảo thông tin tờ hướng dẫn sử dụng thuốc."
     ],
     "id": "gefitinib-250mg-sandoz-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Giotrif 20mg Boehringer 4x7",
@@ -616,7 +643,8 @@
       "Tương tác thuốc: Các tương tác với hệ thống vận chuyển thuốc Ảnh hưởng của các thuốc ức chế P-gp và các thuốc ức chế protein kháng thuốc trong ung thư vú (BCRP) đối với afatinib Các nghiên cứu in vitro đã chứng minh afatinib là cơ chất của P-gp và BCRP. Khi dùng một thuốc ức chế mạnh P-gp và BCRP là ritonavir (200 mg hai lần mỗi ngày trong ba ngày) một giờ trước khi dùng liều đơn 20 mg Giotrif, nồng độ afatinib tăng 48% (diện tích dưới đường cong (AUC)) và 39% (nồng độ đỉnh trong huyết tương (Cmax)). Mặt khác, khi dùng ritonavir đồng thời hoặc cách 6 giờ sau khi dùng 40 mg Giotrif, sinh khả dụng tương đối của afatinib lần lượt là 119% (AUC), 104% (Cmax) và 111% (AUC), 105% (Cmax). Vì vậy, khuyến cáo dùng những thuốc ức chế mạnh P-gp (bao gồm nhưng không chỉ giới hạn trong các thuốc ritonavir, cyclosporine A, ketoconazole, itraconazole, erythromycin, verapamil, quinidine, tacrolimus, nelfinavir, saquinavir, and amiodarone) so le với Giotrif, tốt nhất là dùng cách 6 giờ hoặc 12 giờ so với Giotrif (xin xem mục Liều lượng và cách dùng). Ảnh hưởng của các thuốc cảm ứng P-gp đối với afatinib Điều trị trước đó bằng rifampicin (600 mg một lần mỗi ngày trong 7 ngày) là thuốc kích thích mạnh P-gp làm giảm nồng độ afatinib 34% (AUC) và 22% (Cmax) sau khi dùng liều duy nhất GIOTRIF 40 mg. Các thuốc cảm ứng mạnh P-gp (bao gồm nhưng không chỉ giới hạn trong các thuốc rifampicin, carbamazepine, phenytoin, phenobarbital hoặc thảo dược St. John’s (Hypericum perforatum) có thể làm giảm nồng độ afatinib (xin xem mục Cảnh báo và thận trọng đặc biệt). Ảnh hưởng của afatinib đối với cơ chất của P-gp Dựa vào các dữ liệu in vitro, afatinib là chất ức chế P-gp trung bình, Tuy nhiên, dựa trên các dữ liệu lâm sàng, điều trị với Giotrif được xem như không làm thay đổi nồng độ trong huyết tương của các cơ chất của P-gp. Tương tác với BCRP Các nghiên cứu in vitro chỉ ra rằng afatinib là một cơ chất và một chất ức chế chất vận chuyển BCRP. Afatinib có thể làm tăng sinh khả dụng của các cơ chất BCRP dùng đường uống (bao gồm nhưng không chỉ giới hạn trong các chất rosuvastatin và sulfasalazine). Ảnh hưởng của thức ăn đến afatinib Uống GIOTRIF cùng với bữa ăn giàu chất béo làm giảm đáng kể nồng độ theo thời gian của afatinib, cụ thể Cmax giảm khoảng 50% và AUCo giảm khoảng 39%. Do đó không nên dùng GIOTRIF cùng với thức ăn (xem “Liều lượng và cách dùng” và “Dược động học”)."
     ],
     "id": "giotrif-20mg-boehringer-4x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Giotrif 30mg Boehringer 4x7",
@@ -638,7 +666,8 @@
       "Tương tác thuốc: Ảnh hưởng của các thuốc ức chế P-gp và các thuốc ức chế protein kháng thuốc trong ung thư vú (BCRP) đối với afatinib: Các nghiên cứu in vitro đã chứng minh afatinib là cơ chất của P-gp và BCRP. Khi dùng một thuốc ức chế mạnh P-gp và BCRP là ritonavir (200 mg hai lần mỗi ngày trong ba ngày) một giờ trước khi dùng liều đơn 20 mg Giotrif, nồng độ afatinib tăng 48% (diện tích dưới đường cong (AUC0-∞)) và 39% (nồng độ đỉnh trong huyết tương (Cmax)). Mặt khác, khi dùng ritonavir đồng thời hoặc cách 6 giờ sau khi dùng 40 mg Giotrif, sinh khả dụng tương đối của afatinib lần lượt là 119% (AUC0-∞), 104% (Cmax) và 111% (AUC0-∞), 105% (Cmax). Vì vậy, khuyến cáo dùng những thuốc ức chế mạnh P-gp (bao gồm nhưng không chỉ giới hạn trong các thuốc ritonavir, cyclosporine A, ketoconazole, itraconazole, erythromycin, verapamil, quinidine, tacrolimus, nelfinavir, saquinavir, and amiodarone) so le với Giotrif, tốt nhất là dùng cách 6 giờ hoặc 12 giờ so với Giotrif (xem mục Liều lượng và Cách dùng). Ảnh hưởng của các thuốc cảm ứng P-gp đối với afatinib: Điều trị trước đó bằng rifampicin (600 mg một lần mỗi ngày trong 7 ngày) là thuốc kích thích mạnh P-gp làm giảm nồng độ afatinib 34% (AUC0-∞) và 22% (Cmax) sau khi dùng liều duy nhất Giotrif 40 mg. Các thuốc cảm ứng mạnh P-gp (bao gồm nhưng không chỉ giới hạn trong các thuốc rifampicin, carbamazepine, phenytoin, phenobarbital hoặc thảo dược St. John’s (Hypericum perforatum) có thể làm giảm nồng độ afatinib. Ảnh hưởng của afatinib đối với cơ chất của P-gp: Dựa vào các dữ liệu in vitro, afatinib là chất ức chế P-gp trung bình, Tuy nhiên, dựa trên các dữ liệu lâm sàng, điều trị với Giotrif được xem như không làm thay đổi nồng độ trong huyết tương của các cơ chất của P-gp. Tương tác với BCRP: Các nghiên cứu in vitro chỉ ra rằng afatinib là một cơ chất và một chất ức chế chất vận chuyển BCRP. Afatinib có thể làm tăng sinh khả dụng của các cơ chất BCRP dùng đường uống (bao gồm nhưng không chỉ giới hạn trong các chất rosuvastatin và sulfasalazine). Ảnh hưởng của thức ăn đến afatinib: Uống Giotrif cùng với bữa ăn giàu chất béo làm giảm đáng kể nồng độ theo thời gian của afatinib, cụ thể Cmax giảm khoảng 50% và AUC0-∞ giảm khoảng 39%. Do đó không nên dùng Giotrif cùng với thức ăn."
     ],
     "id": "giotrif-30mg-boehringer-4x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Giotrif 40mg Boehringer 4x7",
@@ -660,7 +689,8 @@
       "Tương tác thuốc: Các tương tác với hệ thống vận chuyển thuốc Ảnh hưởng của các thuốc ức chế P-gp và các thuốc ức chế protein kháng thuốc trong ung thư vú (BCRP) đối với afatinib: Các nghiên cứu in vitro đã chứng minh afatinib là cơ chất của P-gp và BCRP. Khi dùng một thuốc ức chế mạnh P-gp và BCRP là ritonavir (200 mg hai lần mỗi ngày trong ba ngày) một giờ trước khi dùng liều đơn 20 mg Giotrif, nồng độ afatinib tăng 48% (diện tích dưới đường cong (AUC 0-∞ )) và 39% (nồng độ đỉnh trong huyết tương (Cmax)). Mặt khác, khi dùng ritonavir đồng thời hoặc cách 6 giờ sau khi dùng 40 mg Giotrif, sinh khả dụng tương đối của afatinib lần lượt là 119% (AUC 0-∞ ), 104% (Cmax) và 111% (AUC 0-∞ ), 105% (Cmax). Vì vậy, khuyến cáo dùng những thuốc ức chế mạnh P- gp (bao gồm nhưng không chỉ giới hạn trong các thuốc ritonavir, cyclosporine A, ketoconazole, itraconazole, erythromycin, verapamil, quinidine, tacrolimus, nelfinavir, saquinavir, and amiodarone) so le với Giotrif, tốt nhất là dùng cách 6 giờ hoặc 12 giờ so với Giotrif (xin xem mục Liều lượng và cách dùng). Ảnh hưởng của các thuốc cảm ứng P-gp đối với afatinib: Điều trị trước đó bằng rifampicin (600 mg một lần mỗi ngày trong 7 ngày) là thuốc kích thích mạnh P-gp làm giảm nồng độ afatinib 34% (AUC 0-∞ ) và 22% (Cmax) sau khi dùng liều duy nhất GIOTRIF 40 mg. Các thuốc cảm ứng mạnh P-gp (bao gồm nhưng không chỉ giới hạn trong các thuốc rifampicin, carbamazepine, phenytoin, phenobarbital hoặc thảo dược St. John's (Hypericum perforatum) có thể làm giảm nồng độ afatinib (xin xem mục Cảnh báo và thận trọng đặc biệt). Ảnh hưởng của afatinib đối với cơ chất của P-gp: Dựa vào các dữ liệu in vitro, afatinib là chất ức chế P-gp trung bình, Tuy nhiên, dựa trên các dữ liệu lâm sàng, điều trị với Giotrif được xem như không làm thay đổi nồng độ trong huyết tương của các cơ chất của P-gp. Tương tác với BCRP: Các nghiên cứu in vitro chỉ ra rằng afatinib là một cơ chất và một chất ức chế chất vận chuyển BCRP. Afatinib có thể làm tăng sinh khả dụng của các cơ chất BCRP dùng đường uống (bao gồm nhưng không chỉ giới hạn trong các chất rosuvastatin và sulfasalazine). Ảnh hưởng của thức ăn đến afatinib Uống GIOTRIF cùng với bữa ăn giàu chất béo làm giảm đáng kể nồng độ theo thời gian của afatinib, cụ thể Cmax giảm khoảng 50% và AUC 0-∞ giảm khoảng 39%. Do đó không nên dùng GIOTRIF cùng với thức ăn (xem “Liều lượng và cách dùng” và “Dược động học\")."
     ],
     "id": "giotrif-40mg-boehringer-4x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Glivec 100mg Novartic 6x10",
@@ -682,7 +712,8 @@
       "Tương tác thuốc: Các tương tác quan sát được dẫn đến việc không khuyến cáo sử dụng đồng thời Những thuốc có thể làm giảm nồng độ imatinib trong huyết tương Những chất gây thúc đẩy hoạt động của CYP3A4 (ví dụ dexamethasone, phenytoin, carbamazepine, rifampicin, phenobarbital hoặc Hypericum perforatum – còn được biết là cỏ St. John’s Wort) có thể làm giảm đáng kể sự tồn lưu Glivec. Điều trị trước cho 14 người tình nguyện khỏe mạnh với nhiều liều rifampicin 600 mg/ngày trong vòng 8 ngày, sau đó dùng liều đơn Glivec 400 mg, sự thanh thải khi dùng Glivec liều uống tăng lên gấp 3,8 lần (90% khoảng tin cậy = gấp 3,5 đến 4,3 lần), điều này biểu thị sự giảm Cmax trung bình là 54%, AUC(0-24) là 68% và AUC(0-∞) là 74% khi không điều trị rifampicin. Các kết quả tương tự cũng được quan sát thấy ở những bệnh nhân bị u thần kinh đệm ác tính được điều trị với Glivec trong khi đang dùng các thuốc chống động kinh gây cảm ứng enzyme (EIAED) như carbamazepine, oxcarbazepine, phenytoin, fosphenytoin, phenobarbital và primidone. AUC huyết tương của imatinib giảm 73% so với những bệnh nhân không dùng EIAED. Trong hai nghiên cứu đã được công bố, dùng đồng thời Glivec và một sản phẩm chứa cỏ St. John’s Wort dẫn đến giảm 30 đến 32% AUC của Glivec. Ở những bệnh nhân được chỉ định dùng rifampicin hoặc các chất gây thúc đẩy CYP3A4 khác, nên xem xét thay đổi thuốc điều trị ít có khả năng gây cảm ứng enzyme. Những tương tác khác có thể ảnh hưởng đến sự tồn lưu của Glivec hoặc các thuốc khác Những thuốc có thể làm tăng nồng độ imatinib trong huyết tương Những chất làm ức chế hoạt động của cytochrome P450 isoenzyme CYP3A4 (ví dụ ketoconazole, itraconazole, erythromycin, clarithromycin) có thể làm giảm sự chuyển hóa và làm tăng nồng độ imatinib. Có sự tăng đáng kể về sự tồn lưu imatinib (nồng độ cao nhất trong huyết tương (Cmax) trung bình của imatinib tăng 26% và diện tích dưới đường cong nồng độ (AUC) của imatinib tăng 40%) ở những người khỏe mạnh khi thuốc được dùng đồng thời với một liều đơn ketoconazole (một chất ức chế CYP3A4). Nên thận trọng khi dùng Glivec với các chất ức chế nhóm CYP3A4. Những thuốc có thể bị thay đổi nồng độ trong huyết tương do Glivec: Glivec làm tăng Cmax trung bình và AUC của simvastatin (cơ chất CYP3A4) lần lượt là gấp 2 lần và gấp 3,5 lần, cho thấy sự ức chế CYP3A4 bởi Glivec. Vì vậy, khuyến cáo thận trọng khi dùng Glivec với các cơ chất CYP3A4 có cửa sổ điều trị hẹp (ví dụ cyclosporin hoặc pimozide). Glivec có thể làm tăng nồng độ trong huyết tương của các thuốc được chuyển hóa bởi CYP3A4 khác (ví dụ triazolo-benzodiazepine, thuốc chẹn kênh canxi nhóm dihydropyridine, một số chất ức chế HMG-CoA reductase tức là các statin, v.v…). Glivec cũng ức chế hoạt động CYP2C9 và CYP2C19 in vitro. Đã quan sát thấy thời gian prothrombin (PT) kéo dài sau khi dùng đồng thời với warfarin. Vì vậy khi dùng coumarin, cần theo dõi thời gian prothrombin một thời gian ngắn lúc khởi đầu và lúc kết thúc điều trị Glivec và khi thay đổi liều. Một cách khác là nên cân nhắc sử dụng heparin trọng lượng phân tử thấp. In vitro, Glivec ức chế hoạt động của cytochrome P450 isoenzyme CYP2D6 ở nồng độ tương tự như nồng độ ảnh hưởng đến hoạt động của CYP3A4. Glivec 400 mg 2 lần/ngày có tác dụng ức chế yếu lên sự chuyển hóa metoprolol qua trung gian CYP2D6, với Cmax và AUC của metoprolol tăng khoảng 23%. Dùng đồng thời Glivec với các cơ chất CYP2D6 như metoprolol dường như không phải là yếu tố nguy cơ gây tương tác thuốc-thuốc và việc điều chỉnh liều có thể là không cần thiết. In vitro, Glivec ức chế con đường chuyển hóa của acetaminophen O-glucuronidate (Ki 58,5microM). Dùng đồng thời Glivec (400 mg/ngày trong 8 ngày) với acetaminophen/paracetamol (1000 mg liều duy nhất vào ngày thứ 8) ở bệnh nhân bị CML không dẫn đến bất kỳ thay đổi nào về mặt dược động học của acetaminophen/paracetamol. Dược động học của Glivec không bị thay đổi khi dùng acetaminophen/paracetamol đơn liều. Chưa có dữ liệu về độ an toàn và dược động học khi dùng đồng thời Glivec ở liều lớn hơn 400 mg/ngày hoặc sử dụng lâu dài với acetaminophen/paracetamol."
     ],
     "id": "glivec-100mg-novartic-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Herceptin 440mg Roche 20ml",
@@ -704,7 +735,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "herceptin-440mg-roche-20ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Herceptin SC 600mg/5ml Roche",
@@ -726,7 +758,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "herceptin-sc-600mg-5ml-roche",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ibrance 100mg Pfizer 1x7",
@@ -748,7 +781,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "ibrance-100mg-pfizer-1x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ibrance 125mg Pfizer 1x7",
@@ -770,7 +804,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "ibrance-125mg-pfizer-1x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ibrance 75mg Pfizer 1x7",
@@ -792,7 +827,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "ibrance-75mg-pfizer-1x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Idarubicin Ebewe 10mg Ebewe 10ml",
@@ -812,7 +848,8 @@
       "Tương tác thuốc: Tham khảo thông tin tờ hướng dẫn sử dụng thuốc."
     ],
     "id": "idarubicin-ebewe-10mg-ebewe-10ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Idarubicin Ebewe 5mg Ebewe 5ml",
@@ -832,7 +869,8 @@
       "Tương tác thuốc: Tham khảo thông tin tờ hướng dẫn sử dụng thuốc."
     ],
     "id": "idarubicin-ebewe-5mg-ebewe-5ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Imfinzi INJ 120mg VIAL Astrazeneca LỌ 2.4ml",
@@ -852,7 +890,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "imfinzi-inj-120mg-vial-astrazeneca-lo-2-4ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Imfinzi INJ 500mg VIAL Astrazeneca LỌ 10ml",
@@ -872,7 +911,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "imfinzi-inj-500mg-vial-astrazeneca-lo-10ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Iressa 250mg Astrazeneca Zeneca 3x10",
@@ -894,7 +934,8 @@
       "Tương tác thuốc: Gefitinib chuyển hóa qua cytochrom P450, chủ yếu là isoenzym CYP3A4 và qua CYP2D6. Các thuốc có thể làm tăng nồng độ gefitinib trong máu Các nghiên cứu in-vitro cho thấy gefitinib là một chất nền của glycoprotein. Các dữ liệu hiện nay không có chỉ ra bất kỳ mối liên quan lâm sàng với phát hiện in-vitro này. Các thuốc ức chế CYP3A4 có thể làm giảm độ thanh thải của gefitinib. Sử dụng đồng thời với các thuốc ức chế mạnh hoạt động của CYP3A4 (như ketoconazol, posaconazol, voriconazol, thuốc ức chế enzym protease, clarithromycin, telithromycin) có thể làm tăng nồng độ gefitinib trong huyết tương. Sự gia tăng này có thể có ý nghĩa về mặt lâm sàng vì đã ghi nhận các phản ứng ngoại ý liên quan đến liều và nồng độ thuốc trong cơ thể. Sự gia tăng này có thể cao hơn ở cá thể bệnh nhân có kiểu gen chuyển hóa qua CYP2D6 giảm. Điều trị trước với itraconazol (một thuốc ức chế CYP3A4 mạnh) đã làm tăng 80% trị số AUC trung bình của gefitinib ở người tình nguyện khoẻ mạnh. Nếu dùng đồng thời với thuốc ức chế CYP3A4, nên theo dõi chặt chẽ các phản ứng ngoại ý của gefitinib. Chưa có dữ liệu về việc điều trị đồng thời với thuốc ức chế CYP2D6 nhưng các thuốc ức chế mạnh enzym này có thể làm tăng nồng độ gefitinib trong huyết tương khoảng 2 lần ở các bệnh nhân có chuyển hóa mạnh qua CYP2D6. Nếu dùng đồng thời với thuốc ức chế mạnh CYP2D6, nên theo dõi chặt chẽ các phản ứng ngoại ý trên bệnh nhân. Các thuốc làm giảm nồng độ gefitinib trong huyết tương Các thuốc cảm ứng CYP3A4 có thể làm tăng chuyển hóa và làm giảm nồng độ gefitinib trong huyết tương và vì thế làm giảm hiệu lực của gefitinib. Nên tránh sử dụng đồng thời với các thuốc cảm ứng CYP3A4 (như phenytoin, carbamazepin, rifampicin, barbiturat hoặc cỏ St John’s wort (Hypericum perforatum)). Điều trị trước với rifampicin (thuốc cảm ứng CYP3A4 mạnh) ở người tình nguyện khỏe mạnh làm giảm khoảng 83% trị số AUC trung bình (xem phần “Cảnh báo”). Các thuốc làm tăng đáng kể nồng độ pH dịch vị có thể làm giảm nồng độ gefitinib trong huyết tương và vì thế làm giảm hiệu lực của gefitinib. Liều cao các thuốc kháng acid tác động ngắn có thể có tác động tương tự nếu dùng thường xuyên sát thời điểm dùng gefitinib. Dùng đồng thời gefitinib với ranitidin ở mức liều làm tăng kéo dài pH dịch vị ≥5 dẫn đến giảm khoảng 47% trị số AUC trung bình ở người tình nguyện khỏe mạnh. Các thuốc bị thay đổi nồng độ trong huyết tương do ảnh hưởng của gefitinib Các nghiên cứu in-vitro cho thấy gefitinib ít có khả năng ức chế CYP2D6. Trong một thử nghiệm lâm sàng, gefitinib được dùng đồng thời với metoprolol (một chất nền của CYP2D6). Điều này làm tăng 35% nồng độ và thời gian tiếp xúc với metoprolol. Việc gia tăng này có ý nghĩa với các chất nền CYP2D6 có chỉ số điều trị hẹp. Cân nhắc khi sử dụng các chất nền CYP2D6 phối hợp với gefitinib, cần điều chỉnh liều của chất nền CYP2D6, đặc biệt là các thuốc có cửa sổ trị liệu hẹp. Gefitinib ức chế protein vận chuyển BCRP in-vitro, nhưng vẫn chưa rõ các mối liên quan trên lâm sàng với phát hiện này. Các khả năng tương tác khác: Tăng INR và/hoặc các biến cố xuất huyết đã được báo cáo ở một vài bệnh nhân dùng warfarin."
     ],
     "id": "iressa-250mg-astrazeneca-zeneca-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Jakavi 15mg Novartis 4x14",
@@ -916,7 +957,8 @@
       "Tương tác thuốc: Các tác nhân làm thay đổi nồng độ ruxolitinib trong huyết tương Thuốc ức chế mạnh CYP3A4 Các thuốc ức chế mạnh CYP3A4 (bao gồm nhưng không giới hạn ở: Boceprevir, clarithromycin, indinavir, itraconazol, ketoconazol, lopinavir/ritonavir, ritonavir, mibefradil, nefazodon, nelfinavir, posaconazol, saquinavir, telaprevir, telithromycin, voriconazol). Ở các đối tượng khỏe mạnh đang dùng ketoconazole là thuốc ức chế mạnh CYP3A4, với liều 200 mg 2 lần/ngày trong 4 ngày, diện tích dưới đường cong (AUC) của Jakavi tăng 91% và thời gian bán thải kéo dài từ 3,7 - 6,0 giờ. Khi dùng Jakavi cùng với thuốc ức chế mạnh CYP3A4, tổng liều hàng ngày của Jakavi nên được giảm khoảng 50%. Cần theo dõi chặt chẽ bệnh nhân để phát hiện giảm tế bào máu và nên chỉnh liều dựa trên độ an toàn và hiệu quả (xem phần LIỀU LƯỢNG VÀ CÁCH DÙNG). Thuốc ức chế nhẹ hoặc trung bình CYP3A4 Các thuốc ức chế nhẹ hoặc trung bình (bao gồm nhưng không giới hạn ở: Ciprofloxacin, erythromycin, amprenavir, atazanavir, diltiazem, cimetidin). Ở các đối tượng khỏe mạnh đang dùng erythromycin là thuốc ức chế trung bình CYP3A4, với liều 500 mg 2 lần/ngày trong 4 ngày, có sự tăng 27% về AUC của Jakavi. Không khuyến cáo điều chỉnh liều khi Jakavi được dùng đồng thời với thuốc ức chế nhẹ hoặc trung bình CYP3A4 (ví dụ erythromycin). Cần theo dõi chặt chẽ bệnh nhân để phát hiện giảm tế bào máu khi bắt đầu điều trị với một thuốc ức chế trung bình CYP3A4. Thuốc ức chế kép trung bình CYP2C9 và CYP3A4 (ví dụ fluconazole) : Dựa trên mô hình trên máy tính, AUC (diện tích dưới đường cong) của ruxolitinib được dự đoán tăng 2,9 lần và 4,3 lần khi điều trị đồng thời với fluconazol 200 mg hoặc 400 mg, theo thứ tự tương ứng. Nên xem xét giảm liều 50% khi sử dụng các thuốc ức chế kép các enzym CYP2C9 và CYP3A4. Tránh sử dụng đồng thời Jakavi với fluconazol ở liều lớn hơn 200 mg/ngày. Thuốc gây cảm ứng CYP3A4 Thuốc gây cảm ứng CYP3A4 (bao gồm nhưng không giới hạn ở: Avasimibe, carbamazepin, phenobarbital, phenytoin, rifabutin, rifampin (rifampicin), St. John's wort ( Hypericum perforatum ). Khi bắt đầu dùng một thuốc gây cảm ứng CYP3A4, không khuyến cáo điều chỉnh liều. Có thể xem xét tăng dần dần liều Jakavi nếu hiệu quả trị liệu bị giảm trong khi điều trị bằng thuốc gây cảm ứng CYP3A4. Ở các đối tượng khỏe mạnh đang dùng rifampin là thuốc gây cảm ứng mạnh CYP3A4, với liều 600 mg 1 lần/ngày trong 10 ngày, AUC của Jakavi sau khi dùng một liều đơn giảm 71% và thời gian bán thải giảm từ 3,3-1,7 giờ. Số lượng tương đối của các chất chuyển hóa có hoạt tính tăng liên quan đến hợp chất ban đầu. Ảnh hưởng của ruxolitinib đến các thuốc khác Các chất được vận chuyển bởi P-glvcoprotein hoặc các chất vận chuyển khác Ruxolitinib có thể ức chế P-glycoprotein và protein kháng ung thư vú (BCRP) Ở ruột. Điều này có thể dẫn đến tăng nồng độ toàn thân của các cơ chất của những chất vận chuyển này như dabigatran etexilat, ciclosporin, rosuvastatin và có khả năng là digoxin. Nên theo dõi nồng độ thuốc trong máu hoặc theo dõi lâm sàng của chất bị ảnh hưởng. Có thể là khả năng ức chế P-gp và protein kháng ung thư vú (BCRP) ở ruột có thể được giảm thiểu nếu thời gian giữa các lần sử dụng được cách xa nhau càng lâu càng tốt. Các yếu tố tăng trưởng tạo máu Việc sử dụng đồng thời các yếu tố tăng trưởng tạo máu và Jakavi chưa được nghiên cứu. Chưa rõ liệu sự ức chế Janus Associated Kinase (JAK) bởi Jakavi có làm giảm hiệu quả của các yếu tố tăng trưởng tạo máu hay không hoặc liệu các yếu tố tăng trưởng tạo máu có ảnh hưởng đến hiệu quả của Jakavi hay không. Điều trị hóa chất làm giảm tế bào Việc sử dụng đồng thời các phương pháp điều trị giảm tế bào và Jakavi chưa được nghiên cứu. Chưa rõ độ an toàn và hiệu quả của việc sử dụng đồng thời. Cơ chất của CYP3A4 Một nghiên cứu ở các đối tượng khỏe mạnh cho thấy ruxolitinib không ức chế sự chuyển hóa của midazolam dùng đường uống là cơ chất của CYP3A4. Do đó không có sự tăng nồng độ các cơ chất của CYP3A4 được dùng kết hợp với Jakavi. Thuốc tránh thai dùng đường uống Một nghiên cứu ở các đối tượng khỏe mạnh cho thấy Jakavi không ảnh hưởng đến dược động học của thuốc tránh thai dùng đường uống có chứa ethinylestradiol và levonorgestrel. Do đó không có dự kiến là hiệu quả tránh thai của dạng kết hợp này sẽ bị ảnh hưởng do việc dùng đồng thời với ruxolitinib."
     ],
     "id": "jakavi-15mg-novartis-4x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Jakavi 20mg Novartis 4x14",
@@ -938,7 +980,8 @@
       "Tương tác thuốc: Các tác nhân làm thay đổi nồng độ ruxolitinib trong huyết tương Thuốc ức chế mạnh CYP3A4: Các thuốc ức chế mạnh CYP3A4 (bao gồm nhưng không giới hạn ở boceprevir, clarithromycin, indinavir, itraconazol, ketoconazol, lopinavir/ritonavir, ritonavir, mibefradil, nefazodon, nelfinavir, posaconazol, saquinavir, telaprevir, telithromycin, voriconazol). Ở các đối tượng khỏe mạnh đang dùng ketoconazole là thuốc ức chế mạnh CYP3A4, với liều 200 mg 2 lần/ngày trong 4 ngày, diện tích dưới đường cong (AUC) của Jakavi tăng 91% và thời gian bán thải kéo dài từ 3,7 - 6,0 giờ. Khi dùng Jakavi cùng với thuốc ức chế mạnh CYP3A4, tổng liều hàng ngày của Jakavi nên được giảm khoảng 50%. Cần theo dõi chặt chẽ bệnh nhân để phát hiện giảm tế bào máu và nên chỉnh liều dựa trên độ an toàn và hiệu quả (xem phần LIỀU LƯỢNG VÀ CÁCH DÙNG). Thuốc ức chế nhẹ hoặc trung bình CYP3A4: Các thuốc ức chế nhẹ hoặc trung bình (bao gồm nhưng không giới hạn ở ciprofloxacin, erythromycin, amprenavir, atazanavir, diltiazem, cimetidin). Ở các đối tượng khỏe mạnh đang dùng erythromycin là thuốc ức chế trung bình CYP3A4, với liều 500 mg 2 lần/ngày trong 4 ngày, có sự tăng 27% về AUC cùa Jakavi. Không khuyến cáo điều chỉnh liều khi Jakavi được dùng đồng thời với thuốc ức chế nhẹ hoặc trung bình CYP3A4 (ví dụ erythromycin). Cần theo dõi chặt chẽ bệnh nhân để phát hiện giảm tế bào máu khi bắt đầu điều trị với một thuốc ức chế trung bình CYP3A4. Thuốc ức chế kép trung bình CYP2C9 và CYP3A4 (vi du fluconazole): Dựa trên mô hình trên máy tính, AUC (diện tích dưới đường cong) của ruxolitinib được dự đoán tăng 2,9 lần và 4,3 lần khi điều trị đồng thời với fluconazol 200 mg hoặc 400 mg, theo thứ tự tương ứng. Nên xem xét giảm liều 50% khi sử dụng các thuốc ức chế kép các enzym CYP2C9 và CYP3A4. Tránh sử dụng đồng thời Jakavi với fluconazol ở liều lớn hơn 200 mg/ngày. Thuốc gây cảm ứng CYP3A4: Thuốc gây cảm ứng CYP3A4 (bao gồm nhưng không giới hạn ở avasimibe, carbamazepin, phenobarbital, phenytoin, rifabutin, rifampin (rifampicin), St. John's wort (Hypericum perforatum). Khi bắt đầu dùng một thuốc gây cảm ứng CYP3A4, không khuyến cáo điều chỉnh liều. Có thể xem xét tăng dần dần liều Jakavi nếu hiệu quả trị liệu bị giảm trong khi điều trị bằng thuốc gây cảm ứng CYP3A4. Ở các đối tượng khỏe mạnh đang dùng rifampin là thuốc gây cảm ứng mạnh CYP3A4, với liều 600 mg 1 lần/ngày trong 10 ngày, AUC của Jakavi sau khi dùng một liều đơn giảm 71% và thời gian bán thải giảm từ 3,3-1,7 giờ. Số lượng tương đối của các chất chuyển hóa có hoạt tính tăng liên quan đến hợp chất ban đầu. Ảnh hưởng của ruxolitinib đến các thuốc khác Các chất được vận chuyển bởi P-glycoprotein hoặc các chất vận chuyển khác: Ruxolitinib có thể ức chế P-glycoprotein và protein kháng ung thư vú (BCRP) ở ruột. Điều này có thể dẫn đến tăng nồng độ toàn thân của các cơ chất của những chất vận chuyển này như dabigatran etexilat, ciclosporin, rosuvastatin và có khả năng là digoxin. Nên theo dõi nồng độ thuốc trong máu hoặc theo dõi lâm sàng của chất bị ảnh hưởng. Có thể là khả năng ức chế P-gp và protein kháng ung thư vú (BCRP) ở ruột có thể được giảm thiểu nếu thời gian giữa các lần sử dụng được cách xa nhau càng lâu càng tốt. Các yếu tố tăng trưởng tạo máu: Việc sử dụng đồng thời các yếu tố tăng trưởng tạo máu và Jakavi chưa được nghiên cứu. Chưa rõ liệu sự ức chế Janus Associated Kinase (JAK) bởi Jakavi có làm giảm hiệu quả của các yếu tố tăng trưởng tạo máu hay không hoặc liệu các yếu tố tăng trưởng tạo máu có ảnh hưởng đến hiệu quả của Jakavi hay không. Điều trị hóa chất làm giảm tế bào: Việc sử dụng đồng thời các phương pháp điều trị giảm tế bào và Jakavi chưa được nghiên cứu. Chưa rõ độ an toàn và hiệu quả của việc sử dụng đồng thời. Cơ chất của CYP3A4: Một nghiên cứu ở các đối tượng khỏe mạnh cho thay ruxolitinib không ức chế sự chuyển hóa của midazolam dùng đường uống là cơ chất của CYP3A4. Do đó không có sự tăng nồng độ các cơ chất của CYP3A4 được dùng kết hợp với Jakavi. Thuốc tránh thai dùng đường uống: Một nghiên cứu ở các đối tượng khỏe mạnh cho thấy Jakavi không ảnh hưởng đến dược động học của thuốc tránh thai dùng đường uống có chứa ethinylestradiol và levonorgestrel. Do đó không có dự kiến là hiệu quả tránh thai của dạng kết hợp này sẽ bị ảnh hưởng do việc dùng đồng thời với ruxolitinib."
     ],
     "id": "jakavi-20mg-novartis-4x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Keytruda 25mg/ml 4ml",
@@ -961,7 +1004,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc chính thức nào được thực hiện với pembrolizumab. Vì pembrolizumab được loại bỏ khỏi tuần hoàn thông qua quá trình dị hóa, không có thuốc chuyển hóa các tương tác được mong đợi. Nên sử dụng corticosteroid toàn thân hoặc thuốc ức chế miễn dịch trước khi bắt đầu dùng pembrolizumab tránh vì khả năng gây nhiễu đối với hoạt động dược lực học và hiệu quả của pembrolizumab. Tuy nhiên, có thể sử dụng corticosteroid toàn thân hoặc các thuốc ức chế miễn dịch khác sau khi bắt đầu dùng pembrolizumab để điều trị các phản ứng có hại liên quan đến miễn dịch. Corticosteroid cũng có thể được sử dụng như thuốc tiền mê, khi pembrolizumab được sử dụng kết hợp với hóa trị liệu, như dự phòng chống nôn và/hoặc để giảm bớt các phản ứng có hại liên quan đến hóa trị liệu."
     ],
     "id": "keytruda-25mg-ml-4ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Kryxana 200mg Novartis 1x21",
@@ -983,7 +1027,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "kryxana-200mg-novartis-1x21",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lenvima 10mg Eisai 2x10",
@@ -1003,7 +1048,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "lenvima-10mg-eisai-2x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lenvima 4mg Eisai 2x10",
@@ -1028,7 +1074,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "lenvima-4mg-eisai-2x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lonsurf 15mg/6.14mg Taiho 2x10",
@@ -1050,7 +1097,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "lonsurf-15mg-6-14mg-taiho-2x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lonsurf 20mg/8.19mg Taiho 2x10",
@@ -1072,7 +1120,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "lonsurf-20mg-8-19mg-taiho-2x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lynparza 150mg Astrazeneca 7x8",
@@ -1095,7 +1144,8 @@
       "Tương tác thuốc: Tương tác về dược lực Các nghiên cứu lâm sàng về olaparib kết hợp với các thuốc chống ung thư khác, bao gồm các tác nhân gây hại DNA, cho thấy tiềm năng và sự kéo dài độc tính ức chế tủy. Liều khuyến cáo Lynparza đơn trị liệu không thích hợp để kết hợp với các thuốc chống ung thư ức chế tủy. Việc kết hợp olaparib với vaccine hoặc thuốc ức chế miễn dịch chưa được nghiên cứu. Do đó, cần thận trọng nếu dùng chung các thuốc này với Lynparza và bệnh nhân nên được theo dõi chặt chẽ. Tương tác về dược động Tác dụng của các thuốc khác đối với olaparib CYP3A4/5 là các isozyme chủ yếu chịu trách nhiệm cho sự chuyển hóa thải trừ của olaparib. Một nghiên cứu lâm sàng để đánh giá tác động của itraconazole, một chất ức chế CYP3A đã biết, đã cho thấy sử dụng đồng thời với olaparib làm tăng trung vị C max của olaparib lên 42% (90% CI: 33 - 52%) và trung vị AUC tăng 170% (90% CI: 144 - 197%). Do đó, không khuyến cáo dùng thuốc Lynparza chung với các thuốc ức chế CYP3A mạnh (ví dụ itraconazole, telithromycin, clarithromycin, thuốc ức chế protease mạnh với ritonavir hoặc cobicistat, boceprevir, telaprevir) hoặc các thuốc ức chế CYP3A trung bình (ví dụ erythromycin, diltiazem, fluconazole, verapamil). Nếu phải dùng chung với các thuốc ức chế CYP3A mạnh hoặc trung bình, nên giảm liều Lynparza. Việc giảm liều Lynparza được khuyến cáo là 100 mg, hai lần mỗi ngày (tương đương với tổng liều hằng ngày là 200 mg) khi dùng chung với chất ức chế CYP3A mạnh hoặc liều 150 mg, hai lần mỗi ngày (tương đương với tổng liều hằng ngày là 300 mg) khi dùng chung với chất ức chế CYP3A trung bình. Cũng không nên dùng nước bưởi chùm (grapefruit) khi đang điều trị Lynparza vì nước bưởi chùm cũng là chất ức chế CYP3A. Một nghiên cứu lâm sàng để đánh giá tác động của rifampicin, một chất cảm ứng CYP3A đã biết, cho thấy việc dùng đồng thời với olaparib làm giảm trung vị C max của olaparib 71% (90% CI: 76 - 67%) và trung vị AUC giảm 87% (90% CI: 89 - 84%). Do đó, các chất gây cảm ứng mạnh đã biết của isozyme này (ví dụ phenytoin, rifampicin, rifapentine, carbamazepine, nevirapine, phenobarbital và St John’s Wort) không được khuyến cáo dùng chung với Lynparza, vì có thể làm giảm đáng kể hiệu quả của Lynparza. Cường độ tác động của thuốc gây cảm ứng từ trung bình đến mạnh (ví dụ: efavirenz, rifabutin) đối với mức tiếp xúc của olaparib chưa được thiết lập, do đó không nên sử dụng đồng thời Lynparza với các thuốc này. Tác dụng của olaparib đối với các thuốc khác Olaparib ức chế CYP3A4 in vitro và được dự đoán là chất ức chế CYP3A nhẹ in vivo. Do đó, cần thận trọng khi phối hợp các chất nền nhạy cảm với CYP3A hoặc chất nền có cửa sổ điều trị hẹp (ví dụ simvastatin, cisapride, cyclosporine, alkaloid nấm cựa gà, fentanyl, pimozide, sirolimus, tacrolimus và quetiapine) với olaparib. Khuyến cáo theo dõi lâm sàng cho bệnh nhân đang dùng đồng thời chất nền CYP3A có cửa sổ điều trị hẹp với olaparib. Sự cảm ứng của CYP1A2, 2B6 và 3A4 đã được chứng minh in vitro bằng việc CYP2B6 rất có thể được cảm ứng ở mức độ phù hợp lâm sàng. Cũng không thể loại trừ khả năng olaparib cảm ứng CYP2C9, CYP2C19 và P-gp. Do đó, olaparib khi dùng chung có thể làm giảm mức tiếp xúc với các chất nền của các enzyme chuyển hóa và protein vận chuyển này. Hiệu quả của một số thuốc tránh thai nội tiết có thể giảm nếu dùng chung với olaparib. In vitro, olaparib ức chế các protein vận chuyển P-gp (IC50 = 76µM), do đó không thể loại trừ việc olaparib có thể gây tương tác thuốc liên quan đến lâm sàng với chất nền của P-gp (ví dụ như simvastatin, pravastatin, dabigatran, digoxin và colchicine). Cần theo dõi lâm sàng thích hợp cho bệnh nhân dùng đồng thời với loại thuốc này. In vitro, olaparib đã được chứng minh là chất ức chế BCRP, OATP1B1, OCT1, OCT2, OAT3, MATE1 và MATE2K. Không thể loại trừ việc olaparib có thể làm tăng mức tiếp xúc với các chất nền của BCRP (ví dụ methotrexate, rosuvastatin), OATP1B1 (ví dụ bosentan, glibenclamide, repaglinide, statin và valsartan), OCT1 (ví dụ metformin), OCT2 (ví dụ creatinin huyết thanh), OAT3 (ví dụ furosemide và methotrexate), MATE1 (ví dụ metformin) và MATE2K (ví dụ metformin). Đặc biệt, cần thận trọng nếu dùng olaparib kết hợp với bất kỳ statin nào. Kết hợp với anastrozole, letrozole và tamoxifen Một nghiên cứu lâm sàng đã được thực hiện để đánh giá sự kết hợp của olaparib với anastrozole, letrozole hoặc tamoxifen. Chưa ghi nhận có tương tác đáng kể với anastrozole hoặc letrozole trong khi tamoxifen làm giảm mức tiếp xúc với olaparib 27%. Sự liên quan lâm sàng của tác động này vẫn chưa được biết. Olaparib không ảnh hưởng đến dược động học của tamoxifen."
     ],
     "id": "lynparza-150mg-astrazeneca-7x8",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lynparza TAB 100mg Astrazeneca 7x8",
@@ -1115,7 +1165,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "lynparza-tab-100mg-astrazeneca-7x8",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Mabthera 500mg Roche 50ml",
@@ -1137,7 +1188,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "mabthera-500mg-roche-50ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nexavar 200mg Bayer 6x10",
@@ -1159,7 +1211,8 @@
       "Tương tác thuốc: Con đường UGT1A1: Cần thận trọng khi sử dụng sorafenib kết hợp với các thuốc mà được chuyển hoá/thải trừ chủ yếu qua con đường UGT1A1 (ví dụ irinotecan). Docetaxel: Sử dụng đồng thời docetaxel (75 hoặc 100 mg/m2) và sorafenib (200 hoặc 400mg 2 lần/ ngày), sử dụng liều dùng thông thường của docetaxel với 3 ngày ngừng uống thuốc, cho thấy kết quả làm AUC (diện tích dưới đường cong) của docetaxel tăng từ 36-80%. Cần thận trọng khi sử dụng đồng thời sorafenib và docetaxel. Neomycin: Sử dụng đồng thời với Neomycin có thể dẫn đến giảm sinh khả dụng của sorafenib."
     ],
     "id": "nexavar-200mg-bayer-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ninlaro Takeda 4mg 3x1",
@@ -1181,7 +1234,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "ninlaro-takeda-4mg-3x1",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nolvadex 10mg Astrazeneca 3x10",
@@ -1204,7 +1258,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "nolvadex-10mg-astrazeneca-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Nolvadex D 20mg Astrazeneca 3x10",
@@ -1226,7 +1281,8 @@
       "Tương tác thuốc: Dùng chung Nolvadex-D với các thuốc kháng đông máu loại coumarin có thể làm tăng đáng kể tác dụng chống đông máu. Khi bắt đầu dùng kết hợp thuốc như thế nên theo dõi bệnh nhân cẩn thận. Dùng chung Nolvadex-D với các chất gây độc tế bào, để điều trị ung thư vú, có thể làm tăng nguy cơ tắc mạch do huyết khối. Do sự tăng nguy cơ VTE này, dự phòng huyết khối nên được xem xét ở bệnh nhân trong giai đoạn hóa trị liệu phối hợp. Sử dụng tamoxifen phối hợp với chất ức chế aromatase như là điều trị bổ trợ không cho thấy cải thiện hiệu quả so với đơn trị tamoxifen. Do Nolvadex-D được chuyển hóa qua hệ thống men Cytochrome P450 3A4, nên khi dùng chung với các thuốc như rifampicin , được biết gây cảm ứng men này thì cần thận trọng vì nồng độ tamoxifen có thể bị giảm. Mối liên quan trên lâm sàng của sự giảm nồng độ này vẫn chưa rõ. Tương tác về dược động học với chất ức chế enzym CYP2D6 cho thấy giảm nồng độ huyết tương của chất chuyển hóa có hoạt tính của tamoxifen, 4-hydroxy-N-desmethyltamoxifen (endoxifen) đã được báo cáo trong y văn. Đã ghi nhận giảm hiệu quả của tamoxifen khi dùng đồng thời với một số thuốc chống trầm cảm loại ức chế tái hấp thu chọn lọc serotonin (như paroxetin)."
     ],
     "id": "nolvadex-d-20mg-astrazeneca-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "OFEV 100mg Boehringer 6x10",
@@ -1248,7 +1304,8 @@
       "Tương tác thuốc: P-glycoprotein (P-gp) Nintedanib là một chất nền của P-gp. Trong một nghiên cứu chuyên về tương tác thuốc – thuốc, việc sử dụng đồng thời với chất ức chế mạnh P-gp là ketoconazol đã làm tăng nồng độ nintedanib đến 1,61 lần dựa trên AUC và 1,83 lần dựa trên Cmax. Trong một nghiên cứu tương tác thuốc – thuốc với chất cảm ứng mạnh P-gp là rifampicin, nồng độ nintedanib đã giảm xuống còn 50,3% dựa trên AUC và 60,3% dựa trên Cmax khi dùng đồng thời với rifampicin so với khi dùng một mình nintedanib. Nếu dùng chung với Ofev, các chất ức chế mạnh P-gp (như ketoconazol hoặc erythromycin) có thể làm tăng nồng độ nintedanib. Trong trường hợp này, cần theo dõi bệnh nhân chặt chẽ về khả năng dung nạp nintedanib. Có thể yêu cầu tạm ngừng, giảm liều hoặc ngừng hẳn trị liệu Ofev để kiểm soát các tác dụng phụ (xem mục Liều lượng và cách dùng). Các chất cảm ứng mạnh P-gp (như rifampicin, carbamazepin, phenytoin, và thảo dược St. John) có thể làm giảm nồng độ nintedanib. Nên xem xét tới việc thay thế các thuốc này bằng các thuốc không gây cảm ứng P-gp hoặc gây cảm ứng ở mức tối thiểu khi dùng đồng thời với Ofev. Thức ăn Khuyến cáo dùng Ofev cùng với thức ăn. Các men Cytochrome (CYP) Chỉ có một lượng nhỏ nintedanib được chuyển hóa sinh học qua con đường CYP. Nintedanib và các chất chuyển hóa của nó là BIBF 1202 gốc acid tự do và dạng phức hợp glucoronide của nó là BIBF 1202-glucuronide đều không ức chế hoặc gây cảm ứng các men CYP trong các nghiên cứu tiền lâm sàng (xem mục Dược lý – Đặc tính dược động học). Do đó, khả năng tương tác thuốc –thuốc của nintedanib dựa trên sự chuyển hóa qua CYP được coi là thấp. Sử dụng đồng thời với các thuốc khác Khả năng nintedanib tương tác với các thuốc tránh thai chứa nội tiết tố chưa được nghiên cứu. Đối với điều trị NSCLC: Việc dùng nintedanib cùng với docetaxel (75 mg/m²) không làm thay đổi dược động học của cả hai thuốc đến một mức độ có ý nghĩa."
     ],
     "id": "ofev-100mg-boehringer-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "OFEV 150mg Boehringer 6x10",
@@ -1270,7 +1327,8 @@
       "Tương tác thuốc: P-glycoprotein (P-gp) Nintedanib là một chất nền của P-gp (xem mục Đặc tính dược động học ). Trong một nghiên cứu chuyên về tương tác thuốc- thuốc, việc sử dụng đồng thời với chất ức chế mạnh P-gp là ketoconazol đã làm tăng nồng độ nintedanib đến 1,61 lần dựa trên AUC và 1,83 lần dựa trên Cmax. Trong một nghiên cứu tương tác thuốc- thuốc với chất cảm ứng mạnh P-gp là rifampicin, nồng độ nintedanib đã giảm xuống còn 50,3% dựa trên AUC và 60,3% dựa trên Cmax khi dùng đồng thời với rifampicin so với khi dùng một mình nintedanib. Nếu dùng chung với OFEV® , các chất ức chế mạnh P-gp (như ketoconazol hoặc erythromycin) có thể làm tăng nồng độ nintedanib. Trong trường hợp này, cần theo dõi bệnh nhân chặt chẽ về khả năng dung nạp nintedanib. Có thể yêu cầu tạm ngừng, giảm liều hoặc ngừng hẳn trị liệu OFEV® để kiểm soát các tác dụng phụ (xem mục Liều lượng, cách dùng ). Các chất cảm ứng mạnh P-gp (như rifampicin, carbamazepin, phenytoin, và thảo dược St.John) có thể làm giảm nồng độ nintedanib. Nên xem xét tới việc thay thế các thuốc này bằng các thuốc không gây cảm ứng P-gp hoặc gây cảm ứng ở mức tối thiểu khi dùng đồng thời với OFEV® . Thức ăn Khuyến cáo dùng OFEV® cùng với thức ăn (xem mục Đặc tính dược động học ). Các men Cytochrome (CYP) Chỉ có một lượng nhỏ nintedanib được chuyển hóa sinh học qua con đường CYP. Nintedanib và các chất chuyển hóa của nó là BIBF 1202 gốc acid tự do và dạng phức hợp glucoronide của nó là BIBF 1202 -glucuronide đều không ức chế hoặc gây cảm ứng các men CYP trong các nghiên cứu tiền lâm sàng (xem mục Đặc tính dược động học ). Do đó, khả năng tương tác thuốc- thuốc của nintedanib dựa trên sự chuyển hóa qua CYP được coi là thấp. Sử dụng đồng thời với các thuốc khác Khả năng nintedanib tương tác với các thuốc tránh thai chứa nội tiết tố chưa được nghiên cứu. Đối với điều trị NSCLC: Việc dùng nintedanib cùng với docetaxel (75 mg /m 2 ) không làm thay đổi dược động học của cả hai thuốc đến một mức độ có ý nghĩa. Tương kỵ của thuốc Không áp dụng."
     ],
     "id": "ofev-150mg-boehringer-6x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Perjeta 420mg Roche 14ml",
@@ -1292,7 +1350,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "perjeta-420mg-roche-14ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Revolade 25mg Novartis 4x7",
@@ -1314,7 +1373,8 @@
       "Tương tác thuốc: Ảnh hưởng của eltrombopag đến các thuốc khác: Thuốc ức chế HMG CoA reductase: Dùng eltrombopag 75 mg, 1 lần/ngày trong 5 ngày với một liều đơn 10 mg rosuvastatin là cơ chất của OATP1B1 (polypeptide vận chuyển anion hữu cơ - organic anion transporting polypeptide, OATP) và BCRP (protein kháng ung thư vú - breast cancer resistance protein) cho 39 đối tượng người lớn khỏe mạnh đã làm tăng Cmax (nồng độ cao nhất trong huyết tương) của rosuvastatin 103% (khoảng tin cậy (CI) 90%: 82%, 126%) và AUC (diện tích dưới đường cong)0-∞ 55% (khoảng tin cậy 90%: 42%, 69%). Tương tác cũng được dự kiến với các thuốc ức chế HMG-CoA reductase khác, bao gồm atorvastatin, fluvastatin, lovastatin, pravastatin và simvastatin. Khi dùng đồng thời với eltrombopag, nên xem xét giảm liều statin và theo dõi cẩn thận các phản ứng bất lợi của statin (xem phần Đặc tính dược động học). Cơ chất của OATP1B1 và BCRP: Cần thận trọng khi dùng đồng thời eltrombopag và cơ chất của OATP1B1 (ví dụ methotrexate) và BCRP (ví dụ topotecan và methotrexate) (xem phần Đặc tính dược động học). Cơ chất của cytochrome P450: Trong các nghiên cứu sử dụng microsom gan người, eltrombopag (lên đến 100 μM) cho thấy không có sự ức chế in vitro các enzym CYP450 1A2, 2A6, 2C19, 2D6, 2E1, 3A4/5, và 4A9/11 và là thuốc ức chế CYP2C8 và CYP2C9 như được đo bằng cách sử dụng paclitaxel và diclofenac làm cơ chất thăm dò. Sử dụng eltrombopag 75 mg, 1 lần/ngày trong 7 ngày cho 24 đối tượng nam giới khỏe mạnh không ức chế hoặc gây cảm ứng sự chuyển hóa cơ chất thăm dò đối với 1A2 (caffeine), 2C19 (omeprazole), 2C9 (flurbiprofen) hoặc 3A4 (midazolam) ở người. Không có tương tác có ý nghĩa lâm sàng nào được dự kiến khi eltrombopag và cơ chất của CYP450 được dùng đồng thời (xem phần Đặc tính dược động học). Thuốc ức chế HCV protease: Không cần điều chỉnh liều khi dùng đồng thời eltrombopag với telaprevir hoặc boceprevir. Dùng đồng thời một liều đơn eltrombopag 200 mg với telaprevir 750 mg mỗi 8 giờ không làm thay đổi nồng độ telaprevir trong huyết tương. Dùng đồng thời một liều đơn eltrombopag 200 mg với boceprevir 800 mg mỗi 8 giờ không làm thay đổi AUC(0-τ) của boceprevir trong huyết tương nhưng làm tăng Cmax 20%, và làm giảm Cmin (nồng độ thấp nhất trong huyết tương) 32%. Ý nghĩa lâm sàng của việc giảm Cmin chưa được xác định, khuyến cáo nên theo dõi lâm sàng và xét nghiệm về sự ức chế HCV. Ảnh hưởng của các thuốc khác đến eltrombopag: Ciclosporin: Giảm nồng độ eltrombopag đã được quan sát thấy khi dùng đồng thời với 200 mg và 600 mg ciclosporin (thuốc ức chế BCRP (protein kháng ung thư vú). Dùng đồng thời với 200 mg ciclosporin làm giảm Cmax (nồng độ cao nhất trong huyết tương) của eltrombopag 25% và làm giảm AUC (diện tích dưới đường cong) inf của eltrombopag 18%. Dùng đồng thời với 600 mg ciclosporin làm giảm Cmax của eltrombopag 39% và làm giảm AUCinf của eltrombopag 24%. Điều chỉnh liều eltrombopag được cho phép trong quá trình điều trị dựa trên số lượng tiểu cầu của bệnh nhân (xem phần Liều dùng và cách dùng). Nên theo dõi số lượng tiểu cầu ít nhất mỗi tuần trong 2 đến 3 tuần khi dùng đồng thời eltrombopag với ciclosporin. Có thể cần phải tăng liều eltrombopag dựa trên số lượng tiểu cầu này. Cation đa hóa trị (Chelat hóa): Eltrombopag chelat hóa với cation đa hóa trị như sắt, calci, magnesi, nhôm, selen và kẽm. Sử dụng một liều đơn eltrombopag 75 mg với thuốc kháng acid có chứa cation đa hóa trị (1524 mg nhôm hydroxide và 1425 mg magnesi carbonate) làm giảm AUC0-∞ của eltrombopag trong huyết tương 70% (khoảng tin cậy 90%: 64%, 76%) và làm giảm Cmax của eltrombopag trong huyết tương 70% (khoảng tin cậy 90%: 62%, 76%). Nên dùng eltrombopag ít nhất 2 giờ trước hoặc 4 giờ sau khi dùng bất kỳ sản phẩm nào như thuốc kháng acid, các sản phẩm từ sữa, hoặc các chất bổ sung khoáng chất chứa cation đa hóa trị để tránh làm giảm đáng kể sự hấp thu eltrombopag do sự chelat hóa (xem phần Liều dùng và cách dùng và Đặc tính dược động học). Lopinavir/ritonavir: Dùng đồng thời eltrombopag với lopinavir/ritonavir có thể làm giảm nồng độ eltrombopag. Một nghiên cứu ở 40 người tình nguyện khỏe mạnh cho thấy sử dụng đồng thời một liều đơn eltrombopag 100 mg với liều lặp lại của lopinavir/ritonavir 400/100 mg, 2 lần/ngày dẫn đến giảm AUC inf của eltrombopag trong huyết tương 17% (khoảng tin cậy 90%: 6,6%, 26,6%). Do đó, nên thận trọng khi sử dụng đồng thời eltrombopag với lopinavir/ritonavir. Nên theo dõi chặt chẽ số lượng tiểu cầu để đảm bảo xử trí nội khoa thích hợp về liều eltrombopag khi bắt đầu hoặc ngừng điều trị bằng lopinavir/ritonavir. Thuốc ức chế và thuốc gây cảm ứng CYP1A2 và CYP2C8: Eltrombopag được chuyển hóa qua nhiều con đường bao gồm CYP1A2, CYP2C8, UGT1A1, và UGT1A3 (xem phần Đặc tính dược động học). Các thuốc ức chế hoặc gây cảm ứng một loại enzym không chắc ảnh hưởng đáng kể đến nồng độ eltrombopag trong huyết tương, trong khi các thuốc ức chế hoặc gây cảm ứng nhiều enzym có khả năng làm tăng nồng độ eltrombopag (ví dụ fluvoxamine) hoặc làm giảm nồng độ eltrombopag (ví dụ rifampicin). Thuốc ức chế HCV protease: Kết quả của một nghiên cứu tương tác thuốc về dược động học (PK) cho thấy việc sử dụng đồng thời liều lặp lại của boceprevir 800 mg mỗi 8 giờ hoặc telaprevir 750 mg mỗi 8 giờ với một liều đơn eltrombopag 200 mg không làm thay đổi nồng độ eltrombopag trong huyết tương ở mức độ có ý nghĩa lâm sàng. Các thuốc điều trị giảm tiểu cầu miễn dịch (ITP): Các thuốc được sử dụng trong điều trị giảm tiểu cầu miễn dịch kết hợp với eltrombopag trong các nghiên cứu lâm sàng bao gồm corticosteroid, danazol, và/hoặc azathioprine, immunoglobulin (globulin miễn dịch) tiêm tĩnh mạch (IVIG), và anti-D immunoglobulin. Nên theo dõi số lượng tiểu cầu khi kết hợp eltrombopag với các thuốc khác trong điều trị giảm tiểu cầu miễn dịch để tránh số lượng tiểu cầu nằm ngoài phạm vi được khuyến cáo (xem phần Liều dùng và cách dùng). Tương tác với thức ăn: Sử dụng viên nén hoặc bột pha hỗn dịch uống eltrombopag với một bữa ăn nhiều calci (ví dụ bữa ăn bao gồm các sản phẩm từ sữa) làm giảm đáng kể AUC 0-∞ và Cmax của eltrombopag trong huyết tương. Ngược lại, sử dụng eltrombopag 2 giờ trước hoặc 4 giờ sau bữa ăn nhiều calci hoặc với thức ăn có hàm lượng calci thấp [< 50 mg calci] không làm thay đổi nồng độ eltrombopag trong huyết tương ở mức độ có ý nghĩa lâm sàng (xem phần Liều dùng và cách dùng). Dùng một liều đơn eltrombopag 50 mg ở dạng viên nén với một bữa ăn sáng tiêu chuẩn nhiều calo, nhiều chất béo bao gồm các sản phẩm từ sữa làm giảm AUC0-∞ trung bình của eltrombopag trong huyết tương 59% và làm giảm Cmax trung bình của eltrombopag trong huyết tương 65%. Dùng một liều đơn eltrombopag 25 mg dưới dạng bột pha hỗn dịch uống với một bữa ăn nhiều calci, chất béo vừa phải và lượng calo vừa phải làm giảm AUC 0-∞ trung bình của eltrombopag trong huyết tương 75% và làm giảm Cmax trung bình của eltrombopag trong huyết tương 79%. Sự giảm nồng độ này đã giảm đi khi dùng một liều đơn bột pha hỗn dịch uống eltrombopag 25 mg 2 giờ trước bữa ăn nhiều calci (AUC 0-∞ trung bình giảm 20% và Cmax trung bình giảm 14%). Thực phẩm có hàm lượng calci thấp (< 50 mg calci) bao gồm trái cây, thịt heo nạc, thịt bò và nước trái cây không được tăng cường (không có calci, magnesi, sắt), sữa đậu nành không được tăng cường và ngũ cốc không được tăng cường không ảnh hưởng có ý nghĩa đến nồng độ eltrombopag trong huyết tương, bất kể hàm lượng calo và chất béo. Tính tương kỵ: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "revolade-25mg-novartis-4x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ribomustin 100mg Janssen",
@@ -1336,7 +1396,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc in-vivo. Khi kết hợp Ribomustin với các thuốc gây ức chế tủy, có thể có khả năng ảnh hưởng trên tủy xương do Ribomustin và/hoặc các thuốc sử dụng đồng thời. Bất kỳ điều trị nào làm giảm thể trạng của bệnh nhân hay suy giảm chức năng tủy xương cũng có thể gia tăng độc tính của Ribomustin. Kết hợp Ribomustin với cyclosporin hay tacrolimus có thể dẫn đến ức chế miễn dịch quá mức với nguy cơ làm tăng sinh dòng lympho. Kìm hãm phân bào có thể làm giảm sự tạo thành kháng thể sau chủng ngừa vi rút sống giảm độc lực và làm tăng nguy cơ nhiễm trùng có thể dẫn đến kết cục tử vong. Nguy cơ này tăng lên ở những đối tượng đã bị ức chế miễn dịch bởi bệnh lý nền của họ. Sự chuyển hóa bendamustin liên quan đến enzym có cùng chức năng cytochrom P450 (CYP) 1A2 (xem Đặc tính dược động học). Vì thế, có khả năng xảy ra tương tác với các chất ức chế CYP1A2 (như fluvoxamin, ciprofloxacin, acyclovir, cimetidin)."
     ],
     "id": "ribomustin-100mg-janssen",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Sandostatin LAR 30 MG INJ 1 LỌ",
@@ -1358,7 +1419,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "sandostatin-lar-30-mg-inj-1-lo",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Spexib 150mg Novartis 3 HỘP 5x10",
@@ -1380,7 +1442,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "spexib-150mg-novartis-3-hop-5x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Stivarga 40mg Bayer 28v",
@@ -1402,7 +1465,8 @@
       "Tương tác thuốc: Chất ức chế / cảm ứng CYP3A4 Số liệu in vitro chỉ ra rằng regorafenib được chuyển hóa bởi cytochrome CYP3A4 và uridine diphosphate glucuronosyltransferase UGT1A9. Dùng ketoconazole (400 mg trong 18 ngày) một chất ức chế CYP3A4 mạnh, với một liều duy nhất regorafenib (160 mg vào ngày 5) dẫn đến sự gia tăng phơi nhiễm regorafenib trung bình (AUC) khoảng 33%, và giảm sự phơi nhiễm của các chất chuyển hóa có hoạt tính, M-2 (N-oxit) và M-5 (N-oxide và N-desmethyl) trung bình khoảng 90%. Cần tránh sử dụng đồng thời thuốc ức chế mạnh hoạt tính CYP3A4 (ví dụ như clarithromycin, nước ép bưởi, itraconazole, ketoconazole, posaconazole, telithromycin và voriconazole) vì ảnh hưởng của chúng trên sự phơi nhiễm với trạng thái ổn định của regorafenib và các chất chuyển hóa của nó (M-2 và M-5) chưa được nghiên cứu. Dùng rifampin (600 mg trong 9 ngày), một chất cảm ứng CYP3A4 mạnh, với một liều duy nhất regorafenib (160 mg vào ngày 7) dẫn đến làm giảm AUC của regorafenib trung bình khoảng 50%, tăng 3 đến 4 lần phơi nhiễm trung bình của chất chuyển hóa có hoạt tính M-5, và không thay đổi phơi nhiễm của chất chuyển hóa có hoạt tính M-2. Các chất cảm ứng mạnh hoạt tính CYP3A4 khác (ví dụ như phenytoin, carbamazepine, phenobarbital) cũng có thể làm tăng chuyển hóa regorafenib. Do sự giảm nồng độ trong huyết tương của regorafenib có thể dẫn đến giảm hiệu quả, cần tránh sử dụng các chất gây cảm ứng mạnh CYP3A4, hoặc nên xem xét lựa chọn một thuốc thay thế khi dùng đồng thời, không có hoặc rất ít có khả năng cảm ứng CYP3A4. Cơ chất UGT1A1 và UGT1A9 Số liệu in vitro cho thấy regorafenib cũng như các chất chuyển hóa hoạt động của nó M-2 ức chế glucuronid hóa trung gian bởi uridine transferases glucuronosyl diphosphate UGT1A1 và UGT1A9, trong khi M-5 chỉ ức chế UGT1A1 ở nồng độ đạt được trong cơ thể ở trạng thái ổn định. Dùng regorafenib với một khoảng nghỉ dài 5 ngày trước khi dùng irinotecan làm tăng khoảng 44% AUC trung bình của SN-38, một cơ chất của UGT1A1 và là một chất chuyển hóa có hoạt tính của irinotecan. Cũng quan sát thấy có sự gia tăng phơi nhiễm trung bình AUC với irinotecan khoảng 28%. Điều này cho thấy rằng việc sử dụng đồng thời regorafenib có thể làm tăng phơi nhiễm hệ thống với các cơ chất của UGT1A1 và UGT1A9. Cơ chất BCRP (Breast cancer resistance protein: Protein kháng ung thư vú) và P-glycoprotein Dữ liệu in vitro cho thấy rằng regorafenib là một chất ức chế -BCRP và P-glycoprotein. Điều trị đồng thời regorafenib có thể làm tăng nồng độ trong huyết tương của cơ chất của BCRP, như methotrexate,hoặc các cơ chất của P-glycoprotein, như digoxin. Cơ chất chọn lọc của các phân nhóm CYP Dữ liệu in vitro cho thấy rằng regorafenib là một chất ức chế cạnh tranh của các cytochrome CYP2C8, CYP2C9, CYP2B6 ở nồng độ đạt được in vivo ở trạng thái ổn định (nồng độ đinh trong huyết tương là 8,1 micromolar). Tiềm năng ức chế in vitro đối với CYP3A4 và CYP2C19 ít rõ ràng hơn. Một nghiên cứu lâm sàng thăm dò cơ chất đã được thực hiện để đánh giá hiệu quả của 14 ngày dùng regorafenib với liều 160 mg trên dược động học các cơ chất của CYP2C8 (rosiglitazone), CYP2C9 (S-warfarin), CYP2C19 (omeprazole) và CYP3A4 (midazolam). Dữ liệu dược động học cho thấy rằng regorafenib có thể được dùng đồng thời với các chất nền CYP2C8, CYP2C9, CYP3A4, và CYP2C19 mà không có tương tác thuốc có ý nghĩa lâm sàng (xem thêm phần \"Cảnh báo đặc biệt và thận trọng”). Kháng sinh Phân tích nồng độ - thời gian cho thấy regorafenib và các chất chuyển hóa của nó có thể trải qua tuần hoàn gan-ruột (xem phần “Các đặc tính dược động học”). Việc sử dụng đồng thời với kháng sinh mà có ảnh hưởng đến thần kinh thực vật đường tiêu hóa có thể gây cản trở cho tuần hoàn gan-ruột của regorafenib và có thể dẫn đến giảm sự phơi nhiễm của regorafenib. Ý nghĩa lâm sàng của những tương tác tiềm tàng này là không rõ, nhưng có thể làm giảm hiệu quả của regorafenib. Các thuốc gắn acid mật Regorafenib, M-2 và M-5 có khả năng trải qua tuần hoàn ruột-gan (xem phần 5.2). Các thuốc gắn acid mật như cholestyramin và cholesterol có thể tương tác với regorafenib bằng cách hình thành phức hợp không hòa tan có thể ảnh hưởng đến sự hấp thu (hoặc tái hấp thu), vì vậy dẫn đến khả năng giảm sự phơi nhiễm. Ý nghĩa lâm sàng của những tương tác tiềm tàng này là không rõ, nhưng có thế dẫn đến giảm hiệu quả của regorafenib."
     ],
     "id": "stivarga-40mg-bayer-28v",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tagrisso 40mg Astrazeneca 3x10",
@@ -1424,7 +1488,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "tagrisso-40mg-astrazeneca-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tagrisso 80mg Astrazeneca 1x10",
@@ -1444,7 +1509,8 @@
       "Tương tác thuốc: Tương tác về dược động học Các thuốc cảm ứng CYP3A4 mạnh có thể làm giảm nồng độ và thời gian tiếp xúc của osimertinib. Osimertinib có thể làm tăng nồng độ và thời gian tiếp xúc của chất nền BCRP. Hoạt chất có thể làm tăng nồng độ osimertinib trong huyết tương Các nghiên cứu in vitro đã cho thấy osimertinib được chuyển hóa pha I chủ yếu qua CYP3A4 và CYP3A5. Trong một nghiên cứu dược động học trên lâm sàng, khi dùng chung với 200 mg itraconazole (chất ức chế CYP3A4 mạnh) x 2 lần/ngày đã không ảnh hưởng đáng kể về lâm sàng trên nồng độ và thời gian tiếp xúc với osimertinib (diện tích dưới đường cong (AUC) tăng 24% và Cmax giảm 20%). Vì vậy, chất ức chế CYP3A4 có lẽ không ảnh hưởng đến nồng độ và thời gian tiếp xúc của osimertinib. Chưa xác định được các men xúc tác thêm. Hoạt chất có thể làm giảm nồng độ osimertinib trong huyết tương Trong một nghiên cứu dược động học lâm sàng trên bệnh nhân, diện tích nồng độ osimertinib dưới đường cong ở giai đoạn ổn định (AUC steady state) giảm 78% khi dùng chung với rifampicin (600 mg/ngày trong 21 ngày). Tương tự nồng độ và thời gian tiếp xúc với chất chuyển hóa AZ5104 cũng giảm 82% (đối với trị số AUC) và 78% (đối với trị số Cmax). Khuyến cáo nên tránh dùng Tagrisso đồng thời với các chất cảm ứng CYP3A mạnh (e.g. Phenytoin, rifampicin và carbamazepin). Các chất cảm ứng CYP3A4 trung bình (e.g. bosentan, efavirenz, etravirine, modafinil) có thể cũng làm giảm nồng độ và thời gian tiếp xúc osimertinib và nên sử dụng thận trọng hoặc tránh dùng nếu có thể. Chưa có dữ liệu lẫm sàng để khuyến cáo chỉnh liều Tagrisso. Chống chỉ định dùng chung với thuốc St. John's Wort. Ảnh hưởng của các thuốc làm giảm dịch dạ dày trên osimertinib Trong một nghiên cứu dược động học lâm sàng, việc dùng đồng thời với omeprazole đã không thay đổi nồng độ và thời gian tiếp xúc của osimertinib trên lâm sàng. Các chất điều biến pH dịch vị có thể dùng chung với Tagrisso mà không có bất kỳ hạn chế nào."
     ],
     "id": "tagrisso-80mg-astrazeneca-1x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tagrisso 80mg Astrazeneca 3x10",
@@ -1466,7 +1532,8 @@
       "Tương tác thuốc: Tương tác về dược động học Các thuốc cảm ứng CYP3A4 mạnh có thể làm giảm nồng độ và thời gian tiếp xúc của Tagrisso. Tagrisso có thể làm tăng nồng độ và thời gian tiếp xúc của chất nền BCRP. Hoạt chất có thể làm tăng nồng độ Tagrisso trong huyết tương Các nghiên cứu in vitro đã cho thấy Tagrisso được chuyển hóa pha I chủ yếu qua CYP3A4 và CYP3A5. Trong một nghiên cứu dược động học trên lâm sàng, khi dùng chung với 200 mg itraconazole (chất ức chế CYP3A4 mạnh) x 2 lần/ngày đã không ảnh hưởng đáng kể về lâm sàng trên nồng độ và thời gian tiếp xúc với Tagrisso (diện tích dưới đường cong (AUC) tăng 24% và Cmax giảm 20%). Vì vậy, chất ức chế CYP3A4 có lẽ không ảnh hưởng đến nồng độ và thời gian tiếp xúc của Tagrisso. Chưa xác định được các men xúc tác thêm. Hoạt chất có thể làm giảm nồng độ Tagrisso trong huyết tương Trong một nghiên cứu dược động học lâm sàng trên bệnh nhân, diện tích nồng độ Tagrisso dưới đường cong ở giai đoạn ổn định (AUC steady state) giảm 78% khi dùng chung với rifampicin (600 mg/ngày trong 21 ngày). Tương tự, nồng độ và thời gian tiếp xúc với chất chuyển hóa AZ5104 cũng giảm 82% (đối với trị số AUC) và 78% (đối với trị số Cmax). Khuyến cáo nên tránh dùng Tagrisso đồng thời với các chất cảm ứng CYP3A mạnh (như phenytoin, rifampicin và carbamazepin). Các chất cảm ứng CYP3A4 trung bình (như bosentan, efavirenz, etravirine, modafinil) có thể cũng làm giảm nồng độ và thời gian tiếp xúc Tagrisso và nên sử dụng thận trọng hoặc tránh dùng nếu có thể. Chưa có dữ liệu lâm sàng để khuyến cáo chỉnh liều Tagrisso. Chống chỉ định dùng chung với thuốc St. John’s Wort . Ảnh hưởng của các thuốc làm giảm dịch dạ dày trên Tagrisso: Trong một nghiên cứu dược động học lâm sàng, việc dùng đồng thời với omeprazole đã không thay đổi nồng độ và thời gian tiếp xúc của Tagrisso trên lâm sàng. Các chất điều biến pH dịch vị có thể dùng chung với Tagrisso mà không có bất kỳ hạn chế nào. Hoạt chất có nồng độ trong huyết tương có thể thay đổi do Tagrisso Theo các nghiên cứu in vitro, Tagrisso là chất ức chế cạnh tranh của chất vận chuyển BCRP. Trong một nghiên cứu dược động học trên lâm sàng, khi dùng đồng thời Tagrisso với rosuvastatin (chất nền nhạy cảm BCRP) sẽ làm tăng AUC và Cmax của rosuvastatin tương ứng là 35% và 72%. Ở bệnh nhân đang dùng đồng thời với các thuốc có khuynh hướng phụ thuộc BCRP và có chỉ số điều trị thấp, nên theo dõi chặt chẽ về dấu hiệu thay đổi tính dung nạp của thuốc dùng chung vì có thể là kết quả của sự tăng nồng độ và thời gian tiếp xúc trong khi dùng chung với Tagrisso. Trong một nghiên cứu dược động học trên lâm sàng, việc dùng đồng thời Tagrisso với simvastatin (chất nền nhạy cảm CYP3A4) sẽ làm giảm AUC và Cmax của simvastatin tương ứng là 9% và 23%. Các thay đổi này nhỏ và có lẽ là không đáng kể về mặt lâm sàng. Không chắc xảy ra tương tác dược động học trên lâm sàng với chất nền CYP3A4. Chưa nghiên cứu sự tương tác qua men khác với CYP3A4 được điều biến bằng chất thụ thể Pregnane X Receptor (PXR). Không loại bỏ nguy cơ giảm nồng độ và thời gian tiếp xúc của hormon ngừa thai khi dùng đồng thời."
     ],
     "id": "tagrisso-80mg-astrazeneca-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tarceva 100mg Roche 3x10",
@@ -1488,7 +1555,8 @@
       "Tương tác thuốc: Erlotinib được chuyển hoá ở gan bởi hệ cytochrome gan ở người, chủ yếu bởi CYP3A4 và ít hơn bởi các isoform CYP1A2 và CYP1A1. Khả năng tương tác có thể xảy ra với những thuốc được chuyền hoá bởi, hoặc là những thuốc ức chế hoặc kích thích những enzyme này. Các chất ức chế mạnh hoạt tính CYP3A4 làm giảm sự chuyển hoá của erlotinib và làm tăng nồng độ huyết tương của erlotinib. Ketoconazole ức chế sự chuyển hoá CYP3A4 (200mg uống hai lần mỗi ngày trong 5 ngày) làm tăng nồng độ erlotinib (nồng độ phân bố trung vị erlotinib [AUC] tăng 86%) và Cmax tăng 69% khi so sánh với việc dùng erlotinib đơn thuần. Khi dùng Tarceva cùng lúc với ciprofloxacin, thuốc ức chế cả hệ CYP3A4 lẫn CYP1A1, mức độ phân bố erlotinib [AUC] và nồng độ tối đa (Cmax) tăng lần lượt là 39% và 17%. Vì vậy nên thận trọng khi dùng Tarceva với những thuốc ức chế mạnh CYP3A4 hoặc ức chế phối hợp CYP3A4/CYP1A1. Trong những trường hợp này, nên giảm liều Tarceva khi ghi nhận có độc tính. Các thuốc kích thích mạnh hoạt tính CYP3A4 làm tăng chuyền hoá erlotinib và làm giảm nồng độ huyết tương erlotinib một cách đáng kể. Rifampicin kích thích sự chuyển hoá CYP3A4 (600mg uống mỗi ngày trong 7 ngày) làm AUC trung vị của erlotinib giảm 69%, sau khi dùng Tarceva liều 150mg, so sánh với khi dùng Tarceva đơn thuần. Điều trị trước đó hoặc dùng đồng thời rifampicin với liều duy nhất 450mg Tarceva làm AUC với erlotinib giảm còn 57.5% so với giá trị khi dùng liều đơn 150mg Tarceva mà không dùng kèm rifampicin. Nếu có thể nên cân nhắc chế độ điều trị thay thế không dùng các thuốc kích thích mạnh CYP3A4. Đối với những bệnh nhân cần điều trị đồng thời Tarceva với một thuốc kích thích mạnh CYP3A4 như rifampicin, nên cân nhắc tăng liều lên 300mg trong khi theo dõi sát tính an toàn, và nếu dung nạp tốt trong hơn 2 tuần thì có thể tăng đến 450mg đồng thời theo dõi chặt chẽ về an toàn. Chưa có nghiên cứu dùng liều cao hơn trong trường hợp này. Điều trị trước đó hoặc dùng đồng thời với Tarceva không làm thay đổi thanh thải của các cơ chất tiêu biểu của CYP3A4 là midazolam và erythromycin. Vì vậy ít có khả năng tương tác thuốc quan trọng xảy ra với các cơ chất khác của CYP3A4. Độ khả dụng sau khi uống midazolam có vẻ bị giảm tới 24%, tuy nhiên không phải là do tác dụng trên hoạt tính CYP3A4. Độ hòa tan của erlotinib là phụ thuộc vào độ pH. Hòa tan của erlotinib giảm khi pH tăng. Các loại thuốc làm thay đổi độ pH của đường tiêu hoá trên có thể thay đổi độ hòa tan của erlotinib và do đó ảnh hưởng tới khả dụng sinh học của nó. Sử dụng đồng thời Tarceva với omeprazole, một chất ức chế bơm proton, giảm nồng độ erlotinib (AUC) và nồng độ tối đa lần lượt là 46% và 61%. Không có thay đổi về Tmax hoặc thời gian bán thải. Dùng đồng thời Tarceva với 300 mg ranitidine, một chất đối kháng thụ thể H2, giảm nồng độ erlotinib [AUC] và nồng độ tối đa lần lượt là 33% và 54%. Vì vậy, cần tránh dùng kèm các thuốc giảm acid dạ dày với Tarceva nếu có thể. Tăng liều Tarceva khi sử dụng đồng thời với các thuốc như vậy khó có thể bù trừ được cho sự giảm nồng độ. Tuy nhiên, khi Tarceva được dùng một cách so le 2 giờ trước hoặc 10 giờ sau khi sử dụng 150mg ranitidine, nồng độ erlotinib [AUC] và Cmax chỉ giảm đi lần lượt là 15% và 17%. Nếu bệnh nhân cần được điều trị với các thuốc như vậy, thì một chất đối kháng thụ thể H2 như ranitidine cần được xem xét và sử dụng một cách so le. Bệnh nhân phải uống Tarceva ít nhất 2 giờ trước hoặc 10 giờ sau khi dùng thuốc đối kháng thụ thể H2. Bệnh nhân sử dụng Tarceva đã được báo cáo về tình trạng tương tác với thuốc kháng đông nhóm coumarin trong đó có warfarin, dẫn đến tăng INR (International Normalized Ratio - tỉ lệ thời gian prothrombine của bệnh nhân trên thời gian prothrombin chứng được chuẩn hóa quốc tế) và biến cố chảy máu trong đó một số trường hợp dẫn đến tử vong. Bệnh nhân sử dụng thuốc kháng đông nhóm coumarin nên được theo đõi một cách thường xuyên về bất kỳ sự thay đổi nào trên thời gian prothrombin hoặc INR. Tarceva dùng chung với nhóm Statin làm tăng nguy cơ tiêu cơ bao gồm cả tiêu cơ vân, đây là một biến cố hiếm gặp. Những người hút thuốc lá nên được khuyên ngưng hút vì khói thuốc lá, vốn kích thích CYP1A1 và CYP1A2, được nghiên cứu cho thấy làm giảm nồng độ phân bố erlotinib khoảng 50 - 60%. Trong một nghiên cứu pha Ib, không có tác dụng đáng kể của gemcitabin đối với dược động học của erlotinib cũng như không có tác dụng đáng kể của erlotinib lên dược động học của gemcitabin."
     ],
     "id": "tarceva-100mg-roche-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tarceva 150mg Roche 3x10",
@@ -1510,7 +1578,8 @@
       "Tương tác thuốc: Erlotinib được chuyển hoá ở gan bởi hệ cytochrome gan ở người, chủ yếu bởi CYP3A4 và ít hơn bởi CYP1A2, và CYP1A1 đồng dạng ở phổi. Khả năng tương tác có thể xảy ra với những thuốc được chuyền hoá bởi, hoặc là những thuốc ức chế hoặc kích thích những enzyme này. Các chất ức chế mạnh hoạt tính CYP3A4 làm giảm sự chuyển hoá của erlotinib và làm tăng nồng độ huyết tương của erlotinib. Ketoconazole ức chế sự chuyển hoá CYP3A4 (200mg uống hai lần mỗi ngày trong 5 ngày) làm tăng nồng độ erlotinib (nồng độ phân bố trung vị erlotinib [AUC] tăng 86%) và Cmax tăng 69% khi so sánh với việc dùng erlotinib đơn thuần. Khi dùng Tarceva cùng lúc với ciprofloxacin, thuốc ức chế cả hệ CYP3A4 lẫn CYP1A1, mức độ phân bố erlotinib [AUC] và nồng độ tối đa (Cmax) tăng lần lượt là 39% và 17%. Vì vậy nên thận trọng khi dùng Tarceva với những thuốc ức chế mạnh CYP3A4 hoặc ức chế phối hợp CYP3A4/CYP1A1. Trong những trường hợp này, nên giảm liều Tarceva khi ghi nhận có độc tính. Các thuốc kích thích mạnh hoạt tính CYP3A4 làm tăng chuyền hoá erlotinib và làm giảm nồng độ huyết tương erlotinib một cách đáng kể. Rifampicin kích thích sự chuyển hoá CYP3A4 (600mg uống mỗi ngày trong 7 ngày) làm AUC trung vị của erlotinib giảm 69%, sau khi dùng Tarceva liều 150mg, so sánh với khi dùng Tarceva đơn thuần. Điều trị trước đó hoặc dùng đồng thời rifampicin với liều duy nhất 450mg Tarceva làm AUC với erlotinib giảm còn 57.5% so với giá trị khi dùng liều đơn 150mg Tarceva mà không dùng kèm rifampicin. Nếu có thể nên cân nhắc chế độ điều trị thay thế không dùng các thuốc kích thích mạnh CYP3A4. Đối với những bệnh nhân cần điều trị đồng thời Tarceva với một thuốc kích thích mạnh CYP3A4 như rifampicin, nên cân nhắc tăng liều lên 300mg trong khi theo dõi sát tính an toàn, và nếu dung nạp tốt trong hơn 2 tuần thì có thể tăng đến 450mg đồng thời theo dõi chặt chẽ về an toàn. Chưa có nghiên cứu dùng liều cao hơn trong trường hợp này. Điều trị trước đó hoặc dùng đồng thời với Tarceva không làm thay đổi thanh thải của các cơ chất tiêu biểu của CYP3A4 là midazolam và erythromycin. Vì vậy ít có khả năng tương tác thuốc quan trọng xảy ra với các cơ chất khác của CYP3A4. Độ khả dụng sau khi uống midazolam có vẻ bị giảm tới 24%, tuy nhiên không phải là do tác dụng trên hoạt tính CYP3A4. Độ hòa tan của erlotinib là phụ thuộc vào độ pH. Hòa tan của erlotinib giảm khi pH tăng. Các loại thuốc làm thay đổi độ pH của đường tiêu hoá trên có thể thay đổi độ hòa tan của erlotinib và do đó ảnh hưởng tới khả dụng sinh học của nó. Sử dụng đồng thời Tarceva với omeprazole, một chất ức chế bơm proton, giảm nồng độ erlotinib (AUC) và nồng độ tối đa lần lượt là 46% và 61%. Không có thay đổi về Tmax hoặc thời gian bán thải. Dùng đồng thời Tarceva với 300 mg ranitidine, một chất đối kháng thụ thể H2, giảm nồng độ erlotinib [AUC] và nồng độ tối đa lần lượt là 33% và 54%. Vì vậy, cần tránh dùng kèm các thuốc giảm acid dạ dày với Tarceva nếu có thể. Tăng liều Tarceva khi sử dụng đồng thời với các thuốc như vậy khó có thể bù trừ được cho sự giảm nồng độ. Tuy nhiên, khi Tarceva được dùng một cách so le 2 giờ trước hoặc 10 giờ sau khi sử dụng 150mg ranitidine, nồng độ erlotinib [AUC] và Cmax chỉ giảm đi lần lượt là 15% và 17%. Nếu bệnh nhân cần được điều trị với các thuốc như vậy, thì một chất đối kháng thụ thể H2 như ranitidine cần được xem xét và sử dụng một cách so le. Bệnh nhân phải uống Tarceva ít nhất 2 giờ trước hoặc 10 giờ sau khi dùng thuốc đối kháng thụ thể H2. Tăng tỉ số chuẩn hoá quốc tế (INR) và các trường hợp chảy máu bao gồm chảy máu dạ dày đã được ghi nhận trong các nghiên cứu lâm sàng, một vài trường hợp dùng cùng với warfarin. Bệnh nhân dùng warfarin hoặc các thuốc chống đông dẫn xuất của coumarin nên được theo đõi một cách thường xuyên đề phát hiện bất kỳ sự thay đổi nào về thời gian prothrombin hoặc INR. Những người hút thuốc lá nên được khuyên ngưng hút vì khói thuốc lá, vốn kích thích CYP1A1 và CYP1A2, được nghiên cứu cho thấy làm giảm nồng độ phân bố erlotinib khoảng 50 - 60%. Trong một nghiên cứu pha Ib, không có tác dụng đáng kể của gemcitabin đối với dược động học của erlotinib cũng như không có tác dụng đáng kể của erlotinib lên dược động học của gemcitabin."
     ],
     "id": "tarceva-150mg-roche-3x10",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tasigna 200mg Novartis 7x4",
@@ -1532,7 +1601,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "tasigna-200mg-novartis-7x4",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tecentriq 1200mg Roche 20ml",
@@ -1554,7 +1624,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "tecentriq-1200mg-roche-20ml",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ts-one 25 Taiho 4x14",
@@ -1576,7 +1647,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "ts-one-25-taiho-4x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ts-one Capsule 20mg Taiho 4x14",
@@ -1598,7 +1670,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "ts-one-capsule-20mg-taiho-4x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Venutel 50mg Davipharm 2x7",
@@ -1620,7 +1693,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "venutel-50mg-davipharm-2x7",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Votrient 200mg Novartis 30v",
@@ -1642,7 +1716,8 @@
       "Tương tác thuốc: Ảnh hưởng của các thuốc khác đối với Votrient Các nghiên cứu in vitro gợi ý rằng quá trình chuyển hóa oxy hóa của Votrient tại microsome trong gan người chủ yếu là qua trung gian CYP3A4, với sự tham gia một phần nhỏ từ CYP1A2 và CYP2C8. Vì thế, các tác nhân ức chế và cảm ứng của CYP3A4 có thể làm thay đổi chuyển hóa của Votrient. Các thuốc ức chế CYP3A4, P-gp, BCRP Votrient là cơ chất cho CYP3A4, P-gp và BCRP. Sử dụng đồng thời Votrient (400mg một lần mỗi ngày) với chất ức chế mạnh CYP3A4 và P-gp, ketoconazole (400mg một lần mỗi ngày) trong 5 ngày liên tiếp, làm tăng tương ứng 66% và 45% giá trị trung bình của AUC(0-24) và Cmax của Votrient so với khi dùng Votrient đơn độc (400mg một lần mỗi ngày trong 7 ngày). So sánh các thông số dược động học của Votrient Cmax (khoảng giá trị trung bình từ 27,5 đến 58,1 µg/mL) và AUC(0-24) (khoảng giá trị trung bình từ 48,7 đến 1040 µg*giờ/mL) sau khi dùng đơn độc Votrient 800mg và sau khi dùng Votrient 400mg kết hợp ketoconazole 400mg (Cmax trung bình 59,2 µg/mL, AUC(0-24) trung bình 1300 µg*giờ/mL) cho thấy với sự hiện diện của chất ức chế mạnh CYP3A4 và P-gp, giảm liều Votrient 400mg một lần mỗi ngày ở phần lớn các bệnh nhân sẽ dẫn đến phơi nhiễm toàn thân tương tự như quan sát thấy sau khi dùng đơn độc 800mg Votrient một lần mỗi ngày. Tuy nhiên một vài bệnh nhân có thể có phơi nhiễm Votrient toàn thân nhiều hơn so với những bệnh nhân dùng 800mg Votrient đơn độc. Sử dụng đồng thời Votrient với các thuốc ức chế mạnh nhóm CYP3A4 khác (ví dụ itraconazole, clarithromycin, atazanavir, indinavir, nefazodone, nelfinavir, ritonavir, saquinavir, telithromycin, voriconazole) có thể làm tăng nồng độ Votrient. Nước ép bưởi có chứa tác nhân ức chế CYP3A4 cũng có thể làm tăng nồng độ Votrient trong huyết tương. Sử dụng 1500mg lapatinib (một cơ chất và là chất ức chế nhẹ CYP3A4, P-gp và một chất ức chế mạnh BCRP) cùng với 800mg Votrient làm tăng khoảng 50% đến 60% giá trị trung bình AUC(0-24) và Cmax của Votrient khi so sánh với việc sử dụng đơn độc 800mg Votrient. Sự ức chế P-gp và/hoặc BCRP bởi lapatinib có lẽ đã góp phần vào việc tăng phơi nhiễm với Votrient. Sử dụng đồng thời Votrient với thuốc ức chế CYP3A4, P-gp, và BCRP, như lapatinib, sẽ làm tăng nồng độ Votrient trong huyết tương. Sử dụng đồng thời với các thuốc ức chế mạnh P-gp hoặc BCRP cũng có thể làm thay đổi sự phơi nhiễm và phân bố của Votrient, bao gồm cả sự phân bố tới hệ thần kinh trung ương (CNS). Nên tránh sử dụng đồng thời Votrient với thuốc ức chế mạnh CYP3A4 . Nếu không có lựa chọn khác có thể chấp nhận được về mặt y khoa để thay thế thuốc ức chế mạnh CYP3A4 thì nên giảm liều Votrient xuống còn 400mg mỗi ngày trong khi dùng kết hợp. Trong các trường hợp này nên theo dõi chặt chẽ các tác dụng không mong muốn, và có thể cân nhắc giảm liều thêm nếu quan sát thấy các tác dụng không mong muốn có khả năng liên quan đến thuốc. Nên tránh kết hợp với các thuốc ức chế mạnh P-gp hoặc BCRP, hoặc khuyến cáo lựa chọn một thuốc thay thế dùng đồng thời không có hoặc có khả năng ức chế ít nhất P-gp hoặc BCRP. Các thuốc cảm ứng CYP3A4, P-gp, BCRP Các thuốc cảm ứng CYP3A4 như rifampin có thể làm giảm nồng độ Votrient trong huyết tương. Dùng đồng thời Votrient với các thuốc cảm ứng mạnh P-gp hoặc BCRP có thể làm thay đổi sự phơi nhiễm và phân bố của Votrient, bao gồm cả sự phân bố tới hệ thần kinh trung ương (CNS). Khuyến cáo lựa chọn một thuốc thay thế dùng đồng thời không có hoặc có khả năng cảm ứng ít nhất với enzyme hoặc chất vận chuyển. Ảnh hưởng của Votrient lên các thuốc khác Các nghiên cứu in vitro trên các microsome gan người đã cho thấy Votrient có tác dụng ức chế các CYP enzyme 1A2, 3A4, 2B6, 2C8, 2C9, 2C19, và 2E1. Tác dụng gây cảm ứng tiềm tàng trên CYP3A4 ở người đã được chứng minh trong một thử nghiệm PXR in vitro ở người. Các nghiên cứu dược lý học lâm sàng, sử dụng Votrient 800mg một lần mỗi ngày, đã cho thấy rằng Votrient không có ảnh hưởng liên quan trên lâm sàng về dược động học của caffeine (cơ chất thăm dò của CYP1A2), warfarin (cơ chất thăm dò của CYP2C9), hoặc omeprazole (cơ chất thăm dò của CYP2C19) ở các bệnh nhân ung thư. Votrient làm tăng khoảng 30% giá trị trung bình của AUC và Cmax của midazolam (cơ chất thăm dò của CYP3A4) và làm tăng 33% đến 64% tỉ lệ nồng độ dextrometrophan trên dextrorphan trong nước tiểu sau khi uống dextromethorphan (cơ chất thăm dò của CYP2D6). Sử dụng đồng thời Votrient 800mg một lần mỗi ngày và paclitaxel 80mg/m2 (cơ chất của CYP3A4 và CYP2C8) một lần mỗi tuần dẫn đến tăng trung bình tương ứng 25% và 31% giá trị AUC và Cmax của paclitaxel. Dựa trên các giá trị IC50 in vitro và Cmax trong huyết tương in vivo, các chất chuyển hóa của Votrient GSK1268992 và GSK1268997 có thể góp phần vào tác dụng ức chế thực của Votrient đối với BCRP. Hơn nữa, không thể loại trừ việc Votrient ức chế BCRP và P-gp trên đường tiêu hóa. Cần thận trọng khi dùng đồng thời Votrient với các cơ chất BCRP và P-gp đường uống khác. In vitro, Votrient ức chế polypeptide vận chuyển anion hữu cơ ở người (OATP1B1). Không thể loại trừ Votrient sẽ ảnh hưởng đến dược động học của các cơ chất của OATP1B1 (ví dụ các statin, xem mục “Ảnh hưởng khi sử dụng đồng thời Votrient và Simvastatin” dưới đây). Votrient là chất ức chế enzyme uridine diphosphoglucuronosyl-transferase 1A1 (UGT1A1) in vitro. Chất chuyển hóa có hoạt tính của irinotecan, SN-38, là một cơ chất của OATP1B1 và UGT1A1. Dùng đồng thời Votrient 400mg một lần mỗi ngày với cetuximab 250mg/m2 và irinotecan 150mg/m2 dẫn tới tăng khoảng 20% phơi nhiễm toàn thân với SN-38. Votrient có thể có ảnh hưởng nhiều hơn tới sự sắp xếp SN-38 ở các đối tượng có UGT1A1*28 đa hình so với các đối tượng có kiểu allen thể tự nhiên. Tuy nhiên kiểu gen UGT1A1 không phải lúc nào cũng dự đoán được ảnh hưởng của Votrient lên sự sắp xếp SN-38. Thận trọng khi dùng Votrient cùng với các cơ chất của UGT1A1. Ảnh hưởng khi sử dụng đồng thời Votrient và simvastatin Dùng đồng thời Votrient và simvastatin làm gia tăng tỷ lệ tăng ALT. Kết quả từ một phân tích gộp sử dụng dữ liệu từ các thử nghiệm lâm sàng với Votrient cho thấy ALT >3 lần ULN đã được báo cáo ở 126/895 (14%) bệnh nhân không dùng các statin, so với 11/41 (27%) bệnh nhân dùng đồng thời với simvastatin (p = 0,038). Nếu bệnh nhân dùng đồng thời simvastatin có xuất hiện tăng ALT, cần tuân theo các hướng dẫn về cách dùng Votrient và ngưng dùng simvastatin . Thêm vào đó, cần thận trọng khi dùng đồng thời Votrient với các statin khác do không đủ dữ liệu để đánh giá ảnh hưởng của các thuốc này đối với mức ALT. Không thể loại trừ rằng Votrient sẽ ảnh hưởng đến dược động học của các statin khác (ví dụ, atorvastatin, fluvastatin, pravastatin, rosuvastatin). Ảnh hưởng của thức ăn đối với Votrient Sử dụng Votrient cùng với các bữa ăn nhiều hoặc ít chất béo dẫn đến làm tăng khoảng 2 lần giá trị AUC và Cmax. Vì thế, Votrient phải được sử dụng ít nhất 1 giờ trước bữa ăn hoặc 2 giờ sau bữa ăn. Các thuốc làm tăng pH dạ dày Sử dụng đồng thời Votrient với esomeprazole làm giảm sinh khả dụng của Votrient khoảng 40% (AUC và Cmax), và nên tránh dùng đồng thời Votrient với các thuốc tăng pH dạ dày. Nếu việc dùng kết hợp với thuốc ức chế bơm proton (PPI) là cần thiết về mặt y khoa, khuyến cáo dùng liều Votrient một lần mỗi ngày không cùng thức ăn và vào buổi tối đồng thời với thuốc PPI. Nếu việc dùng đồng thời với thuốc kháng thụ thể H2 là cần thiết về mặt y khoa, nên dùng Votrient không cùng thức ăn ít nhất 2 giờ trước hoặc ít nhất 10 giờ sau khi dùng liều thuốc kháng thụ thể H2. Nên dùng Votrient ít nhất 1 giờ trước khi và 2 giờ sau khi dùng thuốc kháng acid tác dụng ngắn hạn. Khuyến cáo dùng đồng thời với các thuốc PPI và thuốc kháng thụ thể H2 như thế nào sẽ dựa trên các xem xét về sinh lý học."
     ],
     "id": "votrient-200mg-novartis-30v",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Winduza 100mg Dr.reddy",
@@ -1664,7 +1739,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "winduza-100mg-dr-reddy",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Xgeva 120mg/1.7ml Amgen",
@@ -1686,7 +1762,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "xgeva-120mg-1-7ml-amgen",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Xtandi 40mg Astellas 4x28",
@@ -1708,7 +1785,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "xtandi-40mg-astellas-4x28",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zoladex 3.6mg Astrazeneca",
@@ -1733,7 +1811,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "zoladex-3-6mg-astrazeneca",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zolotraz Anastrozole 1mg SUN Pharma 2x14",
@@ -1755,7 +1834,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "zolotraz-anastrozole-1mg-sun-pharma-2x14",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zytiga 250mg Janssen 120v",
@@ -1777,7 +1857,8 @@
       "Tương tác thuốc: Ảnh hưởng của thức ăn đến abirateron acetat Sử dụng cùng thức ăn gây tăng đáng kể sự hấp thu abirateron acetat. Chưa xác lập được tính hiệu quả và an toàn khi dùng cùng với thức ăn, vì thế không được uống ZYTIGA cùng thức ăn (xem Liều dùng và cách dùng và Đặc tính dược động học). Tương tác với các thuốc khác Khả năng ảnh hưởng của các thuốc khác lên nồng độ abirateron Trong một nghiên cứu tương tác dược động học lâm sàng ở người khỏe mạnh được điều trị trước bằng một chất gây cảm ứng mạnh CYP3A4 rifampicin, 600 mg mỗi ngày trong 6 ngày, tiếp nối bởi một liều đơn abirateron acetat 1000 mg, giá trị AUC trung bình trong huyết tương của abirateron giảm 55%. Tránh sử dụng các chất gây cảm ứng mạnh CYP3A4 (như phenytoin, carbamazepin, rifampicin, rifabutin, rifapentin, phenobarbital, cỏ St John's [Hypericum perforatum]) trong quá trình điều trị, trừ khi không có liệu pháp điều trị thay thế. Trong một nghiên cứu tương tác dược động học lâm sàng ở người khỏe mạnh, khi sử dụng đồng thời với ketoconazol là một chất ức chế mạnh CYP3A4, không thấy ảnh hưởng có ý nghĩa lâm sàng trên dược động học của abirateron. Khả năng ảnh hưởng đến nồng độ của các thuốc khác Abirateron là chất ức chế các men chuyển hóa thuốc ở gan, CYP2D6 và CYP2C8. Trong một nghiên cứu xác định ảnh hưởng của abirateron acetat (phối hợp với prednison) trên liều đơn dextromethorphan cũng là chất nền của CYP2D6, phơi nhiễm toàn thân (AUC) của dextromethorphan tăng khoảng 2,9 lần. Giá trị AUC24 của dextrorphan, một chất chuyển hóa có hoạt tính của dextromethorphan, cũng tăng khoảng 33%. Nên thận trọng khi sử dụng ZYITGA với các thuốc được chuyển hóa hay hoạt hóa bởi CYP2D6, nhất là các thuốc có chỉ số điều trị hẹp. Nên cân nhắc giảm liều các thuốc có chỉ số điều trị hẹp được chuyển hóa bởi CYP2D6. Các ví dụ về thuốc được chuyển hóa bởi CYP2D6 bao gồm metoprolol, propranolol, desipramin, venlafaxin, haloperidol, risperidon, propafenon, flecainid, codein, oxycodon và tramadol (ba thuốc cuối cùng cần có CYP2D6 để hình thành các chất chuyển hóa có hoạt tính giảm đau). Trong một thử nghiệm về tương tác thuốc - thuốc với CYP2C8 trên người khỏe mạnh, khi dùng đồng thời pioglitazon với một liều đơn abirateron acetat 1000 mg, giá trị AUC của pioglitazon tăng 46% và AUC của M-III và M-IV, là các chất chuyển hóa còn hoạt tính của pioglitazon, giảm 10% mỗi loại. Mặc dù các kết quả này cho thấy không có sự gia tăng nồng độ có ý nghĩa lâm sàng khi kết hợp ZYTIGA với các thuốc được thải trừ chủ yếu qua CYP2C8, bệnh nhân nên được theo dõi các dấu hiệu độc tính liên quan đến chất nền CYP2C8 có chỉ số điều trị hẹp nếu được sử dụng đồng thời với ZYTIGA. In vitro, các chất chuyển hóa chính abirateron sulphat và N-oxid abirateron sulphat thể hiện khả năng ức chế chất vận chuyển hấp thu OATP1B1 của gan và do đó có thể tăng nồng độ của thuốc bị thải trừ bởi OATP1B1. Không có dữ liệu lâm sàng để khẳng định tương tác dựa trên chất vận chuyển. Dùng với các thuốc được biết kéo dài khoảng QT Do điều trị với liệu pháp triệt tiêu androgen có thể gây kéo dài khoảng QT, nên thận trọng khi dùng ZYTIGA với các thuốc được biết kéo dài khoảng QT hoặc các thuốc có khả năng gây xoắn đỉnh như các thuốc chống loạn nhịp tim nhóm IA (ví dụ quinidin, disopyramid) hoặc nhóm III (ví dụ amiodaron, sotalol, dofetilid, ibutilid), methadon, moxifloxacin, các thuốc chống loạn thần,..."
     ],
     "id": "zytiga-250mg-janssen-120v",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zytiga 500mg Janssen 5x12",
@@ -1799,6 +1880,7 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "zytiga-500mg-janssen-5x12",
-    "danh_muc": "Thuốc điều trị ung thư"
+    "danh_muc": "Thuốc điều trị ung thư",
+    "muc_nghiem_trong": "Nguy hiểm"
   }
 ]

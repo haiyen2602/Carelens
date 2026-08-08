@@ -22,7 +22,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "aciclovir-800mg-meyer-bpc-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acriptega 50mg/300mg/300mg Mylan 30v",
@@ -47,7 +48,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "acriptega-50mg-300mg-300mg-mylan-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 200mg Stella 10x5",
@@ -71,7 +73,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "acyclovir-200mg-stella-10x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 200mg Stella 5x5",
@@ -96,7 +99,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "acyclovir-200mg-stella-5x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir Sinil 5g",
@@ -118,7 +122,8 @@
       "Tương tác thuốc: Kem bôi tương tác cùng thuốc Probenecid. Vì khi xảy ra tương tác sẽ dẫn đến tình trạng ngủ lịm và lơ mơ. Hơn nữa Probenecid ức chế mạnh quá trình đào thải acyclovir qua ống thận nên sẽ tăng đến 40% cũng như giảm thải trừ thông qua nước tiểu cùng độ thanh thải acyclovir. Với Amphotericin B và ketoconazol sẽ gây tăng hiệu lực chống virus của acyclovir. Với Interferon sẽ làm tăng tác dụng chống virus invitro của acyclovir. Nên thận trọng khi dùng thuốc tiêm acyclovir với người bệnh trước đã có phản ứng thần kinh cùng với Interferon. Nếu dùng Acyclovir tiêm cần thận trọng với bệnh nhân có tiền sử phản ứng thần kinh khi sử dụng methotrexat."
     ],
     "id": "acyclovir-sinil-5g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 400mg Stella 10x5",
@@ -141,7 +146,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "acyclovir-400mg-stella-10x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 800mg Stella 10x5",
@@ -165,7 +171,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "acyclovir-800mg-stella-10x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir Medipharco 5g",
@@ -188,7 +195,8 @@
       "Tương tác thuốc: Chưa phát hiện thấy thông tin tương tác thuốc khác với acyclovir khi dùng để bôi da."
     ],
     "id": "acyclovir-medipharco-5g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 400mg Stella 7x5",
@@ -211,7 +219,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "acyclovir-400mg-stella-7x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Acyclovir 800mg Stella 7x5",
@@ -235,7 +244,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "acyclovir-800mg-stella-7x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Agicarvir 0.5 Agimexpharm 3x10",
@@ -259,7 +269,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "agicarvir-0-5-agimexpharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Agiclovir 400mg Agimexpharm 3x10",
@@ -281,7 +292,8 @@
       "Tương tác thuốc: Tương tác của thuốc với các thuốc khác và các loại tương tác khác: Probenecid: Làm tăng nửa đời trong huyết tương và AUC của Aciclovir, giảm thải trừ qua nước tiểu và độ thanh thải của aciclovir. Zidovudin: Dùng đồng thời Zidovudin và Aciclovir có thể gây trạng thái ngủ lịm và lơ mơ. Amphotericin B và ketoconazol: Làm tăng hiệu lực chống virus của Aciclovir. Interferon: Làm tăng tác dụng chống virus HSV-1 in vitro của Aciclovir, tuy nhiên tương tác trên lâm sàng vẫn chưa rõ. Theophyllin: Đã có nghiên cứu cho thấy điều trị đồng thời theophyllin với Aciclovir làm tăng AUC của tổng liều sử dụng khoảng 50%, vì vậy cần theo dõi nồng độ theophyllin huyết tương trong thời gian điều trị đồng thời với Aciclovir. Nguy cơ tăng độc tính thận khi dùng đồng thời với các thuốc gây độc với thận. Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "agiclovir-400mg-agimexpharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Agiclovir 5% Agimexpharm",
@@ -305,7 +317,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "agiclovir-5-agimexpharm",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Agifovir 300mg Agimexpharm 3x10",
@@ -330,7 +343,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "agifovir-300mg-agimexpharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Alavir Tenofovir Alafenamide ( Fumarate ) 25mg - Herabiopharm 3x10",
@@ -352,7 +366,8 @@
       "Tương tác thuốc: Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "alavir-tenofovir-alafenamide-fumarate-25mg-herabiopharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Aluvia 200/50 Abbvie 120v",
@@ -377,7 +392,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "aluvia-200-50-abbvie-120v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Anaferon Children 3mg Materia 1x20",
@@ -400,7 +416,8 @@
       "Tương tác thuốc: Chưa có báo cáo về các trường hợp tương tác với các thuốc khác. Có thể dùng Anaferon cho trẻ em đồng thời với các thuốc kháng virus, kháng khuẩn và thuốc điều trị triệu chứng khác khi cần thiết."
     ],
     "id": "anaferon-children-3mg-materia-1x20",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "At. Entecavir 0.5mg AN Thiên 3x10",
@@ -424,7 +441,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "at-entecavir-0-5mg-an-thien-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Barcavir 0.5mg 1x10",
@@ -448,7 +466,8 @@
       "Đối tượng cần thận trọng: Suy gan thận"
     ],
     "id": "barcavir-0-5mg-1x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Bephardin 100mg 3x10",
@@ -473,7 +492,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "bephardin-100mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Biseptol 480 Adamed 1x20",
@@ -495,7 +515,8 @@
       "Tương tác thuốc: Tương tác với các xét nghiệm trong phòng thí nghiệm: Trimethoprim có thể cản trở việc đo creatinin huyết thanh/ huyết tương khi sử dụng phản ứng picrate kiềm. Điều này có thể dẫn đến gây tăng kết quả creatinin huyết thanh/ huyết tương ở mức 10%. Độ thanh thải creatinin giảm: Kết quả đo độ thanh thải có thể giảm từ 23% xuống 9% trong khi quá trình lọc của cầu thận vẫn không thay đổi. Zidovudine: Trong một số trường hợp điều trị đồng thời với zidovudine có thể làm tăng nguy cơ phản ứng bất lợi về huyết học. Nếu điều trị kết hợp là cần thiết, cần theo dõi các chỉ số huyết học. Cyclosporin: Cotrimoxazol dùng cùng với cyclosporin có thể gây độc cho thận ở người ghép thận nhưng có thể hồi phục. Rifampicin: Sử dụng đồng thời rifampicin và Co-Trimoxazole làm giảm thời gian bán thải trong huyết tương của trimethoprim sau khoảng một tuần điều trị. Điều này không có nhiều ý nghĩa lâm sàng. Khi trimethoprim được dùng đồng thời với các thuốc dạng cation ở pH sinh lý, và được bài tiết một phần do bài tiết chủ động ở thận (ví dụ: Procainamide, amantadine), có khả năng ức chế cạnh tranh bài tiết và dẫn đến tăng nồng độ trong huyết tương một hoặc cả hai loại thuốc. Thuốc lợi tiểu (thiazide): Ở bệnh nhân cao tuổi đồng thời dùng thuốc lợi tiểu, chủ yếu là thiazide, có nguy cơ giảm tiểu cầu có hoặc không có ban xuất huyết. Pyrimethamine: Co-trimoxazol dùng đồng thời với pyrimethamin trên 25 mg/tuần làm tăng nguy cơ thiếu máu nguyên hồng cầu khổng lồ. Warfarin: Co-trimoxazole đã được chứng minh là có tác dụng tăng cường hoạt tính chống đông máu của warfarin thông qua ức chế quá trình chuyển hóa. Sulfamethoxazole có thể thay thế warfarin từ các vị trí gắn với protein huyết tương-albumin trong ống nghiệm. Nên kiểm soát chặt chẽ liệu pháp chống đông máu trong khi điều trị bằng Co-Trimoxazole. Phenytoin: Co-trimoxazole kéo dài thời gian bán thải của phenytoin và nếu dùng đồng thời có thể dẫn đến phenytoin. Cần theo dõi chặt chẽ tình trạng của bệnh nhân và nồng độ phenytoin trong huyết thanh. Digoxin: Sử dụng đồng thời trimethoprim với digoxin đã được chứng minh là làm tăng nồng độ digoxin trong huyết tương trên bệnh nhân cao tuổi. Methotrexate: Co-trimoxazole có thể làm tăng nồng độ methotrexate trong huyết tương. Nếu Co-Trimoxazole bắt buộc sử dụng ở những bệnh nhân đang dùng các loại thuốc kháng folate khác như methotrexate, thì nên bổ sung folate. Trimethoprim ảnh hưởng đến xét nghiệm methotrexate huyết thanh khi dihydrofolate reductase từ Lactobacillus casei được sử dụng trong xét nghiệm. Không ảnh hưởng nếu methotrexate được đo bằng xét nghiệm radioimmuno. Lamivudine: Dùng trimethoprim/sulfamethoxazole 160mg/800mg (co-trimoxazole) làm tăng 40% phơi nhiễm lamivudine do tác dụng của trimethoprim. Lamivudine không ảnh hưởng trên dược động học của trimethoprim hoặc sulfamethoxazole. Tương tác với các thuốc hạ đường huyết sulphonylurea: Không phổ biến nhưng đã được báo cáo. Tăng kali máu: Nên thận trọng ở những bệnh nhân dùng bất kỳ loại thuốc nào khác có thể gây tăng kali máu, ví dụ như thuốc ức chế men chuyển, thuốc ức chế thụ thể angiotensin và thuốc lợi tiểu giữ kali như spironolactone. Sử dụng đồng thời trimethoprim-sulfamethoxazole (co-trimoxazole) có thể dẫn đến tăng kali máu liên quan đến lâm sàng. Repaglinide: Trimethoprim có thể làm tăng tác dụng của repaglinide có thể dẫn đến hạ đường huyết. Acid folinic: Bổ sung acid folinic đã được chứng minh làm giảm hiệu quả kháng khuẩn của trimethoprim-sulfamethoxazole. Ảnh hưởng này được quan sát thấy trong điều trị dự phòng và điều trị viêm phổi do Pneumocystis jiroveci. Tránh thai: Kháng sinh có thể làm mất tác dụng của thuốc tránh thai. Cơ chế của hiệu ứng này chưa được làm sáng tỏ. Phụ nữ đang điều trị bằng kháng sinh nên chọn một biện pháp tránh thai khác. Azathioprine: Có các báo cáo lâm sàng về tương tác đối lập giữa azathioprine và trimethoprim-sulfamethoxazole, dẫn đến các bất thường về huyết học nghiêm trọng."
     ],
     "id": "biseptol-480-adamed-1x20",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Caspofungin Acetate FOR Injection 50mg/vial",
@@ -517,7 +538,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "caspofungin-acetate-for-injection-50mg-vial",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Cgovir 400mg Herabiopharm 4x7",
@@ -539,7 +561,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "cgovir-400mg-herabiopharm-4x7",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ciclevir 400mg Abbott 10x5",
@@ -561,7 +584,8 @@
       "Tương tác thuốc: Probenecid ngăn cản thanh thải aciclovir qua thận. Nguy cơ suy thận tăng nếu dùng đồng thời với các thuốc độc với thận. Aciclovir ức chế chuyển hóa theophylin dẫn đến tích lũy thuốc. Tình trạng mệt mỏi quá độ đã được báo cáo khi dùng chung aciclovir với zidovudin. Amphotericin B đã được chứng minh làm tăng tác dụng kháng virus của aciclovir chống lại virus pseudorabies in vitro. Ketoconazol và aciclovir đã được chứng minh có tác dụng kháng virus hiệp đồng phụ thuộc liều chống lại virus Herpes simplex typ 1 và 2 (HSV-1 và -2) in vitro. Aciclovir được thải trừ chủ yếu dưới dạng không thay đổi trong nước tiểu thông qua hoạt động bài tiết ở ống thận. Bất kỳ thuốc nào dùng đồng thời thì sẽ cạnh tranh với cơ chế này, dẫn đến có thể làm tăng nồng độ aciclovir trong huyết tương. Ciclosporin: Đã có một số ít bệnh nhân cấy ghép có tăng nồng độ ciclosporin trong huyết thanh và các dấu hiệu của độc tính trên thận khi dùng đồng thời với aciclovir. Nên theo dõi chặt chẽ chức năng thận ở những bệnh nhân dùng cả hai loại thuốc. Cimetidin và probenecid: Cimetidin và probenecid làm tăng AUC của aciclovir bằng cách cạnh tranh thải trừ chủ động qua ống thận và giảm độ thanh thải thận của aciclovir. Điều chỉnh liều thường không cần thiết vì chỉ số trị liệu rộng của aciclovir. Mycophenolat mofetil: Khi dùng đồng thời đã cho thấy tăng AUC trong huyết tương của aciclovir và chất chuyển hóa không có hoạt tính của mycophenolat mofetil, một tác nhân ức chế miễn dịch được sử dụng ở bệnh nhân cấy ghép. Tuy nhiên, không cần phải điều chỉnh liều vì chỉ số trị liệu rộng của aciclovir. Một nghiên cứu thực nghiệm về năm đối tượng nam chỉ ra rằng liệu pháp đồng thời với aciclovir làm tăng AUC của theophylin khoảng 50%. Khuyến cáo đo nồng độ trong huyết tương khi điều trị đồng thời với aciclovir. Zidovudin: Mặc dù dùng đồng thời zidovudin và aciclovir thường không liên quan đến độc tính, tuy nhiên có một báo cáo đơn lẻ về sự mệt mỏi xảy ra ở bệnh nhân dùng đồng thời 2 thuốc này. Điều này không xảy ra khi zidovudin và aciclovir dùng một mình."
     ],
     "id": "ciclevir-400mg-abbott-10x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ciclevir 800 Abbott 10x5",
@@ -585,7 +609,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "ciclevir-800-abbott-10x5",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Clovirboston 5g",
@@ -608,7 +633,8 @@
       "Tương tác thuốc: Thuốc dạng bôi ngoài da ít được hấp thu nên ít tương tác với các thuốc khác dùng đồng thời."
     ],
     "id": "clovirboston-5g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Dactasvir 60mg Herabiopharm 3x10",
@@ -630,7 +656,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "dactasvir-60mg-herabiopharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Efavirenz 600mg Stella 3x10",
@@ -654,7 +681,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "efavirenz-600mg-stella-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Eltvir 600mg/300mg/300mg Hetero 30v",
@@ -676,7 +704,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "eltvir-600mg-300mg-300mg-hetero-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Entecavir 0.5mg Stella 3x10",
@@ -700,7 +729,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "entecavir-0-5mg-stella-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Epclusa 400/100mg Gilead 28v",
@@ -722,7 +752,8 @@
       "Tương tác thuốc: Vì Epclusa chứa sofosbuvir và velpatasvir, nên bất kỳ tương tác nào đã được xác định với từng hoạt chất này cũng có thể xảy ra với Epclusa. Khả năng Epclusa ảnh hưởng đến các loại thuốc khác Velpatasvir là chất ức chế của protein vận chuyển thuốc P-gp, protein kháng ung thư vú (organic anion-transporting polypeptide - BCRP), polypeptide vận chuyển anion hữu cơ (organic anion-transporting polypeptide - OATP) 1B1 và OATP1B3. Việc sử dụng đồng thời Epclusa với các thuốc là cơ chất cho các chất vận chuyển này có thể tăng nguy cơ phơi nhiễm với các thuốc đó. Xem Bảng 3 để biết ví dụ về tương tác với các cơ chất nhạy cảm P-gp (digoxin), BCRP (rosuvastatin) và OATP (pravastatin). Khả năng các thuốc khác ảnh hưởng đến Epclusa Sofosbuvir và velpatasvir là cơ chất của các chất vận chuyển thuốc P-gp và BCRP. Velpatasvir cũng là cơ chất của polypeptid vận chuyển thuốc OATP1B. Trong thử nghiệm in vitro, đã quan sát thấy chuyển hóa chậm của velpatasvir bởi CYP2B6, CYP2C8 và CYP3A4. Các thuốc là chất gây cảm ứng mạnh P-gp hoặc chất gây cảm ứng mạnh CYP2B6, CYP2C8 hoặc CYP3A4 (ví dụ rifampicin, rifabutin, thảo dược St. John's wort, carbamazepine, phenobarbital và phenytoin) có thể làm giảm nồng độ huyết tương của sofosbuvir hoặc velpatasvir dẫn tới giảm hiệu quả điều trị của sofosbuvir/velpatasvir. Chống chỉ định sử dụng các loại thuốc này với Epclusa (xem phần Chống chỉ định). Các thuốc là chất gây cảm ứng P-gp mức độ trung bình hoặc chất gây cảm ứng CYP mức độ trung bình (ví dụ như oxcarbazepine, modafinil hoặc efavirenz) có thể làm giảm nồng độ huyết tương sofosbuvir hoặc velpatasvir dẫn tới giảm hiệu quả điều trị của Epclusa. Không khuyến nghị sử dụng đồng thời các loại thuốc này với Epclusa (xem phần Thận trọng khi sử dụng). Việc sử dụng đồng thời các thuốc ức chế P-gp hoặc BCRP có thể làm tăng nồng độ huyết tương sofosbuvir hoặc velpatasvir. Các thuốc ức chế OATP, CYP2B6, CYP2C8 hoặc CYP3A4 có thể làm tăng nồng độ huyết tương của velpatasvir. Không dự kiến có tương tác thuốc có ý nghĩa về lâm sàng với Epclusa với các chất ức chế P-gp, BCRP, OATP hoặc CYP450; có thể sử dụng đồng thời Epclusa với các chất ức chế P-gp, BCRP, OATP và CYP. Bệnh nhân được điều trị với chất đối kháng vitamin K Do chức năng gan có thể thay đổi trong quá trình điều trị với Epclusa, khuyến cáo theo dõi chặt chẽ giá trị Chỉ số Chuẩn hóa Quốc tế (INR). Tương tác giữa Epclusa và các loại thuốc khác Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "epclusa-400-100mg-gilead-28v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Evasif 245mg Santa 30v",
@@ -747,7 +778,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "evasif-245mg-santa-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Flustad 75mg Stella 1x10",
@@ -769,7 +801,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "flustad-75mg-stella-1x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Fovirpoxil 300mg OPV 3x10",
@@ -791,7 +824,8 @@
       "Tương tác thuốc: Các nghiên cứu tương tác chỉ được thực hiện ở người lớn. Dựa trên kết quả thí nghiệm in vitro và con đường thải trừ đã biết của tenofovir, khả năng tương tác qua trung gian CYP450 liên quan tenofovir với các thuốc khác là thấp. Không khuyến cáo kết hợp đồng thời Không nên dùng Fovirpoxil đồng thời với các thuốc khác có chứa tenofovir disoproxil fumarate hoặc tenofovir alafenamide. Không nên dùng đồng thời Fovirpoxil với adefovir dipivoxil. Didanosine Không khuyến cáo dùng chung tenofovir disoproxil fumarate và didanosine. Các thuốc thải trừ qua thận: Vì tenofovir được bài tiết chủ yếu qua thận, sử dụng đồng thời tenofovir disoproxil fumarate với các thuốc làm giảm chức năng thận hoặc cạnh tranh bài tiết chủ động qua ống thận thông qua các protein vận chuyển hOAT 1, HOẠT 3 hoặc MRP 4 (như cidofovir) có thể làm tăng nồng độ tenofovir trong huyết tương và/hoặc các thuốc dùng chung. Nên tránh sử dụng tenofovir disoproxil fumarate cùng lúc hoặc gần với một thuốc gây độc cho thận. Bao gồm, nhưng không giới hạn, aminoglycoside, amphotericin B, foscarnet, ganciclovir, pentamidine, vancomycin, cidofovir hoặc interleukin-2. Được cho là tacrolimus có thể ảnh hưởng đến chức năng thận, nên theo dõi chặt chẽ khi dùng đồng thời với tenofovir disoproxil fumarate. Tương tác khác Tương tác giữa tenofovir disoproxil fumarate và các thuốc khác được liệt kê dưới đây: Thuốc kháng retrovirus Chất ức chế protease Atazanavir/Ritonavir (300 q.d./100 q.d./300 q.d.); Lopinavir/Ritonavir (400 b.i.d./100 b.i.d./300 q.d.); Darunavir/ Ritonavir (300/100 b.i.d./300 q.d.): Không cần chỉnh liều. Việc tăng nguy cơ phơi nhiễm với tenofovir có thể làm tăng các phản ứng phụ liên quan đến tenofovir, bao gồm rối loạn thận. Nên theo dõi chặt chẽ chức năng thận. Các NRTI Didanosine: Không khuyến cáo kết hợp tenofovir disoproxil fumarate và didanosine. Adefovir dipivoxil: Không nên dùng đồng thời tenofovir disoproxil fumarate với adefovir dipivoxil. Entecavir: Không có tương tác dược động học đáng kể về lâm sàng khi tenofovir disoproxil fumarate được dùng chung với entecavir. Các thuốc kháng virus viêm gan virus C: Ledipasvir/Sofosbuvir (90 mg/400 mg q.d.) + Atazanavir/Ritonavir (300 mg g.d./100 mg g.d.) + Emtricitabine Tenofovir disoproxil fumarate (200 mg/300 mg q.d.)1 Ledipasvir/Sofosbuvir (90 mg/400 mg q.d.) + Darunavir/Ritonavir (800 mg q.d./100 mg q.d.) + Emtricitabine/ Tenofovir disoproxil fumarate (200 mg/300 mg q.d.) Nồng độ tenofovir trong huyết tương tăng do dùng đồng thời tenofovir disoproxil fumarate, ledipasvir/sofosbuvir và atazanavir/ritonavir hoặc darunavir/ritonavir có thể làm tăng phản ứng không mong muốn liên quan đến tenofovir disoproxil fumarate, bao gồm rối loạn chức năng thận. Tính an toàn của tenofovir disoproxil fumarate khi dùng với ledipasvir/sofosbuvir và thuốc tăng cường về dược động học (ví dụ ritonavir hoặc cobicistat) chưa được thiết lập. Phối hợp nên sử dụng thận trọng kèm theo dõi thận thường xuyên, nếu không có các điều trị thay thế khác. Ledipasvir/Sofosbuvir (90 mg/400 mg q.d.) + Efavirenz/Emtricitabine/Tenofovir disoproxil fumarate (600 mg/200 mg/300 mg q.d.). Ledipasvir/Sofosbuvir (90 mg/400 mg q.d.) + Dolutegravir (50 mg q.d.) + Emtricitabine/ Tenofovir disoproxil fumarate (200 mg/300 mg q.d.). Không cần điều chỉnh liều. Tăng phơi nhiễm tenofovir có khả năng gây các phản ứng không mong muốn liên quan đến tenofovir disoproxil fumarate, bao gồm rối loạn chức năng thận. Nên theo dõi chặt chẽ chức năng thận. Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Atazanavir/Ritonavir (300 mg q.d./100 mg q.d.) + Emtricitabine/ Tenofovir disoproxil fumarate (200 mg/300 mg q.d.) Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Darunavir/Ritonavir (800 mg q.d./100 mg q.d.) + Emtricitabine/ Tenofovir disoproxil fumarate (200 mg/300 mg q.d.) Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Lopinavir/Ritonavir (800 mg/200 mg q.d.) + Emtricitabine/Tenofovir disoproxil fumarate (200 mg/300 mg q.d.) Nồng độ tenofovir trong huyết tương tăng do dùng đồng thời tenofovir disoproxil fumarate, sofosbuvir/velpatasvir và atazanavir/ritonavir hoặc darunavir/ritonavir hoặc lopinavir/ritonavir có thể làm tăng các phản ứng không mong muốn liên quan đến tenofovir disoproxil fumarate, bao gồm rối loạn chức năng thận. Tính an toàn của tenofovir disoproxil fumarate khi dùng với sofosbuvir/velpatasvir và thuốc tăng cường về dược động học (ví dụ ritonavir hoặc cobicistat) chưa được thiết lập. Phối hợp nên sử dụng thận trọng kèm theo dõi thận thường xuyên. Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Raltegravir (400 mg b.i.d) + Emtricitabine/Tenofovir disoproxil fumarate (200 mg/300 mg q.d.): Không cần điều chỉnh liều. Tăng phơi nhiễm tenofovir có khả năng gây các phản ứng không mong muốn liên quan đến tenofovir disoproxil fumarate, bao gồm rối loạn chức năng thận. Nên theo dõi chặt chẽ chức năng thận. Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Efavirenz/Emtricitabine/Tenofovir disoproxil fumarate (600 mg/200 mg/300 mg q.d.): Dùng đồng thời sofosbuvir/velpatasvir và efavirenz sẽ làm giảm nồng độ velpatasvir trong huyết tương. Không khuyến cáo dùng đồng thời sofosbuvir/velpatasvir với các phác đồ chứa efavirenz. Sofosbuvir/Velpatasvir (400 mg/100 mg q.d.) + Emtricitabine/Rilpivirine/Tenofovir disoproxil fumarate (200 mg/25 mg/300 mg q.d.): Không cần điều chỉnh liều. Tăng phơi nhiễm tenofovir có khả năng gây các phản ứng không mong muốn liên quan đến tenofovir disoproxil fumarate, bao gồm rối loạn chức năng thận. Nên theo dõi chặt chẽ chức năng thận. Sofosbuvir (400 mg q.d.) + Efavirenz/Emtricitabine/Tenofovir disoproxil fumarate (600 mg/200 mg/300 mg q.d.): Không cần điều chỉnh liều. b.i.d.: hai lần mỗi ngày, q.d.: một lần mỗi ngày. 1 Dữ liệu được tạo ra khi dùng đồng thời với ledipasvir/sofosbuvir. Liều dùng xáo trộn (cách nhau 12 giờ) cho kết quả tương tự. Các nghiên cứu tiến hành với các thuốc khác Không có sự tương tác dược động học đáng kể về lâm sàng khi dùng đồng thời tenofovir disoproxil fumarate với emtricitabine, lamivudine, indinavir, efavirenz, nelfinavir, saquinavir (ritonavir được tăng cường), methadone, ribavirin, rifampicin, tacrolimus, hoặc hormon ngira thai norgestimate /ethinyl oestradiol. Tenofovir disoproxil fumarate phải được dùng chung với thức ăn vì thức ăn làm tăng sinh khả dụng sinh của tenofovir."
     ],
     "id": "fovirpoxil-300mg-opv-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Fozvir 25mg Medisun 1x10",
@@ -813,7 +847,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "fozvir-25mg-medisun-1x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Getino-b 300 GETZ 30v",
@@ -837,7 +872,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "getino-b-300-getz-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hepa-taf 25mg Reliv 30v",
@@ -859,7 +895,8 @@
       "Tương tác thuốc: Các nghiên cứu tương tác mới chỉ được thực hiện ở người lớn. Không nên dùng thuốc này chung với các thuốc có chứa tenofovir disoproxil fumarate, tenofovir alafenamide hoặc adefovir dipivoxil. Các thuốc có thể gây ảnh hưởng đến tenofovir alafenamide Tenofovir alafenamide được vận chuyển bởi protein P-gp và/hoặc protein kháng ung thư vú (BCRP). Các thuốc gây cảm ứng P-gp (như: Rifampicin, rifabutin, carbamazepin, phenobarbital hoặc St. John's wort) có thể làm giảm nồng độ trong huyết tương của tenofovir alafenamide, điều này có thể dẫn đến mất hiệu quả điều trị của thuốc. Không nên sử dụng cùng lúc các loại thuốc như vậy với thuốc này. Dùng kết hợp thuốc này với các thuốc ức chế P-gp và/hoặc BCRP có thể làm tăng nồng độ trong huyết tương của tenofovir alafenamide. Không nên dùng kết hợp các thuốc ức chế mạnh P-gp với thuốc này. Tenofovir alafenamide là cơ chất của OATPIBI và CATPTB3 invitro. Sự phân bố của alafenamide tenofovir trong cơ thể có thể bị ảnh hưởng bởi hoạt tính của OATP1B1 và/hoặc CATP1B3. Ảnh hưởng của tenofovir alafenamide đối với các thuốc khác Tenofovir alafenamide không phải là chất ức chế CYP1A2, CYP2B6, CYP2C8, CYP2C9, CYP2C19 hoặc CYP2D6 trong in vitro. Nó không phải là một chất ức chế СҮРЗА trong in vivo. Tenofoviralafenamide không phải là chất ức chế enzym uricine diphosphate glucuronosyltransferase (UGT) 1A1 của người trong in vitro. Chưa biết liệu tenofovir alafenamide có phải là chất ức chế các enzyme UGT khác hay không."
     ],
     "id": "hepa-taf-25mg-reliv-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hepariv 0.5mg 3x10",
@@ -886,7 +923,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hepariv-0-5mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hepatymo 300mg 3x10",
@@ -911,7 +949,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hepatymo-300mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Hepbest 25mg Mylan 30v",
@@ -935,7 +974,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "hepbest-25mg-mylan-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lamivudine SAVI 100mg 3x10",
@@ -960,7 +1000,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lamivudine-savi-100mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lamone 100 Stella 3x10",
@@ -985,7 +1026,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lamone-100-stella-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Lamzidivir Stella 5x6",
@@ -1010,7 +1052,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "lamzidivir-stella-5x6",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Mangoherpin 5% BVP 10g",
@@ -1033,7 +1076,8 @@
       "Tương tác thuốc: Không có báo cáo."
     ],
     "id": "mangoherpin-5-bvp-10g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Medskin 200 DHG 5x10",
@@ -1057,7 +1101,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "medskin-200-dhg-5x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Medskin Clovir 800mg DHG 3x10",
@@ -1080,7 +1125,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "medskin-clovir-800mg-dhg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Mibeviru Cream Hasan 5g",
@@ -1103,7 +1149,8 @@
       "Tương tác thuốc: Không có sự tương tác thuốc khi sử dụng khu trú do sự hấp thu vào máu rất thấp."
     ],
     "id": "mibeviru-cream-hasan-5g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Pegasys 180mcg",
@@ -1129,7 +1176,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "pegasys-180mcg",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Pentovas S.p.m 3x10",
@@ -1151,7 +1199,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "pentovas-s-p-m-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Pharcavir 25mg Pharbaco 3x10",
@@ -1176,7 +1225,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "pharcavir-25mg-pharbaco-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Protevir 300mg Incepta 3x10",
@@ -1201,7 +1251,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "protevir-300mg-incepta-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ribatagin 500mg Agimexpharm 2x10",
@@ -1223,7 +1274,8 @@
       "Tương tác thuốc: Ribavirin không ức chế và bị chuyển hóa bởi hệ enzym cytochrom P 450 . Do vậy, không có khả năng tương tác với các thuốc cảm ứng hoặc bị chuyển hóa bởi hệ men này. Với các thuốc antacid: Uống ribavirin cùng với một thuốc kháng acid có chứa magnesi, nhôm và simethicon làm giảm diện tích dưới đường cong của ribavirin. Với interferon: Ribavirin có thể gây tăng nguy cơ giảm bạch cầu trung tính của interferon, phải thận trọng khi phối hợp. Chưa có bằng chứng về tương tác dược động học của 2 thuốc. Với các chất ức chế phiên mã ngược nucleosid (NRTI) như stavudin, zidovudin, lamivudin: Dùng đồng thời ribavirin với các chất này có thể gây tăng nguy cơ các phản ứng bất lợi liên quan tới rối loạn ty thể như suy gan có thể tử vong, bệnh thần kinh ngoại biên, viêm tụy, nhiễm độc acid lactic. Do vậy tránh dùng đồng thời với các thuốc này và chống chỉ định dùng đồng thời ribavirin và didanosin vì có thể xảy ra phản ứng bất lợi nghiêm trọng. Bệnh nhân đồng nhiễm HIV – HCV: Không thấy có bằng chứng rõ ràng về tương tác thuốc ở 47 bệnh nhân đồng nhiễm HIV – HCV sau một nghiên cứu dược động học 12 tuần để kiểm tra tác dụng của ribavirin đối với sự phosphoryl hóa nội bào của một số thuốc ức chế phiên mã ngược nucleosid (lamivudin và zidovudin hoặc stavudin). Tuy nhiên, do khoảng biến thiên lớn, khoảng tin cậy khá rộng. Huyết tương chứa ribavirin dường như không bị ảnh hưởng bởi việc sử dụng đồng thời thuốc ức chế phiên mã ngược nucleosid (NRTI). Sự trầm trọng của thiếu máu do ribavirin đã được báo cáo khi zidovudin là một phần của phác đồ dùng điều trị HIV, mặc dù cơ chế chính xác vẫn cần được làm sáng tỏ. Không nên dùng đồng thời ribavirin với zidovudin do tăng nguy cơ thiếu máu.Cần xem xét để thay thế zidovudin bằng phác đồ phối hợp ART nếu có nguy cơ này.Điều này đặc biệt quan trọng đối với bệnh nhân có tiền sử thiếu máu do zidovudin."
     ],
     "id": "ribatagin-500mg-agimexpharm-2x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Ricovir 300mg Mylan 30v",
@@ -1248,7 +1300,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "ricovir-300mg-mylan-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Samnir 500mg Nobel 1x10",
@@ -1272,7 +1325,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "samnir-500mg-nobel-1x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "SAVI Tenofovir 300mg 3x10",
@@ -1297,7 +1351,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "savi-tenofovir-300mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Stadfovir 25 Stellapharm 3x10",
@@ -1319,7 +1374,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "stadfovir-25-stellapharm-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Stemvir 300mg 3x4",
@@ -1344,7 +1400,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "stemvir-300mg-3x4",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tafnext 25mg Hetero 30v",
@@ -1366,7 +1423,8 @@
       "Tương tác thuốc: Tương tác với các thuốc khác Nghiên cứu tương tác chỉ được thực hiện ở người lớn. Tenofovir Alafenamide không nên dùng chung với các thuốc có chứa tenofovir disoproxil fumarate, Tenofovir alafenamide hoặc adefovir dipivoxil. Các thuốc có thể ảnh hướng đến Tenofovir alafenamide Tenofovir alafenamide là một cơ chất của P-glycoprotein (P-gp) và BCRP. Các thuốc có ảnh hưởng lớn đến P-gp (vi dụ: Rifampicin, rifabutin, carbamazepine, phenobarbital hoặc St. John's wort ) có thể làm thay đổi khả năng hấp thụ tenofovir alafenamide và làm giảm nồng độ huyết tương của tenofovir alafenamide và có thể làm mất điều trị của thuốc Tenofovir Alafenamide. Không nên dùng đồng thời. Phối hợp với Tenofovir Alafenamide với các thuốc ức chế P-gp và BCRP có thể làm tăng nồng độ trong huyết tương của Tenofovir alafenamide. Không nên dùng đồng thời, thuốc ức chế mạnh P-gp với Tenofovir alafenamide. Tenofovir alafenamide là chất nền của OATP1B1 và OATP1B3 in vitro. Sự phân bố của tenofovir alafenamide trong cơ thể có thể bị ảnh hưởng bởi hoạt động của OATP1BI và/hoặc OATP1B3. Tác dụng của Tenofovir alafenamide trên các thuốc khác Tenofovir alafenamide không phải là chất ức chế CYP1A2, CYP2B6, CYP2C8, CYP2C9, CYP2C19 hoặc CYP2D6 in vitro. Nó không phải là chất ức chế hay cảm ứng CYP3A in vivo. Tenofovir alafenamide không phải là chất ức chế uridine diphosphate glucuronosyltransferase (UGT) 1A1 in vitro. Người ta không biết liệu tenofovir alafenamide có phải là chất ức chế các enzyme UGT khác hay không. Vui lòng xem thêm các thông tin về \"Khả năng tương tác thuốc của tenofovir alafenamide với thuốc khác khi sử dụng đồng thời\" trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "tafnext-25mg-hetero-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tafsafe 25mg RV 30v",
@@ -1391,7 +1449,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tafsafe-25mg-rv-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tefostad t300 300mg Stella 3x10",
@@ -1416,7 +1475,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tefostad-t300-300mg-stella-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Teldy Hetero 30v",
@@ -1438,7 +1498,8 @@
       "Tương tác thuốc: Không có nghiên cứu tương tác thuốc nào được thực hiện khi sử dụng Dolutegravir, Lamivudine and Tenofovir disoproxil fumarate tablets 50/300/300 mg. Vì thuốc này chứa dolutegravir, lamivudine và tenofovir disoproxil, bất kỳ tương tác nào đã được xác định với các tác nhân này riêng lẻ có thể xảy ra với viên kết hợp này. Các nghiên cứu tương tác với các tác nhân này chỉ được thực hiện ở người lớn. Tương tác liên quan đến dolutegravir Nên tránh các yếu tố làm giảm nồng độ dolutegravir trong huyết tương khi có HIV-1 kháng với các chất ức chế tích hợp. Điều này bao gồm việc sử dụng đồng thời các loại thuốc làm giảm nồng độ dolutegravir trong máu (ví dụ như thuốc kháng axit có chứa magiê hoặc nhôm, chất bổ sung sắt và canxi, vitamin tổng hợp và chất gây cảm ứng, etravirine (không có chất ức chế protease tăng cường), tipranavir / ritonavir, rifampicin, St. John's wort) và một số loại thuốc chống động kinh). Dolutegravir được thải trừ chủ yếu qua chuyển hóa bởi UGT1A1. Dolutegravir cũng là cơ chất của UGT1A3, UGT1A9, CYP3A4, P-gp và BCRP; do đó, các loại thuốc cảm ứng các enzym này có thể làm giảm nồng độ dolutegravir trong huyết tương và làm giảm tác dụng điều trị của nó. Phối hợp với dolutegravir và các thuốc khác ức chế các enzym này có thể làm tăng nồng độ dolutegravir trong huyết tương. Tương tác liên quan đến lamivudine Khả năng tương tác chuyển hóa thấp do lamivudin ít chuyển hóa, liên kết với protein huyết tương thấp và thải trừ qua thận gần như hoàn toàn. Tương tác liên quan đến tenofovir Vì tenofovir chủ yếu được thải trừ qua thận, nên việc dùng đồng thời tenofovir disoproxil fumarat với các sản phẩm làm giảm chức năng thận hoặc cạnh tranh tiết dịch bằng ống thông qua các protein vận chuyển hOAT 1, hOAT 3 hoặc MRP 4 (ví dụ cidofovir) có thể làm tăng nồng độ tenofovir huyết thanh và/hoặc các thuốc được sử dụng đồng thời Không nên sử dụng tenofovir disoproxil fumaratvới những thuốc độc nguy hại cho thận, chẳng hạn như aminoglycosid, amphotericin B, foscarnet, ganciclovir, pentamidin, vancomycin, cidofovir hoặc interleukin-2. Vì tacrolimus có thể ảnh hưởng đến chức năng thận, nên theo dõi chặt chẽ khi dùng đồng thời với tenofovir disoproxil fumarat. Không nên dùng đồng thời tenofovir disoproxil fumarat với các thuốc khác chứa: tenofovir disoproxil, tenofovir alafenamide, adefovir dipivoxil, didanosine."
     ],
     "id": "teldy-hetero-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Temivir 300/100 Meyer-bpc 3x10",
@@ -1460,7 +1521,8 @@
       "Tương tác thuốc: * Liên quan đến tenofovir: Tenofovir không được dùng cùng với adefovir dipivoxil. Tenofovir làm giảm nồng độ atazanavir sulfat trong huyết tương. Tenofovir làm tăng nồng độ didanosin trong huyết tương. Nếu dùng đồng thời với didanosin thì phải uống tenofovir trước khi uống didanosin 2 giờ hoặc sau khi uống didanosin 1 giờ. Tenofovir làm giảm nồng độ lamivudin trong huyết tương. Indinavir dùng đồng thời với tenofovir: Làm tăng nồng độ tenofovir và làm giảm nồng độ indinavir trong huyết tương. Tenofovir dùng đồng thời với lopinavir và ritonavir: Tăng nồng độ tenofovir trong huyết tương, giảm nồng độ lopinavir và nồng độ đỉnh ritonavir trong huyết tương. Tenofovir dùng đồng thời với thuốc được thải chủ yếu qua thận (aciclovir, cidofovir, ganciclovir, valacyclovir, valganciclovir): Có thể làm tăng nồng độ trong huyết thanh của tenofovir hoặc của thuốc kia do tranh chấp đường đào thải. Các thuốc làm giảm chức năng thận có thể làm tăng nồng độ tenofovir trong huyết thanh. * Liên quan đến lamivudin: Các thuốc chống sự xâm nhập vào tế bào và chống hòa màng của virus HIV (enfuvirtid, maravioc): Có tác dụng hiệp đồng với lamivudin kháng HIV-1. Các thuốc ức chế integrase của HIV (raltenavir): Không ảnh hưởng có ý nghĩa lâm sàng lên dược động học của lamivudin. Các thuốc ức chế protease HIV (amprenavir/fosamprenavir, nelfinavir, ritonavir, saquinavir, tipranavir): Có tác dụng hiệp đồng ( in vitro ) với lamivudin. Không có bằng chứng có sự đối kháng giữa lamivudin và atazanavir hoặc darunavir. Không rõ có tương tác về mặt dược động học giữa darunavir được tăng cường bằng ritonavir và lamivudin. Không rõ có tương tác về mặt dược động học giữa chế phẩm kết hợp có lopinavir và ritonavir với lamivudin khi được dùng đồng thời. Nồng độ đỉnh huyết tương và AUC của lamivudin tăng khi dùng đồng thời với nelfinavir; tuy nhiên điều này không có ý nghĩa lâm sàng và không cần phải chỉnh liều. Dùng đồng thời tipanavir được tăng cường bằng ritonavir không ảnh hưởng lên dược động học của lamivudin. Các thuốc ức chế enzym phiên mã ngược không phải nucleosid (delavirdin, efavirenz, nevirapin): Có tác dụng hiệp đồng với lamivudin lên HIV-1. Không cần phải điều chỉnh liều khi dùng đồng thời efavirenz và lamivudin. Không có tương tác dược động học khi dùng đồng thời lamivudin và rilpivirin. Các nucleosid và nucleotid ức chế enzym phiên mã ngược (abacavir, emtricitabin, stavudin, tenofovir, zidovudin): Nồng độ zidovudin trong huyết tương tăng lên khoảng 13%) khi dùng kết hợp với lamivudin nhưng không cần phải chỉnh liều khi dùng đồng thời. Abacavir, satavudin làm giảm AUC của lamivudin nhưng không có ý nghĩa lâm sàng. Tenofovir làm giảm 24% nồng độ đỉnh huyết tương của lamivudin. Không dùng đồng thời lamivudin và emtricitabin (emtricitabin là chất tương tự lamivudin, dùng đồng thời không có lợi ích vì 2 thuốc bị kháng như nhau và không có tác dụng tăng cường lẫn nhau). Không dùng đồng thời lamivudin và zalcitabin vì lamivudin ức chế mạnh sự phosphoryl hóa zalcitabin ở bên trong tế bào. Interferon và peginterferon: Dùng đồng thời thuốc kháng retrovirus (có hoặc không có ribavirin) và interferon alpha (hoặc peginterferon alpha) cho người đồng thời có HIV và HCV có thể gây suy gan gây tử vong. Phải theo dõi chặt chẽ người bệnh dùng đồng thời lamivudin và interferon alpha (hoặc peginterferon alpha) có hoặc không có ribavirin về độc tính, nhất là suy gan và phải ngừng thuốc nếu cần. Nếu tình trạng bị độc xấu thêm (ví dụ suy gan trên độ 6 theo thang Child-Pugh) thì có thể phải ngừng hoặc giảm liều interferon alpha (hoặc peginterferon) và/hoặc ribavirin. Ribavirin: Ribavirin có thể làm giảm phosphoryl hóa lamivudin. Bệnh nhân đồng thời có HIV và HCV có nguy cơ bị suy gan khi dùng đồng thời thuốc kháng retrovirus và interferon alpha (hoặc peginterferon alpha) có hoặc không có ribavirin. Methadon: Không ảnh hưởng có ý nghĩa lên dược động học của lamivudin; không cần phải chỉnh liều khi dùng đồng thời. Trimethoprim/sulfamethoxazol làm tăng AUC của lamivudin 43% nhưng không cần phải chỉnh liều. Buprenorphin: Không có tương tác dược động học có ý nghĩa lâm sàng; không cần chỉnh liều nếu dùng đồng thời. * Tương kỵ của thuốc: Do không có các nghiên cứu về tính tương kỵ của thuốc, không trộn lẫn thuốc này với các thuốc khác."
     ],
     "id": "temivir-300-100-meyer-bpc-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenfovix 300mg Pymepharco 3x10",
@@ -1485,7 +1547,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tenfovix-300mg-pymepharco-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenifo RV 1x10",
@@ -1510,7 +1573,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tenifo-rv-1x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenoboston 300mg 3x10",
@@ -1532,7 +1596,8 @@
       "Tương tác thuốc: Không sử dụng đồng thời với những chất độc thận hay những chất được bài tiết ở thận. Nếu bắt buộc phải sử dụng thì theo dõi chức năng thận hàng tuần Tenofovir làm tăng nồng độ Didanosine trong huyết tương. Không nên sử dụng đồng thời 3 thuốc: Tenofovir, Lamivudine với Abacavir hay Didanosine vì mất tác dụng điều trị và gây ra đề kháng. Khi dùng đồng thời Tenofovir và Atazanavir thì nồng độ trong huyết tương của Atazanavir sẽ giảm và của Tenofovir tăng, sự ảnh hưởng giảm khi sử dụng thêm ritonavir. Dùng cùng ritonavir, lopinavir với tenofovir sẽ làm tăng nồng độ tenofovir trong huyết tương. Dùng chung thuốc chống tiểu đường metformin với didanosine, stavudine, tenofovir dẫn đến nhiễm acid lactic nặng. Thuốc ức chế protase HIV: Tương tác cộng hợp hay đồng vận giữa Tenofovir và các chất ức chế protase HIV như Amprenavir, Atazanavir, Indinavir, Ritonavir, Saquinavir. Thuốc ức chế men sao chép ngược không nucleosid: tương tác cộng hợp hay đồng vận giữa Tenofovir và các chất ức chế men sao chép ngược không nucleosid như Delavirdin, Efavirenz, Nevirapin. Thuốc ức chế men sao chép ngược nucleoside: Tương tác cộng hợp hay đồng vận giữa tenofovir và các thuốc ức chế men sao chép ngược nucleosid như Abacavir, Didanosin, Emtricitabin, Lamivudin, Stavudin, Zalcitabin, Zidovudin. Các thuốc tránh thai đường uống: Tương tác dược động không rõ với các thuốc tránh thai đường uống chứa ethinyl estradiol và norgestimat."
     ],
     "id": "tenoboston-300mg-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenofovir 300-mv USP 3x10",
@@ -1557,7 +1622,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tenofovir-300-mv-usp-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenofovir Disoproxil Fumarate 300mg Mylan 30v",
@@ -1582,7 +1648,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tenofovir-disoproxil-fumarate-300mg-mylan-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenofovir 300mg Stada 3x10",
@@ -1607,7 +1674,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tenofovir-300mg-stada-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenotrust 25mg BV Pharma 3x10",
@@ -1629,7 +1697,8 @@
       "Tương tác thuốc: Nghiên cứu tương tác thuốc chỉ được thực hiện trên người lớn. Không nên sử dụng Tenotrust 25 cùng với các sản phẩm có chứa tenofovir alafenamid, tenofovir disoproxil fumarat hoặc adefovir dipivoxil. Các thuốc có thể gây ảnh hưởng đến tenofovir alafenamid: Tenofovir alafenamid được vận chuyển bởi P-gp và protein kháng ung thư vú (BCRP). Các chất gây cảm ứng P-Gp (như rifampicin, rifabutin, carbamazepin, phenobarbital hoặc St. John's wort) có thể làm giảm nồng độ tenofovir alafenamid trong huyết tương dẫn đến mất tác dụng điều trị của Tenotrust 25. Không nên sử dụng phối hợp thuốc này. Dùng đồng thời Tenotrust 25 với các sản phẩm thuốc ức chế P-gp và BCRP có thể làm tăng nồng độ tenofovir alafenamid trong huyết tương. Không nên dùng phối hợp Tenotrust 25 với các thuốc ức chế P-gp mạnh. Tenofovir alafenamid là chất nền của OATP1B1 và OATP1B3 in vitro. Sự phân bố của tenofovir alafenamid trong cơ thể có thể bị ảnh hưởng bởi hoạt động của OATP1B1 và/hoặc OATP1B3. Ảnh hưởng của tenofovir alafenamid lên các thuốc khác: Tenofovir alafenamid không phải là chất ức chế CYP1A2, CYP2B6, CYP2C8, CYP2C9, CYP2C19 hoặc CYP2D6 in vitro. Nó cũng không phải chất ức chế hoặc cảm ứng CYP3A in vivo. Tenofovir alafenamid không phải là chất ức chế uridin diphosphat glucuronosyltransferase (UGT) 1A1 in vitro. Chưa biết liệu tenofovir alafenamid có phải là chất ức chế các enzym UGT khác hay không. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "tenotrust-25mg-bv-pharma-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenoxil 300mg Hetero 3x10",
@@ -1654,7 +1723,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tenoxil-300mg-hetero-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Teravir-af 25mg Natco 30v",
@@ -1679,7 +1749,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "teravir-af-25mg-natco-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Movinavir 200mg Mekophar 10x10",
@@ -1699,7 +1770,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ."
     ],
     "id": "movinavir-200mg-mekophar-10x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Molravir 400mg Boston 2x10",
@@ -1727,7 +1799,8 @@
       "Đối tượng cần thận trọng: Người cao tuổi"
     ],
     "id": "molravir-400mg-boston-2x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tamiflu 75mg Roche 10v",
@@ -1752,7 +1825,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "tamiflu-75mg-roche-10v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tenofovir 300mg BVP 3x10",
@@ -1777,7 +1851,8 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "tenofovir-300mg-bvp-3x10",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Tonios 0.5mg Davipharm 4x7",
@@ -1797,7 +1872,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "tonios-0-5mg-davipharm-4x7",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Vemlidy 25mg Gilead 30v",
@@ -1819,7 +1895,8 @@
       "Tương tác thuốc: Tương tác thuốc có thể ảnh hưởng đến hoạt động của thuốc hoặc gây ra các tác dụng phụ. Bệnh nhân nên báo cho bác sĩ hoặc dược sĩ danh sách những thuốc và các thực phẩm chức năng bạn đang sử dụng. Không nên dùng hay tăng giảm liều lượng của thuốc mà không có sự hướng dẫn của bác sĩ. Vui lòng xem thêm các thông tin về thuốc trong tờ hướng dẫn sử dụng thuốc đính kèm sản phẩm."
     ],
     "id": "vemlidy-25mg-gilead-30v",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zeffix 100 GSK 2x14",
@@ -1844,7 +1921,8 @@
       "Đối tượng cần thận trọng: Phụ nữ cho con bú"
     ],
     "id": "zeffix-100-gsk-2x14",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   },
   {
     "ten_thuoc": "Zonaarme 250mg Armepharco 5g",
@@ -1869,6 +1947,7 @@
       "Đối tượng cần thận trọng: Phụ nữ có thai"
     ],
     "id": "zonaarme-250mg-armepharco-5g",
-    "danh_muc": "Thuốc kháng virus"
+    "danh_muc": "Thuốc kháng virus",
+    "muc_nghiem_trong": "Nguy hiểm"
   }
 ]
