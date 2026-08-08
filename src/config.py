@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
+    # Retrieval (specs/chatbot-rag-design.md muc 4) — gia tri de xuat, CHUA CHOT
+    # (can do phan phoi that tren tap out-of-domain o Phase 7, xem build-kickoff-prompt.md muc 4).
+    rrf_k: int = 60
+    retrieval_top_k: int = 5
+    nguong_vector: float = Field(default=0.5, description="TODO: chua chot, can do thuc nghiem")
+    nguong_lexical: float = Field(default=0.3, description="TODO: chua chot, can do thuc nghiem")
+
 
 @lru_cache
 def get_settings() -> Settings:
