@@ -24,3 +24,8 @@ next-env.d.ts
 *.njsproj
 *.sln
 *.sw?
+# Vercel CLI link + pulled env (per-developer, never committed)
+.vercel
+.env*
+# ...but the template must stay in the repo
+!.env.example
