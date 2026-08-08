@@ -1,6 +1,13 @@
 """ORM models:
   - drug_chunks: RAG data thuoc, 4 chunk/thuoc (Phase 1/3, chatbot-rag-design.md muc 3.1)
   - audit_log: AuditLogDTO, append-only (Phase 1, BR-7.5, chatbot-rag-design.md muc 5.2)
+  - prescription, dose_event: them o Phase 5 - chi du de 2 tool
+    tra_cuu_lich_uong_ca_nhan/tra_cuu_don_thuoc_ca_nhan (chatbot-rag-design.md
+    muc 6) co du lieu that de query, KHONG phai trien khai day du FEAT-001-004
+    (nam ngoai pham vi tai lieu nay - xem chatbot-rag-design.md muc 1). Schema
+    khop PrescriptionDTO/DoseEventDTO (api-contracts.md §2, §3); `items`/
+    `expected_items` luu JSON thay vi bang con rieng - don gian hoa hop ly cho
+    MVP, KHONG phai quyet dinh kien truc cuoi cung cho FEAT-001-004 that.
 
 KHONG duoc UPDATE/DELETE audit_log o tang ung dung - xem ghi chu trong
 migrations/versions/, chi duoc INSERT.
@@ -80,3 +87,40 @@ class AuditLog(Base):
 
     final_response: Mapped[str] = mapped_column(Text, nullable=False)
     total_duration_ms: Mapped[float] = mapped_column(Float, nullable=False)
+
+
+class Prescription(Base):
+    """Khop PrescriptionDTO (api-contracts.md §2). `items` la JSON array, moi
+    phan tu: {ten_thuoc, ham_luong, dang_thuoc, lieu_dung, duong_dung,
+    thoi_diem_dung, so_vien_moi_lan, gio_nhac, drug_id} - drug_id de join
+    nguoc ve drug_chunks, thoi_diem_dung la nguon that duy nhat cho tool
+    tra_cuu_don_thuoc_ca_nhan (chatbot-rag-design.md muc 3.1)."""
+
+    __tablename__ = "prescription"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)  # draft|approved|active|completed|stopped
+    items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    start_date: Mapped[str] = mapped_column(String, nullable=False)  # ISO date string, don gian hoa cho MVP
+    duration_days: Mapped[int] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class DoseEvent(Base):
+    """Khop DoseEventDTO (api-contracts.md §3). `expected_items`: list cac
+    {drug_id, ten_thuoc, so_vien} - dung cho tool tra_cuu_lich_uong_ca_nhan
+    (vd "hom nay toi uong thuoc gi")."""
+
+    __tablename__ = "dose_event"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    prescription_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)  # PENDING|TAKEN|MISSED|DELAYED|CANCELLED
+    expected_items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
