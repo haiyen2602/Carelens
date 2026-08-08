@@ -65,3 +65,7 @@ out/
 # Crawler resume state — internal checkpoint, not a deliverable
 crawler/**/*.progress.txt
 data pharmacy/**/*.progress.txt
+
+# Generated RAG chunk staging file (scripts/chunk_drugs.py) — derivable from
+# thuoc.json + script, large (~37MB), not a deliverable.
+data pharmacy/_chunks.jsonl

@@ -18,6 +18,10 @@ psycopg2-binary>=2.9.0
 # Vector Store — pgvector (extension trong PostgreSQL, xem ADR-0008), KHONG dung ChromaDB rieng
 pgvector>=0.3.6
 
+# LLM client truc tiep (dung cho batch embedding script, Phase 3 - ngoai LangGraph)
+openai>=1.54.0
+tiktoken>=0.8.0
+
 # Dev tools
 ruff>=0.8.0
 pytest>=8.0.0
