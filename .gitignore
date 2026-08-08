@@ -65,3 +65,8 @@ out/
 # Crawler resume state — internal checkpoint, not a deliverable
 crawler/**/*.progress.txt
 data pharmacy/**/*.progress.txt
+# Vercel CLI link + pulled env (per-developer, never committed)
+.vercel
+.env*
+# ...but the template must stay in the repo
+!.env.example
