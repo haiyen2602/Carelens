@@ -439,6 +439,8 @@ class ConversationState(TypedDict):
 | 7 | Trace log có hiển thị cho bệnh nhân/người thân hay chỉ bác sĩ (đề xuất: chỉ bác sĩ) | PM |
 | 8 | Ngưỡng lọc thô `NGUONG_VECTOR`/`NGUONG_LEXICAL` trước RRF (mục 4.3) | Architect, tinh chỉnh thực nghiệm |
 | 9 | **[RỦI RO PHÁP LÝ — CHƯA CÓ ĐÁNH GIÁ]** `data pharmacy/` hiện crawl trực tiếp từ nhathuoclongchau.com.vn — 1 website thương mại; `crawler/report.md` chỉ đánh giá **khả năng kỹ thuật** để crawl (có bị chặn không, có tôn trọng `robots.txt` không), **chưa từng đánh giá quyền sử dụng lại nội dung** (bản quyền mô tả thuốc, ToS của site) cho mục đích ngoài coursework — xem ghi chú làm rõ ngay dưới bảng này. Cần quyết trước khi dùng ngoài phạm vi demo/nộp bài. | PM + BTC/mentor (vượt phạm vi quyết định kỹ thuật thuần) |
+| 10 | **[RỦI RO BẢO MẬT — CHẶN PRODUCTION, phát hiện 2026-08-08 review Phase 6]** `POST /api/v1/chat` nhận `patient_id` thẳng trong request body, không xác thực qua JWT (`auth-api` §1 chưa được xây trong repo này — hoàn toàn chưa có timeline, `api-contracts.md`/`business-rules.md` không nhắc gì tới thứ tự xây `auth-api` so với các domain khác). Hệ quả: **bất kỳ ai gọi endpoint đều đọc/ghi được dữ liệu của bất kỳ `patient_id` nào họ tự gõ vào** — toàn bộ test cách ly 2 bệnh nhân đã làm kỹ ở Phase 5b (`tra_cuu_lich_uong_ca_nhan`/`tra_cuu_don_thuoc_ca_nhan`/`tra_cuu_dose_event_ca_nhan`, đều filter đúng `patient_id` ở tầng SQL) chỉ đúng ở **tầng tool** — tầng endpoint phía trên hoàn toàn không có gì chặn giả mạo `patient_id`, nên toàn bộ nỗ lực cách ly đó bị vô hiệu hoá nếu request tới được endpoint từ bên ngoài. **Điều kiện bắt buộc:** không cho bất kỳ ai ngoài phạm vi thử nghiệm nội bộ (Architect, mentor, BTC) chạm vào `/api/v1/chat` — kể cả demo — cho tới khi có tối thiểu 1 cơ chế xác thực (JWT thật, hoặc tối thiểu 1 shared secret/token chặn truy cập ngoài cho giai đoạn demo) chặn giữa request và `patient_id` được tin dùng. | PM + Architect — cần quyết `auth-api` xây trước hay có mitigation tạm cho demo |
+| 11 | **[Kênh dự phòng khi CẢ 2 kênh escalate đều fail — phát hiện 2026-08-08 review Phase 6]** `EscalationOutcome` (src/services/escalation.py) phân biệt đúng kênh nào (gia đình/bác sĩ) thành công hay thất bại, và ghi đủ vào trace/audit log khi thất bại — nhưng dừng lại ở đó: hệ thống hiện **không retry, không có kênh dự phòng, không nâng mức ưu tiên log** khi CẢ HAI kênh cùng fail. "Biết là đã fail" khác với "có cơ chế nào đó vẫn tới được người thật" — với escalation cấp cứu, khoảng trống này có thể nghĩa là không ai biết bệnh nhân đang cần cấp cứu cho tới khi có người chủ động xem audit log. Cần quyết: retry với backoff? Kênh dự phòng là gì (SMS thay vì push? gọi điện tự động? cảnh báo riêng cho admin/trực ban)? Ngưỡng bao lâu thì coi là "cả 2 đã fail, cần escalate lên kênh khác"? | PM — quyết fallback channel là gì, không phải việc code ngay bây giờ |
 
 **Ghi chú cho mục #9:** khi được hỏi liệu đây có phải "quyết định tạm thời, sẽ đổi sang OpenFDA/mua license
 trước khi lên production" — tôi (AI assistant) **không có bất kỳ ghi nhận nào** trong lịch sử làm việc ở
@@ -447,6 +449,11 @@ quá trình thu thập `data pharmacy/` trong phiên này bắt đầu thẳng t
 nguồn thay thế nào được ghi lại. Nếu quyết định đó thật sự tồn tại, nhiều khả năng đến từ 1 phiên làm việc
 khác (Cursor/Codex/Gemini CLI — repo có log cho nhiều tool, xem `.ai-log/`) mà tôi không truy cập được nội
 dung. Cần Architect xác nhận lại nguồn của quyết định đó trước khi coi đây là điều đã chốt.
+
+**Ghi chú cho mục #10:** đã tra `api-contracts.md` (toàn bộ, kể cả §1 `auth-api`) và `business-rules.md` —
+không có dòng nào nói tới thứ tự/thời điểm xây `auth-api` so với `chat-api`. `auth-api` chỉ được liệt kê
+ngang hàng "Draft" như mọi domain khác (mục "Danh sách contract"), không có cờ ưu tiên. Đây là gap hoàn
+toàn chưa ai note tới trước review này, không phải quyết định đã có từ trước bị bỏ sót khi implement.
 
 ---
 **Liên kết:** [`business-rules.md`](./business-rules.md) §3, §6 · [`features.md`](./features.md) FEAT-005–008

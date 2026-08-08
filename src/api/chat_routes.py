@@ -118,6 +118,30 @@ def _persist_audit_log(
     db.commit()
 
 
+def _should_show_emergency_overlay(severity_en: str | None) -> bool:
+    """Tra ve gia tri se dien vao `ConversationChatResponse.safety_flag`.
+
+    QUAN TRONG - day KHONG PHAI `state["safety_flag"]` doc lai truc tiep, va
+    2 cai TEN GIONG NHAU nhung Y NGHIA KHAC NHAU (phat hien 2026-08-08, code
+    review Phase 6):
+      - `state["safety_flag"]` (ConversationState noi bo, muc 9 thiet ke) -
+        nghia HEP: chi True khi CHINH safety_layer (keyword/LLM redflag,
+        BR-3.3, ADR-0009) kich hoat. False ke ca khi SEVERITY node rieng
+        (FEAT-007) tu ket luan "Nguy hiểm".
+      - `ConversationChatResponse.safety_flag` (JSON tra cho FE, TEN nay do
+        api-contracts.md §4 quy dinh - KHONG duoc doi ten field ngoai nay du
+        muon, se pha contract voi FE) - nghia RONG: "FE bat buoc hien
+        overlay cap cuu" (BR-3.5) - phai True cho CA HAI nguon kich hoat
+        HIGH (safety_layer redflag LAN SEVERITY->LEVEL = Nguy hiểm), khong
+        chi 1 trong 2.
+
+    Ham rieng, ten ro rang nay ton tai DE KHONG AI (ke ca agent khac) vo
+    tinh doc `state.get("safety_flag")` roi gan thang vao response - day
+    chinh xac la dang bug ten trung nhau tung gay ra lo ho escalation o
+    Phase 5b (safety_layer redflag khong he goi escalate_fn)."""
+    return severity_en == "HIGH"
+
+
 def _to_response(state: ConversationState) -> ConversationChatResponse:
     classification = None
     if state.get("classification") is not None:
@@ -139,21 +163,11 @@ def _to_response(state: ConversationState) -> ConversationChatResponse:
 
     sources = [SourceOut(drug_id=r.drug_id, field=r.field_group) for r in state.get("rag_results") or []]
 
-    # QUAN TRONG: safety_flag noi BAN GIAO (contract) nghia la "FE bat buoc
-    # hien overlay cap cuu" (api-contracts.md §4) - RONG HON
-    # state["safety_flag"] noi bo (chi True khi CHINH safety_layer
-    # keyword/LLM redflag kich hoat, BR-3.3). BR-3.5 noi HIGH tu CA 2 nguon
-    # (safety_layer LAN SEVERITY->LEVEL) deu phai overlay ngay - neu chi map
-    # thang state["safety_flag"], benh nhan bi SEVERITY danh gia la "Nguy
-    # hiem" (vd bo lieu thuoc tim mach) se KHONG duoc FE hien overlay cap
-    # cuu, sai BR-3.5. Dung severity_en == "HIGH" de gop ca 2 nguon.
-    safety_flag = severity_en == "HIGH"
-
     return ConversationChatResponse(
         reply=state.get("response", ""),
         classification=classification,
         severity=severity_en,
-        safety_flag=safety_flag,
+        safety_flag=_should_show_emergency_overlay(severity_en),
         needs_clarification=needs_clarification,
         sources=sources,
     )

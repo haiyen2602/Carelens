@@ -145,14 +145,22 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
     đường nào gọi `run_conversation()` mà thiếu nó nữa. Startup-check riêng không còn cần thiết.
   - `safety_flag` trả cho FE giờ hợp nhất **cả 2 nguồn HIGH** (`severity_en == "HIGH"`), không chỉ nguồn
     safety_layer redflag — sửa đúng theo BR-3.5 (trước đó nếu chỉ map thẳng `state["safety_flag"]`, ca HIGH
-    từ SEVERITY→LEVEL sẽ không bật overlay cấp cứu cho FE).
-- **Vẫn còn treo, chưa tự quyết:**
+    từ SEVERITY→LEVEL sẽ không bật overlay cấp cứu cho FE). Tên field response `safety_flag` PHẢI giữ
+    nguyên (api-contracts.md §4 quy định) dù ý nghĩa khác `ConversationState["safety_flag"]` nội bộ — mapping
+    tường minh qua `_should_show_emergency_overlay()` (src/api/chat_routes.py), không đọc thẳng.
+
+- **🔴 CHẶN PRODUCTION (không phải "việc để mở" thường — xem `chatbot-rag-design.md` mục 10 #10):**
+  `patient_id` hiện nhận thẳng trong request body (`ConversationChatRequest`), không xác thực qua JWT —
+  `auth-api` (`api-contracts.md` §1) chưa được xây, hoàn toàn chưa có timeline trong bất kỳ tài liệu nào.
+  Hệ quả: bất kỳ ai gọi endpoint đều đọc/ghi được dữ liệu của `patient_id` bất kỳ họ tự gõ vào — vô hiệu hoá
+  toàn bộ test cách ly 2 bệnh nhân đã làm kỹ ở Phase 5b (test đó chỉ đúng ở tầng tool, không có gì chặn ở
+  tầng endpoint). **Không cho ai ngoài phạm vi thử nghiệm nội bộ chạm vào `/api/v1/chat` (kể cả demo) cho
+  tới khi có tối thiểu 1 cơ chế xác thực chặn giữa request và `patient_id` được tin dùng.**
+
+- **Vẫn còn treo, chưa tự quyết (mức thường, không chặn thử nghiệm nội bộ):**
   - `src/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` vẫn là **placeholder** (xem TODO trong file) — PHẢI
     dừng lại xin PM + mentor duyệt nội dung thật (mục 10 #5 `chatbot-rag-design.md`) trước khi cho endpoint
     này nhận traffic thật với bệnh nhân.
-  - `patient_id` hiện nhận thẳng trong request body (`ConversationChatRequest`) thay vì đọc từ JWT — vì
-    `auth-api` (`api-contracts.md` §1) chưa được xây trong repo này. Cần thay bằng JWT `sub` claim khi
-    auth-api có thật, xoá field này khỏi body.
   - Prompt LLM thật (`src/services/classification.py`: classify_intent/classify_dose/classify_severity/
     generate_answer) là **bản nháp đầu tiên**, chưa qua eval (Phase 7) — không coi là đã tối ưu.
 

@@ -29,7 +29,12 @@ class SourceOut(BaseModel):
 class ConversationChatResponse(BaseModel):
     """Response 200 cua POST /api/v1/chat (api-contracts.md §4). `severity`
     dung quy uoc tieng Anh (LOW|MEDIUM|HIGH) - xem SEVERITY_VI_TO_EN trong
-    src/services/severity.py cho chuyen doi tu ConversationState noi bo."""
+    src/services/severity.py cho chuyen doi tu ConversationState noi bo.
+
+    `safety_flag`: TEN nay do api-contracts.md §4 quy dinh (KHONG duoc doi,
+    se pha contract voi FE) nhung Y NGHIA RONG HON `ConversationState[
+    "safety_flag"]` noi bo - xem src/api/chat_routes.py::
+    _should_show_emergency_overlay() cho ly do va cach map dung."""
 
     reply: str
     classification: ClassificationOut | None = None
