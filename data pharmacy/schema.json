@@ -8,6 +8,8 @@
     "ham_luong",
     "dang_thuoc",
     "tong_so_luong",
+    "tac_dung",
+    "tac_dung_phu",
     "huong_dan_su_dung",
     "lieu_dung",
     "duong_dung",
@@ -30,6 +32,14 @@
       "type": "string",
       "description": "Tổng số lượng thuốc trong hộp/đơn, để người dùng biết còn bao nhiêu. Ví dụ: '30 viên', '1 lọ 100ml'."
     },
+    "tac_dung": {
+      "type": "string",
+      "description": "Công dụng / chỉ định của thuốc - dùng để làm gì, điều trị bệnh gì. Ví dụ: 'Giảm đau, hạ sốt trong các trường hợp đau đầu, đau cơ, sốt.'"
+    },
+    "tac_dung_phu": {
+      "type": "string",
+      "description": "Tác dụng phụ / phản ứng bất lợi có thể gặp khi dùng thuốc (ADR). Ví dụ: 'Buồn nôn, chóng mặt, phát ban ngoài da.'"
+    },
     "huong_dan_su_dung": {
       "type": "string",
       "description": "Hướng dẫn sử dụng chi tiết, dễ hiểu cho người bệnh. Ví dụ: 'Uống nguyên viên với nhiều nước, không nhai'."
@@ -40,11 +50,15 @@
     },
     "duong_dung": {
       "type": "string",
-      "description": "Đường dùng: uống, tiêm, bôi ngoài da, đặt, nhỏ mắt/mũi..."
+      "description": "Đường dùng, chuẩn hóa theo 1 trong các giá trị: 'Uống', 'Tiêm', 'Bôi ngoài da', 'Đặt', 'Nhỏ mắt', 'Nhỏ mũi', 'Nhỏ tai', 'Xịt', 'Ngậm', 'Dán ngoài da'. Suy ra từ dang_thuoc (dạng bào chế), không suy diễn từ văn bản tự do."
     },
     "thoi_diem_dung": {
       "type": "string",
-      "description": "Thời điểm dùng: trước/sau ăn, sáng/trưa/tối, cách nhau bao lâu giữa các lần."
+      "description": "Thời điểm dùng: trước/sau ăn, sáng/trưa/tối, cách nhau bao lâu giữa các lần. LUU Y: trang nguồn (nhathuoclongchau.com.vn) không tách riêng field này nên crawler luôn để trống - dữ liệu này sẽ được bổ sung sau dựa trên đơn thuốc bác sĩ kê cho từng bệnh nhân (không phải dữ liệu tham chiếu chung của thuốc), khác nguồn với các field còn lại."
+    },
+    "huong_dan_bao_quan": {
+      "type": "string",
+      "description": "Hướng dẫn bảo quản thuốc. Ví dụ: 'Bảo quản ở nơi khô ráo, tránh ánh sáng mặt trời'."
     },
     "luu_y_dac_biet": {
       "type": "array",

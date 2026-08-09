@@ -45,6 +45,12 @@ danh sách nhóm ở đâu cả, cứ tạo thư mục mới là dùng được.
    Tiêu đề không phân biệt hoa/thường hay có dấu/không dấu. Danh sách các tiêu đề
    được nhận diện nằm trong `HEADER_SYNONYMS` ở `scripts/map_drug_data.py`.
 
+   Dòng nào bắt đầu bằng `#` được coi là ghi chú, script sẽ bỏ qua. Mọi dòng
+   khác xuất hiện **trước** tiêu đề hợp lệ đầu tiên trong 1 khối sẽ không có
+   field nào để gán vào — script sẽ cảnh báo "BI MAT NOI DUNG" thay vì âm thầm
+   bỏ qua, nên nếu thấy cảnh báo này thì thêm `#` vào đầu dòng đó hoặc chuyển
+   nó xuống dưới 1 tiêu đề phù hợp.
+
 2. Chạy:
 
    ```

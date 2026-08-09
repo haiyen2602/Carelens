@@ -24,6 +24,9 @@ env/
 *.swo
 *~
 
+# Claude Code personal settings
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
@@ -58,3 +61,12 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Crawler resume state — internal checkpoint, not a deliverable
+crawler/**/*.progress.txt
+data pharmacy/**/*.progress.txt
+# Vercel CLI link + pulled env (per-developer, never committed)
+.vercel
+.env*
+# ...but the template must stay in the repo
+!.env.example
