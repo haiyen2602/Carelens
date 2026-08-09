@@ -170,10 +170,19 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
   thuốc thật gõ sai nghiêm trọng, 5 văn bản không liên quan) — `eval/run_eval.py` đo phân phối
   `cosine_similarity`/trigram thật, chọn `NGUONG_VECTOR=0.60`/`NGUONG_LEXICAL=0.55` bằng số liệu (xem
   `chatbot-rag-design.md` mục 10 #8 cho đầy đủ evidence + trade-off)
-- Đã đo: retrieval precision/recall (recall@5=87.5%, precision@1=40.6% — mục 10 #14), hallucination rate
+- Đã đo: retrieval precision/recall qua `hybrid_search()` thật ở ngưỡng đã chốt (recall@5=68.8%, precision@1=40.6% — mục 10 #14, số recall đã sửa lại 2026-08-08 vì bản đo đầu tính ở ngưỡng cũ 0.5/0.3 trước khi đổi config, không phản ánh hành vi hiện tại), hallucination rate
   (mục 10 #13b — **phát hiện quan trọng hơn cả con số:** LLM-judge tự động không đáng tin ở cấu hình đầu,
   verify tay phát hiện toàn bộ case bị flag đều là judge sai, không phải model bịa), missing-caveat rate
-  (0/8, sạch)
+  — **đo lại đúng cách 2026-08-08** qua node function THẬT (`build_retrieval_node` +
+  `build_prescription_lookup_node` + `build_answer_generation_node`, không phải suy luận từ retrieval
+  recall như bản đầu): `caveat_lieu_dung_inserted` 0/8 câu cach_dung bị thiếu (qua node thật, ngưỡng
+  hiện tại); `caveat_thoi_diem_missing_inserted` — CHƯA TỪNG được test trước đây (eval/run_eval.py gốc
+  không dùng `patient_id`/prescription_lookup) — đo mới bằng demo-patient-01 (seed thật, Phase 6): 1 câu
+  đúng thuốc đã kê đơn (kỳ vọng caveat=False) + 8 câu GT thuốc khác không có trong đơn (kỳ vọng
+  caveat=True) → 0/9 sai kỳ vọng. Dữ liệu: `eval/caveat_completeness.json`. Lưu ý: điều kiện
+  `caveat_lieu_dung_inserted` chỉ kiểm tra field_group=cach_dung CÓ MẶT trong top-5 (không kiểm tra CÙNG
+  thuốc) — nên vẫn có thể fire đúng dù chunk cach_dung đó không phải của đúng thuốc (xem #14, recall
+  miss vẫn tồn tại độc lập với việc caveat có fire hay không).
 - 3688 ghi trong bản kickoff gốc ở đây là số liệu trước khi dọn dữ liệu (Phase 2-3) — số thật hiện tại là
   3562 thuốc riêng biệt, đã cập nhật đúng trong `eval/`
 
