@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.agents.nodes.drug_confirmation_nodes import _dedupe_distinct_drugs  # noqa: E402
 from src.services.retrieval import CandidateChunk, RetrievalResult, fuse_rrf  # noqa: E402
 
 
@@ -117,3 +118,65 @@ def test_scores_reported_separately_not_collapsed_into_one_number():
     assert outcome.results[0].vector_score == 0.77
     assert outcome.results[0].lexical_score is None
     assert outcome.results[0].rrf_score > 0
+
+
+# ---------------------------------------------------------------------------
+# THEM 2026-08-09 (phan hoi review muc 6) - invariant OR o tren CHI xac nhan
+# cho fuse_rrf() THUAN. _dedupe_distinct_drugs() (src/agents/nodes/drug_
+# confirmation_nodes.py, viet cho muc 5/11 - dedup chunk -> danh sach THUOC
+# phan biet, dung boi _search_distinct_drug_candidates()) la code MOI, CHUA
+# tung duoc kiem chung invariant nay con SONG SOT sau buoc dedup hay khong -
+# truoc khi tin bat ky ket qua sweep nao (eval/tune_candidate_retrieval.py,
+# muc 6) dua tren _search_distinct_drug_candidates(), phai xac nhan dedup
+# khong vo tinh bien OR (hop) thanh AND (giao)/lam mat candidate hop le.
+# ---------------------------------------------------------------------------
+
+
+def test_dedupe_distinct_drugs_preserves_or_invariant_after_fuse_rrf():
+    """Ghep dung 2 buoc that _search_distinct_drug_candidates() lam (fuse_rrf
+    roi _dedupe_distinct_drugs), KHONG phai reimplement rieng - drug-A chi co
+    1 chunk qua duoc NGUONG_VECTOR (khong qua lexical), drug-B chi co 1 chunk
+    qua duoc NGUONG_LEXICAL (khong qua vector) - ca 2 deu phai con SONG SOT
+    trong danh sach THUOC phan biet cuoi cung sau dedup. Neu FAIL, dedup dang
+    vo tinh lam mat 1 candidate hop le theo OR - toan bo so lieu sweep muc 6
+    dua tren ham nay se vo nghia."""
+    only_vector = _chunk("only-vector", score=0.85, drug_id="drug-A")
+    only_lexical = _chunk("only-lexical", score=0.9, drug_id="drug-B")
+
+    outcome = fuse_rrf([only_vector], [only_lexical], k=60, top_k=50)
+    distinct = _dedupe_distinct_drugs(outcome.results, n=4)
+
+    drug_ids = {c["drug_id"] for c in distinct}
+    assert "drug-A" in drug_ids, (
+        "Thuoc chi co chunk qua nguong VECTOR (khong qua lexical) BI THIEU sau dedup "
+        "- OR o fuse_rrf() dung nhung dedup lam mat candidate"
+    )
+    assert "drug-B" in drug_ids, (
+        "Thuoc chi co chunk qua nguong LEXICAL (khong qua vector) BI THIEU sau dedup "
+        "- OR o fuse_rrf() dung nhung dedup lam mat candidate"
+    )
+
+
+def test_dedupe_distinct_drugs_not_crowded_out_by_multi_chunk_drug():
+    """Regression dung #14 (docstring _search_distinct_drug_candidates): 1
+    thuoc co NHIEU chunk (field_group khac nhau) hay dung gan nhau trong
+    top-k - khong duoc de thuoc do chiem het "cho" trong danh sach n=4 thuoc
+    phan biet, lam thuoc khac (chi co 1 chunk, dung sau trong pool) bi day
+    ra ngoai. drug-CROWD co 10 chunk deu qua CA HAI nguon (rank cao) - van
+    chi duoc tinh la 1 "cho" sau dedup, drug-A (1 chunk, chi qua vector,
+    rank thap hon) van phai con trong ket qua vi pool=50 du rong chua toi."""
+    crowd_chunks = [_chunk(f"crowd-{i}", score=0.9 - i * 0.01, drug_id="drug-CROWD") for i in range(10)]
+    only_vector = _chunk("only-vector-late", score=0.5, drug_id="drug-A")
+
+    vector_results = [*crowd_chunks, only_vector]
+    lexical_results = crowd_chunks
+
+    outcome = fuse_rrf(vector_results, lexical_results, k=60, top_k=50)
+    distinct = _dedupe_distinct_drugs(outcome.results, n=4)
+
+    drug_ids = [c["drug_id"] for c in distinct]
+    assert drug_ids.count("drug-CROWD") == 1, "1 thuoc nhieu chunk phai chi chiem 1 'cho' sau dedup, khong nhieu hon"
+    assert "drug-A" in drug_ids, (
+        "Thuoc chi co 1 chunk (qua 1 nguong) bi day ra ngoai vi 1 thuoc khac chiem qua nhieu "
+        "'cho' trong pool - dung chinh loai loi #14 da ghi nhan"
+    )
