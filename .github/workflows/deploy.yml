@@ -1,0 +1,127 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which app to deploy
+        type: choice
+        options: [both, api, web]
+        default: both
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+# Runner self-hosted có thể là Windows, nơi shell mặc định là PowerShell.
+# Ép bash để `curl ... > /dev/null` và dấu `\` xuống dòng chạy đúng trên mọi OS.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Detect which app changed so a frontend-only commit does not redeploy the API.
+  changes:
+    # Ghim nhãn cụ thể (xem ci.yml) — nhãn trần `self-hosted` có thể đưa job sang máy khác OS.
+    runs-on: [self-hosted, windows, x64]
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'src/**'
+              - 'requirements.txt'
+              - '.vercelignore'
+              - '.github/workflows/deploy.yml'
+            web:
+              - 'frontend/**'
+              - '.github/workflows/deploy.yml'
+
+  deploy-api:
+    needs: changes
+    if: >-
+      needs.changes.outputs.api == 'true' ||
+      contains(fromJSON('["both","api"]'), inputs.target)
+    runs-on: [self-hosted, windows, x64]
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+    steps:
+      # Workspace của self-hosted runner giữ nguyên rác từ lần chạy trước:
+      # .vercel cũ trỏ nhầm project, __pycache__ lọt vào bundle upload.
+      - name: Clean stale workspace artifacts
+        run: |
+          rm -rf .vercel .pytest_cache .ruff_cache
+          find . -path ./.git -prune -o -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+
+      - name: Verify runner toolchain
+        run: |
+          # Step này chạy được nghĩa là bash đã có (defaults.run.shell: bash).
+          missing=""
+          for tool in git curl node npm; do
+            command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Self-hosted runner thiếu:$missing. Cài sẵn trên máy rồi chạy lại."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - run: npm install --global vercel@latest
+      # Source upload + remote build — mirrors `vercel --prod` run locally.
+      - run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Smoke test
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            https://capymedi.vercel.app/api/v1/status
+
+  deploy-web:
+    needs: changes
+    if: >-
+      needs.changes.outputs.web == 'true' ||
+      contains(fromJSON('["both","web"]'), inputs.target)
+    runs-on: [self-hosted, windows, x64]
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+    steps:
+      # node_modules và .next sót lại từ lần chạy trước làm `vercel build` dùng
+      # dependency cũ; .vercel cũ có thể trỏ sang project API.
+      - name: Clean stale workspace artifacts
+        run: |
+          rm -rf .vercel frontend/.vercel frontend/node_modules frontend/.next
+
+      - name: Verify runner toolchain
+        run: |
+          # Step này chạy được nghĩa là bash đã có (defaults.run.shell: bash).
+          missing=""
+          for tool in git curl node npm; do
+            command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Self-hosted runner thiếu:$missing. Cài sẵn trên máy rồi chạy lại."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - run: npm install --global vercel@latest
+      - name: Pull production env
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+      - name: Deploy prebuilt
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: frontend
+      - name: Smoke test
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            https://capymedi-web.vercel.app/ > /dev/null

@@ -76,3 +76,9 @@ data pharmacy/**/*.progress.txt
 # Generated RAG chunk staging file (scripts/chunk_drugs.py) — derivable from
 # thuoc.json + script, large (~37MB), not a deliverable.
 data pharmacy/_chunks.jsonl
+
+# Vercel CLI link + pulled env (per-developer, never committed)
+.vercel
+.env*
+# ...but the template must stay in the repo
+!.env.example
