@@ -16,6 +16,7 @@ from __future__ import annotations
 from fastapi import Header, HTTPException, status
 
 from src.config import get_settings
+from src.models.schemas import ConversationChatRequest
 
 INTERNAL_SECRET_HEADER = "X-Internal-Secret"
 
@@ -36,3 +37,25 @@ async def require_internal_secret(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid X-Internal-Secret header (temp auth gate - chatbot-rag-design.md mục 10 #10)",
         )
+
+
+def get_current_patient_id(request: ConversationChatRequest) -> str:
+    """Vòng 2 (chatbot-rag-design.md mục 14, mục 10 #10) - 1 CHỖ NỐI DUY NHẤT
+    để đọc patient_id của người đang gọi. Mọi endpoint/node PHẢI gọi qua hàm
+    này - KHÔNG đọc `request.patient_id` thẳng ở bất kỳ đâu khác (kể cả
+    trong chính chat_routes.py).
+
+    Implementation HIỆN TẠI: đọc từ body như cũ (giữ nguyên hành vi, không
+    đổi behavior ngay - auth-api thật chưa xây trong repo này). Khi app có
+    endpoint đăng nhập thật (JWT/session), CHỈ sửa BÊN TRONG hàm này (đọc
+    patient_id từ token đã xác thực thay vì tin body), KHÔNG sửa lại từng
+    chỗ gọi - đúng pattern đã dùng cho `escalate_fn` (tham số/hàm optional,
+    đổi implementation không đổi logic nơi gọi).
+
+    KHÔNG thay thế `require_internal_secret` (rào cản khác: chặn request lạ
+    hoàn toàn, không biết ai đang gọi) - hàm này giải quyết vấn đề KHÁC: xác
+    định ĐÚNG patient_id của người đang gọi, kể cả khi họ là 1 người dùng
+    hợp lệ của app nhưng tự gõ patient_id của người khác vào request (lỗ
+    hổng thật khi có nhiều người dùng thật, không còn là rủi ro lý thuyết -
+    xem chatbot-rag-design.md mục 10 #10)."""
+    return request.patient_id
