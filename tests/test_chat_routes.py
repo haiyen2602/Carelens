@@ -86,28 +86,35 @@ def _latest_audit_log(patient_id: str) -> AuditLog:
 
 @pytest.mark.asyncio
 async def test_drug_info_flow_returns_reply_and_sources_and_writes_audit_log(client):
+    """Vong 2 (chatbot-rag-design.md muc 11): drug_info gio can 2 luot - luot
+    1 hoi xac nhan danh tinh thuoc, luot 2 (xac nhan "co") moi tra loi that
+    voi sources - khong con tra loi thang trong 1 luot nhu truoc."""
     patient_id = f"test-chat-druginfo-{uuid.uuid4().hex[:8]}"
     _override_services(classify_intent=lambda u: ("drug_info", 0.95))
 
-    response = await client.post(
+    turn1 = await client.post(
         "/api/v1/chat",
         json={"patient_id": patient_id, "message": "Agiclovir 5% Agimexpharm dùng sao"},
     )
+    assert turn1.status_code == 200
+    body1 = turn1.json()
+    assert "Agiclovir" in body1["reply"], "luot 1 phai hoi xac nhan, nhac lai ten thuoc tim duoc"
+    assert body1["sources"] == [], "luot 1 chi hoi xac nhan, chua co sources"
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["reply"]
-    assert len(body["sources"]) > 0, "phai co it nhat 1 nguon khi lexical match trung ten thuoc that"
-    assert body["safety_flag"] is False
-    assert body["classification"] is None, "drug_info khong co classification (chi dose_confirmation moi co)"
+    turn2 = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": "có"})
+    assert turn2.status_code == 200
+    body2 = turn2.json()
+    assert body2["reply"]
+    assert len(body2["sources"]) > 0, "sau khi xac nhan, phai co it nhat 1 nguon"
+    assert body2["safety_flag"] is False
+    assert body2["classification"] is None, "drug_info khong co classification (chi dose_confirmation moi co)"
 
     audit = _latest_audit_log(patient_id)
-    assert audit is not None, "phai ghi AuditLog cho nhanh drug_info"
+    assert audit is not None, "phai ghi AuditLog cho luot xac nhan"
     steps = [e.get("step") for e in audit.trace]
-    assert "intent_classification" in steps
-    assert "retrieval" in steps
+    assert "drug_confirmation_reply" in steps
     assert "answer_generation" in steps
-    assert audit.final_response == body["reply"]
+    assert audit.final_response == body2["reply"]
 
 
 @pytest.mark.asyncio
@@ -129,9 +136,13 @@ async def test_drug_info_no_match_refuses_and_still_writes_audit_log(client):
     assert body["sources"] == []
 
     audit = _latest_audit_log(patient_id)
-    assert audit is not None, "nhanh REFUSE cung phai ghi AuditLog, khong duoc bo sot"
+    assert audit is not None, "nhanh khong tim duoc ung vien nao cung phai ghi AuditLog, khong duoc bo sot"
     steps = [e.get("step") for e in audit.trace]
-    assert "refuse" in steps
+    # Vong 2 (muc 11): khong con "refuse" - drug_identity_resolution tu tra
+    # ve NOT_FOUND_FINAL_MESSAGE ngay khi khong tim duoc ung vien nao.
+    assert "drug_identity_resolution" in steps
+    resolution_entry = next(e for e in audit.trace if e.get("step") == "drug_identity_resolution")
+    assert resolution_entry.get("result") == "no_candidates_at_all"
 
 
 @pytest.mark.asyncio

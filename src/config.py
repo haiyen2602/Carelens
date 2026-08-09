@@ -55,6 +55,21 @@ class Settings(BaseSettings):
     nguong_lexical: float = Field(
         default=0.55, description="Chot 2026-08-08 tu eval/ Phase 7 - xem chatbot-rag-design.md muc 10 #8"
     )
+    # Chot 2026-08-09 (vong 2, muc 6/15 - phat hien qua review, KHONG phai gia
+    # dinh mac dinh pgvector): mac dinh pgvector (40) chi dat HNSW recall vs
+    # exact scan 84.4% tren 32 cau GT (~15% cau hoi that su bi HNSW bo sot
+    # dung chunk gan nhat, khong lien quan gi toi nguong/RRF - loi o TANG TIM
+    # UNG VIEN GOC). Sweep that {40,60,80,100,150,200}: 100 la diem dat 100%
+    # recall vs exact scan (giu nguyen tu 100 den 200 - khong ich loi gi khi
+    # tang them), doi lai ~3x latency truy van vector thuan (46ms->128ms trung
+    # binh, do co kiem soat/xen ke thu tu tranh nhieu do cache) - chap nhan
+    # duoc vi chi la 1 phan nho trong tong do tre 1 luot chat (3-4 lan goi LLM,
+    # tung lan >=500ms, xem muc 2), va chi ap dung nhanh out-of-prescription
+    # (muc 11.2), khong phai moi tin nhan. Xem chatbot-rag-design.md muc 15,
+    # eval/hnsw_recall_tuning.py.
+    hnsw_ef_search: int = Field(
+        default=100, description="Chot 2026-08-09 tu eval/hnsw_recall_tuning.py - xem chatbot-rag-design.md muc 15"
+    )
 
     # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO
     # BAO MAT CHAN PRODUCTION, khong phai CAN CHOT can PM duyet - day chi la
@@ -86,6 +101,41 @@ class Settings(BaseSettings):
                 "that) truoc khi khoi dong app hoac chay test - xem chatbot-rag-design.md muc 10 #10."
             )
         return v
+
+    # Rate limiter (vong 2, chatbot-rag-design.md muc 12.4) - theo patient_id,
+    # KHONG theo IP (nhieu benh nhan co the chung mang nha/benh vien). [CAN
+    # CHOT - thuc nghiem] 2 gia tri duoi la PLACEHOLDER dua tren co so chi phi
+    # da do Phase 3/7 (1 luot chat = 3-4 lan goi LLM, gpt-4o-mini re) - CHUA
+    # phai so cuoi cung, can Architect xac nhan lai khi co du lieu su dung
+    # that (xem src/api/rate_limit.py).
+    rate_limit_max_requests: int = Field(
+        default=20, description="[CAN CHOT] so request toi da/patient_id trong 1 window"
+    )
+    rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit (giay)")
+
+    # TTL cho pending_drug_confirmation (vong 2, chatbot-rag-design.md muc
+    # 11.3) - THEM 2026-08-09, phat hien qua review: benh nhan bo do 1 cau
+    # hoi giua chung (khong tra loi xac nhan) se de lai pending state TREO
+    # VINH VIEN neu khong co TTL - tin nhan KHONG lien quan gui sau do (ke ca
+    # vai ngay sau) se bi hieu NHAM la dang tra loi cau hoi xac nhan cu.
+    # [CAN CHOT - thuc nghiem] 30 phut la PLACEHOLDER hop ly cho 1 phien chat
+    # dang hoi thoai (du dai cho tra loi tu nhien, du ngan de tranh nham lan
+    # thuc te) - CHUA phai so cuoi, can Architect xac nhan lai. Kiem tra o
+    # get_pending_confirmation() (check-on-read, khong can APScheduler/job
+    # rieng - xem ghi chu trong drug_confirmation_store.py).
+    drug_confirmation_ttl_minutes: float = Field(
+        default=30.0, description="[CAN CHOT] TTL cho 1 pending_drug_confirmation truoc khi bi coi la het han"
+    )
+
+    # Escalation reminder scheduler (vong 2, chatbot-rag-design.md muc 13) -
+    # tan suat quet cac escalation OPEN de kiem tra co den moc nhac lai chua
+    # (t=15p/25p/35p, xem src/services/escalation_reminder.py). [CAN CHOT -
+    # thuc nghiem] 60 giay la PLACEHOLDER hop ly (moc nhac gan nhat cach nhau
+    # 10 phut, quet moi 60s du chi tiet, khong tai DB qua muc can thiet) -
+    # CHUA phai so cuoi, can Architect xac nhan lai.
+    escalation_reminder_check_interval_seconds: float = Field(
+        default=60.0, description="[CAN CHOT] tan suat quet escalation can nhac lai (giay)"
+    )
 
 
 @lru_cache

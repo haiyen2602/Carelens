@@ -154,3 +154,48 @@ class Escalation(Base):
     # Vd ["caregiver", "doctor"] - target "family" noi bo cua escalate_fn map
     # sang "caregiver" o day de khop dung tu vung EscalationDTO.
     notified: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+
+    # THEM vong 2, muc 13 (chatbot-rag-design.md) - co che nhac lai theo moc
+    # thoi gian co dinh (t=15p/25p/35p, xem src/services/escalation_reminder.py).
+    # `status` DA CO SAN o tren dung lam tin hieu "dung nhac lai chua" (OPEN
+    # = van con nhac, RESOLVED = da xu ly, dung nhac) - KHONG them cot
+    # resolved: bool rieng de tranh 2 nguon trang thai co the lech nhau.
+    reminder_count: Mapped[int] = mapped_column(nullable=False, default=1)  # 1 = da gui t=0, chua tinh nhac lai
+    last_reminder_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_by: Mapped[str | None] = mapped_column(String, nullable=True)  # vd "doctor"/"caregiver"
+
+
+class PendingDrugConfirmation(Base):
+    """Vong 2 (chatbot-rag-design.md muc 11.3) - luu trang thai "dang cho
+    benh nhan xac nhan danh tinh thuoc" GIUA 2 lan goi HTTP. BAT BUOC phai
+    la bang DB (khong phai in-memory) vi POST /api/v1/chat la stateless
+    per-request - neu chi luu trong ConversationState/memory, gia tri mat
+    ngay sau khi request ket thuc, VA se hong voi nhieu worker process (muc
+    10 #10: sap co nhieu nguoi dung that, nhieu kha nang chay nhieu worker -
+    dung nguyen tac da ap dung cho scheduler o muc 13, SQLAlchemyJobStore
+    khong phai in-memory).
+
+    `patient_id` la PRIMARY KEY (khong phai id rieng) - 1 benh nhan CHI co
+    toi da 1 pending confirmation tai 1 thoi diem (dung y thiet ke: khi tin
+    nhan moi toi, kiem tra dung 1 dong nay theo patient_id, khong can query
+    nhieu dong roi loc "cai nao moi nhat")."""
+
+    __tablename__ = "pending_drug_confirmation"
+
+    patient_id: Mapped[str] = mapped_column(String, primary_key=True)
+    # Danh sach ung vien dang cho xac nhan - {drug_id, ten_thuoc} moi phan tu.
+    # 1 phan tu khi dang hoi xac nhan don/top-1 (muc 11.1, 11.2 buoc dau); toi
+    # da 3 phan tu khi o buoc "chon 1 trong top-3" (muc 11.2 buoc 1).
+    candidates: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    # "in_prescription_round1" | "in_prescription_round2" |
+    # "out_of_prescription_round1" | "out_of_prescription_round2" (muc 11.3)
+    stage: Mapped[str] = mapped_column(String, nullable=False)
+    original_query: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM 2026-08-09 (review) - dem so lan LIEN TIEP reply KHONG parse duoc
+    # (yes/no/so thu tu) o CUNG 1 stage - KHAC round-budget (dem theo so ung
+    # vien da thu). Reset ve 0 moi khi CO tien trien (stage doi) - chi tang
+    # khi phai hoi lai DUNG stage cu vi khong hieu reply. Vuot nguong ->
+    # dung han, tranh vong lap vo han khi benh nhan go linh tinh.
+    retry_count: Mapped[int] = mapped_column(nullable=False, default=0)

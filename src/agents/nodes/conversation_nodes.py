@@ -166,11 +166,15 @@ def build_retrieval_node(db: Session, embed_query: EmbedFn, search_fn: SearchFn 
 
 def build_prescription_lookup_node(db: Session):
     async def node(state: ConversationState) -> dict:
-        if state.get("intent") not in _DRUG_INFO_INTENTS:
+        if state.get("intent") not in _DRUG_INFO_INTENTS or state.get("awaiting_drug_confirmation"):
             entry = {
                 "step": "prescription_lookup",
                 "skipped": True,
-                "reason": f"intent={state.get('intent')!r}",
+                "reason": (
+                    f"intent={state.get('intent')!r}"
+                    if not state.get("awaiting_drug_confirmation")
+                    else "awaiting_drug_confirmation"
+                ),
                 "duration_ms": 0.0,
             }
             return {"trace": _append_trace(state, entry)}
@@ -216,11 +220,15 @@ def build_answer_generation_node(generate_fn: AnswerGenerateFn, model_name: str 
     node day du de lo ra)."""
 
     async def node(state: ConversationState) -> dict:
-        if state.get("intent") not in _DRUG_INFO_INTENTS:
+        if state.get("intent") not in _DRUG_INFO_INTENTS or state.get("awaiting_drug_confirmation"):
             entry = {
                 "step": "answer_generation",
                 "skipped": True,
-                "reason": f"intent={state.get('intent')!r}",
+                "reason": (
+                    f"intent={state.get('intent')!r}"
+                    if not state.get("awaiting_drug_confirmation")
+                    else "awaiting_drug_confirmation"
+                ),
                 "duration_ms": 0.0,
             }
             return {"trace": _append_trace(state, entry)}

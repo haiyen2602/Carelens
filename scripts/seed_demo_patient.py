@@ -139,7 +139,7 @@ def main() -> int:
         print(f'  {{"patient_id": "{DEMO_PATIENT_ID}", "message": "tôi chưa uống liều buổi tối"}}')
         print()
         print("KHONG go cau kich hoat redflag (vd \"khó thở\", \"10 viên uống hết\") de thu ngay luc nay -")
-        print("HIGH_OVERLAY_MESSAGE con la placeholder chua duyet (chatbot-rag-design.md muc 10 #5).")
+        print("4 overlay message (OVERDOSE/MISSED_DOSE/SYMPTOM/SIDE_EFFECT) con la placeholder chua duyet (chatbot-rag-design.md muc 10 #5).")
     finally:
         db.close()
 

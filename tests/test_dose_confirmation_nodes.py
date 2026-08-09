@@ -36,7 +36,7 @@ from src.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
 )
 from src.db.base import SessionLocal, engine  # noqa: E402
 from src.db.models import DoseEvent, DrugChunk, Prescription  # noqa: E402
-from src.services.escalation import HIGH_OVERLAY_MESSAGE  # noqa: E402
+from src.services.escalation import MISSED_DOSE_OVERLAY_MESSAGE, SIDE_EFFECT_OVERLAY_MESSAGE  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Nhom 1 - CLASSIFY node, thuan, khong can DB.
@@ -348,9 +348,9 @@ async def test_level_trung_binh_escalates_family_and_doctor():
     # "response" not in result o day - dung, nhung khong ai hoi nguoc lai
     # "vay benh nhan thay gi" - hoa ra la KHONG THAY GI CA (chuoi rong).
     # Danh dau lai dung invariant MOI: Trung binh PHAI co response (khac
-    # HIGH_OVERLAY_MESSAGE, khong phai overlay cap cuu).
+    # overlay cap cuu Nguy hiem).
     assert result["response"] == MEDIUM_ACTION_RESPONSE
-    assert result["response"] != HIGH_OVERLAY_MESSAGE, "Trung binh khong duoc dung chung cau voi Nguy hiem"
+    assert result["response"] != MISSED_DOSE_OVERLAY_MESSAGE, "Trung binh khong duoc dung chung cau voi Nguy hiem"
 
 
 @pytest.mark.asyncio
@@ -367,7 +367,25 @@ async def test_level_nguy_hiem_escalates_urgent_and_sets_overlay_response():
     assert all(urgent is True for _, urgent in calls)
     entry = result["trace"][-1]
     assert entry["action"] == HIGH_ACTION
-    assert result["response"] == HIGH_OVERLAY_MESSAGE
+    assert result["response"] == MISSED_DOSE_OVERLAY_MESSAGE, "classification=MISSED -> trigger=missed_dose"
+
+
+@pytest.mark.asyncio
+async def test_level_nguy_hiem_side_effect_uses_side_effect_overlay_not_missed_dose():
+    """Vong 2 (chatbot-rag-design.md muc 7.1) - classification=SIDE_EFFECT +
+    severity=Nguy hiem PHAI dung SIDE_EFFECT_OVERLAY_MESSAGE, khac han nhanh
+    MISSED (test truoc do) du ca 2 cung urgent=True - truoc vong 2 ca 2
+    duong dung chung 1 HIGH_OVERLAY_MESSAGE, gio phai tach dung theo trigger."""
+    async def spy_escalate(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        return None
+
+    node = build_level_action_node(escalate_fn=spy_escalate)
+    result = await node(_base_state(classification="SIDE_EFFECT", severity="Nguy hiểm"))
+
+    entry = result["trace"][-1]
+    assert entry["action"] == HIGH_ACTION
+    assert result["response"] == SIDE_EFFECT_OVERLAY_MESSAGE
+    assert result["response"] != MISSED_DOSE_OVERLAY_MESSAGE
 
 
 @pytest.mark.asyncio

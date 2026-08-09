@@ -26,6 +26,23 @@ class SourceOut(BaseModel):
     field: str  # field_group (cong_dung|tac_dung_phu|cach_dung|bao_quan)
 
 
+class EscalationAckRequest(BaseModel):
+    """POST /api/v1/escalations/{id}/ack (api-contracts.md §6, vong 2 muc 13).
+    `resolved_by` KHONG co trong contract goc (gia dinh lay tu JWT/role that -
+    api-contracts.md §1) - them tam vao body vi auth-api CHUA duoc xay (cung
+    tinh trang voi `patient_id` trong ConversationChatRequest). TODO: doc tu
+    JWT/session that khi auth-api co."""
+
+    resolved_by: str = Field(..., min_length=1, description="vd 'doctor' hoac 'caregiver' - ai xac nhan da xu ly")
+
+
+class EscalationAckResponse(BaseModel):
+    id: str
+    status: str
+    resolved_at: str
+    resolved_by: str
+
+
 class ConversationChatResponse(BaseModel):
     """Response 200 cua POST /api/v1/chat (api-contracts.md §4). `severity`
     dung quy uoc tieng Anh (LOW|MEDIUM|HIGH) - xem SEVERITY_VI_TO_EN trong

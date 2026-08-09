@@ -17,7 +17,24 @@ nao goi run_conversation() ma thieu escalate_fn tu route nay).
 
 Depends(require_internal_secret) - RAO CAN TAM (chatbot-rag-design.md muc
 10 #10), KHONG PHAI auth that - xem src/api/security.py. XOA dong nay khi
-auth-api that co."""
+auth-api that co.
+
+Vong 2 (chatbot-rag-design.md muc 12): input guardrail chay TRUOC ca
+run_conversation() (chan injection som, khong de utterance doc hai toi duoc
+intent_classification) - neu blocked, KHONG chay graph, tra loi tu choi
+lich su, van ghi du audit. Output guardrail chay SAU khi co final_state,
+TRUOC khi tra ve nguoi dung - co the redact/thay response, ghi vao audit
+log DUNG response DA REDACT (khong luu ban goc co secret vao DB).
+
+Vong 2 (chatbot-rag-design.md muc 11): NEU benh nhan dang co 1 pending_
+drug_confirmation (bang DB rieng, song sot qua nhieu request/worker) - tin
+nhan nay la REPLY xac nhan, KHONG phai cau hoi moi. Bo qua han giai doan 1
+(intent_classification) trong truong hop nay - dat intent='drug_info'
+THANG (da biet chac tu luot truoc), chay qua build_drug_confirmation_
+reply_node roi TIEP TUC qua prescription_lookup/answer_generation NEU da
+resolve xong drug_id trong luot nay. build_retrieval_node CU khong con
+duoc dua vao danh sach node nua - thay bang build_drug_identity_
+resolution_node (chi dung khi CAU HOI MOI, khong co pending nao)."""
 
 from __future__ import annotations
 
@@ -30,7 +47,6 @@ from src.agents.nodes.conversation_nodes import (
     build_answer_generation_node,
     build_intent_classification_node,
     build_prescription_lookup_node,
-    build_retrieval_node,
     build_today_schedule_node,
 )
 from src.agents.nodes.dose_confirmation_nodes import (
@@ -38,66 +54,165 @@ from src.agents.nodes.dose_confirmation_nodes import (
     build_level_action_node,
     build_severity_node,
 )
+from src.agents.nodes.drug_confirmation_nodes import (
+    build_drug_confirmation_reply_node,
+    build_drug_identity_resolution_node,
+)
 from src.agents.orchestrator import run_conversation
 from src.agents.state import ConversationState
+from src.agents.tools.drug_confirmation_store import get_pending_confirmation
 from src.api.chat_deps import ChatServices, get_chat_services
-from src.api.security import require_internal_secret
+from src.api.rate_limit import rate_limit_check
+from src.api.security import get_current_patient_id, require_internal_secret
 from src.db.base import get_db
 from src.db.models import AuditLog
 from src.models.schemas import ClassificationOut, ConversationChatRequest, ConversationChatResponse, SourceOut
 from src.services.escalation import build_db_escalate_fn
+from src.services.guardrails import (
+    INPUT_GUARDRAIL_REFUSAL_MESSAGE,
+    check_input_guardrail,
+    check_output_guardrail,
+)
 from src.services.severity import SEVERITY_VI_TO_EN
 
 chat_router = APIRouter()
 
 
-@chat_router.post("/chat", response_model=ConversationChatResponse, dependencies=[Depends(require_internal_secret)])
+@chat_router.post(
+    "/chat",
+    response_model=ConversationChatResponse,
+    dependencies=[Depends(require_internal_secret), Depends(rate_limit_check)],
+)
 async def chat(
     request: ConversationChatRequest,
     db: Session = Depends(get_db),
     services: ChatServices = Depends(get_chat_services),
 ) -> ConversationChatResponse:
     t0 = time.monotonic()
+    patient_id = get_current_patient_id(request)
     escalate_fn = build_db_escalate_fn(db)
 
     initial_state: ConversationState = {
-        "patient_id": request.patient_id,
+        "patient_id": patient_id,
         "dose_event_id": request.dose_id,
         "utterance": request.message,
         "trace": [],
     }
 
-    # Giai doan 1: chi intent_classification. Neu redflag toi ngay o day
-    # (truoc ca khi biet intent), safety_flag=True va dung luon - khong
-    # chay giai doan 2 (dung y BR-3.3: cat ngang bat ke dang o dau).
-    stage1 = await run_conversation(
-        initial_state,
-        nodes=[build_intent_classification_node(services.classify_intent)],
-        safety_check=services.safety_check,
-        escalate_fn=escalate_fn,
-    )
-
-    if stage1.get("safety_flag"):
-        final_state = stage1
+    t_guard0 = time.monotonic()
+    guardrail_result = check_input_guardrail(request.message)
+    input_guardrail_duration_ms = (time.monotonic() - t_guard0) * 1000
+    if guardrail_result.blocked:
+        # KHONG chay run_conversation() - utterance nghi injection khong duoc
+        # dua toi bat ky LLM call nao (ke ca intent_classification), chan
+        # SOM nhat co the (muc 12.1).
+        entry = {
+            "step": "input_guardrail",
+            "blocked": True,
+            "category": guardrail_result.category,
+            "matched_pattern": guardrail_result.matched_pattern,
+            "duration_ms": input_guardrail_duration_ms,
+        }
+        final_state = {
+            **initial_state,
+            "response": INPUT_GUARDRAIL_REFUSAL_MESSAGE,
+            "safety_flag": False,
+            "trace": [entry],
+        }
     else:
-        # TOAN BO node con lai cua CA 3 nhanh - moi node tu quyet co chay
-        # hay khong dua vao state["intent"]/state["classification"]/
-        # state["severity"] da co (xem docstring o dau file).
-        remaining_nodes = [
-            build_retrieval_node(db, services.embed_query),
-            build_prescription_lookup_node(db),
-            build_answer_generation_node(services.generate_answer),
-            build_today_schedule_node(db),
-            build_classify_node(services.classify_dose),
-            build_severity_node(db, services.classify_severity),
-            build_level_action_node(escalate_fn),
-        ]
-        final_state = await run_conversation(
-            stage1,
-            nodes=remaining_nodes,
-            safety_check=services.safety_check,
-            escalate_fn=escalate_fn,
-        )
+        pending = get_pending_confirmation(db, patient_id)
+        if pending is not None:
+            # Tin nhan nay la REPLY cho 1 cau hoi xac nhan dang cho (muc 11) -
+            # KHONG chay intent_classification, da biet chac intent tu luot
+            # truoc. Van chay qua run_conversation() (khong tu xay final_state
+            # thang) de safety_layer VAN duoc rai song song tren tin nhan nay
+            # (BR-3.3 - benh nhan co the noi trieu chung khan cap ngay trong
+            # 1 cau tra loi xac nhan, khong duoc bo qua kiem tra nay).
+            initial_state["intent"] = "drug_info"
+            reply_nodes = [
+                build_drug_confirmation_reply_node(db, services.embed_query, pending),
+                build_prescription_lookup_node(db),
+                build_answer_generation_node(services.generate_answer),
+            ]
+            final_state = await run_conversation(
+                initial_state,
+                nodes=reply_nodes,
+                safety_check=services.safety_check,
+                escalate_fn=escalate_fn,
+            )
+        else:
+            # Giai doan 1: chi intent_classification. Neu redflag toi ngay o
+            # day (truoc ca khi biet intent), safety_flag=True va dung luon -
+            # khong chay giai doan 2 (dung y BR-3.3: cat ngang bat ke dang o dau).
+            stage1 = await run_conversation(
+                initial_state,
+                nodes=[build_intent_classification_node(services.classify_intent)],
+                safety_check=services.safety_check,
+                escalate_fn=escalate_fn,
+            )
+
+            if stage1.get("safety_flag"):
+                final_state = stage1
+            else:
+                # TOAN BO node con lai cua CA 3 nhanh - moi node tu quyet co
+                # chay hay khong dua vao state["intent"]/state["classification"]/
+                # state["severity"] da co (xem docstring o dau file).
+                # build_drug_identity_resolution_node THAY build_retrieval_
+                # node cu (muc 11) - hybrid search gio chi dung de tim ung
+                # vien dua ra hoi xac nhan, khong con tra loi truc tiep.
+                remaining_nodes = [
+                    build_drug_identity_resolution_node(db, services.embed_query),
+                    build_prescription_lookup_node(db),
+                    build_answer_generation_node(services.generate_answer),
+                    build_today_schedule_node(db),
+                    build_classify_node(services.classify_dose),
+                    build_severity_node(db, services.classify_severity),
+                    build_level_action_node(escalate_fn),
+                ]
+                final_state = await run_conversation(
+                    stage1,
+                    nodes=remaining_nodes,
+                    safety_check=services.safety_check,
+                    escalate_fn=escalate_fn,
+                )
+
+    # Output guardrail (muc 12.2) - chay SAU khi co final_state, TRUOC khi
+    # ghi audit/tra ve nguoi dung. redact/thay response NEU can - audit log
+    # phai luu DUNG response da redact, khong luu ban goc co secret vao DB.
+    #
+    # SUA 2026-08-09 (phan hoi review) - LUON ghi 1 entry trace cho buoc nay,
+    # KHONG chi khi redacted=True nhu ban truoc. Dung nguyen tac audit da ap
+    # dung nhat quan xuyen suot du an (caveat_lieu_dung_inserted/caveat_thoi_
+    # diem_missing_inserted o conversation_nodes.py, escalated_to/escalation_
+    # failed o escalation.py - deu ghi ro gia tri KE CA False/rong, khong bao
+    # gio de "vang mat" mang nghia ngam dinh): "vang mat" trong trace co 2
+    # cach hieu khac han nhau ma nhin GIONG HET nhau - "da kiem tra, khong
+    # trigger" hay "chua tung chay toi buoc kiem tra" (loi, nhanh code khac
+    # quen goi, exception) - dung LOAI mo ho da tung gay hau qua that (REFUSE
+    # dead code, escalate_fn optional). Ghi moi lan CON cho phep tinh dung ty
+    # le kich hoat truc tiep tu audit_log (mau so = so lan step nay xuat hien,
+    # khong phai suy doan bang tong so request).
+    t_output_guard0 = time.monotonic()
+    output_guard = check_output_guardrail(final_state.get("response", ""), patient_id)
+    output_guardrail_duration_ms = (time.monotonic() - t_output_guard0) * 1000
+    final_state = {
+        **final_state,
+        "response": output_guard.response,
+        "trace": [
+            *final_state.get("trace", []),
+            {
+                "step": "output_guardrail",
+                "redacted": output_guard.redacted,
+                # `reasons` chi chua TEN LOAI phat hien duoc, KHONG bao gio
+                # chua gia tri THAT bi lo (xem docstring check_output_guardrail)
+                # - trace nay se luu vao AuditLog (Postgres), khong duoc
+                # bien chinh audit log thanh 1 noi luu ro ri thu 2. Rong ([])
+                # khi khong trigger, khong phai thieu key.
+                "reasons": output_guard.redaction_reasons,
+                "duration_ms": output_guardrail_duration_ms,
+            },
+        ],
+    }
 
     total_duration_ms = (time.monotonic() - t0) * 1000
     _persist_audit_log(db, request, final_state, total_duration_ms)
@@ -112,7 +227,7 @@ def _persist_audit_log(
     xu ly 1 dong, ke ca nhanh REFUSE/redflag HIGH (khong co nhanh nao bo sot
     trace - yeu cau ro trong build-kickoff-prompt.md Phase 6)."""
     audit = AuditLog(
-        patient_id=request.patient_id,
+        patient_id=get_current_patient_id(request),
         dose_event_id=request.dose_id,
         utterance=request.message,
         trace=final_state.get("trace", []),

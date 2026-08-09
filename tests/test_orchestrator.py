@@ -19,6 +19,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pytest  # noqa: E402
 
 from src.agents.orchestrator import run_conversation  # noqa: E402
+from src.services.escalation import (  # noqa: E402
+    GENERIC_OVERLAY_MESSAGE,
+    OVERDOSE_OVERLAY_MESSAGE,
+    SYMPTOM_OVERLAY_MESSAGE,
+)
 from src.services.safety import SafetyFlag  # noqa: E402
 
 
@@ -189,3 +194,48 @@ async def test_redflag_partial_escalation_failure_is_visible_in_trace_not_hidden
     assert safety_entry["escalated_to"] == ["family"], "family thanh cong khong duoc bi an di"
     assert "doctor" in safety_entry["escalation_failed"], "doctor that bai phai hien ro trong trace, khong duoc giau"
     assert "that bai" in safety_entry["escalation_failed"]["doctor"] or safety_entry["escalation_failed"]["doctor"]
+
+@pytest.mark.asyncio
+async def test_overdose_risk_matched_group_uses_overdose_overlay_message():
+    """Vong 2 (chatbot-rag-design.md muc 7.1) - matched_group="overdose_risk"
+    (BR-6.7/6.8, vd "toi co 10 vien uong het") PHAI dung OVERDOSE_OVERLAY_
+    MESSAGE, KHAC voi nhom trieu chung lam sang."""
+
+    async def instant_overdose_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group="overdose_risk", matched_keyword="10 viên", source="keyword")
+
+    result = await run_conversation(_make_state(), nodes=[], safety_check=instant_overdose_redflag)
+
+    assert result["response"] == OVERDOSE_OVERLAY_MESSAGE
+    assert result["response"] != SYMPTOM_OVERLAY_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_clinical_matched_group_uses_symptom_overlay_message():
+    """matched_group="clinical" (kho tho, dau nguc...) PHAI dung SYMPTOM_
+    OVERLAY_MESSAGE, khac OVERDOSE_OVERLAY_MESSAGE cua nhom lieu dung."""
+
+    async def instant_clinical_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group="clinical", matched_keyword="đau ngực", source="keyword")
+
+    result = await run_conversation(_make_state(), nodes=[], safety_check=instant_clinical_redflag)
+
+    assert result["response"] == SYMPTOM_OVERLAY_MESSAGE
+    assert result["response"] != OVERDOSE_OVERLAY_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_llm_only_redflag_without_matched_group_uses_generic_overlay():
+    """Sua 2026-08-09 (review) - matched_group=None (LLM-only detection,
+    khong khop keyword group nao) PHAI dung GENERIC_OVERLAY_MESSAGE rieng,
+    KHONG duoc ep vao overdose/symptom (he thong chua biet day la loai nguy
+    hiem gi, gan nham nhan cu the se dua thong tin sai nhung nghe cu the)."""
+
+    async def instant_llm_redflag(utterance: str) -> SafetyFlag:
+        return SafetyFlag(is_redflag=True, matched_group=None, matched_keyword=None, source="llm")
+
+    result = await run_conversation(_make_state(), nodes=[], safety_check=instant_llm_redflag)
+
+    assert result["response"] == GENERIC_OVERLAY_MESSAGE
+    assert result["response"] not in (OVERDOSE_OVERLAY_MESSAGE, SYMPTOM_OVERLAY_MESSAGE)
+

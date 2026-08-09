@@ -5,15 +5,18 @@
      src/agents/nodes/dose_confirmation_nodes.py
 
 Ly do gop: muc 8 flowchart ve CA HAI duong deu hoi tu ve chung 1 node
-HIGH/ESC. Neu code 2 lan rieng, sau nay sua noi dung overlay cap cuu (muc 10
-#5 con [CAN CHOT] - PM + Pham Thanh Dat chua quyet) o 1 cho ma quen cho kia,
-2 duong se troi lech nhau ma khong co gi bao (phat hien 2026-08-08, code
-review Phase 5b)."""
+HIGH/ESC. Neu code 2 lan rieng, sau nay sua noi dung overlay cap cuu o 1 cho
+ma quen cho kia, 2 duong se troi lech nhau ma khong co gi bao (phat hien
+2026-08-08, code review Phase 5b). Vong 2 (2026-08-09) tach 1 HIGH_OVERLAY_
+MESSAGE chung thanh 5 hang so rieng (xem duoi) - ca cong thuc LAN noi
+dung da qua PM + Pham Thanh Dat xac nhan (2026-08-09, xem chatbot-rag-
+design.md muc 10 #5), khong con marker CAN CHOT."""
 
 from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Protocol
 
 from sqlalchemy.orm import Session
@@ -21,18 +24,46 @@ from sqlalchemy.orm import Session
 from src.db.models import Escalation
 from src.services.severity import SEVERITY_VI_TO_EN
 
-# TODO [CẦN CHỐT — chatbot-rag-design.md muc 10 #5]: day la PLACEHOLDER, KHONG
-# PHAI noi dung da duyet. Muc 10 #5 ghi ro noi dung overlay cho nhom redflag
-# "nguy co lieu dung bat thuong" (BR-6.7/6.8) can PM + Pham Thanh Dat quyet -
-# build-kickoff-prompt.md muc 5 noi ro dung vao [CAN CHOT] phai dung lai hoi,
-# khong tu chon. Cau chu duoi day chi de PIPELINE CHAY DUOC HET-TO-END VA TEST
-# DUOC (bao gom Phase 5 orchestrator/dose_confirmation_nodes) - dung DUNG cho
-# san xuat/demo that voi benh nhan cho toi khi PM + mentor duyet noi dung that
-# (day la man hinh benh nhan nhin thay LUC KHUNG HOANG THAT - cau chu sai cach
-# co the gay hoang mang thay vi tran an). Phase 6 (wiring FastAPI that) PHAI
-# dung lai o day va xac nhan lai truoc khi cho phep endpoint nhan traffic that.
-HIGH_OVERLAY_MESSAGE = (
-    "⚠️ Đây có thể là tình huống khẩn cấp. Vui lòng liên hệ cấp cứu 115 ngay. "
+# ĐÃ CHỐT 2026-08-09 (chatbot-rag-design.md muc 10 #5): cong thuc CẢNH BÁO:
+# [LOẠI] NGUY HIỂM VA noi dung cu the (kem cau 115/thong bao nguoi than-bac
+# si) da qua PM + Pham Thanh Dat xac nhan - KHONG con la placeholder, khong
+# con marker CAN CHOT tren ca 5 hang so duoi day.
+#
+# 5 nguon kich hoat rieng biet (chatbot-rag-design.md muc 7.1) - TRUOC vong 2
+# ca 4 duong (chua tinh GENERIC) deu dung chung 1 HIGH_OVERLAY_MESSAGE (da
+# retire, xem lich su git) - gio moi nguon co cau rieng, van dung CHUNG cong
+# thuc da chot.
+OVERDOSE_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: QUÁ LIỀU NGUY HIỂM. Vui lòng liên hệ cấp cứu 115 ngay. "
+    "Người thân và bác sĩ của bạn đã được thông báo."
+)
+MISSED_DOSE_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: THIẾU LIỀU NGUY HIỂM. Vui lòng liên hệ cấp cứu 115 ngay. "
+    "Người thân và bác sĩ của bạn đã được thông báo."
+)
+SYMPTOM_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: TRIỆU CHỨNG NGUY HIỂM. Vui lòng liên hệ cấp cứu 115 ngay. "
+    "Người thân và bác sĩ của bạn đã được thông báo."
+)
+SIDE_EFFECT_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: TÁC DỤNG PHỤ NGUY HIỂM. Vui lòng liên hệ cấp cứu 115 ngay. "
+    "Người thân và bác sĩ của bạn đã được thông báo."
+)
+
+# Hang so THU 5 - danh RIENG cho truong hop safety_layer.matched_group=None
+# (LLM layer flag redflag nhung KHONG khop keyword group nao, tuc CHINH HE
+# THONG cung chua biet day la loai nguy hiem gi - co the khong phai lieu
+# dung/trieu chung ma la thu khac hoan toan, vd y dinh tu hai khong lien
+# quan toi thuoc). KHONG duoc ep vao 1 trong 4 nhan cu the o tren - gan nham
+# nhan (vd "TRIEU CHUNG NGUY HIEM" cho 1 case co the khong phai trieu chung)
+# se dua thong tin SAI nhung nghe rat cu the cho nguoi than/bac si nhan canh
+# bao, khien ho chuan bi phan ung SAI huong - cung ban chat rui ro voi #17
+# (thong tin sai nhung tu tin) da danh nhieu cong dong. Quyet dinh 2026-08-09
+# (review vong 2): dung 1 nhan TONG QUAT, khong tuyen bo loai nguy hiem cu
+# the, thay vi doan bua vao 1 trong 4 nhan co san. DA CHOT 2026-08-09 cung
+# 4 hang so tren (PM + Pham Thanh Dat xac nhan), khong con marker CAN CHOT.
+GENERIC_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: NGUY HIỂM KHẨN CẤP. Vui lòng liên hệ cấp cứu 115 ngay. "
     "Người thân và bác sĩ của bạn đã được thông báo."
 )
 
@@ -155,6 +186,7 @@ def build_db_escalate_fn(db: Session) -> EscalateFn:
                 db.commit()
             return
 
+        now = datetime.now(UTC)
         row = Escalation(
             patient_id=patient_id,
             dose_event_id=dose_event_id,
@@ -163,6 +195,8 @@ def build_db_escalate_fn(db: Session) -> EscalateFn:
             reason=reason,
             status="OPEN",
             notified=[notified_target],
+            reminder_count=1,  # da gui t=0 (chinh lan nay), chua tinh nhac lai
+            last_reminder_at=now,
         )
         db.add(row)
         db.commit()

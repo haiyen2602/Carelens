@@ -12,13 +12,24 @@ muc do nay da du chung minh redflag khong bi bo lo du toi luc nao trong
 luong chinh (ADR-0009 rang buoc #3), khong phai chi kiem tra truoc khi bat
 dau (tuc "gan nhu luon lo di 1 nua neu redflag toi giua chung").
 
-HIGH_OVERLAY_MESSAGE va viec goi escalate_fn deu lay tu
-src/services/escalation.py - DUNG CHUNG voi duong HIGH con lai (SEVERITY ->
-LEVEL = "Nguy hiểm", src/agents/nodes/dose_confirmation_nodes.py). Khong
-duoc dinh nghia rieng o day (phat hien 2026-08-08: truoc do file nay tu dinh
-nghia overlay message rieng va KHONG he goi escalate_fn nao - safety_layer
-redflag chi set response/severity, chua bao gio thuc su bao nguoi than/bac
-si, du BR-3.5 yeu cau ca 2 duong HIGH deu phai lam viec do)."""
+Cac hang so overlay message (OVERDOSE_OVERLAY_MESSAGE, SYMPTOM_OVERLAY_
+MESSAGE...) va viec goi escalate_fn deu lay tu src/services/escalation.py -
+DUNG CHUNG voi duong HIGH con lai (SEVERITY -> LEVEL = "Nguy hiểm",
+src/agents/nodes/dose_confirmation_nodes.py). Khong duoc dinh nghia rieng o
+day (phat hien 2026-08-08: truoc do file nay tu dinh nghia overlay message
+rieng va KHONG he goi escalate_fn nao - safety_layer redflag chi set
+response/severity, chua bao gio thuc su bao nguoi than/bac si, du BR-3.5
+yeu cau ca 2 duong HIGH deu phai lam viec do).
+
+Vong 2 (2026-08-09, chatbot-rag-design.md muc 7.1): 2 nhom redflag
+(SafetyFlag.matched_group) gio co overlay RIENG - "overdose_risk" ->
+OVERDOSE_OVERLAY_MESSAGE, "clinical" -> SYMPTOM_OVERLAY_MESSAGE. SUA 2026-08-09 (review): matched_
+group=None (LLM layer flag redflag ma KHONG khop keyword group nao - tuc
+chinh he thong cung chua biet day la loai nguy hiem gi, co the khong phai
+lieu dung/trieu chung ma la thu khac hoan toan) dung GENERIC_OVERLAY_
+MESSAGE rieng - KHONG ep vao overdose/symptom, vi gan nham nhan cu the se
+dua thong tin SAI nhung nghe cu the cho nguoi nhan canh bao (cung ban chat
+rui ro voi #17: thong tin sai nhung tu tin)."""
 
 from __future__ import annotations
 
@@ -27,7 +38,9 @@ from collections.abc import Awaitable, Callable
 
 from src.agents.state import ConversationState
 from src.services.escalation import (
-    HIGH_OVERLAY_MESSAGE,
+    GENERIC_OVERLAY_MESSAGE,
+    OVERDOSE_OVERLAY_MESSAGE,
+    SYMPTOM_OVERLAY_MESSAGE,
     TRIGGER_SAFETY_REDFLAG,
     EscalateFn,
     EscalationOutcome,
@@ -38,7 +51,13 @@ from src.services.safety import SafetyFlag
 SafetyCheckFn = Callable[[str], Awaitable[SafetyFlag]]
 NodeFn = Callable[[ConversationState], Awaitable[dict]]
 
-__all__ = ["HIGH_OVERLAY_MESSAGE", "run_conversation", "default_safety_check"]
+__all__ = [
+    "OVERDOSE_OVERLAY_MESSAGE",
+    "SYMPTOM_OVERLAY_MESSAGE",
+    "GENERIC_OVERLAY_MESSAGE",
+    "run_conversation",
+    "default_safety_check",
+]
 
 
 def _apply_redflag(
@@ -58,11 +77,19 @@ def _apply_redflag(
         "escalation_failed": escalation.failed if escalation else {},
     }
     trace = [*state.get("trace", []), entry]
+    # matched_group="overdose_risk" -> OVERDOSE, "clinical" -> SYMPTOM,
+    # None (LLM-only, chua ro loai) -> GENERIC (khong doan bua, xem docstring dau file).
+    if flag.matched_group == "overdose_risk":
+        overlay_message = OVERDOSE_OVERLAY_MESSAGE
+    elif flag.matched_group == "clinical":
+        overlay_message = SYMPTOM_OVERLAY_MESSAGE
+    else:
+        overlay_message = GENERIC_OVERLAY_MESSAGE
     return {
         **state,
         "safety_flag": True,
         "severity": "Nguy hiểm",
-        "response": HIGH_OVERLAY_MESSAGE,
+        "response": overlay_message,
         "trace": trace,
     }
 

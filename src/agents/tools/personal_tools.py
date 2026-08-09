@@ -63,6 +63,26 @@ def tra_cuu_dose_event_ca_nhan(db: Session, patient_id: str, dose_event_id: str)
     }
 
 
+def list_active_prescription_drug_items(db: Session, patient_id: str) -> list[dict]:
+    """Vong 2 (chatbot-rag-design.md muc 11.1) - TOAN BO {drug_id, ten_thuoc}
+    tu MOI don thuoc ACTIVE cua DUNG patient_id, dung de fuzzy-match ten
+    thuoc benh nhan go (co the viet tat/gan dung) truoc khi roi sang hybrid
+    search tu do (muc 11.2). Bo qua item khong co drug_id (khong the resolve
+    ve 1 chunk RAG cu the)."""
+    stmt = select(Prescription).where(
+        Prescription.patient_id == patient_id,
+        Prescription.status.in_(ACTIVE_PRESCRIPTION_STATUSES),
+    )
+    prescriptions = db.execute(stmt).scalars().all()
+
+    items: list[dict] = []
+    for presc in prescriptions:
+        for item in presc.items or []:
+            if item.get("drug_id"):
+                items.append({"drug_id": item["drug_id"], "ten_thuoc": item.get("ten_thuoc", "")})
+    return items
+
+
 def tra_cuu_don_thuoc_ca_nhan(db: Session, patient_id: str, drug_id: str) -> dict | None:
     """Tim `thoi_diem_dung` (va cac field khac cua item) trong don thuoc DANG
     ACTIVE cua DUNG patient_id co chua drug_id nay. Tra ve None neu benh nhan

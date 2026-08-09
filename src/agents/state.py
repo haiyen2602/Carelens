@@ -53,3 +53,13 @@ class ConversationState(TypedDict, total=False):
 
     trace: list[dict]
     response: str
+
+    # MOI vong 2 (chatbot-rag-design.md muc 11) - True khi node xac nhan
+    # danh tinh thuoc (drug_confirmation_nodes.py) VUA hoi 1 cau xac nhan
+    # (hoac vua dua ra cau tra loi "khong tim thay" cuoi cung) - CHUA resolve
+    # duoc drug_id, nen prescription_lookup_node/answer_generation_node PHAI
+    # bo qua luot nay (response da la cau hoi/cau tra loi cuoi, khong duoc
+    # ghi de). CHI la flag trong-luot-nay - trang thai THAT su "dang cho xac
+    # nhan giua 2 lan goi HTTP" nam trong bang DB `pending_drug_confirmation`
+    # (src/agents/tools/drug_confirmation_store.py), khong phai o day.
+    awaiting_drug_confirmation: bool

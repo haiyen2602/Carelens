@@ -25,7 +25,8 @@ from src.agents.nodes.conversation_nodes import _append_trace
 from src.agents.state import ConversationState
 from src.agents.tools.personal_tools import tra_cuu_dose_event_ca_nhan
 from src.services.escalation import (
-    HIGH_OVERLAY_MESSAGE,
+    MISSED_DOSE_OVERLAY_MESSAGE,
+    SIDE_EFFECT_OVERLAY_MESSAGE,
     TRIGGER_MISSED_DOSE,
     TRIGGER_SIDE_EFFECT,
     EscalateFn,
@@ -57,11 +58,11 @@ HIGH_ACTION = "escalate_emergency"
 # bình) truoc do KHONG set `response` gi ca, khien benh nhan nhan ve chuoi
 # rong sau khi bao "toi chua uong lieu" - im lang tuyet doi, khong phan biet
 # duoc voi app loi/crash (te hon ca placeholder xau). KHAC voi
-# HIGH_OVERLAY_MESSAGE (src/services/escalation.py) - do la noi dung MAN
-# HINH KHUNG HOANG, can PM+mentor duyet ky vi rui ro tam ly cao; 3 cau duoi
-# day chi la XAC NHAN DA GHI NHAN, rui ro chon sai cau chu THAP hon nhieu -
-# van danh dau CAN CHOT (chua phai final chinh thuc) nhung KHONG chan viec
-# co 1 phan hoi thay vi im lang.
+# MISSED_DOSE_OVERLAY_MESSAGE/SIDE_EFFECT_OVERLAY_MESSAGE (src/services/
+# escalation.py) - do la noi dung MAN HINH KHUNG HOANG, can PM+mentor duyet
+# ky vi rui ro tam ly cao; 3 cau duoi day chi la XAC NHAN DA GHI NHAN, rui ro
+# chon sai cau chu THAP hon nhieu - van danh dau CAN CHOT (chua phai final
+# chinh thuc) nhung KHONG chan viec co 1 phan hoi thay vi im lang.
 TAKEN_RESPONSE = "Đã ghi nhận bạn đã uống thuốc lần này. Cảm ơn bạn đã xác nhận!"
 LOW_ACTION_RESPONSE = (
     "Đã ghi nhận thông tin của bạn. Đây là mức độ nhẹ, hệ thống sẽ tiếp tục theo dõi trong 48 giờ tới."
@@ -235,7 +236,12 @@ def build_level_action_node(escalate_fn: EscalateFn):
             "duration_ms": duration_ms,
         }
         result: dict = {"trace": _append_trace(state, entry)}
-        result["response"] = HIGH_OVERLAY_MESSAGE if urgent else MEDIUM_ACTION_RESPONSE
+        # trigger da tinh o tren: TRIGGER_SIDE_EFFECT hoac TRIGGER_MISSED_DOSE
+        # (chatbot-rag-design.md muc 7.1) - map thang sang overlay tuong ung.
+        urgent_message = (
+            SIDE_EFFECT_OVERLAY_MESSAGE if trigger == TRIGGER_SIDE_EFFECT else MISSED_DOSE_OVERLAY_MESSAGE
+        )
+        result["response"] = urgent_message if urgent else MEDIUM_ACTION_RESPONSE
         return result
 
     return node
