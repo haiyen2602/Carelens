@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""Eval harness Phase 7 (build-kickoff-prompt.md muc 3) - 3 viec dung theo
-dung scope da chot, khong lam them/bot:
+"""Eval harness Phase 7 (build-kickoff-prompt.md muc 3) - scope goc 3 viec,
+CONG THEM 1 chi so thu 4 (them 2026-08-09 sau review Phase 7, muc 10 #17 -
+KHONG phai lam them/bot tuy y, ma la 1 gap thuc su trong 3 chi so goc: judge
+hallucination khong bat duoc loi "dung noi dung thuoc khac" vi noi dung do
+van "grounded" theo dung nghia judge - can 1 chi so rieng, deterministic):
 
   1. Do phan phoi cosine_similarity/trigram that tren eval/ground_truth.json
      (32 cau, dung thuoc/dung field_group biet truoc) VA eval/out_of_domain.json
      (15 cau - thuoc khong ton tai trong 3562 ban ghi, go sai nghiem trong,
      van ban khong lien quan) - dung 2 phan phoi nay de DE XUAT
      NGUONG_VECTOR/NGUONG_LEXICAL bang so lieu (muc 10 #13b), khong doan.
-  2. Do rieng 3 chi so: retrieval precision/recall, ty le hallucination (cau
-     tra loi khong grounded vao chunk nao), ty le caveat bi thieu khi dang
-     le phai co.
+  2. Do 4 chi so: retrieval precision/recall, ty le hallucination (cau tra
+     loi khong grounded vao chunk nao), ty le caveat bi thieu khi dang le
+     phai co, VA cross-drug misattribution rate (cau tra loi dung noi dung
+     CUA THUOC KHAC - phat hien thu cong 2026-08-09, gio do TU DONG, xem
+     measure_cross_drug_misattribution_rate() va chatbot-rag-design.md muc
+     10 #17).
 
 KHONG lam: sua NGUONG_VECTOR/NGUONG_LEXICAL trong code (chi DE XUAT so lieu,
 Architect tu quyet co ap dung khong - xem report cuoi script). KHONG danh
@@ -216,6 +222,79 @@ def measure_retrieval_precision_recall(db, ground_truth: list[dict], gt_embeddin
 
 
 # ---------------------------------------------------------------------------
+# Phan 2b': cross-drug misattribution rate (muc 10 #17, phat hien 2026-08-09)
+# - DETERMINISTIC, khong goi LLM/judge them (judge KHONG bat duoc lop loi nay
+#   vi noi dung "grounded" theo dung nghia judge dinh nghia, chi la sai thuoc).
+#   Trai nguoc voi thu tay 1 lan roi thoi - day la chi so TU DONG, chay lai
+#   duoc moi lan sua #12/#15/#17 de theo doi regression.
+# ---------------------------------------------------------------------------
+
+
+def measure_cross_drug_misattribution_rate(
+    db, ground_truth: list[dict], gt_embeddings: dict[str, list[float]]
+) -> dict:
+    """Muc 10 #17: 1 cau GT bi flag la "cross_drug_risk" (TRUOC khi ap dung
+    vá #17) neu (1) recall miss thuc su xay ra (target (drug_id, field_group)
+    KHONG co trong top-k tra ve, #14) VA (2) co >=1 chunk CUNG field_group
+    nhung KHAC drug_id trong rag_results - tuc co 1 "hang thay the" tu thuoc
+    khac san sang bi dua vao context cho generate_answer(). Day la proxy
+    THEN CHOT (conservative, do duoc top-k RRF ma khong can goi them LLM) -
+    dat "chunk cua thuoc khac CO MAT trong context" lam dieu kien flag, KHONG
+    xac nhan model THAT SU dung noi dung do trong cau tra loi (viec do can
+    doc tung cau tra loi that, da lam thu cong 1 lan cho 3 case cu the khi
+    phat hien van de nay - ket qua thu cong đó (3/32, xem chatbot-rag-design.
+    md muc 10 #17) co the THAP HON so voi so nay vi khong phai moi "hang thay
+    the co mat" deu bi model dung that.
+
+    Doc them "blocked_by_filter_17": ap dung _filter_cross_drug_mismatch()
+    (dung THANG production code, khong viet lai logic rieng cho eval) len
+    rag_results CUA CAU DO - True neu sau khi loc, khong con chunk field_group
+    dung nhung drug_id khac nao - tuc vá #17 co chan duoc rui ro nay hay
+    khong, do TUNG cau, dung lam baseline theo doi khi sua #12/#15 that."""
+    from src.agents.nodes.conversation_nodes import _filter_cross_drug_mismatch
+
+    flagged = []
+    for item in ground_truth:
+        emb = gt_embeddings[item["utterance"]]
+        outcome = hybrid_search(db, item["utterance"], emb)
+        rag_results = outcome.results
+        target_found = any(
+            (r.drug_id, r.field_group) == (item["drug_id"], item["field_group"]) for r in rag_results
+        )
+        if target_found:
+            continue
+        wrong_drug_same_field = [
+            r
+            for r in rag_results
+            if r.field_group == item["field_group"] and r.drug_id != item["drug_id"]
+        ]
+        if not wrong_drug_same_field:
+            continue
+        filtered = _filter_cross_drug_mismatch(rag_results, item["utterance"])
+        still_present = any(
+            r.field_group == item["field_group"] and r.drug_id != item["drug_id"] for r in filtered
+        )
+        flagged.append(
+            {
+                "utterance": item["utterance"],
+                "target_drug_id": item["drug_id"],
+                "target_field_group": item["field_group"],
+                "wrong_drug_candidates": [f"{r.drug_id}:{r.field_group}" for r in wrong_drug_same_field],
+                "blocked_by_filter_17": not still_present,
+            }
+        )
+
+    n = len(ground_truth)
+    return {
+        "n": n,
+        "cross_drug_risk_count": len(flagged),
+        "cross_drug_risk_rate": len(flagged) / n,
+        "blocked_by_filter_17_count": sum(1 for f in flagged if f["blocked_by_filter_17"]),
+        "flagged": flagged,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Phan 2b: hallucination rate (LLM-judge) + Phan 2c: missing-caveat rate
 # (dung LAI ket qua generate_answer cua 2b, khong ton them API call)
 # ---------------------------------------------------------------------------
@@ -374,6 +453,11 @@ def main() -> int:
         print(f"  grounded rate: {hc['grounded_rate']:.1%}  hallucination rate: {hc['hallucination_rate']:.1%}")
         print(f"  cach_dung questions: {hc['cach_dung_questions']}, missing caveat rate: {hc['missing_caveat_rate']}")
 
+        print("\n=== Phan 2d: cross-drug misattribution rate (muc 10 #17, them 2026-08-09) ===")
+        cd = measure_cross_drug_misattribution_rate(db, ground_truth, gt_embeddings)
+        print(f"  cross-drug risk: {cd['cross_drug_risk_count']}/{cd['n']} ({cd['cross_drug_risk_rate']:.1%})")
+        print(f"  blocked by _filter_cross_drug_mismatch (#17 patch): {cd['blocked_by_filter_17_count']}/{cd['cross_drug_risk_count']}")
+
         elapsed = time.monotonic() - t0
         print(f"\nTong thoi gian chay: {elapsed:.1f}s")
 
@@ -382,6 +466,7 @@ def main() -> int:
             "distribution_summaries": summaries,
             "precision_recall": pr,
             "hallucination_and_caveat": hc,
+            "cross_drug_misattribution": cd,
         }
         out_path = EVAL_DIR / "eval_report.json"
         out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
