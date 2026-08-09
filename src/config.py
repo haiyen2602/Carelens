@@ -1,8 +1,15 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Sentinel PUBLIC (nam trong repo, KHONG phai bi mat that) - dung de PHAT
+# HIEN "chua ai dat INTERNAL_AUTH_SECRET that" trong _internal_auth_secret_
+# must_be_configured() ben duoi. Chinh vi gia tri nay cong khai trong source
+# (va trong .env.example) nen KHONG duoc phep dung lam gia tri chay that -
+# validator raise ngay neu con bang gia tri nay, khong chi log roi cho qua.
+_UNSET_INTERNAL_SECRET_SENTINEL = "unset-temp-auth-gate-CHANGE-ME-for-any-shared-env"
 
 
 class Settings(BaseSettings):
@@ -20,16 +27,115 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     cors_origins: str = "http://localhost:3000"
 
-    # LLM
+    # LLM — gpt-4o-mini cho MOI tac vu (xem specs/chatbot-rag-design.md muc 2), khong doi
+    # model dat hon tru khi eval/ cho thay accuracy < 85%.
     openai_api_key: str = ""
     model_name: str = "gpt-4o-mini"
+    embedding_model: str = "text-embedding-3-small"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
 
-    # Database
-    database_url: str = "sqlite:///./data/app.db"
+    # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
+    database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
-    # Vector Store
-    chroma_persist_dir: str = "./data/chroma"
+    # Retrieval (specs/chatbot-rag-design.md muc 4) — DA CHOT bang so lieu that
+    # Phase 7 (2026-08-08, eval/run_eval.py + eval/eval_report.json), khong con
+    # la doan mo hinh nua. O gia tri cu (0.5/0.3), 15/15 cau out-of-domain
+    # (thuoc khong ton tai, go sai nghiem trong, van ban khong lien quan) DEU
+    # lot qua nguong (100% false-accept) - BR-7.3 "khong co nguon -> tu choi"
+    # khong hoat dong. 0.60/0.55 giam false-accept tong the tu 100% -> ~47%
+    # (con "thuoc khong ton tai" van kho o ~83%, xem chatbot-rag-design.md
+    # muc 10 #12 - can them lop phong ve khac, khong chi tune nguong), doi lai
+    # GT recall giam tu ~100% xuong 81.2% (26/32 cau) - xem muc 10 #1/#8 cho
+    # chi tiet day du + bang trade-off cac muc khac da can nhac.
+    rrf_k: int = 60
+    retrieval_top_k: int = 5
+    nguong_vector: float = Field(
+        default=0.60, description="Chot 2026-08-08 tu eval/ Phase 7 - xem chatbot-rag-design.md muc 10 #1"
+    )
+    nguong_lexical: float = Field(
+        default=0.55, description="Chot 2026-08-08 tu eval/ Phase 7 - xem chatbot-rag-design.md muc 10 #8"
+    )
+    # Chot 2026-08-09 (vong 2, muc 6/15 - phat hien qua review, KHONG phai gia
+    # dinh mac dinh pgvector): mac dinh pgvector (40) chi dat HNSW recall vs
+    # exact scan 84.4% tren 32 cau GT (~15% cau hoi that su bi HNSW bo sot
+    # dung chunk gan nhat, khong lien quan gi toi nguong/RRF - loi o TANG TIM
+    # UNG VIEN GOC). Sweep that {40,60,80,100,150,200}: 100 la diem dat 100%
+    # recall vs exact scan (giu nguyen tu 100 den 200 - khong ich loi gi khi
+    # tang them), doi lai ~3x latency truy van vector thuan (46ms->128ms trung
+    # binh, do co kiem soat/xen ke thu tu tranh nhieu do cache) - chap nhan
+    # duoc vi chi la 1 phan nho trong tong do tre 1 luot chat (3-4 lan goi LLM,
+    # tung lan >=500ms, xem muc 2), va chi ap dung nhanh out-of-prescription
+    # (muc 11.2), khong phai moi tin nhan. Xem chatbot-rag-design.md muc 15,
+    # eval/hnsw_recall_tuning.py.
+    hnsw_ef_search: int = Field(
+        default=100, description="Chot 2026-08-09 tu eval/hnsw_recall_tuning.py - xem chatbot-rag-design.md muc 15"
+    )
+
+    # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO
+    # BAO MAT CHAN PRODUCTION, khong phai CAN CHOT can PM duyet - day chi la
+    # bien phap giam nhe ky thuat) - KHONG PHAI auth that (khong biet request
+    # tu ai, chi biet co dung 1 chuoi bi mat hay khong). BAT BUOC dat
+    # INTERNAL_AUTH_SECRET that qua env var (.env, KHONG commit gia tri that)
+    # - fail-closed THAT (xem validator ben duoi), khong chi canh bao roi
+    # van chay: neu con la sentinel/rong, Settings() raise NGAY luc doc
+    # config (app/test suite khong khoi dong duoc), khong doi toi luc co
+    # request that moi phat hien. Ap dung ke ca local dev/test - "chi la
+    # local" khong phai ly do mien tru, dung y "phong ve ky thuat dang tin
+    # hon tri nho tap the" da thong nhat 2026-08-08. XOA dependency nay
+    # (src/api/security.py::require_internal_secret) khoi route NGAY khi
+    # auth-api (JWT that) duoc xay - day la rao can tam, khong phai giai
+    # phap cuoi.
+    internal_auth_secret: str = Field(
+        default=_UNSET_INTERNAL_SECRET_SENTINEL,
+        description="TEMP: xem chatbot-rag-design.md muc 10 #10, retire khi auth-api that co",
+    )
+
+    @field_validator("internal_auth_secret")
+    @classmethod
+    def _internal_auth_secret_must_be_configured(cls, v: str) -> str:
+        if not v or v == _UNSET_INTERNAL_SECRET_SENTINEL:
+            raise ValueError(
+                "INTERNAL_AUTH_SECRET chua duoc cau hinh that (con rong hoac la sentinel cong khai "
+                f"{_UNSET_INTERNAL_SECRET_SENTINEL!r} - gia tri nay NAM SAN TRONG SOURCE nen KHONG "
+                "duoc dung de chay that). Dat INTERNAL_AUTH_SECRET trong .env (khong commit gia tri "
+                "that) truoc khi khoi dong app hoac chay test - xem chatbot-rag-design.md muc 10 #10."
+            )
+        return v
+
+    # Rate limiter (vong 2, chatbot-rag-design.md muc 12.4) - theo patient_id,
+    # KHONG theo IP (nhieu benh nhan co the chung mang nha/benh vien). [CAN
+    # CHOT - thuc nghiem] 2 gia tri duoi la PLACEHOLDER dua tren co so chi phi
+    # da do Phase 3/7 (1 luot chat = 3-4 lan goi LLM, gpt-4o-mini re) - CHUA
+    # phai so cuoi cung, can Architect xac nhan lai khi co du lieu su dung
+    # that (xem src/api/rate_limit.py).
+    rate_limit_max_requests: int = Field(
+        default=20, description="[CAN CHOT] so request toi da/patient_id trong 1 window"
+    )
+    rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit (giay)")
+
+    # TTL cho pending_drug_confirmation (vong 2, chatbot-rag-design.md muc
+    # 11.3) - THEM 2026-08-09, phat hien qua review: benh nhan bo do 1 cau
+    # hoi giua chung (khong tra loi xac nhan) se de lai pending state TREO
+    # VINH VIEN neu khong co TTL - tin nhan KHONG lien quan gui sau do (ke ca
+    # vai ngay sau) se bi hieu NHAM la dang tra loi cau hoi xac nhan cu.
+    # [CAN CHOT - thuc nghiem] 30 phut la PLACEHOLDER hop ly cho 1 phien chat
+    # dang hoi thoai (du dai cho tra loi tu nhien, du ngan de tranh nham lan
+    # thuc te) - CHUA phai so cuoi, can Architect xac nhan lai. Kiem tra o
+    # get_pending_confirmation() (check-on-read, khong can APScheduler/job
+    # rieng - xem ghi chu trong drug_confirmation_store.py).
+    drug_confirmation_ttl_minutes: float = Field(
+        default=30.0, description="[CAN CHOT] TTL cho 1 pending_drug_confirmation truoc khi bi coi la het han"
+    )
+
+    # Escalation reminder scheduler (vong 2, chatbot-rag-design.md muc 13) -
+    # tan suat quet cac escalation OPEN de kiem tra co den moc nhac lai chua
+    # (t=15p/25p/35p, xem src/services/escalation_reminder.py). [CAN CHOT -
+    # thuc nghiem] 60 giay la PLACEHOLDER hop ly (moc nhac gan nhat cach nhau
+    # 10 phut, quet moi 60s du chi tiet, khong tai DB qua muc can thiet) -
+    # CHUA phai so cuoi, can Architect xac nhan lai.
+    escalation_reminder_check_interval_seconds: float = Field(
+        default=60.0, description="[CAN CHOT] tan suat quet escalation can nhac lai (giay)"
+    )
 
 
 @lru_cache

@@ -55,6 +55,15 @@ Mức nghiêm trọng được quyết định bởi **loại thuốc + ngữ c�
 | BR-3.3 | Safety layer cờ đỏ → **luôn là HIGH**, ghi đè mọi kết quả đánh giá của luồng chính. |
 | BR-3.4 | Gộp cảnh báo trùng trong cùng một dose window để tránh spam người thân. |
 | BR-3.5 | Mức HIGH không xếp hàng chờ người thân xử lý trước — gửi thẳng cả người thân và bác sĩ. |
+| BR-3.6 | Field `muc_nghiem_trong` trong `data pharmacy/*/thuoc.json` là **prior/fallback**, dùng khi RAG per-thuốc (`tac_dung`) không đủ rõ để quyết — **không thay thế** đánh giá per-thuốc, chỉ nâng lên chứ không hạ thấp mức đã suy ra từ RAG (cùng tinh thần BR-3.2). |
+
+### Mức nghiêm trọng mặc định — đã tính sẵn theo từng thuốc *(cập nhật 2026-08-04)*
+
+Ban đầu định làm bảng fallback theo **11 thư mục** (`data pharmacy/`), nhưng quá thô — 1 thư mục lớn như "Thuốc tim mạch và máu" gộp chung cả thuốc chống đông (rất nguy hiểm) lẫn thuốc trị trĩ/suy giãn tĩnh mạch (nhẹ hơn nhiều). Thay vào đó, mỗi thuốc đã có sẵn field **`muc_nghiem_trong`** (`Nhẹ` / `Trung bình` / `Nguy hiểm`), tính rule-based (không LLM) qua [`scripts/classify_severity.py`](../scripts/classify_severity.py) — tra theo `danh_muc` (**52 tiểu mục gốc của trang nguồn**, chi tiết hơn nhiều 11 thư mục, vd tách riêng "Thuốc chống đông máu" khỏi "Thuốc trị trĩ, suy giãn tĩnh mạch"). Xem bảng tra cứu đầy đủ + lý do từng nhóm ngay trong file script đó — không lặp lại ở đây để tránh 2 nguồn dễ lệch nhau.
+
+**Số liệu hiện tại** (3688 thuốc, 11 thư mục, chạy `classify_severity.py --report-only` để xem lại): **1398 Nguy hiểm · 1403 Trung bình · 887 Nhẹ**.
+
+**Ví dụ ngoại lệ đã xử lý ở mức tiểu mục:** glaucoma/tăng nhãn áp được site tự tách thành tiểu mục riêng "Thuốc trị tăng nhãn áp" (khác "Thuốc nhỏ mắt" thông thường) nên tự nhiên có mức riêng (Trung bình), không lẫn vào mức Nhẹ của nhóm nhỏ mắt nói chung — không cần rule ngoại lệ thủ công.
 
 ## 4. Xác nhận bằng ảnh
 
@@ -95,8 +104,18 @@ Mức nghiêm trọng được quyết định bởi **loại thuốc + ngữ c�
 | BR-6.3 | Safety layer không được bị chặn bởi lỗi/timeout của luồng chính; nếu LLM lỗi → **vẫn chạy keyword layer**. |
 | BR-6.4 | Danh sách keyword redflag lưu thành file versioned trong repo, sửa được không cần đổi code. |
 | BR-6.5 | Không role nào (kể cả `admin`) được tắt safety layer từ UI. |
+| BR-6.6 | Redflag chia **2 nhóm** (xem dưới): *triệu chứng lâm sàng* (đang xảy ra, cần cấp cứu ngay) và *nguy cơ liều dùng bất thường* (có thể là hỏi trước khi hành động — vẫn phải chặn ở mức HIGH, không chờ xác nhận đã uống hay chưa). |
 
-**Nhóm redflag khởi tạo** (mở rộng ở TASK-008): khó thở · đau ngực · ngất/xỉu · co giật · nôn ra máu · yếu liệt nửa người · nói khó/méo miệng · lú lẫn đột ngột · chảy máu không cầm · dị ứng nặng (sưng mặt/môi, nổi mề đay toàn thân).
+**Nhóm 1 — Triệu chứng lâm sàng** (mở rộng ở TASK-008): khó thở · đau ngực · ngất/xỉu · co giật · nôn ra máu · yếu liệt nửa người · nói khó/méo miệng · lú lẫn đột ngột · chảy máu không cầm · dị ứng nặng (sưng mặt/môi, nổi mề đay toàn thân).
+
+**Nhóm 2 — Nguy cơ liều dùng bất thường / quá liều** *(bổ sung 2026-08-04, phát hiện khi thảo luận thiết kế chatbot RAG — chưa có trong bản gốc Gate 01)*: bệnh nhân hỏi/nói về việc dùng **số lượng thuốc lớn bất thường so với liều đã kê**, hoặc có dấu hiệu ý định dùng sai mục đích — ví dụ: "tôi có 10 viên thuốc ngủ, uống hết được không", "uống gấp đôi/gấp ba liều có sao không", "uống hết cả vỉ có làm sao không". Khác nhóm 1 ở chỗ đây là **hỏi trước khi hành động**, không phải triệu chứng đã xảy ra — nhưng vẫn phải xử lý ở mức **HIGH ngay lập tức**, không chờ xem bệnh nhân có thực sự uống hay không.
+
+| Quy tắc | Nội dung |
+|---|---|
+| BR-6.7 | Redflag nhóm 2 kích hoạt khi phát ngôn có **số lượng thuốc** (số viên/liều) kèm ngữ cảnh hỏi/định dùng, không cần so khớp được với đúng thuốc nào trong phác đồ — an toàn trước, làm rõ sau. |
+| BR-6.8 | `[CẦN CHỐT — PM + Phạm Thành Đạt]` nội dung overlay cho nhóm 2 nên khác nhóm 1 (vd hướng dẫn liên hệ Trung tâm chống độc thay vì cấp cứu tổng quát) — cần xác nhận trước khi viết prompt/overlay UI. |
+
+Cả 2 nhóm đều dùng chung cơ chế `keyword rules OR LLM` (BR-6.1) — nhóm 2 khó phủ hết bằng keyword đơn thuần (nhiều cách diễn đạt số lượng) nên **phụ thuộc nhiều hơn vào lớp LLM**; cần ưu tiên nhóm 2 khi xây bộ test set TASK-008 để đo riêng recall của nó.
 
 ## 7. Ràng buộc an toàn tuyệt đối (agent KHÔNG được làm)
 
