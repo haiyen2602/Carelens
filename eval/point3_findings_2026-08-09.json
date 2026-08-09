@@ -1,0 +1,62 @@
+{
+  "prefix_hypothesis_test": {
+    "hypothesis": "dong mo dau trung lap (Thuoc: X (...) - danh_muc) keo cosine cua field_group xuong",
+    "verdict": "BAC BO - bo prefix lam cosine GIAM, khong tang",
+    "cases": [
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+        "cosine_with_prefix": 0.5932,
+        "cosine_without_prefix": 0.5053,
+        "delta": -0.0879
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "cosine_with_prefix": 0.5413,
+        "cosine_without_prefix": 0.4894,
+        "delta": -0.0519
+      }
+    ]
+  },
+  "cross_drug_misattribution": {
+    "description": "3/10 recall-miss cau tra loi DUNG noi dung cua 1 thuoc KHAC, khong tu choi, khong bi judge tinh la hallucination vi noi dung co that trong context (chi sai thuoc)",
+    "rate_of_gt_set": "3/32 = 9.4%",
+    "rate_of_recall_misses": "3/10 = 30%",
+    "cases": [
+      {
+        "question_drug": "ame-prazol-40mg-opv-2x7",
+        "field_group": "tac_dung_phu",
+        "actual_source_drug": "prazo-pro-40mg-tvp-2x7",
+        "verified_by": "noi_dung gan nhu nguyen van trung khop"
+      },
+      {
+        "question_drug": "fluopas-0-025-quang-binh-10g",
+        "field_group": "bao_quan",
+        "actual_source_drug_candidates": [
+          "bifehema-bidiphar-20-ong-x-10ml",
+          "povidine-10-pharmedic-500ml"
+        ],
+        "verified_by": "drug_id trong top-5 RRF, khong co fluopas/bao_quan nao trong top-5"
+      },
+      {
+        "question_drug": "xaravix-20mg-dhg-pharma-1x14",
+        "field_group": "bao_quan",
+        "actual_source_drug_candidates": [
+          "xelostad-20mg-stellapharm-1x14",
+          "trihexyphenidyl-pharmedic-5x20",
+          "brilinta-90-astrazeneca-6x10"
+        ],
+        "verified_by": "drug_id trong top-5 RRF, khong co xaravix/bao_quan nao trong top-5"
+      }
+    ]
+  },
+  "refusal_rate_gt_set": {
+    "n": 32,
+    "refused_count": 7,
+    "refused_rate": 0.21875,
+    "wrong_source_answered_count": 3,
+    "wrong_source_answered_rate": 0.09375,
+    "correctly_answered_count": 22,
+    "correctly_answered_rate": 0.6875,
+    "note": "tat ca 7 cau refused + 3 cau wrong_source deu nam trong 10 cau recall-miss cua #14"
+  }
+}

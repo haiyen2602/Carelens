@@ -1,0 +1,407 @@
+[
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 30,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.96875,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 30,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 30,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 60,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.96875,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 60,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 60,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 100,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.96875,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 100,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.5,
+    "nguong_lexical": 0.45,
+    "rrf_k": 100,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.8666666666666667
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 30,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 30,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 30,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 60,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 60,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 60,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 100,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 100,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.55,
+    "nguong_lexical": 0.5,
+    "rrf_k": 100,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.6
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 30,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 30,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 30,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 60,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 60,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 60,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 100,
+    "n_candidates": 3,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 100,
+    "n_candidates": 4,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "rrf_k": 100,
+    "n_candidates": 5,
+    "gt_recall_at_n": 1.0,
+    "gt_zero_candidates_rate": 0.0,
+    "ood_has_candidate_rate": 0.4666666666666667
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 30,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 30,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 30,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 60,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 60,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 60,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 100,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 100,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.65,
+    "nguong_lexical": 0.6,
+    "rrf_k": 100,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.9375,
+    "gt_zero_candidates_rate": 0.0625,
+    "ood_has_candidate_rate": 0.3333333333333333
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 30,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 30,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 30,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 60,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 60,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 60,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 100,
+    "n_candidates": 3,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 100,
+    "n_candidates": 4,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  },
+  {
+    "nguong_vector": 0.7,
+    "nguong_lexical": 0.65,
+    "rrf_k": 100,
+    "n_candidates": 5,
+    "gt_recall_at_n": 0.5625,
+    "gt_zero_candidates_rate": 0.4375,
+    "ood_has_candidate_rate": 0.2
+  }
+]

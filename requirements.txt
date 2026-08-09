@@ -10,13 +10,23 @@ langchain>=0.3.0
 langchain-openai>=0.3.0
 langgraph>=0.2.0
 
-# Database (uncomment as needed)
-# sqlalchemy>=2.0.0
-# alembic>=1.14.0
-# psycopg2-binary>=2.9.0
+# Database
+sqlalchemy>=2.0.0
+alembic>=1.14.0
+psycopg2-binary>=2.9.0
 
-# Vector Store (uncomment as needed)
-# chromadb>=0.5.0
+# Scheduler - nhac lai escalation theo thoi gian (vong 2, chatbot-rag-design.md
+# muc 13). SQLAlchemyJobStore (khong dung in-memory mac dinh) - luu job vao
+# chinh Postgres dang co, tranh moi worker process tu chay 1 scheduler rieng
+# khi deploy nhieu worker (chatbot-rag-design.md muc 13, quyet dinh 2026-08-09).
+apscheduler>=3.11.0
+
+# Vector Store — pgvector (extension trong PostgreSQL, xem ADR-0008), KHONG dung ChromaDB rieng
+pgvector>=0.3.6
+
+# LLM client truc tiep (dung cho batch embedding script, Phase 3 - ngoai LangGraph)
+openai>=1.54.0
+tiktoken>=0.8.0
 
 # Dev tools
 ruff>=0.8.0

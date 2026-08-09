@@ -1,0 +1,68 @@
+{
+  "n": 32,
+  "cross_drug_risk_count": 6,
+  "cross_drug_risk_rate": 0.1875,
+  "blocked_by_filter_17_count": 5,
+  "flagged": [
+    {
+      "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+      "target_drug_id": "bluepine-5mg-blue-6x10",
+      "target_field_group": "tac_dung_phu",
+      "wrong_drug_candidates": [
+        "eporon-samchundang-5ml:tac_dung_phu",
+        "lenvima-4mg-eisai-2x10:tac_dung_phu",
+        "agilosart-h-100-12-5-agimexpharm-3x10:tac_dung_phu"
+      ],
+      "blocked_by_filter_17": false
+    },
+    {
+      "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+      "target_drug_id": "fluopas-0-025-quang-binh-10g",
+      "target_field_group": "bao_quan",
+      "wrong_drug_candidates": [
+        "bifehema-bidiphar-20-ong-x-10ml:bao_quan",
+        "povidine-10-pharmedic-500ml:bao_quan",
+        "buscopan-20mg-1ml-boehringer-2x5-ong:bao_quan"
+      ],
+      "blocked_by_filter_17": true
+    },
+    {
+      "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+      "target_drug_id": "ame-prazol-40mg-opv-2x7",
+      "target_field_group": "tac_dung_phu",
+      "wrong_drug_candidates": [
+        "prazo-pro-40mg-tvp-2x7:tac_dung_phu"
+      ],
+      "blocked_by_filter_17": true
+    },
+    {
+      "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+      "target_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "target_field_group": "tac_dung_phu",
+      "wrong_drug_candidates": [
+        "liposic-bausch-lomb-10g:tac_dung_phu",
+        "lumigan-0-01-allergan-3ml:tac_dung_phu"
+      ],
+      "blocked_by_filter_17": true
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+      "target_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "target_field_group": "cach_dung",
+      "wrong_drug_candidates": [
+        "xaravix-15mg-dhg-pharma-1x14:cach_dung"
+      ],
+      "blocked_by_filter_17": true
+    },
+    {
+      "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+      "target_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "target_field_group": "bao_quan",
+      "wrong_drug_candidates": [
+        "xelostad-20mg-stellapharm-1x14:bao_quan",
+        "trihexyphenidyl-pharmedic-5x20:bao_quan"
+      ],
+      "blocked_by_filter_17": true
+    }
+  ]
+}
