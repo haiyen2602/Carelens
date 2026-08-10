@@ -18,7 +18,6 @@ import {
   Send,
   ShieldCheck,
   Stethoscope,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,16 +35,9 @@ const roles: { role: Role; label: string; desc: string; icon: typeof Stethoscope
     },
     {
       role: "patient",
-      label: "Bệnh nhân",
-      desc: "Nhắc uống thuốc, xác nhận, chụp ảnh, báo sức khỏe",
+      label: "Bệnh nhân/Người thân",
+      desc: "Nhắc uống thuốc, xác nhận, chụp ảnh, báo sức khỏe · theo dõi tuân thủ của người thân",
       icon: HeartPulse,
-      hint: "Web mobile",
-    },
-    {
-      role: "family",
-      label: "Người thân",
-      desc: "Hộp cảnh báo, duyệt ảnh, phán quyết đúng/sai",
-      icon: Users,
       hint: "Web mobile",
     },
   ];
@@ -68,7 +60,7 @@ export default function LoginPage() {
 
   const finish = (role: Role) => {
     login(role, phone);
-    router.push(role === "doctor" ? "/doctor" : role === "patient" ? "/patient" : "/family");
+    router.push(role === "doctor" ? "/doctor" : "/patient");
   };
 
   return (
@@ -295,11 +287,7 @@ export default function LoginPage() {
               {picked && (
                 <div className="space-y-2 rounded-xl bg-muted p-4">
                   <Label htmlFor="idv">
-                    {picked === "doctor"
-                      ? "Nhập ID bác sĩ"
-                      : picked === "patient"
-                        ? "Nhập ID bệnh nhân"
-                        : "Nhập ID bệnh nhân bạn chăm sóc"}
+                    {picked === "doctor" ? "Nhập ID bác sĩ" : "Nhập ID bệnh nhân"}
                   </Label>
                   <Input
                     id="idv"

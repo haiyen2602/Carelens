@@ -1,19 +1,36 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import { useProto } from "@/lib/proto-store";
 import type { ChatMessage as ChatMessageT } from "@/types/chat";
 
 export default function AssistantPage() {
+  const { symptomCheckPending, clearSymptomCheck } = useProto();
   const [messages, setMessages] = useState<ChatMessageT[]>([]);
   const [input, setInput] = useState("");
   const lastQuestion = useRef("");
   const { mutate, isPending, isError, error, reset } = useChatMessage();
+
+  useEffect(() => {
+    if (!symptomCheckPending) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content:
+          "Bạn vừa cho biết hôm nay cảm thấy không ổn. Hãy mô tả chi tiết triệu chứng bạn đang gặp (vị trí, mức độ, từ khi nào, kèm dấu hiệu gì khác) để tôi hỗ trợ và báo cho bác sĩ nhé.",
+      },
+    ]);
+    clearSymptomCheck();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symptomCheckPending]);
 
   const submit = (content: string) => {
     if (!content.trim() || isPending) return;

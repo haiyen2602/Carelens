@@ -150,6 +150,7 @@ type State = {
   patients: Patient[];
   healthLog: { id: string; at: string; text: string; level: AlertLevel }[];
   emergency: boolean;
+  symptomCheckPending: boolean;
 };
 
 const now = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -203,6 +204,17 @@ const initial: State = {
       photo: true,
       note: "Ảnh chụp mờ, cần người thân đối chiếu",
     },
+    {
+      id: "d5",
+      med: "Vitamin D3",
+      strength: "1000IU · 1 viên",
+      time: "12:00",
+      meal: "Sau ăn trưa",
+      status: "missed",
+      reminders: 2,
+      photo: false,
+      note: "Bệnh nhân báo đã uống nhưng quên chụp ảnh — cần người thân xác nhận",
+    },
   ],
   prescriptions: [
     {
@@ -231,14 +243,13 @@ const initial: State = {
   alerts: [
     {
       id: "a1",
-      level: "mid",
-      title: "Ảnh thuốc không xác thực được",
+      level: "high",
+      title: "Bệnh nhân báo cảm thấy không ổn sau 3 ngày dùng thuốc",
       detail:
-        "Bệnh nhân Nguyễn Thị Lan gửi ảnh liều Atorvastatin 21:00 nhưng AI không đối chiếu được viên thuốc.",
+        "Bệnh nhân Nguyễn Thị Lan báo mệt mỏi, chóng mặt kéo dài từ khi bắt đầu phác đồ Atorvastatin. Đề nghị tái khám sớm và xem xét điều chỉnh phác đồ điều trị.",
       at: "21:14",
       target: ["family", "doctor"],
       status: "new",
-      doseId: "d4",
     },
     {
       id: "a2",
@@ -249,6 +260,26 @@ const initial: State = {
       target: ["family"],
       status: "new",
       doseId: "d1",
+    },
+    {
+      id: "a3",
+      level: "mid",
+      title: "Ảnh thuốc mờ, cần đối chiếu",
+      detail: "Ảnh chụp liều Atorvastatin 21:00 bị mờ/không rõ vật thể, cần bạn xác nhận lại.",
+      at: "21:15",
+      target: ["family"],
+      status: "new",
+      doseId: "d4",
+    },
+    {
+      id: "a4",
+      level: "mid",
+      title: "Bỏ liều — bệnh nhân báo đã uống nhưng quên chụp ảnh",
+      detail: "Liều Vitamin D3 12:00 không có ảnh xác nhận, hệ thống ghi nhận bỏ liều.",
+      at: "12:35",
+      target: ["family"],
+      status: "new",
+      doseId: "d5",
     },
   ],
   audit: [
@@ -292,6 +323,7 @@ const initial: State = {
     },
   ],
   healthLog: [],
+  symptomCheckPending: false,
 };
 
 type Ctx = State & {
@@ -302,12 +334,14 @@ type Ctx = State & {
   remindAgain: (id: string) => void;
   markMissed: (id: string) => void;
   reportHealth: (text: string, level: AlertLevel) => void;
+  requestSymptomCheck: () => void;
+  clearSymptomCheck: () => void;
   setEmergency: (v: boolean) => void;
   decidePrescription: (id: string, ok: boolean) => void;
   createPrescription: (p: Omit<Prescription, "id" | "status">) => void;
   verifyDose: (doseId: string, verdict: "correct" | "wrong" | "unclear" | "absent") => void;
+  familyConfirmDose: (id: string, taken: boolean) => void;
   setAlertStatus: (id: string, status: SysAlert["status"]) => void;
-  escalateToDoctor: (id: string) => void;
   toggleWatch: (id: string) => void;
 };
 
@@ -406,6 +440,8 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         }
         log("Bệnh nhân", `Báo vấn đề sức khỏe (${level}): ${text}`);
       },
+      requestSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: true })),
+      clearSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: false })),
       setEmergency: (v) => setState((s) => ({ ...s, emergency: v })),
       decidePrescription: (id, ok) => {
         setState((s) => ({
@@ -454,21 +490,39 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
           });
         }
       },
+      familyConfirmDose: (id, taken) => {
+        setState((s) => ({
+          ...s,
+          doses: s.doses.map((d) =>
+            d.id === id ? { ...d, status: taken ? "taken" : "missed" } : d,
+          ),
+          alerts: s.alerts.map((a) =>
+            a.doseId === id ? { ...a, status: taken ? "resolved" : "acknowledged" } : a,
+          ),
+        }));
+        log(
+          "Người thân",
+          taken
+            ? `Xác nhận ĐÃ UỐNG liều #${id} (không có ảnh, dựa trên quan sát trực tiếp)`
+            : `Xác nhận BỎ LIỀU liều #${id}`,
+        );
+        if (!taken) {
+          const dose = state.doses.find((d) => d.id === id);
+          pushAlert({
+            level: "mid",
+            title: "Người thân xác nhận bỏ liều",
+            detail: `Người thân xác nhận liều ${dose?.med ?? ""} ${dose?.time ?? ""} không được uống.`,
+            target: ["doctor"],
+            doseId: id,
+          });
+        }
+      },
       setAlertStatus: (id, status) => {
         setState((s) => ({
           ...s,
           alerts: s.alerts.map((a) => (a.id === id ? { ...a, status } : a)),
         }));
-        log("Người thân", `Cập nhật cảnh báo #${id} → ${status}`);
-      },
-      escalateToDoctor: (id) => {
-        setState((s) => ({
-          ...s,
-          alerts: s.alerts.map((a) =>
-            a.id === id ? { ...a, status: "processing", target: ["doctor"] } : a,
-          ),
-        }));
-        log("Người thân", `Chuyển cảnh báo #${id} tới bác sĩ`);
+        log("Bệnh nhân", `Cập nhật cảnh báo #${id} → ${status}`);
       },
       toggleWatch: (id) => {
         setState((s) => ({
