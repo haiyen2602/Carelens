@@ -57,7 +57,7 @@ Nếu thiếu bất kỳ context nào ở trên (ví dụ task chưa có AC, ho�
 - Đọc kỹ `/specs`, `/adrs`, contracts liên quan, và rules trong file này.
 - Tạo branch mới:
   ```bash
-  git checkout -b feature/<TASK-ID>-<mo-ta-ngan>
+  git checkout -b feature/<TASK-NAME>
   ```
 
 ### Bước 2 — AI + Dev cùng code
@@ -77,7 +77,7 @@ Nếu thiếu bất kỳ context nào ở trên (ví dụ task chưa có AC, ho�
   ```bash
   git add .
   git commit -m "<TASK-ID>: <mo ta thay doi>"
-  git push origin feature/<TASK-ID>-<mo-ta-ngan>
+  git push origin feature/<TASK-NAME>
   ```
 
 ### Bước 5 — Pull Request & Review
