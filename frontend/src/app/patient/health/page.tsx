@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Smile, ThumbsUp } from "lucide-react";
+import { AlertTriangle, HeartPulse, Pill } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useProto, type AlertLevel } from "@/lib/proto-store";
 
 export default function HealthPage() {
-  const { reportHealth, setEmergency, healthLog } = useProto();
-  const [mode, setMode] = useState<"ask" | "form" | "done">("ask");
+  const { patients, doses, prescriptions, healthLog, reportHealth, setEmergency } = useProto();
+  const patient = patients[0];
+  const [reporting, setReporting] = useState(false);
   const [text, setText] = useState("");
   const [level, setLevel] = useState<AlertLevel>("low");
+
+  const takenCount = doses.filter((d) => d.status === "taken").length;
+  const myPrescriptions = prescriptions.filter(
+    (p) => p.patient === patient?.name && p.status !== "rejected",
+  );
 
   const submit = () => {
     reportHealth(text || "Không mô tả chi tiết", level);
@@ -22,56 +28,89 @@ export default function HealthPage() {
         level === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h",
       );
     }
-    setMode("done");
+    setReporting(false);
     setText("");
+    setLevel("low");
   };
 
   return (
     <div className="space-y-4">
-      {mode === "ask" && (
-        <section className="surface-card p-5 text-center">
-          <Smile className="mx-auto h-10 w-10 text-primary" />
-          <h1 className="mt-3 text-xl font-extrabold">Hôm nay bạn thấy thế nào?</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Câu trả lời giúp bác sĩ và người thân theo dõi tình trạng của bạn.
-          </p>
-          <div className="mt-5 space-y-3">
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={() => {
-                reportHealth("Bình thường", "low");
-                toast.success("Đã ghi nhận: bình thường");
-                setMode("done");
-              }}
-            >
-              <ThumbsUp className="mr-1 h-4 w-4" /> Bình thường
-            </Button>
-            <Button variant="outline" className="w-full" size="lg" onClick={() => setMode("form")}>
-              <AlertTriangle className="mr-1 h-4 w-4" /> Không ổn
-            </Button>
+      {patient && (
+        <section className="surface-card p-5">
+          <div className="flex items-center gap-3">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-lg font-bold text-accent-foreground">
+              {patient.name.charAt(0)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">{patient.name}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {patient.age} tuổi · {patient.condition}
+              </p>
+            </div>
+            <span className="shrink-0 text-xl font-extrabold text-primary">
+              {patient.adherence}%
+            </span>
           </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${patient.adherence}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Tuân thủ điều trị 7 ngày qua · đã uống {takenCount}/{doses.length} liều hôm nay
+          </p>
         </section>
       )}
 
-      {mode === "form" && (
-        <section className="surface-card space-y-4 p-5">
-          <div>
-            <h1 className="text-lg font-extrabold">Nhập vấn đề sức khỏe</h1>
-            <p className="text-sm text-muted-foreground">
-              AI sẽ phân loại mức độ trước khi gửi đi.
-            </p>
-          </div>
-          <Textarea
-            rows={4}
-            placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">
-              AI đánh giá mức độ (chọn để mô phỏng)
-            </p>
+      <section className="surface-card p-5">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+          <Pill className="h-4 w-4" /> Đơn thuốc hiện tại
+        </h2>
+        <div className="mt-3 divide-y divide-border">
+          {myPrescriptions.map((p) => (
+            <div key={p.id} className="py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold">{p.med}</p>
+                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold text-secondary-foreground">
+                  {p.status === "approved"
+                    ? "Đang dùng"
+                    : p.status === "pending"
+                      ? "Chờ duyệt"
+                      : "Bản nháp"}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {p.dose} · {p.perDay} lần/ngày · {p.meal}
+              </p>
+            </div>
+          ))}
+          {myPrescriptions.length === 0 && (
+            <p className="py-3 text-sm text-muted-foreground">Chưa có đơn thuốc nào.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="surface-card space-y-3 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+            <HeartPulse className="h-4 w-4" /> Nhật ký sức khỏe
+          </h2>
+          {!reporting && (
+            <Button size="sm" variant="outline" onClick={() => setReporting(true)}>
+              <AlertTriangle className="mr-1 h-4 w-4" /> Báo vấn đề
+            </Button>
+          )}
+        </div>
+
+        {reporting && (
+          <div className="space-y-3 rounded-xl border border-border p-4">
+            <Textarea
+              rows={3}
+              placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
@@ -83,7 +122,7 @@ export default function HealthPage() {
                 <button
                   key={v}
                   onClick={() => setLevel(v)}
-                  className={`rounded-lg border p-2.5 text-sm font-semibold transition-colors ${
+                  className={`rounded-lg border p-2 text-sm font-semibold transition-colors ${
                     level === v
                       ? "border-primary bg-accent text-accent-foreground"
                       : "border-border"
@@ -93,38 +132,20 @@ export default function HealthPage() {
                 </button>
               ))}
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => setReporting(false)}>
+                Hủy
+              </Button>
+              <Button onClick={submit}>Gửi</Button>
+            </div>
           </div>
-          <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-            {level === "low" && "→ Ghi nhật ký, theo dõi 48h."}
-            {level === "mid" && "→ Báo người thân và lưu log vấn đề."}
-            {level === "high" &&
-              "→ Overlay cấp cứu, hướng dẫn gọi 115 + push người thân và bác sĩ."}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" onClick={() => setMode("ask")}>
-              Quay lại
-            </Button>
-            <Button onClick={submit}>Gửi</Button>
-          </div>
-        </section>
-      )}
+        )}
 
-      {mode === "done" && (
-        <section className="surface-card p-5 text-center">
-          <h1 className="text-lg font-extrabold">Đã ghi nhận</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Cảm ơn bạn. Hệ thống sẽ tiếp tục theo dõi và nhắc liều tiếp theo.
-          </p>
-          <Button className="mt-4 w-full" variant="outline" onClick={() => setMode("ask")}>
-            Báo thêm vấn đề khác
-          </Button>
-        </section>
-      )}
-
-      {healthLog.length > 0 && (
-        <section className="surface-card p-5">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Nhật ký sức khỏe</h2>
-          <ul className="mt-3 space-y-2 text-sm">
+        {healthLog.length === 0 && !reporting && (
+          <p className="text-sm text-muted-foreground">Chưa có nhật ký nào.</p>
+        )}
+        {healthLog.length > 0 && (
+          <ul className="space-y-2 text-sm">
             {healthLog.map((h) => (
               <li key={h.id} className="flex gap-3">
                 <span className="w-12 shrink-0 font-mono text-xs text-muted-foreground">
@@ -134,8 +155,8 @@ export default function HealthPage() {
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }
