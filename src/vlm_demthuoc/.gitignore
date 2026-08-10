@@ -1,0 +1,6 @@
+api_key.json
+capture_*.jpg
+anh_thuoc/
+ket_qua.json
+*.jsonl
+__pycache__/

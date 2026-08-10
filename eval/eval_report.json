@@ -1,0 +1,2143 @@
+{
+  "distributions": {
+    "gt_cosine": [
+      0.6987355113184572,
+      0.5932311923186141,
+      0.6267203519235776,
+      0.6474673508994916,
+      0.7362466902911312,
+      0.5541311586941123,
+      0.6400810880009432,
+      0.7062704310019836,
+      0.6733974888710716,
+      0.5697787195381977,
+      0.6317350307089905,
+      0.6441200215324111,
+      0.7760445851624473,
+      0.7034331179430365,
+      0.7494531721023564,
+      0.8099200768657749,
+      0.7256536826500811,
+      0.4469677449838191,
+      0.6953620535985062,
+      0.7250740835062298,
+      0.6105858301750593,
+      0.541508142730167,
+      0.6019834219911658,
+      0.788198791780347,
+      0.6971596975823859,
+      0.6025052824334602,
+      0.7277199096543632,
+      0.7546140192688126,
+      0.6197556969378127,
+      0.6215479137587261,
+      0.5964761613828176,
+      0.703498678219928
+    ],
+    "gt_lexical": [
+      0.5319149,
+      0.46551725,
+      0.45,
+      0.54347825,
+      0.46341464,
+      0.4047619,
+      0.39759037,
+      0.47727272,
+      0.5833333,
+      0.4918033,
+      0.47619048,
+      0.62222224,
+      0.60784316,
+      0.55421686,
+      0.53521127,
+      0.627451,
+      0.4888889,
+      0.44444445,
+      0.43636364,
+      0.5365854,
+      0.5106383,
+      0.45614034,
+      0.44594595,
+      0.5217391,
+      0.5319149,
+      0.47524753,
+      0.45762712,
+      0.5555556,
+      0.5686275,
+      0.53571427,
+      0.484375,
+      0.5686275
+    ],
+    "ood_cosine": [
+      0.4711677004799386,
+      0.5165743808491944,
+      0.3955914016008125,
+      0.602829810436687,
+      0.5376713621112201,
+      0.5896501387563402,
+      0.4349263868378065,
+      0.5736579161578291,
+      0.5029927522994759,
+      0.6962271278528078,
+      0.3832594420131119,
+      0.40132822874344876,
+      0.4012466540945536,
+      0.41593520605496637,
+      0.31377138269057325
+    ],
+    "ood_lexical": [
+      0.4642857,
+      0.5833333,
+      0.6956522,
+      0.42857143,
+      0.67741936,
+      0.61904764,
+      0.41935483,
+      0.5116279,
+      0.4848485,
+      0.32352942,
+      0.4814815,
+      0.5151515,
+      0.4857143,
+      0.6666667,
+      0.4318182
+    ]
+  },
+  "distribution_summaries": [
+    {
+      "name": "GT true-match cosine",
+      "n": 32,
+      "min": 0.4469677449838191,
+      "p5": 0.5541311586941123,
+      "p50": 0.6604324198852816,
+      "p95": 0.7760445851624473,
+      "max": 0.8099200768657749,
+      "mean": 0.6631055343070712
+    },
+    {
+      "name": "OOD best-match cosine",
+      "n": 15,
+      "min": 0.31377138269057325,
+      "p5": 0.3832594420131119,
+      "p50": 0.4711677004799386,
+      "p95": 0.602829810436687,
+      "max": 0.6962271278528078,
+      "mean": 0.4824553260652511
+    },
+    {
+      "name": "GT true-match lexical",
+      "n": 32,
+      "min": 0.39759037,
+      "p5": 0.43636364,
+      "p50": 0.5012208,
+      "p95": 0.60784316,
+      "max": 0.627451,
+      "mean": 0.507833035625
+    },
+    {
+      "name": "OOD best-match lexical",
+      "n": 15,
+      "min": 0.32352942,
+      "p5": 0.41935483,
+      "p50": 0.4857143,
+      "p95": 0.67741936,
+      "max": 0.6956522,
+      "mean": 0.5192334986666667
+    }
+  ],
+  "precision_recall": {
+    "n": 32,
+    "nguong_vector_used": 0.6,
+    "nguong_lexical_used": 0.55,
+    "recall_at_k": 0.6875,
+    "precision_at_1": 0.40625,
+    "mean_reciprocal_rank": 0.5072916666666667,
+    "per_question": [
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 2
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 1
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "cach_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 1
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 2
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "cach_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 2
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 4
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "cach_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "bao_quan"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "tac_dung_phu"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "cach_dung"
+        ],
+        "found_rank": 5,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "cach_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 1
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "cong_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 4
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "cach_dung"
+        ],
+        "found_rank": 5,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 4
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "cach_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 3
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "cong_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "cach_dung"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "bao_quan"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      }
+    ]
+  },
+  "hallucination_and_caveat": {
+    "n_ground_truth": 32,
+    "n_refused_no_source": 0,
+    "n_answered": 32,
+    "grounded_rate": 1.0,
+    "hallucination_rate": 0.0,
+    "cach_dung_questions": 8,
+    "missing_caveat_rate": 0.0,
+    "per_question": [
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về công dụng của thuốc Vizicin 125 Hasan 30 GÓI, không bịa thêm thông tin và không có khẳng định nào không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "Thuốc Vizicin 125 Hasan 30 GÓI được dùng để điều trị các trường hợp nhiễm khuẩn do các vi khuẩn nhạy cảm, bao gồm nhiễm khuẩn đường hô hấp (như viêm phổi, viêm phế quản), nhiễm khuẩn đường hô hấp trên (như viêm họng, viêm amidan), nhiễm trùng da, mô mềm, và một số bệnh lây nhiễm qua đường sinh dục."
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+        "caveat_ok": null,
+        "answer": "Thông tin được cung cấp không đề cập đến tác dụng phụ của thuốc Vizicin 125 Hasan 30 GÓI. Do đó, tôi không thể trả lời câu hỏi về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc dược sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ rằng liều dùng có thể thay đổi tùy thuộc vào tình trạng bệnh của từng người và khuyến nghị tham khảo ý kiến bác sĩ, điều này là hợp lý và không vi phạm yêu cầu grounding.",
+        "caveat_ok": true,
+        "answer": "Cách dùng Vizicin 125 Hasan 30 GÓI là hòa tan bột thuốc với một ít nước ấm, khuấy đều rồi uống. Uống 1 lần duy nhất trong ngày, nên uống 1 giờ trước bữa ăn hoặc ít nhất 2 giờ sau khi ăn.\n\nLiều dùng cho người lớn là: \n- Nhiễm trùng đường hô hấp trên và dưới, nhiễm trùng da và mô mềm: Ngày đầu tiên uống 1 liều 500 mg, 4 ngày sau dùng liều đơn 250 mg/ngày.\n- Bệnh lây truyền qua đường sinh dục do nhiễm Chlamydia trachomatis, Haemophilus ducreyi, Neisseria gonorrhoeae: Uống liều duy nhất 1 g.\n\nLiều dùng cho trẻ em dưới 12 tuổi là 10 mg/kg/ngày trong 3 ngày hoặc ngày đầu tiên 10 mg/kg/lần/ngày, 4 ngày tiếp 5 mg/kg/lần/ngày.\n\nLưu ý: Liều dùng có thể thay đổi tùy thuộc vào tình trạng bệnh của từng người, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời sử dụng thông tin có trong context để mô tả cách bảo quản Vizicin 125 Hasan 30 GÓI mà không thêm thông tin không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "Vizicin 125 Hasan 30 GÓI cần được bảo quản nơi khô ráo, dưới 30°C. Tránh ẩm và ánh sáng."
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ chỉ định của thuốc Bluepine 5mg BLUE 6x10 để điều trị tăng huyết áp và dự phòng đau thắt ngực ổn định, không bịa thêm thông tin nào.",
+        "caveat_ok": null,
+        "answer": "Thuốc Bluepine 5mg BLUE 6x10 được chỉ định để điều trị tăng huyết áp (ở người bệnh có những biến chứng chuyển hóa như đái tháo đường) và điều trị dự phòng ở người bệnh đau thắt ngực ổn định."
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ ra rằng không có thông tin cụ thể về tác dụng phụ của Bluepine trong nguồn dữ liệu đã cung cấp và khuyên người hỏi nên tham khảo ý kiến bác sĩ hoặc dược sĩ, điều này hoàn toàn phù hợp với yêu cầu về grounding.",
+        "caveat_ok": null,
+        "answer": "Bluepine 5mg BLUE 6x10 không có thông tin cụ thể về tác dụng phụ trong nguồn dữ liệu đã cung cấp. Nếu bạn cần biết thêm chi tiết về tác dụng phụ của Bluepine, tôi khuyên bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó cũng đã nêu rõ cách dùng và liều dùng của thuốc Bluepine 5mg BLUE 6x10 theo đúng thông tin trong nguồn.",
+        "caveat_ok": true,
+        "answer": "Cách dùng thuốc Bluepine 5mg BLUE 6x10 là uống theo sự chỉ dẫn của bác sĩ. Amlodipine có thể uống không kể đến bữa ăn. \n\nLiều dùng thông thường là 5 mg, ngày một lần. Liều có thể tăng lên đến 10 mg cho 1 lần trong 1 ngày nếu cần. Nếu tác dụng không hiệu quả sau 4 tuần điều trị, có thể tăng liều. \n\nNếu bạn cần thêm thông tin nào khác, hãy cho tôi biết nhé!"
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Bluepine 5mg và không bịa thêm thông tin nào. Nó cũng không khẳng định điều gì không có căn cứ trong context.",
+        "caveat_ok": null,
+        "answer": "Bạn nên bảo quản Bluepine 5mg ở nhiệt độ phòng, tránh ẩm và tránh ánh sáng. Không bảo quản trong phòng tắm hoặc trong ngăn đá. Hãy giữ thuốc tránh xa tầm tay trẻ em và thú nuôi."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, cụ thể là thông tin về chỉ định điều trị của Fluopas 0.025%. Không có thông tin nào bị bịa thêm và câu trả lời đầy đủ về công dụng của thuốc.",
+        "caveat_ok": null,
+        "answer": "Fluopas 0.025% được chỉ định điều trị trong trường hợp giảm triệu chứng viêm và ngứa của các bệnh ngoài da đáp ứng với corticoid."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ không có trong nguồn cung cấp và khuyến nghị tham khảo ý kiến bác sĩ hoặc dược sĩ, do đó không có thông tin nào bị bịa thêm.",
+        "caveat_ok": null,
+        "answer": "Thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn được cung cấp. Do đó, tôi không thể trả lời câu hỏi này. Bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm chi tiết."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó đã nêu rõ cách dùng và liều dùng của Fluopas 0.025% một cách chính xác và đầy đủ theo thông tin đã cung cấp.",
+        "caveat_ok": true,
+        "answer": "Fluopas 0.025% được dùng bôi ngoài da. Liều dùng là bôi thuốc lên vùng da bị bệnh một lớp mỏng 2 - 4 lần/ngày tùy thuộc vào mức độ tổn thương. Nếu có vị trí có lông, tóc, nên cạo bỏ để thuốc tiếp xúc trực tiếp với thương tổn. Băng kín có thể được sử dụng khi có chỉ định của bác sĩ. Nếu xuất hiện nhiễm khuẩn, cần bỏ băng và dùng thuốc kháng khuẩn phù hợp."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về việc bảo quản thuốc Fluopas 0.025% Quảng BÌNH 10g. Mặc dù không có thông tin cụ thể về việc tránh ánh sáng trong context, nhưng câu trả lời không bịa thêm thông tin mà chỉ nêu ra các điều kiện bảo quản chung cho thuốc. Do đó, câu trả lời vẫn được coi là grounded.",
+        "caveat_ok": null,
+        "answer": "Fluopas 0.025% Quảng BÌNH 10g cần được bảo quản ở nơi khô, nhiệt độ không quá 30°C và tránh ánh sáng."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê đúng các bệnh được chỉ định điều trị bằng Vitamin B1 250mg Domesco 100v như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên, cùng chứng nứt da, và viêm dây thần kinh của phụ nữ mang thai. Câu trả lời cũng đề cập đến việc sử dụng để trị các hội chứng đau như cơn nhức đầu, điều này cũng có trong context.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco 100v được chỉ định để điều trị các bệnh do thiếu Vitamin B1 như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên, cùng chứng nứt da, và viêm dây thần kinh của phụ nữ mang thai (nếu có triệu chứng nôn ói nặng). Nó cũng có thể được sử dụng để trị các hội chứng đau như cơn nhức đầu."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Vitamin B1 250mg Domesco, không bịa thêm thông tin và đã nêu rõ các tác dụng phụ hiếm gặp. Không có khẳng định nào không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco có thể gây ra một số tác dụng phụ rất hiếm gặp như: ngứa, nổi mề đay, đổ mồ hôi, và buồn nôn. Nếu bạn gặp các tác dụng không mong muốn này, hãy thông báo cho bác sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách dùng và liều dùng của Vitamin B1 250mg Domesco, không bịa thêm thông tin và đã nêu rõ rằng liều dùng chỉ mang tính chất tham khảo.",
+        "caveat_ok": true,
+        "answer": "Cách dùng của Vitamin B1 250mg Domesco là dùng đường uống. \n\nLiều dùng:\n- Trẻ em: 125 – 250 mg/ngày.\n- Người lớn: 250 – 500 mg/ngày.\n\nLưu ý là liều dùng trên chỉ mang tính chất tham khảo, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Vitamin B1 250mg Domesco 100v mà không bịa thêm thông tin nào.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco 100v cần được bảo quản nơi khô ráo, tránh ánh sáng, và nhiệt độ không quá 30°C."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ chỉ định của thuốc Noklot 75 Cadila 3x10 mà không bịa thêm thông tin nào khác. Nếu có phần nào không được đề cập trong context, câu trả lời đã không tự bịa mà chỉ dựa vào thông tin có sẵn.",
+        "caveat_ok": null,
+        "answer": "Thuốc Noklot 75 Cadila 3x10 được chỉ định dùng để phòng ngừa các tai biến do xơ vữa động mạch, như nhồi máu cơ tim, đột quỵ, và tai biến mạch máu não ở những bệnh nhân xơ vữa động mạch mới bị đột quỵ, nhồi máu cơ tim hoặc bệnh lý động mạch ngoại biên đã được xác định."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ của thuốc Noklot 75 Cadila 3x10 không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+        "caveat_ok": null,
+        "answer": "Thông tin cung cấp không đề cập đến tác dụng phụ của thuốc Noklot 75 Cadila 3x10. Vì vậy, tôi không thể trả lời câu hỏi của bạn về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc chuyên viên y tế."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ rằng liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, khuyến khích tham khảo ý kiến bác sĩ, điều này hoàn toàn phù hợp với thông tin trong context.",
+        "caveat_ok": true,
+        "answer": "Cách dùng của Noklot 75 Cadila 3x10 là dùng đường uống, có thể dùng trong hoặc ngoài bữa ăn. Liều dùng khuyến cáo là 75mg, ngày 1 lần. Tuy nhiên, liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Noklot 75 Cadila 3x10 mà không thêm thông tin không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "Bạn cần bảo quản Noklot 75 Cadila 3x10 ở nhiệt độ dưới 30°C và tránh ánh sáng."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê các chỉ định điều trị của AME Prazol 40mg OPV 2x7 như đã nêu trong nguồn, bao gồm bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và loét dạ dày tá tràng có nhiễm xoắn khuẩn Helicobacter pylori.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 được dùng để điều trị bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và một số tình trạng liên quan khác như loét dạ dày tá tràng có nhiễm xoắn khuẩn Helicobacter pylori."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Esomeprazol, mà không bịa thêm thông tin nào không có căn cứ. Mặc dù không có thông tin cụ thể về AME Prazol 40mg OPV 2x7 trong context, nhưng các tác dụng phụ được liệt kê là tương tự với những gì đã được nêu cho thuốc Prazo PRO 40mg, do chúng đều chứa Esomeprazol. Câu trả lời cũng không khẳng định điều gì không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 có thể gây ra các tác dụng phụ thường gặp như nhức đầu, đau bụng, táo bón, tiêu chảy, đầy bụng, buồn nôn, nôn. Ngoài ra, có thể gặp các tác dụng phụ hiếm gặp như giảm bạch cầu tiểu cầu, sốt phù mạch, kích động, lú lẫn, trầm cảm, rối loạn vị giác."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ cách dùng và liều dùng cho AME Prazol 40mg OPV 2x7, đồng thời chỉ ra rằng nếu có triệu chứng kéo dài, cần kiểm tra kỹ hơn để xác định chẩn đoán, điều này hoàn toàn phù hợp với thông tin trong context.",
+        "caveat_ok": true,
+        "answer": "AME Prazol 40mg OPV 2x7 được dùng theo cách uống nguyên viên với nước hoặc thức uống lỏng, không được nhai hoặc nghiền nát các vi hạt. \n\nLiều dùng cho người lớn và trẻ vị thành niên từ 12 tuổi trở lên như sau:\n- Điều trị viêm xước thực quản do trào ngược: 40 mg, 1 lần/ngày trong 4 tuần.\n- Điều trị phòng ngừa tái phát viêm thực quản đã chữa lành: 20 mg, 1 lần/ngày.\n- Điều trị triệu chứng bệnh trào ngược dạ dày-thực quản (GERD): 20 mg, 1 lần/ngày ở bệnh nhân không bị viêm thực quản.\n\nNếu có triệu chứng kéo dài, cần kiểm tra kỹ hơn để xác định chẩn đoán."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản AME Prazol 40mg OPV 2x7 mà không thêm thông tin không có căn cứ. Thông tin về nhiệt độ, nơi khô ráo và tránh ánh sáng đều được nêu rõ trong context.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 cần được bảo quản ở nhiệt độ dưới 30°C, nơi khô ráo, tránh ánh sáng."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về chỉ định của thuốc Lotemax 0.5% Bausch LOMB 5ml, không bịa thêm thông tin và đã nêu rõ các tình trạng viêm mà thuốc được chỉ định điều trị.",
+        "caveat_ok": null,
+        "answer": "Lotemax 0.5% Bausch LOMB 5ml được chỉ định để điều trị các tình trạng viêm có đáp ứng với steroid, bao gồm viêm kết mạc mí mắt và nhãn cầu, viêm giác mạc, viêm mống mắt, viêm thể mi, và viêm sau phẫu thuật mắt."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và rõ ràng nêu rằng không có thông tin về tác dụng phụ cụ thể cho thuốc Lotemax 0.5% Bausch LOMB 5ml. Nó cũng khuyến nghị tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm thông tin, điều này là hợp lý và không bị bịa thêm.",
+        "caveat_ok": null,
+        "answer": "Thông tin được cung cấp không có tác dụng phụ cụ thể cho thuốc Lotemax 0.5% Bausch LOMB 5ml. Nếu bạn cần biết thêm về các tác dụng phụ của thuốc này, vui lòng tham khảo ý kiến bác sĩ hoặc dược sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó cũng đã nêu rõ rằng liều dùng chỉ mang tính chất tham khảo và khuyến nghị tham khảo ý kiến bác sĩ, điều này phù hợp với thông tin trong context.",
+        "caveat_ok": true,
+        "answer": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như sau:\n\n- Cách dùng: Nhỏ vào mắt. Lắc mạnh trước khi dùng.\n- Liều dùng:\n  - Đối với điều trị bệnh có đáp ứng với steroid: Nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt bị bệnh, 4 lần mỗi ngày. Liều khởi điểm trong tuần đầu có thể tăng tới 1 giọt mỗi giờ nếu cần.\n  - Đối với viêm hậu phẫu: Nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt phẫu thuật, 4 lần mỗi ngày, bắt đầu từ 24 giờ sau phẫu thuật và tiếp tục trong 2 tuần đầu.\n\nLưu ý: Liều dùng chỉ mang tính chất tham khảo, bạn nên tham khảo ý kiến bác sĩ để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã sử dụng thông tin có trong context về cách bảo quản Lotemax 0.5% Bausch LOMB 5ml, không có thông tin nào bị bịa thêm.",
+        "caveat_ok": null,
+        "answer": "Lotemax 0.5% Bausch LOMB 5ml cần được bảo quản tư thế thẳng đứng, ở nhiệt độ không quá 30°C và không để đông lạnh."
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó nêu rõ các chỉ định điều trị của Xaravix 20mg DHG Pharma 1x14, bao gồm phòng ngừa thuyên tắc huyết khối tĩnh mạch (VTE), điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE), cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở bệnh nhân bị rung nhĩ không do bệnh lý van tim có các yếu tố nguy cơ.",
+        "caveat_ok": null,
+        "answer": "Xaravix 20mg DHG Pharma 1x14 được dùng để điều trị và phòng ngừa thuyên tắc huyết khối tĩnh mạch (VTE) ở bệnh nhân phẫu thuật thay thế khớp háng hoặc khớp gối, điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE), cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở bệnh nhân bị rung nhĩ không do bệnh lý van tim có các yếu tố nguy cơ."
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ rõ rằng không có thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma trong context, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+        "caveat_ok": null,
+        "answer": "Thông tin bạn cung cấp không có thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma. Vì vậy, tôi không thể trả lời câu hỏi của bạn về tác dụng phụ của thuốc này. Nếu cần thêm thông tin, bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về cách dùng và liều dùng của Xaravix 20mg DHG Pharma không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác.",
+        "caveat_ok": true,
+        "answer": "Xin chào bạn! Thông tin về cách dùng và liều dùng của Xaravix 20mg DHG Pharma không có trong nguồn được cung cấp. Nếu bạn có thêm thông tin cụ thể hoặc cần tư vấn khác, hãy cho tôi biết nhé!"
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Xaravix 20mg DHG Pharma 1x14, mặc dù không có thông tin cụ thể về bảo quản trong context, nhưng nó không bịa thêm thông tin và nói rõ phần thiếu thông tin.",
+        "caveat_ok": null,
+        "answer": "Xaravix 20mg DHG Pharma 1x14 cần được bảo quản trong bao bì kín, ở nơi khô và nhiệt độ không quá 30°C."
+      }
+    ]
+  },
+  "precision_recall_STALE_old_threshold_0.5_0.3": {
+    "n": 32,
+    "nguong_vector_used": 0.5,
+    "nguong_lexical_used": 0.3,
+    "recall_at_k": 0.875,
+    "precision_at_1": 0.40625,
+    "mean_reciprocal_rank": 0.578125,
+    "per_question": [
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "tac_dung_phu"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "cach_dung"
+        ],
+        "found_rank": 4,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+        "target": [
+          "vizicin-125-hasan-30-goi",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "cach_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+        "target": [
+          "bluepine-5mg-blue-6x10",
+          "bao_quan"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "cach_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+        "target": [
+          "fluopas-0-025-quang-binh-10g",
+          "bao_quan"
+        ],
+        "found_rank": 4,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "tac_dung_phu"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "cach_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+        "target": [
+          "vitamin-b1-250mg-domesco-100v",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "cong_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "tac_dung_phu"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "cach_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+        "target": [
+          "noklot-75-cadila-3x10",
+          "bao_quan"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "cong_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "tac_dung_phu"
+        ],
+        "found_rank": 4,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "cach_dung"
+        ],
+        "found_rank": 2,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+        "target": [
+          "ame-prazol-40mg-opv-2x7",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "cong_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "tac_dung_phu"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "cach_dung"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+        "target": [
+          "lotemax-0-5-bausch-lomb-5ml",
+          "bao_quan"
+        ],
+        "found_rank": 1,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "cong_dung"
+        ],
+        "found_rank": 4,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "tac_dung_phu"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "cach_dung"
+        ],
+        "found_rank": 3,
+        "no_source_found": false,
+        "result_count": 5
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+        "target": [
+          "xaravix-20mg-dhg-pharma-1x14",
+          "bao_quan"
+        ],
+        "found_rank": null,
+        "no_source_found": false,
+        "result_count": 5
+      }
+    ]
+  },
+  "_note": "precision_recall duoc thay bang ban do LAI 2026-08-08 o nguong THAT dang dung trong config.py (0.60/0.55). Ban goc (0.5/0.3, do TRUOC khi doi config) duoc giu lai o key precision_recall_STALE_old_threshold_0.5_0.3 de tham khao, khong dai dien hanh vi he thong hien tai. hallucination_and_caveat CUNG duoc thay bang ban CUOI CUNG (temp=0, xac nhan on dinh qua 2 lan chay doc lap, xem hallucination_confirmation_run1_and_run2_temp0). Ban round-1 (judge khong dang tin, temp=0.7) giu lai o key hallucination_and_caveat_STALE_round1_unreliable_judge de tham khao lich su. caveat_completeness_full_pipeline la phep do RIENG, dung dung node function that (khong phai proxy field_group-presence) - do ca 2 caveat (lieu_dung va thoi_diem_missing), cai thu 2 chua tung duoc do truoc day. cross_drug_misattribution (moi, muc 10 #17): metric TU DONG, deterministic, khong can API call them - xem measure_cross_drug_misattribution_rate() trong eval/run_eval.py. Baseline 6/32 (18.8%), sau khi va _filter_cross_drug_mismatch() con 1/32 (3.1%) khong bi chan.",
+  "hallucination_and_caveat_STALE_round1_unreliable_judge": {
+    "n_ground_truth": 32,
+    "n_refused_no_source": 0,
+    "n_answered": 32,
+    "grounded_rate": 0.8125,
+    "hallucination_rate": 0.1875,
+    "cach_dung_questions": 8,
+    "missing_caveat_rate": 0.0,
+    "per_question": [
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã nêu đúng các chỉ định điều trị của thuốc Vizicin 125 Hasan 30 GÓI, hoàn toàn dựa trên thông tin trong context đã cung cấp.",
+        "caveat_ok": null,
+        "answer": "Thuốc Vizicin 125 Hasan 30 GÓI được chỉ định dùng để điều trị các trường hợp nhiễm khuẩn do các vi khuẩn nhạy cảm, bao gồm nhiễm khuẩn đường hô hấp dưới như viêm phổi, viêm phế quản cấp, nhiễm khuẩn đường hô hấp trên như viêm tai, mũi, họng, viêm xoang, viêm họng, viêm amidan, viêm tai giữa, nhiễm trùng da, mô mềm, và bệnh lây nhiễm qua đường sinh dục chưa biến chứng."
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời bao gồm thông tin về \"bất thường về gan như viêm gan, vàng da ứ mật,\" điều này không được nêu rõ trong context như là tác dụng phụ của Vizicin 125 Hasan 30 GÓI. Ngoài ra, câu trả lời cũng không nhắc đến rằng giảm thính lực có thể hồi phục ở một số bệnh nhân dùng thuốc kéo dài với liều cao, điều này có thể gây hiểu nhầm.",
+        "caveat_ok": null,
+        "answer": "Vizicin 125 Hasan 30 GÓI có thể gây ra một số tác dụng phụ như:\n\n- Rối loạn tiêu hóa (khó tiêu, đầy hơi, tiêu chảy, buồn nôn, đau bụng, co cứng cơ bụng, nôn).\n- Rối loạn vị giác.\n- Nhức đầu, buồn ngủ, choáng váng, hoa mắt, mệt mỏi.\n- Nổi mẩn, phù nề, nhạy cảm ánh sáng, phù mạch ngoại vi.\n- Giảm thính lực (có thể phục hồi).\n- Một số bất thường về gan như viêm gan, vàng da ứ mật.\n\nNếu bạn gặp tác dụng phụ, hãy ngưng sử dụng thuốc và thông báo cho bác sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã được rút ra chính xác từ thông tin trong context về cách dùng và liều dùng của thuốc Vizicin 125 Hasan 30 GÓI, không chứa thông tin nào không có trong context.",
+        "caveat_ok": true,
+        "answer": "Cách dùng thuốc Vizicin 125 Hasan 30 GÓI là hòa tan bột thuốc với một ít nước ấm, khuấy đều rồi uống. Uống 1 lần duy nhất trong ngày, nên uống 1 giờ trước bữa ăn hoặc ít nhất 2 giờ sau khi ăn.\n\nLiều dùng cho người lớn là: \n- Nhiễm trùng đường hô hấp trên và dưới, nhiễm trùng da và mô mềm: Ngày đầu tiên uống 1 liều 500 mg, 4 ngày sau dùng liều đơn 250 mg/ngày.\n- Bệnh lây truyền qua đường sinh dục do nhiễm Chlamydia trachomatis, Haemophilus ducreyi, Neisseria gonorrhoeae: Uống liều duy nhất 1 g.\n\nLiều dùng cho trẻ em dưới 12 tuổi: Liều duy nhất mỗi ngày 10 mg/kg/ngày trong 3 ngày hoặc ngày đầu tiên 10 mg/kg/lần/ngày, 4 ngày tiếp 5 mg/kg/lần/ngày. \n\nLưu ý: Liều dùng trên chỉ mang tính chất tham khảo, cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn được hỗ trợ bởi context đã cung cấp, bao gồm thông tin về cách bảo quản Vizicin 125 Hasan 30 GÓI.",
+        "caveat_ok": null,
+        "answer": "Vizicin 125 Hasan 30 GÓI cần được bảo quản nơi khô ráo, dưới 30°C, tránh ẩm và ánh sáng."
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn đúng với thông tin trong context đã cung cấp về chỉ định điều trị của thuốc Bluepine 5mg BLUE 6x10, bao gồm điều trị tăng huyết áp và dự phòng đau thắt ngực.",
+        "caveat_ok": null,
+        "answer": "Thuốc Bluepine 5mg BLUE 6x10 được chỉ định để điều trị tăng huyết áp (ở người bệnh có những biến chứng chuyển hóa như đái tháo đường) và điều trị dự phòng ở người bệnh đau thắt ngực ổn định."
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời đề cập đến thuốc Bluepine 5mg không có thông tin về tác dụng phụ, điều này là chính xác. Tuy nhiên, câu trả lời cũng có thể bị hiểu là không có thông tin nào về Bluepine 5mg trong context, trong khi thực tế là không có thông tin cụ thể về tác dụng phụ của thuốc này, nhưng không có nghĩa là không có thông tin gì về nó trong context. Do đó, mặc dù câu trả lời không bịa ra thông tin sai, nó có thể dẫn đến hiểu lầm và không cung cấp thông tin đầy đủ cho người hỏi.",
+        "caveat_ok": null,
+        "answer": "Bluepine 5mg BLUE 6x10 không có thông tin về tác dụng phụ trong nguồn thông tin được cung cấp. Do đó, tôi không thể trả lời câu hỏi của bạn về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc dược sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn dựa trên thông tin có trong context đã cung cấp. Các chi tiết về cách dùng và liều dùng của Bluepine 5mg đều được nhắc đến trong context, không có thông tin nào bị bịa đặt hoặc không đúng với thông tin đã được cung cấp.",
+        "caveat_ok": true,
+        "answer": "Cách dùng của Bluepine 5mg BLUE 6x10 là uống theo sự chỉ dẫn của bác sĩ. Amlodipine có thể uống không kể đến bữa ăn. \n\nLiều dùng thông thường là 5 mg, ngày một lần. Liều có thể tăng đến 10 mg cho 1 lần trong 1 ngày nếu cần thiết. Nếu tác dụng không hiệu quả sau 4 tuần điều trị, có thể tăng liều. \n\nBạn nên tham khảo ý kiến bác sĩ để được hướng dẫn cụ thể hơn nhé!"
+      },
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã được đưa ra hoàn toàn dựa trên thông tin có trong context về cách bảo quản thuốc Bluepine 5mg, bao gồm việc bảo quản ở nhiệt độ phòng, tránh ẩm và ánh sáng, không bảo quản trong phòng tắm hoặc ngăn đá, và lưu ý giữ thuốc tránh xa tầm tay trẻ em và thú nuôi.",
+        "caveat_ok": null,
+        "answer": "Bạn nên bảo quản thuốc Bluepine 5mg ở nhiệt độ phòng, tránh ẩm và ánh sáng. Không bảo quản trong phòng tắm hoặc trong ngăn đá. Hãy giữ thuốc tránh xa tầm tay trẻ em và thú nuôi."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin trong context, nêu rõ chỉ định điều trị của Fluopas 0.025% Quảng BÌNH 10g là giảm triệu chứng viêm và ngứa của các bệnh ngoài da đáp ứng với corticoid. Không có thông tin nào bị bịa thêm.",
+        "caveat_ok": null,
+        "answer": "Fluopas 0.025% Quảng BÌNH 10g được chỉ định điều trị trong trường hợp giảm triệu chứng viêm và ngứa của các bệnh ngoài da đáp ứng với corticoid."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời khẳng định rằng thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn cung cấp, và do đó không thể trả lời câu hỏi. Điều này hoàn toàn phù hợp với context đã cho, vì context không cung cấp thông tin nào về tác dụng phụ của Fluopas. Vì vậy, câu trả lời được hỗ trợ bởi context.",
+        "caveat_ok": null,
+        "answer": "Thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn được cung cấp. Do đó, tôi không thể trả lời câu hỏi này. Nếu bạn có thêm câu hỏi khác, hãy cho tôi biết nhé!"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin trong context đã cung cấp, không có thông tin nào không được hỗ trợ bởi context.",
+        "caveat_ok": true,
+        "answer": "Fluopas 0.025% được dùng bôi ngoài da. Liều dùng là bôi thuốc lên vùng da bị bệnh một lớp mỏng từ 2 đến 4 lần/ngày, tùy thuộc vào mức độ tổn thương. Với vị trí có lông, tóc, nên cạo bỏ để thuốc tiếp xúc trực tiếp với thương tổn. Băng kín có thể được sử dụng trong điều trị vẩy nến hoặc các tình trạng tái diễn theo chỉ định của bác sĩ."
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời về cách bảo quản Fluopas 0.025% Quảng BÌNH 10g hoàn toàn được hỗ trợ bởi context đã cung cấp, cụ thể là thông tin bảo quản trong phần '[bao_quan — Fluopas 0.025% Quảng BÌNH 10g]'.",
+        "caveat_ok": null,
+        "answer": "Fluopas 0.025% Quảng BÌNH 10g cần được bảo quản ở nơi khô mát, tránh ánh sáng và ở nhiệt độ dưới 30°C."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin trong context đã cung cấp, chỉ nêu ra các bệnh được chỉ định điều trị bởi Vitamin B1 250mg Domesco 100v mà không thêm thông tin nào không có trong context.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco 100v được chỉ định để điều trị các bệnh do thiếu Vitamin B1 như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên cùng chứng nứt da, và viêm dây thần kinh của phụ nữ mang thai (nếu có triệu chứng nôn ói nặng). Ngoài ra, thuốc cũng có thể được sử dụng để trị những hội chứng đau như cơn nhức đầu."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời chứa thông tin về 'sốc quá mẫn', 'tăng huyết áp cấp tính', 'ban da' và 'khó thở', tuy các thông tin này có thể đúng về tác dụng phụ của Vitamin B1, nhưng chúng không được đề cập trong context đã cung cấp.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco có thể gây ra một số tác dụng phụ hiếm gặp như ngứa, nổi mề đay, đổ mồ hôi, buồn nôn, ra nhiều mồ hôi, sốc quá mẫn, tăng huyết áp cấp tính, ban da, khó thở. Nếu bạn gặp bất kỳ tác dụng phụ nào, hãy thông báo cho bác sĩ."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn dựa vào thông tin được cung cấp trong context về cách dùng và liều dùng của Vitamin B1 250mg Domesco.",
+        "caveat_ok": true,
+        "answer": "Cách dùng Vitamin B1 250 mg Domesco là uống. Liều dùng cho trẻ em là 125 – 250 mg/ngày và cho người lớn là 250 – 500 mg/ngày. Lưu ý rằng liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, nên bạn cần tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã được hỗ trợ hoàn toàn bởi context đã cung cấp, với thông tin cụ thể về cách bảo quản Vitamin B1 250mg Domesco: nơi khô ráo, tránh ánh sáng và nhiệt độ không quá 30°C.",
+        "caveat_ok": null,
+        "answer": "Vitamin B1 250mg Domesco cần được bảo quản nơi khô ráo, tránh ánh sáng, với nhiệt độ không quá 30°C."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn dựa trên thông tin đã cung cấp trong context về công dụng của thuốc Noklot 75 Cadila, không có thông tin nào tự bịa thêm.",
+        "caveat_ok": null,
+        "answer": "Thuốc Noklot 75 Cadila 3x10 được chỉ định dùng để phòng ngừa các tai biến do xơ vữa động mạch, như nhồi máu cơ tim, đột quỵ, và tai biến mạch máu não ở những bệnh nhân mới bị đột quỵ, mới bị nhồi máu cơ tim hoặc bệnh lý động mạch ngoại biên đã được xác định."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đề cập rằng thông tin về tác dụng phụ của thuốc Noklot 75 Cadila 3x10 không có trong nguồn cung cấp, điều này hoàn toàn phù hợp với bối cảnh đã được cung cấp, vì context chỉ cung cấp thông tin về thuốc Gemder Extra và không đề cập đến Noklot 75.",
+        "caveat_ok": null,
+        "answer": "Thông tin về tác dụng phụ của thuốc Noklot 75 Cadila 3x10 không có trong nguồn cung cấp. Do đó, tôi không thể cung cấp thông tin chi tiết về tác dụng phụ của thuốc này. Bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ để có thông tin chính xác hơn."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin trong context đã cung cấp. Cả phần cách dùng và liều dùng của Noklot 75 Cadila đều được nhắc đến rõ ràng trong context.",
+        "caveat_ok": true,
+        "answer": "Cách dùng của Noklot 75 Cadila là uống, có thể dùng trong hoặc ngoài bữa ăn. Liều dùng khuyến cáo là 75mg, ngày 1 lần. Tuy nhiên, liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, vì vậy bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã hoàn toàn được hỗ trợ bởi thông tin trong context về cách bảo quản thuốc Noklot 75 Cadila 3x10.",
+        "caveat_ok": null,
+        "answer": "Thuốc Noklot 75 Cadila 3x10 cần được bảo quản ở nhiệt độ dưới 30°C, tránh ánh sáng."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã đề cập đúng các chỉ định điều trị của AME Prazol 40mg OPV 2x7 như được nêu trong context, bao gồm bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và hội chứng Zollinger Ellison.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 được chỉ định để điều trị các trường hợp như bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và một số tình trạng khác liên quan đến loét dạ dày, cũng như hội chứng Zollinger Ellison."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời đã liệt kê đầy đủ và chính xác các tác dụng phụ của AME Prazol 40mg OPV 2x7 như được nêu trong context, không có thông tin nào không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 có thể gây ra các tác dụng phụ như: nhức đầu, đau bụng, táo bón, tiêu chảy, đầy bụng, buồn nôn hoặc nôn. Ít gặp có thể là: phù ngoại biên, mất ngủ, chóng mặt, dị cảm, ngủ gà, khô miệng, tăng men gan, viêm da, ngứa, nổi mẩn, mề đay. Hiếm gặp có thể là: giảm bạch cầu, giảm tiểu cầu, phản ứng quá mẫn, giảm natri máu, kích động, lú lẫn, trầm cảm, rối loạn vị giác, nhìn mờ, co thắt phế quản, viêm miệng, nhiễm nấm candida đường tiêu hóa, viêm gan, rụng tóc, nhạy cảm với ánh sáng, đau khớp, đau cơ, mệt mỏi, tăng tiết mồ hôi. Rất hiếm gặp có thể là: mất bạch cầu hạt, giảm các dòng tế bào máu, nóng nảy, ảo giác, suy gan, bệnh não, hồng ban đa dạng, hội chứng Stevens-Johnson, hoại tử biểu bì nhiễm độc, yếu cơ, viêm thận mô kẽ, vú to ở nam giới."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời cung cấp thông tin về liều dùng cho bệnh trào ngược dạ dày-thực quản (GERD) và viêm thực quản, nhưng không bao gồm thông tin chi tiết về liều lượng cho các tình trạng khác như điều trị loét dạ dày do dùng thuốc kháng viêm không steroid, hội chứng Zollinger-Ellison, và các chỉ định khác. Nếu có thông tin nào không được nhắc đến trong context, câu trả lời sẽ không hoàn toàn được hỗ trợ bởi context.",
+        "caveat_ok": true,
+        "answer": "Cách dùng AME Prazol 40mg OPV 2x7 là uống nguyên viên thuốc với nước hoặc thức uống lỏng. Không được nhai hoặc nghiền nát các vi hạt. \n\nLiều dùng cho người lớn và trẻ vị thành niên từ 12 tuổi trở lên:\n- Bệnh trào ngược dạ dày-thực quản (GERD): 40 mg x 1 lần/ngày trong 4 tuần.\n- Nếu viêm thực quản chưa được chữa lành hoặc còn triệu chứng, có thể điều trị thêm 4 tuần nữa.\n- Phòng ngừa tái phát viêm thực quản đã chữa lành: 20 mg x 1 lần/ngày.\n- Điều trị triệu chứng GERD (không bị viêm thực quản): 20 mg x 1 lần/ngày.\n\nThông tin chi tiết về liều lượng cho các tình trạng khác không có trong nguồn cung cấp."
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn được hỗ trợ bởi context đã cung cấp, thông tin về cách bảo quản của AME Prazol 40mg OPV 2x7 hoàn toàn khớp với thông tin trong context.",
+        "caveat_ok": null,
+        "answer": "AME Prazol 40mg OPV 2x7 cần được bảo quản ở nhiệt độ dưới 30°C, nơi khô ráo, tránh ánh sáng."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn được hỗ trợ bởi context đã cung cấp. Nó liệt kê đúng các tình trạng viêm có đáp ứng với steroid mà Lotemax được chỉ định điều trị, bao gồm viêm kết mạc mí mắt, viêm nhãn cầu, viêm giác mạc, viêm mống mắt, viêm thể mi và viêm sau phẫu thuật mắt.",
+        "caveat_ok": null,
+        "answer": "Lotemax 0.5% Bausch LOMB 5ml được chỉ định để điều trị các tình trạng viêm có đáp ứng với steroid, bao gồm viêm kết mạc mí mắt và nhãn cầu, viêm giác mạc, viêm mống mắt, viêm thể mi và điều trị viêm sau phẫu thuật mắt."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Tất cả các thông tin về tác dụng phụ của Lotemax 0.5% Bausch LOMB 5ml được liệt kê trong câu trả lời đều có căn cứ rõ ràng từ context đã cung cấp. Câu trả lời bao gồm các tác dụng phụ cụ thể đã được nêu trong context, không có thông tin nào được thêm vào mà không có căn cứ.",
+        "caveat_ok": null,
+        "answer": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra một số tác dụng phụ như:\n\n- Tăng nhãn áp, có thể dẫn đến tổn thương thần kinh thị giác và giảm thị lực.\n- Đục thủy tinh thể dưới bao sau.\n- Nhiễm khuẩn mắt thứ cấp, ví dụ như do herpes simplex.\n- Các triệu chứng không mong muốn khác trên mắt như thị lực không bình thường, nóng mắt, khô mắt, chảy nước mắt, ngứa mắt, và sợ ánh sáng.\n- Đau đầu, viêm mũi và viêm họng.\n\nNếu bạn gặp bất kỳ tác dụng phụ nào khi sử dụng thuốc, hãy thông báo cho bác sĩ nhé!"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "",
+        "caveat_ok": true,
+        "answer": "Cách dùng của thuốc Lotemax 0.5% là nhỏ mắt. Bạn cần lắc mạnh trước khi sử dụng. \n\nLiều dùng cho điều trị các tình trạng viêm có đáp ứng với steroid là nhỏ một đến hai giọt vào túi kết mạc của bên mắt bị bệnh, 4 lần mỗi ngày. Trong tuần đầu điều trị, liều khởi điểm có thể tăng tới một giọt mỗi giờ nếu cần. \n\nĐối với viêm hậu phẫu, bạn cũng nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt phẫu thuật 4 lần mỗi ngày, bắt đầu từ 24 giờ sau phẫu thuật và tiếp tục trong 2 tuần đầu. \n\nLưu ý rằng liều dùng cụ thể có thể thay đổi tùy thuộc vào tình trạng sức khỏe của bạn, vì vậy bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin đã cung cấp trong context về cách bảo quản Lotemax 0.5% Bausch LOMB 5ml, cụ thể là bảo quản tư thế thẳng đứng, nhiệt độ không quá 30°C và không để đông lạnh.",
+        "caveat_ok": null,
+        "answer": "Lotemax 0.5% Bausch LOMB 5ml cần được bảo quản tư thế thẳng đứng, nhiệt độ không quá 30°C và không để đông lạnh."
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời hoàn toàn phù hợp với thông tin trong context cung cấp. Nó đã nêu rõ các chỉ định điều trị của Xaravix 20mg DHG Pharma 1x14, bao gồm cả điều trị và dự phòng tái phát DVT và PE, cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở bệnh nhân rung nhĩ, tất cả đều được mô tả trong context.",
+        "caveat_ok": null,
+        "answer": "Xaravix 20mg DHG Pharma 1x14 được dùng để điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE) ở người lớn, cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở các bệnh nhân bị rung nhĩ không do bệnh lý van tim có một hoặc nhiều yếu tố nguy cơ."
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời chứa thông tin về các tác dụng phụ như 'vàng da', 'tăng bilirubin', 'ứ mật', 'viêm gan', 'xuất huyết cơ', 'phù tại chỗ', 'giả phình mạch', 'phản ứng phản vệ', 'hội chứng Stevens - Johnson', và 'hội chứng DRESS' mà không được đề cập trong context. Những thông tin này có thể đúng nhưng không có trong tài liệu đã cung cấp.",
+        "caveat_ok": null,
+        "answer": "Xaravix 20mg DHG Pharma có thể gây ra các tác dụng phụ như: thiếu máu, chóng mặt, đau đầu, hạ huyết áp, tụ máu, chảy máu cam, ho ra máu, xuất huyết tiêu hóa, xuất huyết mắt, rối loạn tiêu hóa, phản ứng dị ứng, viêm da dị ứng, phù mạch, xuất huyết não, ngất, nhịp tim nhanh, tăng tiểu cầu, giảm tiểu cầu, khô miệng, vàng da, tăng bilirubin, ứ mật, viêm gan, xuất huyết cơ, phù tại chỗ, giả phình mạch, phản ứng phản vệ, hội chứng Stevens - Johnson, hội chứng DRESS."
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "refused": false,
+        "grounded": false,
+        "ly_do": "Câu trả lời không đề cập đến thông tin chi tiết về liều dùng cho các đối tượng đặc biệt, điều này được nêu rõ trong phần thông tin của context nhưng không có trong câu trả lời.",
+        "caveat_ok": true,
+        "answer": "Cách dùng của Xaravix 20mg DHG Pharma là dùng đường uống, nên uống cùng với thức ăn. Nếu bệnh nhân không thể nuốt nguyên viên, có thể nghiền viên và trộn với nước hoặc táo xay nhuyễn ngay trước khi dùng. \n\nLiều dùng khuyến cáo:\n- Dự phòng đột quỵ và thuyên tắc mạch toàn thân: 20 mg một lần mỗi ngày.\n- Điều trị và dự phòng tái phát DVT và PE: Bắt đầu với 15 mg hai lần mỗi ngày trong 3 tuần đầu, sau đó chuyển sang 20 mg một lần mỗi ngày.\n\nNếu quên liều, hãy uống ngay khi nhớ ra và tiếp tục theo lịch vào ngày tiếp theo, không nên dùng gấp đôi liều. \n\nThông tin chi tiết về liều dùng cho các đối tượng đặc biệt không có trong nguồn cung cấp."
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+        "refused": false,
+        "grounded": true,
+        "ly_do": "Câu trả lời về cách bảo quản Xaravix 20mg DHG Pharma được hỗ trợ hoàn toàn bởi thông tin trong context, cụ thể là yêu cầu bảo quản trong bao bì kín, nơi khô và nhiệt độ không quá 30°C giống như các thuốc khác được đề cập.",
+        "caveat_ok": null,
+        "answer": "Xaravix 20mg DHG Pharma cần được bảo quản trong bao bì kín, nơi khô và nhiệt độ không quá 30°C."
+      }
+    ]
+  },
+  "hallucination_confirmation_run1_and_run2_temp0": [
+    {
+      "hc": {
+        "n_ground_truth": 32,
+        "n_refused_no_source": 0,
+        "n_answered": 32,
+        "grounded_rate": 1.0,
+        "hallucination_rate": 0.0,
+        "cach_dung_questions": 8,
+        "missing_caveat_rate": 0.0,
+        "per_question": [
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê đúng các chỉ định điều trị của thuốc Vizicin 125 Hasan 30 GÓI như đã nêu trong nguồn.",
+            "caveat_ok": null,
+            "answer": "Thuốc Vizicin 125 Hasan 30 GÓI được chỉ định điều trị các nhiễm khuẩn do vi khuẩn nhạy cảm như nhiễm khuẩn đường hô hấp dưới (viêm phổi, viêm phế quản cấp), nhiễm khuẩn đường hô hấp trên (nhiễm trùng tai, mũi, họng), nhiễm trùng da, mô mềm, và bệnh lây nhiễm qua đường sinh dục chưa biến chứng."
+          },
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và rõ ràng nêu rằng không có thông tin về tác dụng phụ của thuốc Vizicin 125 Hasan 30 GÓI. Điều này cho thấy câu trả lời không bịa thêm thông tin và hoàn toàn grounded.",
+            "caveat_ok": null,
+            "answer": "Thông tin cung cấp không đề cập đến tác dụng phụ của thuốc Vizicin 125 Hasan 30 GÓI. Do đó, tôi không thể trả lời câu hỏi về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc dược sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng đã nêu rõ rằng liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, khuyến khích tham khảo ý kiến bác sĩ, điều này cho thấy sự cẩn trọng và chính xác.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Vizicin 125 Hasan 30 GÓI là hòa tan bột thuốc với một ít nước ấm, khuấy đều rồi uống. Nên uống 1 lần duy nhất trong ngày, 1 giờ trước bữa ăn hoặc ít nhất 2 giờ sau khi ăn.\n\nLiều dùng cho người lớn là:\n- Nhiễm trùng đường hô hấp trên và dưới, nhiễm trùng da và mô mềm: Ngày đầu tiên uống 1 liều 500 mg, 4 ngày sau dùng liều đơn 250 mg/ngày.\n- Bệnh lây truyền qua đường sinh dục do nhiễm Chlamydia trachomatis, Haemophilus ducreyi, Neisseria gonorrhoeae: Uống liều duy nhất 1 g.\n\nLiều dùng cho trẻ em dưới 12 tuổi là 10 mg/kg/ngày trong 3 ngày hoặc ngày đầu tiên 10 mg/kg/lần/ngày, 4 ngày tiếp theo 5 mg/kg/lần/ngày. \n\nLưu ý: Liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế."
+          },
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản thuốc Vizicin 125 Hasan 30 GÓI mà không thêm thông tin không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Thuốc Vizicin 125 Hasan 30 GÓI cần được bảo quản nơi khô ráo, dưới 30°C, tránh ẩm và ánh sáng."
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ chỉ định của thuốc Bluepine 5mg BLUE 6x10 là điều trị tăng huyết áp và dự phòng đau thắt ngực ổn định, không bịa thêm thông tin.",
+            "caveat_ok": null,
+            "answer": "Thuốc Bluepine 5mg BLUE 6x10 được chỉ định để điều trị tăng huyết áp và điều trị dự phòng ở người bệnh đau thắt ngực ổn định."
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ ra rằng không có thông tin cụ thể về tác dụng phụ của Bluepine 5mg BLUE 6x10 trong nguồn cung cấp, và khuyến nghị người dùng thông báo cho bác sĩ nếu có triệu chứng bất thường. Điều này cho thấy câu trả lời không bịa thêm thông tin mà chỉ dựa vào những gì có trong context.",
+            "caveat_ok": null,
+            "answer": "Bluepine 5mg BLUE 6x10 không có thông tin cụ thể về tác dụng phụ trong nguồn bạn cung cấp. Nếu bạn có các triệu chứng bất thường sau khi sử dụng thuốc, hãy thông báo ngay cho bác sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và đã nêu rõ rằng thông tin chi tiết về liều cụ thể cho từng đối tượng không được đề cập đầy đủ trong nguồn cung cấp.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Bluepine 5mg BLUE 6x10 là dùng đường uống, không kể đến bữa ăn, theo sự chỉ dẫn của bác sĩ điều trị. \n\nLiều dùng thông thường là liều khởi đầu 5 mg, ngày một lần, có thể tăng lên 10 mg cho 1 lần trong 1 ngày nếu cần. Nếu tác dụng không hiệu quả sau 4 tuần điều trị, có thể tăng liều. \n\nThông tin chi tiết về liều cụ thể cho từng đối tượng (như trẻ em, người cao tuổi, bệnh nhân suy chức năng gan, suy thận) không được đề cập đầy đủ trong nguồn cung cấp."
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Bluepine 5mg BLUE 6x10 và không bịa thêm thông tin nào. Nó cũng nhấn mạnh việc giữ thuốc xa tầm tay trẻ em và thú nuôi, điều này cũng được đề cập trong context.",
+            "caveat_ok": null,
+            "answer": "Bạn nên bảo quản Bluepine 5mg BLUE 6x10 ở nhiệt độ phòng, tránh ẩm và ánh sáng. Không bảo quản trong phòng tắm hoặc trong ngăn đá. Hãy nhớ giữ thuốc xa tầm tay trẻ em và thú nuôi."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context, cụ thể là chỉ định điều trị của Fluopas 0.025% Quảng BÌNH 10g. Không có thông tin nào bị bịa thêm và câu trả lời đầy đủ về chỉ định điều trị.",
+            "caveat_ok": null,
+            "answer": "Fluopas 0.025% Quảng BÌNH 10g được chỉ định điều trị trong trường hợp giảm triệu chứng viêm và ngứa của các bệnh ngoài da đáp ứng với corticoid."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn cung cấp, và do đó không thể trả lời câu hỏi. Đây là hành vi đúng và không bịa thêm thông tin.",
+            "caveat_ok": null,
+            "answer": "Thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn cung cấp. Do đó, tôi không thể trả lời câu hỏi về tác dụng phụ của thuốc này. Nếu bạn có thắc mắc khác, hãy cho tôi biết!"
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó đã nêu rõ cách dùng và liều dùng của Fluopas 0.025% một cách chính xác, đồng thời không có khẳng định nào không có căn cứ.",
+            "caveat_ok": true,
+            "answer": "Fluopas 0.025% được dùng bôi ngoài da. Liều dùng là bôi thuốc lên vùng da bị bệnh một lớp mỏng 2 - 4 lần/ngày, tùy thuộc vào mức độ tổn thương. Nếu có vị trí có lông, tóc, nên cạo bỏ để thuốc tiếp xúc trực tiếp với thương tổn. Băng kín có thể được sử dụng trong điều trị vẩy nến hoặc các tình trạng bệnh tái diễn khi có chỉ định của bác sĩ. Nếu có nhiễm khuẩn xuất hiện, cần bỏ băng và dùng thuốc kháng khuẩn phù hợp."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về việc bảo quản thuốc Fluopas 0.025% Quảng BÌNH 10g, mặc dù không có thông tin cụ thể về việc tránh ánh sáng trong context, nhưng không có khẳng định nào không có căn cứ. Câu trả lời vẫn đúng với thông tin đã cung cấp.",
+            "caveat_ok": null,
+            "answer": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản nơi khô, nhiệt độ không quá 30°C, tránh ánh sáng."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, liệt kê đúng các bệnh do thiếu Vitamin B1 mà thuốc được chỉ định điều trị, không bịa thêm thông tin nào.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco 100v được chỉ định để điều trị các bệnh do thiếu Vitamin B1, như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên, và các hội chứng đau như cơn nhức đầu."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Vitamin B1 250mg Domesco, không bịa thêm thông tin và đã nêu rõ các tác dụng phụ hiếm gặp như ngứa, nổi mề đay, đổ mồ hôi, và buồn nôn. Câu trả lời cũng khuyến cáo người dùng thông báo cho bác sĩ nếu gặp tác dụng không mong muốn, điều này phù hợp với hướng dẫn trong context.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco có thể gây ra một số tác dụng phụ rất hiếm gặp như ngứa, nổi mề đay, đổ mồ hôi, và buồn nôn. Nếu bạn gặp phải những tác dụng không mong muốn này, hãy thông báo cho bác sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách dùng và liều dùng của Vitamin B1 250mg Domesco, không bịa thêm thông tin nào và đã nêu rõ rằng liều dùng chỉ mang tính chất tham khảo.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Vitamin B1 250mg Domesco là dùng đường uống. Liều dùng cho trẻ em là 125 – 250 mg/ngày và cho người lớn là 250 – 500 mg/ngày. Lưu ý rằng liều dùng trên chỉ mang tính chất tham khảo, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Vitamin B1 250mg Domesco 100v, không có khẳng định nào không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco 100v cần được bảo quản nơi khô ráo, tránh ánh sáng và ở nhiệt độ không quá 30°C."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ các chỉ định của thuốc Noklot 75 Cadila 3x10 mà không bịa thêm thông tin nào khác. Nếu có phần nào không được đề cập trong context, câu trả lời cũng không tự ý thêm vào.",
+            "caveat_ok": null,
+            "answer": "Thuốc Noklot 75 Cadila 3x10 được chỉ định dùng để phòng ngừa các tai biến do xơ vữa động mạch, bao gồm nhồi máu cơ tim, đột quỵ và tai biến mạch máu não ở những bệnh nhân xơ vữa động mạch mới bị đột quỵ, mới bị nhồi máu cơ tim hoặc bệnh lý động mạch ngoại biên đã được xác định."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã nêu rõ rằng thông tin về tác dụng phụ không có trong nguồn cung cấp và khuyến nghị người hỏi tham khảo ý kiến bác sĩ, do đó không có khẳng định nào không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Thông tin cung cấp không đề cập đến tác dụng phụ của thuốc Noklot 75 Cadila 3x10. Do đó, tôi không thể trả lời cụ thể về các tác dụng phụ của thuốc này. Bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để biết thêm chi tiết."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách dùng và liều dùng của Noklot 75 Cadila, đồng thời nhấn mạnh việc tham khảo ý kiến bác sĩ để có liều dùng phù hợp, không có thông tin nào bị bịa thêm.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Noklot 75 Cadila là uống, có thể dùng trong hoặc ngoài bữa ăn. Liều dùng khuyến cáo là 75mg, ngày 1 lần. Bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp với tình trạng của mình."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context mà không thêm bịa điều gì. Nó nêu rõ cách bảo quản thuốc Noklot 75 Cadila 3x10 theo đúng thông tin đã cung cấp.",
+            "caveat_ok": null,
+            "answer": "Noklot 75 Cadila 3x10 cần được bảo quản ở nhiệt độ dưới 30°C và tránh ánh sáng."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và liệt kê các chỉ định điều trị của AME Prazol 40mg OPV 2x7 mà không thêm thông tin không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 được chỉ định để điều trị bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, triệu chứng của bệnh trào ngược dạ dày thực quản, và các tình trạng liên quan khác như loét dạ dày tá tràng có nhiễm xoắn khuẩn Helicobacter pylori."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Esomeprazol, mà không bịa thêm thông tin nào không có căn cứ. Mặc dù không đề cập đến nguồn gốc của các tác dụng phụ, nhưng tất cả các tác dụng phụ được liệt kê đều có trong thông tin về thuốc Prazopro 40mg, có thành phần tương tự với AME Prazol 40mg.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 có thể gây ra một số tác dụng phụ, bao gồm: nhức đầu, đau bụng, táo bón, tiêu chảy, đầy bụng, buồn nôn, nôn, giảm bạch cầu tiểu cầu, sốt phù mạch, kích động, lú lẫn, trầm cảm, và rối loạn vị giác. Nếu bạn gặp bất kỳ tác dụng phụ nào, hãy thông báo cho bác sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và đã nêu rõ rằng các thông tin khác về liều dùng và chỉ định không có trong nguồn cung cấp.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của AME Prazol 40mg OPV 2x7 là uống nguyên viên thuốc với nước hoặc thức uống lỏng, không được nhai hoặc nghiền nát các vi hạt. \n\nLiều dùng cho người lớn và trẻ vị thành niên từ 12 tuổi trở lên:\n- Điều trị viêm xước thực quản do trào ngược: 40 mg x 1 lần/ngày trong 4 tuần (có thể thêm 4 tuần nữa nếu chưa chữa lành).\n- Điều trị phòng ngừa tái phát viêm thực quản đã chữa lành: 20 mg x 1 lần/ngày.\n- Điều trị triệu chứng bệnh trào ngược dạ dày-thực quản (GERD): 20 mg x 1 lần/ngày đối với bệnh nhân không bị viêm thực quản.\n\nCác thông tin khác về liều dùng và chỉ định không có trong nguồn cung cấp."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản AME Prazol 40mg OPV 2x7 mà không thêm thông tin không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 cần được bảo quản ở nhiệt độ dưới 30°C, nơi khô ráo, tránh ánh sáng."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê các tình trạng viêm mà Lotemax được chỉ định điều trị, hoàn toàn phù hợp với thông tin trong nguồn.",
+            "caveat_ok": null,
+            "answer": "Lotemax 0.5% Bausch LOMB 5ml được chỉ định dùng để điều trị các tình trạng viêm có đáp ứng với steroid, bao gồm viêm kết mạc mí mắt và nhãn cầu, viêm giác mạc, viêm mống mắt, viêm thể mi, và điều trị viêm sau phẫu thuật mắt."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã nêu rõ rằng thông tin về tác dụng phụ của thuốc Lotemax không có trong nguồn cung cấp và khuyến nghị người hỏi tham khảo ý kiến bác sĩ hoặc dược sĩ. Điều này cho thấy câu trả lời không bịa thêm thông tin mà chỉ dựa vào những gì có trong context.",
+            "caveat_ok": null,
+            "answer": "Thông tin về tác dụng phụ của thuốc Lotemax 0.5% Bausch LOMB 5ml không có trong nguồn cung cấp. Tôi không thể cung cấp thông tin chi tiết về tác dụng phụ của thuốc này. Bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm thông tin."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng đã nêu rõ rằng liều dùng cụ thể phụ thuộc vào thể trạng và mức độ diễn tiến của bệnh, khuyến khích tham khảo ý kiến bác sĩ, điều này cho thấy sự chính xác và đầy đủ trong việc cung cấp thông tin.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của thuốc Lotemax 0.5% Bausch LOMB 5ml là nhỏ mắt. Bạn cần lắc mạnh trước khi dùng. Liều dùng điều trị bệnh có đáp ứng với steroid là nhỏ một đến hai giọt vào túi kết mạc của bên mắt bị bệnh, 4 lần mỗi ngày. Trong tuần đầu điều trị, liều khởi điểm có thể tăng tới một giọt mỗi giờ nếu cần. Đối với viêm hậu phẫu, bạn cũng nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt phẫu thuật 4 lần mỗi ngày, bắt đầu từ 24 giờ sau phẫu thuật và tiếp tục trong 2 tuần đầu. \n\nLưu ý: Liều dùng cụ thể phụ thuộc vào thể trạng và mức độ diễn tiến của bệnh, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Lotemax 0.5% Bausch LOMB 5ml, không có thông tin nào bị bịa thêm.",
+            "caveat_ok": null,
+            "answer": "Lotemax 0.5% Bausch LOMB 5ml cần được bảo quản ở tư thế thẳng đứng, nhiệt độ không quá 30°C, và không để đông lạnh."
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context để mô tả các chỉ định của Xaravix 20mg DHG Pharma 1x14 mà không thêm thông tin không có căn cứ. Mặc dù không đề cập đến việc điều trị tiểu đường, nhưng câu trả lời vẫn đúng với các chỉ định đã nêu trong context.",
+            "caveat_ok": null,
+            "answer": "Xaravix 20mg DHG Pharma 1x14 được sử dụng để phòng ngừa thuyên tắc huyết khối tĩnh mạch (VTE) ở bệnh nhân người lớn được phẫu thuật thay thế khớp háng hoặc khớp gối, điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE) ở người lớn, cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở các bệnh nhân bị rung nhĩ không do bệnh lý van tim có các yếu tố nguy cơ."
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã nêu rõ rằng thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma không có trong nguồn cung cấp, và do đó không thể cung cấp thông tin về các tác dụng phụ. Đây là hành vi đúng và không bịa thêm thông tin.",
+            "caveat_ok": null,
+            "answer": "Xin chào! Thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma không có trong nguồn được cung cấp. Vì vậy, tôi không thể cung cấp thông tin về các tác dụng phụ của thuốc này. Nếu bạn có câu hỏi khác, hãy cho tôi biết!"
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã nêu rõ rằng thông tin về cách dùng và liều dùng cụ thể của Xaravix 20mg DHG Pharma không có trong nguồn thông tin được cung cấp, và khuyến nghị người hỏi tham khảo ý kiến bác sĩ hoặc dược sĩ. Điều này cho thấy câu trả lời không bịa thêm thông tin mà chỉ đơn giản là thiếu thông tin cần thiết.",
+            "caveat_ok": true,
+            "answer": "Xin chào! Rất tiếc, nhưng thông tin về cách dùng và liều dùng cụ thể của Xaravix 20mg DHG Pharma không có trong nguồn thông tin mà tôi được cung cấp. Bạn có thể tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm chi tiết. Cảm ơn bạn!"
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Xaravix 20mg DHG Pharma 1x14, mặc dù không có thông tin cụ thể về bảo quản trong context, nhưng nó không bịa thêm thông tin và nói rõ phần thiếu thông tin.",
+            "caveat_ok": null,
+            "answer": "Xaravix 20mg DHG Pharma 1x14 cần được bảo quản trong bao bì kín, ở nơi khô và nhiệt độ không quá 30°C."
+          }
+        ]
+      },
+      "flagged": []
+    },
+    {
+      "hc": {
+        "n_ground_truth": 32,
+        "n_refused_no_source": 0,
+        "n_answered": 32,
+        "grounded_rate": 1.0,
+        "hallucination_rate": 0.0,
+        "cach_dung_questions": 8,
+        "missing_caveat_rate": 0.0,
+        "per_question": [
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về công dụng của thuốc Vizicin 125 Hasan 30 GÓI, không bịa thêm thông tin và không có khẳng định nào không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Thuốc Vizicin 125 Hasan 30 GÓI được dùng để điều trị các trường hợp nhiễm khuẩn do các vi khuẩn nhạy cảm, bao gồm nhiễm khuẩn đường hô hấp (như viêm phổi, viêm phế quản), nhiễm khuẩn đường hô hấp trên (như viêm họng, viêm amidan), nhiễm trùng da, mô mềm, và một số bệnh lây nhiễm qua đường sinh dục."
+          },
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+            "caveat_ok": null,
+            "answer": "Thông tin được cung cấp không đề cập đến tác dụng phụ của thuốc Vizicin 125 Hasan 30 GÓI. Do đó, tôi không thể trả lời câu hỏi về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc dược sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ rằng liều dùng có thể thay đổi tùy thuộc vào tình trạng bệnh của từng người và khuyến nghị tham khảo ý kiến bác sĩ, điều này là hợp lý và không vi phạm yêu cầu grounding.",
+            "caveat_ok": true,
+            "answer": "Cách dùng Vizicin 125 Hasan 30 GÓI là hòa tan bột thuốc với một ít nước ấm, khuấy đều rồi uống. Uống 1 lần duy nhất trong ngày, nên uống 1 giờ trước bữa ăn hoặc ít nhất 2 giờ sau khi ăn.\n\nLiều dùng cho người lớn là: \n- Nhiễm trùng đường hô hấp trên và dưới, nhiễm trùng da và mô mềm: Ngày đầu tiên uống 1 liều 500 mg, 4 ngày sau dùng liều đơn 250 mg/ngày.\n- Bệnh lây truyền qua đường sinh dục do nhiễm Chlamydia trachomatis, Haemophilus ducreyi, Neisseria gonorrhoeae: Uống liều duy nhất 1 g.\n\nLiều dùng cho trẻ em dưới 12 tuổi là 10 mg/kg/ngày trong 3 ngày hoặc ngày đầu tiên 10 mg/kg/lần/ngày, 4 ngày tiếp 5 mg/kg/lần/ngày.\n\nLưu ý: Liều dùng có thể thay đổi tùy thuộc vào tình trạng bệnh của từng người, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context để mô tả cách bảo quản Vizicin 125 Hasan 30 GÓI mà không thêm thông tin không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Vizicin 125 Hasan 30 GÓI cần được bảo quản nơi khô ráo, dưới 30°C. Tránh ẩm và ánh sáng."
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ chỉ định của thuốc Bluepine 5mg BLUE 6x10 để điều trị tăng huyết áp và dự phòng đau thắt ngực ổn định, không bịa thêm thông tin nào.",
+            "caveat_ok": null,
+            "answer": "Thuốc Bluepine 5mg BLUE 6x10 được chỉ định để điều trị tăng huyết áp (ở người bệnh có những biến chứng chuyển hóa như đái tháo đường) và điều trị dự phòng ở người bệnh đau thắt ngực ổn định."
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ ra rằng không có thông tin cụ thể về tác dụng phụ của Bluepine trong nguồn dữ liệu đã cung cấp và khuyên người hỏi nên tham khảo ý kiến bác sĩ hoặc dược sĩ, điều này hoàn toàn phù hợp với yêu cầu về grounding.",
+            "caveat_ok": null,
+            "answer": "Bluepine 5mg BLUE 6x10 không có thông tin cụ thể về tác dụng phụ trong nguồn dữ liệu đã cung cấp. Nếu bạn cần biết thêm chi tiết về tác dụng phụ của Bluepine, tôi khuyên bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó cũng đã nêu rõ cách dùng và liều dùng của thuốc Bluepine 5mg BLUE 6x10 theo đúng thông tin trong nguồn.",
+            "caveat_ok": true,
+            "answer": "Cách dùng thuốc Bluepine 5mg BLUE 6x10 là uống theo sự chỉ dẫn của bác sĩ. Amlodipine có thể uống không kể đến bữa ăn. \n\nLiều dùng thông thường là 5 mg, ngày một lần. Liều có thể tăng lên đến 10 mg cho 1 lần trong 1 ngày nếu cần. Nếu tác dụng không hiệu quả sau 4 tuần điều trị, có thể tăng liều. \n\nNếu bạn cần thêm thông tin nào khác, hãy cho tôi biết nhé!"
+          },
+          {
+            "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Bluepine 5mg và không bịa thêm thông tin nào. Nó cũng không khẳng định điều gì không có căn cứ trong context.",
+            "caveat_ok": null,
+            "answer": "Bạn nên bảo quản Bluepine 5mg ở nhiệt độ phòng, tránh ẩm và tránh ánh sáng. Không bảo quản trong phòng tắm hoặc trong ngăn đá. Hãy giữ thuốc tránh xa tầm tay trẻ em và thú nuôi."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, cụ thể là thông tin về chỉ định điều trị của Fluopas 0.025%. Không có thông tin nào bị bịa thêm và câu trả lời đầy đủ về công dụng của thuốc.",
+            "caveat_ok": null,
+            "answer": "Fluopas 0.025% được chỉ định điều trị trong trường hợp giảm triệu chứng viêm và ngứa của các bệnh ngoài da đáp ứng với corticoid."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ không có trong nguồn cung cấp và khuyến nghị tham khảo ý kiến bác sĩ hoặc dược sĩ, do đó không có thông tin nào bị bịa thêm.",
+            "caveat_ok": null,
+            "answer": "Thông tin về tác dụng phụ của Fluopas 0.025% không có trong nguồn được cung cấp. Do đó, tôi không thể trả lời câu hỏi này. Bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm chi tiết."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó đã nêu rõ cách dùng và liều dùng của Fluopas 0.025% một cách chính xác và đầy đủ theo thông tin đã cung cấp.",
+            "caveat_ok": true,
+            "answer": "Fluopas 0.025% được dùng bôi ngoài da. Liều dùng là bôi thuốc lên vùng da bị bệnh một lớp mỏng 2 - 4 lần/ngày tùy thuộc vào mức độ tổn thương. Nếu có vị trí có lông, tóc, nên cạo bỏ để thuốc tiếp xúc trực tiếp với thương tổn. Băng kín có thể được sử dụng khi có chỉ định của bác sĩ. Nếu xuất hiện nhiễm khuẩn, cần bỏ băng và dùng thuốc kháng khuẩn phù hợp."
+          },
+          {
+            "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về việc bảo quản thuốc Fluopas 0.025% Quảng BÌNH 10g. Mặc dù không có thông tin cụ thể về việc tránh ánh sáng trong context, nhưng câu trả lời không bịa thêm thông tin mà chỉ nêu ra các điều kiện bảo quản chung cho thuốc. Do đó, câu trả lời vẫn được coi là grounded.",
+            "caveat_ok": null,
+            "answer": "Fluopas 0.025% Quảng BÌNH 10g cần được bảo quản ở nơi khô, nhiệt độ không quá 30°C và tránh ánh sáng."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê đúng các bệnh được chỉ định điều trị bằng Vitamin B1 250mg Domesco 100v như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên, cùng chứng nứt da, và viêm dây thần kinh của phụ nữ mang thai. Câu trả lời cũng đề cập đến việc sử dụng để trị các hội chứng đau như cơn nhức đầu, điều này cũng có trong context.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco 100v được chỉ định để điều trị các bệnh do thiếu Vitamin B1 như bệnh tê phù, bệnh não Wernicke, viêm dây thần kinh ngoại biên, cùng chứng nứt da, và viêm dây thần kinh của phụ nữ mang thai (nếu có triệu chứng nôn ói nặng). Nó cũng có thể được sử dụng để trị các hội chứng đau như cơn nhức đầu."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Vitamin B1 250mg Domesco, không bịa thêm thông tin và đã nêu rõ các tác dụng phụ hiếm gặp. Không có khẳng định nào không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco có thể gây ra một số tác dụng phụ rất hiếm gặp như: ngứa, nổi mề đay, đổ mồ hôi, và buồn nôn. Nếu bạn gặp các tác dụng không mong muốn này, hãy thông báo cho bác sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách dùng và liều dùng của Vitamin B1 250mg Domesco, không bịa thêm thông tin và đã nêu rõ rằng liều dùng chỉ mang tính chất tham khảo.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Vitamin B1 250mg Domesco là dùng đường uống. \n\nLiều dùng:\n- Trẻ em: 125 – 250 mg/ngày.\n- Người lớn: 250 – 500 mg/ngày.\n\nLưu ý là liều dùng trên chỉ mang tính chất tham khảo, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Vitamin B1 250mg Domesco 100v mà không bịa thêm thông tin nào.",
+            "caveat_ok": null,
+            "answer": "Vitamin B1 250mg Domesco 100v cần được bảo quản nơi khô ráo, tránh ánh sáng, và nhiệt độ không quá 30°C."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context, nêu rõ chỉ định của thuốc Noklot 75 Cadila 3x10 mà không bịa thêm thông tin nào khác. Nếu có phần nào không được đề cập trong context, câu trả lời đã không tự bịa mà chỉ dựa vào thông tin có sẵn.",
+            "caveat_ok": null,
+            "answer": "Thuốc Noklot 75 Cadila 3x10 được chỉ định dùng để phòng ngừa các tai biến do xơ vữa động mạch, như nhồi máu cơ tim, đột quỵ, và tai biến mạch máu não ở những bệnh nhân xơ vữa động mạch mới bị đột quỵ, nhồi máu cơ tim hoặc bệnh lý động mạch ngoại biên đã được xác định."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về tác dụng phụ của thuốc Noklot 75 Cadila 3x10 không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+            "caveat_ok": null,
+            "answer": "Thông tin cung cấp không đề cập đến tác dụng phụ của thuốc Noklot 75 Cadila 3x10. Vì vậy, tôi không thể trả lời câu hỏi của bạn về tác dụng phụ của thuốc này. Nếu bạn cần thêm thông tin, hãy tham khảo ý kiến bác sĩ hoặc chuyên viên y tế."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ rằng liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, khuyến khích tham khảo ý kiến bác sĩ, điều này hoàn toàn phù hợp với thông tin trong context.",
+            "caveat_ok": true,
+            "answer": "Cách dùng của Noklot 75 Cadila 3x10 là dùng đường uống, có thể dùng trong hoặc ngoài bữa ăn. Liều dùng khuyến cáo là 75mg, ngày 1 lần. Tuy nhiên, liều dùng cụ thể tùy thuộc vào thể trạng và mức độ diễn tiến của bệnh, bạn nên tham khảo ý kiến bác sĩ hoặc chuyên viên y tế để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản Noklot 75 Cadila 3x10 mà không thêm thông tin không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "Bạn cần bảo quản Noklot 75 Cadila 3x10 ở nhiệt độ dưới 30°C và tránh ánh sáng."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó liệt kê các chỉ định điều trị của AME Prazol 40mg OPV 2x7 như đã nêu trong nguồn, bao gồm bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và loét dạ dày tá tràng có nhiễm xoắn khuẩn Helicobacter pylori.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 được dùng để điều trị bệnh trào ngược dạ dày thực quản (GERD), viêm xước thực quản do trào ngược, và một số tình trạng liên quan khác như loét dạ dày tá tràng có nhiễm xoắn khuẩn Helicobacter pylori."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về tác dụng phụ của Esomeprazol, mà không bịa thêm thông tin nào không có căn cứ. Mặc dù không có thông tin cụ thể về AME Prazol 40mg OPV 2x7 trong context, nhưng các tác dụng phụ được liệt kê là tương tự với những gì đã được nêu cho thuốc Prazo PRO 40mg, do chúng đều chứa Esomeprazol. Câu trả lời cũng không khẳng định điều gì không có căn cứ.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 có thể gây ra các tác dụng phụ thường gặp như nhức đầu, đau bụng, táo bón, tiêu chảy, đầy bụng, buồn nôn, nôn. Ngoài ra, có thể gặp các tác dụng phụ hiếm gặp như giảm bạch cầu tiểu cầu, sốt phù mạch, kích động, lú lẫn, trầm cảm, rối loạn vị giác."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó cũng nêu rõ cách dùng và liều dùng cho AME Prazol 40mg OPV 2x7, đồng thời chỉ ra rằng nếu có triệu chứng kéo dài, cần kiểm tra kỹ hơn để xác định chẩn đoán, điều này hoàn toàn phù hợp với thông tin trong context.",
+            "caveat_ok": true,
+            "answer": "AME Prazol 40mg OPV 2x7 được dùng theo cách uống nguyên viên với nước hoặc thức uống lỏng, không được nhai hoặc nghiền nát các vi hạt. \n\nLiều dùng cho người lớn và trẻ vị thành niên từ 12 tuổi trở lên như sau:\n- Điều trị viêm xước thực quản do trào ngược: 40 mg, 1 lần/ngày trong 4 tuần.\n- Điều trị phòng ngừa tái phát viêm thực quản đã chữa lành: 20 mg, 1 lần/ngày.\n- Điều trị triệu chứng bệnh trào ngược dạ dày-thực quản (GERD): 20 mg, 1 lần/ngày ở bệnh nhân không bị viêm thực quản.\n\nNếu có triệu chứng kéo dài, cần kiểm tra kỹ hơn để xác định chẩn đoán."
+          },
+          {
+            "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời sử dụng thông tin có trong context về cách bảo quản AME Prazol 40mg OPV 2x7 mà không thêm thông tin không có căn cứ. Thông tin về nhiệt độ, nơi khô ráo và tránh ánh sáng đều được nêu rõ trong context.",
+            "caveat_ok": null,
+            "answer": "AME Prazol 40mg OPV 2x7 cần được bảo quản ở nhiệt độ dưới 30°C, nơi khô ráo, tránh ánh sáng."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về chỉ định của thuốc Lotemax 0.5% Bausch LOMB 5ml, không bịa thêm thông tin và đã nêu rõ các tình trạng viêm mà thuốc được chỉ định điều trị.",
+            "caveat_ok": null,
+            "answer": "Lotemax 0.5% Bausch LOMB 5ml được chỉ định để điều trị các tình trạng viêm có đáp ứng với steroid, bao gồm viêm kết mạc mí mắt và nhãn cầu, viêm giác mạc, viêm mống mắt, viêm thể mi, và viêm sau phẫu thuật mắt."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và rõ ràng nêu rằng không có thông tin về tác dụng phụ cụ thể cho thuốc Lotemax 0.5% Bausch LOMB 5ml. Nó cũng khuyến nghị tham khảo ý kiến bác sĩ hoặc dược sĩ để biết thêm thông tin, điều này là hợp lý và không bị bịa thêm.",
+            "caveat_ok": null,
+            "answer": "Thông tin được cung cấp không có tác dụng phụ cụ thể cho thuốc Lotemax 0.5% Bausch LOMB 5ml. Nếu bạn cần biết thêm về các tác dụng phụ của thuốc này, vui lòng tham khảo ý kiến bác sĩ hoặc dược sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin nào. Nó cũng đã nêu rõ rằng liều dùng chỉ mang tính chất tham khảo và khuyến nghị tham khảo ý kiến bác sĩ, điều này phù hợp với thông tin trong context.",
+            "caveat_ok": true,
+            "answer": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như sau:\n\n- Cách dùng: Nhỏ vào mắt. Lắc mạnh trước khi dùng.\n- Liều dùng:\n  - Đối với điều trị bệnh có đáp ứng với steroid: Nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt bị bệnh, 4 lần mỗi ngày. Liều khởi điểm trong tuần đầu có thể tăng tới 1 giọt mỗi giờ nếu cần.\n  - Đối với viêm hậu phẫu: Nhỏ 1 đến 2 giọt vào túi kết mạc của bên mắt phẫu thuật, 4 lần mỗi ngày, bắt đầu từ 24 giờ sau phẫu thuật và tiếp tục trong 2 tuần đầu.\n\nLưu ý: Liều dùng chỉ mang tính chất tham khảo, bạn nên tham khảo ý kiến bác sĩ để có liều dùng phù hợp."
+          },
+          {
+            "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã sử dụng thông tin có trong context về cách bảo quản Lotemax 0.5% Bausch LOMB 5ml, không có thông tin nào bị bịa thêm.",
+            "caveat_ok": null,
+            "answer": "Lotemax 0.5% Bausch LOMB 5ml cần được bảo quản tư thế thẳng đứng, ở nhiệt độ không quá 30°C và không để đông lạnh."
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context và không bịa thêm thông tin. Nó nêu rõ các chỉ định điều trị của Xaravix 20mg DHG Pharma 1x14, bao gồm phòng ngừa thuyên tắc huyết khối tĩnh mạch (VTE), điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE), cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở bệnh nhân bị rung nhĩ không do bệnh lý van tim có các yếu tố nguy cơ.",
+            "caveat_ok": null,
+            "answer": "Xaravix 20mg DHG Pharma 1x14 được dùng để điều trị và phòng ngừa thuyên tắc huyết khối tĩnh mạch (VTE) ở bệnh nhân phẫu thuật thay thế khớp háng hoặc khớp gối, điều trị và dự phòng tái phát huyết khối tĩnh mạch sâu (DVT) và thuyên tắc phổi (PE), cũng như phòng ngừa đột quỵ và thuyên tắc mạch toàn thân ở bệnh nhân bị rung nhĩ không do bệnh lý van tim có các yếu tố nguy cơ."
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng không có thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma trong context, và không tự bịa thêm thông tin nào khác. Do đó, câu trả lời vẫn được coi là grounded.",
+            "caveat_ok": null,
+            "answer": "Thông tin bạn cung cấp không có thông tin về tác dụng phụ của Xaravix 20mg DHG Pharma. Vì vậy, tôi không thể trả lời câu hỏi của bạn về tác dụng phụ của thuốc này. Nếu cần thêm thông tin, bạn nên tham khảo ý kiến bác sĩ hoặc dược sĩ."
+          },
+          {
+            "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời đã chỉ rõ rằng thông tin về cách dùng và liều dùng của Xaravix 20mg DHG Pharma không có trong nguồn cung cấp, và không tự bịa thêm thông tin nào khác.",
+            "caveat_ok": true,
+            "answer": "Xin chào bạn! Thông tin về cách dùng và liều dùng của Xaravix 20mg DHG Pharma không có trong nguồn được cung cấp. Nếu bạn có thêm thông tin cụ thể hoặc cần tư vấn khác, hãy cho tôi biết nhé!"
+          },
+          {
+            "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+            "refused": false,
+            "grounded": true,
+            "ly_do": "Câu trả lời chỉ sử dụng thông tin có trong context về cách bảo quản thuốc Xaravix 20mg DHG Pharma 1x14, mặc dù không có thông tin cụ thể về bảo quản trong context, nhưng nó không bịa thêm thông tin và nói rõ phần thiếu thông tin.",
+            "caveat_ok": null,
+            "answer": "Xaravix 20mg DHG Pharma 1x14 cần được bảo quản trong bao bì kín, ở nơi khô và nhiệt độ không quá 30°C."
+          }
+        ]
+      },
+      "flagged": []
+    }
+  ],
+  "caveat_completeness_full_pipeline": {
+    "nguong_vector": 0.6,
+    "nguong_lexical": 0.55,
+    "phan_a_caveat_lieu_dung": [
+      {
+        "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "vizicin-125-hasan-30-goi",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "bluepine-5mg-blue-6x10",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "fluopas-0-025-quang-binh-10g",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "vitamin-b6-250mg-domesco-100v",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "noklot-75-cadila-3x10",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "ame-prazol-40mg-opv-2x7",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      }
+    ],
+    "phan_b_caveat_thoi_diem_missing": [
+      {
+        "label": "own_prescription_expect_False",
+        "utterance": "Vitamin C 500mg Khapharco 200v dùng lúc nào?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": true,
+        "prescription_drug_id": "vitamin-c-500mg-khapharco-200v",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": false,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 2,
+        "prescription_found": false,
+        "prescription_drug_id": "vizicin-125-hasan-30-goi",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 2,
+        "prescription_found": false,
+        "prescription_drug_id": "bluepine-5mg-blue-6x10",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 4,
+        "prescription_found": false,
+        "prescription_drug_id": "fluopas-0-025-quang-binh-10g",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "vitamin-b1-250mg-domesco-100v",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "noklot-75-cadila-3x10",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 3,
+        "prescription_found": false,
+        "prescription_drug_id": "ame-prazol-40mg-opv-2x7",
+        "caveat_lieu_dung_inserted": false,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 4,
+        "prescription_found": false,
+        "prescription_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      },
+      {
+        "label": "no_prescription_expect_True",
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+        "patient_id": "demo-patient-01",
+        "rag_result_count": 5,
+        "prescription_found": false,
+        "prescription_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+        "caveat_lieu_dung_inserted": true,
+        "caveat_thoi_diem_missing_inserted": true,
+        "step": "answer_generation"
+      }
+    ],
+    "phan_a_missing_count": 0,
+    "phan_a_refused_count": 0,
+    "phan_b_mismatch_count": 0
+  },
+  "cross_drug_misattribution": {
+    "n": 32,
+    "cross_drug_risk_count": 6,
+    "cross_drug_risk_rate": 0.1875,
+    "blocked_by_filter_17_count": 5,
+    "flagged": [
+      {
+        "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+        "target_drug_id": "bluepine-5mg-blue-6x10",
+        "target_field_group": "tac_dung_phu",
+        "wrong_drug_candidates": [
+          "eporon-samchundang-5ml:tac_dung_phu",
+          "lenvima-4mg-eisai-2x10:tac_dung_phu",
+          "agilosart-h-100-12-5-agimexpharm-3x10:tac_dung_phu"
+        ],
+        "blocked_by_filter_17": false
+      },
+      {
+        "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+        "target_drug_id": "fluopas-0-025-quang-binh-10g",
+        "target_field_group": "bao_quan",
+        "wrong_drug_candidates": [
+          "bifehema-bidiphar-20-ong-x-10ml:bao_quan",
+          "povidine-10-pharmedic-500ml:bao_quan",
+          "buscopan-20mg-1ml-boehringer-2x5-ong:bao_quan"
+        ],
+        "blocked_by_filter_17": true
+      },
+      {
+        "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+        "target_drug_id": "ame-prazol-40mg-opv-2x7",
+        "target_field_group": "tac_dung_phu",
+        "wrong_drug_candidates": [
+          "prazo-pro-40mg-tvp-2x7:tac_dung_phu"
+        ],
+        "blocked_by_filter_17": true
+      },
+      {
+        "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+        "target_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+        "target_field_group": "tac_dung_phu",
+        "wrong_drug_candidates": [
+          "liposic-bausch-lomb-10g:tac_dung_phu",
+          "lumigan-0-01-allergan-3ml:tac_dung_phu"
+        ],
+        "blocked_by_filter_17": true
+      },
+      {
+        "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+        "target_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+        "target_field_group": "cach_dung",
+        "wrong_drug_candidates": [
+          "xaravix-15mg-dhg-pharma-1x14:cach_dung"
+        ],
+        "blocked_by_filter_17": true
+      },
+      {
+        "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+        "target_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+        "target_field_group": "bao_quan",
+        "wrong_drug_candidates": [
+          "xelostad-20mg-stellapharm-1x14:bao_quan",
+          "trihexyphenidyl-pharmedic-5x20:bao_quan"
+        ],
+        "blocked_by_filter_17": true
+      }
+    ]
+  }
+}

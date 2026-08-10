@@ -1,0 +1,258 @@
+[
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "danh_muc": "Thuốc kháng sinh",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "cong_dung",
+    "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "danh_muc": "Thuốc kháng sinh",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "tac_dung_phu",
+    "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "danh_muc": "Thuốc kháng sinh",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?"
+  },
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "danh_muc": "Thuốc kháng sinh",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "bao_quan",
+    "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "danh_muc": "Thuốc tim mạch huyết áp",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cong_dung",
+    "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "danh_muc": "Thuốc tim mạch huyết áp",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "tac_dung_phu",
+    "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "danh_muc": "Thuốc tim mạch huyết áp",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "danh_muc": "Thuốc tim mạch huyết áp",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "bao_quan",
+    "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "danh_muc": "Thuốc bôi ngoài da",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cong_dung",
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "danh_muc": "Thuốc bôi ngoài da",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "tac_dung_phu",
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "danh_muc": "Thuốc bôi ngoài da",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "danh_muc": "Thuốc bôi ngoài da",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "bao_quan",
+    "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "vitamin-b1-250mg-domesco-100v",
+    "ten_thuoc": "Vitamin b1 250mg Domesco 100v",
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cong_dung",
+    "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "vitamin-b1-250mg-domesco-100v",
+    "ten_thuoc": "Vitamin b1 250mg Domesco 100v",
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "tac_dung_phu",
+    "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "vitamin-b1-250mg-domesco-100v",
+    "ten_thuoc": "Vitamin b1 250mg Domesco 100v",
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?"
+  },
+  {
+    "drug_id": "vitamin-b1-250mg-domesco-100v",
+    "ten_thuoc": "Vitamin b1 250mg Domesco 100v",
+    "danh_muc": "Thuốc bổ",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "bao_quan",
+    "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "noklot-75-cadila-3x10",
+    "ten_thuoc": "Noklot 75 Cadila 3x10",
+    "danh_muc": "Thuốc chống đông máu",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cong_dung",
+    "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "noklot-75-cadila-3x10",
+    "ten_thuoc": "Noklot 75 Cadila 3x10",
+    "danh_muc": "Thuốc chống đông máu",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "tac_dung_phu",
+    "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "noklot-75-cadila-3x10",
+    "ten_thuoc": "Noklot 75 Cadila 3x10",
+    "danh_muc": "Thuốc chống đông máu",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?"
+  },
+  {
+    "drug_id": "noklot-75-cadila-3x10",
+    "ten_thuoc": "Noklot 75 Cadila 3x10",
+    "danh_muc": "Thuốc chống đông máu",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "bao_quan",
+    "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "ame-prazol-40mg-opv-2x7",
+    "ten_thuoc": "AME Prazol 40mg OPV 2x7",
+    "danh_muc": "Thuốc dạ dày",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "cong_dung",
+    "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "ame-prazol-40mg-opv-2x7",
+    "ten_thuoc": "AME Prazol 40mg OPV 2x7",
+    "danh_muc": "Thuốc dạ dày",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "tac_dung_phu",
+    "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "ame-prazol-40mg-opv-2x7",
+    "ten_thuoc": "AME Prazol 40mg OPV 2x7",
+    "danh_muc": "Thuốc dạ dày",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?"
+  },
+  {
+    "drug_id": "ame-prazol-40mg-opv-2x7",
+    "ten_thuoc": "AME Prazol 40mg OPV 2x7",
+    "danh_muc": "Thuốc dạ dày",
+    "muc_nghiem_trong": "Trung bình",
+    "field_group": "bao_quan",
+    "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cong_dung",
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "tac_dung_phu",
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "danh_muc": "Thuốc nhỏ mắt",
+    "muc_nghiem_trong": "Nhẹ",
+    "field_group": "bao_quan",
+    "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?"
+  },
+  {
+    "drug_id": "xaravix-20mg-dhg-pharma-1x14",
+    "ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+    "danh_muc": "Thuốc trị tiểu đường",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cong_dung",
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?"
+  },
+  {
+    "drug_id": "xaravix-20mg-dhg-pharma-1x14",
+    "ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+    "danh_muc": "Thuốc trị tiểu đường",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "tac_dung_phu",
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?"
+  },
+  {
+    "drug_id": "xaravix-20mg-dhg-pharma-1x14",
+    "ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+    "danh_muc": "Thuốc trị tiểu đường",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "cach_dung",
+    "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?"
+  },
+  {
+    "drug_id": "xaravix-20mg-dhg-pharma-1x14",
+    "ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+    "danh_muc": "Thuốc trị tiểu đường",
+    "muc_nghiem_trong": "Nguy hiểm",
+    "field_group": "bao_quan",
+    "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?"
+  }
+]

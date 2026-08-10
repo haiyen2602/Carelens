@@ -52,6 +52,13 @@ HEADER_SYNONYMS: dict[str, str] = {
     "so luong": "tong_so_luong",
     "so luong thuoc": "tong_so_luong",
     "tong so luong thuoc": "tong_so_luong",
+    "tac dung": "tac_dung",
+    "cong dung": "tac_dung",
+    "chi dinh": "tac_dung",
+    "tac dung phu": "tac_dung_phu",
+    "phan ung phu": "tac_dung_phu",
+    "phan ung co hai": "tac_dung_phu",
+    "adr": "tac_dung_phu",
     "huong dan su dung": "huong_dan_su_dung",
     "cach dung": "huong_dan_su_dung",
     "lieu dung": "lieu_dung",
@@ -94,6 +101,8 @@ def blank_record() -> dict:
         "ham_luong": "",
         "dang_thuoc": "",
         "tong_so_luong": "",
+        "tac_dung": "",
+        "tac_dung_phu": "",
         "huong_dan_su_dung": "",
         "lieu_dung": "",
         "duong_dung": "",
@@ -117,10 +126,16 @@ def flush_section(data: dict, field: str | None, lines: list[str]) -> None:
     data[field] = " ".join(l.strip() for l in lines if l.strip())
 
 
-def parse_block(text: str) -> tuple[dict, list[str]]:
-    """Parse 1 khoi van ban (1 thuoc). Return (record, unmapped_headers)."""
+def parse_block(text: str) -> tuple[dict, list[str], list[str]]:
+    """Parse 1 khoi van ban (1 thuoc). Return (record, unmapped_headers, orphan_lines).
+
+    orphan_lines la cac dong xuat hien TRUOC khi gap tieu de hop le dau tien
+    trong khoi - khong co field nao de gan vao, nen khong duoc am tham bo qua
+    ma phai bao cho nguoi dung biet (tranh mat du lieu ma khong hay).
+    """
     data = blank_record()
     unmapped: list[str] = []
+    orphan_lines: list[str] = []
     current_field: str | None = None
     current_lines: list[str] = []
 
@@ -145,9 +160,11 @@ def parse_block(text: str) -> tuple[dict, list[str]]:
 
         if current_field is not None:
             current_lines.append(stripped)
+        else:
+            orphan_lines.append(stripped)
 
     flush_section(data, current_field, current_lines)
-    return data, unmapped
+    return data, unmapped, orphan_lines
 
 
 def slugify(text: str, fallback: str) -> str:
@@ -196,8 +213,10 @@ def map_category(category_dir: Path, schema: dict) -> None:
     records = []
     used_slugs: set[str] = set()
     for i, block in enumerate(blocks, start=1):
-        data, unmapped = parse_block(block)
+        data, unmapped, orphan_lines = parse_block(block)
         if not any(data.values()):
+            if orphan_lines:
+                print(f"     [{category_dir.name}] khoi #{i}: bo qua vi khong co tieu de nao hop le, noi dung: {orphan_lines}")
             continue  # khoi rong (vd chi co tieu de huong dan o dau file)
 
         base_slug = slugify(data.get("ten_thuoc", ""), fallback=f"thuoc-{i}")
@@ -214,6 +233,8 @@ def map_category(category_dir: Path, schema: dict) -> None:
 
         errors = validate_record(data, schema)
         label = data.get("ten_thuoc") or f"khoi #{i}"
+        if orphan_lines:
+            print(f"     [{category_dir.name}] '{label}': BI MAT NOI DUNG truoc tieu de dau tien (khong ro thuoc field nao): {orphan_lines}")
         if unmapped:
             print(f"     [{category_dir.name}] '{label}': header khong nhan dien: {unmapped}")
         if errors:

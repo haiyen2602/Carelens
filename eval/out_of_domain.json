@@ -1,0 +1,77 @@
+[
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Adderall 20mg dùng để làm gì?"
+  },
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Xanax 0.5mg có tác dụng phụ gì không?"
+  },
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Wegovy dùng như thế nào?"
+  },
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Prozac 20mg bảo quản ra sao?"
+  },
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Ritalin dùng để điều trị bệnh gì?"
+  },
+  {
+    "category": "nonexistent_drug",
+    "note": "Xac nhan 0 match trong drug_chunks.ten_thuoc truoc khi dua vao (2026-08-08)",
+    "utterance": "Viagra 100mg có gây tác dụng phụ nào không?"
+  },
+  {
+    "category": "severe_typo",
+    "note": "Ten that trong GT set bi go sai nghiem trong (xao tron ky tu), khong con nhan dang duoc",
+    "utterance": "Vzcni125Hsan30Go dùng để làm gì?"
+  },
+  {
+    "category": "severe_typo",
+    "note": "Ten that trong GT set bi go sai nghiem trong",
+    "utterance": "Blpuein5mgBule6x10 có tác dụng phụ gì không?"
+  },
+  {
+    "category": "severe_typo",
+    "note": "Ten that trong GT set bi go sai nghiem trong",
+    "utterance": "Nkolot75Cdila3x10 dùng như thế nào?"
+  },
+  {
+    "category": "severe_typo",
+    "note": "Ten that trong GT set bi go sai nghiem trong",
+    "utterance": "Xravix20mgDHGPhrma bảo quản ra sao?"
+  },
+  {
+    "category": "unrelated_text",
+    "note": "Khong lien quan y te/thuoc",
+    "utterance": "Thời tiết hôm nay ở Hà Nội thế nào?"
+  },
+  {
+    "category": "unrelated_text",
+    "note": "Khong lien quan y te/thuoc",
+    "utterance": "Cách nấu phở bò truyền thống"
+  },
+  {
+    "category": "unrelated_text",
+    "note": "Khong lien quan y te/thuoc",
+    "utterance": "Giá vàng hôm nay bao nhiêu một lượng"
+  },
+  {
+    "category": "unrelated_text",
+    "note": "Khong lien quan y te/thuoc",
+    "utterance": "1 cộng 1 bằng mấy"
+  },
+  {
+    "category": "unrelated_text",
+    "note": "Khong lien quan y te/thuoc",
+    "utterance": "Đội tuyển Việt Nam đá bóng tối nay mấy giờ"
+  }
+]
