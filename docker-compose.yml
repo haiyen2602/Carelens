@@ -1,6 +1,23 @@
-version: "3.8"
-
 services:
+  db:
+    # Image chinh thuc cua pgvector, build tren postgres:16, da co san extension
+    # vector + contrib modules (pg_trgm, unaccent) - xem ADR-0008.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vmec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vmec}
+      POSTGRES_DB: ${POSTGRES_DB:-vmec04}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vmec} -d ${POSTGRES_DB:-vmec04}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -9,6 +26,11 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vmec}:${POSTGRES_PASSWORD:-vmec}@db:5432/${POSTGRES_DB:-vmec04}
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./data:/app/data
     restart: unless-stopped
@@ -17,3 +39,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  pgdata:

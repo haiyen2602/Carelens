@@ -17,6 +17,13 @@ env/
 .env.local
 .env.production
 
+# API keys / secrets accidentally dropped at repo root (incident 2026-08-08:
+# api.txt held a live key, was untracked but never verified safe until this
+# pattern was added - see report.md for the rotation note)
+api.txt
+*api_key*.txt
+secrets.txt
+
 # IDE
 .vscode/
 .idea/
@@ -61,3 +68,17 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Crawler resume state — internal checkpoint, not a deliverable
+crawler/**/*.progress.txt
+data pharmacy/**/*.progress.txt
+
+# Generated RAG chunk staging file (scripts/chunk_drugs.py) — derivable from
+# thuoc.json + script, large (~37MB), not a deliverable.
+data pharmacy/_chunks.jsonl
+
+# Vercel CLI link + pulled env (per-developer, never committed)
+.vercel
+.env*
+# ...but the template must stay in the repo
+!.env.example
