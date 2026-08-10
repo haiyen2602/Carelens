@@ -16,6 +16,7 @@
 | [`TASK-007`](./TASK-007-wireframe-ui-flow.md) | Wireframe / UI flow trên Figma (3 vai trò) | `frontend` | Nguyễn Hải Yến | P1 | To Do (carry over) |
 | [`TASK-008`](./TASK-008-test-set-safety-layer.md) | Bộ test set safety layer + redflag tiếng Việt | `safety` | Phạm Thành Đạt | **P0** | To Do |
 | [`TASK-009`](./TASK-009-hoan-thien-context-base.md) | Hoàn thiện context base | `docs` | Cả team | P1 | 🔄 In Progress |
+| [`TASK-010`](./TASK-010-build-chatbot.md) | Build chatbot/RAG (VMEC-04) — backend + tích hợp frontend | `drug-knowledge` | Nguyễn Minh Đạt | **P0** | 🔄 In Progress (backend Done) |
 
 > Sprint 01 diễn ra **trước khi** repo có `/tasks` nên không có file task — xem [`sprint-01.md`](../planning/sprints/sprint-01.md).
 
