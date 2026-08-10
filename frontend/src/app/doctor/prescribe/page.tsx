@@ -30,10 +30,18 @@ type MedRow = {
   dose: string;
   perDay: number;
   meal: string;
+  times: string[];
 };
 
 function newMedRow(): MedRow {
-  return { id: crypto.randomUUID(), med: "", dose: "1 viên", perDay: 1, meal: "Sau ăn" };
+  return {
+    id: crypto.randomUUID(),
+    med: "",
+    dose: "1 viên",
+    perDay: 1,
+    meal: "Sau ăn",
+    times: defaultTimes[1] ?? ["08:00"],
+  };
 }
 
 export default function PrescribePage() {
@@ -41,11 +49,30 @@ export default function PrescribePage() {
   const [patient, setPatient] = useState(patients[0]?.name ?? "");
   const [note, setNote] = useState("Theo dõi huyết áp mỗi sáng");
   const [meds, setMeds] = useState<MedRow[]>([
-    { id: crypto.randomUUID(), med: "Amlodipine 5mg", dose: "1 viên", perDay: 2, meal: "Sau ăn" },
+    {
+      id: crypto.randomUUID(),
+      med: "Amlodipine 5mg",
+      dose: "1 viên",
+      perDay: 2,
+      meal: "Sau ăn",
+      times: defaultTimes[2] ?? ["08:00"],
+    },
   ]);
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
     setMeds((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  };
+
+  const updatePerDay = (id: string, perDay: number) => {
+    updateMed(id, { perDay, times: defaultTimes[perDay] ?? ["08:00"] });
+  };
+
+  const updateTime = (id: string, index: number, value: string) => {
+    setMeds((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, times: m.times.map((t, i) => (i === index ? value : t)) } : m,
+      ),
+    );
   };
 
   const removeMed = (id: string) => {
@@ -63,7 +90,7 @@ export default function PrescribePage() {
         perDay: m.perDay,
         meal: m.meal,
         note,
-        times: defaultTimes[m.perDay] ?? ["08:00"],
+        times: m.times,
       });
     }
     toast.success(
@@ -130,7 +157,7 @@ export default function PrescribePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`dose-${m.id}`}>Liều</Label>
+                    <Label htmlFor={`dose-${m.id}`}>Liều dùng</Label>
                     <Input
                       id={`dose-${m.id}`}
                       value={m.dose}
@@ -144,7 +171,7 @@ export default function PrescribePage() {
                     <Label>Số lần/ngày</Label>
                     <Select
                       value={String(m.perDay)}
-                      onValueChange={(v) => updateMed(m.id, { perDay: Number(v) })}
+                      onValueChange={(v) => updatePerDay(m.id, Number(v))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -175,6 +202,24 @@ export default function PrescribePage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Giờ uống</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {m.times.map((t, idx) => (
+                      <Input
+                        key={idx}
+                        type="time"
+                        value={t}
+                        onChange={(e) => updateTime(m.id, idx, e.target.value)}
+                        className="w-32"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Giờ mặc định theo số lần/ngày — chỉnh lại nếu bệnh nhân có lịch sinh hoạt khác.
+                  </p>
                 </div>
               </div>
             ))}
@@ -209,7 +254,7 @@ export default function PrescribePage() {
           </div>
 
           {meds.map((m) => {
-            const times = defaultTimes[m.perDay] ?? ["08:00"];
+            const times = m.times;
             return (
               <div key={m.id}>
                 <p className="truncate text-sm font-semibold text-primary">
