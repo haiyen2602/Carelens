@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Đếm thuốc trong một (hoặc nhiều) file ảnh có sẵn — không cần camera.
 
@@ -16,7 +15,6 @@ import sys
 from pathlib import Path
 
 import cv2
-
 from config import Settings, load_api_key
 from providers import BASE_URL_PRESETS, BackendError
 from vlm_client import PillCounter
@@ -64,6 +62,8 @@ def main() -> int:
             effort=args.effort,
             max_image_edge=args.max_edge,
             count_pills_in_blister=not args.no_blister,
+            retries=settings.retries,
+            timeout=settings.timeout,
         )
     except BackendError as exc:
         raise SystemExit(str(exc)) from exc

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Đếm thuốc trực tiếp từ webcam bằng VLM (Claude).
 
@@ -35,23 +34,44 @@ Phím tắt trong cửa sổ camera:
     SPACE      : đang đóng băng -> chụp tiếp; đang chạy -> chụp ngay lập tức
     s          : lưu khung hình hiện tại vào anh_thuoc/ (không gọi API)
     q hoặc ESC : thoát
+
+Cấu trúc file trong thư mục này:
+    camera_counter.py  - CLI + vòng lặp điều khiển (file này)
+    stability.py       - phát hiện khung hình đứng yên
+    overlay.py         - vẽ lên cửa sổ camera
+    results_store.py   - in kết quả, lưu ảnh, ghi file JSON
+    config.py          - tham số chạy + nạp API key
+    vlm_client.py      - mã hoá ảnh, gọi model, làm sạch JSON trả về
+    providers.py       - chi tiết từng nhà cung cấp (Claude / OpenAI-compatible)
+    prompts.py         - system prompt + danh mục loại thuốc
 """
 
 from __future__ import annotations
 
 import argparse
-import json
+import logging
 import sys
+import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
 import numpy as np
-
 from config import Settings, load_api_key
-from prompts import COUNT_KEYS, COUNT_LABELS_ASCII, NON_DRUG_KEY
+from overlay import draw_overlay, status_text
 from providers import BASE_URL_PRESETS, BackendError
+from results_store import (
+    append_log,
+    build_record,
+    load_results_json,
+    next_run_index,
+    print_result,
+    save_frame,
+    save_results_json,
+)
+from stability import StabilityWatcher
 from vlm_client import CountResult, PillCounter
 
 # Terminal Windows hay dùng bảng mã cũ -> ép UTF-8 để in được tiếng Việt.
@@ -61,325 +81,58 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, ValueError):
         pass
 
+logger = logging.getLogger(__name__)
+
 VLM_DIR = Path(__file__).resolve().parent
 # Mọi khung hình được chụp để đếm đều lưu lại đây, tiện xem lại / dựng bộ ảnh test.
 ANH_THUOC_DIR = VLM_DIR / "anh_thuoc"
 WINDOW_NAME = "VLM Pills Counter - e:chup ngay  SPACE:chup tiep  s:luu anh  q:thoat"
 
-_CONFIDENCE_TEXT = {
-    "cao": "cao",
-    "trung_binh": "trung bình",
-    "thap": "thấp",
-}
-_CONFIDENCE_COLOR = {  # BGR
-    "cao": (80, 200, 80),
-    "trung_binh": (60, 190, 230),
-    "thap": (80, 80, 235),
-}
-
 
 # ---------------------------------------------------------------------------
-# Phát hiện khung hình đứng yên
+# Trạng thái
 # ---------------------------------------------------------------------------
-class StabilityWatcher:
-    """Theo dõi chuyển động giữa 2 khung hình liên tiếp.
+@dataclass
+class OutputPaths:
+    """Ba nơi ghi kết quả, mỗi cái tắt được độc lập."""
 
-    Quy tắc kích hoạt:
-      - Chênh lệch pixel trung bình < `threshold`  -> coi là đứng yên.
-      - Đứng yên liên tục đủ `stable_seconds` giây -> báo sẵn sàng chụp.
-      - Sau khi đã chụp, phải có chuyển động trở lại (cảnh thay đổi) thì mới
-        cho phép chụp lần tiếp theo. Nhờ vậy để thuốc yên một chỗ sẽ không bị
-        đếm đi đếm lại.
+    anh_dir: Path | None = None   # thư mục lưu ảnh đã chụp (None = không lưu)
+    json_path: Path | None = None  # file JSON tích luỹ mọi lần đếm
+    log_path: Path | None = None   # file .jsonl ghi thêm (tuỳ chọn)
+
+
+@dataclass
+class LoopState:
+    """Toàn bộ trạng thái thay đổi trong vòng lặp camera.
+
+    Gom lại một chỗ thay vì rải 9 biến rời rạc: nhìn vào đây là biết vòng lặp
+    có những gì, và thấy được cặp nào luôn đi cùng nhau — `pending` với
+    `pending_path` luôn được đặt và xoá cùng lúc (ảnh ứng với lần đếm đang chờ
+    kết quả), quan hệ này trước đây chỉ nằm trong đầu người viết.
     """
 
-    def __init__(
-        self,
-        threshold: float = 2.0,
-        stable_seconds: float = 3.0,
-        work_width: int = 320,
-    ) -> None:
-        self.threshold = threshold
-        self.stable_seconds = stable_seconds
-        self.work_width = work_width
-        self._prev: np.ndarray | None = None
-        self._stable_since: float | None = None
-        self._armed = True
-        self.score = 0.0
+    # Lần gọi API đang chờ kết quả, và ảnh tương ứng với nó.
+    pending: Future[CountResult] | None = None
+    pending_path: Path | None = None
+    # Kết quả mới nhất đang hiển thị trên overlay.
+    last_result: CountResult | None = None
 
-    def _prepare(self, frame: np.ndarray) -> np.ndarray:
-        height, width = frame.shape[:2]
-        if width > self.work_width:
-            scale = self.work_width / float(width)
-            frame = cv2.resize(
-                frame,
-                (self.work_width, max(1, int(height * scale))),
-                interpolation=cv2.INTER_AREA,
-            )
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # Làm mờ nhẹ để nhiễu cảm biến không bị tính là chuyển động.
-        return cv2.GaussianBlur(gray, (5, 5), 0)
+    last_sent: float = 0.0        # mốc lần gọi API gần nhất, để giãn cách
+    frame_index: int = 0          # tổng số khung đã đọc (chế độ frames dùng)
+    run_index: int = 0            # số thứ tự lần đếm, nối tiếp file cũ
+    dem_phien: int = 0            # số lần đếm của riêng phiên chạy này
 
-    def update(self, frame: np.ndarray, now: float) -> None:
-        current = self._prepare(frame)
-        if self._prev is None:
-            self._prev = current
-            self._stable_since = now
-            return
-
-        self.score = float(cv2.absdiff(current, self._prev).mean())
-        self._prev = current
-
-        if self.score > self.threshold:  # đang chuyển động
-            self._stable_since = None
-            self._armed = True  # cảnh đã đổi -> cho phép đếm lần nữa
-        elif self._stable_since is None:  # vừa dừng lại
-            self._stable_since = now
+    # Ảnh đang bị đóng băng trên màn hình (None = đang chạy bình thường).
+    frozen_frame: np.ndarray | None = field(default=None, repr=False)
+    timer_start: float = 0.0      # mốc đếm giờ của chế độ timer
 
     @property
-    def moving(self) -> bool:
-        return self._stable_since is None
+    def busy(self) -> bool:
+        return self.pending is not None
 
     @property
-    def armed(self) -> bool:
-        return self._armed
-
-    def stable_for(self, now: float) -> float:
-        return 0.0 if self._stable_since is None else now - self._stable_since
-
-    def ready(self, now: float) -> bool:
-        return self._armed and self.stable_for(now) >= self.stable_seconds
-
-    def consume(self) -> None:
-        """Đánh dấu đã chụp cho cảnh hiện tại."""
-        self._armed = False
-
-    def rearm(self, now: float) -> None:
-        """Cho phép chụp lại ngay mà không cần chờ cảnh thay đổi.
-
-        Dùng khi người dùng bấm SPACE: lúc đó chính cú bấm là tín hiệu "tôi sẵn
-        sàng cho lần đếm sau", nên không bắt phải xê dịch thuốc nữa. Mốc đứng
-        yên cũng đặt lại về hiện tại để vẫn phải chờ đủ `stable_seconds` giây.
-        """
-        self._armed = True
-        self._stable_since = now
-
-
-# ---------------------------------------------------------------------------
-# Thông báo
-# ---------------------------------------------------------------------------
-def print_result(result: CountResult, index: int, image_path: Path | None = None) -> None:
-    stamp = time.strftime("%H:%M:%S", time.localtime(result.timestamp))
-    anh = f"  Ảnh        : {image_path.name}" if image_path else ""
-    print()
-    print("=" * 52)
-    if not result.ok:
-        print(f"[{stamp}] Lần đếm #{index} — LỖI: {result.error}")
-        if anh:
-            print(anh)
-        print("=" * 52, flush=True)
-        return
-
-    counts = result.counts
-    print(f"[{stamp}] Lần đếm #{index}  ({result.latency_sec:.1f}s)")
-    print(f"  Viên nang  : {counts['vien_nang']}")
-    print(f"  Viên nén   : {counts['vien_nen']}")
-    print(f"  Tuýp thuốc : {counts['tuyp_thuoc']}")
-    print(f"  Lọ thuốc   : {counts['lo_thuoc']}")
-    print(f"  Hộp thuốc  : {counts['hop_thuoc']}")
-    print(f"  Gói thuốc  : {counts['goi_thuoc']}")
-    print(f"  ---------------------------------")
-    print(f"  Tổng số viên (nang + nén): {result.total_pills}")
-    if result.khong_phai_thuoc:
-        print(f"  Đã loại ra : {result.khong_phai_thuoc} viên kẹo / không phải thuốc")
-    print(f"  Độ tin cậy : {_CONFIDENCE_TEXT.get(result.do_tin_cay, result.do_tin_cay)}")
-    if result.ghi_chu:
-        print(f"  Ghi chú    : {result.ghi_chu}")
-    if anh:
-        print(anh)
-    print("=" * 52, flush=True)
-
-
-# ---------------------------------------------------------------------------
-# Lưu ảnh
-# ---------------------------------------------------------------------------
-def save_frame(frame: np.ndarray, folder: Path, prefix: str = "capture") -> Path | None:
-    """Ghi khung hình ra `folder` với tên theo mốc thời gian.
-
-    Dùng imencode + tofile thay cho cv2.imwrite vì cv2.imwrite không ghi được
-    khi đường dẫn có ký tự tiếng Việt (thư mục dự án này nằm trong "Máy tính").
-    Trả về đường dẫn đã ghi, hoặc None nếu ghi hỏng.
-    """
-    stamp = time.strftime("%Y%m%d_%H%M%S")
-    millis = int((time.time() % 1) * 1000)
-    path = folder / f"{prefix}_{stamp}_{millis:03d}.jpg"
-    try:
-        folder.mkdir(parents=True, exist_ok=True)
-        ok, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
-        if not ok:
-            raise ValueError("imencode thất bại")
-        buffer.tofile(str(path))
-    except Exception as exc:  # noqa: BLE001 - lưu ảnh hỏng không được làm chết vòng lặp
-        print(f"Không lưu được ảnh: {exc}", file=sys.stderr)
-        return None
-    return path
-
-
-def append_log(path: Path, result: CountResult) -> None:
-    record = result.to_dict() if result.ok else {
-        "loi": result.error,
-        "thoi_gian": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(result.timestamp)),
-    }
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-
-def load_results_json(path: Path) -> list[dict]:
-    """Đọc kết quả của những lần chạy trước để ghi tiếp vào đó.
-
-    File hỏng hoặc sai định dạng sẽ được đổi tên sang một bên chứ không bị ghi
-    đè — mất dữ liệu cũ vì một lỗi đọc là điều không chấp nhận được.
-    """
-    if not path.is_file():
-        return []
-
-    ly_do = ""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-        data, ly_do = None, str(exc)
-    else:
-        if not isinstance(data, list):
-            data, ly_do = None, "nội dung không phải mảng JSON"
-
-    if data is None:
-        backup = path.with_name(
-            f"{path.stem}_hong_{time.strftime('%Y%m%d_%H%M%S')}{path.suffix}"
-        )
-        print(f"Không đọc được {path.name} ({ly_do}). Giữ lại thành {backup.name} "
-              "và bắt đầu file mới.", file=sys.stderr)
-        try:
-            path.replace(backup)
-        except OSError:
-            pass
-        return []
-
-    return [r for r in data if isinstance(r, dict)]
-
-
-def build_record(
-    result: CountResult, index: int, image_path: Path | None, phien: str = ""
-) -> dict:
-    """Một phần tử trong file kết quả JSON."""
-    common = {
-        "lan": index,
-        "phien": phien,
-        "anh": image_path.name if image_path else "",
-        "thoi_gian": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(result.timestamp)),
-    }
-    if not result.ok:
-        return {**common, "thanh_cong": False, "loi": result.error}
-    detail = result.to_dict()
-    detail.pop("thoi_gian", None)  # đã có trong common
-    return {**common, "thanh_cong": True, **detail}
-
-
-def save_results_json(path: Path, records: list[dict]) -> None:
-    """Ghi đè toàn bộ danh sách kết quả ra file JSON.
-
-    Ghi ra file tạm rồi mới đổi tên: tắt chương trình giữa chừng cũng không để
-    lại file JSON dở dang.
-    """
-    tmp = path.with_name(path.name + ".tmp")
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp.write_text(
-            json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        tmp.replace(path)
-    except OSError as exc:
-        print(f"Không ghi được {path}: {exc}", file=sys.stderr)
-
-
-# ---------------------------------------------------------------------------
-# Vẽ overlay lên cửa sổ camera (cv2.putText chỉ vẽ được ASCII)
-# ---------------------------------------------------------------------------
-def status_text(
-    watcher: StabilityWatcher | None,
-    settings: Settings,
-    busy: bool,
-    now: float,
-    frames_left: int,
-    frozen: bool = False,
-    seconds_left: float = 0.0,
-) -> tuple[str, tuple[int, int, int]]:
-    """Dòng trạng thái ở đáy cửa sổ (ASCII, vì cv2 không vẽ được dấu)."""
-    if busy:
-        return "DANG DEM...", (0, 200, 255)
-    if frozen:
-        return "DA DUNG - nhan SPACE de chup tiep", (0, 215, 255)
-    if settings.trigger_mode == "timer":
-        return f"Chup sau {max(0.0, seconds_left):.1f}s", (80, 220, 80)
-    if watcher is None:
-        return f"Dem sau {frames_left} khung", (180, 180, 180)
-    if watcher.moving:
-        return f"Dang chuyen dong (do lech {watcher.score:.1f})", (200, 200, 200)
-    if not watcher.armed:
-        return "Da dem xong - doi canh thay doi", (150, 150, 150)
-    held = watcher.stable_for(now)
-    return f"On dinh {held:.1f}/{settings.stable_seconds:g}s", (80, 220, 80)
-
-
-def draw_overlay(
-    frame,
-    result: CountResult | None,
-    status: tuple[str, tuple[int, int, int]],
-    frozen: bool = False,
-):
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    # Panel cao vừa đủ số dòng thực sự vẽ: mỗi loại 1 dòng, cộng dòng tổng, dòng
-    # độ tin cậy, và dòng "đã loại ra" chỉ xuất hiện khi có kẹo bị loại.
-    show_non_drug = result is not None and result.ok and result.khong_phai_thuoc > 0
-    panel_h = 26 * (len(COUNT_KEYS) + 2 + int(show_non_drug)) + 14
-    # Vẽ lên bản sao: khung hình gốc còn được StabilityWatcher so sánh ở vòng
-    # lặp sau, vẽ đè lên nó sẽ bị tính là chuyển động.
-    frame = frame.copy()
-    if frozen:  # viền vàng cho biết khung hình đang bị đóng băng
-        cv2.rectangle(frame, (0, 0), (frame.shape[1] - 1, frame.shape[0] - 1),
-                      (0, 215, 255), 6)
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (0, 0), (300, panel_h), (0, 0, 0), -1)
-    cv2.addWeighted(overlay, 0.55, frame, 0.45, 0, frame)
-
-    y = 26
-    if result is None:
-        cv2.putText(frame, "Chua co ket qua", (12, y),
-                    font, 0.5, (230, 230, 230), 1, cv2.LINE_AA)
-    elif not result.ok:
-        cv2.putText(frame, "LOI - xem terminal", (12, y),
-                    font, 0.55, (80, 80, 235), 2, cv2.LINE_AA)
-    else:
-        for key in COUNT_KEYS:
-            cv2.putText(frame, f"{COUNT_LABELS_ASCII[key]:<11}: {result.counts[key]}",
-                        (12, y), font, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
-            y += 26
-        cv2.putText(frame, f"Tong vien : {result.total_pills}", (12, y),
-                    font, 0.6, (0, 255, 255), 2, cv2.LINE_AA)
-        y += 26
-        if show_non_drug:
-            cv2.putText(
-                frame,
-                f"{COUNT_LABELS_ASCII[NON_DRUG_KEY]}: {result.khong_phai_thuoc} (loai ra)",
-                (12, y), font, 0.5, (150, 150, 245), 1, cv2.LINE_AA,
-            )
-            y += 26
-        color = _CONFIDENCE_COLOR.get(result.do_tin_cay, (200, 200, 200))
-        cv2.putText(frame, f"Do tin cay: {result.do_tin_cay}", (12, y),
-                    font, 0.55, color, 1, cv2.LINE_AA)
-
-    text, color = status
-    cv2.putText(frame, text, (12, frame.shape[0] - 14),
-                font, 0.55, color, 2, cv2.LINE_AA)
-    return frame
+    def frozen(self) -> bool:
+        return self.frozen_frame is not None
 
 
 # ---------------------------------------------------------------------------
@@ -401,6 +154,9 @@ def open_camera(settings: Settings):
     )
 
 
+# ---------------------------------------------------------------------------
+# Tham số dòng lệnh
+# ---------------------------------------------------------------------------
 def parse_args() -> argparse.Namespace:
     defaults = Settings()
     parser = argparse.ArgumentParser(
@@ -443,6 +199,8 @@ def parse_args() -> argparse.Namespace:
                         help="Chạy không cửa sổ (máy không có giao diện đồ hoạ)")
     parser.add_argument("--retries", type=int, default=defaults.retries,
                         help="Số lần gọi lại khi máy chủ trả phản hồi rỗng")
+    parser.add_argument("--timeout", type=float, default=defaults.timeout,
+                        help="Chờ tối đa bao nhiêu giây cho một lần gọi API")
     parser.add_argument("--anh-dir", default=str(ANH_THUOC_DIR),
                         help="Thư mục lưu ảnh đã chụp")
     parser.add_argument("--no-save-anh", action="store_true",
@@ -453,9 +211,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
-    settings = Settings(
+def build_settings(args: argparse.Namespace) -> Settings:
+    """Dòng lệnh ghi đè lên giá trị đọc từ env/api_key.json.
+
+    Các `max(...)` ở đây là chặn dưới cho giá trị vô nghĩa (thời gian âm, số
+    khung bằng 0) — giữ nguyên như bản trước, không phải kiểm tra mới.
+    """
+    return Settings(
         provider=args.provider,
         model=args.model,
         base_url=args.base_url,
@@ -472,11 +234,33 @@ def main() -> int:
         max_image_edge=args.max_edge,
         count_pills_in_blister=not args.no_blister,
         retries=max(1, args.retries),
+        timeout=max(5.0, args.timeout),
     )
 
+
+def prepare_paths(args: argparse.Namespace) -> OutputPaths:
+    """Dựng sẵn các thư mục cần ghi, để lỗi quyền ghi lộ ra ngay lúc khởi động
+    chứ không phải sau lần đếm đầu tiên."""
+    paths = OutputPaths()
+
+    if args.log:
+        paths.log_path = Path(args.log).expanduser()
+        paths.log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not args.no_save_anh:
+        paths.anh_dir = Path(args.anh_dir).expanduser()
+        paths.anh_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.json_out:
+        paths.json_path = Path(args.json_out).expanduser()
+
+    return paths
+
+
+def create_counter(settings: Settings) -> PillCounter:
     api_key = load_api_key(settings.provider)
     try:
-        counter = PillCounter(
+        return PillCounter(
             api_key=api_key,
             provider=settings.provider,
             model=settings.model,
@@ -488,36 +272,21 @@ def main() -> int:
             jpeg_quality=settings.jpeg_quality,
             count_pills_in_blister=settings.count_pills_in_blister,
             retries=settings.retries,
+            timeout=settings.timeout,
         )
     except BackendError as exc:
         raise SystemExit(str(exc)) from exc
 
-    log_path = Path(args.log).expanduser() if args.log else None
-    if log_path:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    anh_dir = None if args.no_save_anh else Path(args.anh_dir).expanduser()
-    if anh_dir:
-        anh_dir.mkdir(parents=True, exist_ok=True)
-
-    json_path = Path(args.json_out).expanduser() if args.json_out else None
-    # Nạp kết quả những lần chạy trước rồi ghi tiếp, không bắt đầu lại từ đầu.
-    records: list[dict] = load_results_json(json_path) if json_path else []
-    phien = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    cap = open_camera(settings)
-    show_window = not args.no_window
-
-    # Không có cửa sổ thì không nhận được phím -> chờ SPACE sẽ treo vĩnh viễn.
-    if settings.wait_space and not show_window:
-        print("Không có cửa sổ nên không bấm được SPACE — tự chuyển sang chạy liên tục.",
-              file=sys.stderr)
-        settings.wait_space = False
-
+def print_banner(
+    counter: PillCounter, settings: Settings, paths: OutputPaths, records: list[dict]
+) -> None:
+    """Vài dòng giới thiệu lúc khởi động: đang dùng model nào, ghi kết quả vào
+    đâu, và phải làm gì tiếp theo."""
     print(f"Model  : {counter.describe()}")
     print(f"Cấu hình: {settings.describe()}")
-    print(f"Lưu ảnh: {anh_dir if anh_dir else 'tắt'}")
-    print(f"Kết quả: {json_path if json_path else 'tắt'}"
+    print(f"Lưu ảnh: {paths.anh_dir if paths.anh_dir else 'tắt'}")
+    print(f"Kết quả: {paths.json_path if paths.json_path else 'tắt'}"
           + (f" (đã có {len(records)} lần đếm cũ, sẽ ghi tiếp)" if records else ""))
     if settings.trigger_mode == "stable":
         print(f"Đặt thuốc vào khung hình và giữ yên {settings.stable_seconds:g} giây "
@@ -529,135 +298,279 @@ def main() -> int:
               if settings.wait_space else "Chạy liên tục.")
     print("Đang chạy. Nhấn q (trong cửa sổ camera) hoặc Ctrl+C để dừng.", flush=True)
 
+
+# ---------------------------------------------------------------------------
+# Các bước trong một vòng lặp
+# ---------------------------------------------------------------------------
+def collect_result(
+    state: LoopState, paths: OutputPaths, records: list[dict], phien: str
+) -> None:
+    """Thu kết quả nếu lần gọi API trước đã xong, rồi in + ghi file.
+
+    `pending.result()` ở đây không cần bọc try: `PillCounter.count` cam kết
+    không bao giờ ném exception (xem docstring của nó) — mọi lỗi đều quay về
+    dưới dạng `CountResult(ok=False, error=...)`.
+    """
+    if state.pending is None or not state.pending.done():
+        return
+
+    state.last_result = state.pending.result()
+    state.pending = None
+    state.run_index += 1
+    state.dem_phien += 1
+
+    print_result(state.last_result, state.run_index, state.pending_path)
+    if paths.log_path:
+        append_log(paths.log_path, state.last_result)
+    if paths.json_path:
+        records.append(
+            build_record(state.last_result, state.run_index, state.pending_path, phien)
+        )
+        save_results_json(paths.json_path, records)
+    state.pending_path = None
+
+
+def handle_key(
+    key: int,
+    frame: np.ndarray,
+    state: LoopState,
+    watcher: StabilityWatcher | None,
+    paths: OutputPaths,
+    now: float,
+) -> tuple[bool, bool]:
+    """Xử lý một phím bấm. Trả về (thoát chương trình?, chụp ngay?)."""
+    if key in (ord("q"), 27):
+        return True, False
+
+    force = False
+    if key == ord("e"):
+        # Chụp ngay, không cần chờ ổn định. Đang đóng băng thì bỏ đóng băng
+        # luôn rồi chụp, khỏi phải bấm SPACE trước.
+        state.frozen_frame = None
+        force = True
+    if key == ord(" "):
+        if state.frozen:
+            # Đang đóng băng -> chạy tiếp, đếm lại từ đầu.
+            state.frozen_frame = None
+            state.timer_start = now
+            if watcher is not None:
+                watcher.rearm(now)
+        else:
+            force = True  # đang chạy -> chụp ngay
+    if key == ord("s"):
+        saved = save_frame(frame, paths.anh_dir or ANH_THUOC_DIR, prefix="thucong")
+        if saved:
+            print(f"Đã lưu {saved}", flush=True)
+
+    return False, force
+
+
+def should_capture(
+    state: LoopState, settings: Settings, watcher: StabilityWatcher | None, now: float
+) -> bool:
+    """Đã tới lượt chụp chưa (chưa tính tới phím bấm cưỡng bức)."""
+    if state.frozen:
+        return False  # đang đóng băng thì không tự chụp nữa
+    if settings.trigger_mode == "timer":
+        return (now - state.timer_start) >= settings.timer_seconds
+    if watcher is not None:
+        return watcher.ready(now)
+    return state.frame_index % settings.frame_interval == 0
+
+
+def is_cooled(state: LoopState, settings: Settings, now: float) -> bool:
+    """Đã đủ giãn cách tối thiểu giữa 2 lần gọi API chưa.
+
+    Ở chế độ timer chính đồng hồ đã giãn cách các lần gọi API rồi.
+    """
+    if settings.trigger_mode == "timer":
+        return True
+    return (now - state.last_sent) >= settings.min_interval_sec
+
+
+class BackgroundCounter:
+    """Gọi `PillCounter.count` trên luồng nền để vòng lặp camera không đứng hình.
+
+    KHÔNG DÙNG `ThreadPoolExecutor` (sửa 2026-08-11): luồng của nó là non-daemon
+    và `concurrent.futures` đăng ký sẵn một `atexit` chờ mọi luồng xong mới cho
+    trình thông dịch thoát. Hậu quả: bấm Ctrl+C giữa lúc đang gọi API thì cửa sổ
+    đóng, dòng "Dừng theo yêu cầu người dùng." in ra, nhưng terminal treo tiếp
+    cho tới khi máy chủ trả lời. `shutdown(wait=False, cancel_futures=True)`
+    không cứu được vì `cancel_futures` chỉ huỷ việc CHƯA bắt đầu.
+
+    Luồng ở đây là daemon nên Ctrl+C trả lại dấu nhắc ngay; cuộc gọi dở dang bị
+    bỏ lại và chết cùng tiến trình.
+
+    Vẫn trả về `Future` để phần còn lại của vòng lặp không phải đổi gì. Mỗi lúc
+    chỉ có một việc chạy — vòng lặp đã tự bảo đảm điều đó bằng `state.pending is
+    None` trước khi gọi `submit_capture`.
+    """
+
+    def __init__(self, counter: PillCounter) -> None:
+        self._counter = counter
+
+    def submit(self, frame: np.ndarray) -> Future[CountResult]:
+        future: Future[CountResult] = Future()
+        future.set_running_or_notify_cancel()
+        threading.Thread(
+            target=self._run, args=(future, frame), name="vlm-count", daemon=True
+        ).start()
+        return future
+
+    def _run(self, future: Future[CountResult], frame: np.ndarray) -> None:
+        # `count()` tự hứa không ném exception, nhưng nếu lời hứa đó vỡ thì lỗi
+        # phải đi được sang luồng chính — nuốt ở đây là treo `pending` vĩnh viễn.
+        try:
+            future.set_result(self._counter.count(frame))
+        except BaseException as exc:  # noqa: BLE001
+            future.set_exception(exc)
+
+
+def submit_capture(
+    frame: np.ndarray,
+    state: LoopState,
+    settings: Settings,
+    watcher: StabilityWatcher | None,
+    paths: OutputPaths,
+    runner: BackgroundCounter,
+    now: float,
+) -> None:
+    """Chụp khung hình hiện tại và gửi đi đếm."""
+    if watcher is not None:
+        watcher.consume()
+    shot = frame.copy()
+    state.pending_path = save_frame(shot, paths.anh_dir) if paths.anh_dir else None
+    state.pending = runner.submit(shot)
+    state.last_sent = now
+    state.timer_start = now
+    # Xoá kết quả cũ: để nguyên thì số của ảnh trước sẽ hiện đè lên ảnh mới vừa
+    # chụp, rất dễ đọc nhầm.
+    state.last_result = None
+    if settings.wait_space:
+        state.frozen_frame = shot  # giữ nguyên ảnh vừa chụp cho tới khi bấm SPACE
+
+
+def render(
+    frame: np.ndarray,
+    state: LoopState,
+    settings: Settings,
+    watcher: StabilityWatcher | None,
+    now: float,
+) -> None:
+    remaining = settings.frame_interval - (state.frame_index % settings.frame_interval)
+    hien = frame if state.frozen_frame is None else state.frozen_frame
+    status = status_text(
+        watcher, settings, state.busy, now, remaining,
+        frozen=state.frozen,
+        seconds_left=settings.timer_seconds - (now - state.timer_start),
+    )
+    cv2.imshow(WINDOW_NAME, draw_overlay(hien, state.last_result, status, frozen=state.frozen))
+
+
+# ---------------------------------------------------------------------------
+# Vòng lặp chính
+# ---------------------------------------------------------------------------
+def run_loop(
+    cap,
+    counter: PillCounter,
+    settings: Settings,
+    watcher: StabilityWatcher | None,
+    paths: OutputPaths,
+    records: list[dict],
+    phien: str,
+    show_window: bool,
+) -> int:
+    """Chạy tới khi người dùng thoát. Trả về số lần đếm của phiên này."""
+    runner = BackgroundCounter(counter)
+    state = LoopState(
+        run_index=next_run_index(records),
+        timer_start=time.monotonic(),
+    )
+
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                logger.error("Mất tín hiệu camera, dừng lại.")
+                break
+
+            state.frame_index += 1
+            now = time.monotonic()
+            if watcher is not None:
+                watcher.update(frame, now)
+
+            collect_result(state, paths, records, phien)
+
+            force = False
+            if show_window:
+                key = cv2.waitKey(1) & 0xFF
+                quit_now, force = handle_key(key, frame, state, watcher, paths, now)
+                if quit_now:
+                    break
+
+            due = should_capture(state, settings, watcher, now)
+            cooled = is_cooled(state, settings, now)
+            if (due or force) and state.pending is None and (cooled or force):
+                submit_capture(frame, state, settings, watcher, paths, runner, now)
+
+            if show_window:
+                render(frame, state, settings, watcher, now)
+    except KeyboardInterrupt:
+        if state.busy:
+            print("\nDừng theo yêu cầu người dùng — bỏ lần đếm đang chờ máy chủ.")
+        else:
+            print("\nDừng theo yêu cầu người dùng.")
+    finally:
+        cap.release()
+        if show_window:
+            cv2.destroyAllWindows()
+        # Không chờ luồng nền: nó là daemon, chết cùng tiến trình. Xem
+        # BackgroundCounter để biết vì sao việc "chờ cho gọn gàng" lại là bug.
+
+    return state.dem_phien
+
+
+def main() -> int:
+    # Chẩn đoán (không đọc được file, mất camera…) đi ra stderr; kết quả đếm
+    # vẫn dùng print() vì đó là giao diện của chương trình, không phải log.
+    logging.basicConfig(
+        level=logging.WARNING, format="[%(levelname)s] %(message)s", stream=sys.stderr
+    )
+
+    args = parse_args()
+    settings = build_settings(args)
+    counter = create_counter(settings)
+    paths = prepare_paths(args)
+
+    # Nạp kết quả những lần chạy trước rồi ghi tiếp, không bắt đầu lại từ đầu.
+    records: list[dict] = load_results_json(paths.json_path) if paths.json_path else []
+    phien = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    cap = open_camera(settings)
+    show_window = not args.no_window
+
+    # Không có cửa sổ thì không nhận được phím -> chờ SPACE sẽ treo vĩnh viễn.
+    if settings.wait_space and not show_window:
+        logger.warning(
+            "Không có cửa sổ nên không bấm được SPACE — tự chuyển sang chạy liên tục."
+        )
+        settings.wait_space = False
+
+    print_banner(counter, settings, paths, records)
+
     watcher = (
         StabilityWatcher(settings.motion_threshold, settings.stable_seconds)
         if settings.trigger_mode == "stable"
         else None
     )
 
-    executor = ThreadPoolExecutor(max_workers=1)
-    pending: Future[CountResult] | None = None
-    pending_path: Path | None = None  # ảnh ứng với lần đếm đang chờ kết quả
-    last_result: CountResult | None = None
-    last_sent = 0.0
-    frame_index = 0
-    # Đánh số tiếp nối file cũ để mỗi bản ghi mang một số riêng, không trùng.
-    run_index = max(
-        (r["lan"] for r in records if isinstance(r.get("lan"), int)), default=0
+    dem_phien = run_loop(
+        cap, counter, settings, watcher, paths, records, phien, show_window
     )
-    dem_phien = 0  # số lần đếm của riêng phiên chạy này
-
-    # Ảnh đang bị đóng băng trên màn hình (None = đang chạy bình thường).
-    frozen_frame: np.ndarray | None = None
-    timer_start = time.monotonic()  # mốc đếm giờ của chế độ timer
-
-    try:
-        while True:
-            ok, frame = cap.read()
-            if not ok:
-                print("Mất tín hiệu camera, dừng lại.", file=sys.stderr)
-                break
-
-            frame_index += 1
-            now = time.monotonic()
-            if watcher is not None:
-                watcher.update(frame, now)
-
-            # Nhận kết quả nếu lần gọi trước đã xong.
-            if pending is not None and pending.done():
-                last_result = pending.result()
-                pending = None
-                run_index += 1
-                dem_phien += 1
-                print_result(last_result, run_index, pending_path)
-                if log_path:
-                    append_log(log_path, last_result)
-                if json_path:
-                    records.append(
-                        build_record(last_result, run_index, pending_path, phien)
-                    )
-                    save_results_json(json_path, records)
-                pending_path = None
-
-            # --- Bàn phím ---
-            force = False
-            if show_window:
-                key = cv2.waitKey(1) & 0xFF
-                if key in (ord("q"), 27):
-                    break
-                if key == ord("e"):
-                    # Chụp ngay, không cần chờ ổn định. Đang đóng băng thì bỏ
-                    # đóng băng luôn rồi chụp, khỏi phải bấm SPACE trước.
-                    frozen_frame = None
-                    force = True
-                if key == ord(" "):
-                    if frozen_frame is not None:
-                        # Đang đóng băng -> chạy tiếp, đếm lại từ đầu.
-                        frozen_frame = None
-                        timer_start = now
-                        if watcher is not None:
-                            watcher.rearm(now)
-                    else:
-                        force = True  # đang chạy -> chụp ngay
-                if key == ord("s"):
-                    saved = save_frame(frame, anh_dir or ANH_THUOC_DIR, prefix="thucong")
-                    if saved:
-                        print(f"Đã lưu {saved}", flush=True)
-
-            # --- Tới lượt chụp chưa? ---
-            if frozen_frame is not None:
-                due = False  # đang đóng băng thì không tự chụp nữa
-            elif settings.trigger_mode == "timer":
-                due = (now - timer_start) >= settings.timer_seconds
-            elif watcher is not None:
-                due = watcher.ready(now)
-            else:
-                due = frame_index % settings.frame_interval == 0
-
-            # Ở chế độ timer chính đồng hồ đã giãn cách các lần gọi API.
-            cooled = (
-                True if settings.trigger_mode == "timer"
-                else (now - last_sent) >= settings.min_interval_sec
-            )
-
-            if (due or force) and pending is None and (cooled or force):
-                if watcher is not None:
-                    watcher.consume()
-                shot = frame.copy()
-                pending_path = save_frame(shot, anh_dir) if anh_dir else None
-                pending = executor.submit(counter.count, shot)
-                last_sent = now
-                timer_start = now
-                # Xoá kết quả cũ: để nguyên thì số của ảnh trước sẽ hiện đè lên
-                # ảnh mới vừa chụp, rất dễ đọc nhầm.
-                last_result = None
-                if settings.wait_space:
-                    frozen_frame = shot  # giữ nguyên ảnh vừa chụp cho tới khi bấm SPACE
-
-            # --- Vẽ ---
-            if show_window:
-                remaining = settings.frame_interval - (frame_index % settings.frame_interval)
-                hien = frame if frozen_frame is None else frozen_frame
-                status = status_text(
-                    watcher, settings, pending is not None, now, remaining,
-                    frozen=frozen_frame is not None,
-                    seconds_left=settings.timer_seconds - (now - timer_start),
-                )
-                cv2.imshow(
-                    WINDOW_NAME,
-                    draw_overlay(hien, last_result, status, frozen=frozen_frame is not None),
-                )
-    except KeyboardInterrupt:
-        print("\nDừng theo yêu cầu người dùng.")
-    finally:
-        cap.release()
-        if show_window:
-            cv2.destroyAllWindows()
-        executor.shutdown(wait=False, cancel_futures=True)
 
     print(f"Lần chạy này: {dem_phien} lần đếm.")
-    if json_path and records:
-        print(f"Tổng cộng {len(records)} lần đếm trong {json_path}")
+    if paths.json_path and records:
+        print(f"Tổng cộng {len(records)} lần đếm trong {paths.json_path}")
     return 0
 
 

@@ -1,5 +1,6 @@
 opencv-python>=4.8
 numpy>=1.24
+python-dotenv>=1.0  # đọc .env ở gốc repo (xem config.py)
 
 # Chỉ cần SDK của nhà cung cấp bạn dùng — cài cả hai cũng không sao.
 openai>=1.40        # provider = openai (OpenRouter, Groq, Together, Ollama, LM Studio...)
