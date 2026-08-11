@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from src.services.escalation import trigger_emergency_escalation  # noqa: E402
+from backend.services.escalation import trigger_emergency_escalation  # noqa: E402
 
 
 @pytest.mark.asyncio

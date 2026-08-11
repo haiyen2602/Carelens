@@ -4,15 +4,15 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from src.api.security import INTERNAL_SECRET_HEADER
-from src.config import get_settings
-from src.main import app
+from backend.api.security import INTERNAL_SECRET_HEADER
+from backend.config import get_settings
+from backend.main import app
 
 
 @pytest_asyncio.fixture
 async def client():
     """Async HTTP client for testing API endpoints. Gui san header cua rao
-    can tam (X-Internal-Secret, xem src/api/security.py) voi dung gia tri
+    can tam (X-Internal-Secret, xem backend/api/security.py) voi dung gia tri
     dang cau hinh trong settings hien tai - test luon "duoc uy quyen" du
     secret la gia tri mac dinh local dev hay 1 gia tri that duoc dat qua
     env var, khong can moi test tu them header rieng."""

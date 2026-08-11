@@ -14,13 +14,13 @@ import pytest  # noqa: E402
 from sqlalchemy import select, text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-import src.api.chat_routes as chat_routes  # noqa: E402
-from src.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
-from src.api.security import get_current_patient_id  # noqa: E402
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import AuditLog  # noqa: E402
-from src.main import app  # noqa: E402
-from src.models.schemas import ConversationChatRequest  # noqa: E402
+import backend.api.chat_routes as chat_routes  # noqa: E402
+from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
+from backend.api.security import get_current_patient_id  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import AuditLog  # noqa: E402
+from backend.main import app  # noqa: E402
+from backend.models.schemas import ConversationChatRequest  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -66,7 +66,7 @@ async def test_swapping_implementation_changes_behavior_without_touching_call_si
         generate_answer=lambda u, r: "Câu trả lời giả lập.",
         classify_severity=lambda combined_text: None,
         embed_query=lambda t: [0.0] * 1536,
-        safety_check=__import__("src.agents.orchestrator", fromlist=["default_safety_check"]).default_safety_check,
+        safety_check=__import__("backend.agents.orchestrator", fromlist=["default_safety_check"]).default_safety_check,
     )
 
     response = await client.post(

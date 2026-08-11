@@ -12,7 +12,7 @@ muc 6):
     uong lieu toi" (CLASSIFY nhanh dose_confirmation, dung lieu PENDING).
 
 KHONG seed case redflag/SEVERITY=Nguy hiem (co y - HIGH_OVERLAY_MESSAGE con
-la placeholder, xem src/services/escalation.py va chatbot-rag-design.md muc
+la placeholder, xem backend/services/escalation.py va chatbot-rag-design.md muc
 10 #5 - go thu cau kich hoat nhanh do bay gio se thay noi dung CHUA duyet,
 de hieu nham la bug neu khong nho truoc).
 
@@ -34,8 +34,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text  # noqa: E402
 
-from src.db.base import SessionLocal  # noqa: E402
-from src.db.models import DoseEvent, Prescription  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.db.models import DoseEvent, Prescription  # noqa: E402
 
 DEMO_PATIENT_ID = "demo-patient-01"
 DEMO_DOCTOR_ID = "demo-doctor-01"

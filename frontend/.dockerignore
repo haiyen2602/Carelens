@@ -1,0 +1,29 @@
+# Loc build context cua Docker (khac .railwayignore: file kia loc luc UPLOAD).
+#
+# QUAN TRONG: node_modules PHAI nam o day. Stage `builder` chay
+# `COPY --from=deps /app/node_modules ./node_modules` roi moi `COPY . .` - neu
+# context con node_modules cua may Windows, no se DE LEN ban vua cai trong
+# container (binary lech OS, thieu package neu may dev cai bang npm).
+node_modules
+
+# Build cu cua may local: `next build` khong don .next truoc khi ghi, de lai co
+# the tron output cu vao goi standalone.
+.next
+
+# Bi mat + config local, khong duoc chui vao image
+.env
+.env.*
+!.env.example
+.vercel
+
+# Tooling/IDE - khong anh huong build
+.prettierrc
+.prettierignore
+eslint.config.js
+*.md
+.gitignore
+.dockerignore
+Dockerfile
+
+# Lockfile cua npm: build chi dung pnpm-lock.yaml (xem Dockerfile stage `deps`)
+package-lock.json

@@ -16,12 +16,12 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.tools.personal_tools import (  # noqa: E402
+from backend.agents.tools.personal_tools import (  # noqa: E402
     tra_cuu_don_thuoc_ca_nhan,
     tra_cuu_lich_uong_ca_nhan,
 )
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import DoseEvent, Prescription  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import DoseEvent, Prescription  # noqa: E402
 
 
 def _db_available() -> bool:

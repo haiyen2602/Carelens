@@ -1,4 +1,4 @@
-// Mirrors src/models/schemas.py (ChatRequest / ChatResponse) on the backend.
+// Mirrors backend/models/schemas.py (ChatRequest / ChatResponse) on the backend.
 export type ChatRequest = {
   message: string;
 };
