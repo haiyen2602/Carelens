@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Đếm thuốc trong một khung hình bằng VLM.
 
@@ -17,7 +16,6 @@ from typing import Any
 
 import cv2
 import numpy as np
-
 from prompts import (
     CONFIDENCE_LEVELS,
     COUNT_KEYS,

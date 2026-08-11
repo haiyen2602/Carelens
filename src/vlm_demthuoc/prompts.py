@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 System prompt + user prompt cho hệ thống đếm thuốc bằng VLM.
 
@@ -39,6 +38,20 @@ COUNT_LABELS_ASCII = {
     "hop_thuoc": "Hop thuoc",
     "goi_thuoc": "Goi thuoc",
     NON_DRUG_KEY: "Keo/ko thuoc",
+}
+
+# Nhãn có dấu để in ra terminal (terminal render được tiếng Việt, cửa sổ OpenCV
+# thì không). Phải phủ đủ mọi khoá trong COUNT_KEYS — có test kiểm chứng điều
+# này, vì trước đây terminal viết cứng 6 dòng nên thêm loại thuốc mới là bị bỏ
+# sót im lặng, không lỗi, không cảnh báo.
+COUNT_LABELS_VI = {
+    "vien_nang": "Viên nang",
+    "vien_nen": "Viên nén",
+    "tuyp_thuoc": "Tuýp thuốc",
+    "lo_thuoc": "Lọ thuốc",
+    "hop_thuoc": "Hộp thuốc",
+    "goi_thuoc": "Gói thuốc",
+    NON_DRUG_KEY: "Kẹo/không phải thuốc",
 }
 
 # ---------------------------------------------------------------------------
