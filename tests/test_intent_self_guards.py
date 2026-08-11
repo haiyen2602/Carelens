@@ -11,13 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from src.agents.nodes.conversation_nodes import (  # noqa: E402
+from backend.agents.nodes.conversation_nodes import (  # noqa: E402
     build_answer_generation_node,
     build_prescription_lookup_node,
     build_retrieval_node,
     build_today_schedule_node,
 )
-from src.agents.nodes.dose_confirmation_nodes import build_classify_node  # noqa: E402
+from backend.agents.nodes.dose_confirmation_nodes import build_classify_node  # noqa: E402
 
 
 def _state(intent, **overrides):

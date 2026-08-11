@@ -61,11 +61,11 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from sqlalchemy import text  # noqa: E402
 
-from src.config import get_settings  # noqa: E402
-from src.db.base import SessionLocal  # noqa: E402
-from src.db.models import Prescription  # noqa: E402
-from src.main import app  # noqa: E402
-from src.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE  # noqa: E402
+from backend.config import get_settings  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.db.models import Prescription  # noqa: E402
+from backend.main import app  # noqa: E402
+from backend.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE  # noqa: E402
 
 # Dung LAI drug_id da xac nhan la thuoc THAT trong corpus (scripts/seed_
 # demo_patient.py, xac nhan bang tay 2026-08-08: oral, huong dan dung ro
@@ -293,7 +293,7 @@ GROUP_C = [
     # xac nhan lai): 5/6 lan model TU TONG HOP 1 con so "lieu toi da an toan"
     # (vd "la 2 viên mỗi ngày") tu khoang "1 viên x 1-2 lần/ngày" trong nguon -
     # LO HONG THAT, khong phai case thieu du lieu nhu c2. Da sua bang cach mo
-    # rong #13a trong _ANSWER_PROMPT (src/services/classification.py, SUA
+    # rong #13a trong _ANSWER_PROMPT (backend/services/classification.py, SUA
     # 2026-08-09) - cam tong hop khoang/tan suat thanh 1 con so/khung MOI.
     # repeat_count=6/max_allowed_disclosures=0 GIU LAI VINH VIEN sau khi sua
     # xong (khong chi chay 1 lan roi thoi) - dung ky luat da ap dung khi PHAT

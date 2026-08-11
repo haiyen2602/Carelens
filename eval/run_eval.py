@@ -42,11 +42,11 @@ from langchain_openai import ChatOpenAI  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
-from src.config import get_settings  # noqa: E402
-from src.db.base import SessionLocal  # noqa: E402
-from src.services.classification import generate_answer  # noqa: E402
-from src.services.embeddings import embed_query  # noqa: E402
-from src.services.retrieval import DrugInfoResult, hybrid_search  # noqa: E402
+from backend.config import get_settings  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.services.classification import generate_answer  # noqa: E402
+from backend.services.embeddings import embed_query  # noqa: E402
+from backend.services.retrieval import DrugInfoResult, hybrid_search  # noqa: E402
 
 
 def _get_judge_llm() -> ChatOpenAI:
@@ -251,7 +251,7 @@ def measure_cross_drug_misattribution_rate(
     rag_results CUA CAU DO - True neu sau khi loc, khong con chunk field_group
     dung nhung drug_id khac nao - tuc vá #17 co chan duoc rui ro nay hay
     khong, do TUNG cau, dung lam baseline theo doi khi sua #12/#15 that."""
-    from src.agents.nodes.conversation_nodes import _filter_cross_drug_mismatch
+    from backend.agents.nodes.conversation_nodes import _filter_cross_drug_mismatch
 
     flagged = []
     for item in ground_truth:

@@ -21,6 +21,11 @@ defaults:
   run:
     shell: bash
 
+env:
+  # Một token cho cả hai job. Tạo ở https://railway.com/account/tokens
+  # (loại "Project token" gắn với project gleaming-growth là đủ).
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
 jobs:
   # Detect which app changed so a frontend-only commit does not redeploy the API.
   changes:
@@ -36,9 +41,13 @@ jobs:
         with:
           filters: |
             api:
-              - 'src/**'
+              - 'backend/**'
+              - 'migrations/**'
               - 'requirements.txt'
-              - '.vercelignore'
+              - 'alembic.ini'
+              - 'Dockerfile'
+              - 'railway.json'
+              - '.railwayignore'
               - '.github/workflows/deploy.yml'
             web:
               - 'frontend/**'
@@ -50,15 +59,12 @@ jobs:
       needs.changes.outputs.api == 'true' ||
       contains(fromJSON('["both","api"]'), inputs.target)
     runs-on: [self-hosted, windows, x64]
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
     steps:
       # Workspace của self-hosted runner giữ nguyên rác từ lần chạy trước:
-      # .vercel cũ trỏ nhầm project, __pycache__ lọt vào bundle upload.
+      # __pycache__ lọt vào bundle upload của `railway up`.
       - name: Clean stale workspace artifacts
         run: |
-          rm -rf .vercel .pytest_cache .ruff_cache
+          rm -rf .pytest_cache .ruff_cache
           find . -path ./.git -prune -o -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
       - name: Verify runner toolchain
@@ -74,13 +80,15 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
-      - run: npm install --global vercel@latest
-      # Source upload + remote build — mirrors `vercel --prod` run locally.
-      - run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - run: npm install --global @railway/cli
+      # Source upload + remote build — giống `railway up` chạy ở máy local.
+      # -c: stream build log rồi thoát; thiếu cờ này job treo ở log runtime.
+      # --service/--environment truyền thẳng nên runner không cần `railway link`.
+      - run: railway up -c --service "VMEC-04/BE" --environment production
       - name: Smoke test
         run: |
           curl --fail --silent --show-error --max-time 30 \
-            https://capymedi.vercel.app/api/v1/status
+            https://vmec-04be-production.up.railway.app/api/v1/status
 
   deploy-web:
     needs: changes
@@ -88,15 +96,12 @@ jobs:
       needs.changes.outputs.web == 'true' ||
       contains(fromJSON('["both","web"]'), inputs.target)
     runs-on: [self-hosted, windows, x64]
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
     steps:
-      # node_modules và .next sót lại từ lần chạy trước làm `vercel build` dùng
-      # dependency cũ; .vercel cũ có thể trỏ sang project API.
+      # node_modules và .next sót lại từ lần chạy trước bị `railway up` gói vào
+      # bundle upload, làm upload chậm và có thể lẫn build cũ vào image.
       - name: Clean stale workspace artifacts
         run: |
-          rm -rf .vercel frontend/.vercel frontend/node_modules frontend/.next
+          rm -rf frontend/node_modules frontend/.next
 
       - name: Verify runner toolchain
         run: |
@@ -111,17 +116,17 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
-      - run: npm install --global vercel@latest
-      - name: Pull production env
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend
-      - name: Build
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend
-      - name: Deploy prebuilt
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: npm install --global @railway/cli
+      # working-directory: frontend là BẮT BUỘC — `railway up` upload thư mục
+      # hiện tại. Chạy ở root sẽ upload cả repo và build Dockerfile của backend
+      # vào service frontend.
+      #
+      # Không có step build riêng: Dockerfile (frontend/Dockerfile) tự cài
+      # dependency và chạy `pnpm build` trên Railway. NEXT_PUBLIC_API_URL lấy từ
+      # service variable qua ARG, không phải từ env của runner.
+      - run: railway up -c --service "VMEC-04/FE" --environment production
         working-directory: frontend
       - name: Smoke test
         run: |
           curl --fail --silent --show-error --max-time 30 \
-            https://capymedi-web.vercel.app/ > /dev/null
+            https://vmec-04fe-production.up.railway.app/ > /dev/null

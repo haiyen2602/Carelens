@@ -11,13 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from src.agents.nodes.conversation_nodes import (  # noqa: E402
+from backend.agents.nodes.conversation_nodes import (  # noqa: E402
     CAVEAT_LIEU_DUNG,
     CAVEAT_THOI_DIEM_MISSING,
     NO_SOURCE_MESSAGE,
     build_answer_generation_node,
 )
-from src.services.retrieval import DrugInfoResult  # noqa: E402
+from backend.services.retrieval import DrugInfoResult  # noqa: E402
 
 
 def _fake_result(field_group: str, drug_id: str = "drug-1") -> DrugInfoResult:

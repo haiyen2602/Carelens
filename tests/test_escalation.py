@@ -13,9 +13,9 @@ import pytest  # noqa: E402
 from sqlalchemy import select, text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import Escalation  # noqa: E402
-from src.services.escalation import build_db_escalate_fn, trigger_emergency_escalation  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import Escalation  # noqa: E402
+from backend.services.escalation import build_db_escalate_fn, trigger_emergency_escalation  # noqa: E402
 
 
 def _db_available() -> bool:

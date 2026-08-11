@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text  # noqa: E402
 
-from src.db.base import SessionLocal  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data pharmacy"
 

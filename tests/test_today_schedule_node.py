@@ -12,9 +12,9 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.nodes.conversation_nodes import NO_SCHEDULE_TODAY_MESSAGE, build_today_schedule_node  # noqa: E402
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import DoseEvent, Prescription  # noqa: E402
+from backend.agents.nodes.conversation_nodes import NO_SCHEDULE_TODAY_MESSAGE, build_today_schedule_node  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import DoseEvent, Prescription  # noqa: E402
 
 
 def _db_available() -> bool:

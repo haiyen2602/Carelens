@@ -19,8 +19,8 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.services.retrieval import lexical_search  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.services.retrieval import lexical_search  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -58,7 +58,7 @@ def test_word_similarity_threshold_guc_is_set_not_just_similarity_threshold(db_s
     COI Y dung 0.3 CO DINH o day, KHONG doc settings.nguong_lexical - test
     nay kiem tra co CHE (2 GUC deu duoc SET dung), khong kiem tra GIA TRI
     threshold production hien tai (da doi thanh 0.55 sau Phase 7 eval,
-    src/config.py) - neu dung settings.nguong_lexical, test se gay am tham
+    backend/config.py) - neu dung settings.nguong_lexical, test se gay am tham
     moi lan threshold production duoc tune lai, du co che GUC van dung."""
     db_session.execute(text("SET pg_trgm.similarity_threshold = :t"), {"t": 0.3})
     db_session.execute(text("SET pg_trgm.word_similarity_threshold = :t"), {"t": 0.3})
@@ -85,7 +85,7 @@ def test_lexical_search_finds_exact_drug_name_match():
     """Smoke test end-to-end qua chinh ham lexical_search() (khong bypass SQL):
     go dung ten 1 thuoc that trong DB phai tra ve chinh thuoc do o vi tri dau
     (similarity ten_thuoc gan 1.0, khong canh tranh voi nguon nao khac)."""
-    from src.config import get_settings
+    from backend.config import get_settings
 
     settings = get_settings()
     db = SessionLocal()

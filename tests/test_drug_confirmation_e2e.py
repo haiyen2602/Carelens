@@ -15,11 +15,11 @@ import pytest  # noqa: E402
 from sqlalchemy import select, text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.tools.drug_confirmation_store import get_pending_confirmation  # noqa: E402
-from src.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import AuditLog, PendingDrugConfirmation, Prescription  # noqa: E402
-from src.main import app  # noqa: E402
+from backend.agents.tools.drug_confirmation_store import get_pending_confirmation  # noqa: E402
+from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import AuditLog, PendingDrugConfirmation, Prescription  # noqa: E402
+from backend.main import app  # noqa: E402
 
 _UNRELATED_EMBEDDING = [random.Random(42).gauss(0, 1) for _ in range(1536)]
 
@@ -46,7 +46,7 @@ def _override_services(**fakes) -> None:
         "safety_check": None,
     }
     defaults.update(fakes)
-    from src.agents.orchestrator import default_safety_check
+    from backend.agents.orchestrator import default_safety_check
 
     if defaults["safety_check"] is None:
         defaults["safety_check"] = default_safety_check
@@ -164,7 +164,7 @@ async def test_in_prescription_decline_then_second_name_answers_correct_drug(cli
 
     turn2 = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": "không"})
     assert turn2.status_code == 200
-    from src.agents.nodes.drug_confirmation_nodes import ASK_DIFFERENT_NAME_MESSAGE
+    from backend.agents.nodes.drug_confirmation_nodes import ASK_DIFFERENT_NAME_MESSAGE
 
     assert turn2.json()["reply"] == ASK_DIFFERENT_NAME_MESSAGE
 
@@ -183,8 +183,8 @@ async def test_choosing_from_top3_menu_then_confirm_answers_the_picked_drug(clie
     Seed thang pending o stage choose_top3 (ly do giong test STOP o tren -
     dispatch logic da unit-test rieng, day xac nhan WIRING qua chat_routes.py
     + DB that + get_chunks_by_drug_id() that)."""
-    from src.agents.nodes.drug_confirmation_nodes import STAGE_OUT_RX_CHOOSE_TOP3_R1
-    from src.agents.tools.drug_confirmation_store import set_pending_confirmation
+    from backend.agents.nodes.drug_confirmation_nodes import STAGE_OUT_RX_CHOOSE_TOP3_R1
+    from backend.agents.tools.drug_confirmation_store import set_pending_confirmation
 
     patient_id = seeded_patient
     _override_services()
@@ -251,11 +251,11 @@ async def test_exhausting_both_rounds_returns_fixed_not_found_message(client, se
     match/hybrid search tren corpus that CO THE tra ve so ung vien khac ky
     vong o moi buoc trung gian - da xac nhan qua that bai that khi build test
     nay, xem lich su commit)."""
-    from src.agents.nodes.drug_confirmation_nodes import (
+    from backend.agents.nodes.drug_confirmation_nodes import (
         NOT_FOUND_FINAL_MESSAGE,
         STAGE_OUT_RX_CONFIRM_TOP1_R2,
     )
-    from src.agents.tools.drug_confirmation_store import set_pending_confirmation
+    from backend.agents.tools.drug_confirmation_store import set_pending_confirmation
 
     patient_id = seeded_patient
     _override_services()
@@ -285,7 +285,7 @@ async def test_repeated_unparseable_replies_eventually_give_up(client, seeded_pa
     luy qua nhieu lan goi HTTP that (khong chi mo phong trong 1 test function) -
     sau MAX_UNPARSEABLE_RETRIES lan lien tiep khong hieu duoc, phai dung han
     bang TOO_MANY_UNPARSEABLE_REPLIES_MESSAGE va xoa pending, KHONG hoi vo han."""
-    from src.agents.nodes.drug_confirmation_nodes import (
+    from backend.agents.nodes.drug_confirmation_nodes import (
         MAX_UNPARSEABLE_RETRIES,
         TOO_MANY_UNPARSEABLE_REPLIES_MESSAGE,
         UNPARSEABLE_YES_NO_MESSAGE,
@@ -324,11 +324,11 @@ async def test_progress_between_unparseable_replies_resets_retry_count(client, s
     o confirm_top1_r1 LUON chuyen sang menu top-3 that (khac test truoc, tung
     that bai vi corpus that co the tra ve <4 ung vien phan biet cho 1 cau
     hoi cu the, xem lich su commit)."""
-    from src.agents.nodes.drug_confirmation_nodes import (
+    from backend.agents.nodes.drug_confirmation_nodes import (
         STAGE_OUT_RX_CONFIRM_TOP1_R1,
         TOO_MANY_UNPARSEABLE_REPLIES_MESSAGE,
     )
-    from src.agents.tools.drug_confirmation_store import set_pending_confirmation
+    from backend.agents.tools.drug_confirmation_store import set_pending_confirmation
 
     patient_id = seeded_patient
     _override_services()
@@ -378,7 +378,7 @@ async def test_injection_during_active_confirmation_is_still_blocked(client, see
     code: gui injection NGAY GIUA luc dang cho xac nhan -> PHAI van bi chan,
     VA pending row KHONG bi tieu thu/hong (cau tra loi hop le sau do van
     duoc hieu dung nhu cau tra loi cho cau hoi GOC)."""
-    from src.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE
+    from backend.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE
 
     patient_id = seeded_patient
     _override_services()
@@ -426,8 +426,8 @@ async def test_expired_pending_confirmation_treats_next_message_as_fresh_questio
     KHONG bi loi vao dispatch cua pending da het han."""
     from datetime import UTC, datetime, timedelta
 
-    from src.config import get_settings
-    from src.db.models import PendingDrugConfirmation
+    from backend.config import get_settings
+    from backend.db.models import PendingDrugConfirmation
 
     patient_id = seeded_patient
     _override_services()

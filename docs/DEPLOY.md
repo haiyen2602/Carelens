@@ -1,11 +1,14 @@
 # Deploy
 
-Repo này có **2 app độc lập**, mỗi app là **1 Vercel project riêng**:
+Repo này có **2 app độc lập**, deploy vào **cùng 1 project Railway** (`gleaming-growth`,
+environment `production`) nhưng là **2 service riêng**:
 
-| App | Thư mục | Vercel project | Framework | URL |
+| App | Thư mục | Service Railway | Framework | URL |
 |---|---|---|---|---|
-| Backend | `.` (dùng `src/`) | `capymedi` | FastAPI | https://capymedi.vercel.app |
-| Frontend | `frontend/` | `capymedi-web` | Next.js | https://capymedi-web.vercel.app |
+| Backend | `.` (dùng `backend/`) | `VMEC-04/BE` | FastAPI | https://vmec-04be-production.up.railway.app |
+| Frontend | `frontend/` | `VMEC-04/FE` | Next.js 16 | https://vmec-04fe-production.up.railway.app |
+
+Cùng project còn service `VMEC-04/DB` (Postgres + pgvector) mà backend dùng.
 
 Hai app nối với nhau qua 2 biến môi trường:
 
@@ -14,8 +17,13 @@ frontend  --NEXT_PUBLIC_API_URL-->  backend
 backend   --CORS_ORIGINS--------->  frontend
 ```
 
-Đổi domain một bên thì **phải cập nhật biến ở bên kia rồi redeploy** — env var trên
-Vercel chỉ áp dụng cho deployment mới, không tác động lên deployment đang chạy.
+Đổi domain một bên thì **phải cập nhật biến ở bên kia**. Lưu ý bất đối xứng quan trọng:
+
+- `CORS_ORIGINS` là **runtime var** — backend đọc lúc khởi động, nên đổi biến là Railway
+  restart container và có hiệu lực ngay, **không cần build lại**.
+- `NEXT_PUBLIC_API_URL` là **build-time var** — Next.js nhúng thẳng giá trị vào bundle JS
+  lúc `next build`. Đổi biến này thì **phải `railway up` lại**; restart suông vẫn giữ URL
+  cũ vì nó đã nằm trong file `.js` của image.
 
 ---
 
@@ -34,15 +42,8 @@ make deploy         # cả hai -> production, kèm smoke test
 make deploy-api     # backend  -> production
 make deploy-web     # frontend -> production
 
-make preview-api    # backend  -> preview URL
-make preview-web    # frontend -> preview URL
-
 make smoke          # chỉ smoke test domain production, không deploy
 ```
-
-Trên Windows make gọi `cmd.exe` làm shell (không có `sh` trong PATH), các target deploy
-đã viết để chạy được ở cả hai shell. Riêng `make clean` dùng `find`/`rm` nên chỉ chạy
-được trên POSIX.
 
 Nếu không muốn cài `make`, [scripts/deploy.ps1](../scripts/deploy.ps1) làm việc tương đương:
 
@@ -50,21 +51,24 @@ Nếu không muốn cài `make`, [scripts/deploy.ps1](../scripts/deploy.ps1) là
 ./scripts/deploy.ps1                 # cả api + web -> production, kèm smoke test
 ./scripts/deploy.ps1 -Target api     # chỉ backend
 ./scripts/deploy.ps1 -Target web     # chỉ frontend
-./scripts/deploy.ps1 -Preview        # ra preview URL thay vì production
 ```
 
 Hoặc gọi thẳng CLI:
 
 ```bash
-vercel deploy --prod                 # backend (chạy ở root repo)
-cd frontend && vercel deploy --prod  # frontend, hoặc: pnpm deploy
+railway up -c                        # backend (chạy ở root repo)
+cd frontend && railway up -c         # frontend, hoặc: pnpm deploy
 ```
+
+`railway up` **upload thẳng thư mục hiện tại** rồi build trên Railway (không đi qua git),
+nên deploy được cả khi đang có thay đổi chưa commit. Cờ `-c` chỉ stream build log rồi
+thoát — thiếu nó thì CLI bám vào log runtime và treo terminal.
 
 ## Deploy tự động (GitHub Actions)
 
 [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) chạy khi push lên `main`.
 Workflow lọc theo đường dẫn: commit chỉ đụng `frontend/` sẽ **không** redeploy backend.
-Có thể chạy tay qua tab Actions → Deploy → Run workflow (chọn `api` / `web` / `both`).
+Chạy tay được qua tab Actions → Deploy → Run workflow (chọn `api` / `web` / `both`).
 
 ### Secrets cần thêm vào GitHub
 
@@ -72,98 +76,130 @@ Settings → Secrets and variables → Actions:
 
 | Secret | Giá trị |
 |---|---|
-| `VERCEL_TOKEN` | Tạo ở https://vercel.com/account/tokens |
-| `VERCEL_ORG_ID` | `team_51PSrhskGDB2REyCck9oLuIa` |
-| `VERCEL_PROJECT_ID_API` | `prj_GQO6lfYFPCF1PKRPFjOF5aCMzR3e` |
-| `VERCEL_PROJECT_ID_WEB` | `prj_RXfVKqSegrpCkt6qpSFm9qVZ8Mdj` |
+| `RAILWAY_TOKEN` | Tạo ở https://railway.com/account/tokens (project token của `gleaming-growth` là đủ) |
 
-`ORG_ID` / `PROJECT_ID` lấy lại được từ `.vercel/project.json` và
-`frontend/.vercel/project.json` (2 file này gitignored, chỉ có trên máy đã `vercel link`).
+Chỉ cần **1 secret** — service và environment truyền qua cờ `--service` / `--environment`
+nên runner không cần `railway link`.
 
 ---
 
 ## Environment variables
 
-Env được lưu trên Vercel, **không** đọc từ `.env` khi deploy. Xem bằng `vercel env ls`.
+Env lưu trên Railway, **không** đọc từ `.env` khi deploy. Xem bằng `railway variables`.
 
-### `capymedi` (backend)
+### `VMEC-04/BE` (backend)
 
-| Biến | Production | Ghi chú |
+| Biến | Ghi chú |
+|---|---|
+| `OPENAI_API_KEY` | |
+| `INTERNAL_AUTH_SECRET` | Bắt buộc — app **từ chối khởi động** nếu còn giá trị sentinel trong source |
+| `DATABASE_URL` | Reference var trỏ sang service `VMEC-04/DB` |
+| `CORS_ORIGINS` | `https://vmec-04fe-production.up.railway.app` + 2 origin Vercel cũ. Phân tách bằng dấu phẩy, **so khớp chính xác** |
+| `APP_ENV` / `APP_HOST` / `LOG_LEVEL` / `EMBEDDING_MODEL` | Cấu hình app |
+
+Hai origin `*.vercel.app` trong `CORS_ORIGINS` là **rác còn lại** từ lần deploy Vercel cũ.
+Xoá được ngay khi không còn ai mở frontend trên Vercel nữa.
+
+### `VMEC-04/FE` (frontend)
+
+| Biến | Giá trị | Ghi chú |
 |---|---|---|
-| `OPENAI_API_KEY` | ✅ | Đã set cho cả production/preview/development |
-| `CORS_ORIGINS` | `https://capymedi-web.vercel.app,http://localhost:3000` | Danh sách phân tách bằng dấu phẩy, **so khớp chính xác** |
-| `APP_ENV` | `production` | |
-
-### `capymedi-web` (frontend)
-
-| Biến | Production | Ghi chú |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `https://capymedi.vercel.app` | Development trỏ `http://localhost:8000` |
+| `NEXT_PUBLIC_API_URL` | `https://vmec-04be-production.up.railway.app` | **Build-time** — xem ghi chú ở đầu file |
+| `NEXT_TELEMETRY_DISABLED` | `1` | |
 
 Sửa env:
 
 ```bash
-vercel env add  <TÊN> production      # nhập giá trị qua stdin
-vercel env rm   <TÊN> production
-vercel env pull .env.local            # kéo về máy để chạy local
+railway variables                                  # liệt kê service đang link
+railway variables --set "TÊN=giá trị"              # thêm/sửa (tự trigger redeploy)
+railway variables --service "VMEC-04/FE"           # xem service khác
 ```
 
 ---
 
 ## Setup cho dev mới
 
+Mỗi thư mục link tới **1 service riêng** — link ở root **không** tự áp cho `frontend/`:
+
 ```bash
+railway login
+
 # backend
-vercel link --yes --project capymedi
-vercel env pull .env
+railway link --project gleaming-growth --environment production --service "VMEC-04/BE"
 
 # frontend
 cd frontend
-vercel link --yes --project capymedi-web
-vercel env pull .env.local
+railway link --project gleaming-growth --environment production --service "VMEC-04/FE"
+```
+
+Kéo env về máy để chạy local:
+
+```bash
+railway variables --kv > .env             # ở root, cho backend
+cd frontend && cp .env.example .env.local # frontend chỉ cần NEXT_PUBLIC_API_URL
 ```
 
 ---
 
 ## Những chỗ dễ vấp
 
-**Một thư mục chỉ link được 1 project.** Trước đây cả `.vercel/` lẫn `frontend/.vercel/`
-cùng trỏ vào `capymedi` (project FastAPI), nên deploy từ `frontend/` lại build backend.
-Nếu deploy ra nhầm app, kiểm tra `cat .vercel/project.json` xem `projectName` có đúng không.
+**`railway up` ở `frontend/` mà chưa `railway link` thư mục đó** thì CLI đi ngược lên tìm
+link của thư mục cha, rồi upload **cả repo** và build `Dockerfile` của backend vào service
+frontend. Triệu chứng: build log của service FE chạy `pip install -r requirements.txt`.
+Fix: `railway link` riêng trong `frontend/` (xem mục trên).
 
-**CORS lỗi sau khi đổi env.** Env mới chỉ có hiệu lực ở deployment kế tiếp — phải
-`make deploy-api` lại. Triệu chứng: preflight `OPTIONS` trả `400` và thiếu header
-`Access-Control-Allow-Origin`.
+**Target port của domain phải khớp port app thật sự listen.** Railway inject `PORT=8080`,
+Next.js standalone `server.js` đọc `PORT` nên listen 8080 — dù Dockerfile có `EXPOSE 3000`.
+Domain trỏ sai port trả `502 Application failed to respond` mặc dù container log `✓ Ready`.
+Kiểm tra ở dashboard → service → Settings → Networking.
 
-**Preview URL bị CORS chặn.** Preview của frontend có URL ngẫu nhiên
-(`capymedi-web-<hash>-...vercel.app`) nên không nằm trong `CORS_ORIGINS`. Test preview
-frontend với backend thật thì thêm URL đó vào `CORS_ORIGINS`, hoặc chạy backend local.
+**`HOSTNAME=0.0.0.0` là bắt buộc cho frontend.** `server.js` của Next.js standalone mặc
+định bind `localhost`, Railway không route được traffic từ ngoài vào → healthcheck fail.
+Đã set trong [frontend/Dockerfile](../frontend/Dockerfile).
 
-**Serverless không có disk ghi được.** `database_url` (SQLite) và `chroma_persist_dir`
-trong [src/config.py](../src/config.py) trỏ tới `./data/` — chỉ hoạt động khi chạy local
-hoặc Docker. Khi nào bật thật ChromaDB/SQLite thì backend phải chuyển sang host chạy
-container (đã có sẵn [Dockerfile](../Dockerfile)) hoặc đổi qua managed service.
+**Đổi `NEXT_PUBLIC_API_URL` mà không build lại** thì frontend vẫn gọi URL cũ. Với Dockerfile
+build, biến chỉ vào được build qua `ARG` (Docker cách ly build khỏi env của host) — và `ARG`
+phải khai báo **trong đúng stage** dùng nó, không xuyên stage.
 
-**Bundle backend ~45MB**, chủ yếu là `langchain` + `langgraph`. [.vercelignore](../.vercelignore)
-đã loại `data pharmacy/`, `docs/`, `frontend/`, `src/vlm_demthuoc/` khỏi upload. Giới hạn
-serverless function là 250MB sau giải nén — thêm dependency nặng (torch, opencv) sẽ vượt.
+**Frontend có 2 lockfile** (`package-lock.json` + `pnpm-lock.yaml`). Dockerfile chỉ copy
+`pnpm-lock.yaml` để build luôn dùng pnpm thay vì tuỳ builder đoán. Thêm dependency thì nhớ
+cập nhật lockfile bằng `pnpm`, không phải `npm`.
+
+**Backend từ chối khởi động nếu thiếu `INTERNAL_AUTH_SECRET` thật.** Sentinel
+`unset-temp-auth-gate-CHANGE-ME-for-any-shared-env` nằm sẵn trong source nên bị chặn.
+Triệu chứng: deploy FAILED, log có `ValidationError ... internal_auth_secret`.
+
+**`preDeployCommand` chạy `alembic upgrade head`** ([railway.json](../railway.json)) trước
+mỗi lần deploy backend. Volume **không** được mount lúc build và lúc pre-deploy, chỉ lúc
+container chạy.
 
 ---
 
 ## Smoke test
 
 ```bash
-curl https://capymedi.vercel.app/api/v1/status
+curl https://vmec-04be-production.up.railway.app/api/v1/status
 # {"status":"ready","agent":"LangGraph Agent v1.0"}
 
-curl -X POST https://capymedi.vercel.app/api/v1/chat \
+curl -X POST https://vmec-04be-production.up.railway.app/api/v1/chat \
   -H "Content-Type: application/json" -d '{"message":"xin chao"}'
 
 # CORS — phải thấy Access-Control-Allow-Origin
-curl -i -X OPTIONS https://capymedi.vercel.app/api/v1/status \
-  -H "Origin: https://capymedi-web.vercel.app" \
+curl -i -X OPTIONS https://vmec-04be-production.up.railway.app/api/v1/status \
+  -H "Origin: https://vmec-04fe-production.up.railway.app" \
   -H "Access-Control-Request-Method: GET"
+
+curl -o /dev/null -w "%{http_code}\n" https://vmec-04fe-production.up.railway.app/
+# 200
 ```
 
-Lưu ý: `https://capymedi.vercel.app/` trả `404` là **đúng** — backend không có route `/`.
-Health check nằm ở `/health`, API ở `/api/v1/*`.
+Lưu ý: `https://vmec-04be-production.up.railway.app/` trả `404` là **đúng** — backend không
+có route `/`. Health check ở `/health`, API ở `/api/v1/*`.
+
+Xem log và trạng thái:
+
+```bash
+railway logs                    # log runtime của service đang link
+railway logs --build            # log build
+railway status                  # trạng thái toàn project
+```

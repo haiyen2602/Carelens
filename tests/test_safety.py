@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.services.safety import check_keyword_redflag, check_safety  # noqa: E402
+from backend.services.safety import check_keyword_redflag, check_safety  # noqa: E402
 
 
 def test_clinical_redflag_detected():

@@ -19,12 +19,12 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.nodes.conversation_nodes import (  # noqa: E402
+from backend.agents.nodes.conversation_nodes import (  # noqa: E402
     build_prescription_lookup_node,
     build_retrieval_node,
 )
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.services.retrieval import DrugInfoResult, RetrievalResult  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.services.retrieval import DrugInfoResult, RetrievalResult  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -37,7 +37,7 @@ def _db_available() -> bool:
 
 
 def _demo_patient_seeded(db) -> bool:
-    from src.db.models import Prescription
+    from backend.db.models import Prescription
 
     return (
         db.query(Prescription)

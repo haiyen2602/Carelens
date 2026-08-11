@@ -57,7 +57,8 @@ uvicorn src.main:app --reload
 ## Project Structure
 
 ```
-├── src/
+├── backend/             # Backend FastAPI (doi ten tu src/ 2026-08-11 de tach
+│   │                    # ro voi frontend/)
 │   ├── agents/          # LangGraph agent definitions
 │   │   ├── graph.py     # Main graph (nodes + edges)
 │   │   ├── state.py     # State schema
@@ -69,6 +70,7 @@ uvicorn src.main:app --reload
 │   ├── services/        # Business logic, cron scheduler dose_event
 │   ├── config.py        # Settings
 │   └── main.py          # App entry point
+├── frontend/            # Next.js app (service Railway rieng)
 ├── tests/               # Test suite
 ├── docs/                # BRIEF, PRD, workflow, functional decomposition, system flow
 ├── eval/                # Evaluation results (accuracy phân loại, recall triệu chứng...)

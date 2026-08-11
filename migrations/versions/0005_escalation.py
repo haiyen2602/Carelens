@@ -1,7 +1,7 @@
 """Phase 6: bang escalation - khop EscalationDTO (api-contracts.md §6/§8),
 noi DUY NHAT ca 2 duong kich hoat HIGH (safety_layer redflag va
 SEVERITY -> LEVEL = "Nguy hiểm") ghi vao qua escalate_fn dung chung
-(src/services/escalation.py).
+(backend/services/escalation.py).
 
 Revision ID: 0005
 Revises: 0004

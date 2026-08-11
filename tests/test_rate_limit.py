@@ -14,7 +14,7 @@ from fastapi import HTTPException  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.api.rate_limit import RATE_LIMIT_MESSAGE, SlidingWindowRateLimiter, reset_default_limiter_for_tests  # noqa: E402
+from backend.api.rate_limit import RATE_LIMIT_MESSAGE, SlidingWindowRateLimiter, reset_default_limiter_for_tests  # noqa: E402
 
 
 class _FakeClock:
@@ -73,7 +73,7 @@ def test_old_requests_outside_window_are_forgotten():
 
 
 def _db_available() -> bool:
-    from src.db.base import engine
+    from backend.db.base import engine
 
     try:
         with engine.connect() as conn:
@@ -91,16 +91,16 @@ def _reset_limiter_and_overrides():
     reset_default_limiter_for_tests()
     yield
     reset_default_limiter_for_tests()
-    from src.main import app
+    from backend.main import app
 
     app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
 async def test_exceeding_rate_limit_returns_429_not_500(client, monkeypatch):
-    from src.api.chat_deps import ChatServices, get_chat_services
-    from src.config import get_settings
-    from src.main import app
+    from backend.api.chat_deps import ChatServices, get_chat_services
+    from backend.config import get_settings
+    from backend.main import app
 
     settings = get_settings()
     monkeypatch.setattr(settings, "rate_limit_max_requests", 2)
@@ -112,7 +112,7 @@ async def test_exceeding_rate_limit_returns_429_not_500(client, monkeypatch):
         generate_answer=lambda u, r: "Câu trả lời giả lập.",
         classify_severity=lambda combined_text: None,
         embed_query=lambda t: [0.0] * 1536,
-        safety_check=__import__("src.agents.orchestrator", fromlist=["default_safety_check"]).default_safety_check,
+        safety_check=__import__("backend.agents.orchestrator", fromlist=["default_safety_check"]).default_safety_check,
     )
 
     patient_id = f"test-ratelimit-{uuid.uuid4().hex[:8]}"
