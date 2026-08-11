@@ -1,5 +1,5 @@
 """Vong 2 (chatbot-rag-design.md muc 12.1/12.2) - input/output guardrails,
-lop DOC LAP voi safety_layer (src/services/safety.py). Test bat buoc theo
+lop DOC LAP voi safety_layer (backend/services/safety.py). Test bat buoc theo
 kickoff: false-positive nguy hiem nhat la chan nham cau hoi y te hop le
 chua tu nhay cam."""
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.services.guardrails import (  # noqa: E402
+from backend.services.guardrails import (  # noqa: E402
     OUTPUT_GUARDRAIL_FALLBACK_MESSAGE,
     check_input_guardrail,
     check_output_guardrail,

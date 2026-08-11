@@ -12,9 +12,8 @@ Không cần mạng, không cần webcam, không đụng tới `api_key.json` th
 
 import json
 
-import pytest
-
 import config
+import pytest
 
 # Mọi biến môi trường mà config.py có thể đọc. Xoá sạch trước mỗi test để giá
 # trị thật trong .env của máy đang chạy không lọt vào kết quả.
@@ -188,7 +187,7 @@ def test_timeout_sai_dinh_dang_thi_quay_ve_mac_dinh(monkeypatch):
 # ---------------------------------------------------------------------------
 def test_repo_env_tro_ve_dung_goc_repo():
     """`config.py` nạp .env bằng đường dẫn tuyệt đối chứ không dò theo thư mục
-    làm việc — `run.bat` chạy từ src/vlm_demthuoc còn pytest chạy từ gốc repo.
+    làm việc — `run.bat` chạy từ backend/vlm_demthuoc còn pytest chạy từ gốc repo.
     """
     assert config.REPO_ENV.name == ".env"
     assert config.REPO_ENV.parent == config.VLM_DIR.parents[1]

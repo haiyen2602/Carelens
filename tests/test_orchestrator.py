@@ -18,13 +18,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from src.agents.orchestrator import run_conversation  # noqa: E402
-from src.services.escalation import (  # noqa: E402
+from backend.agents.orchestrator import run_conversation  # noqa: E402
+from backend.services.escalation import (  # noqa: E402
     GENERIC_OVERLAY_MESSAGE,
     OVERDOSE_OVERLAY_MESSAGE,
     SYMPTOM_OVERLAY_MESSAGE,
 )
-from src.services.safety import SafetyFlag  # noqa: E402
+from backend.services.safety import SafetyFlag  # noqa: E402
 
 
 def _make_state():
@@ -132,7 +132,7 @@ async def test_redflag_arriving_before_any_node_starts_stops_immediately():
 async def test_redflag_triggers_shared_escalation_handler_not_a_separate_one():
     """Diem bat buoc (code review Phase 5b, 2026-08-08): safety_layer redflag
     va SEVERITY -> LEVEL = "Nguy hiểm" (xem test_dose_confirmation_nodes.py)
-    PHAI cung goi 1 ham escalate dung chung (src/services/escalation.py),
+    PHAI cung goi 1 ham escalate dung chung (backend/services/escalation.py),
     khong duoc code rieng 2 lan. Truoc fix nay, redflag chi set response/
     severity ma KHONG bao gio thuc su goi escalate_fn - BR-3.5 (gui nguoi
     than + bac si) khong duoc thuc hien tren duong nay."""

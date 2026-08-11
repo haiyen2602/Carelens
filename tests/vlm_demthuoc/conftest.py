@@ -1,4 +1,4 @@
-"""Cho phép import các module của `src/vlm_demthuoc/` trong test.
+"""Cho phép import các module của `backend/vlm_demthuoc/` trong test.
 
 Thư mục đó là một chương trình CLI chạy độc lập (`run.bat` làm `cd` vào đúng
 thư mục rồi mới gọi python), nên các file trong đó import phẳng — `from config
@@ -11,6 +11,6 @@ gốc của repo.
 import sys
 from pathlib import Path
 
-VLM_DIR = Path(__file__).resolve().parents[2] / "src" / "vlm_demthuoc"
+VLM_DIR = Path(__file__).resolve().parents[2] / "backend" / "vlm_demthuoc"
 if str(VLM_DIR) not in sys.path:
     sys.path.insert(0, str(VLM_DIR))

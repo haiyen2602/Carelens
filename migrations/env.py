@@ -3,9 +3,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from src.config import get_settings
-from src.db.base import Base
-from src.db.models import AuditLog, DrugChunk  # noqa: F401 - import de dang ky vao Base.metadata
+from backend.config import get_settings
+from backend.db.base import Base
+from backend.db.models import AuditLog, DrugChunk  # noqa: F401 - import de dang ky vao Base.metadata
 
 config = context.config
 

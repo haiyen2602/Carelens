@@ -77,8 +77,9 @@ data pharmacy/**/*.progress.txt
 # thuoc.json + script, large (~37MB), not a deliverable.
 data pharmacy/_chunks.jsonl
 
-# Vercel CLI link + pulled env (per-developer, never committed)
-.vercel
+# Railway CLI link (per-developer, per-directory: root -> BE, frontend/ -> FE)
+.railway/
+# Local env — pulled from Railway with `railway variables`, never committed
 .env*
 # ...but the template must stay in the repo
 !.env.example

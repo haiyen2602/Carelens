@@ -15,8 +15,10 @@ Thống nhất cấu trúc dự án, quy ước code và kỹ thuật cho toàn 
 
 ### 1. Cấu trúc thư mục
 
+> **Cập nhật 2026-08-11:** thư mục gốc backend đổi tên `src/` → `backend/` để tách rõ với `frontend/`. Đường dẫn dưới đây đã theo tên mới; nội dung quyết định gốc không đổi.
+
 ```
-├── src/
+├── backend/
 │   ├── agents/              # LangGraph
 │   │   ├── graph.py         # Main graph (nodes + edges)
 │   │   ├── state.py         # State schema
@@ -33,7 +35,7 @@ Thống nhất cấu trúc dự án, quy ước code và kỹ thuật cho toàn 
 │   │   ├── prescription/  scheduling/  safety/  escalation/  reporting/  audit/
 │   ├── config.py            # Settings (pydantic-settings, đọc từ .env)
 │   └── main.py              # App entry point
-├── tests/                   # pytest — mirror cấu trúc src/
+├── tests/                   # pytest — mirror cấu trúc backend/
 ├── eval/                    # Script + kết quả đánh giá AI (accuracy, recall)
 ├── data pharmacy/           # Dữ liệu thuốc cho RAG (theo schema.json)
 ├── docs/  specs/  adrs/  tasks/  planning/
@@ -41,10 +43,10 @@ Thống nhất cấu trúc dự án, quy ước code và kỹ thuật cho toàn 
 ```
 
 **Quy tắc thư mục:**
-- Một domain = một thư mục con trong `src/services/`. Không tạo file `utils.py` khổng lồ dùng chung mọi nơi.
-- `src/api/` **chỉ** làm việc HTTP: validate input, gọi service, map lỗi. **Không** chứa business logic.
-- `src/services/` **không** import `fastapi` (trừ `HTTPException` nếu thật cần) — để logic test được mà không cần dựng app.
-- `tests/` mirror cấu trúc `src/`: `src/services/scheduling/` → `tests/services/test_scheduling.py`.
+- Một domain = một thư mục con trong `backend/services/`. Không tạo file `utils.py` khổng lồ dùng chung mọi nơi.
+- `backend/api/` **chỉ** làm việc HTTP: validate input, gọi service, map lỗi. **Không** chứa business logic.
+- `backend/services/` **không** import `fastapi` (trừ `HTTPException` nếu thật cần) — để logic test được mà không cần dựng app.
+- `tests/` mirror cấu trúc `backend/`: `backend/services/scheduling/` → `tests/services/test_scheduling.py`.
 
 ### 2. Naming convention
 
@@ -66,21 +68,21 @@ Thống nhất cấu trúc dự án, quy ước code và kỹ thuật cho toàn 
 
 - **Python 3.11+**, formatter & linter: **`ruff`** (đã dùng trong CI từ 2026-07-26).
 - Line length: **100**.
-- **Type hint bắt buộc** cho mọi hàm public trong `src/services/` và `src/agents/`.
+- **Type hint bắt buộc** cho mọi hàm public trong `backend/services/` và `backend/agents/`.
 - Docstring: bắt buộc cho module và hàm public; viết **tiếng Việt** cho logic nghiệp vụ (giải thích *vì sao*), tiếng Anh cho phần kỹ thuật thuần.
-- Không commit code bị comment-out; không để `print()` trong `src/` (dùng logger).
+- Không commit code bị comment-out; không để `print()` trong `backend/` (dùng logger).
 
 ### 4. Error handling
 
-- Định nghĩa exception nghiệp vụ riêng trong `src/services/<domain>/errors.py`, kế thừa từ một base chung (VD: `VmecError`).
-- Tầng `src/api/` bắt exception nghiệp vụ và map sang HTTP code + body theo đúng [`../specs/api-contracts.md`](../specs/api-contracts.md) §10.
+- Định nghĩa exception nghiệp vụ riêng trong `backend/services/<domain>/errors.py`, kế thừa từ một base chung (VD: `VmecError`).
+- Tầng `backend/api/` bắt exception nghiệp vụ và map sang HTTP code + body theo đúng [`../specs/api-contracts.md`](../specs/api-contracts.md) §10.
 - **Không bao giờ trả stack trace / chi tiết nội bộ cho FE** (500 chỉ trả message chung).
 - **Không dùng `except: pass`.** Nuốt lỗi âm thầm trong dự án y tế là không chấp nhận được.
 - Lỗi LLM/Vision (timeout, rate limit) phải có fallback rõ ràng — đặc biệt: **LLM lỗi thì safety layer vẫn phải chạy keyword layer** (BR-6.3).
 
 ### 5. Logging
 
-- Dùng `logging` chuẩn của Python, cấu hình tập trung ở `src/config.py`; **log dạng JSON** để dễ truy vết.
+- Dùng `logging` chuẩn của Python, cấu hình tập trung ở `backend/config.py`; **log dạng JSON** để dễ truy vết.
 - Mức: `DEBUG` (local) · `INFO` (mốc nghiệp vụ: đã gửi nhắc, đã đóng dose window) · `WARNING` (fallback được kích hoạt) · `ERROR` (thất bại cần người xem).
 - Mọi log liên quan tới một liều phải kèm `dose_id` và `patient_id` để truy vết.
 - **Không log PHI/PII dạng plain** (ảnh thuốc, nội dung hội thoại đầy đủ, thông tin định danh bệnh nhân). Log `patient_id`, không log tên/địa chỉ.
@@ -101,7 +103,7 @@ Chi tiết ở [ADR-0001](./0001-test-strategy.md). Tóm tắt:
 
 ### 8. Config & secrets
 
-- Mọi config qua biến môi trường, đọc bằng `pydantic-settings` trong `src/config.py`. **Không hardcode** URL/khoá/ngưỡng trong code.
+- Mọi config qua biến môi trường, đọc bằng `pydantic-settings` trong `backend/config.py`. **Không hardcode** URL/khoá/ngưỡng trong code.
 - Mọi con số nghiệp vụ (`DOSE_WINDOW_MINUTES`, ngưỡng confidence, SLA) khai báo thành **hằng số có tên**, giá trị lấy từ [`../specs/business-rules.md`](../specs/business-rules.md).
 - **Không commit `.env`** — chỉ commit `.env.example`. Không commit dữ liệu bệnh nhân thật, ảnh thuốc thật, hay `.ai-log/*.jsonl`.
 

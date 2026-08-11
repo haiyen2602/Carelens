@@ -12,8 +12,8 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import Escalation  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import Escalation  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -105,7 +105,7 @@ async def test_ack_without_internal_secret_is_rejected(client):
     endpoint moi nay, khong duoc quen wire (dung loai loi da tung xay ra)."""
     from httpx import ASGITransport, AsyncClient
 
-    from src.main import app
+    from backend.main import app
 
     patient_id = f"test-ack-nosecret-{uuid.uuid4().hex[:8]}"
     esc_id = _seed_open_escalation(patient_id)

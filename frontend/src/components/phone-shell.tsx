@@ -31,9 +31,9 @@ export function PhoneShell({
   };
 
   return (
-    <div className="min-h-screen bg-secondary/60 px-0 py-0 sm:px-4 sm:py-8">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col overflow-hidden bg-background sm:min-h-[860px] sm:rounded-[2.25rem] sm:shadow-[var(--shadow-phone)]">
-        <header className="brand-gradient grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-5 pb-5 pt-7 text-primary-foreground sm:rounded-t-[2.25rem]">
+    <div className="h-dvh bg-secondary/60 px-0 py-0 sm:px-4 sm:py-8">
+      <div className="relative mx-auto flex h-full w-full max-w-[430px] flex-col overflow-hidden bg-background sm:h-[min(860px,calc(100dvh-4rem))] sm:rounded-[2.25rem] sm:shadow-[var(--shadow-phone)]">
+        <header className="brand-gradient grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-5 pb-5 pt-7 text-primary-foreground sm:rounded-t-[2.25rem]">
           <button
             aria-label="Menu"
             className="shrink-0 rounded-full bg-white/15 p-2"
@@ -47,10 +47,10 @@ export function PhoneShell({
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 space-y-4 p-5">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto p-5">{children}</main>
 
         <nav
-          className="sticky bottom-0 grid border-t border-border bg-card sm:rounded-b-[2.25rem]"
+          className="grid shrink-0 border-t border-border bg-card sm:rounded-b-[2.25rem]"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map((t) => {

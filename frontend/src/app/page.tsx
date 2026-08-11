@@ -312,6 +312,10 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} CapyMedi. Bảo lưu mọi quyền.
+          {" · "}
+          <a href="/admin" className="font-medium text-primary hover:underline">
+            Quản trị hệ thống
+          </a>
         </p>
       </div>
     </main>

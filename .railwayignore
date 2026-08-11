@@ -1,0 +1,53 @@
+# Loai khoi goi upload cua `railway up` (backend FastAPI).
+#
+# `railway up` da tu bo qua .gitignore + .git + node_modules, nen file nay chi
+# can liet ke nhung thu CO TRONG GIT nhung KHONG can de build/chay backend.
+# Muc dich: goi upload nho (upload nhanh, build context nho), khong phai bao mat.
+#
+# Khac voi .dockerignore: .dockerignore loc luc BUILD (sau khi da upload xong),
+# file nay loc luc UPLOAD - thu bi loai o day khong bao gio roi khoi may.
+
+# Frontend Next.js - service Railway RIENG (VMEC-04/FE), deploy bang
+# `cd frontend && railway up`. Thu muc frontend/ da duoc `railway link` rieng nen
+# goi upload cua no chi gom frontend/, khong dinh file nao o day.
+frontend/
+
+# Du lieu thuoc (~32MB) + crawler: chi dung cho script seed/embed chay TAY
+# (scripts/chunk_drugs.py, scripts/embed_and_insert.py), KHONG doc luc runtime.
+data pharmacy/
+crawler/
+
+# Tooling VLM dem thuoc dung rieng (requirements.txt rieng), khong duoc
+# backend/main.py hay bat ky module nao trong backend/api|agents|services import.
+backend/vlm_demthuoc/
+
+# Venv dev cua may (nam duoi backend/ sau khi doi ten src/ -> backend/).
+# .gitignore da bo qua .venv/ nen `railway up` cung khong upload, nhung liet ke
+# tuong minh de nguoi doc sau khong tuong no di theo backend/ len server.
+backend/.venv/
+
+# Tai lieu, ke hoach, slide - khong anh huong build/runtime
+docs/
+adrs/
+planning/
+presentation/
+specs/
+tasks/
+eval/
+.agents/
+.ai-log/
+*.md
+
+# Test + tooling local
+tests/
+scripts/
+docker-compose.yml
+Makefile
+ruff.toml
+
+# Cau hinh IDE/agent local
+.claude/
+.codex/
+.cursor/
+.gemini/
+.github/

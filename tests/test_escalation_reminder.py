@@ -13,9 +13,9 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import Escalation  # noqa: E402
-from src.services.escalation_reminder import check_and_send_reminders, is_reminder_due  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import Escalation  # noqa: E402
+from backend.services.escalation_reminder import check_and_send_reminders, is_reminder_due  # noqa: E402
 
 
 def _db_available() -> bool:

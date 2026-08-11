@@ -44,9 +44,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import text  # noqa: E402
 
-from src.db.base import SessionLocal  # noqa: E402
-from src.services.embeddings import embed_query  # noqa: E402
-from src.services.retrieval import CANDIDATE_POOL_SIZE  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.services.embeddings import embed_query  # noqa: E402
+from backend.services.retrieval import CANDIDATE_POOL_SIZE  # noqa: E402
 
 EVAL_DIR = Path(__file__).resolve().parent
 GROUND_TRUTH_PATH = EVAL_DIR / "ground_truth.json"

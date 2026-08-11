@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.agents.nodes.drug_confirmation_nodes import _dedupe_distinct_drugs  # noqa: E402
-from src.services.retrieval import CandidateChunk, RetrievalResult, fuse_rrf  # noqa: E402
+from backend.agents.nodes.drug_confirmation_nodes import _dedupe_distinct_drugs  # noqa: E402
+from backend.services.retrieval import CandidateChunk, RetrievalResult, fuse_rrf  # noqa: E402
 
 
 def _chunk(id_: str, score: float, drug_id: str = "drug-1", field_group: str = "cach_dung") -> CandidateChunk:
@@ -122,7 +122,7 @@ def test_scores_reported_separately_not_collapsed_into_one_number():
 
 # ---------------------------------------------------------------------------
 # THEM 2026-08-09 (phan hoi review muc 6) - invariant OR o tren CHI xac nhan
-# cho fuse_rrf() THUAN. _dedupe_distinct_drugs() (src/agents/nodes/drug_
+# cho fuse_rrf() THUAN. _dedupe_distinct_drugs() (backend/agents/nodes/drug_
 # confirmation_nodes.py, viet cho muc 5/11 - dedup chunk -> danh sach THUOC
 # phan biet, dung boi _search_distinct_drug_candidates()) la code MOI, CHUA
 # tung duoc kiem chung invariant nay con SONG SOT sau buoc dedup hay khong -

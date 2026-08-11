@@ -22,7 +22,7 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
+from backend.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
     ASK_AGAIN_MESSAGE,
     HIGH_ACTION,
     LOW_ACTION,
@@ -34,9 +34,9 @@ from src.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
     build_level_action_node,
     build_severity_node,
 )
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import DoseEvent, DrugChunk, Prescription  # noqa: E402
-from src.services.escalation import MISSED_DOSE_OVERLAY_MESSAGE, SIDE_EFFECT_OVERLAY_MESSAGE  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import DoseEvent, DrugChunk, Prescription  # noqa: E402
+from backend.services.escalation import MISSED_DOSE_OVERLAY_MESSAGE, SIDE_EFFECT_OVERLAY_MESSAGE  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Nhom 1 - CLASSIFY node, thuan, khong can DB.
@@ -249,7 +249,7 @@ async def test_severity_node_uses_dose_event_drug_not_rag_results_from_other_bra
     rag_results cua 1 cau hoi thuoc chung KHONG lien quan (vd tu 1 luot hoi
     truoc do trong cung phien), SEVERITY van phai dung dung thuoc cua
     dose_event dang xu ly, khong bi nham lan qua rag_results."""
-    from src.services.retrieval import DrugInfoResult
+    from backend.services.retrieval import DrugInfoResult
 
     unrelated_result = DrugInfoResult(
         drug_id="drug-hoan-toan-khac",

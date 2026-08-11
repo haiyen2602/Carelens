@@ -8,17 +8,17 @@
 
 | Domain | Mô tả ngắn | Module code (dự kiến) | Owner | Trạng thái |
 |---|---|---|---|---|
-| `auth` | Đăng nhập, JWT, phân quyền theo role (bác sĩ / bệnh nhân / người thân), liên kết bệnh nhân ↔ bác sĩ ↔ người thân | `src/api/auth/`, `src/services/auth/` | Trương Quốc Trường | Planned |
-| `prescription` | Phác đồ điều trị: bác sĩ tạo, chỉnh sửa, **duyệt** (HITL). Nguồn sự thật cho mọi lịch nhắc | `src/services/prescription/` | Trương Quốc Trường | Planned |
-| `scheduling` | Sinh `dose_event` từ phác đồ đã duyệt, dose window ±30 phút, cron 1 phút quét liều đến hạn, nhắc 3 cấp độ | `src/services/scheduling/` | Trương Quốc Trường | Planned |
-| `conversation` | Hội thoại bệnh nhân ↔ agent; phân loại 4 nhãn Taken/Missed/Delayed/SideEffect; hỏi lại khi confidence thấp | `src/agents/nodes/phan_loai_hoi_thoai.py` | Phạm Thành Đạt | Planned |
-| `photo-verification` | Nhận ảnh thuốc, vision đếm viên, đối chiếu phác đồ, tối đa 2 lần chụp lại → fallback người thân duyệt | `src/agents/tools/vision.py`, `src/services/photo/` | Nguyễn Minh Đạt | Planned |
-| `drug-knowledge` | Dữ liệu thuốc có nguồn + RAG trên pgvector (chỉ định, tác dụng phụ, tương tác, mức nguy hiểm khi bỏ liều) | `src/agents/tools/rag.py`, `data pharmacy/` | Nguyễn Minh Đạt | In progress |
-| `safety` | Lớp an toàn song song: keyword rules OR LLM, phát hiện triệu chứng nguy hiểm, cắt luồng + escalate khẩn | `src/services/safety/` | Phạm Thành Đạt | Planned |
-| `escalation` | Quyết định mức Nhẹ/Trung bình/Nghiêm trọng và gửi cảnh báo tới người thân/bác sĩ; hàng đợi cảnh báo cho caregiver | `src/services/escalation/`, `src/agents/nodes/escalate.py` | Phạm Thành Đạt | Planned |
-| `notification` | Kênh gửi thực tế (push/PWA notification, in-app), retry, template thông báo theo cấp độ | `src/agents/tools/notification.py` | Nguyễn Hải Yến | Planned |
-| `reporting` | Dashboard tuân thủ cho bác sĩ (tự khai vs có xác minh), heatmap lịch sử cho người thân | `src/services/reporting/` | Nguyễn Hải Yến | Planned |
-| `audit` | Ghi log mọi hành động của agent: reasoning, confidence, nguồn RAG, phiên bản prompt | `src/services/audit/` | Trương Quốc Trường | Planned |
+| `auth` | Đăng nhập, JWT, phân quyền theo role (bác sĩ / bệnh nhân / người thân), liên kết bệnh nhân ↔ bác sĩ ↔ người thân | `backend/api/auth/`, `backend/services/auth/` | Trương Quốc Trường | Planned |
+| `prescription` | Phác đồ điều trị: bác sĩ tạo, chỉnh sửa, **duyệt** (HITL). Nguồn sự thật cho mọi lịch nhắc | `backend/services/prescription/` | Trương Quốc Trường | Planned |
+| `scheduling` | Sinh `dose_event` từ phác đồ đã duyệt, dose window ±30 phút, cron 1 phút quét liều đến hạn, nhắc 3 cấp độ | `backend/services/scheduling/` | Trương Quốc Trường | Planned |
+| `conversation` | Hội thoại bệnh nhân ↔ agent; phân loại 4 nhãn Taken/Missed/Delayed/SideEffect; hỏi lại khi confidence thấp | `backend/agents/nodes/phan_loai_hoi_thoai.py` | Phạm Thành Đạt | Planned |
+| `photo-verification` | Nhận ảnh thuốc, vision đếm viên, đối chiếu phác đồ, tối đa 2 lần chụp lại → fallback người thân duyệt | `backend/agents/tools/vision.py`, `backend/services/photo/` | Nguyễn Minh Đạt | Planned |
+| `drug-knowledge` | Dữ liệu thuốc có nguồn + RAG trên pgvector (chỉ định, tác dụng phụ, tương tác, mức nguy hiểm khi bỏ liều) | `backend/agents/tools/rag.py`, `data pharmacy/` | Nguyễn Minh Đạt | In progress |
+| `safety` | Lớp an toàn song song: keyword rules OR LLM, phát hiện triệu chứng nguy hiểm, cắt luồng + escalate khẩn | `backend/services/safety/` | Phạm Thành Đạt | Planned |
+| `escalation` | Quyết định mức Nhẹ/Trung bình/Nghiêm trọng và gửi cảnh báo tới người thân/bác sĩ; hàng đợi cảnh báo cho caregiver | `backend/services/escalation/`, `backend/agents/nodes/escalate.py` | Phạm Thành Đạt | Planned |
+| `notification` | Kênh gửi thực tế (push/PWA notification, in-app), retry, template thông báo theo cấp độ | `backend/agents/tools/notification.py` | Nguyễn Hải Yến | Planned |
+| `reporting` | Dashboard tuân thủ cho bác sĩ (tự khai vs có xác minh), heatmap lịch sử cho người thân | `backend/services/reporting/` | Nguyễn Hải Yến | Planned |
+| `audit` | Ghi log mọi hành động của agent: reasoning, confidence, nguồn RAG, phiên bản prompt | `backend/services/audit/` | Trương Quốc Trường | Planned |
 
 > Reviewer bắt buộc theo domain: xem [`TEAM.md`](../TEAM.md) §2.
 

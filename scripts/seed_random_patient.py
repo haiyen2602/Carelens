@@ -28,8 +28,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import text  # noqa: E402
 
-from src.db.base import SessionLocal  # noqa: E402
-from src.db.models import DoseEvent, Prescription  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.db.models import DoseEvent, Prescription  # noqa: E402
 
 TEST_PATIENT_ID = "test-patient-01"
 TEST_DOCTOR_ID = "test-doctor-01"

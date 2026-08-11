@@ -1,6 +1,6 @@
 """Phase 5: bang prescription + dose_event - chi du de tool
 tra_cuu_lich_uong_ca_nhan/tra_cuu_don_thuoc_ca_nhan query duoc that (khong
-phai FEAT-001-004 day du, xem ghi chu trong src/db/models.py).
+phai FEAT-001-004 day du, xem ghi chu trong backend/db/models.py).
 
 Revision ID: 0004
 Revises: 0003
