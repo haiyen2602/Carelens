@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import { DEMO_PATIENT_ID } from "@/lib/api";
 import { useProto } from "@/lib/proto-store";
 import {
   type Conversation,
@@ -89,10 +90,10 @@ export default function AssistantPage() {
     setInput("");
     reset();
     mutate(
-      { message: content },
+      { patient_id: DEMO_PATIENT_ID, message: content },
       {
         onSuccess: (data) => {
-          appendMessage(activeId, "assistant", data.response);
+          appendMessage(activeId, "assistant", data.reply);
         },
       },
     );
