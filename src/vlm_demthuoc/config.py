@@ -1,30 +1,48 @@
-# -*- coding: utf-8 -*-
 """
 Cấu hình + nạp API key cho hệ thống VLM đếm thuốc.
 
-Toàn bộ thông tin kết nối nằm trong MỘT file: `vlm/api_key.json`.
+Thông tin kết nối nằm trong `.env` ở GỐC REPO, cùng chỗ với phần còn lại của dự
+án (trước đây thư mục này dùng riêng `api_key.json` — xem phần tương thích ngược
+bên dưới):
 
-    {
-      "provider": "openai",                          // "openai" hoặc "claude"
-      "api_key":  "sk-...",
-      "base_url": "openrouter",                      // tên viết tắt hoặc URL đầy đủ
-      "model":    "google/gemini-2.5-flash"
-    }
+    VLM_API_KEY=sk-...
+    VLM_PROVIDER=openai                  # "openai" hoặc "claude"
+    VLM_BASE_URL=https://api.vilao.ai/v1 # tên viết tắt hoặc URL đầy đủ
+    VLM_MODEL=mn/ag/gemini-3.6-flash-high
+    VLM_JSON_MODE=off                    # schema | object | off
 
-Thứ tự ưu tiên: tham số dòng lệnh > biến môi trường > api_key.json > mặc định.
+Thứ tự ưu tiên: tham số dòng lệnh > biến môi trường (kể cả .env) > api_key.json
+> mặc định.
+
+TƯƠNG THÍCH NGƯỢC: `api_key.json` vẫn được đọc nếu biến môi trường trống, nên
+máy nào đang dùng file đó vẫn chạy y nguyên, không cần sửa gì.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 from dataclasses import dataclass, field
 from getpass import getpass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
+
 VLM_DIR = Path(__file__).resolve().parent
 KEY_FILE = VLM_DIR / "api_key.json"
+REPO_ENV = VLM_DIR.parents[1] / ".env"
+
+# Nạp .env của repo bằng ĐƯỜNG DẪN TUYỆT ĐỐI, không dùng find_dotenv(): `run.bat`
+# làm `cd` vào src/vlm_demthuoc rồi mới gọi python, còn pytest chạy từ gốc repo —
+# hai thư mục làm việc khác nhau nên dò tương đối sẽ ra hai kết quả khác nhau.
+#
+# override=False: biến đã export sẵn ở shell vẫn thắng giá trị trong .env, giữ
+# nguyên thứ tự ưu tiên cũ (dòng lệnh > biến môi trường > file).
+load_dotenv(REPO_ENV, override=False)
 
 _PLACEHOLDERS = {
     "",
@@ -37,12 +55,22 @@ _PLACEHOLDERS = {
     "TEN_MODEL_CUA_BAN",
 }
 
-# Biến môi trường chứa key, theo từng nhà cung cấp.
+# Biến môi trường chứa key, theo từng nhà cung cấp. Tìm theo đúng thứ tự này,
+# lấy cái đầu tiên có giá trị.
+#
+# VLM_API_KEY PHẢI ĐỨNG ĐẦU (sửa 2026-08-11, khi chuyển sang .env). Trước đây
+# nó đứng cuối và vẫn chạy đúng, chỉ vì .env chưa bao giờ được nạp vào
+# os.environ trong thư mục này. Từ lúc có load_dotenv() ở trên, OPENAI_API_KEY
+# của chatbot (endpoint api.openai.com) nằm chung .env — để nó đứng trước thì
+# key ấy sẽ bị gửi tới base_url của VLM và trả 401 ngay. VLM_API_KEY là biến
+# DÀNH RIÊNG cho thư mục này nên nó phải thắng mọi biến dùng chung.
+#
+# tests/vlm_demthuoc/test_config.py khoá lại thứ tự này.
 _ENV_KEYS = {
-    "claude": ("ANTHROPIC_API_KEY", "VLM_API_KEY"),
+    "claude": ("VLM_API_KEY", "ANTHROPIC_API_KEY"),
     # GEMINI_API_KEY / GOOGLE_API_KEY là tên Google AI Studio dùng, để sẵn cho
     # ai đã export theo thói quen đó.
-    "openai": ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "VLM_API_KEY"),
+    "openai": ("VLM_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"),
 }
 
 _DEFAULT_MODEL = {"claude": "claude-opus-5", "openai": ""}
@@ -55,8 +83,7 @@ def load_config_file() -> dict[str, str]:
     try:
         raw = json.loads(KEY_FILE.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-        print(f"Cảnh báo: không đọc được {KEY_FILE.name} ({exc}). Bỏ qua file này.",
-              file=sys.stderr)
+        logger.warning("Không đọc được %s (%s). Bỏ qua file này.", KEY_FILE.name, exc)
         return {}
     if not isinstance(raw, dict):
         return {}
@@ -84,10 +111,41 @@ def _save_config_file(data: dict[str, str]) -> None:
     KEY_FILE.write_text(
         json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    try:  # trên Linux/macOS thì siết quyền; Windows bỏ qua
+    _restrict_permissions()
+
+
+def _restrict_permissions() -> None:
+    """Siết quyền đọc file key về riêng chủ sở hữu, nếu hệ điều hành cho phép.
+
+    NÓI THẲNG VỚI NGƯỜI DÙNG KHI KHÔNG LÀM ĐƯỢC (sửa 2026-08-10, phản hồi
+    review): `os.chmod(0o600)` chỉ có tác dụng thật trên hệ POSIX. Trên Windows
+    nó *không báo lỗi* mà cũng *không siết quyền* — chỉ bật/tắt cờ read-only.
+    Bản trước bọc nguyên khối trong `except OSError: pass`, nên người dùng
+    Windows tưởng file đã được bảo vệ trong khi không hề.
+
+    Bắt riêng theo `os.name` thay vì dựa vào exception chính vì lý do đó: trên
+    Windows `chmod` *thành công*, nên không exception nào nổ ra để mà cảnh báo.
+
+    Cũng theo ADR-0004 §4: không nuốt lỗi im lặng — mọi nhánh ở đây đều nói ra
+    kết quả thật.
+    """
+    if os.name != "posix":
+        logger.warning(
+            "%s vừa được ghi nhưng KHÔNG siết được quyền truy cập trên hệ điều "
+            "hành này. File đang dùng quyền mặc định của thư mục. Nếu máy có "
+            "nhiều người dùng, hãy đặt key qua biến môi trường thay vì lưu file.",
+            KEY_FILE.name,
+        )
+        return
+
+    try:
         os.chmod(KEY_FILE, 0o600)
-    except OSError:
-        pass
+    except OSError as exc:
+        logger.warning(
+            "Không siết được quyền cho %s (%s). File có thể đọc được bởi người "
+            "dùng khác trên máy này.",
+            KEY_FILE.name, exc,
+        )
 
 
 def load_api_key(provider: str = "claude", allow_prompt: bool = True) -> str:
@@ -163,10 +221,20 @@ class Settings:
     # low | medium | high | xhigh | max — chỉ áp dụng cho Claude.
     effort: str = field(default_factory=lambda: _env("VLM_EFFORT", "medium"))
     max_tokens: int = field(default_factory=lambda: _env_int("VLM_MAX_TOKENS", 4000))
-    # Số lần gọi lại khi máy chủ trả phản hồi rỗng/hỏng. Cần với endpoint chập
-    # chờn — api.vilao.ai hỏng khoảng một nửa số lần gọi, 5 lượt cho ~97% thành
-    # công. Endpoint lành mạnh không bao giờ chạm tới cơ chế này nên không tốn gì.
+    # Số lần gọi lại khi máy chủ trả phản hồi RỖNG/HỎNG NGAY LẬP TỨC. Cần với
+    # endpoint chập chờn — api.vilao.ai hỏng khoảng một nửa số lần gọi, 5 lượt
+    # cho ~97% thành công. Mỗi lượt hỏng kiểu này gần như không tốn thời gian,
+    # nên để 5 vẫn rẻ. KHÔNG áp dụng cho lỗi quá giờ — xem `timeout` bên dưới.
     retries: int = field(default_factory=lambda: _env_int("VLM_RETRIES", 5))
+    # Thời gian chờ tối đa cho MỘT lần gọi API (giây), tính cả lúc tải ảnh lên.
+    # Một lần đếm thật mất ~25s nên 45s đã rất rộng rãi.
+    #
+    # Đây là chặn trên cho thời gian "treo" khi máy chủ nhận kết nối rồi im
+    # lặng: quá giờ thì báo lỗi luôn chứ không thử lại. Thử lại một lần quá giờ
+    # tốn trọn 45 giây mà khả năng thành công rất thấp — khác hẳn lỗi rỗng tức
+    # thì ở `retries`. Người dùng đang ngồi trước camera, bấm `e` để đếm lại
+    # nhanh hơn nhiều so với việc chương trình tự thử trong im lặng.
+    timeout: float = field(default_factory=lambda: _env_float("VLM_TIMEOUT", 45.0))
 
     # --- Camera ---
     camera_index: int = field(default_factory=lambda: _env_int("VLM_CAMERA", 0))

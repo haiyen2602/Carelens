@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Lớp trung gian giữa chương trình và các nhà cung cấp model khác nhau.
 
@@ -16,8 +15,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 #: Hàm dựng system prompt. Tham số bool = "có nối thêm khối ép định dạng JSON
 #: hay không". Backend tự quyết định vì chỉ nó biết đang dùng chế độ JSON nào —
@@ -128,7 +128,11 @@ class ClaudeBackend:
             raise BackendError("Chưa cài SDK: pip install anthropic") from exc
 
         self._anthropic = anthropic
-        kwargs: dict[str, Any] = {"api_key": api_key, "timeout": timeout}
+        # max_retries=0: xem lý do ở OpenAICompatBackend.__init__ — không để SDK
+        # âm thầm nhân thời gian chờ lên gấp 3.
+        kwargs: dict[str, Any] = {
+            "api_key": api_key, "timeout": timeout, "max_retries": 0,
+        }
         if base_url:
             kwargs["base_url"] = base_url
         self.client = anthropic.Anthropic(**kwargs)
@@ -271,6 +275,12 @@ class OpenAICompatBackend:
             api_key=api_key or "not-needed",  # server local thường không cần key
             base_url=self.base_url or None,
             timeout=timeout,
+            # SDK openai mặc định tự thử lại 2 lần khi quá giờ/lỗi kết nối, tức
+            # là NHÂN THẦM thời gian chờ lên gấp 3 (với timeout 120s cũ là 6
+            # phút mới báo lỗi). Tắt đi để `timeout` đúng nghĩa là chặn trên, và
+            # để chỉ còn MỘT cơ chế thử lại — `_goi_co_thu_lai` bên dưới, cái
+            # được viết cho đúng kiểu hỏng của endpoint này (trả rỗng tức thì).
+            max_retries=0,
         )
         self.model = model
         self.schema = schema
@@ -278,11 +288,12 @@ class OpenAICompatBackend:
         self.max_tokens = max_tokens
         self.retries = max(1, retries)
         self.retry_delay = max(0.0, retry_delay)
+        self.timeout = timeout
 
     def describe(self) -> str:
         where = self.base_url or "api mặc định của SDK"
         return (f"openai-compat · {self.model} · {where} · json={self.json_mode}"
-                f" · thử lại {self.retries} lần")
+                f" · thử lại {self.retries} lần · chờ tối đa {self.timeout:g}s")
 
     @staticmethod
     def _doc_phan_hoi(response: Any) -> tuple[str, str]:
