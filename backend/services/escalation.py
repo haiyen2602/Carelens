@@ -72,6 +72,11 @@ GENERIC_OVERLAY_MESSAGE = (
 TRIGGER_SAFETY_REDFLAG = "safety_redflag"
 TRIGGER_MISSED_DOSE = "missed_dose"
 TRIGGER_SIDE_EFFECT = "side_effect"
+# THEM cho photo-verification (ADR-0011): het 2 lan chup lai (3 lan gui) van
+# khong khop -> chuyen nguoi than duyet. Day la MEDIUM, khong phai HIGH nhu 3
+# hang so tren - "trigger_emergency_escalation" van dung duoc (severity la
+# tham so, ham khong hardcode HIGH), ten ham chi con mang tinh lich su.
+TRIGGER_PHOTO_MISMATCH = "photo_mismatch"
 
 
 class EscalateFn(Protocol):

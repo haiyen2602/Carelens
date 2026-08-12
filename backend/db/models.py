@@ -203,7 +203,11 @@ class DoseEvent(Base):
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False)  # PENDING|TAKEN|MISSED|DELAYED|CANCELLED
+    # PENDING|TAKEN|MISSED|DELAYED|CANCELLED|AWAITING_CAREGIVER - them
+    # AWAITING_CAREGIVER 2026-08-12 (khop api-contracts.md §3, cot nay truoc do
+    # thieu gia tri nay dung khong dong bo voi contract) khi ADR-0011 het 2 lan
+    # chup lai anh van khong khop - xem backend/services/photo_verification/verifier.py.
+    status: Mapped[str] = mapped_column(String, nullable=False)
     expected_items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 

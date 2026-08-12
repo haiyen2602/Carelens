@@ -102,6 +102,38 @@ class PrescriptionListResponse(BaseModel):
     items: list[PrescriptionOut]
 
 
+class PhotoSubmitResponse(BaseModel):
+    """POST /api/v1/doses/{id}/photo — 202, chua co ket qua.
+
+    KHAC api-contracts.md §5 (dang response 200 dong bo voi matched/
+    detected_count ngay lap tuc): mot lan goi mo hinh do duoc 26-265 giay,
+    qua lau de giu trong 1 request HTTP. Frontend phai hoi lai qua GET
+    /api/v1/photo-verifications/{verification_id}. CHUA duoc cap nhat vao
+    api-contracts.md - can Architect duyet truoc khi coi la on dinh (ADR-0003)."""
+
+    verification_id: str
+    status: str  # luon la "dang_xu_ly" ngay sau khi gui
+    attempt: int
+    max_attempts: int
+    message: str
+
+
+class PhotoVerificationOut(BaseModel):
+    """GET /api/v1/photo-verifications/{id} — trang thai hien tai cua 1 lan gui anh."""
+
+    id: str
+    dose_event_id: str
+    attempt: int
+    max_attempts: int
+    status: str  # dang_xu_ly|khop|lech|khong_xac_minh_duoc|loi_he_thong
+    matched: bool | None = None  # None khi con dang_xu_ly hoac loi_he_thong
+    expected_by_form: dict[str, int]
+    detected_by_form: dict[str, int]
+    confidence: str | None = None
+    next_action: str | None = None  # None khi con dang_xu_ly hoac loi_he_thong
+    message: str
+
+
 class ConversationChatRequest(BaseModel):
     """POST /api/v1/chat (api-contracts.md §4). `patient_id` KHONG co trong
     contract goc (gia dinh lay tu JWT `sub` claim - api-contracts.md §1) -

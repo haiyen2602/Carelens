@@ -62,6 +62,12 @@ class Settings(BaseSettings):
     # nao trong luc chay test (xem tests/services/photo_verification/test_vlm_bridge.py).
     vlm_retry_delay: float = Field(default=1.5, ge=0)
 
+    # Anh xac nhan lieu thuoc la du lieu y te (BR-4.3) - luu ngoai repo, DB chi
+    # giu duong dan (backend/db/models.py::PhotoVerification.image_path).
+    # "./data/..." cung quy uoc voi CHROMA_PERSIST_DIR cu; can volume ben ngoai
+    # container thi moi song qua lan deploy lai (xem docs/DEPLOY.md ve volume).
+    photo_storage_dir: str = "./data/photo_verifications"
+
     # Retrieval (specs/chatbot-rag-design.md muc 4) — DA CHOT bang so lieu that
     # Phase 7 (2026-08-08, eval/run_eval.py + eval/eval_report.json), khong con
     # la doan mo hinh nua. O gia tri cu (0.5/0.3), 15/15 cau out-of-domain

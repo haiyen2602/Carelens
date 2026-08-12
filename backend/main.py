@@ -7,6 +7,7 @@ from backend.api.chat_routes import chat_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.patient_routes import patient_router
+from backend.api.photo_routes import photo_router
 from backend.api.prescription_routes import prescription_router
 from backend.api.routes import router
 from backend.config import get_settings
@@ -63,6 +64,7 @@ app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")
 app.include_router(prescription_router, prefix="/api/v1")
+app.include_router(photo_router, prefix="/api/v1")
 
 
 @app.get("/health")
