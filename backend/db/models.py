@@ -73,6 +73,47 @@ class DrugChunk(Base):
     )
 
 
+class Drug(Base):
+    """Danh muc thuoc - 1 dong = 1 thuoc. THEM 2026-08-12 (migration 0012).
+
+    KHAC drug_chunks: bang do la san pham cua RAG (4 chunk/thuoc, moi chunk la
+    mot doan van ban co embedding), dung de TRA LOI CAU HOI. Bang nay la DANH
+    MUC: mot dong mot thuoc, chua thuoc tinh co cau truc (dang bao che, duong
+    dung, ham luong), dung de TRA CUU va DIEN VAO DON THUOC.
+
+    Vi sao phai co bang rieng thay vi them cot vao drug_chunks:
+      - drug_chunks lap 4 lan moi thuoc, them dang_thuoc vao do la lap 4 lan
+        cung mot gia tri.
+      - drug_chunks chi chua thuoc DA EMBED (hien 226/3562). Danh muc phai co
+        du 3562 thuoc thi bac si moi ke duoc don, khong phu thuoc tien embed.
+
+    `dang_thuoc` la truong quan trong nhat o day: no la dau vao cua
+    backend/services/photo_verification/dosage_form.py, quyet dinh mot lieu
+    thuoc co xac minh duoc bang anh hay khong.
+
+    `ten_thuoc_unaccent` build bang ham unaccent() NGAY TRONG SQL luc insert -
+    cung quy uoc voi drug_chunks, de index va cach xu ly cau hoi luc query dung
+    chung 1 logic (xem migration 0001)."""
+
+    __tablename__ = "drug"
+
+    # = 'id' trong 'data pharmacy/**/*.json', vd "agi-calci-agimexpharm-20x10".
+    # Cung khong gian dinh danh voi drug_chunks.drug_id.
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    ten_thuoc: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    ten_thuoc_unaccent: Mapped[str] = mapped_column(Text, nullable=False)
+
+    dang_thuoc: Mapped[str] = mapped_column(String, nullable=False)  # "Viên nén bao phim"...
+    duong_dung: Mapped[str] = mapped_column(String, nullable=False)  # "Uống"|"Tiêm"|"Bôi ngoài da"...
+    ham_luong: Mapped[str | None] = mapped_column(String, nullable=True)
+    tong_so_luong: Mapped[str | None] = mapped_column(String, nullable=True)  # "30 viên", "1 lọ 100ml"
+
+    danh_muc: Mapped[str | None] = mapped_column(String, nullable=True)
+    muc_nghiem_trong: Mapped[str | None] = mapped_column(String, nullable=True)  # Nhẹ|Trung bình|Nguy hiểm
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
 class AuditLog(Base):
     """1 dong = 1 AuditLogDTO (1 luot xu ly 1 utterance cua benh nhan).
     APPEND-ONLY (BR-7.5) - khong duoc UPDATE/DELETE tu code ung dung."""

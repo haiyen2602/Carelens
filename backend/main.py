@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.chat_routes import chat_router
+from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.routes import router
 from backend.config import get_settings
@@ -57,6 +58,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
+app.include_router(drug_router, prefix="/api/v1")
 
 
 @app.get("/health")

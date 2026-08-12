@@ -1,6 +1,32 @@
 from pydantic import BaseModel, Field
 
 
+class DrugSummary(BaseModel):
+    """Mot thuoc trong ket qua tra cuu danh muc (GET /api/v1/drugs).
+
+    Du de dien mot dong thuoc vao don, khong hon. KHONG co tac_dung/
+    tac_dung_phu - nhung thu do thuoc luong RAG (drug_chunks), tra kem o day
+    se khien o tim kiem tai ve hang chuc KB van ban cho MOI lan go phim.
+
+    `dang_thuoc` la truong quan trong nhat: no quyet dinh mot lieu co xac minh
+    duoc bang anh hay khong (backend/services/photo_verification/dosage_form.py).
+    """
+
+    drug_id: str
+    ten_thuoc: str
+    dang_thuoc: str
+    duong_dung: str
+    ham_luong: str | None = None
+    tong_so_luong: str | None = None
+    muc_nghiem_trong: str | None = None
+
+
+class DrugSearchResponse(BaseModel):
+    query: str
+    count: int
+    items: list[DrugSummary]
+
+
 class ConversationChatRequest(BaseModel):
     """POST /api/v1/chat (api-contracts.md §4). `patient_id` KHONG co trong
     contract goc (gia dinh lay tu JWT `sub` claim - api-contracts.md §1) -
