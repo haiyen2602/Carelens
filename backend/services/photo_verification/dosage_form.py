@@ -111,7 +111,7 @@ _LUAT: tuple[_Luat, ...] = (
         _mau("tiem", "truyen"),
         None,
         MatchMode.SKIP,
-        "thuốc tiêm/truyền — ảnh thuốc bày ra không xác minh được, dùng nút xác nhận",
+        "đây là thuốc tiêm/truyền, ảnh thuốc bày ra không chứng minh được gì",
     ),
     _Luat(
         _mau("nang"),
@@ -150,7 +150,7 @@ _LUAT: tuple[_Luat, ...] = (
 _KHONG_RO = DosageForm(
     count_key=None,
     mode=MatchMode.SKIP,
-    ly_do="chưa biết dạng bào chế của thuốc này nên không đối chiếu ảnh được",
+    ly_do="cháu chưa nhận biết được dạng thuốc này",
     co_luat=False,
 )
 
