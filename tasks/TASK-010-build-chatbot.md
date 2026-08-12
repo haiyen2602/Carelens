@@ -3,7 +3,7 @@
 **Domain:** `drug-knowledge` (chính) — cắt ngang `conversation`, `safety`, `escalation` (xem [`FEAT-005`](../specs/features.md#feat-005--hội-thoại-tự-nhiên--phân-loại-4-nhãn) → [`FEAT-008`](../specs/features.md#feat-008--safety-layer-song-song))
 **Owner:** Nguyễn Minh Đạt + AI
 **Sprint:** sprint-02
-**Status:** 🔄 In Progress (backend + frontend wiring + auth thật đều Done, vài mục CẦN CHỐT tạm/chưa xác nhận với team app còn mở — xem "Còn mở")
+**Status:** 🔄 In Progress (backend + frontend wiring + auth thật + vòng 3 + quick_replies/banner escalation/greeting cá nhân hoá đều Done — chỉ còn #14 theo dõi thêm, không chặn)
 
 ## Mục tiêu (Goal)
 
@@ -46,12 +46,15 @@ Xây dựng chatbot/RAG cho bệnh nhân hỏi về thuốc, lịch uống, đơ
 - [x] #18/#19/#20/#23 — 4 điểm `[CẦN CHỐT]` gốc của vòng 3 đã chốt đầy đủ 2026-08-12 (PM + Phạm Thành Đạt), gỡ hết marker `# TODO [CẦN CHỐT]` liên quan
 - [x] #30 — ghi nhận rủi ro tồn dư hệ thống: `temperature=0` giảm nhưng không triệt tiêu hoàn toàn dao động giữa các lần gọi LLM (đo được ở 2/5 category) — áp dụng cho mọi tác vụ phân loại LLM trong dự án, không riêng safety_layer
 
+**Hoàn tất 2026-08-13 — PM tự quyết định shape (không chờ team app), merge `feature/build-chatbot` vào `main` mới (auth-api thật + prescription-hitl-ui) trước khi làm:**
+
+- [x] Banner đề xuất gọi cấp cứu — `GET /api/v1/escalations/current` (vòng 2 mục 4 ý 4), trả `{status, severity, reminder_count, created_at}` hoặc `null`, dùng lại đúng field có sẵn trên `Escalation`, không thêm cột mới. Test riêng cho case bệnh nhân không đọc được escalation của người khác qua query string
+- [x] #22 — `quick_replies: list[str] | None` trong `ConversationChatResponse`. Suy tập trung ở 1 hàm `_infer_quick_replies()` (`drug_confirmation_nodes.py`) dựa theo `stage`, không sửa 24 điểm tạo `_StepResult` rải rác — an toàn hơn, tránh lệch thứ tự tham số. Gắn cho: câu hỏi Có/Không xác nhận thuốc, menu top-3, 3 gợi ý ở greeting
+- [x] 2 endpoint `chat/history*` (#27) — giữ nguyên shape đã có từ vòng 3, chỉ sửa lỗ hổng bảo mật phát sinh khi merge (xem "Ghi chú" bên dưới), không đổi contract
+- [x] #21 — `Patient.full_name` (có thật từ `TASK-010-auth-api`) giờ dùng cá nhân hoá câu chào, fallback về bản không tên khi patient_id không khớp dòng `Patient` nào (Patient.id chưa có FK bắt buộc, có chủ đích)
+
 **Còn mở — chưa Done hẳn:**
 
-- [ ] Trạng thái đề xuất gọi cấp cứu lộ ra tầng response/endpoint riêng để FE hiển thị banner liên tục từ t=15p tới khi `resolved` — `[CẦN CHỐT — cần thống nhất shape với team app trước]` (vòng 2 mục 4 ý 4), chưa thấy đóng ở vòng 3
-- [ ] #21 — nguồn dữ liệu tên bệnh nhân cho câu chào cá nhân hoá: **chốt tạm** (giữ bản chào không tên), chưa có nguồn thật
-- [ ] #22 — shape field `quick_replies: list[str]`: **chốt tạm** (PM cho build trước theo đề xuất), **chưa xác nhận với team app** — có thể phải đổi shape
-- [ ] 2 endpoint mới `POST /api/v1/chat/history` + `/chat/history/hide` (#27): shape tạm thời, cùng tình trạng chưa trao đổi với team app như #22
 - [ ] #14 (precision@1 field_group thấp ở nhánh ngoài đơn) — để mở, không chặn, theo dõi thêm (xem `chatbot-rag-design.md` mục 15)
 
 ## Context bắt buộc phải đọc trước khi làm (dành cho AI)
@@ -86,3 +89,5 @@ Phần build chính (Phase 0-7, vòng 2, vòng 3, auth thật, frontend wiring) 
 - **`🔴 CHẶN PRODUCTION` đã đóng 2026-08-12:** `patient_id` từng đọc thẳng từ request body qua `X-Internal-Secret` tạm — `TASK-010-auth-api` (Trương Quốc Trường) đã xây xong JWT thật, thay hẳn cơ chế tạm này. Không còn là rủi ro mở.
 - 2026-08-12: 3 file kickoff (`build-kickoff-prompt.md`, `chatbot-rag-design.md`, `kickoff-prompt-vong-2.md`) chuyển từ `specs/` sang thư mục riêng `chat-bot-build/` (cùng lúc thêm `kickoff-prompt-vong-3.md`) — mọi link trong file task này đã cập nhật theo đường dẫn mới.
 - Vòng 3 bắt nguồn từ **PM tự thử tay chatbot thật** (không phải quy trình test/red-team), phát hiện 1 lỗ hổng an toàn thật (safety_layer thực chất chưa từng có lớp LLM nào chạy — #26) và nhiều vấn đề UX (`today_schedule`, greeting) — bài học: thử tay định kỳ vẫn cần thiết dù đã có eval/test suite tự động.
+- **2026-08-13, merge `feature/build-chatbot` (vòng 3) vào `main` mới:** branch vòng 3 tách ra từ trước khi `TASK-010-auth-api`/`prescription-hitl-ui` merge, nên phải hợp nhất lại. Dùng **merge**, không phải rebase — rebase thử trước tiên bị conflict ở tận các commit rất cũ (crawler dữ liệu thuốc, không liên quan chatbot) vì replay lại từng bước lịch sử gốc trong khi `main` đã squash — abort, đổi sang merge (chỉ giải quyết khác biệt ở trạng thái cuối). 3 conflict thật: `backend/api/security.py` (hợp nhất `_HasPatientId` Protocol của vòng 3 với `CurrentUser`/JWT của auth-api), `backend/db/models.py` (2 class độc lập `ChatMessage` vs `PhotoVerification`+`Account`, giữ cả 2), và trùng số migration `0009` (đổi `chat_messages` thành `0014`, giữ chuỗi tuyến tính).
+- **Lỗ hổng bảo mật phát hiện lúc merge (đã sửa cùng lúc):** merge tự động giữ nguyên `Depends(require_internal_secret)` ở 2 endpoint `chat/history*` (thêm ở vòng 3, trước khi có JWT) — hàm này không còn được import trong `chat_routes.py` (auth-api đã đổi sang JWT cho endpoint `/chat` chính), lẽ ra sẽ `NameError` khi load module. Về bản chất còn tệ hơn crash: nếu lỡ chạy được, **bất kỳ ai biết `X-Internal-Secret` (không cần biết danh tính) đọc được lịch sử chat của bất kỳ `patient_id` nào tự gõ vào body** — đã sửa cả 2 sang `Depends(get_current_user)` + JWT thật, khớp đúng nguyên tắc "1 CHỖ NỐI DUY NHẤT" của `get_current_patient_id()`.
