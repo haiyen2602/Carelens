@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
@@ -17,6 +18,7 @@ from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import ChatMessage  # noqa: E402
 from backend.main import app  # noqa: E402
+from backend.services.auth import create_access_token  # noqa: E402
 
 _UNRELATED_EMBEDDING = [random.Random(42).gauss(0, 1) for _ in range(1536)]
 
@@ -136,3 +138,62 @@ async def test_recent_context_is_threaded_into_intent_classification(client):
         assert received_utterances[1].endswith("Câu hỏi hiện tại: câu thứ hai")
     finally:
         _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_patient_role_cannot_read_or_hide_another_patients_chat_history():
+    """Phan hoi review PR #20 (IDOR) - get_current_patient_id() da chan dung
+    (role=patient luon dung patient_id cua JWT, bo qua body), nhung truoc
+    PR nay CHUA co test rieng xac nhan cho DUNG 2 endpoint chat/history* -
+    chi co test isolation o tang du lieu (test_chat_history_tool.py), chua
+    co test o tang auth/route. Bo sung o day."""
+    own_patient_id = f"test-chathist-own-{uuid.uuid4().hex[:8]}"
+    other_patient_id = f"test-chathist-other-{uuid.uuid4().hex[:8]}"
+    _override_services()
+
+    caregiver_token = create_access_token(sub="test-caregiver-seed", role="caregiver")
+    patient_token = create_access_token(sub="test-patient-idor", role="patient", patient_id=own_patient_id)
+
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(
+            transport=transport, base_url="http://test", headers={"Authorization": f"Bearer {caregiver_token}"}
+        ) as caregiver_client:
+            # Seed 1 tin nhan that trong lich su cua "nguoi khac".
+            resp = await caregiver_client.post(
+                "/api/v1/chat", json={"patient_id": other_patient_id, "message": "xin chào"}
+            )
+            assert resp.status_code == 200
+
+        async with AsyncClient(
+            transport=transport, base_url="http://test", headers={"Authorization": f"Bearer {patient_token}"}
+        ) as patient_client:
+            # Benh nhan (role=patient, JWT gan voi own_patient_id) tu go
+            # patient_id cua NGUOI KHAC vao body.
+            read_resp = await patient_client.post(
+                "/api/v1/chat/history", json={"patient_id": other_patient_id}
+            )
+            assert read_resp.status_code == 200
+            # Phai tra ve RONG (lich su cua chinh minh, khong phai cua
+            # other_patient_id) - KHONG duoc doc duoc tin nhan nguoi khac.
+            assert read_resp.json()["messages"] == []
+
+            hide_resp = await patient_client.post(
+                "/api/v1/chat/history/hide", json={"patient_id": other_patient_id}
+            )
+            assert hide_resp.status_code == 200
+            # 0 tin nhan bi an - vi hide chay tren own_patient_id (rong),
+            # KHONG dung duoc de xoa lich su nguoi khac.
+            assert hide_resp.json()["hidden_count"] == 0
+
+        # Xac nhan tin nhan cua other_patient_id VAN CON nguyen, khong bi an.
+        async with AsyncClient(
+            transport=transport, base_url="http://test", headers={"Authorization": f"Bearer {caregiver_token}"}
+        ) as caregiver_client:
+            verify_resp = await caregiver_client.post(
+                "/api/v1/chat/history", json={"patient_id": other_patient_id}
+            )
+            assert len(verify_resp.json()["messages"]) == 2
+    finally:
+        _cleanup(other_patient_id)
+        _cleanup(own_patient_id)
