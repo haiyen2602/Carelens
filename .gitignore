@@ -83,3 +83,6 @@ data pharmacy/_chunks.jsonl
 .env*
 # ...but the template must stay in the repo
 !.env.example
+
+# Prototype runtime output — not a deliverable
+prototypes/**/missing_drugs_log.jsonl

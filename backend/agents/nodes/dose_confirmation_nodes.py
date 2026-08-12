@@ -63,11 +63,20 @@ HIGH_ACTION = "escalate_emergency"
 # ky vi rui ro tam ly cao; 3 cau duoi day chi la XAC NHAN DA GHI NHAN, rui ro
 # chon sai cau chu THAP hon nhieu - van danh dau CAN CHOT (chua phai final
 # chinh thuc) nhung KHONG chan viec co 1 phan hoi thay vi im lang.
-TAKEN_RESPONSE = "Đã ghi nhận bạn đã uống thuốc lần này. Cảm ơn bạn đã xác nhận!"
+# SUA vong 3, muc 9.1 (persona "Capy") - TAKEN/Nhẹ: "than thien vua phai,
+# khong can trang trong nhung cung khong can bieu tuong" - giu ten "Capy"
+# nhung KHONG dung "<3"/bieu tuong dang yeu (khac han GREETING_RESPONSE, du
+# ca 2 deu la tinh huong binh thuong - day la xac nhan 1 hanh dong y te,
+# khong phai loi chao thuan tuy). Trung binh tro len: nghiem tuc, xem
+# MEDIUM_ACTION_RESPONSE + cac overlay o escalation.py, khong doi giong o day.
+TAKEN_RESPONSE = "Capy đã ghi nhận bạn uống thuốc lần này rồi nhé. Cảm ơn bạn đã xác nhận!"
 LOW_ACTION_RESPONSE = (
-    "Đã ghi nhận thông tin của bạn. Đây là mức độ nhẹ, hệ thống sẽ tiếp tục theo dõi trong 48 giờ tới."
+    "Capy đã ghi nhận thông tin của bạn. Đây là mức độ nhẹ, hệ thống sẽ tiếp tục theo dõi trong 48 giờ tới."
 )
-MEDIUM_ACTION_RESPONSE = "Đã ghi nhận thông tin của bạn. Người thân và bác sĩ đã được thông báo để theo dõi thêm."
+# "SEVERITY=Trung bình trở lên... nghiêm túc, rõ ràng, KHÔNG dùng biểu
+# tượng dễ thương, không đùa cợt - vẫn có thể giữ tên 'Capy Medi' trong câu
+# dẫn (không mất bản sắc), nhưng nội dung chính phải nghiêm túc" (muc 9.1).
+MEDIUM_ACTION_RESPONSE = "Capy Medi đã ghi nhận thông tin của bạn. Người thân và bác sĩ đã được thông báo để theo dõi thêm."
 
 
 class DoseClassifyFn(Protocol):

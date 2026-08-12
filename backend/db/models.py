@@ -203,6 +203,30 @@ class Escalation(Base):
     resolved_by: Mapped[str | None] = mapped_column(String, nullable=True)  # vd "doctor"/"caregiver"
 
 
+class ChatMessage(Base):
+    """Vong 3, muc 7.1 (chatbot-rag-design.md) - lich su chat DAY DU cho
+    HIEN THI lai cho benh nhan, luu MOI tin nhan (ca patient lan assistant),
+    KHONG gioi han thoi gian. KHAC HAN cua so ngu canh ngan han 15 phut (muc
+    7.2, backend/agents/tools/chat_history_tool.py::get_recent_context()) -
+    bang nay CHI dung de hien thi, KHONG tu dong dua vao LLM.
+
+    "Xoa doan chat" = an khoi man hinh benh nhan (hidden=True, QUYET DINH
+    #20, chatbot-rag-design.md muc 10) - KHONG xoa that khoi DB. audit_log
+    la kho du lieu HOAN TOAN TACH BIET (BR-7.5, da co tu Phase 1) - an 1 tin
+    nhan o day KHONG anh huong gi toi audit_log, bac si/doi ky thuat van tra
+    cuu duoc day du qua audit_log nhu thuong."""
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String, nullable=False)  # "patient" | "assistant"
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
+    # #20 - soft-delete, mac dinh False (hien thi binh thuong).
+    hidden: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+
 class PhotoVerification(Base):
     """1 dong = 1 LAN gui anh xac nhan lieu thuoc. THEM 2026-08-12 (migration 0011).
 

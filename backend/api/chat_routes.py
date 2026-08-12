@@ -46,6 +46,8 @@ from sqlalchemy.orm import Session
 
 from backend.agents.nodes.conversation_nodes import (
     build_answer_generation_node,
+    build_chat_history_query_node,
+    build_greeting_node,
     build_intent_classification_node,
     build_prescription_lookup_node,
     build_today_schedule_node,
@@ -61,13 +63,27 @@ from backend.agents.nodes.drug_confirmation_nodes import (
 )
 from backend.agents.orchestrator import run_conversation
 from backend.agents.state import ConversationState
-from backend.agents.tools.drug_confirmation_store import get_pending_confirmation
+from backend.agents.tools.chat_history_tool import (
+    get_chat_history_for_display,
+    hide_all_chat_messages,
+    save_chat_message,
+)
+from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation
 from backend.api.chat_deps import ChatServices, get_chat_services
 from backend.api.rate_limit import rate_limit_check
 from backend.api.security import CurrentUser, get_current_patient_id, get_current_user
 from backend.db.base import get_db
 from backend.db.models import AuditLog
-from backend.models.schemas import ClassificationOut, ConversationChatRequest, ConversationChatResponse, SourceOut
+from backend.models.schemas import (
+    ChatHistoryHideResponse,
+    ChatHistoryRequest,
+    ChatHistoryResponse,
+    ChatMessageOut,
+    ClassificationOut,
+    ConversationChatRequest,
+    ConversationChatResponse,
+    SourceOut,
+)
 from backend.services.escalation import build_db_escalate_fn
 from backend.services.guardrails import (
     INPUT_GUARDRAIL_REFUSAL_MESSAGE,
@@ -134,7 +150,7 @@ async def chat(
             reply_nodes = [
                 build_drug_confirmation_reply_node(db, services.embed_query, pending),
                 build_prescription_lookup_node(db),
-                build_answer_generation_node(services.generate_answer),
+                build_answer_generation_node(services.generate_answer, db=db),
             ]
             final_state = await run_conversation(
                 initial_state,
@@ -148,7 +164,7 @@ async def chat(
             # khong chay giai doan 2 (dung y BR-3.3: cat ngang bat ke dang o dau).
             stage1 = await run_conversation(
                 initial_state,
-                nodes=[build_intent_classification_node(services.classify_intent)],
+                nodes=[build_intent_classification_node(services.classify_intent, db=db)],
                 safety_check=services.safety_check,
                 escalate_fn=escalate_fn,
             )
@@ -165,11 +181,13 @@ async def chat(
                 remaining_nodes = [
                     build_drug_identity_resolution_node(db, services.embed_query),
                     build_prescription_lookup_node(db),
-                    build_answer_generation_node(services.generate_answer),
+                    build_answer_generation_node(services.generate_answer, db=db),
                     build_today_schedule_node(db),
                     build_classify_node(services.classify_dose),
                     build_severity_node(db, services.classify_severity),
                     build_level_action_node(escalate_fn),
+                    build_greeting_node(db),
+                    build_chat_history_query_node(db),
                 ]
                 final_state = await run_conversation(
                     stage1,
@@ -177,6 +195,20 @@ async def chat(
                     safety_check=services.safety_check,
                     escalate_fn=escalate_fn,
                 )
+
+    # Vong 3, muc 4 - fix bug thuc: neu safety_layer trigger redflag (bat ke
+    # dang o nhanh nao - dang tra loi 1 cau hoi xac nhan cu, HOAC vua tao 1
+    # pending MOI ngay trong luot nay qua build_drug_identity_resolution_
+    # node), PHAI xoa ngay pending_drug_confirmation dang treo cho patient
+    # nay - khong de 2 trang thai (dang cho xac nhan thuoc + dang co redflag)
+    # ton tai cung luc, tranh tin nhan TIEP THEO (co the hoan toan khong lien
+    # quan, ke ca vai ngay sau) bi ep nham qua bo phan tich co/khong cu.
+    # clear_pending_confirmation() idempotent (DELETE WHERE, khong loi neu
+    # khong co dong nao) - goi vo dieu kien khi safety_flag=True an toan hon
+    # kiem tra "co pending truoc do khong" (bao phu ca truong hop pending
+    # MOI tao ngay trong luot nay, xem kickoff-prompt-vong-3.md muc 4).
+    if final_state.get("safety_flag"):
+        clear_pending_confirmation(db, patient_id)
 
     # Output guardrail (muc 12.2) - chay SAU khi co final_state, TRUOC khi
     # ghi audit/tra ve nguoi dung. redact/thay response NEU can - audit log
@@ -219,7 +251,54 @@ async def chat(
     total_duration_ms = (time.monotonic() - t0) * 1000
     _persist_audit_log(db, patient_id, request, final_state, total_duration_ms)
 
+    # Vong 3, muc 7.1 - luu CA HAI tin nhan (patient + assistant) vao
+    # chat_messages CHO LUOT NAY, SAU KHI toan bo run_conversation() (bao
+    # gom cua so ngu canh 15 phut, muc 7.2) da chay xong - co y KHONG luu
+    # truoc do, de get_recent_context()/build_chat_history_query_node() goi
+    # TRONG luot nay khong vo tinh doc lai chinh cau hoi/tra loi cua chinh
+    # luot nay nhu the la "lich su qua khu" (xem docstring build_chat_
+    # history_query_node). Luu response DA REDACT (output guardrail, giong
+    # nguyen tac audit_log - khong luu ban goc co secret vao bat ky kho hien
+    # thi nao).
+    save_chat_message(db, patient_id, "patient", request.message)
+    save_chat_message(db, patient_id, "assistant", final_state.get("response", ""))
+
     return _to_response(final_state)
+
+
+@chat_router.post("/chat/history", response_model=ChatHistoryResponse)
+async def get_chat_history(
+    request: ChatHistoryRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ChatHistoryResponse:
+    """Vong 3, muc 7.1 - lich su chat DAY DU cho benh nhan xem lai (khong
+    phai ngu canh dua vao LLM, xem docstring chat_history_tool.py). Mac
+    dinh khong tra tin nhan da bi an (#20).
+
+    TASK-010 (auth-api that): doi tu rao tam require_internal_secret sang
+    JWT that (Depends(get_current_user)) - truoc do endpoint nay chi kiem
+    tra 1 shared secret, KHONG xac thuc danh tinh, nen bat ky ai biet secret
+    co the doc lich su chat cua BAT KY patient_id nao tu go trong body. Dung
+    dung 1 cho noi get_current_patient_id() nhu chinh docstring cua ham do
+    yeu cau, khong tao duong doc patient_id rieng cho history."""
+    patient_id = get_current_patient_id(request, current_user)
+    messages = get_chat_history_for_display(db, patient_id)
+    return ChatHistoryResponse(messages=[ChatMessageOut(**m) for m in messages])
+
+
+@chat_router.post("/chat/history/hide", response_model=ChatHistoryHideResponse)
+async def hide_chat_history(
+    request: ChatHistoryRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ChatHistoryHideResponse:
+    """Vong 3, muc 7.1/#20 - "xoá đoạn chat" = an khoi man hinh (soft-delete),
+    audit_log KHONG doi. Idempotent (goi lai khi da an het van tra ve 0,
+    khong loi). TASK-010: cung doi sang JWT that, xem ghi chu get_chat_history."""
+    patient_id = get_current_patient_id(request, current_user)
+    hidden_count = hide_all_chat_messages(db, patient_id)
+    return ChatHistoryHideResponse(hidden_count=hidden_count)
 
 
 def _persist_audit_log(
@@ -302,4 +381,5 @@ def _to_response(state: ConversationState) -> ConversationChatResponse:
         safety_flag=_should_show_emergency_overlay(severity_en),
         needs_clarification=needs_clarification,
         sources=sources,
+        quick_replies=state.get("quick_replies"),
     )

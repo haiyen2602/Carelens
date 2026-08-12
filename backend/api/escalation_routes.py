@@ -10,18 +10,29 @@ phuc tap cho 1 hanh dong vo hai (xac nhan lai)."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.api.security import require_internal_secret
+from backend.api.security import CurrentUser, get_current_patient_id, get_current_user, require_internal_secret
 from backend.db.base import get_db
 from backend.db.models import Escalation
-from backend.models.schemas import EscalationAckRequest, EscalationAckResponse
+from backend.models.schemas import CurrentEscalationResponse, EscalationAckRequest, EscalationAckResponse
 
 escalation_router = APIRouter()
+
+
+@dataclass
+class _PatientIdQuery:
+    """Adapter de tai dung get_current_patient_id() (backend/api/security.py)
+    cho endpoint GET khong co request body - Protocol _HasPatientId chi can
+    1 thuoc tinh .patient_id, khong bat buoc phai la Pydantic model that."""
+
+    patient_id: str
 
 
 @escalation_router.post(
@@ -46,4 +57,46 @@ async def ack_escalation(
         status=row.status,
         resolved_at=row.resolved_at.isoformat(),
         resolved_by=row.resolved_by,
+    )
+
+
+@escalation_router.get("/escalations/current")
+async def get_current_escalation(
+    patient_id: str | None = Query(
+        default=None, description="Bat buoc neu role khong phai patient (doctor/caregiver goi ho)"
+    ),
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> CurrentEscalationResponse | None:
+    """Vong 2 muc 4 y 4 (CAN CHOT, PM chot shape 2026-08-12) - escalation
+    OPEN gan nhat cua benh nhan, de FE quyet dinh hien banner "de xuat goi
+    cap cuu" lien tuc tu t=15p (escalation_reminder.py) toi khi resolved.
+    Tra None (khong phai 404) neu khong co escalation OPEN nao - day la
+    trang thai binh thuong (khong co gi khan cap), khong phai loi.
+
+    Dung dung 1 cho noi get_current_patient_id() (qua adapter _PatientIdQuery)
+    nhu moi endpoint dung patient_id khac trong TASK-010 - benh nhan chi xem
+    duoc escalation CUA CHINH HO, khong tu go patient_id nguoi khac vao query
+    string ma doc duoc."""
+    if current_user.role != "patient" and not patient_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="patient_id bat buoc trong query string cho role khong phai patient",
+        )
+    resolved_patient_id = get_current_patient_id(_PatientIdQuery(patient_id=patient_id or ""), current_user)
+
+    row = (
+        db.query(Escalation)
+        .filter(Escalation.patient_id == resolved_patient_id, Escalation.status == "OPEN")
+        .order_by(desc(Escalation.created_at))
+        .first()
+    )
+    if row is None:
+        return None
+
+    return CurrentEscalationResponse(
+        status=row.status,
+        severity=row.severity,
+        reminder_count=row.reminder_count,
+        created_at=row.created_at.isoformat(),
     )

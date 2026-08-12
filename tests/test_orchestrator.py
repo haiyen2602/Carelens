@@ -239,3 +239,151 @@ async def test_llm_only_redflag_without_matched_group_uses_generic_overlay():
     assert result["response"] == GENERIC_OVERLAY_MESSAGE
     assert result["response"] not in (OVERDOSE_OVERLAY_MESSAGE, SYMPTOM_OVERLAY_MESSAGE)
 
+
+# ---------------------------------------------------------------------------
+# Vong 3 (phan hoi review 2026-08-12) - "Trung bình" o 2 category self_harm/
+# clinical_symptom: escalate KHONG khan CHI kenh family + 1 cau ghi nhan nhe,
+# KHONG cat luong chinh (khac han is_redflag=True o tren).
+# ---------------------------------------------------------------------------
+
+
+async def _medium_safety_check(category: str):
+    async def check(utterance: str) -> SafetyFlag:
+        return SafetyFlag(
+            is_redflag=False,
+            matched_group=None,
+            matched_keyword=None,
+            source="llm",
+            level="Trung bình",
+            llm_category=category,
+            llm_reasoning="test",
+        )
+
+    return check
+
+
+@pytest.mark.asyncio
+async def test_medium_self_harm_escalates_family_only_and_appends_acknowledgment():
+    calls = []
+
+    async def recording_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        calls.append({"target": target, "severity": severity, "urgent": urgent})
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "answer_generation"}]}
+
+    result = await run_conversation(
+        _make_state(),
+        nodes=[set_response_node],
+        safety_check=await _medium_safety_check("self_harm"),
+        escalate_fn=recording_escalate_fn,
+    )
+
+    # Luong chinh KHONG bi cat - response goc van con, chi duoc GHEP THEM
+    # cau ghi nhan, khong bi THAY THE.
+    assert "Câu trả lời bình thường." in result["response"]
+    assert "Capy đã ghi nhận" in result["response"]
+    assert result["safety_flag"] is False  # KHONG phai overlay khan cap
+
+    assert len(calls) == 1
+    assert calls[0]["target"] == "family"  # CHI family, khong goi "doctor"
+    assert calls[0]["urgent"] is False
+    assert calls[0]["severity"] == "Trung bình"
+
+
+@pytest.mark.asyncio
+async def test_medium_wrong_category_does_not_escalate_but_still_acknowledges():
+    """BUG THAT sua 2026-08-12 (phan hoi review lan 2): ban dau (a) va (c)
+    bi gop chung 1 dieu kien, khien category ngoai {self_harm,
+    clinical_symptom} (vd wrong_drug - vua duoc _CATEGORY_LEVEL_FLOOR nang
+    len toi thieu Trung bình) IM LANG HOAN TOAN - quay lai dung bug rong-
+    response. Dung: khong escalate (chinh sach (a) - dung gioi han pham vi
+    nay) NHUNG VAN phai co cau ghi nhan (chinh sach (c) - ap dung cho MOI
+    "Trung bình", khong chi 2 category duoc escalate)."""
+    calls = []
+
+    async def recording_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        calls.append(target)
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "x"}]}
+
+    result = await run_conversation(
+        _make_state(),
+        nodes=[set_response_node],
+        safety_check=await _medium_safety_check("wrong_drug"),
+        escalate_fn=recording_escalate_fn,
+    )
+
+    assert calls == [], "wrong_drug khong thuoc pham vi escalate (a)"
+    assert "Câu trả lời bình thường." in result["response"]
+    assert "Capy đã ghi nhận" in result["response"], "van phai co ghi nhan (c) du khong escalate"
+
+
+@pytest.mark.asyncio
+async def test_medium_acknowledgment_works_without_escalate_fn():
+    """escalate_fn=None (test/chua wiring) - van ghep duoc cau ghi nhan,
+    khong crash vi thieu escalate_fn."""
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "x"}]}
+
+    result = await run_conversation(
+        _make_state(),
+        nodes=[set_response_node],
+        safety_check=await _medium_safety_check("clinical_symptom"),
+        escalate_fn=None,
+    )
+
+    assert "Capy đã ghi nhận" in result["response"]
+
+
+@pytest.mark.asyncio
+async def test_medium_escalate_failure_does_not_crash_or_block_acknowledgment():
+    async def broken_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        raise RuntimeError("DB loi")
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "x"}]}
+
+    result = await run_conversation(
+        _make_state(),
+        nodes=[set_response_node],
+        safety_check=await _medium_safety_check("self_harm"),
+        escalate_fn=broken_escalate_fn,
+    )
+
+    assert "Capy đã ghi nhận" in result["response"]  # van co ghi nhan du escalate loi
+
+
+@pytest.mark.asyncio
+async def test_nhe_level_does_not_get_medium_acknowledgment_or_escalate():
+    """Regression - "Nhẹ" (khac "Trung bình") KHONG duoc kich hoat ca ghi
+    nhan lan escalate, du category la self_harm (co the xay ra o category
+    khac ngoai self_harm/wrong_drug, 2 category duy nhat co floor)."""
+    calls = []
+
+    async def recording_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        calls.append(target)
+
+    async def nhe_safety_check(utterance: str) -> SafetyFlag:
+        return SafetyFlag(
+            is_redflag=False,
+            matched_group=None,
+            matched_keyword=None,
+            source="llm",
+            level="Nhẹ",
+            llm_category="severe_reaction",
+            llm_reasoning="test",
+        )
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "x"}]}
+
+    result = await run_conversation(
+        _make_state(), nodes=[set_response_node], safety_check=nhe_safety_check, escalate_fn=recording_escalate_fn
+    )
+
+    assert calls == []
+    assert result["response"] == "Câu trả lời bình thường."
+

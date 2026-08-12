@@ -41,7 +41,17 @@ class ConversationState(TypedDict, total=False):
     dose_event_id: str | None
     utterance: str
 
-    intent: Literal["drug_info", "today_schedule", "dose_confirmation"] | None
+    # "greeting" them 2026-08-12 (vong 3, muc 6) - phu ca 2 truong hop chao
+    # hoi thuan ("xin chao") VA cau hoan toan ngoai pham vi thuoc (vd hoi thoi
+    # tiet) - dung 1 nhan chung, 1 response co dinh cho ca 2 (xem
+    # conversation_nodes.py::build_greeting_node), khong tach rieng vi ca hai
+    # deu can cung 1 hanh dong: khong dua vao luong tra thuoc, huong dan lai.
+    # "chat_history_query" them 2026-08-12 (vong 3, muc 7.3(a)) - benh nhan
+    # hoi truc tiep ve lich su tro chuyen CUA CHINH HO (vd "truoc day toi tung
+    # hoi ve thuoc gi") - kich hoat search_chat_history() thay vi RAG/dose_event.
+    intent: Literal[
+        "drug_info", "today_schedule", "dose_confirmation", "greeting", "chat_history_query"
+    ] | None
     classification: Literal["TAKEN", "MISSED", "DELAYED", "SIDE_EFFECT"] | None
     classification_confidence: float | None
 
@@ -53,6 +63,14 @@ class ConversationState(TypedDict, total=False):
 
     trace: list[dict]
     response: str
+
+    # Vong 3, muc 6.1 (#22, chatbot-rag-design.md muc 10) - goi y nut bam
+    # cho FE, giam phu thuoc do chinh xac cua viec phan tich cau go tay tu do
+    # (vd "Có"/"Không" luc xac nhan thuoc, ten thuoc luc chon top-3). Benh
+    # nhan van go tay tu do binh thuong duoc - day CHI la goi y hien thi, gui
+    # len van la 1 chuoi text nhu moi utterance khac. None/thieu key = khong
+    # co goi y nao cho luot nay (FE khong hien nut).
+    quick_replies: list[str] | None
 
     # MOI vong 2 (chatbot-rag-design.md muc 11) - True khi node xac nhan
     # danh tinh thuoc (drug_confirmation_nodes.py) VUA hoi 1 cau xac nhan

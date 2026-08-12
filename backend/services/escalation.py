@@ -67,6 +67,33 @@ GENERIC_OVERLAY_MESSAGE = (
     "Người thân và bác sĩ của bạn đã được thông báo."
 )
 
+# Hang so THU 6 - VONG 3, muc 3.3/9.3 (chatbot-rag-design.md muc 10 #18) -
+# rieng cho category "y dinh tu hai" (taxonomy safety_layer LLM-first, muc
+# 3.1) - KHONG dung chung cong thuc/noi dung 5 hang so tren (khac ban chat,
+# khong phai chi khac cau chu): PM quyet dinh 2026-08-12 KHONG kem so hotline
+# khung hoang cu the (tranh rui ro dua sai so trong tinh huong nhay cam) -
+# chi canh bao + khuyen gap bac si ngay. DA CHOT 2026-08-12 (PM + Pham Thanh
+# Dat xac nhan), khong con marker CAN CHOT.
+SELF_HARM_OVERLAY_MESSAGE = (
+    "⚠️ CẢNH BÁO: Đây là hành động nguy hiểm. Vui lòng gặp bác sĩ ngay. "
+    "Người thân và bác sĩ của bạn đã được thông báo."
+)
+
+# Vong 3, muc 9.3 (chatbot-rag-design.md muc 10 #23) - "mo rong muc 3.3 tu
+# '5 tieu de canh bao' thanh '5 tieu de + 5 cau giai thich ngan di kem'".
+# KHONG de LLM tu sinh giai thich luc phat hien nguy hiem (dung ly do #13a
+# duoc lap ra - khong tu suy dien luc nhay cam nhat) - viet san,
+# orchestrator.py ghep vao SAU overlay_message da chon theo category (uu
+# tien llm_category, fallback matched_group). DA CHOT 2026-08-12 (PM + Pham
+# Thanh Dat xac nhan noi dung), khong con marker CAN CHOT.
+CATEGORY_EXPLANATIONS: dict[str, str] = {
+    "dosage_risk": "Uống sai liều lượng có thể gây nguy hiểm cho sức khoẻ của bạn.",
+    "clinical_symptom": "Đây là dấu hiệu cần được xử lý y tế ngay, không nên chờ đợi.",
+    "self_harm": "Sự an toàn của bạn rất quan trọng, hãy để người thân và bác sĩ hỗ trợ ngay.",
+    "wrong_drug": "Uống nhầm thuốc có thể gây phản ứng nguy hiểm, cần kiểm tra lại ngay.",
+    "severe_reaction": "Phản ứng bạn mô tả cần được bác sĩ đánh giá ngay, không nên tự xử lý.",
+}
+
 
 # trigger ∈ missed_dose | side_effect | safety_redflag | photo_mismatch (api-contracts.md §6)
 TRIGGER_SAFETY_REDFLAG = "safety_redflag"

@@ -14,14 +14,26 @@ xoa, khong rai rac nhieu noi."""
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 from fastapi import Depends, Header, HTTPException, status
 
 from backend.config import get_settings
-from backend.models.schemas import ConversationChatRequest
 from backend.services.auth import TokenError, decode_token
 
 INTERNAL_SECRET_HEADER = "X-Internal-Secret"
+
+
+class _HasPatientId(Protocol):
+    """Vong 3 (muc 7.1) - noi long type hint cua get_current_patient_id()
+    tu ConversationChatRequest CU THE sang BAT KY schema nao co truong
+    patient_id (structural typing) - de cac endpoint MOI (vd chat history
+    muc 7.1) tai su dung DUNG 1 cho noi nay, khong tao 1 ham doc patient_id
+    song song rieng (dung y "1 CHO NOI DUY NHAT" cua chinh ham nay). KHONG
+    doi hanh vi (van chi doc .patient_id), chi noi rong kieu du lieu chap
+    nhan duoc."""
+
+    patient_id: str
 
 
 @dataclass(frozen=True)
@@ -97,7 +109,12 @@ async def require_internal_secret(
     co y: neu secret chua duoc cau hinh (van con gia tri mac dinh ro rang la
     khong that), request van bi tu choi trong moi truong khong khop, khong
     am tham cho qua - phong ve ky thuat dang tin hon viec dua vao moi nguoi
-    lien quan deu nho dung chinh sach da ghi trong tai lieu."""
+    lien quan deu nho dung chinh sach da ghi trong tai lieu.
+
+    KHONG con duoc dung cho /api/v1/chat va /api/v1/chat/history* (TASK-010,
+    auth-api that thay the) - giu lai ham nay cho cac route noi bo khac neu
+    can (vd escalation ack cu, xem escalation_routes.py), xoa han khi khong
+    con noi nao goi toi."""
     settings = get_settings()
     if x_internal_secret is None or x_internal_secret != settings.internal_auth_secret:
         raise HTTPException(
@@ -106,7 +123,7 @@ async def require_internal_secret(
         )
 
 
-def get_current_patient_id(request: ConversationChatRequest, current_user: CurrentUser) -> str:
+def get_current_patient_id(request: _HasPatientId, current_user: CurrentUser) -> str:
     """Vòng 2 (chatbot-rag-design.md mục 14, mục 10 #10) - 1 CHỖ NỐI DUY NHẤT
     để đọc patient_id của người đang gọi. Mọi endpoint/node PHẢI gọi qua hàm
     này - KHÔNG đọc `request.patient_id` thẳng ở bất kỳ đâu khác (kể cả
@@ -116,9 +133,15 @@ def get_current_patient_id(request: ConversationChatRequest, current_user: Curre
     như ghi chú cũ đã dự tính — nhưng KHÔNG thể giữ nguyên chữ ký 1 tham số
     như dự tính ban đầu, vì để đọc JWT cần danh tính đã xác thực
     (`CurrentUser`), thứ mà `ConversationChatRequest` (chỉ là body) không
-    mang theo. Vì vậy chỗ gọi DUY NHẤT trong `chat_routes.py` phải thêm
-    `Depends(get_current_user)` — đây là điểm lệch nhỏ so với ghi chú gốc,
-    chấp nhận được vì vẫn chỉ có 1 chỗ gọi cần sửa.
+    mang theo. Vì vậy MỌI chỗ gọi (kể cả 2 endpoint chat/history* thêm ở
+    vòng 3) đều phải kèm `Depends(get_current_user)` — đây là điểm lệch nhỏ
+    so với ghi chú gốc, chấp nhận được vì vẫn chỉ có 1 hàm duy nhất chứa
+    logic, không có đường đọc patient_id song song nào khác.
+
+    `request` nới type hint sang `_HasPatientId` (Protocol, vòng 3 mục 7.1)
+    thay vì cụ thể `ConversationChatRequest` - để `ChatHistoryRequest` (khác
+    schema, cùng có field `patient_id`) tái dùng được đúng hàm này, không
+    tạo đường đọc patient_id song song cho chat history.
 
     Role `patient`: BỎ QUA `request.patient_id`, luôn dùng `patient_id` của
     chính JWT — đúng lỗ hổng đã nêu trong ghi chú gốc (không cho phép 1
