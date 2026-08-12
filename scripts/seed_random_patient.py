@@ -22,7 +22,7 @@ Usage:
 from __future__ import annotations
 
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -30,6 +30,10 @@ from sqlalchemy import text  # noqa: E402
 
 from backend.db.base import SessionLocal  # noqa: E402
 from backend.db.models import DoseEvent, Prescription  # noqa: E402
+
+# BUG THAT, sua 2026-08-12 (vong 3, muc 5.1, cung fix nhu seed_demo_patient.py)
+# - fixed-offset +07:00 (VN khong DST), khong con dung UTC lam moc roi doi gio.
+VN_TZ = timezone(timedelta(hours=7))
 
 TEST_PATIENT_ID = "test-patient-01"
 TEST_DOCTOR_ID = "test-doctor-01"
@@ -101,13 +105,13 @@ def main() -> int:
                     "drug_id": drug_id,
                 }
             ],
-            start_date=datetime.now(UTC).date().isoformat(),
+            start_date=datetime.now(VN_TZ).date().isoformat(),
             duration_days=30,
         )
         db.add(presc)
         db.commit()
 
-        today = datetime.now(UTC).replace(second=0, microsecond=0)
+        today = datetime.now(VN_TZ).replace(second=0, microsecond=0)
         morning = today.replace(hour=8, minute=0)
         evening = today.replace(hour=20, minute=0)
         expected_items = [{"drug_id": drug_id, "ten_thuoc": ten_thuoc, "so_vien": 1}]
