@@ -24,20 +24,31 @@ sao: luong xac nhan bang anh khong dung RAG - no chi can `dang_thuoc` va
 TAI CHAY DUOC: xoa du lieu cu loc dung theo 3 patient_id nay roi tao lai, chay
 bao nhieu lan cung ra ket qua giong nhau. Khong bao gio cham vao benh nhan khac.
 
+CHI CHAY DUOC O MAY LOCAL - xem _chan_database_that() ben duoi. Script nay XOA
+du lieu, va `railway run python scripts/seed_photo_patients.py` se bom
+DATABASE_URL cua production vao mot cau lenh nhin y het luc chay duoi may.
+
 Usage:
     python scripts/seed_photo_patients.py
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from backend.config import get_settings  # noqa: E402
 from backend.db.base import SessionLocal  # noqa: E402
 from backend.db.models import DoseEvent, Patient, Prescription  # noqa: E402
 from backend.services.photo_verification import doi_chieu_don_thuoc  # noqa: E402
+
+# Nhung host duoc coi la "may minh". "db" la ten service trong docker-compose,
+# dung khi chay script tu ben trong mang cua compose.
+HOST_LOCAL = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 
 DOCTOR_ID = "demo-doctor-01"
 GIO_UONG = "08:00"
@@ -110,9 +121,53 @@ BENH_NHAN = [
 ]
 
 
+def _chan_database_that(cho_phep_db_tu_xa: bool) -> None:
+    """Dung han neu script sap chay vao mot database khong phai cua may minh.
+
+    Vi sao can hai lop kiem tra doc lap chu khong phai mot:
+
+      - APP_ENV bat duoc truong hop chay dung tren server, nhung no CO GIA TRI
+        MAC DINH la "development". Bien nay khong duoc set o dau do la du lieu
+        that van bi coi la may local.
+      - Host cua DATABASE_URL bat duoc truong hop nguy hiem that su:
+        `railway run python scripts/seed_photo_patients.py` chay tren may ban
+        (APP_ENV van la development) nhung DATABASE_URL da bi thay bang cua
+        production. Cau lenh nhin y het luc chay hang ngay, chi them hai chu
+        o dau.
+
+    Khong co duong tat nao cho APP_ENV=production: khong co ly do chinh dang
+    nao de tao benh nhan gia tren he thong that.
+    """
+    settings = get_settings()
+
+    if settings.app_env == "production":
+        raise SystemExit(
+            "DUNG LAI: APP_ENV=production.\n"
+            "  Script nay tao benh nhan gia va XOA du lieu cua pat_001/002/003.\n"
+            "  No chi danh cho may local, khong bao gio chay tren he thong that."
+        )
+
+    host = urlsplit(settings.database_url).hostname or ""
+    if host not in HOST_LOCAL and not cho_phep_db_tu_xa:
+        raise SystemExit(
+            f"DUNG LAI: DATABASE_URL dang tro toi {host!r}, khong phai may nay.\n"
+            "  Script nay XOA moi du lieu cua pat_001/002/003 truoc khi tao lai.\n"
+            "  Neu that su muon chay vao database tu xa, them --cho-phep-db-tu-xa."
+        )
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    parser = argparse.ArgumentParser(description="Seed 3 benh nhan mau cho luong xac nhan bang anh.")
+    parser.add_argument(
+        "--cho-phep-db-tu-xa",
+        action="store_true",
+        help="Cho phep chay vao database khong nam tren may nay (mac dinh: chan)",
+    )
+    args = parser.parse_args()
+    _chan_database_that(args.cho_phep_db_tu_xa)
 
     ids = [b["id"] for b in BENH_NHAN]
     db = SessionLocal()
