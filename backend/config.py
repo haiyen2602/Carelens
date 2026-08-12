@@ -11,6 +11,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # validator raise ngay neu con bang gia tri nay, khong chi log roi cho qua.
 _UNSET_INTERNAL_SECRET_SENTINEL = "unset-temp-auth-gate-CHANGE-ME-for-any-shared-env"
 
+# Cung sentinel-pattern nhu tren, ap dung cho JWT_SECRET (TASK-010,
+# api-contracts.md muc 1) - gia tri nay CONG KHAI trong source nen KHONG
+# duoc dung de ky JWT that, validator ben duoi raise ngay neu con giu nguyen.
+_UNSET_JWT_SECRET_SENTINEL = "unset-jwt-secret-CHANGE-ME-for-any-shared-env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -99,6 +104,30 @@ class Settings(BaseSettings):
                 f"{_UNSET_INTERNAL_SECRET_SENTINEL!r} - gia tri nay NAM SAN TRONG SOURCE nen KHONG "
                 "duoc dung de chay that). Dat INTERNAL_AUTH_SECRET trong .env (khong commit gia tri "
                 "that) truoc khi khoi dong app hoac chay test - xem chatbot-rag-design.md muc 10 #10."
+            )
+        return v
+
+    # auth-api that (TASK-010, api-contracts.md muc 1) - ky/giai ma JWT
+    # (Authorization: Bearer <JWT>, payload sub+role). Fail-closed giong het
+    # internal_auth_secret o tren, cung 1 ly do: JWT_SECRET la nen tang bao
+    # mat toan bo he thong, khong duoc phep am tham chay voi gia tri sentinel.
+    jwt_secret: str = Field(
+        default=_UNSET_JWT_SECRET_SENTINEL,
+        description="TEMP sentinel - PHAI dat that qua env truoc khi chay (TASK-010)",
+    )
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = Field(default=60, description="Khop expires_in=3600 trong api-contracts.md muc 1")
+    refresh_token_expire_days: int = 30
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def _jwt_secret_must_be_configured(cls, v: str) -> str:
+        if not v or v == _UNSET_JWT_SECRET_SENTINEL:
+            raise ValueError(
+                "JWT_SECRET chua duoc cau hinh that (con rong hoac la sentinel cong khai "
+                f"{_UNSET_JWT_SECRET_SENTINEL!r} - gia tri nay NAM SAN TRONG SOURCE nen KHONG duoc "
+                "dung de chay that). Dat JWT_SECRET trong .env (khong commit gia tri that) truoc khi "
+                "khoi dong app hoac chay test - xem TASK-010."
             )
         return v
 

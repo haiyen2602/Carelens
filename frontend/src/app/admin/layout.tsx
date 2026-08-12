@@ -27,8 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ACCOUNTS } from "@/lib/admin-mock";
-import { isAdminAuthed, setAdminAuthed } from "@/lib/admin-auth";
+import { useAuth } from "@/lib/auth";
 
 type NavItem = {
   to: string;
@@ -44,25 +43,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const isLoginRoute = pathname === "/admin/login";
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const { user, loading, logout } = useAuth();
+  const authChecked = !loading && !!user && user.role === "admin";
 
   useEffect(() => {
-    if (isLoginRoute) return;
-    if (!isAdminAuthed()) {
+    if (isLoginRoute || loading) return;
+    if (!user || user.role !== "admin") {
       router.replace("/admin/login");
-      return;
     }
-    setAuthChecked(true);
-  }, [isLoginRoute, pathname, router]);
-
-  const pendingAccounts = ACCOUNTS.filter((a) => a.status === "pending").length;
+  }, [isLoginRoute, loading, user, router]);
 
   const groups: { title: string; items: NavItem[] }[] = [
     {
       title: "Quản trị hệ thống",
       items: [
         { to: "/admin", label: "Dashboard", icon: Home, exact: true },
-        { to: "/admin/accounts", label: "Quản lý tài khoản", icon: Users2, badge: pendingAccounts },
+        { to: "/admin/accounts", label: "Quản lý tài khoản", icon: Users2 },
         { to: "/admin/links", label: "Liên kết bệnh nhân · bác sĩ · người thân", icon: Link2 },
         { to: "/admin/medicines", label: "Dữ liệu thuốc (RAG)", icon: PillBottle },
         { to: "/admin/audit", label: "Log hệ thống", icon: FileClock },
@@ -223,19 +219,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <DropdownMenu>
             <DropdownMenuTrigger className="flex shrink-0 items-center gap-2 rounded-lg border-l border-border py-1 pl-3 outline-none hover:bg-muted">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
-                Y
+                {(user?.full_name ?? "?").trim().charAt(0).toUpperCase()}
               </span>
               <div className="hidden min-w-0 text-left sm:block">
-                <p className="truncate text-sm font-semibold leading-tight">Nguyễn Hải Yến</p>
+                <p className="truncate text-sm font-semibold leading-tight">
+                  {user?.full_name ?? "…"}
+                </p>
                 <p className="text-xs text-muted-foreground">Quản trị viên</p>
               </div>
               <ChevronDown className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
-                <p className="truncate text-sm font-semibold leading-tight">Nguyễn Hải Yến</p>
-                <p className="truncate text-xs font-normal text-muted-foreground">
-                  yen.nguyen@capymedi.dev
+                <p className="truncate text-sm font-semibold leading-tight">
+                  {user?.full_name ?? "…"}
                 </p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -248,8 +245,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={() => {
-                  setAdminAuthed(false);
+                onClick={async () => {
+                  await logout();
                   router.push("/admin/login");
                 }}
               >

@@ -15,9 +15,10 @@ rieng) - loai bo hoan toan rui ro "quen wire escalate_fn" ma
 build-kickoff-prompt.md Phase 6 da ghi lai can kiem tra (khong con duong
 nao goi run_conversation() ma thieu escalate_fn tu route nay).
 
-Depends(require_internal_secret) - RAO CAN TAM (chatbot-rag-design.md muc
-10 #10), KHONG PHAI auth that - xem src/api/security.py. XOA dong nay khi
-auth-api that co.
+TASK-010: Depends(get_current_user) - auth-api that (api-contracts.md §1),
+thay rao tam require_internal_secret (chatbot-rag-design.md muc 10 #10) da
+xoa khoi route nay. get_current_patient_id() gio nhan them CurrentUser de
+doc patient_id tu JWT khi nguoi goi la role=patient (xem backend/api/security.py).
 
 Vong 2 (chatbot-rag-design.md muc 12): input guardrail chay TRUOC ca
 run_conversation() (chan injection som, khong de utterance doc hai toi duoc
@@ -63,7 +64,7 @@ from backend.agents.state import ConversationState
 from backend.agents.tools.drug_confirmation_store import get_pending_confirmation
 from backend.api.chat_deps import ChatServices, get_chat_services
 from backend.api.rate_limit import rate_limit_check
-from backend.api.security import get_current_patient_id, require_internal_secret
+from backend.api.security import CurrentUser, get_current_patient_id, get_current_user
 from backend.db.base import get_db
 from backend.db.models import AuditLog
 from backend.models.schemas import ClassificationOut, ConversationChatRequest, ConversationChatResponse, SourceOut
@@ -81,15 +82,16 @@ chat_router = APIRouter()
 @chat_router.post(
     "/chat",
     response_model=ConversationChatResponse,
-    dependencies=[Depends(require_internal_secret), Depends(rate_limit_check)],
+    dependencies=[Depends(rate_limit_check)],
 )
 async def chat(
     request: ConversationChatRequest,
     db: Session = Depends(get_db),
     services: ChatServices = Depends(get_chat_services),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ConversationChatResponse:
     t0 = time.monotonic()
-    patient_id = get_current_patient_id(request)
+    patient_id = get_current_patient_id(request, current_user)
     escalate_fn = build_db_escalate_fn(db)
 
     initial_state: ConversationState = {
@@ -215,19 +217,29 @@ async def chat(
     }
 
     total_duration_ms = (time.monotonic() - t0) * 1000
-    _persist_audit_log(db, request, final_state, total_duration_ms)
+    _persist_audit_log(db, patient_id, request, final_state, total_duration_ms)
 
     return _to_response(final_state)
 
 
 def _persist_audit_log(
-    db: Session, request: ConversationChatRequest, final_state: ConversationState, total_duration_ms: float
+    db: Session,
+    patient_id: str,
+    request: ConversationChatRequest,
+    final_state: ConversationState,
+    total_duration_ms: float,
 ) -> None:
     """AuditLogDTO (chatbot-rag-design.md muc 5.2) - APPEND-ONLY, moi luot
     xu ly 1 dong, ke ca nhanh REFUSE/redflag HIGH (khong co nhanh nao bo sot
-    trace - yeu cau ro trong build-kickoff-prompt.md Phase 6)."""
+    trace - yeu cau ro trong build-kickoff-prompt.md Phase 6).
+
+    `patient_id` TASK-010: nhan lai gia tri DA duoc chat() tinh 1 lan qua
+    get_current_patient_id(request, current_user) (dong ~94) - KHONG goi lai
+    get_current_patient_id() o day, vi ham nay khong co current_user (can
+    JWT da xac thuc) va KHONG duoc doc thang request.patient_id (dung y thiet
+    ke ghi trong get_current_patient_id() - 1 cho noi duy nhat)."""
     audit = AuditLog(
-        patient_id=get_current_patient_id(request),
+        patient_id=patient_id,
         dose_event_id=request.dose_id,
         utterance=request.message,
         trace=final_state.get("trace", []),
