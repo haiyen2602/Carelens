@@ -400,6 +400,7 @@ def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
             return {
                 "response": _confirm_question(rx_match["ten_thuoc"]),
                 "awaiting_drug_confirmation": True,
+                "quick_replies": ["Có", "Không"],
                 "trace": _append_trace(state, entry),
             }
 
@@ -437,6 +438,7 @@ def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
         return {
             "response": _confirm_question(top1["ten_thuoc"]),
             "awaiting_drug_confirmation": True,
+            "quick_replies": ["Có", "Không"],
             "trace": _append_trace(state, entry),
         }
 
@@ -456,6 +458,31 @@ class _StepResult:
     # resolved HOAC stop (khong con pending row nao nua).
     new_pending: tuple[list[dict], str, str] | None
     stop: bool  # True neu day la cau tra loi CUOI CUNG (khong tim thay), phai clear pending
+
+
+# Vong 3, muc 6.1 (#22 - PM cho build truoc, chua xac nhan shape voi team
+# app) - suy quick_replies TAP TRUNG tai 1 cho, dua tren `stage` da co san,
+# thay vi sua ca 24 diem tao _StepResult rai rac ben tren (rui ro lech thu
+# tu tham so positional). Chi anh huong UI goi y nut bam - benh nhan van go
+# tay tu do binh thuong, khong doi logic parse reply nao ca.
+_CONFIRM_STAGES = {
+    STAGE_IN_RX_CONFIRM_R1,
+    STAGE_IN_RX_CONFIRM_R2,
+    STAGE_OUT_RX_CONFIRM_TOP1_R1,
+    STAGE_OUT_RX_CONFIRM_TOP1_R2,
+    STAGE_OUT_RX_CONFIRM_PICK_R1,
+}
+NOT_FOUND_QUICK_REPLY = "Không tìm thấy thuốc tôi cần"
+
+
+def _infer_quick_replies(stage: str, candidates: list[dict]) -> list[str] | None:
+    if stage in _CONFIRM_STAGES:
+        return ["Có", "Không"]
+    if stage == STAGE_OUT_RX_CHOOSE_TOP3_R1:
+        return [c["ten_thuoc"] for c in candidates] + [NOT_FOUND_QUICK_REPLY]
+    # STAGE_IN_RX_AWAITING_NEW_NAME / STAGE_OUT_RX_AWAITING_REDESCRIBE - can
+    # ten thuoc tu do, khong co goi y nut bam co dinh nao hop ly.
+    return None
 
 
 def build_drug_confirmation_reply_node(db: Session, embed_query: EmbedFn, pending: dict):
@@ -531,7 +558,12 @@ def build_drug_confirmation_reply_node(db: Session, embed_query: EmbedFn, pendin
             "retry_count": retry_count,
             "duration_ms": duration_ms,
         }
-        return {"response": result.response, "awaiting_drug_confirmation": True, "trace": _append_trace(state, entry)}
+        return {
+            "response": result.response,
+            "awaiting_drug_confirmation": True,
+            "quick_replies": _infer_quick_replies(new_stage, new_candidates),
+            "trace": _append_trace(state, entry),
+        }
 
     return node
 

@@ -39,6 +39,7 @@ from backend.agents.state import ConversationState
 from backend.agents.tools.chat_history_tool import get_chat_history_for_display
 from backend.agents.tools.drug_info_tool import EmbedFn, tra_cuu_thuoc_chung
 from backend.agents.tools.personal_tools import tra_cuu_don_thuoc_ca_nhan, tra_cuu_lich_uong_ca_nhan
+from backend.db.models import Patient
 from backend.services.retrieval import DrugInfoResult
 
 CAVEAT_LIEU_DUNG = "Đây là liều khuyến cáo chung theo nhãn thuốc, liều thực tế của bạn có thể khác theo chỉ định của bác sĩ."
@@ -52,14 +53,37 @@ NO_SCHEDULE_TODAY_MESSAGE = "Hôm nay bạn không có liều thuốc nào đư�
 #
 # SUA vong 3, muc 9.1/9.2 (persona "Capy") - day la nhom THAN THIEN NHAT
 # theo dung bang phan loai muc 9.1 (chao hoi/thong tin thuoc thuong/lich
-# uong thuoc): dung ten "Capy Medi" + bieu tuong nhe nhang "<3". KHONG kem
-# ten benh nhan ca nhan hoa (quyet dinh #21 - chua co nguon du lieu ro rang,
-# giu ban chao khong ten, khong tu bia nguon).
+# uong thuoc): dung ten "Capy Medi" + bieu tuong nhe nhang "<3".
+#
+# #21 (chatbot-rag-design.md muc 10) - GO CHOT TAM 2026-08-12: luc quyet
+# dinh #21, chua co nguon du lieu ten benh nhan nao trong he thong nen giu
+# ban chao khong ten. Gio bang `Patient.full_name` da co that (migration
+# 0009, TASK-010-auth-api) nen ca nhan hoa duoc - nhung Patient.id CHUA co
+# khoa ngoai rang buoc voi patient_id dung trong chat/prescription/dose_event
+# (co y, xem docstring class Patient trong backend/db/models.py), nen 1 vai
+# patient_id (du lieu test cua thanh vien khac) co the KHONG co dong Patient
+# tuong ung - fallback ve ban chao khong ten trong truong hop do, khong loi.
 GREETING_RESPONSE = (
     "Chào bạn, Capy Medi sẵn sàng chăm sóc bạn <3 Mình có thể giúp bạn: "
     "hỏi thông tin về 1 loại thuốc, xem lịch uống thuốc hôm nay, "
     "hoặc báo đã/chưa uống 1 liều thuốc."
 )
+
+GREETING_QUICK_REPLIES = [
+    "Hỏi về 1 loại thuốc",
+    "Xem lịch uống thuốc hôm nay",
+    "Báo đã/chưa uống thuốc",
+]
+
+
+def _greeting_response_for(full_name: str | None) -> str:
+    if not full_name:
+        return GREETING_RESPONSE
+    return (
+        f"Chào {full_name}, Capy Medi sẵn sàng chăm sóc bạn <3 Mình có thể giúp bạn: "
+        "hỏi thông tin về 1 loại thuốc, xem lịch uống thuốc hôm nay, "
+        "hoặc báo đã/chưa uống 1 liều thuốc."
+    )
 
 _DRUG_INFO_INTENTS = (None, "drug_info")  # None: goi node truc tiep, ngoai orchestrator (test)
 
@@ -171,10 +195,11 @@ def build_intent_classification_node(
     return node
 
 
-def build_greeting_node():
+def build_greeting_node(db: Session):
     """Vong 3, muc 6 - tu bao ve theo intent=="greeting" giong moi node khac
     (khong dung danh sach rieng cho tung intent, xem docstring dau file).
-    Khong nhan tham so nao (khong goi LLM/DB) - response co dinh."""
+    Khong goi LLM - response gan nhu co dinh, chi 1 truy van DB don gian
+    (Patient theo patient_id) de ca nhan hoa ten (#21) neu co."""
 
     async def node(state: ConversationState) -> dict:
         if state.get("intent") != "greeting":
@@ -186,8 +211,16 @@ def build_greeting_node():
             }
             return {"trace": _append_trace(state, entry)}
 
-        entry = {"step": "greeting", "duration_ms": 0.0}
-        return {"response": GREETING_RESPONSE, "trace": _append_trace(state, entry)}
+        t0 = time.monotonic()
+        patient = db.get(Patient, state["patient_id"])
+        full_name = patient.full_name if patient else None
+        duration_ms = (time.monotonic() - t0) * 1000
+        entry = {"step": "greeting", "personalized": full_name is not None, "duration_ms": duration_ms}
+        return {
+            "response": _greeting_response_for(full_name),
+            "quick_replies": GREETING_QUICK_REPLIES,
+            "trace": _append_trace(state, entry),
+        }
 
     return node
 

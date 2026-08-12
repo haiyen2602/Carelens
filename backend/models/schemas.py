@@ -138,6 +138,19 @@ class EscalationAckResponse(BaseModel):
     resolved_by: str
 
 
+class CurrentEscalationResponse(BaseModel):
+    """GET /api/v1/escalations/current (vong 2 muc 4 y 4 - CAN CHOT, PM chot
+    2026-08-12: dung field da co san tren Escalation, khong them cot moi).
+    FE goi de quyet dinh co hien banner "de xuat goi cap cuu" lien tuc tu
+    t=15p (escalation_reminder.py) toi khi resolved hay khong - shape TAM
+    THOI, chua trao doi voi team app (cung tinh trang #22)."""
+
+    status: str  # OPEN|ACKED|RESOLVED
+    severity: str  # LOW|MEDIUM|HIGH
+    reminder_count: int
+    created_at: str
+
+
 class ConversationChatResponse(BaseModel):
     """Response 200 cua POST /api/v1/chat (api-contracts.md §4). `severity`
     dung quy uoc tieng Anh (LOW|MEDIUM|HIGH) - xem SEVERITY_VI_TO_EN trong
@@ -154,6 +167,10 @@ class ConversationChatResponse(BaseModel):
     safety_flag: bool = False
     needs_clarification: bool = False
     sources: list[SourceOut] = Field(default_factory=list)
+    # Vong 3 muc 6.1 (#22 - PM cho build truoc, CHUA xac nhan shape voi team
+    # app, xem tasks/TASK-010-build-chatbot.md "Con mo"). None/rong = FE
+    # khong hien nut goi y, chi co o textbox tu do nhu binh thuong.
+    quick_replies: list[str] | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -64,6 +64,14 @@ class ConversationState(TypedDict, total=False):
     trace: list[dict]
     response: str
 
+    # Vong 3, muc 6.1 (#22, chatbot-rag-design.md muc 10) - goi y nut bam
+    # cho FE, giam phu thuoc do chinh xac cua viec phan tich cau go tay tu do
+    # (vd "Có"/"Không" luc xac nhan thuoc, ten thuoc luc chon top-3). Benh
+    # nhan van go tay tu do binh thuong duoc - day CHI la goi y hien thi, gui
+    # len van la 1 chuoi text nhu moi utterance khac. None/thieu key = khong
+    # co goi y nao cho luot nay (FE khong hien nut).
+    quick_replies: list[str] | None
+
     # MOI vong 2 (chatbot-rag-design.md muc 11) - True khi node xac nhan
     # danh tinh thuoc (drug_confirmation_nodes.py) VUA hoi 1 cau xac nhan
     # (hoac vua dua ra cau tra loi "khong tim thay" cuoi cung) - CHUA resolve

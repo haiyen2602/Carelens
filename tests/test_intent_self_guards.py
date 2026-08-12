@@ -105,7 +105,9 @@ async def test_drug_info_nodes_still_run_when_intent_field_absent_backward_compa
 
 @pytest.mark.asyncio
 async def test_greeting_node_skips_when_intent_is_not_greeting():
-    node = build_greeting_node()
+    # db=None an toan o day: duong SKIP tra ve TRUOC khi cham toi db (xem
+    # docstring dau file), khong can ket noi Postgres that cho test nay.
+    node = build_greeting_node(db=None)
     result = await node(_state("drug_info"))
     assert result["trace"][-1]["skipped"] is True
     assert "response" not in result

@@ -63,7 +63,11 @@ from backend.agents.nodes.drug_confirmation_nodes import (
 )
 from backend.agents.orchestrator import run_conversation
 from backend.agents.state import ConversationState
-from backend.agents.tools.chat_history_tool import get_chat_history_for_display, hide_all_chat_messages, save_chat_message
+from backend.agents.tools.chat_history_tool import (
+    get_chat_history_for_display,
+    hide_all_chat_messages,
+    save_chat_message,
+)
 from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation
 from backend.api.chat_deps import ChatServices, get_chat_services
 from backend.api.rate_limit import rate_limit_check
@@ -182,7 +186,7 @@ async def chat(
                     build_classify_node(services.classify_dose),
                     build_severity_node(db, services.classify_severity),
                     build_level_action_node(escalate_fn),
-                    build_greeting_node(),
+                    build_greeting_node(db),
                     build_chat_history_query_node(db),
                 ]
                 final_state = await run_conversation(
@@ -377,4 +381,5 @@ def _to_response(state: ConversationState) -> ConversationChatResponse:
         safety_flag=_should_show_emergency_overlay(severity_en),
         needs_clarification=needs_clarification,
         sources=sources,
+        quick_replies=state.get("quick_replies"),
     )
