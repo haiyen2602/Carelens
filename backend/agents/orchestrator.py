@@ -181,7 +181,62 @@ async def run_conversation(
     }
     current_state["trace"] = [*current_state.get("trace", []), entry]
     current_state["safety_flag"] = False
+    current_state = await _maybe_medium_acknowledge(escalate_fn, current_state, flag)
     return current_state  # type: ignore[return-value]
+
+
+# Vong 3 (phan hoi review 2026-08-12) - PM quyet dinh 4 cau hoi chinh sach
+# (a/b/c/d, chatbot-rag-design.md muc 10 #26):
+#   (a) chi 2/5 category: self_harm + clinical_symptom (khong phai moi
+#       category Trung binh - wrong_drug/dosage_risk o muc Trung binh de
+#       chi la nham lan nho, escalate ngay se qua nhay, dung y kickoff lo
+#       ngai "bao dong gia").
+#   (b) CHI kenh "family" nhan tin nhan chu dong - bac si KHONG duoc chu
+#       dong bao, chi xem duoc qua bang Escalation/trace khi tra cuu (da co
+#       san, khong can them gi).
+#   (c) benh nhan CO nhan 1 cau ghi nhan nhe - khong im lang hoan toan.
+#   (d) chap nhan floor theo category (_CATEGORY_LEVEL_FLOOR, safety.py)
+#       lam tang so case bi escalate - uu tien khong bo sot hon la giam bao
+#       dong gia cho 2 category da co bang chung dao dong that.
+_MEDIUM_ESCALATE_CATEGORIES = frozenset({"self_harm", "clinical_symptom"})
+_MEDIUM_ACKNOWLEDGMENT = "(Capy đã ghi nhận điều bạn vừa chia sẻ.)"
+
+
+async def _maybe_medium_acknowledge(
+    escalate_fn: EscalateFn | None, current_state: ConversationState, flag: SafetyFlag
+) -> ConversationState:
+    """KHONG cat luong chinh (khac _apply_redflag/is_redflag) - chi 1 tac
+    dung phu (escalate kenh family) + ghep 1 cau ghi nhan nhe vao response
+    DA CO SAN (khong thay the noi dung chinh do node tuong ung intent set)."""
+    if flag.level != "Trung bình" or flag.llm_category not in _MEDIUM_ESCALATE_CATEGORIES:
+        return current_state
+
+    if escalate_fn is not None:
+        reason = (
+            f"Safety layer 'Trung bình' - category={flag.llm_category!r}, "
+            f"llm_reasoning={flag.llm_reasoning!r}"
+        )
+        try:
+            # Goi THANG escalate_fn cho DUNG 1 kenh "family" - KHONG qua
+            # trigger_emergency_escalation() (ham do luon goi CA HAI kenh
+            # cung luc qua asyncio.gather, khong chon rieng duoc 1 kenh).
+            await escalate_fn(
+                "family",
+                current_state.get("patient_id", ""),
+                current_state.get("dose_event_id"),
+                "Trung bình",
+                False,
+                TRIGGER_SAFETY_REDFLAG,
+                reason,
+            )
+        except Exception:  # noqa: BLE001 - best-effort, khong lam sap luong chinh (cung tinh than BR-6.3)
+            pass
+
+    existing_response = current_state.get("response") or ""
+    current_state["response"] = (
+        f"{existing_response} {_MEDIUM_ACKNOWLEDGMENT}".strip() if existing_response else _MEDIUM_ACKNOWLEDGMENT
+    )
+    return current_state
 
 
 async def _maybe_escalate(
