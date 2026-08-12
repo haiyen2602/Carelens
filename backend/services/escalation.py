@@ -72,9 +72,8 @@ GENERIC_OVERLAY_MESSAGE = (
 # 3.1) - KHONG dung chung cong thuc/noi dung 5 hang so tren (khac ban chat,
 # khong phai chi khac cau chu): PM quyet dinh 2026-08-12 KHONG kem so hotline
 # khung hoang cu the (tranh rui ro dua sai so trong tinh huong nhay cam) -
-# chi canh bao + khuyen gap bac si ngay. # TODO [CẦN CHỐT]: da co xac nhan
-# cua PM, CON THIEU xac nhan cua Pham Thanh Dat (dung quy trinh 2 nguoi duyet
-# da ap dung cho 5 hang so tren) - giu marker nay cho toi khi co xac nhan do.
+# chi canh bao + khuyen gap bac si ngay. DA CHOT 2026-08-12 (PM + Pham Thanh
+# Dat xac nhan), khong con marker CAN CHOT.
 SELF_HARM_OVERLAY_MESSAGE = (
     "⚠️ CẢNH BÁO: Đây là hành động nguy hiểm. Vui lòng gặp bác sĩ ngay. "
     "Người thân và bác sĩ của bạn đã được thông báo."
@@ -82,14 +81,11 @@ SELF_HARM_OVERLAY_MESSAGE = (
 
 # Vong 3, muc 9.3 (chatbot-rag-design.md muc 10 #23) - "mo rong muc 3.3 tu
 # '5 tieu de canh bao' thanh '5 tieu de + 5 cau giai thich ngan di kem'".
-# PM da xac nhan PHAM VI nay (khong phai noi dung cu the) - noi dung duoi
-# day la DU THAO, CHUA duyet chinh thuc, giu # TODO [CẦN CHỐT] cho toi khi
-# PM + Pham Thanh Đat xac nhan, cung quy trinh 2 nguoi duyet nhu 5 tieu de
-# overlay goc. KHONG de LLM tu sinh giai thich luc phat hien nguy hiem
-# (dung ly do #13a duoc lap ra - khong tu suy dien luc nhay cam nhat) -
-# viet san, orchestrator.py ghep vao SAU overlay_message da chon theo
-# category (uu tien llm_category, fallback matched_group).
-# TODO [CẦN CHỐT — PM + Phạm Thành Đạt]: noi dung 5 cau duoi day la du thao.
+# KHONG de LLM tu sinh giai thich luc phat hien nguy hiem (dung ly do #13a
+# duoc lap ra - khong tu suy dien luc nhay cam nhat) - viet san,
+# orchestrator.py ghep vao SAU overlay_message da chon theo category (uu
+# tien llm_category, fallback matched_group). DA CHOT 2026-08-12 (PM + Pham
+# Thanh Dat xac nhan noi dung), khong con marker CAN CHOT.
 CATEGORY_EXPLANATIONS: dict[str, str] = {
     "dosage_risk": "Uống sai liều lượng có thể gây nguy hiểm cho sức khoẻ của bạn.",
     "clinical_symptom": "Đây là dấu hiệu cần được xử lý y tế ngay, không nên chờ đợi.",
