@@ -20,7 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
@@ -34,13 +34,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json();
 }
 
-export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
-  // Goi qua route noi bo (`app/api/chat/route.ts`), KHONG goi thang
-  // `${API_BASE}/api/v1/chat` - route noi bo giu header X-Internal-Secret
-  // an toan phia server, xem ghi chu chi tiet trong route.ts.
+export async function sendChatMessage(
+  payload: ChatRequest,
+  accessToken?: string | null,
+): Promise<ChatResponse> {
+  // Goi qua route noi bo (`app/api/chat/route.ts`) - route noi bo CHI
+  // forward nguyen header Authorization sang backend that (TASK-010,
+  // khong con tu gan X-Internal-Secret nua, xem ghi chu chi tiet trong
+  // route.ts). `accessToken`: lay tu useAuth() (frontend/src/lib/auth.tsx) -
+  // optional vi luc chua dang nhap that (F5 truoc khi refresh xong) van goi
+  // duoc, backend se tra 401 dung nhu thiet ke.
   const response = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify(payload),
   });
 

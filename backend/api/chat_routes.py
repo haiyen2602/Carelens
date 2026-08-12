@@ -15,9 +15,10 @@ rieng) - loai bo hoan toan rui ro "quen wire escalate_fn" ma
 build-kickoff-prompt.md Phase 6 da ghi lai can kiem tra (khong con duong
 nao goi run_conversation() ma thieu escalate_fn tu route nay).
 
-Depends(require_internal_secret) - RAO CAN TAM (chatbot-rag-design.md muc
-10 #10), KHONG PHAI auth that - xem src/api/security.py. XOA dong nay khi
-auth-api that co.
+TASK-010: Depends(get_current_user) - auth-api that (api-contracts.md §1),
+thay rao tam require_internal_secret (chatbot-rag-design.md muc 10 #10) da
+xoa khoi route nay. get_current_patient_id() gio nhan them CurrentUser de
+doc patient_id tu JWT khi nguoi goi la role=patient (xem backend/api/security.py).
 
 Vong 2 (chatbot-rag-design.md muc 12): input guardrail chay TRUOC ca
 run_conversation() (chan injection som, khong de utterance doc hai toi duoc
@@ -66,7 +67,7 @@ from backend.agents.tools.chat_history_tool import get_chat_history_for_display,
 from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation
 from backend.api.chat_deps import ChatServices, get_chat_services
 from backend.api.rate_limit import rate_limit_check
-from backend.api.security import get_current_patient_id, require_internal_secret
+from backend.api.security import CurrentUser, get_current_patient_id, get_current_user
 from backend.db.base import get_db
 from backend.db.models import AuditLog
 from backend.models.schemas import (
@@ -93,15 +94,16 @@ chat_router = APIRouter()
 @chat_router.post(
     "/chat",
     response_model=ConversationChatResponse,
-    dependencies=[Depends(require_internal_secret), Depends(rate_limit_check)],
+    dependencies=[Depends(rate_limit_check)],
 )
 async def chat(
     request: ConversationChatRequest,
     db: Session = Depends(get_db),
     services: ChatServices = Depends(get_chat_services),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ConversationChatResponse:
     t0 = time.monotonic()
-    patient_id = get_current_patient_id(request)
+    patient_id = get_current_patient_id(request, current_user)
     escalate_fn = build_db_escalate_fn(db)
 
     initial_state: ConversationState = {
@@ -243,7 +245,7 @@ async def chat(
     }
 
     total_duration_ms = (time.monotonic() - t0) * 1000
-    _persist_audit_log(db, request, final_state, total_duration_ms)
+    _persist_audit_log(db, patient_id, request, final_state, total_duration_ms)
 
     # Vong 3, muc 7.1 - luu CA HAI tin nhan (patient + assistant) vao
     # chat_messages CHO LUOT NAY, SAU KHI toan bo run_conversation() (bao
@@ -260,42 +262,59 @@ async def chat(
     return _to_response(final_state)
 
 
-@chat_router.post(
-    "/chat/history",
-    response_model=ChatHistoryResponse,
-    dependencies=[Depends(require_internal_secret)],
-)
-async def get_chat_history(request: ChatHistoryRequest, db: Session = Depends(get_db)) -> ChatHistoryResponse:
+@chat_router.post("/chat/history", response_model=ChatHistoryResponse)
+async def get_chat_history(
+    request: ChatHistoryRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ChatHistoryResponse:
     """Vong 3, muc 7.1 - lich su chat DAY DU cho benh nhan xem lai (khong
     phai ngu canh dua vao LLM, xem docstring chat_history_tool.py). Mac
-    dinh khong tra tin nhan da bi an (#20)."""
-    patient_id = get_current_patient_id(request)
+    dinh khong tra tin nhan da bi an (#20).
+
+    TASK-010 (auth-api that): doi tu rao tam require_internal_secret sang
+    JWT that (Depends(get_current_user)) - truoc do endpoint nay chi kiem
+    tra 1 shared secret, KHONG xac thuc danh tinh, nen bat ky ai biet secret
+    co the doc lich su chat cua BAT KY patient_id nao tu go trong body. Dung
+    dung 1 cho noi get_current_patient_id() nhu chinh docstring cua ham do
+    yeu cau, khong tao duong doc patient_id rieng cho history."""
+    patient_id = get_current_patient_id(request, current_user)
     messages = get_chat_history_for_display(db, patient_id)
     return ChatHistoryResponse(messages=[ChatMessageOut(**m) for m in messages])
 
 
-@chat_router.post(
-    "/chat/history/hide",
-    response_model=ChatHistoryHideResponse,
-    dependencies=[Depends(require_internal_secret)],
-)
-async def hide_chat_history(request: ChatHistoryRequest, db: Session = Depends(get_db)) -> ChatHistoryHideResponse:
+@chat_router.post("/chat/history/hide", response_model=ChatHistoryHideResponse)
+async def hide_chat_history(
+    request: ChatHistoryRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ChatHistoryHideResponse:
     """Vong 3, muc 7.1/#20 - "xoá đoạn chat" = an khoi man hinh (soft-delete),
     audit_log KHONG doi. Idempotent (goi lai khi da an het van tra ve 0,
-    khong loi)."""
-    patient_id = get_current_patient_id(request)
+    khong loi). TASK-010: cung doi sang JWT that, xem ghi chu get_chat_history."""
+    patient_id = get_current_patient_id(request, current_user)
     hidden_count = hide_all_chat_messages(db, patient_id)
     return ChatHistoryHideResponse(hidden_count=hidden_count)
 
 
 def _persist_audit_log(
-    db: Session, request: ConversationChatRequest, final_state: ConversationState, total_duration_ms: float
+    db: Session,
+    patient_id: str,
+    request: ConversationChatRequest,
+    final_state: ConversationState,
+    total_duration_ms: float,
 ) -> None:
     """AuditLogDTO (chatbot-rag-design.md muc 5.2) - APPEND-ONLY, moi luot
     xu ly 1 dong, ke ca nhanh REFUSE/redflag HIGH (khong co nhanh nao bo sot
-    trace - yeu cau ro trong build-kickoff-prompt.md Phase 6)."""
+    trace - yeu cau ro trong build-kickoff-prompt.md Phase 6).
+
+    `patient_id` TASK-010: nhan lai gia tri DA duoc chat() tinh 1 lan qua
+    get_current_patient_id(request, current_user) (dong ~94) - KHONG goi lai
+    get_current_patient_id() o day, vi ham nay khong co current_user (can
+    JWT da xac thuc) va KHONG duoc doc thang request.patient_id (dung y thiet
+    ke ghi trong get_current_patient_id() - 1 cho noi duy nhat)."""
     audit = AuditLog(
-        patient_id=get_current_patient_id(request),
+        patient_id=patient_id,
         dose_event_id=request.dose_id,
         utterance=request.message,
         trace=final_state.get("trace", []),

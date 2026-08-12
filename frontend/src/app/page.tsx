@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   Activity,
   Bell,
@@ -14,33 +14,14 @@ import {
   HeartPulse,
   Pill,
   PillBottle,
-  QrCode,
-  Send,
   ShieldCheck,
   Stethoscope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useProto, type Role } from "@/lib/proto-store";
-
-const roles: { role: Role; label: string; desc: string; icon: typeof Stethoscope; hint: string }[] =
-  [
-    {
-      role: "doctor",
-      label: "Bác sĩ",
-      desc: "Dashboard, kê đơn, hàng đợi duyệt HITL, audit log",
-      icon: Stethoscope,
-      hint: "Giao diện desktop",
-    },
-    {
-      role: "patient",
-      label: "Bệnh nhân/Người thân",
-      desc: "Nhắc uống thuốc, xác nhận, chụp ảnh, báo sức khỏe · theo dõi tuân thủ của người thân",
-      icon: HeartPulse,
-      hint: "Web mobile",
-    },
-  ];
+import { useAuth } from "@/lib/auth";
+import { useProto } from "@/lib/proto-store";
 
 const features = [
   { icon: Clock, title: "Nhắc đúng giờ", desc: "Không bỏ lỡ liều thuốc nào" },
@@ -50,17 +31,42 @@ const features = [
 ];
 
 export default function LoginPage() {
-  const [step, setStep] = useState<"phone" | "otp" | "role">("phone");
-  const [phone, setPhone] = useState("912 345 678");
-  const [otp, setOtp] = useState("");
-  const [idValue, setIdValue] = useState("");
-  const [picked, setPicked] = useState<Role | null>(null);
-  const { login } = useProto();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login: authLogin } = useAuth();
+  const { login: protoLogin } = useProto();
   const router = useRouter();
 
-  const finish = (role: Role) => {
-    login(role, phone);
-    router.push(role === "doctor" ? "/doctor" : "/patient");
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError("Vui lòng nhập đầy đủ email và mật khẩu.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const user = await authLogin(email.trim(), password);
+      if (user.role === "doctor" || user.role === "patient") {
+        // Cau noi TAM: dashboard doctor/patient van la UI mock tinh (chua
+        // doi theo tai khoan dang nhap that) - van can state role/phone cua
+        // proto-store de cac UI hien co (PhoneShell header, banner...)
+        // khong vo. KHONG PHAI nguon that cho danh tinh - danh tinh that la
+        // useAuth().user (xem lib/auth.tsx).
+        protoLogin(user.role, user.full_name);
+        router.push(user.role === "doctor" ? "/doctor" : "/patient");
+      } else if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        setError("Vai trò người thân/caregiver chưa được hỗ trợ trên giao diện web.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -169,145 +175,54 @@ export default function LoginPage() {
         </button>
 
         <section className="surface-card w-full max-w-md p-6 sm:p-8">
-          {step === "phone" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold">Chào mừng bạn trở lại 👋</h2>
-                <p className="text-sm text-muted-foreground">
-                  Đăng nhập để tiếp tục sử dụng CapyMedi
-                </p>
-              </div>
-              <div className="border-t border-border pt-5">
-                <h3 className="font-bold">Đăng nhập</h3>
-                <p className="text-sm text-muted-foreground">Nhập số điện thoại để nhận mã OTP.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-card">
-                  <span className="flex shrink-0 items-center gap-1 border-r border-input px-3 text-sm text-muted-foreground">
-                    🇻🇳 +84
-                  </span>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-none border-0 shadow-none focus-visible:ring-0"
-                  />
-                </div>
-              </div>
-              <Button className="w-full" size="lg" onClick={() => setStep("otp")}>
-                Gửi mã OTP <Send className="ml-1 h-4 w-4" />
-              </Button>
-
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" /> hoặc{" "}
-                <span className="h-px flex-1 bg-border" />
-              </div>
-
-              <Button variant="outline" className="w-full">
-                <QrCode className="mr-1 h-4 w-4" /> Đăng nhập bằng mã QR
-              </Button>
-
-              <div className="flex items-start gap-3 rounded-lg bg-muted p-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">Bảo mật &amp; an toàn</span> —
-                  Thông tin của bạn được mã hóa và bảo vệ theo tiêu chuẩn bảo mật cao nhất.
-                </p>
-              </div>
-
-              <p className="text-center text-xs text-muted-foreground">
-                Chưa có tài khoản? Liên hệ quản trị hệ thống bệnh viện.
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-bold">Chào mừng bạn trở lại 👋</h2>
+              <p className="text-sm text-muted-foreground">
+                Đăng nhập để tiếp tục sử dụng CapyMedi
               </p>
             </div>
-          )}
-
-          {step === "otp" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-bold">Xác thực OTP</h2>
-                <p className="text-sm text-muted-foreground">
-                  Mã demo: <span className="font-semibold text-foreground">123456</span> (nhập gì
-                  cũng hợp lệ trong prototype).
-                </p>
+            <form onSubmit={submit} className="space-y-4 border-t border-border pt-5">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <Input
-                inputMode="numeric"
-                placeholder="______"
-                className="text-center text-2xl tracking-[0.5em]"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setStep("phone")}>
-                  Quay lại
-                </Button>
-                <Button className="flex-1" onClick={() => setStep("role")}>
-                  Xác thực
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === "role" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold">Bạn là ai?</h2>
-                <p className="text-sm text-muted-foreground">Rẽ vai để vào đúng luồng.</p>
-              </div>
-              <div className="space-y-3">
-                {roles.map((r) => {
-                  const Icon = r.icon;
-                  const active = picked === r.role;
-                  return (
-                    <button
-                      key={r.role}
-                      onClick={() => setPicked(r.role)}
-                      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
-                        active ? "border-primary bg-accent" : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      <span className="brand-gradient grid h-10 w-10 shrink-0 place-items-center rounded-lg text-primary-foreground">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold">{r.label}</span>
-                          <span className="rounded bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
-                            {r.hint}
-                          </span>
-                        </span>
-                        <span className="mt-1 block text-sm text-muted-foreground">{r.desc}</span>
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="space-y-2">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
 
-              {picked && (
-                <div className="space-y-2 rounded-xl bg-muted p-4">
-                  <Label htmlFor="idv">
-                    {picked === "doctor" ? "Nhập ID bác sĩ" : "Nhập ID bệnh nhân"}
-                  </Label>
-                  <Input
-                    id="idv"
-                    placeholder={picked === "doctor" ? "BS-0114" : "BN-2049"}
-                    value={idValue}
-                    onChange={(e) => setIdValue(e.target.value)}
-                  />
-                </div>
-              )}
+              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={!picked}
-                onClick={() => picked && finish(picked)}
-              >
-                Vào hệ thống
+              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
+            </form>
+
+            <div className="flex items-start gap-3 rounded-lg bg-muted p-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">Bảo mật &amp; an toàn</span> — Thông
+                tin của bạn được mã hóa và bảo vệ theo tiêu chuẩn bảo mật cao nhất.
+              </p>
             </div>
-          )}
+
+            <p className="text-center text-xs text-muted-foreground">
+              Chưa có tài khoản? Liên hệ quản trị hệ thống bệnh viện.
+            </p>
+          </div>
         </section>
 
         <p className="text-center text-xs text-muted-foreground">

@@ -7,17 +7,18 @@ import { Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { setAdminAuthed } from "@/lib/admin-auth";
+import { useAuth } from "@/lib/auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       setError("Vui lòng nhập đầy đủ tài khoản và mật khẩu.");
@@ -25,10 +26,18 @@ export default function AdminLoginPage() {
     }
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      setAdminAuthed(true);
+    try {
+      const user = await login(username.trim(), password);
+      if (user.role !== "admin") {
+        setError("Tài khoản này không phải quản trị viên.");
+        setLoading(false);
+        return;
+      }
       router.push("/admin");
-    }, 500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,14 +69,15 @@ export default function AdminLoginPage() {
 
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Tài khoản</Label>
+              <Label htmlFor="username">Email</Label>
               <div className="flex items-center overflow-hidden rounded-md border border-input bg-card focus-within:border-primary">
                 <span className="flex shrink-0 items-center px-3 text-muted-foreground">
                   <User className="h-4 w-4" />
                 </span>
                 <Input
                   id="username"
-                  autoComplete="username"
+                  type="email"
+                  autoComplete="email"
                   placeholder="admin@capymedi.dev"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -112,8 +122,9 @@ export default function AdminLoginPage() {
           <div className="mt-5 flex items-start gap-3 rounded-lg bg-muted p-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <p className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Demo/prototype</span> — nhập bất kỳ
-              tài khoản/mật khẩu nào cũng đăng nhập được. Không sử dụng thông tin thật.
+              <span className="font-semibold text-foreground">Chưa có tài khoản?</span> Tài khoản
+              admin đầu tiên được tạo qua <code>scripts/create_admin.py</code> (xem TASK-010) —
+              không có đăng ký công khai.
             </p>
           </div>
         </section>

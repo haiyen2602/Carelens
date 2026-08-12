@@ -7,17 +7,20 @@ Index tren (patient_id, created_at) - phuc vu ca 2 truy van chinh: lay lich
 su hien thi (loc patient_id, sap theo created_at) VA cua so ngu canh 15
 phut (loc patient_id + created_at >= cutoff).
 
-Revision ID: 0009
-Revises: 0008
+Revision ID: 0014
+Revises: 0013
 Create Date: 2026-08-12
 
-"""
+Doi so tu 0009 -> 0014 luc merge vong 3 vao main (2026-08-12): main da dung
+0009-0013 cho patient/prescription_fields/photo_verification/account/
+account_status (TASK-010-auth-api) truoc khi vong 3 merge - giu 1 chuoi
+tuyen tinh duy nhat, khong co 2 nhanh "0009" khac noi dung."""
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0009"
-down_revision = "0008"
+revision = "0014"
+down_revision = "0013"
 branch_labels = None
 depends_on = None
 

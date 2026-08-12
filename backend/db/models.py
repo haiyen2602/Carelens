@@ -93,6 +93,35 @@ class AuditLog(Base):
     total_duration_ms: Mapped[float] = mapped_column(Float, nullable=False)
 
 
+class Patient(Base):
+    """Ho so benh nhan. THEM 2026-08-12 (migration 0009).
+
+    KHONG PHAI bang tai khoan dang nhap. Khong co mat khau, email, role hay
+    JWT - nhung thu do thuoc domain `auth` (auth-api, api-contracts.md §1),
+    chua chot va khong phai pham vi cua bang nay.
+
+    Tach nhu vay vi ho so benh nhan va tai khoan dang nhap la hai thu khac
+    nhau: nguoi than co tai khoan ma khong phai benh nhan; benh nhan cao tuoi
+    co the khong bao gio tu dang nhap. Khi auth-api xong, chi can them mot cot
+    `user_id` nullable de noi, khong phai sua lai bang nay.
+
+    CHUA dat khoa ngoai tu prescription.patient_id/dose_event.patient_id sang
+    day (co y): may cac thanh vien khac dang co san du lieu voi patient_id tuy
+    y, them FK bay gio se lam `alembic upgrade` cua ho loi. Kiem tra o tang
+    services truoc (patient_id khong ton tai -> 404 theo api-contracts.md §10),
+    them FK sau khi ca nhom da don du lieu."""
+
+    __tablename__ = "patient"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    full_name: Mapped[str] = mapped_column(String, nullable=False)
+    year_of_birth: Mapped[int | None] = mapped_column(nullable=True)
+    # Bac si phu trach - BR-1.2 (chi bac si phu trach moi duoc duyet phac do).
+    doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)  # vd "Tang huyet ap, sau dot quy"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
 class Prescription(Base):
     """Khop PrescriptionDTO (api-contracts.md §2). `items` la JSON array, moi
     phan tu: {ten_thuoc, ham_luong, dang_thuoc, lieu_dung, duong_dung,
@@ -105,11 +134,19 @@ class Prescription(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     doctor_id: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False)  # draft|approved|active|completed|stopped
+    status: Mapped[str] = mapped_column(String, nullable=False)  # draft|approved|active|completed|stopped|rejected
     items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     start_date: Mapped[str] = mapped_column(String, nullable=False)  # ISO date string, don gian hoa cho MVP
     duration_days: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    # THEM 2026-08-12 (migration 0010) - 3 cot con thieu so voi PrescriptionDTO
+    # (api-contracts.md §2). `note` la o "Luu y" tren form bac si;
+    # approved_by/approved_at la yeu cau cua BR-1.5 (moi chuyen trang thai phai
+    # ghi lai actor + thoi diem). Deu nullable de du lieu cu khong hong.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class DoseEvent(Base):
@@ -188,6 +225,84 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
     # #20 - soft-delete, mac dinh False (hien thi binh thuong).
     hidden: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+
+class PhotoVerification(Base):
+    """1 dong = 1 LAN gui anh xac nhan lieu thuoc. THEM 2026-08-12 (migration 0011).
+
+    Nhieu dong cho cung mot dose_event: ADR-0011 cho toi da 2 lan chup lai
+    (tong 3 lan gui), `attempt` cho biet day la lan thu may.
+
+    KHONG luu anh trong DB, chi luu duong dan: anh thuoc la du lieu y te (PHI)
+    theo BR-4.3, phai de ngoai repo va co kiem soat truy cap rieng.
+
+    `ket_qua` luu 3 gia tri (khop|lech|khong_xac_minh_duoc) chu KHONG phai mot
+    cot boolean `matched`: lieu toan thuoc tiem la truong hop thu ba - benh
+    nhan khong lam gi sai, he thong chi khong co cach kiem chung - gop no vao
+    "khong khop" se khien dashboard bac si dem nham thanh lieu co van de.
+    Truong `matched` cua api-contracts.md §5 suy ra tu day (= khop), khong luu
+    lan 2 de tranh 2 nguon trang thai lech nhau.
+
+    `thong_bao` luu DUNG cau da noi voi benh nhan - can cho audit: sau nay
+    truy lai mot ca bat thuong thi phai biet luc do he thong da bao gi, khong
+    the dung lai tu ket qua vi cau chu co the da doi."""
+
+    __tablename__ = "photo_verification"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    dose_event_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    attempt: Mapped[int] = mapped_column(nullable=False, default=1)  # 1..3 (ADR-0011)
+
+    # {"vien_nen": 2, "vien_nang": 1} - da gop theo dang bao che, xem
+    # backend/services/photo_verification/matcher.py
+    expected_by_form: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    detected_by_form: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+    ket_qua: Mapped[str] = mapped_column(String, nullable=False)  # khop|lech|khong_xac_minh_duoc
+    confidence: Mapped[str | None] = mapped_column(String, nullable=True)  # cao|trung_binh|thap
+    ghi_chu: Mapped[str | None] = mapped_column(Text, nullable=True)  # ghi_chu model tra ve
+    thong_bao: Mapped[str] = mapped_column(Text, nullable=False)  # cau da noi voi benh nhan
+
+    image_path: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class Account(Base):
+    """TASK-010 (api-contracts.md muc 1, auth-api) - 1 bang chung cho CA 4
+    role (doctor|patient|caregiver|admin), phan biet qua cot `role` - dung
+    quyet dinh da chot voi PM 2026-08-12 (KHONG tach bang/endpoint rieng
+    theo role, tranh lech contract Draft san trong specs/api-contracts.md).
+
+    `patient_id`/`doctor_id` la lien ket TOI THIEU de get_current_patient_id()
+    (backend/api/security.py) doc duoc patient_id cua chinh nguoi dang dang
+    nhap khi role=patient - CHUA phai mo hinh lien ket day du bac si<->benh
+    nhan<->nguoi than (user-roles.md, thuoc FEAT-001/quan ly tai khoan cua
+    admin, ngoai pham vi TASK-010). KHONG lien quan gi den bang `Patient`
+    (patient_id o day la string tu do, khop DoseEvent/Prescription.patient_id
+    - Patient la 1 khai niem khac, xem class Patient o tren)."""
+
+    __tablename__ = "account"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    full_name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)  # doctor|patient|caregiver|admin
+    # Neu role=patient: chinh patient_id cua nguoi nay (dung boi
+    # get_current_patient_id de khong tin patient_id nguoi dung tu go trong
+    # body). Neu role=doctor: KHONG dung cot nay (bac si co the phu trach
+    # nhieu benh nhan - can bang lien ket rieng, chua co trong TASK-010).
+    patient_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM sau TASK-010 (migration 0013) - account-api (admin quan ly tai
+    # khoan). "active"|"locked". KHONG co "pending" - khong co luong tu
+    # dang ky, moi tai khoan do admin tao truc tiep la active ngay. PHAI
+    # duoc kiem tra trong POST /auth/login (backend/api/auth_routes.py) -
+    # neu khong, tinh nang khoa tai khoan chi la UI gia, khong chan dang
+    # nhap that.
+    status: Mapped[str] = mapped_column(String, nullable=False, default="active")
 
 
 class PendingDrugConfirmation(Base):

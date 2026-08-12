@@ -16,9 +16,9 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 
-from backend.api.security import get_current_patient_id
+from backend.api.security import CurrentUser, get_current_patient_id, get_current_user
 from backend.config import get_settings
 from backend.models.schemas import ConversationChatRequest
 
@@ -81,10 +81,14 @@ def reset_default_limiter_for_tests() -> None:
     _default_limiter = None
 
 
-async def rate_limit_check(request: ConversationChatRequest) -> None:
-    """FastAPI dependency - dat trong `dependencies=[...]` cua route, cung
-    cach `require_internal_secret` da dung. Nhan `request` (Pydantic model)
-    lam tham so - FastAPI se merge voi tham so `request` cua route handler
-    chinh, KHONG parse body 2 lan."""
-    patient_id = get_current_patient_id(request)
+async def rate_limit_check(
+    request: ConversationChatRequest, current_user: CurrentUser = Depends(get_current_user)
+) -> None:
+    """FastAPI dependency - dat trong `dependencies=[...]` cua route. Nhan
+    `request` (Pydantic model) lam tham so - FastAPI se merge voi tham so
+    `request` cua route handler chinh, KHONG parse body 2 lan. TASK-010:
+    them `current_user` (Depends(get_current_user)) - FastAPI cache ket qua
+    dependency theo request nen get_current_user() chi chay 1 lan du duoc
+    khai bao o ca day va o route handler chinh (chat_routes.py)."""
+    patient_id = get_current_patient_id(request, current_user)
     _get_default_limiter().check(patient_id)
