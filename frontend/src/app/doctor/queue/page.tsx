@@ -10,6 +10,12 @@ import { useProto } from "@/lib/proto-store";
 export default function QueuePage() {
   const { prescriptions, decidePrescription } = useProto();
   const [editing, setEditing] = useState<string | null>(null);
+  // Id (co dang "{prescId}::{idx}") dang cho ket qua Duyet/Tu choi - khoa
+  // dung DONG do lai, khong khoa ca danh sach: mot phac do nhieu thuoc rai
+  // thanh nhieu dong, duyet 1 dong la duyet CA phac do, nen cac dong con lai
+  // cua CUNG phac do van bam duoc trong luc cho - backend tu chan trung
+  // (409 INVALID_STATE) neu co ai lo bam lan hai.
+  const [dangXuLy, setDangXuLy] = useState<string | null>(null);
   const pending = prescriptions.filter((p) => p.status === "pending");
   const done = prescriptions.filter((p) => p.status !== "pending");
 
@@ -78,9 +84,17 @@ export default function QueuePage() {
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Button
-                onClick={() => {
-                  decidePrescription(p.id, true);
-                  toast.success("Đã duyệt & kích hoạt phác đồ, thông báo bệnh nhân + người thân");
+                disabled={dangXuLy === p.id}
+                onClick={async () => {
+                  setDangXuLy(p.id);
+                  try {
+                    await decidePrescription(p.id, true);
+                    toast.success("Đã duyệt & kích hoạt phác đồ, thông báo bệnh nhân + người thân");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Không duyệt được phác đồ");
+                  } finally {
+                    setDangXuLy(null);
+                  }
                 }}
               >
                 <Check className="mr-1 h-4 w-4" /> Duyệt
@@ -91,9 +105,17 @@ export default function QueuePage() {
               <Button
                 variant="ghost"
                 className="text-destructive"
-                onClick={() => {
-                  decidePrescription(p.id, false);
-                  toast("Đã từ chối phác đồ");
+                disabled={dangXuLy === p.id}
+                onClick={async () => {
+                  setDangXuLy(p.id);
+                  try {
+                    await decidePrescription(p.id, false);
+                    toast("Đã từ chối phác đồ");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Không từ chối được phác đồ");
+                  } finally {
+                    setDangXuLy(null);
+                  }
                 }}
               >
                 <X className="mr-1 h-4 w-4" /> Từ chối

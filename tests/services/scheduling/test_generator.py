@@ -8,9 +8,16 @@ Dùng đối tượng `Prescription` dựng tay (không cần DB thật) — `si
 chỉ đọc thuộc tính, không tự query.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from backend.services.scheduling.generator import huy_lieu_chua_toi_han, sinh_dose_event
+
+# "Ngày mai" tính động, không hardcode ngày cụ thể: các test không tự truyền
+# `bay_gio` mặc định gọi `sinh_dose_event(db, presc)` với bay_gio=None ->
+# datetime.now(UTC) thật. Hardcode một ngày cố định sẽ ăn may lúc viết test rồi
+# hỏng khi chạy lại sau giờ 08:30 — chính logic "không sinh liều đã trôi qua"
+# mà NHÓM TEST NÀY đang kiểm sẽ tự lọc bỏ liều của một ngày đã qua giờ hẹn.
+NGAY_MAI = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
 
 
 class _Db:
@@ -37,7 +44,8 @@ class _Db:
 
 
 class _Presc:
-    def __init__(self, id="presc_1", items=None, start_date="2026-08-12", duration_days=2):
+    def __init__(self, id="presc_1", items=None, start_date=None, duration_days=2):
+        start_date = start_date or NGAY_MAI
         self.id = id
         self.patient_id = "pat_1"
         self.items = items or []

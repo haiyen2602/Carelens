@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,18 @@ import {
 } from "@/components/ui/select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
 import { goiYLieu } from "@/lib/drugs";
+import { listPatients, type PatientRecord } from "@/lib/patients";
 import { useProto } from "@/lib/proto-store";
+
+// Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
+// anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
+// con so nguyen. Doc tam so dau tien trong chuoi - khong doan duoc thi de
+// trong, lieu do se roi ve nut bam xac nhan thay vi anh (van hop le, chi la
+// bang chung yeu hon).
+function docSoVien(dose: string): number | null {
+  const khop = dose.match(/\d+/);
+  return khop ? Number(khop[0]) : null;
+}
 
 const defaultTimes: Record<number, string[]> = {
   1: ["08:00"],
@@ -53,13 +64,30 @@ function newMedRow(): MedRow {
 }
 
 export default function PrescribePage() {
-  const { patients, createPrescription } = useProto();
-  const [patient, setPatient] = useState(patients[0]?.name ?? "");
+  const { createPrescription } = useProto();
+  // Danh sach benh nhan THAT (bang `patient`), khac han mang `patients` mock
+  // cua useProto() - mang do phuc vu dashboard tuan thu (age/condition/
+  // adherence), chua co ben backend. Xem lib/patients.ts.
+  const [benhNhanThat, setBenhNhanThat] = useState<PatientRecord[]>([]);
+  const [patientId, setPatientId] = useState("");
   const [note, setNote] = useState("");
+  const [dangGui, setDangGui] = useState(false);
   // Bat dau bang mot dong trong. Truoc day dien san "Amlodipine 5mg" - mot
   // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
   // se thanh don thuoc khong tra cuu duoc dang bao che.
   const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
+
+  useEffect(() => {
+    listPatients()
+      .then((ds) => {
+        setBenhNhanThat(ds);
+        setPatientId((hienTai) => hienTai || (ds[0]?.id ?? ""));
+      })
+      .catch((err) => {
+        console.error("Không tải được danh sách bệnh nhân:", err);
+        toast.error("Không tải được danh sách bệnh nhân");
+      });
+  }, []);
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
     setMeds((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
@@ -81,26 +109,42 @@ export default function PrescribePage() {
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSubmit = meds.every((m) => m.med.trim().length > 0);
+  const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
 
-  const submit = () => {
-    for (const m of meds) {
-      createPrescription({
-        patient,
-        med: m.med,
-        dose: m.dose,
-        perDay: m.perDay,
-        meal: m.meal,
+  const submit = async () => {
+    setDangGui(true);
+    try {
+      // MOT lan goi cho ca don, khong phai tung thuoc mot: hai thuoc cung gio
+      // phai nam chung mot phac do de backend gop dung 1 dose_event thay vi 2
+      // (backend/services/scheduling/generator.py - benh nhan bay ca nam
+      // thuoc ra roi chup MOT anh, khong phai chup tung thuoc).
+      await createPrescription({
+        patientId,
         note,
-        times: m.times,
+        items: meds.map((m) => ({
+          drugId: m.drugId || null,
+          tenThuoc: m.med,
+          dangThuoc: m.dangThuoc || null,
+          duongDung: null, // backend tu tra lai tu drugId neu co, xem service.py::_chuan_hoa_item
+          hamLuong: null,
+          lieuDung: m.dose,
+          thoiDiemDung: m.meal,
+          soVienMoiLan: docSoVien(m.dose),
+          gioNhac: m.times,
+        })),
       });
+      toast.success(
+        meds.length > 1
+          ? `Đã gửi đơn (${meds.length} thuốc) vào hàng đợi duyệt HITL`
+          : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
+      );
+      setMeds([newMedRow()]);
+      setNote("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tạo được đơn thuốc");
+    } finally {
+      setDangGui(false);
     }
-    toast.success(
-      meds.length > 1
-        ? `Đã gửi ${meds.length} thuốc vào hàng đợi duyệt HITL`
-        : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
-    );
-    setMeds([newMedRow()]);
   };
 
   return (
@@ -116,14 +160,14 @@ export default function PrescribePage() {
         <section className="surface-card space-y-5 p-5">
           <div className="space-y-2">
             <Label>Bệnh nhân</Label>
-            <Select value={patient} onValueChange={setPatient}>
+            <Select value={patientId} onValueChange={setPatientId} disabled={benhNhanThat.length === 0}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={benhNhanThat.length === 0 ? "Đang tải…" : "Chọn bệnh nhân"} />
               </SelectTrigger>
               <SelectContent>
-                {patients.map((p) => (
-                  <SelectItem key={p.id} value={p.name}>
-                    {p.name}
+                {benhNhanThat.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.fullName}
                   </SelectItem>
                 ))}
               </SelectContent>

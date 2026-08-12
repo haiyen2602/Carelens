@@ -8,6 +8,7 @@ Không cần webcam, không cần mạng ngoài — chỉ SQL.
 """
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import text
@@ -71,6 +72,13 @@ def thuoc_that(db):
     return db.query(Drug).first()
 
 
+# "Ngày mai" tính động: sinh_dose_event() cố ý bỏ liều đã trôi qua giờ hẹn
+# (xem generator.py), nên duyệt một phác đồ bắt đầu "hôm nay" mà giờ hẹn đã
+# qua trong ngày sẽ sinh RA ÍT LIỀU HƠN mong đợi tuỳ giờ chạy test. Không phải
+# lỗi của service — hardcode ngày cụ thể mới là lỗi ăn may lúc viết test.
+NGAY_MAI = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
+
+
 def _item(thuoc, so_vien=1, gio=("08:00",)):
     return {"drug_id": thuoc.id, "ten_thuoc": thuoc.ten_thuoc, "lieu_dung": f"{so_vien} đơn vị",
             "so_vien_moi_lan": so_vien, "gio_nhac": list(gio)}
@@ -131,7 +139,8 @@ def test_bac_si_tu_go_thuoc_khong_co_trong_danh_muc_van_ke_duoc(db, benh_nhan):
 # ---------------------------------------------------------------------------
 def test_duyet_sinh_lieu_va_ghi_lai_ai_duyet(db, benh_nhan, thuoc_that):
     presc = tao_phac_do(
-        db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)], duration_days=2
+        db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)],
+        duration_days=2, start_date=NGAY_MAI,
     )
 
     da_duyet, so_lieu = duyet_phac_do(db, presc.id, doctor_id="bs_duyet")
@@ -155,7 +164,10 @@ def test_duyet_khong_tao_lieu_trung_khi_goi_lai(db, benh_nhan, thuoc_that):
     kiểm tra tầng dưới — sinh_dose_event không nhân đôi nếu lỡ được gọi lại."""
     from backend.services.scheduling import sinh_dose_event
 
-    presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)], duration_days=1)
+    presc = tao_phac_do(
+        db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)],
+        duration_days=1, start_date=NGAY_MAI,
+    )
     duyet_phac_do(db, presc.id, doctor_id="bs1")
 
     sinh_dose_event(db, presc)  # gọi thẳng lần 2, mô phỏng lỗi tầng trên
@@ -169,7 +181,10 @@ def test_duyet_lai_khong_dung_den_lieu_da_dong(db, benh_nhan, thuoc_that):
     """Liều TAKEN là lịch sử y tế — sinh lại lịch không được viết đè (BR-1.3)."""
     from backend.services.scheduling import sinh_dose_event
 
-    presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)], duration_days=1)
+    presc = tao_phac_do(
+        db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)],
+        duration_days=1, start_date=NGAY_MAI,
+    )
     duyet_phac_do(db, presc.id, doctor_id="bs1")
 
     lieu = db.query(DoseEvent).filter(DoseEvent.prescription_id == presc.id).first()
@@ -209,7 +224,10 @@ def test_khong_tu_choi_duoc_phac_do_da_duyet(db, benh_nhan, thuoc_that):
 # Dừng phác đồ (BR-1.4)
 # ---------------------------------------------------------------------------
 def test_dung_phac_do_huy_lieu_pending_chua_toi_han(db, benh_nhan, thuoc_that):
-    presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)], duration_days=3)
+    presc = tao_phac_do(
+        db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)],
+        duration_days=3, start_date=NGAY_MAI,
+    )
     duyet_phac_do(db, presc.id, doctor_id="bs1")
 
     da_dung, so_huy = dung_phac_do(db, presc.id, doctor_id="bs1")
