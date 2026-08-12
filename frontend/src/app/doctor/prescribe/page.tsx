@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { goiYLieu } from "@/lib/drugs";
 import { useProto } from "@/lib/proto-store";
 
 const defaultTimes: Record<number, string[]> = {
@@ -27,6 +28,11 @@ const defaultTimes: Record<number, string[]> = {
 type MedRow = {
   id: string;
   med: string;
+  // Danh tinh that trong danh muc thuoc. Rong khi bac si tu go mot ten khong
+  // co trong danh muc — van ke don duoc, nhung lieu do se khong xac minh duoc
+  // bang anh (khong biet dang bao che), phai xac nhan bang nut bam.
+  drugId: string;
+  dangThuoc: string;
   dose: string;
   perDay: number;
   meal: string;
@@ -37,6 +43,8 @@ function newMedRow(): MedRow {
   return {
     id: crypto.randomUUID(),
     med: "",
+    drugId: "",
+    dangThuoc: "",
     dose: "1 viên",
     perDay: 1,
     meal: "Sau ăn",
@@ -47,17 +55,11 @@ function newMedRow(): MedRow {
 export default function PrescribePage() {
   const { patients, createPrescription } = useProto();
   const [patient, setPatient] = useState(patients[0]?.name ?? "");
-  const [note, setNote] = useState("Theo dõi huyết áp mỗi sáng");
-  const [meds, setMeds] = useState<MedRow[]>([
-    {
-      id: crypto.randomUUID(),
-      med: "Amlodipine 5mg",
-      dose: "1 viên",
-      perDay: 2,
-      meal: "Sau ăn",
-      times: defaultTimes[2] ?? ["08:00"],
-    },
-  ]);
+  const [note, setNote] = useState("");
+  // Bat dau bang mot dong trong. Truoc day dien san "Amlodipine 5mg" - mot
+  // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
+  // se thanh don thuoc khong tra cuu duoc dang bao che.
+  const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
     setMeds((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
@@ -152,7 +154,14 @@ export default function PrescribePage() {
                       id={`med-${m.id}`}
                       value={m.med}
                       onChange={(v) => updateMed(m.id, { med: v })}
-                      onSelectDrug={(d) => updateMed(m.id, { med: d.name, dose: d.defaultDose })}
+                      onSelectDrug={(d) =>
+                        updateMed(m.id, {
+                          med: d.tenThuoc,
+                          drugId: d.drugId,
+                          dangThuoc: d.dangThuoc,
+                          dose: goiYLieu(d),
+                        })
+                      }
                       placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
                     />
                   </div>
