@@ -17,6 +17,7 @@
 | Contract | Loại | Domain cung cấp | Domain tiêu thụ | Trạng thái | Định nghĩa |
 |---|---|---|---|---|---|
 | `auth-api` | REST | `auth` | Tất cả frontend | Draft | §1 |
+| `account-api` | REST | `auth` | FE admin | Draft | §1b |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
@@ -48,6 +49,44 @@
   "user": { "id": "usr_01", "full_name": "Nguyễn Văn A", "role": "patient" }
 }
 ```
+
+## 1b. `account-api`
+
+**Thêm sau `auth-api` §1 (2026-08-13)** — chưa có trong bản Draft gốc, phát sinh khi wire login thật cho `doctor`/`patient`: không có luồng tự đăng ký (đúng chủ đích, `user-roles.md`: chỉ `admin` được quản lý tài khoản), nên cần 1 API để admin tạo tài khoản cho các role khác. Đề xuất bởi AI, cần Architect/PM review.
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| POST | `/api/v1/accounts` | `admin` | Tạo tài khoản (bất kỳ role nào) |
+| GET | `/api/v1/accounts` | `admin` | Danh sách toàn bộ tài khoản |
+| PATCH | `/api/v1/accounts/{id}/status` | `admin` | Khoá/mở khoá tài khoản (`active`\|`locked`) |
+
+```json
+// POST /api/v1/accounts — request
+{
+  "email": "bs.huy@capymedi.dev",
+  "password": "mat-khau-toi-thieu-8-ky-tu",
+  "full_name": "BS. Phạm Quốc Huy",
+  "role": "doctor",
+  "patient_id": null,
+  "doctor_id": null
+}
+```
+
+```json
+// POST /api/v1/accounts — response 201 (khớp GET/PATCH cũng trả dạng này)
+{
+  "id": "usr_01",
+  "full_name": "BS. Phạm Quốc Huy",
+  "email": "bs.huy@capymedi.dev",
+  "role": "doctor",
+  "status": "active",
+  "patient_id": null,
+  "doctor_id": null,
+  "created_at": "2026-08-13T10:00:00+07:00"
+}
+```
+
+**Ràng buộc contract:** `POST /auth/login` (§1) **bắt buộc** kiểm tra `status == "active"` — tài khoản `locked` không được cấp JWT (403), không chỉ chặn ở UI. Không có trạng thái `pending` — mọi tài khoản do admin tạo qua endpoint này là `active` ngay, không có bước kích hoạt riêng. `patient_id`/`doctor_id` là liên kết tối thiểu (text tự do) — **chưa phải** mô hình liên kết bác sĩ↔bệnh nhân↔người thân đầy đủ (đó là việc khác, ngoài phạm vi).
 
 ## 2. `prescription-api`
 
@@ -300,6 +339,7 @@ Mọi lỗi trả về cùng một hình dạng:
 | Ngày | Contract | Thay đổi | Người duyệt |
 |---|---|---|---|
 | 2026-08-04 | tất cả | Bản draft đầu tiên, dựng từ `README.md` + `ARCHITECTURE.md` + PRD Gate 01 | `[chờ Architect + Tech Lead review]` |
+| 2026-08-13 | `account-api` (mới, §1b) | Thêm contract mới — cần khi wire login thật cho doctor/patient (không có luồng tự đăng ký, cần admin tạo tài khoản qua API thay vì chỉ CLI `scripts/create_admin.py`). Xem `tasks/TASK-010-auth-api.md`. | `[chờ Architect/PM review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

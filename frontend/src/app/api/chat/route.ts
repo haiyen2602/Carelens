@@ -1,36 +1,28 @@
 // Server-side proxy cho POST /api/v1/chat cua backend that.
 //
-// Vi sao co route nay thay vi frontend goi thang backend: backend dang doi
-// header `X-Internal-Secret` (rao can tam - chatbot-rag-design.md muc 10 #10,
-// backend/api/security.py::require_internal_secret) trong luc cho auth-api
-// (JWT) that duoc xay. Trang chat (`patient/assistant/page.tsx`) la client
-// component chay trong trinh duyet - neu gan secret o do, bat ky ai mo
-// DevTools/Network tab cung doc duoc, pha vo hoan toan muc dich cua rao can.
-// Route nay chay tren server cua chinh VMEC-04/FE, giu `INTERNAL_AUTH_SECRET`
-// (bien server-only, KHONG co prefix NEXT_PUBLIC_ nen khong lot vao bundle
-// gui ve trinh duyet) va tu gan header truoc khi forward request that sang
-// backend. Xoa route nay + gan thang tu backend that (JWT) khi auth-api xong.
+// TASK-010 (2026-08-13): backend/api/chat_routes.py da bo `X-Internal-Secret`
+// (rao tam) va doi sang doi hoi `Authorization: Bearer <JWT>` that
+// (backend/api/security.py::get_current_user). Route nay GIO CHI forward
+// nguyen header `Authorization` tu client (trinh duyet, qua useAuth() -
+// xem frontend/src/lib/auth.tsx) sang backend, KHONG con tu gan
+// X-Internal-Secret nua - backend tu tra 401 neu thieu/sai/het han JWT,
+// khong can route nay tu kiem tra truoc.
+//
+// Van giu route proxy nay (khong goi thang backend tu client) de tuong lai
+// de doi sang forward qua httpOnly cookie/refresh-on-401 ma khong dong vao
+// component goi chat - xem cung pattern o frontend/src/app/api/auth/*.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
 export async function POST(request: Request) {
-  if (!INTERNAL_SECRET) {
-    // Fail-closed giong nguyen tac backend da dung (khong am tham bo qua rao
-    // can chi vi thieu config) - xem backend/config.py.
-    return Response.json(
-      { detail: "Server misconfigured: INTERNAL_AUTH_SECRET chua duoc set cho VMEC-04/FE." },
-      { status: 500 },
-    );
-  }
-
   const body = await request.text();
+  const authorization = request.headers.get("authorization");
 
   const upstream = await fetch(`${BACKEND_URL}/api/v1/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Internal-Secret": INTERNAL_SECRET,
+      ...(authorization ? { Authorization: authorization } : {}),
     },
     body,
   });

@@ -244,6 +244,43 @@ class PhotoVerification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
 
+class Account(Base):
+    """TASK-010 (api-contracts.md muc 1, auth-api) - 1 bang chung cho CA 4
+    role (doctor|patient|caregiver|admin), phan biet qua cot `role` - dung
+    quyet dinh da chot voi PM 2026-08-12 (KHONG tach bang/endpoint rieng
+    theo role, tranh lech contract Draft san trong specs/api-contracts.md).
+
+    `patient_id`/`doctor_id` la lien ket TOI THIEU de get_current_patient_id()
+    (backend/api/security.py) doc duoc patient_id cua chinh nguoi dang dang
+    nhap khi role=patient - CHUA phai mo hinh lien ket day du bac si<->benh
+    nhan<->nguoi than (user-roles.md, thuoc FEAT-001/quan ly tai khoan cua
+    admin, ngoai pham vi TASK-010). KHONG lien quan gi den bang `Patient`
+    (patient_id o day la string tu do, khop DoseEvent/Prescription.patient_id
+    - Patient la 1 khai niem khac, xem class Patient o tren)."""
+
+    __tablename__ = "account"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    full_name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)  # doctor|patient|caregiver|admin
+    # Neu role=patient: chinh patient_id cua nguoi nay (dung boi
+    # get_current_patient_id de khong tin patient_id nguoi dung tu go trong
+    # body). Neu role=doctor: KHONG dung cot nay (bac si co the phu trach
+    # nhieu benh nhan - can bang lien ket rieng, chua co trong TASK-010).
+    patient_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM sau TASK-010 (migration 0013) - account-api (admin quan ly tai
+    # khoan). "active"|"locked". KHONG co "pending" - khong co luong tu
+    # dang ky, moi tai khoan do admin tao truc tiep la active ngay. PHAI
+    # duoc kiem tra trong POST /auth/login (backend/api/auth_routes.py) -
+    # neu khong, tinh nang khoa tai khoan chi la UI gia, khong chan dang
+    # nhap that.
+    status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+
+
 class PendingDrugConfirmation(Base):
     """Vong 2 (chatbot-rag-design.md muc 11.3) - luu trang thai "dang cho
     benh nhan xac nhan danh tinh thuoc" GIUA 2 lan goi HTTP. BAT BUOC phai
