@@ -198,6 +198,17 @@ async def run_conversation(
 #   (d) chap nhan floor theo category (_CATEGORY_LEVEL_FLOOR, safety.py)
 #       lam tang so case bi escalate - uu tien khong bo sot hon la giam bao
 #       dong gia cho 2 category da co bang chung dao dong that.
+#
+# SUA 2026-08-12 (phan hoi review lan 2) - BUG THAT phat hien: ban dau (a)
+# va (c) bi GOP CHUNG 1 dieu kien (ca 2 chi chay khi category thuoc
+# _MEDIUM_ESCALATE_CATEGORIES), khien 3/5 category Trung binh con lai
+# (wrong_drug/dosage_risk/severe_reaction - ke ca wrong_drug vua duoc
+# _CATEGORY_LEVEL_FLOOR nang len toi thieu Trung binh) IM LANG HOAN TOAN -
+# quay lai dung bug rong-response da tung sua o vong 2, chi hep pham vi
+# lai con 3/5 category thay vi ca 5. (c) la cau tra loi chung cho MOI
+# "Trung bình" (dung y "bat ke (a)/(b)/(d) quyet the nao" da de xuat truoc
+# do), (a) CHI gioi han pham vi ESCALATE - 2 dieu kien nay PHAI doc lap,
+# khong dung chung 1 gate.
 _MEDIUM_ESCALATE_CATEGORIES = frozenset({"self_harm", "clinical_symptom"})
 _MEDIUM_ACKNOWLEDGMENT = "(Capy đã ghi nhận điều bạn vừa chia sẻ.)"
 
@@ -205,13 +216,16 @@ _MEDIUM_ACKNOWLEDGMENT = "(Capy đã ghi nhận điều bạn vừa chia sẻ.)"
 async def _maybe_medium_acknowledge(
     escalate_fn: EscalateFn | None, current_state: ConversationState, flag: SafetyFlag
 ) -> ConversationState:
-    """KHONG cat luong chinh (khac _apply_redflag/is_redflag) - chi 1 tac
-    dung phu (escalate kenh family) + ghep 1 cau ghi nhan nhe vao response
-    DA CO SAN (khong thay the noi dung chinh do node tuong ung intent set)."""
-    if flag.level != "Trung bình" or flag.llm_category not in _MEDIUM_ESCALATE_CATEGORIES:
+    """KHONG cat luong chinh (khac _apply_redflag/is_redflag). 2 tac dung
+    phu DOC LAP, xem ghi chu SUA o tren:
+      - Ghep 1 cau ghi nhan nhe vao response - AP DUNG CHO MOI "Trung bình"
+        (moi category, ca 5/5), khong chi 2 category duoc escalate.
+      - Escalate kenh "family" - CHI 2 category trong _MEDIUM_ESCALATE_
+        CATEGORIES (chinh sach (a), gioi han rieng, hep hon dieu kien tren)."""
+    if flag.level != "Trung bình":
         return current_state
 
-    if escalate_fn is not None:
+    if escalate_fn is not None and flag.llm_category in _MEDIUM_ESCALATE_CATEGORIES:
         reason = (
             f"Safety layer 'Trung bình' - category={flag.llm_category!r}, "
             f"llm_reasoning={flag.llm_reasoning!r}"

@@ -292,10 +292,14 @@ async def test_medium_self_harm_escalates_family_only_and_appends_acknowledgment
 
 
 @pytest.mark.asyncio
-async def test_medium_wrong_category_does_not_escalate_or_acknowledge():
-    """Category KHONG thuoc {self_harm, clinical_symptom} (vd wrong_drug) -
-    du level="Trung bình" van KHONG escalate/khong ghep gi them (quyet dinh
-    PM (a) - chi 2/5 category)."""
+async def test_medium_wrong_category_does_not_escalate_but_still_acknowledges():
+    """BUG THAT sua 2026-08-12 (phan hoi review lan 2): ban dau (a) va (c)
+    bi gop chung 1 dieu kien, khien category ngoai {self_harm,
+    clinical_symptom} (vd wrong_drug - vua duoc _CATEGORY_LEVEL_FLOOR nang
+    len toi thieu Trung bình) IM LANG HOAN TOAN - quay lai dung bug rong-
+    response. Dung: khong escalate (chinh sach (a) - dung gioi han pham vi
+    nay) NHUNG VAN phai co cau ghi nhan (chinh sach (c) - ap dung cho MOI
+    "Trung bình", khong chi 2 category duoc escalate)."""
     calls = []
 
     async def recording_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
@@ -311,8 +315,9 @@ async def test_medium_wrong_category_does_not_escalate_or_acknowledge():
         escalate_fn=recording_escalate_fn,
     )
 
-    assert result["response"] == "Câu trả lời bình thường."
-    assert calls == []
+    assert calls == [], "wrong_drug khong thuoc pham vi escalate (a)"
+    assert "Câu trả lời bình thường." in result["response"]
+    assert "Capy đã ghi nhận" in result["response"], "van phai co ghi nhan (c) du khong escalate"
 
 
 @pytest.mark.asyncio
@@ -349,4 +354,36 @@ async def test_medium_escalate_failure_does_not_crash_or_block_acknowledgment():
     )
 
     assert "Capy đã ghi nhận" in result["response"]  # van co ghi nhan du escalate loi
+
+
+@pytest.mark.asyncio
+async def test_nhe_level_does_not_get_medium_acknowledgment_or_escalate():
+    """Regression - "Nhẹ" (khac "Trung bình") KHONG duoc kich hoat ca ghi
+    nhan lan escalate, du category la self_harm (co the xay ra o category
+    khac ngoai self_harm/wrong_drug, 2 category duy nhat co floor)."""
+    calls = []
+
+    async def recording_escalate_fn(target, patient_id, dose_event_id, severity, urgent, trigger, reason):
+        calls.append(target)
+
+    async def nhe_safety_check(utterance: str) -> SafetyFlag:
+        return SafetyFlag(
+            is_redflag=False,
+            matched_group=None,
+            matched_keyword=None,
+            source="llm",
+            level="Nhẹ",
+            llm_category="severe_reaction",
+            llm_reasoning="test",
+        )
+
+    async def set_response_node(state: dict) -> dict:
+        return {"response": "Câu trả lời bình thường.", "trace": [*state.get("trace", []), {"step": "x"}]}
+
+    result = await run_conversation(
+        _make_state(), nodes=[set_response_node], safety_check=nhe_safety_check, escalate_fn=recording_escalate_fn
+    )
+
+    assert calls == []
+    assert result["response"] == "Câu trả lời bình thường."
 
