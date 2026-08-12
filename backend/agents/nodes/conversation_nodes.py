@@ -457,17 +457,30 @@ def _detect_requested_buoi(utterance: str) -> str | None:
     nay khong can LLM").
 
     BUG THAT phat hien khi test truc tiep (khong phai suy doan) - CO Y
-    KHONG dung _normalize_for_match() (bo dau) o day: "tôi" (dai tu nhan
-    xung, cuc pho bien - hau nhu moi cau benh nhan go deu co) va "tối"
-    (buoi toi) deu bo dau thanh "toi" giong het nhau, gay false-positive
+    KHONG dung _normalize_for_match() (bo dau) TREN CA CAU o day: "tôi" (dai
+    tu nhan xung, cuc pho bien - hau nhu moi cau benh nhan go deu co) va
+    "tối" (buoi toi) deu bo dau thanh "toi" giong het nhau, gay false-positive
     tren GAN NHU MOI cau (vd "hôm nay tôi uống thuốc gì" bi hieu NHAM la
     hoi rieng buoi toi, an mat lich ca ngay con lai - loi an toan/do tin
-    cay that, khong phai chi tieu bien). Chi so khop tren chuoi CO GIU DAU
-    (chi ha thuong) - benh nhan go KHONG dau se khong duoc phat hien buoi
-    (fallback AN TOAN: tra CA NGAY) thay vi doan sai va lam mat du lieu."""
+    cay that, khong phai chi tieu bien).
+
+    2 buoc, UU TIEN chuoi CO dau truoc:
+    1. So khop tren chuoi CO GIU DAU (chi ha thuong) - do chinh xac cao nhat.
+    2. SUA (phan hoi review 2026-08-13, PR #20) - benh nhan go KHONG dau
+       (pho bien tren mobile) truoc do bi bo hoan toan (fallback ve ca ngay),
+       ve UX khong dat duoc dung y "than thien/thong minh". Them buoc 2: so
+       khop cum "buoi " + ten buoi KHONG DAU (vd "buoi sang", "buoi toi") tren
+       chuoi da bo dau - AN TOAN vi "tôi" (dai tu) khong bao gio dung ngay
+       sau tu "buổi" trong tieng Viet tu nhien, nen khong tai pham bug goc.
+       Van fallback ve ca ngay (khong doan) neu khong khop CA 2 buoc."""
     lowered = utterance.lower()
     for buoi, label in _BUOI_LABELS.items():
         if label in lowered:
+            return buoi
+
+    normalized = _normalize_for_match(utterance)
+    for buoi in _BUOI_LABELS:
+        if f"buoi {buoi}" in normalized:
             return buoi
     return None
 
