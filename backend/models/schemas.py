@@ -59,3 +59,32 @@ class ConversationChatResponse(BaseModel):
     safety_flag: bool = False
     needs_clarification: bool = False
     sources: list[SourceOut] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Vong 3, muc 7.1 (chatbot-rag-design.md muc 10 #26) - endpoint xem/xoa lich
+# su chat. SHAPE TAM THOI - CHUA trao doi voi team app (cung tinh trang nhu
+# #22 quick_replies) - dung POST (khong phai GET/DELETE chuan REST) de tai
+# su dung dung 1 cho noi get_current_patient_id() (chi nhan duoc than co
+# .patient_id tu body, xem backend/api/security.py) thay vi tu doc query
+# param o day, giu dung nguyen tac "1 CHO NOI DUY NHAT" cho patient_id.
+# -----------------------------------------------------------------------------
+
+
+class ChatHistoryRequest(BaseModel):
+    patient_id: str = Field(..., min_length=1)
+
+
+class ChatMessageOut(BaseModel):
+    id: str
+    role: str
+    content: str
+    created_at: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: list[ChatMessageOut] = Field(default_factory=list)
+
+
+class ChatHistoryHideResponse(BaseModel):
+    hidden_count: int

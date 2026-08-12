@@ -13,6 +13,7 @@ import pytest  # noqa: E402
 
 from backend.agents.nodes.conversation_nodes import (  # noqa: E402
     build_answer_generation_node,
+    build_greeting_node,
     build_prescription_lookup_node,
     build_retrieval_node,
     build_today_schedule_node,
@@ -100,3 +101,11 @@ async def test_drug_info_nodes_still_run_when_intent_field_absent_backward_compa
     state = {"patient_id": "p1", "dose_event_id": None, "utterance": "x", "trace": [], "rag_results": []}
     result = await node(state)  # khong co key "intent" o day
     assert result["trace"][-1]["step"] == "refuse"  # chay that (khong skip), chi la rag_results rong
+
+
+@pytest.mark.asyncio
+async def test_greeting_node_skips_when_intent_is_not_greeting():
+    node = build_greeting_node()
+    result = await node(_state("drug_info"))
+    assert result["trace"][-1]["skipped"] is True
+    assert "response" not in result

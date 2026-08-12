@@ -53,7 +53,15 @@ State machine day du (8 stage, xem chatbot-rag-design.md muc 11.1/11.2):
   3. reply KHONG parse duoc thanh yes/no/so thu tu (vd benh nhan go tu do
      giua luc dang cho chon 1/2/3) - day CHINH LA case "chua duoc mo ta o
      muc 5" (muc 8 kickoff) - fallback AN TOAN NHAT: hoi lai CUNG cau hoi/
-     menu, khong doan them, khong tu y dong luong moi."""
+     menu, khong doan them, khong tu y dong luong moi.
+
+Vong 3, muc 8 (2026-08-12): "khong, [ten thuoc khac]" trong 1 cau (o
+STAGE_IN_RX_CONFIRM_R1/STAGE_OUT_RX_CONFIRM_TOP1_R1) gio thu fuzzy-match/
+hybrid-search phan con lai NGAY trong luot, xem _extract_remainder_after_no()
++ 2 nhanh yn is False. KHONG ap dung cho STAGE_OUT_RX_CONFIRM_PICK_R1 (tu
+choi 1 lua chon trong top-3) - kickoff chi cho vi du ro rang cho 2 stage dau,
+mo rong them stage nay de vong sau neu can, tranh tang pham vi khong duoc
+yeu cau tuong minh."""
 
 from __future__ import annotations
 
@@ -175,6 +183,23 @@ def _parse_yes_no(reply: str) -> bool | None:
 
 def _is_not_found_reply(reply: str) -> bool:
     return _NOT_FOUND_PHRASE in _normalize(reply)
+
+
+# Vong 3, muc 8 - cung tien to "khong"/"k" da dung de PHAT HIEN decline o
+# _parse_yes_no (regex "^(khong|k)\b"), dung LAI o day de TACH phan con lai
+# cua cau (vd "khong, cefixim" -> "cefixim") - benh nhan hay tra loi "khong,
+# [ten thuoc khac]" trong 1 cau thay vi 2 luot rieng (tu choi -> hoi lai ten
+# -> xac nhan). Hoat dong tren _normalize(reply) (bo dau + thuong) - an toan
+# vi _fuzzy_best_match() normalize lai chinh no, khong mat gi khi normalize 2 lan.
+_NO_PREFIX_RE = re.compile(r"^(khong|k)\b[\s,\.\-]*")
+
+
+def _extract_remainder_after_no(reply: str) -> str:
+    """Rong neu "khong" la CA CAU (khong kem ten) - giu dung hanh vi cu
+    (hoi lai ten khac / hien top-3) cho case nay, KHONG doan bua khi khong
+    co gi de doan."""
+    norm = _normalize(reply)
+    return _NO_PREFIX_RE.sub("", norm, count=1).strip()
 
 
 def _parse_choice_index(reply: str, candidates: list[dict]) -> int | None:
@@ -525,6 +550,22 @@ def _dispatch_stage(
         if yn is True:
             return _StepResult(candidates[0]["drug_id"], None, None, False)
         if yn is False:
+            # Vong 3, muc 8 - "khong, [ten thuoc khac]" trong 1 cau: thu fuzzy-
+            # match phan con lai NGAY trong luot nay (dung §5.1, cung ham/pool
+            # da dung o build_drug_identity_resolution_node) - tiet kiem 1
+            # luot so voi hoi lai ten roi moi xac nhan. Rong hoac khong khop
+            # gi -> giu NGUYEN hanh vi cu (regression bat buoc theo kickoff).
+            remainder = _extract_remainder_after_no(reply)
+            if remainder:
+                rx_items = list_active_prescription_drug_items(db, patient_id)
+                match = _fuzzy_best_match(remainder, rx_items)
+                if match is not None:
+                    return _StepResult(
+                        None,
+                        _confirm_question(match["ten_thuoc"]),
+                        ([match], STAGE_IN_RX_CONFIRM_R2, original_query),
+                        False,
+                    )
             return _StepResult(
                 None, ASK_DIFFERENT_NAME_MESSAGE, ([], STAGE_IN_RX_AWAITING_NEW_NAME, original_query), False
             )
@@ -556,6 +597,24 @@ def _dispatch_stage(
         if yn is True:
             return _StepResult(candidates[0]["drug_id"], None, None, False)
         if yn is False:
+            # Vong 3, muc 8 - cung y tuong nhu nhanh in-prescription o tren,
+            # ap dung §5.2 (hybrid search) thay vi §5.1 (fuzzy match don
+            # active). Neu tim duoc ung vien ro rang -> hoi xac nhan ngay,
+            # dua vao STAGE ..._R2 (giong duong "mo ta lai" - da dung 1 lan
+            # thu, khong mo lai top-3 tu dau). Khong tim duoc -> giu NGUYEN
+            # hanh vi cu (top-3 menu tu candidates con lai).
+            remainder = _extract_remainder_after_no(reply)
+            if remainder:
+                embedding = embed_query(remainder)
+                new_candidates = _search_distinct_drug_candidates(db, remainder, embedding, n=1)
+                if new_candidates:
+                    top1 = new_candidates[0]
+                    return _StepResult(
+                        None,
+                        _confirm_question(top1["ten_thuoc"]),
+                        ([top1], STAGE_OUT_RX_CONFIRM_TOP1_R2, original_query),
+                        False,
+                    )
             rest = candidates[1:4]
             if not rest:
                 return _StepResult(None, NOT_FOUND_FINAL_MESSAGE, None, True)

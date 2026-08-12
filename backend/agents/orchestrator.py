@@ -38,8 +38,10 @@ from collections.abc import Awaitable, Callable
 
 from backend.agents.state import ConversationState
 from backend.services.escalation import (
+    CATEGORY_EXPLANATIONS,
     GENERIC_OVERLAY_MESSAGE,
     OVERDOSE_OVERLAY_MESSAGE,
+    SELF_HARM_OVERLAY_MESSAGE,
     SYMPTOM_OVERLAY_MESSAGE,
     TRIGGER_SAFETY_REDFLAG,
     EscalateFn,
@@ -68,6 +70,9 @@ def _apply_redflag(
         "keyword_hit": flag.source in ("keyword", "keyword+llm"),
         "llm_flag": flag.source in ("llm", "keyword+llm"),
         "matched_group": flag.matched_group,
+        "level": flag.level,  # MOI vong 3
+        "llm_category": flag.llm_category,  # MOI vong 3
+        "llm_reasoning": flag.llm_reasoning,  # MOI vong 3
         "interrupted_after_step": interrupted_after_step,
         # escalated_to CHI liet ke target THUC SU thanh cong (khong phai "da
         # goi") - escalation_failed ghi ro target nao that bai + vi sao, de
@@ -77,14 +82,32 @@ def _apply_redflag(
         "escalation_failed": escalation.failed if escalation else {},
     }
     trace = [*state.get("trace", []), entry]
-    # matched_group="overdose_risk" -> OVERDOSE, "clinical" -> SYMPTOM,
-    # None (LLM-only, chua ro loai) -> GENERIC (khong doan bua, xem docstring dau file).
-    if flag.matched_group == "overdose_risk":
+    # Chon overlay theo category - uu tien llm_category (taxonomy 5 nhom,
+    # muc 3.1) truoc, fallback matched_group (lop keyword, chi co 2 nhom) neu
+    # LLM khong cung cap category (vd LLM loi/timeout, chi con keyword flag).
+    # self_harm -> SELF_HARM (muc 10 #18); wrong_drug -> GENERIC (muc 10 #19,
+    # PM quyet dinh khong can overlay rieng); con lai/khong ro -> GENERIC
+    # (khong doan bua, xem docstring dau file - cung nguyen tac da dung cho
+    # matched_group=None truoc day).
+    if flag.llm_category == "dosage_risk" or flag.matched_group == "overdose_risk":
         overlay_message = OVERDOSE_OVERLAY_MESSAGE
-    elif flag.matched_group == "clinical":
+    elif flag.llm_category in ("clinical_symptom", "severe_reaction") or flag.matched_group == "clinical":
         overlay_message = SYMPTOM_OVERLAY_MESSAGE
+    elif flag.llm_category == "self_harm":
+        overlay_message = SELF_HARM_OVERLAY_MESSAGE
     else:
         overlay_message = GENERIC_OVERLAY_MESSAGE
+
+    # Vong 3, muc 9.3 (muc 10 #23) - ghep them 1 cau giai thich ngan theo
+    # DUNG category (taxonomy muc 3.1) SAU overlay_message da chon, neu co
+    # category ro rang (llm_category). Khong co category (vd chi keyword
+    # trigger, matched_group="overdose_risk"/"clinical" khong map 1-1 sang
+    # 5 category taxonomy) -> khong ghep gi them, giu nguyen overlay_message
+    # nhu truoc, tranh doan sai category tu nguon keyword.
+    explanation = CATEGORY_EXPLANATIONS.get(flag.llm_category) if flag.llm_category else None
+    if explanation:
+        overlay_message = f"{overlay_message} {explanation}"
+
     return {
         **state,
         "safety_flag": True,
@@ -139,7 +162,23 @@ async def run_conversation(
         escalated = await _maybe_escalate(escalate_fn, current_state, flag)
         return _apply_redflag(current_state, flag, last_completed_step, escalated)
 
-    entry = {"step": "safety_layer", "keyword_hit": False, "llm_flag": False, "matched_group": None}
+    # SUA vong 3, muc 3 - TRUOC day entry nay LUON hardcode "khong flag gi"
+    # (dung khi safety_layer chi la keyword thuan) - gio LLM co the tra ve
+    # "Nhẹ"/"Trung bình" (khong cat luong chinh, xem SafetyFlag.is_redflag)
+    # nhung VAN can ghi day du vao trace de audit thay lop nay da chay va
+    # ket qua that, khong chi "false" mo ho (kickoff-prompt-vong-3.md muc 3:
+    # "bước safety_layer vẫn ghi vào trace dù không redflag, để audit thấy
+    # lớp này đã chạy" - ap dung ca cho Nhẹ/Trung bình, khong chi truong hop
+    # sach hoan toan).
+    entry = {
+        "step": "safety_layer",
+        "keyword_hit": flag.source in ("keyword", "keyword+llm"),
+        "llm_flag": flag.source in ("llm", "keyword+llm"),
+        "matched_group": flag.matched_group,
+        "level": flag.level,
+        "llm_category": flag.llm_category,
+        "llm_reasoning": flag.llm_reasoning,
+    }
     current_state["trace"] = [*current_state.get("trace", []), entry]
     current_state["safety_flag"] = False
     return current_state  # type: ignore[return-value]
@@ -151,8 +190,9 @@ async def _maybe_escalate(
     if escalate_fn is None:
         return None
     reason = (
-        f"Safety layer redflag - nhom={flag.matched_group!r}, tu khoa/nguon={flag.matched_keyword!r}, "
-        f"phat hien qua {flag.source}"
+        f"Safety layer redflag - level={flag.level!r}, nhom_keyword={flag.matched_group!r}, "
+        f"tu khoa={flag.matched_keyword!r}, llm_category={flag.llm_category!r}, "
+        f"llm_reasoning={flag.llm_reasoning!r}, phat hien qua {flag.source}"
     )
     return await trigger_emergency_escalation(
         escalate_fn,
@@ -167,7 +207,18 @@ async def _maybe_escalate(
 
 async def default_safety_check(utterance: str) -> SafetyFlag:
     """Wrapper mac dinh - dung ngay, khong delay gia lap (cho production).
-    Test dung safety_check rieng co delay co kiem soat (xem test_orchestrator.py)."""
+    Test dung safety_check rieng co delay co kiem soat (xem test_orchestrator.py).
+
+    SUA vong 3, muc 3 (2026-08-12): truoc day goi check_safety(utterance)
+    KHONG kem llm_classifier - dieu tra kien truc (vong-3-investigation.md
+    muc 2) xac nhan day CHINH LA ly do production khong co lop LLM nao ca.
+    Gio wire classify_safety_llm (backend/services/classification.py) - LLM
+    la lop CHINH tu day, chay trong executor (chay dong bo/blocking, dua ra
+    thread pool de KHONG block event loop - check_safety() ban than no la
+    ham dong bo, phu hop voi cach asyncio.to_thread duoc thiet ke)."""
+    import asyncio
+
+    from backend.services.classification import classify_safety_llm
     from backend.services.safety import check_safety
 
-    return check_safety(utterance)
+    return await asyncio.to_thread(check_safety, utterance, classify_safety_llm)

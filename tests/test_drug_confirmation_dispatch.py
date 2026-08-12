@@ -230,6 +230,38 @@ def test_in_rx_confirm_r1_unparseable_reasks_same_stage():
     assert result.new_pending[1] == STAGE_IN_RX_CONFIRM_R1
 
 
+def test_in_rx_confirm_r1_no_with_new_name_skips_ahead_to_confirm_r2(db_session_with_prescription):
+    """Vong 3, muc 8 - "khong, [ten thuoc khac]" trong 1 cau: tim duoc ngay
+    trong luot nay, KHONG hoi lai ten (tiet kiem 1 luot so voi hanh vi cu)."""
+    db, patient_id = db_session_with_prescription
+    result = _dispatch_stage(
+        db, _fake_embed, patient_id, STAGE_IN_RX_CONFIRM_R1, [CEFIXIM], "cefixim dùng sao", "không, daflavon"
+    )
+    assert result.resolved_drug_id is None
+    assert result.stop is False
+    assert result.new_pending[1] == STAGE_IN_RX_CONFIRM_R2
+    assert result.new_pending[0][0]["drug_id"] == DAFLAVON["drug_id"]
+    assert result.response == f"Bạn muốn thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không?"
+
+
+def test_in_rx_confirm_r1_no_with_unmatched_name_falls_back_to_ask_different_name(db_session_with_prescription):
+    """Phan con lai KHONG khop thuoc nao trong don - giu hanh vi cu (hoi lai
+    ten khac), khong tu bia ket qua."""
+    db, patient_id = db_session_with_prescription
+    result = _dispatch_stage(
+        db,
+        _fake_embed,
+        patient_id,
+        STAGE_IN_RX_CONFIRM_R1,
+        [CEFIXIM],
+        "cefixim dùng sao",
+        "không, thuốc gì đó không tồn tại 12345",
+    )
+    assert result.resolved_drug_id is None
+    assert result.response == ASK_DIFFERENT_NAME_MESSAGE
+    assert result.new_pending[1] == STAGE_IN_RX_AWAITING_NEW_NAME
+
+
 def test_in_rx_awaiting_new_name_finds_match_asks_confirm_r2(db_session_with_prescription):
     db, patient_id = db_session_with_prescription
     result = _dispatch_stage(db, _fake_embed, patient_id, STAGE_IN_RX_AWAITING_NEW_NAME, [], "orig q", "daflavon")
@@ -283,6 +315,39 @@ def test_out_rx_confirm_top1_r1_no_shows_top3():
     assert result.new_pending[0] == [FAKE_B, FAKE_C]
     assert "1. Fake Drug B" in result.response
     assert "2. Fake Drug C" in result.response
+
+
+def test_out_rx_confirm_top1_r1_no_with_new_name_skips_ahead(db_session_with_prescription):
+    """Vong 3, muc 8 - cung y tuong nhu in-prescription nhung dung §5.2
+    (hybrid search that tren drug_chunks) thay vi fuzzy-match don thuoc -
+    "khong, [ten thuoc khac]" tim duoc ngay, khong hien top-3 menu."""
+    db, _patient_id = db_session_with_prescription
+    result = _dispatch_stage(
+        db, _fake_embed, "p1", STAGE_OUT_RX_CONFIRM_TOP1_R1, [FAKE_A, FAKE_B, FAKE_C], "orig q", "không, daflavon"
+    )
+    assert result.resolved_drug_id is None
+    assert result.stop is False
+    assert result.new_pending[1] == STAGE_OUT_RX_CONFIRM_TOP1_R2
+    assert result.new_pending[0][0]["drug_id"] == DAFLAVON["drug_id"]
+    assert result.response == f"Bạn muốn thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không?"
+
+
+def test_out_rx_confirm_top1_r1_no_with_unmatched_name_falls_back_to_top3(db_session_with_prescription):
+    """Phan con lai khong tim duoc gi qua hybrid search - giu hanh vi cu
+    (hien top-3 tu candidates con lai), khong tu bia ket qua."""
+    db, _patient_id = db_session_with_prescription
+    result = _dispatch_stage(
+        db,
+        _fake_embed,
+        "p1",
+        STAGE_OUT_RX_CONFIRM_TOP1_R1,
+        [FAKE_A, FAKE_B, FAKE_C],
+        "orig q",
+        "không, thuốc gì đó không tồn tại 12345",
+    )
+    assert result.resolved_drug_id is None
+    assert result.new_pending[1] == STAGE_OUT_RX_CHOOSE_TOP3_R1
+    assert result.new_pending[0] == [FAKE_B, FAKE_C]
 
 
 def test_out_rx_choose_top3_picks_valid_index_asks_confirm():

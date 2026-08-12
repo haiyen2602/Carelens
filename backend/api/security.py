@@ -13,12 +13,25 @@ xoa, khong rai rac nhieu noi."""
 
 from __future__ import annotations
 
+from typing import Protocol
+
 from fastapi import Header, HTTPException, status
 
 from backend.config import get_settings
-from backend.models.schemas import ConversationChatRequest
 
 INTERNAL_SECRET_HEADER = "X-Internal-Secret"
+
+
+class _HasPatientId(Protocol):
+    """Vong 3 (muc 7.1) - noi long type hint cua get_current_patient_id()
+    tu ConversationChatRequest CU THE sang BAT KY schema nao co truong
+    patient_id (structural typing) - de cac endpoint MOI (vd chat history
+    muc 7.1) tai su dung DUNG 1 cho noi nay, khong tao 1 ham doc patient_id
+    song song rieng (dung y "1 CHO NOI DUY NHAT" cua chinh ham nay). KHONG
+    doi hanh vi (van chi doc .patient_id), chi noi rong kieu du lieu chap
+    nhan duoc."""
+
+    patient_id: str
 
 
 async def require_internal_secret(
@@ -39,7 +52,7 @@ async def require_internal_secret(
         )
 
 
-def get_current_patient_id(request: ConversationChatRequest) -> str:
+def get_current_patient_id(request: _HasPatientId) -> str:
     """Vòng 2 (chatbot-rag-design.md mục 14, mục 10 #10) - 1 CHỖ NỐI DUY NHẤT
     để đọc patient_id của người đang gọi. Mọi endpoint/node PHẢI gọi qua hàm
     này - KHÔNG đọc `request.patient_id` thẳng ở bất kỳ đâu khác (kể cả
