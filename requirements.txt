@@ -19,6 +19,16 @@ sqlalchemy>=2.0.0
 alembic>=1.14.0
 psycopg2-binary>=2.9.0
 
+# Auth — auth-api that (TASK-010, api-contracts.md muc 1), thay rao tam
+# X-Internal-Secret (backend/api/security.py). bcrypt PIN <4.1 - passlib
+# 1.7.4 doc bcrypt.__about__.__version__ (bi xoa tu bcrypt>=4.1), khong
+# tuong thich - xac nhan bang test that 2026-08-12 (AttributeError luc
+# hash_password()).
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.1,<4.1
+python-jose[cryptography]>=3.3.0
+email-validator>=2.2.0
+
 # Scheduler - nhac lai escalation theo thoi gian (vong 2, chatbot-rag-design.md
 # muc 13). SQLAlchemyJobStore (khong dung in-memory mac dinh) - luu job vao
 # chinh Postgres dang co, tranh moi worker process tu chay 1 scheduler rieng

@@ -25,7 +25,8 @@ import {
   Users,
   Users2,
 } from "lucide-react";
-import { useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
 type NavItem = {
@@ -69,16 +70,33 @@ const groups: { title: string; items: NavItem[] }[] = [
 ];
 
 export default function DoctorLayout({ children }: { children: ReactNode }) {
-  const { alerts, prescriptions, logout } = useProto();
+  const { alerts, prescriptions, logout: protoLogout } = useProto();
+  const { user, loading, logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pendingCount = prescriptions.filter((p) => p.status === "pending").length;
   const alertCount = alerts.filter((a) => a.status === "new").length;
+  const authChecked = !loading && !!user && user.role === "doctor";
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user || user.role !== "doctor") {
+      router.replace("/");
+    }
+  }, [loading, user, router]);
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.to : pathname.startsWith(item.to);
+
+  if (!authChecked) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <p className="text-sm text-muted-foreground">Đang kiểm tra đăng nhập...</p>
+      </div>
+    );
+  }
 
   const sidebar = (
     <div className="flex h-full flex-col bg-sidebar">
@@ -213,8 +231,9 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
             </div>
             <button
               title="Đăng xuất"
-              onClick={() => {
-                logout();
+              onClick={async () => {
+                await authLogout();
+                protoLogout();
                 router.push("/");
               }}
               className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"

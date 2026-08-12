@@ -6,6 +6,7 @@ import { LogOut, Menu, Phone, Settings, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
 export function PhoneShell({
@@ -19,14 +20,16 @@ export function PhoneShell({
   children: ReactNode;
   tabs: { to: string; label: string; icon: ReactNode; exact?: boolean }[];
 }) {
-  const { role, logout, emergency, setEmergency } = useProto();
+  const { role, logout: protoLogout, emergency, setEmergency } = useProto();
+  const { logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const doLogout = () => {
+  const doLogout = async () => {
     setMenuOpen(false);
-    logout();
+    await authLogout();
+    protoLogout();
     router.push("/");
   };
 

@@ -8,6 +8,7 @@ import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
 import { DEMO_PATIENT_ID } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 import {
   type Conversation,
@@ -29,7 +30,8 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const lastQuestion = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { mutate, isPending, isError, error, reset } = useChatMessage();
+  const { accessToken } = useAuth();
+  const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
 
   useEffect(() => {
     const stored = loadConversations();

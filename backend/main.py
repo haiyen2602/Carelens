@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.account_routes import account_router
+from backend.api.auth_routes import auth_router
 from backend.api.chat_routes import chat_router
 from backend.api.dose_routes import dose_router
 from backend.api.drug_routes import drug_router
@@ -21,7 +23,7 @@ async def lifespan(app: FastAPI):
     print(f"Starting {settings.app_name} in {settings.app_env} mode")
     # TEMP AUTH GATE (chatbot-rag-design.md muc 10 #10) - retire khi auth-api
     # that co. `get_settings()` o tren DA raise (fail-closed that, xem
-    # src/config.py::_internal_auth_secret_must_be_configured) neu
+    # backend/config.py::_internal_auth_secret_must_be_configured) neu
     # INTERNAL_AUTH_SECRET chua duoc cau hinh - toi duoc dong nay nghia la
     # da co gia tri that, khong can kiem tra lai o day.
     #
@@ -60,6 +62,8 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(account_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
