@@ -202,6 +202,27 @@ def test_khop_thi_dose_event_chuyen_taken(db, benh_nhan, monkeypatch, tmp_path):
     assert dose.status == "TAKEN"
 
 
+def test_khop_nhung_qua_window_thi_delayed_khong_phai_taken(db, benh_nhan, monkeypatch, tmp_path):
+    """BR-2.2: xác nhận sau window_end không được tính là TAKEN."""
+    dose = _dose_event(benh_nhan.id, [{
+        "drug_id": "d1", "ten_thuoc": "Thuốc test", "dang_thuoc": "Viên nén",
+        "duong_dung": "Uống", "so_vien": 2,
+    }])
+    dose.window_end = datetime.now(UTC) - timedelta(minutes=5)  # cửa sổ đã đóng
+    db.add(dose)
+    db.commit()
+    db.refresh(dose)
+
+    _gia_vlm(monkeypatch, vien_nen=2)
+    xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+    hoan_tat_xac_minh(xac_minh.id)
+
+    row = db.get(PhotoVerification, xac_minh.id)
+    assert row.ket_qua == KetQua.KHOP.value, "vẫn khớp đúng đơn thuốc"
+    db.refresh(dose)
+    assert dose.status == "DELAYED", "khớp nhưng trễ cửa sổ không được ghi TAKEN"
+
+
 # ---------------------------------------------------------------------------
 # Hoàn tất — đường lệch, chưa hết lượt
 # ---------------------------------------------------------------------------

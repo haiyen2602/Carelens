@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -208,7 +209,12 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
     next_action = xac_dinh_next_action(ket_qua_doi_chieu.ket_qua, row.attempt)
 
     if ket_qua_doi_chieu.khop:
-        dose_event.status = "TAKEN"  # BR-2.1: xác nhận ở bất kỳ cấp nào huỷ nhắc còn lại
+        # BR-2.2: xác nhận TRONG cửa sổ -> TAKEN; SAU window_end -> DELAYED,
+        # không phải TAKEN. Hệ thống chưa có job quét tự chuyển PENDING quá
+        # hạn sang MISSED (ADR-0007, ngoài phạm vi domain này), nên ở đây chỉ
+        # so window_end với giờ hiện tại — không phân biệt "trễ trong ngày" với
+        # "trễ nhiều ngày", đơn giản hoá có chủ đích vì chưa có gì để so lệch.
+        dose_event.status = "TAKEN" if datetime.now(UTC) <= dose_event.window_end else "DELAYED"
     elif next_action == NEXT_ACTION_CAREGIVER_REVIEW:
         dose_event.status = "AWAITING_CAREGIVER"
         _escalate_photo_mismatch(db, dose_event, row)

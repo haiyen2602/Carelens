@@ -102,6 +102,22 @@ class PrescriptionListResponse(BaseModel):
     items: list[PrescriptionOut]
 
 
+class DoseSummary(BaseModel):
+    """GET /api/v1/doses?patient_id= — chua trong api-contracts.md dung dinh
+    dang day du (thieu reminder_level/evidence, khong co cot tuong ung trong
+    DoseEvent hien tai) - chi du de trang benh nhan biet lieu nao dang PENDING
+    va can gi de chup anh. Can Architect duyet truoc khi coi la contract on
+    dinh (ADR-0003)."""
+
+    id: str
+    prescription_id: str
+    scheduled_at: str
+    window_start: str
+    window_end: str
+    status: str
+    expected_items: list[dict]
+
+
 class PhotoSubmitResponse(BaseModel):
     """POST /api/v1/doses/{id}/photo — 202, chua co ket qua.
 

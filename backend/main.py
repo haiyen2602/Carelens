@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.chat_routes import chat_router
+from backend.api.dose_routes import dose_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.patient_routes import patient_router
@@ -65,6 +66,7 @@ app.include_router(drug_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")
 app.include_router(prescription_router, prefix="/api/v1")
 app.include_router(photo_router, prefix="/api/v1")
+app.include_router(dose_router, prefix="/api/v1")
 
 
 @app.get("/health")
