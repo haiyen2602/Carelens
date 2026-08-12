@@ -28,16 +28,24 @@ from backend.services.photo_verification.matcher import (
     doi_chieu_don_thuoc,
     tinh_yeu_cau,
 )
+from backend.services.photo_verification.vlm_bridge import (
+    KetQuaDemVlm,
+    VlmBridgeError,
+    dem_thuoc_trong_anh,
+)
 
 __all__ = [
     "DosageForm",
     "KetQua",
+    "KetQuaDemVlm",
     "KetQuaDoiChieu",
     "MatchMode",
     "ThuocBoQua",
+    "VlmBridgeError",
     "YeuCauDem",
     "classify",
     "count_keys_hop_le",
+    "dem_thuoc_trong_anh",
     "doi_chieu",
     "doi_chieu_don_thuoc",
     "tinh_yeu_cau",

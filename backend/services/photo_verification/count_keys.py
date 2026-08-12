@@ -43,4 +43,11 @@ COUNT_LABELS_VI: dict[str, str] = {
     "goi_thuoc": "Gói thuốc",
 }
 
-__all__ = ["COUNT_KEYS", "COUNT_LABELS_VI"]
+# Trường đếm phụ — kẹo/thực phẩm bị nhận nhầm thành thuốc, KHÔNG cộng vào
+# COUNT_KEYS. Khớp `prompts.NON_DRUG_KEY`.
+NON_DRUG_KEY = "khong_phai_thuoc"
+
+# Mức tin cậy model tự chấm cho một lần đếm. Khớp `prompts.CONFIDENCE_LEVELS`.
+CONFIDENCE_LEVELS: tuple[str, ...] = ("cao", "trung_binh", "thap")
+
+__all__ = ["CONFIDENCE_LEVELS", "COUNT_KEYS", "COUNT_LABELS_VI", "NON_DRUG_KEY"]

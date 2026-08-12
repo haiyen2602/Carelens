@@ -40,3 +40,11 @@ def test_ban_backend_khong_thua_khoa_nao():
     bao giờ được đếm, và mọi liều dùng nó sẽ mãi mãi báo thiếu thuốc.
     """
     assert set(count_keys.COUNT_LABELS_VI) == set(prompts.COUNT_KEYS)
+
+
+def test_non_drug_key_khop():
+    assert count_keys.NON_DRUG_KEY == prompts.NON_DRUG_KEY
+
+
+def test_confidence_levels_khop_ca_thu_tu():
+    assert count_keys.CONFIDENCE_LEVELS == prompts.CONFIDENCE_LEVELS

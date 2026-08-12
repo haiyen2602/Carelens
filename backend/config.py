@@ -37,6 +37,31 @@ class Settings(BaseSettings):
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
+    # VLM dem thuoc (backend/services/photo_verification/vlm_bridge.py) — DUNG
+    # CHUNG bien VLM_* voi backend/vlm_demthuoc/ (cong cu CLI doc lap), khong
+    # phai vo tinh trung ten: ca hai cung goi mot endpoint dem thuoc, nen dung
+    # chung mot bo cau hinh la dung, khong phai 2 nguon can dong bo.
+    #
+    # KHONG doc qua backend/vlm_demthuoc/config.py (os.environ + api_key.json
+    # + getpass) - ham do danh cho CLI chay duoi may nguoi dung, khong hop
+    # voi server (khong the "hoi nguoi dung" luc dang chay). pydantic-settings
+    # o day la nguon duy nhat cho ca web server.
+    vlm_api_key: str = ""
+    vlm_provider: Literal["openai", "claude"] = "openai"
+    vlm_base_url: str = ""
+    vlm_model: str = ""
+    vlm_json_mode: Literal["schema", "object", "off"] = "schema"
+    # Mot lan dem that do duoc ~26s; 45s da rong rai. Xem ghi chu lich su o
+    # backend/vlm_demthuoc/config.py::Settings.timeout - cung con so, cung ly do:
+    # SDK openai mac dinh tu thu lai 2 lan khi qua gio, am tham nhan gap 3.
+    vlm_timeout: float = Field(default=45.0, gt=0)
+    # api.vilao.ai hong ~50% so lan goi (tra SSE rong kem HTTP 200), 5 lan cho
+    # ~97% thanh cong. Endpoint lanh manh khong bao gio cham toi co che nay.
+    vlm_retries: int = Field(default=5, ge=1)
+    # Doi giua 2 lan thu. Test cua vlm_bridge.py dat 0 de khong ngu that giay
+    # nao trong luc chay test (xem tests/services/photo_verification/test_vlm_bridge.py).
+    vlm_retry_delay: float = Field(default=1.5, ge=0)
+
     # Retrieval (specs/chatbot-rag-design.md muc 4) — DA CHOT bang so lieu that
     # Phase 7 (2026-08-08, eval/run_eval.py + eval/eval_report.json), khong con
     # la doan mo hinh nua. O gia tri cu (0.5/0.3), 15/15 cau out-of-domain
