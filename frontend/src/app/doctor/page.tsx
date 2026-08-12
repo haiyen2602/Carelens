@@ -183,14 +183,14 @@ export default function DoctorDashboard() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
-                <tr className="border-y border-border bg-muted/60 text-left text-xs font-semibold text-muted-foreground">
-                  <th className="px-3 py-3">Bệnh nhân</th>
-                  <th className="px-3 py-3">Tuổi</th>
-                  <th className="px-3 py-3">Chẩn đoán chính</th>
-                  <th className="px-3 py-3">Mức độ nguy cơ</th>
-                  <th className="px-3 py-3">Tuân thủ (7 ngày)</th>
-                  <th className="px-3 py-3">Cập nhật cuối</th>
-                  <th className="px-3 py-3" />
+                <tr className="border-y border-border bg-muted/60 text-left align-middle text-xs font-semibold text-muted-foreground">
+                  <th className="px-3 py-3 align-middle">Bệnh nhân</th>
+                  <th className="px-3 py-3 align-middle">Tuổi</th>
+                  <th className="w-48 px-3 py-3 align-middle">Chẩn đoán chính</th>
+                  <th className="px-3 py-3 align-middle">Mức độ nguy cơ</th>
+                  <th className="whitespace-nowrap px-3 py-3 align-middle">Tuân thủ (7 ngày)</th>
+                  <th className="whitespace-nowrap px-3 py-3 align-middle">Cập nhật cuối</th>
+                  <th className="px-3 py-3 align-middle" />
                 </tr>
               </thead>
               <tbody>
@@ -215,7 +215,7 @@ export default function DoctorDashboard() {
                       <td className="px-3 py-3">{p.condition}</td>
                       <td className="px-3 py-3">
                         <span
-                          className={`rounded-md px-2 py-1 text-xs font-semibold ${riskTone[risk]}`}
+                          className={`inline-block whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${riskTone[risk]}`}
                         >
                           {risk}
                         </span>

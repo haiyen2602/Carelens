@@ -11,7 +11,14 @@ export default function PatientsPage() {
   const { patients, toggleWatch, doses } = useProto();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
-  const list = patients.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
+  const withDisplayId = patients.map((p, i) => ({
+    ...p,
+    displayId: `BN${String(i + 1).padStart(4, "0")}`,
+  }));
+  const query = q.trim().toLowerCase();
+  const list = withDisplayId.filter(
+    (p) => p.name.toLowerCase().includes(query) || p.displayId.toLowerCase().includes(query),
+  );
 
   return (
     <div className="space-y-6">
@@ -23,7 +30,7 @@ export default function PatientsPage() {
           </p>
         </div>
         <Input
-          placeholder="Tìm bệnh nhân…"
+          placeholder="Tìm theo tên hoặc ID bệnh nhân…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="w-full sm:w-64"
@@ -48,23 +55,31 @@ export default function PatientsPage() {
                     )}
                   </p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {p.age} tuổi · {p.condition}
+                    ID: {p.displayId} · {p.age} tuổi · {p.condition}
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-4">
-                <div className="hidden w-36 sm:block">
-                  <p className="text-xs text-muted-foreground">Tuân thủ {p.adherence}%</p>
+              <div className="grid shrink-0 grid-cols-[9rem_6.5rem_7rem] items-center gap-4">
+                <div className="hidden sm:block">
+                  <p className="whitespace-nowrap text-xs text-muted-foreground">
+                    Tuân thủ {p.adherence}%
+                  </p>
                   <Progress value={p.adherence} className="mt-1 h-2" />
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="justify-self-start"
                   onClick={() => setOpenId(openId === p.id ? null : p.id)}
                 >
                   <Eye className="mr-1 h-4 w-4" /> Hồ sơ
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => toggleWatch(p.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-self-start whitespace-nowrap"
+                  onClick={() => toggleWatch(p.id)}
+                >
                   {p.watch ? "Bỏ theo dõi" : "Theo dõi"}
                 </Button>
               </div>

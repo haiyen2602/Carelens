@@ -19,6 +19,7 @@ export type Dose = {
 
 export type Prescription = {
   id: string;
+  orderId: string;
   patient: string;
   med: string;
   dose: string;
@@ -26,6 +27,9 @@ export type Prescription = {
   meal: string;
   note: string;
   times: string[];
+  startDate: string;
+  endDate: string;
+  cycle: { onDays: number; offDays: number } | null;
   status: "draft" | "pending" | "approved" | "rejected";
 };
 
@@ -139,6 +143,22 @@ const MONITORED_RELATIVES: MonitoredRelative[] = [
   },
 ];
 
+export type FamilyContact = {
+  id: string;
+  patientId: string;
+  name: string;
+  relation: string;
+  phone: string;
+};
+
+const FAMILY_CONTACTS: FamilyContact[] = [
+  { id: "fc1", patientId: "bn1", name: "Nguyễn Văn Long", relation: "Con trai", phone: "09xx xxx 100" },
+  { id: "fc2", patientId: "bn1", name: "Nguyễn Thị Mai", relation: "Con gái", phone: "09xx xxx 101" },
+  { id: "fc3", patientId: "bn2", name: "Trần Thị Hương", relation: "Con gái", phone: "09xx xxx 102" },
+  { id: "fc4", patientId: "bn3", name: "Phạm Văn An", relation: "Cháu", phone: "09xx xxx 103" },
+  { id: "fc5", patientId: "bn3", name: "Lê Văn Bình", relation: "Con trai", phone: "09xx xxx 104" },
+];
+
 type State = {
   role: Role | null;
   phone: string;
@@ -148,6 +168,7 @@ type State = {
   alerts: SysAlert[];
   audit: AuditEntry[];
   patients: Patient[];
+  familyContacts: FamilyContact[];
   healthLog: { id: string; at: string; text: string; level: AlertLevel }[];
   emergency: boolean;
   symptomCheckPending: boolean;
@@ -219,6 +240,7 @@ const initial: State = {
   prescriptions: [
     {
       id: "p1",
+      orderId: "o1",
       patient: "Nguyễn Thị Lan",
       med: "Amlodipine 5mg",
       dose: "1 viên",
@@ -226,10 +248,14 @@ const initial: State = {
       meal: "Sau ăn trưa",
       note: "Theo dõi huyết áp mỗi sáng",
       times: ["13:00"],
+      startDate: "2026-08-01",
+      endDate: "",
+      cycle: null,
       status: "pending",
     },
     {
       id: "p2",
+      orderId: "o2",
       patient: "Trần Văn Minh",
       med: "Metformin 850mg",
       dose: "1 viên",
@@ -237,6 +263,9 @@ const initial: State = {
       meal: "Sau ăn",
       note: "Đề xuất AI: đổi 07:00 → 07:30 do bệnh nhân thường ăn muộn",
       times: ["07:30", "19:00"],
+      startDate: "2026-08-01",
+      endDate: "",
+      cycle: null,
       status: "pending",
     },
   ],
@@ -322,6 +351,7 @@ const initial: State = {
       watch: true,
     },
   ],
+  familyContacts: FAMILY_CONTACTS,
   healthLog: [],
   symptomCheckPending: false,
 };
@@ -338,7 +368,9 @@ type Ctx = State & {
   clearSymptomCheck: () => void;
   setEmergency: (v: boolean) => void;
   decidePrescription: (id: string, ok: boolean) => void;
+  decidePrescriptionOrder: (orderId: string, ok: boolean) => void;
   createPrescription: (p: Omit<Prescription, "id" | "status">) => void;
+  updatePrescription: (id: string, patch: Partial<Omit<Prescription, "id" | "orderId">>) => void;
   verifyDose: (doseId: string, verdict: "correct" | "wrong" | "unclear" | "absent") => void;
   familyConfirmDose: (id: string, taken: boolean) => void;
   setAlertStatus: (id: string, status: SysAlert["status"]) => void;
@@ -456,12 +488,34 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
           `${ok ? "Duyệt" : "Từ chối"} phác đồ ${p?.med ?? id} — ${p?.patient ?? ""}`,
         );
       },
+      decidePrescriptionOrder: (orderId, ok) => {
+        setState((s) => ({
+          ...s,
+          prescriptions: s.prescriptions.map((p) =>
+            p.orderId === orderId ? { ...p, status: ok ? "approved" : "rejected" } : p,
+          ),
+        }));
+        const meds = state.prescriptions.filter((x) => x.orderId === orderId);
+        const patient = meds[0]?.patient ?? "";
+        log(
+          "BS. Phạm Quốc Huy",
+          `${ok ? "Duyệt" : "Từ chối"} đơn thuốc (${meds.length} thuốc) — ${patient}`,
+        );
+      },
       createPrescription: (p) => {
         setState((s) => ({
           ...s,
           prescriptions: [{ ...p, id: uid(), status: "pending" }, ...s.prescriptions],
         }));
         log("BS. Phạm Quốc Huy", `Tạo đơn thuốc ${p.med} cho ${p.patient}, chờ duyệt HITL`);
+      },
+      updatePrescription: (id, patch) => {
+        setState((s) => ({
+          ...s,
+          prescriptions: s.prescriptions.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        }));
+        const p = state.prescriptions.find((x) => x.id === id);
+        log("BS. Phạm Quốc Huy", `Điều chỉnh thủ công ${p?.med ?? id} — ${p?.patient ?? ""}`);
       },
       verifyDose: (doseId, verdict) => {
         const map = {
