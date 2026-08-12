@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from src.services.severity import SEVERITY_RANK, combine_severity  # noqa: E402
+from backend.services.severity import SEVERITY_RANK, combine_severity  # noqa: E402
 
 ALL_LEVELS = ("Nhẹ", "Trung bình", "Nguy hiểm")
 

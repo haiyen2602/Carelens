@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # cho `from chunk_drugs import ...`
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # cho `from src... import ...`
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # cho `from backend... import ...`
 from chunk_drugs import iter_all_chunks  # noqa: E402
 
 # Gia tham khao cong khai cua OpenAI cho text-embedding-3-small tai thoi diem
@@ -56,9 +56,9 @@ def run_real(limit: int | None) -> int:
     import openai
     from sqlalchemy import func, insert
 
-    from src.config import get_settings
-    from src.db.base import SessionLocal
-    from src.db.models import DrugChunk
+    from backend.config import get_settings
+    from backend.db.base import SessionLocal
+    from backend.db.models import DrugChunk
 
     settings = get_settings()
     if not settings.openai_api_key or settings.openai_api_key == "sk-your-key-here":

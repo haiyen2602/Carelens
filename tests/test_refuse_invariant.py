@@ -22,8 +22,8 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.nodes.conversation_nodes import build_answer_generation_node, build_retrieval_node  # noqa: E402
-from src.db.base import SessionLocal, engine  # noqa: E402
+from backend.agents.nodes.conversation_nodes import build_answer_generation_node, build_retrieval_node  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
 
 
 def _db_available() -> bool:

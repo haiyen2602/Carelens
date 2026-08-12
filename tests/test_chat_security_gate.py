@@ -12,11 +12,11 @@ import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
-from src.agents.orchestrator import default_safety_check  # noqa: E402
-from src.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
-from src.api.security import INTERNAL_SECRET_HEADER  # noqa: E402
-from src.config import get_settings  # noqa: E402
-from src.main import app  # noqa: E402
+from backend.agents.orchestrator import default_safety_check  # noqa: E402
+from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
+from backend.api.security import INTERNAL_SECRET_HEADER  # noqa: E402
+from backend.config import get_settings  # noqa: E402
+from backend.main import app  # noqa: E402
 
 
 @pytest_asyncio.fixture

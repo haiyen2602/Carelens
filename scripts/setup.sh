@@ -25,4 +25,4 @@ fi
 # Create data directories
 mkdir -p data/chroma
 
-echo "Setup complete! Run: uvicorn src.main:app --reload"
+echo "Setup complete! Run: uvicorn backend.main:app --reload"

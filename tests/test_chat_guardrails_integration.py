@@ -12,11 +12,11 @@ import pytest  # noqa: E402
 from sqlalchemy import select, text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import AuditLog  # noqa: E402
-from src.main import app  # noqa: E402
-from src.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE  # noqa: E402
+from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import AuditLog  # noqa: E402
+from backend.main import app  # noqa: E402
+from backend.services.guardrails import INPUT_GUARDRAIL_REFUSAL_MESSAGE  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -41,7 +41,7 @@ def _override_services(**fakes) -> None:
         "safety_check": None,
     }
     defaults.update(fakes)
-    from src.agents.orchestrator import default_safety_check
+    from backend.agents.orchestrator import default_safety_check
 
     if defaults["safety_check"] is None:
         defaults["safety_check"] = default_safety_check

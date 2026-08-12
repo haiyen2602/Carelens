@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Vong 2, muc 6 (chatbot-rag-design.md, dong #1/#2) - tune NGUONG_VECTOR/
 NGUONG_LEXICAL/rrf_k/n cho DUNG duong song HIEN TAI:
-`_search_distinct_drug_candidates()` (src/agents/nodes/drug_confirmation_
+`_search_distinct_drug_candidates()` (backend/agents/nodes/drug_confirmation_
 nodes.py) - KHONG phai `hybrid_search()`/`build_retrieval_node` (Phase 7 dung
 de tune #8/#14) - duong do DA CHET trong production tu khi muc 5 (xac nhan
 danh tinh thuoc) thay the (`build_retrieval_node` chi con duoc goi tu unit
@@ -43,9 +43,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.db.base import SessionLocal  # noqa: E402
-from src.services.embeddings import embed_query  # noqa: E402
-from src.services.retrieval import fuse_rrf, lexical_search, vector_search  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.services.embeddings import embed_query  # noqa: E402
+from backend.services.retrieval import fuse_rrf, lexical_search, vector_search  # noqa: E402
 
 EVAL_DIR = Path(__file__).resolve().parent
 GROUND_TRUTH_PATH = EVAL_DIR / "ground_truth.json"

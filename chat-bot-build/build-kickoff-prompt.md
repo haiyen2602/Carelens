@@ -147,7 +147,7 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
     safety_layer redflag — sửa đúng theo BR-3.5 (trước đó nếu chỉ map thẳng `state["safety_flag"]`, ca HIGH
     từ SEVERITY→LEVEL sẽ không bật overlay cấp cứu cho FE). Tên field response `safety_flag` PHẢI giữ
     nguyên (api-contracts.md §4 quy định) dù ý nghĩa khác `ConversationState["safety_flag"]` nội bộ — mapping
-    tường minh qua `_should_show_emergency_overlay()` (src/api/chat_routes.py), không đọc thẳng.
+    tường minh qua `_should_show_emergency_overlay()` (backend/api/chat_routes.py), không đọc thẳng.
 
 - **🔴 CHẶN PRODUCTION (không phải "việc để mở" thường — xem `chatbot-rag-design.md` mục 10 #10):**
   `patient_id` hiện nhận thẳng trong request body (`ConversationChatRequest`), không xác thực qua JWT —
@@ -155,13 +155,13 @@ phải trace rỗng hoặc trace giả như luồng chạy hết bình thường
   Hệ quả: bất kỳ ai gọi endpoint đều đọc/ghi được dữ liệu của `patient_id` bất kỳ họ tự gõ vào — vô hiệu hoá
   toàn bộ test cách ly 2 bệnh nhân đã làm kỹ ở Phase 5b (test đó chỉ đúng ở tầng tool, không có gì chặn ở
   tầng endpoint). **Không cho ai ngoài phạm vi thử nghiệm nội bộ chạm vào `/api/v1/chat` (kể cả demo) cho
-  tới khi có tối thiểu 1 cơ chế xác thực chặn giữa request và `patient_id` được tin dùng.** **Cập nhật 2026-08-08:** đã thêm mitigation tạm (`src/api/security.py::require_internal_secret`, shared-secret header `X-Internal-Secret` đọc qua env var `INTERNAL_AUTH_SECRET`) — không phải auth thật, chỉ hạ mức rủi ro trong lúc chờ `auth-api`. Fail-closed thật (không chỉ log cảnh báo) — thiếu secret thì app không khởi động được, xem chi tiết ở `chatbot-rag-design.md` mục 10 #10.
+  tới khi có tối thiểu 1 cơ chế xác thực chặn giữa request và `patient_id` được tin dùng.** **Cập nhật 2026-08-08:** đã thêm mitigation tạm (`backend/api/security.py::require_internal_secret`, shared-secret header `X-Internal-Secret` đọc qua env var `INTERNAL_AUTH_SECRET`) — không phải auth thật, chỉ hạ mức rủi ro trong lúc chờ `auth-api`. Fail-closed thật (không chỉ log cảnh báo) — thiếu secret thì app không khởi động được, xem chi tiết ở `chatbot-rag-design.md` mục 10 #10.
 
 - **Vẫn còn treo, chưa tự quyết (mức thường, không chặn thử nghiệm nội bộ):**
-  - `src/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` vẫn là **placeholder** (xem TODO trong file) — PHẢI
+  - `backend/services/escalation.py`: `HIGH_OVERLAY_MESSAGE` vẫn là **placeholder** (xem TODO trong file) — PHẢI
     dừng lại xin PM + mentor duyệt nội dung thật (mục 10 #5 `chatbot-rag-design.md`) trước khi cho endpoint
     này nhận traffic thật với bệnh nhân.
-  - Prompt LLM thật (`src/services/classification.py`: classify_intent/classify_dose/classify_severity/
+  - Prompt LLM thật (`backend/services/classification.py`: classify_intent/classify_dose/classify_severity/
     generate_answer) là **bản nháp đầu tiên**, chưa qua eval (Phase 7) — không coi là đã tối ưu.
 
 ### Phase 7 — Eval harness (`eval/`) ✅ (2026-08-08)

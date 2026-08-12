@@ -12,8 +12,8 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
-from src.db.base import SessionLocal, engine
-from src.db.models import AuditLog, DrugChunk
+from backend.db.base import SessionLocal, engine
+from backend.db.models import AuditLog, DrugChunk
 
 EMBEDDING_DIM = 1536
 

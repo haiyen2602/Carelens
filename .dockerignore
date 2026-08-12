@@ -2,6 +2,11 @@
 .gitignore
 .env
 .venv
+# Pattern khong co dau `/` chi khop o goc context, nen `.venv`/`__pycache__` o
+# tren KHONG bao gom backend/.venv (venv dev nam duoi backend/ sau khi doi ten
+# src/ -> backend/). Them dang `**/` de loai o moi cap.
+**/.venv
+**/__pycache__
 __pycache__
 *.pyc
 .pytest_cache

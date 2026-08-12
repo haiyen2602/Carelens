@@ -1,7 +1,7 @@
 """Vong 2 (chatbot-rag-design.md muc 11) - unit test _dispatch_stage() (state
 machine thuan cua luong xac nhan danh tinh thuoc), bao phu du 8 stage + 3
 DIEN GIAI rieng (khong duoc mo ta tuong minh trong kickoff-prompt-vong-2.md,
-xem docstring dau src/agents/nodes/drug_confirmation_nodes.py):
+xem docstring dau backend/agents/nodes/drug_confirmation_nodes.py):
   1. "khong" o out_rx_confirm_pick_r1 -> quay lai menu top-3 CON LAI
   2. het ung vien de hoi (khong phai "no") -> STOP
   3. reply khong parse duoc (unscripted case, muc 8 kickoff) -> hoi lai CUNG
@@ -22,7 +22,7 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from src.agents.nodes.drug_confirmation_nodes import (  # noqa: E402
+from backend.agents.nodes.drug_confirmation_nodes import (  # noqa: E402
     ASK_DESCRIBE_AGAIN_MESSAGE,
     ASK_DIFFERENT_NAME_MESSAGE,
     NOT_FOUND_FINAL_MESSAGE,
@@ -41,8 +41,8 @@ from src.agents.nodes.drug_confirmation_nodes import (  # noqa: E402
     _parse_choice_index,
     _parse_yes_no,
 )
-from src.db.base import SessionLocal, engine  # noqa: E402
-from src.db.models import Prescription  # noqa: E402
+from backend.db.base import SessionLocal, engine  # noqa: E402
+from backend.db.models import Prescription  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -131,7 +131,7 @@ def test_fuzzy_best_match_no_match_returns_none():
 
 
 def test_fresh_pending_confirmation_is_returned_normally():
-    from src.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation, set_pending_confirmation
+    from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation, set_pending_confirmation
 
     db = SessionLocal()
     patient_id = f"test-ttl-fresh-{uuid.uuid4().hex[:8]}"
@@ -151,9 +151,9 @@ def test_expired_pending_confirmation_is_treated_as_none_and_deleted():
     tiep theo la CAU HOI MOI), VA phai XOA dong het han (khong de rac)."""
     from datetime import UTC, datetime, timedelta
 
-    from src.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation
-    from src.config import get_settings
-    from src.db.models import PendingDrugConfirmation
+    from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation
+    from backend.config import get_settings
+    from backend.db.models import PendingDrugConfirmation
 
     db = SessionLocal()
     patient_id = f"test-ttl-expired-{uuid.uuid4().hex[:8]}"
@@ -193,7 +193,7 @@ def test_core_name_keeps_short_alphanumeric_identifier_not_just_stops_at_first_d
     "dung o tu dau tien bat dau bang chu so" lam core RONG HOAN TOAN cho
     thuoc nay (fallback ve ca chuoi, vo hieu hoa core-name). Phai phan biet
     dosage THAT (ket thuc bang don vi/dang NxN) voi token dinh danh ngan."""
-    from src.agents.nodes.drug_confirmation_nodes import _drug_core_name
+    from backend.agents.nodes.drug_confirmation_nodes import _drug_core_name
 
     assert _drug_core_name("3b Agi-neurin Agimexpharm 10x10") == "3b agi-neurin agimexpharm"
     assert _drug_core_name("AMMG 3b Trường THỌ 5x10") == "ammg 3b truong tho"
