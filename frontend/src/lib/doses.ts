@@ -40,6 +40,8 @@ export type PhotoVerification = {
   confidence: string | null;
   nextAction: NextAction;
   message: string;
+  createdAt: string;
+  hasImage: boolean;
 };
 
 type DoseApiItem = {
@@ -70,7 +72,34 @@ type PhotoVerificationApi = {
   confidence: string | null;
   next_action: NextAction;
   message: string;
+  created_at: string;
+  has_image: boolean;
 };
+
+// Nhan hien thi cho trang thai lieu THAT (backend/db/models.py::DoseEvent) -
+// dung chung boi patient/page.tsx (hom nay) va patient/history/page.tsx.
+export const NHAN_TRANG_THAI_LIEU: Record<string, string> = {
+  PENDING: "Chờ xác nhận",
+  TAKEN: "Đã uống",
+  DELAYED: "Đã uống (trễ giờ)",
+  MISSED: "Bỏ liều",
+  CANCELLED: "Đã huỷ",
+  AWAITING_CAREGIVER: "Chờ người thân duyệt",
+};
+
+export function moTaThuoc(dose: Dose): string {
+  return dose.expectedItems
+    .map((it) => `${it.tenThuoc} (${it.soVien} ${it.dangThuoc ?? "đơn vị"})`)
+    .join(", ");
+}
+
+export function gioHienThi(iso: string): string {
+  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+export function ngayHienThi(iso: string): string {
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
 
 async function loi(response: Response): Promise<never> {
   const body = await response.json().catch(() => null);
@@ -113,6 +142,8 @@ function toPhotoVerification(p: PhotoVerificationApi): PhotoVerification {
     confidence: p.confidence,
     nextAction: p.next_action,
     message: p.message,
+    createdAt: p.created_at,
+    hasImage: p.has_image,
   };
 }
 
@@ -161,6 +192,19 @@ export async function getPhotoVerification(verificationId: string): Promise<Phot
   const response = await fetch(`/api/photo-verifications/${encodeURIComponent(verificationId)}`);
   if (!response.ok) return loi(response);
   return toPhotoVerification(await response.json());
+}
+
+/** Toàn bộ lịch sử gửi ảnh của 1 liều — dùng cho patient/history khi bấm vào 1 dòng. */
+export async function listPhotoVerifications(doseId: string): Promise<PhotoVerification[]> {
+  const response = await fetch(`/api/doses/${encodeURIComponent(doseId)}/photo-verifications`);
+  if (!response.ok) return loi(response);
+  const items: PhotoVerificationApi[] = await response.json();
+  return items.map(toPhotoVerification);
+}
+
+/** URL ảnh gốc của 1 lần xác minh — chỉ gọi khi `hasImage` true. */
+export function photoVerificationImageUrl(verificationId: string): string {
+  return `/api/photo-verifications/${encodeURIComponent(verificationId)}/image`;
 }
 
 const KHOANG_CACH_HOI_LAI_MS = 6000;

@@ -15,6 +15,8 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.api.security import require_internal_secret
@@ -97,7 +99,43 @@ def get_photo_verification(verification_id: str, db: Session = Depends(get_db)) 
     row = db.get(PhotoVerification, verification_id)
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy lần xác minh này.")
+    return _to_out(row)
 
+
+@photo_router.get(
+    "/doses/{dose_id}/photo-verifications",
+    response_model=list[PhotoVerificationOut],
+    dependencies=[Depends(require_internal_secret)],
+)
+def list_photo_verifications_for_dose(dose_id: str, db: Session = Depends(get_db)) -> list[PhotoVerificationOut]:
+    """Lịch sử TẤT CẢ lần gửi ảnh của 1 liều (patient/history bấm vào 1 dòng
+    lịch sử để xem lại) — sắp theo `attempt` tăng dần, không phải chỉ lần mới
+    nhất như GET /photo-verifications/{id}."""
+    rows = db.execute(
+        select(PhotoVerification)
+        .where(PhotoVerification.dose_event_id == dose_id)
+        .order_by(PhotoVerification.attempt)
+    ).scalars().all()
+    return [_to_out(row) for row in rows]
+
+
+@photo_router.get(
+    "/photo-verifications/{verification_id}/image",
+    dependencies=[Depends(require_internal_secret)],
+)
+def get_photo_verification_image(verification_id: str, db: Session = Depends(get_db)) -> FileResponse:
+    row = db.get(PhotoVerification, verification_id)
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy lần xác minh này.")
+    if not row.image_path or not Path(row.image_path).is_file():
+        # Anh khong con tren dia (vd container restart, chua gan volume ben
+        # ngoai) - phan biet voi 404 o tren (khong tim thay BAN GHI) bang loi
+        # rieng de frontend hien dung thong bao.
+        raise HTTPException(status.HTTP_410_GONE, detail="Ảnh không còn trên máy chủ.")
+    return FileResponse(row.image_path, media_type="image/jpeg")
+
+
+def _to_out(row: PhotoVerification) -> PhotoVerificationOut:
     matched: bool | None = None
     next_action: str | None = None
     if row.ket_qua in _TRANG_THAI_DA_XONG:
@@ -117,6 +155,8 @@ def get_photo_verification(verification_id: str, db: Session = Depends(get_db)) 
         confidence=row.confidence,
         next_action=next_action,
         message=row.thong_bao,
+        created_at=row.created_at.isoformat(),
+        has_image=bool(row.image_path and Path(row.image_path).is_file()),
     )
 
 

@@ -17,7 +17,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/camera-capture";
 import {
+  gioHienThi,
   listDoses,
+  moTaThuoc,
+  NHAN_TRANG_THAI_LIEU,
   pollPhotoVerification,
   submitDosePhoto,
   type Dose,
@@ -25,27 +28,6 @@ import {
 } from "@/lib/doses";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
-
-// Nhan hien thi cho trang thai lieu THAT (backend/db/models.py::DoseEvent) -
-// khac han vocab cua mang `doses` mock trong proto-store (pending/taken/...).
-const NHAN_TRANG_THAI: Record<string, string> = {
-  PENDING: "Chờ xác nhận",
-  TAKEN: "Đã uống",
-  DELAYED: "Đã uống (trễ giờ)",
-  MISSED: "Bỏ liều",
-  CANCELLED: "Đã huỷ",
-  AWAITING_CAREGIVER: "Chờ người thân duyệt",
-};
-
-function moTaThuoc(dose: Dose): string {
-  return dose.expectedItems
-    .map((it) => `${it.tenThuoc} (${it.soVien} ${it.dangThuoc ?? "đơn vị"})`)
-    .join(", ");
-}
-
-function gioHienThi(iso: string): string {
-  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-}
 
 // GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
 // mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
@@ -304,7 +286,7 @@ export default function PatientToday() {
                           : "bg-secondary text-secondary-foreground"
                   }`}
                 >
-                  {NHAN_TRANG_THAI[d.status] ?? d.status}
+                  {NHAN_TRANG_THAI_LIEU[d.status] ?? d.status}
                 </span>
               </div>
             </div>
