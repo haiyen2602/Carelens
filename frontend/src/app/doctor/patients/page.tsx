@@ -1,16 +1,30 @@
 "use client";
 
 import { Eye, ShieldAlert } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useProto } from "@/lib/proto-store";
+import { listDoses, type Dose } from "@/lib/doses";
+
+function gioHienThi(iso: string): string {
+  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+function moTaThuoc(d: Dose): string {
+  return d.expectedItems.map((it) => it.tenThuoc).join(", ") || "(chưa rõ tên thuốc)";
+}
 
 export default function PatientsPage() {
-  const { patients, toggleWatch, doses } = useProto();
+  const { patients, toggleWatch } = useProto();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  // Lich uong hom nay CUA DUNG benh nhan dang mo ho so - GET /doses can
+  // patient_id (khong co endpoint liet ke gop nhieu benh nhan cung luc), nen
+  // tai rieng moi khi mo mot ho so thay vi dung mot mang `doses` toan cuc.
+  const [dosesCuaHoSo, setDosesCuaHoSo] = useState<Dose[]>([]);
+  const [dangTai, setDangTai] = useState(false);
   const withDisplayId = patients.map((p, i) => ({
     ...p,
     displayId: `BN${String(i + 1).padStart(4, "0")}`,
@@ -19,6 +33,26 @@ export default function PatientsPage() {
   const list = withDisplayId.filter(
     (p) => p.name.toLowerCase().includes(query) || p.displayId.toLowerCase().includes(query),
   );
+
+  useEffect(() => {
+    if (!openId) {
+      setDosesCuaHoSo([]);
+      return;
+    }
+    let cancelled = false;
+    setDangTai(true);
+    listDoses(openId)
+      .then((ds) => {
+        if (!cancelled) setDosesCuaHoSo(ds);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setDangTai(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openId]);
 
   return (
     <div className="space-y-6">
@@ -88,14 +122,18 @@ export default function PatientsPage() {
             {openId === p.id && (
               <div className="mt-5 space-y-3 rounded-lg bg-muted p-4">
                 <p className="text-sm font-semibold">Lịch sử liều hôm nay</p>
+                {dangTai && <p className="text-sm text-muted-foreground">Đang tải…</p>}
+                {!dangTai && dosesCuaHoSo.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Chưa có lịch uống thuốc nào.</p>
+                )}
                 <ul className="space-y-2 text-sm">
-                  {doses.map((d) => (
+                  {dosesCuaHoSo.map((d) => (
                     <li key={d.id} className="flex items-center justify-between gap-3">
                       <span className="min-w-0 truncate">
-                        {d.time} · {d.med} {d.strength}
+                        {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
                       </span>
                       <span className="shrink-0 text-xs font-semibold text-muted-foreground">
-                        {d.status.toUpperCase()}
+                        {d.status}
                       </span>
                     </li>
                   ))}

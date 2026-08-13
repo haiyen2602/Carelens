@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useProto } from "@/lib/proto-store";
@@ -57,9 +57,6 @@ export default function FamilyListPage() {
                         {c.name}
                       </span>
                       <span className="ml-5 text-xs text-muted-foreground">{c.relation}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1.5 text-sm text-primary">
-                      <Phone className="h-3.5 w-3.5 shrink-0" /> {c.phone}
                     </span>
                   </div>
                 ))}
