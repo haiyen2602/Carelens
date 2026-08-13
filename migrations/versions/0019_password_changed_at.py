@@ -5,16 +5,16 @@ moc nay bi coi la het hieu luc (xem backend/services/auth.py::
 token_revoked_by_password_change). NULL = tai khoan chua tung doi mat khau ->
 khong thu hoi gi (tuong thich voi tai khoan da ton tai truoc migration nay).
 
-Revision ID: 0018
-Revises: 0017
+Revision ID: 0019
+Revises: 0018
 Create Date: 2026-08-13
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0018"
-down_revision = "0017"
+revision = "0019"
+down_revision = "0018"
 branch_labels = None
 depends_on = None
 

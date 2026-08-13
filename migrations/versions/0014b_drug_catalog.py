@@ -13,12 +13,19 @@ GIN trigram index tren cot da bo dau - cung quy uoc voi drug_chunks (migration
 0001): bat buoc unaccent truoc khi index va truoc khi query, neu khong thi go
 "vien nen" se khong tim ra "viên nén".
 
-Danh so lai 0012->0015 (2026-08-13): trung revision voi 0012_account.py (2
-migration doc lap cung danh so 0012). Xep sau 0014_chat_messages.py de co
+Danh so lai 0012->0014 (2026-08-13): trung revision voi 0012_account.py (2
+migration doc lap cung danh so 0012). Xep sau 0013_account_status.py de co
 mot chuoi tuyen tinh duy nhat, khong doi thu tu that cua 2 thay doi (bang nay
 khong phu thuoc gi vao bang account).
 
-Revision ID: 0015
+Doi revision id 0014 -> 0014b (2026-08-13, luc noi backend reporting/caregiver
+domain vao main): 0014_chat_messages.py (vong 3) cung tu danh so "0014" doc
+lap voi file nay, ca 2 cung down_revision="0013" - 2 nhanh song song trung
+ten. Giu 0014_chat_messages.py nguyen ten file+revision (merge truoc), doi
+file nay thanh "0014b" xep NGAY SAU no de co lai 1 chuoi tuyen tinh duy nhat -
+khong doi noi dung/tac dung cua migration, chi doi vi tri trong chuoi.
+
+Revision ID: 0014b
 Revises: 0014
 Create Date: 2026-08-12
 
@@ -27,7 +34,7 @@ Create Date: 2026-08-12
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0015"
+revision = "0014b"
 down_revision = "0014"
 branch_labels = None
 depends_on = None

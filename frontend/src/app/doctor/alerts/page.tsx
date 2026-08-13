@@ -17,7 +17,10 @@ const levelLabel: Record<AlertLevel, string> = {
 
 export default function AlertsPage() {
   const { alerts, setAlertStatus } = useProto();
-  const visible = alerts.filter((a) => a.target.includes("doctor"));
+  // Escalation that (BE contract) khong phan loai theo doi tuong nhan
+  // (doctor/family) nhu SysAlert.target cu - bac si xem CHUNG danh sach voi
+  // patient/family/page.tsx, khong loc rieng nua.
+  const visible = alerts;
 
   return (
     <div className="space-y-6">

@@ -1,15 +1,15 @@
 """Add password reset columns to account table: password_reset_token, password_reset_expires_at.
 
-Revision ID: 0017
-Revises: 0016
+Revision ID: 0016
+Revises: 0015
 Create Date: 2026-08-13
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0017"
-down_revision = "0016"
+revision = "0016"
+down_revision = "0015"
 branch_labels = None
 depends_on = None
 

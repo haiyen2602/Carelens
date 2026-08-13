@@ -161,6 +161,13 @@ class Patient(Base):
     doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)  # vd "Tang huyet ap, sau dot quy"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM 2026-08-13 (migration 0015) - bac si tu chon "theo doi" mot benh
+    # nhan cu the tren dashboard bao cao (backend/api/reporting_routes.py) hay
+    # khong. KHONG suy ra tu doctor_id (bac si phu trach van thay TAT CA benh
+    # nhan cua minh trong danh sach chinh; `watch` chi la 1 co "ghim/theo doi
+    # sat" bo sung, mac dinh False de danh sach theo doi khong tu dong day len
+    # khi co benh nhan moi).
+    watch: Mapped[bool] = mapped_column(nullable=False, default=False)
 
 
 class Prescription(Base):
@@ -395,3 +402,31 @@ class PendingDrugConfirmation(Base):
     # khi phai hoi lai DUNG stage cu vi khong hieu reply. Vuot nguong ->
     # dung han, tranh vong lap vo han khi benh nhan go linh tinh.
     retry_count: Mapped[int] = mapped_column(nullable=False, default=0)
+
+
+class CaregiverLink(Base):
+    """Bang lien ket bac si<->benh nhan<->nguoi than THAT (specs/user-roles.md:
+    1 benh nhan co 0..n nguoi than, 1 nguoi than co the gan voi nhieu benh
+    nhan, CHI admin duoc quan ly lien ket nay). THEM 2026-08-13 (migration 0016).
+
+    Truoc bang nay, `Account.patient_id` (backend/db/models.py::Account) chi
+    cho 1 tai khoan role=caregiver gan voi DUY NHAT 1 patient_id - khong dung
+    duoc cho truong hop 1 nguoi than theo doi nhieu benh nhan (vd 1 nguoi con
+    cham 2 bo me). Bang nay KHONG thay the Account.patient_id (van giu de
+    tuong thich nguoc voi TASK-010), la lop lien ket RONG HON, dung rieng cho
+    2 man hinh moi: "nguoi lien he gia dinh" cua bac si (xem 1 benh nhan) va
+    "nguoi than dang theo doi" cua caregiver (xem nhieu benh nhan).
+
+    `caregiver_account_id`/`patient_id` la string tu do, KHONG dat FK that -
+    cung ly do da giai thich tren class Patient o tren: cac thanh vien khac
+    co the dang co san du lieu patient_id/account_id chua duoc don, them FK
+    ngay bay gio se lam `alembic upgrade` cua ho loi giua chung. Kiem tra ton
+    tai o tang service/route neu can (404 ro rang), khong dua vao rang buoc DB."""
+
+    __tablename__ = "caregiver_link"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    caregiver_account_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    relationship: Mapped[str] = mapped_column(String, nullable=False)  # vd "Con gái"/"Vợ"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
