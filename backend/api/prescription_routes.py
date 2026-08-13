@@ -23,6 +23,7 @@ from backend.models.schemas import (
     PrescriptionDecisionRequest,
     PrescriptionListResponse,
     PrescriptionOut,
+    PrescriptionUpdateRequest,
 )
 from backend.services.prescription import (
     VmecError,
@@ -31,6 +32,7 @@ from backend.services.prescription import (
     duyet_phac_do,
     lay_phac_do,
     liet_ke_phac_do,
+    sua_phac_do,
     tao_phac_do,
     tu_choi_phac_do,
 )
@@ -106,6 +108,27 @@ def list_prescriptions(
 def get_prescription(prescription_id: str, db: Session = Depends(get_db)) -> PrescriptionOut:
     try:
         presc = lay_phac_do(db, prescription_id)
+    except VmecError as exc:
+        raise _http(exc) from exc
+    return _to_out(presc)
+
+
+@prescription_router.put(
+    "/prescriptions/{prescription_id}",
+    response_model=PrescriptionOut,
+    dependencies=[Depends(require_internal_secret)],
+)
+def update_prescription(
+    prescription_id: str, payload: PrescriptionUpdateRequest, db: Session = Depends(get_db)
+) -> PrescriptionOut:
+    try:
+        presc, _ = sua_phac_do(
+            db,
+            prescription_id,
+            doctor_id=payload.doctor_id,
+            items=[item.model_dump() for item in payload.items],
+            note=payload.note,
+        )
     except VmecError as exc:
         raise _http(exc) from exc
     return _to_out(presc)

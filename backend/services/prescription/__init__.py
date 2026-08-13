@@ -22,6 +22,7 @@ from backend.services.prescription.service import (
     duyet_phac_do,
     lay_phac_do,
     liet_ke_phac_do,
+    sua_phac_do,
     tao_phac_do,
     tu_choi_phac_do,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "duyet_phac_do",
     "lay_phac_do",
     "liet_ke_phac_do",
+    "sua_phac_do",
     "tao_phac_do",
     "tu_choi_phac_do",
 ]

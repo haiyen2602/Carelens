@@ -58,6 +58,9 @@ def list_reporting_patients(
             full_name=p.full_name,
             year_of_birth=p.year_of_birth,
             note=p.note,
+            gender=p.gender,
+            height_cm=p.height_cm,
+            weight_kg=p.weight_kg,
             watch=p.watch,
             adherence_pct=compute_adherence_pct(db, p.id),
         )
