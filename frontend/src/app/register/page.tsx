@@ -67,7 +67,7 @@ export default function RegisterPage() {
         role,
       });
 
-      router.push(`/verify-notice?email=${encodeURIComponent(email.trim())}`);
+      router.push("/?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng ký thất bại.");
       setLoading(false);

@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new Error(data?.detail ?? "Đăng ký thất bại");
     }
-    setState({ user: data.user, accessToken: data.access_token, loading: false });
+    // Không auto-login sau đăng ký — redirect về trang đăng nhập
     return data.user as AuthUser;
   }, []);
 

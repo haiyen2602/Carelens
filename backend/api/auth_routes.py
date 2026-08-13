@@ -8,26 +8,22 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
+import uuid
 
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import Account
+from backend.db.models import Account, Patient
 from backend.models.schemas import (
     ChangePasswordRequest,
     ChangePasswordResponse,
-    ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
     MeResponse,
     RefreshRequest,
     RegisterRequest,
-    ResendVerificationRequest,
-    ResetPasswordRequest,
     UserOut,
-    VerifyEmailRequest,
 )
 from backend.services.auth import (
     TokenError,
@@ -38,7 +34,7 @@ from backend.services.auth import (
     token_revoked_by_password_change,
     verify_password,
 )
-from backend.services.email import send_password_reset_email, send_verification_email
+
 
 auth_router = APIRouter()
 
@@ -68,114 +64,35 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)) -> Logi
     if existing_account is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã được sử dụng")
 
-    token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(UTC) + timedelta(hours=24)
-
+    account_id = str(uuid.uuid4())
     account = Account(
+        id=account_id,
         full_name=body.full_name,
         email=body.email,
         password_hash=hash_password(body.password),
         role=body.role,
         status="active",
-        is_email_verified=False,
-        email_verification_token=token,
-        email_verification_expires_at=expires_at,
+        is_email_verified=True,
     )
+
+    if body.role == "patient":
+        patient = Patient(id=account_id, full_name=body.full_name)
+        db.add(patient)
+        account.patient_id = account_id
+    elif body.role == "doctor":
+        account.doctor_id = account_id
+
     db.add(account)
     db.commit()
     db.refresh(account)
 
-    await send_verification_email(account.email, token)
-
     return _login_response(account)
 
 
-@auth_router.post("/auth/verify-email")
-async def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
-    account = (
-        db.query(Account)
-        .filter(Account.email_verification_token == body.token)
-        .first()
-    )
-    if account is None or account.email_verification_expires_at is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mã xác minh không hợp lệ"
-        )
-
-    now = datetime.now(UTC)
-    expires_at = account.email_verification_expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=UTC)
-
-    if now > expires_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mã xác minh đã hết hạn"
-        )
-
-    account.is_email_verified = True
-    account.email_verification_token = None
-    account.email_verification_expires_at = None
-    db.commit()
-
-    return {"detail": "Xác minh email thành công"}
 
 
-@auth_router.post("/auth/resend-verification")
-async def resend_verification(body: ResendVerificationRequest, db: Session = Depends(get_db)):
-    account = db.query(Account).filter(Account.email == body.email).first()
-    if account is not None and not getattr(account, "is_email_verified", True):
-        token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(UTC) + timedelta(hours=24)
-        account.email_verification_token = token
-        account.email_verification_expires_at = expires_at
-        db.commit()
-        await send_verification_email(account.email, token)
-
-    return {"detail": "Nếu email tồn tại và chưa xác minh, đường dẫn xác minh mới đã được gửi."}
 
 
-@auth_router.post("/auth/forgot-password")
-async def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    account = db.query(Account).filter(Account.email == body.email).first()
-    if account is not None:
-        token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(UTC) + timedelta(hours=1)
-        account.password_reset_token = token
-        account.password_reset_expires_at = expires_at
-        db.commit()
-        await send_password_reset_email(account.email, token)
-
-    return {"detail": "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu."}
-
-
-@auth_router.post("/auth/reset-password")
-async def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
-    account = (
-        db.query(Account)
-        .filter(Account.password_reset_token == body.token)
-        .first()
-    )
-    if account is None or account.password_reset_expires_at is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mã đặt lại mật khẩu không hợp lệ"
-        )
-
-    now = datetime.now(UTC)
-    expires_at = account.password_reset_expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=UTC)
-
-    if now > expires_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mã đặt lại mật khẩu đã hết hạn"
-        )
-
-    account.password_hash = hash_password(body.new_password)
-    account.password_reset_token = None
-    account.password_reset_expires_at = None
-    db.commit()
-
-    return {"detail": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."}
 
 
 @auth_router.post("/auth/change-password", response_model=ChangePasswordResponse)

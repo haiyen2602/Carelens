@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import {
   Activity,
   Bell,
@@ -30,7 +30,7 @@ const features = [
   { icon: BellRing, title: "Cảnh báo kịp thời", desc: "Thông báo ngay khi có dấu hiệu bất thường" },
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,6 +38,8 @@ export default function LoginPage() {
   const { login: authLogin } = useAuth();
   const { login: protoLogin } = useProto();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -194,12 +196,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mật khẩu</Label>
-                  <a href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-                    Quên mật khẩu?
-                  </a>
-                </div>
+                <Label htmlFor="password">Mật khẩu</Label>
                 <Input
                   id="password"
                   type="password"
@@ -208,6 +205,13 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+
+              {justRegistered && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Đã đăng ký tài khoản thành công. Vui lòng đăng nhập.
+                </div>
+              )}
 
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
@@ -242,5 +246,13 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center bg-background"><p className="text-sm text-muted-foreground">Đang tải...</p></div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

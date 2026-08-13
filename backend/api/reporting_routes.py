@@ -17,7 +17,7 @@ from fastapi import status as http_status
 from sqlalchemy import desc, or_, select
 from sqlalchemy.orm import Session
 
-from backend.api.security import require_internal_secret
+from backend.api.security import CurrentUser, get_current_user, require_role
 from backend.db.base import get_db
 from backend.db.models import AuditLog, Escalation, Patient
 from backend.models.schemas import (
@@ -41,13 +41,15 @@ _AUDIT_LOG_LIMIT = 200
 @reporting_router.get(
     "/reporting/patients",
     response_model=list[ReportingPatientOut],
-    dependencies=[Depends(require_internal_secret)],
 )
 def list_reporting_patients(
     search: str | None = Query(default=None, min_length=1),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> list[ReportingPatientOut]:
     query = select(Patient)
+    if current_user.role == "doctor" and current_user.doctor_id:
+        query = query.where(Patient.doctor_id == current_user.doctor_id)
     if search:
         pattern = f"%{search}%"
         query = query.where(or_(Patient.id.ilike(pattern), Patient.full_name.ilike(pattern)))
@@ -68,10 +70,12 @@ def list_reporting_patients(
 @reporting_router.patch(
     "/reporting/patients/{patient_id}/watch",
     response_model=PatientWatchOut,
-    dependencies=[Depends(require_internal_secret)],
 )
 def update_patient_watch(
-    patient_id: str, body: PatientWatchUpdateRequest, db: Session = Depends(get_db)
+    patient_id: str,
+    body: PatientWatchUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> PatientWatchOut:
     patient = db.get(Patient, patient_id)
     if patient is None:
@@ -85,12 +89,12 @@ def update_patient_watch(
 @reporting_router.get(
     "/escalations",
     response_model=list[EscalationOut],
-    dependencies=[Depends(require_internal_secret)],
 )
 def list_escalations(
     patient_id: str | None = Query(default=None),
     status: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> list[EscalationOut]:
     query = select(Escalation)
     if patient_id:
@@ -124,11 +128,11 @@ def list_escalations(
 @reporting_router.get(
     "/audit-log",
     response_model=list[AuditLogOut],
-    dependencies=[Depends(require_internal_secret)],
 )
 def list_audit_log(
     patient_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> list[AuditLogOut]:
     query = select(AuditLog)
     if patient_id:
