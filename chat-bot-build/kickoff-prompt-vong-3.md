@@ -337,7 +337,60 @@ hỏi lại tên. Regression: case "không" đơn thuần (không kèm tên) →
 
 ---
 
-## 9. Thứ tự
+## 9. Persona "Capy" — giọng văn thân thiện, mức độ giảm dần theo độ nghiêm trọng
+
+PM muốn chatbot có tên riêng ("Capy"/"Capy Medi", khớp thương hiệu capybara đã có của app), giọng văn thân
+thiện hơn, bớt cứng nhắc — nhưng **không áp dụng đều cho mọi loại phản hồi**. Ví dụ PM đưa ra tự thể hiện
+đúng nguyên tắc cần giữ: câu chào có "<3", câu cảnh báo nguy hiểm thì nghiêm túc, không có yếu tố dễ thương.
+
+### 9.1. Nguyên tắc: thân thiện tỉ lệ nghịch với mức độ nghiêm trọng
+
+- **Chào hỏi, câu hỏi thông tin thuốc thông thường, lịch uống thuốc** — thân thiện, có thể dùng tên riêng
+  "Capy"/"Capy Medi", biểu tượng nhẹ nhàng (vd "<3"), gọi tên bệnh nhân khi tự nhiên.
+- **CLASSIFY=Taken/xác nhận thường** — thân thiện vừa phải, không cần trang trọng nhưng cũng không cần biểu
+  tượng.
+- **SEVERITY=Trung bình trở lên, mọi cảnh báo redflag (mục 3)** — nghiêm túc, rõ ràng, **không dùng biểu
+  tượng dễ thương, không đùa cợt** — vẫn có thể giữ tên "Capy Medi" trong câu dẫn (không mất bản sắc), nhưng
+  nội dung chính phải nghiêm túc, đi thẳng vào vấn đề.
+
+### 9.2. Cá nhân hoá câu chào — cần xác nhận nguồn dữ liệu tên bệnh nhân
+
+Ví dụ PM: `"Chào {tên_bệnh_nhân}, Capy Medi sẵn sàng chăm sóc bạn <3"` — cần tên hiển thị của bệnh nhân.
+`[CẦN THÔNG TIN]`: tên bệnh nhân lấy từ đâu — có sẵn trong DB chatbot hiện tại (bảng nào?), hay cần gọi sang
+hệ thống chính của app (liên quan `auth-api`, #10, cùng nguồn dữ liệu người dùng)? Nếu chưa có sẵn, giữ tạm
+bản chào không có tên (`"Chào bạn, Capy Medi..."`) cho tới khi nguồn dữ liệu này rõ ràng — không tự bịa/giả
+định lấy tên từ đâu.
+
+Vẫn là template cố định (không cần LLM sinh câu chào) — chỉ thêm bước interpolate tên vào chỗ trống, đúng
+tinh thần "rẻ, không thêm LLM call" đã giữ xuyên suốt mục 6.
+
+### 9.3. Mở rộng mục 3.3 — thêm câu giải thích ngắn cho mỗi category, KHÔNG để LLM tự soạn lúc nguy hiểm
+
+PM muốn câu cảnh báo có kèm "giải thích lý do ngắn gọn" (vd *"Capy Medi cảnh báo bạn đây là hành động nguy
+hiểm. [giải thích ngắn]"*). **Không để LLM tự sinh giải thích tại thời điểm phát hiện nguy hiểm** — đúng lý
+do #13a được lập ra (không tự suy diễn), áp dụng nghiêm ngặt nhất đúng lúc nhạy cảm nhất.
+
+Thay vào đó: viết sẵn **1 câu giải thích cố định cho mỗi trong 5 category** (taxonomy mục 3.1), qua cùng quy
+trình duyệt như 5 overlay message đã có (PM + Phạm Thành Đạt) — mở rộng phạm vi mục 3.3 từ "5 tiêu đề cảnh
+báo" thành "5 tiêu đề + 5 câu giải thích ngắn đi kèm", vẫn giữ `# TODO [CẦN CHỐT]` cho toàn bộ, không tự viết
+nội dung y khoa.
+
+**Test bắt buộc:** với mỗi category, response cuối = đúng ghép `"Capy Medi cảnh báo bạn đây là hành động
+nguy hiểm. {câu giải thích cố định của category đó}"` — không có phần nào trong câu do LLM sinh tự do tại
+runtime.
+
+### 9.4. Áp dụng persona vào phần LLM-generated (answer_generation)
+
+- Thêm 1 đoạn ngắn vào `_ANSWER_PROMPT` mô tả giọng văn Capy (thân thiện, gần gũi, xưng "Capy"/"mình" khi
+  phù hợp) — áp dụng cho câu trả lời RAG (`drug_info`), **không đổi gì về kỷ luật grounding đã có** (#13a,
+  #13b vẫn nguyên vẹn — đổi giọng văn, không đổi nguồn thông tin được phép dùng).
+- Các hằng số có sẵn (`TAKEN_RESPONSE`, `LOW_ACTION_RESPONSE`, `MEDIUM_ACTION_RESPONSE`...) — cập nhật câu
+  chữ cho hợp giọng Capy theo đúng mức độ ở 9.1, nhưng đây vẫn là nội dung patient-facing đã/đang chờ duyệt
+  — sửa câu chữ không có nghĩa là bỏ qua bước duyệt nếu nội dung đó thuộc phạm vi CẦN CHỐT đã có.
+
+---
+
+## 10. Thứ tự
 
 1. Mục 2 (điều tra kiến trúc `safety_layer` — bắt buộc trước, không code gì trước khi có kết luận)
 2. Mục 5.1 phần timezone (kiểm tra/sửa gốc lưu trữ) — tách riêng làm sớm vì có thể ảnh hưởng mục 4 vòng 2 đã
@@ -348,12 +401,14 @@ hỏi lại tên. Regression: case "không" đơn thuần (không kèm tên) →
 6. Mục 7 (lịch sử chat — bảng `chat_messages`, cửa sổ ngắn hạn 15 phút, tra cứu dài hạn theo yêu cầu) — làm
    sau mục 3/4 vì cùng đụng tới `intent_classification`, gộp thay đổi vào cùng 1 lần sửa thay vì rải rác
 7. Mục 5 còn lại (format hiển thị lịch, lọc buổi, thời điểm dùng)
+8. Mục 9 (persona Capy) — làm SAU CÙNG, sau khi toàn bộ nội dung patient-facing khác (overlay, response
+   constants) đã ổn định — đổi giọng văn 1 lần cho tất cả, tránh phải sửa đi sửa lại theo từng mục xong trước
 
 ---
 
 **Khi nào dừng lại hỏi:** kết quả điều tra mục 2 nếu cho thấy kiến trúc khác hẳn giả định (vd không có đường
-LLM nào tồn tại từ trước) — xác nhận lại phạm vi mục 3 trước khi code. Tổng cộng 4 điểm `[CẦN CHỐT]` rải rác
-trong file, không tự chọn phương án cho bất kỳ điểm nào:
+LLM nào tồn tại từ trước) — xác nhận lại phạm vi mục 3 trước khi code. Tổng cộng 6 điểm cần dừng lại (4 CẦN
+CHỐT + 1 CẦN THÔNG TIN + phạm vi mở rộng), rải rác trong file, không tự chọn phương án cho bất kỳ điểm nào:
 
 1. Mục 3.3 — nội dung overlay cho category "tự hại" — PM + Phạm Thành Đạt (**hành vi** "kèm thông tin hỗ trợ
    trực tiếp" có thể implement trước, chỉ chờ đúng câu chữ).
@@ -361,3 +416,7 @@ trong file, không tự chọn phương án cho bất kỳ điểm nào:
 3. Mục 6.1 — shape field `quick_replies` trong response API — thống nhất với team app trước khi code phần
    trả về, không tự quyết định cấu trúc field một mình phía backend.
 4. Mục 7.1 — chính sách "xoá đoạn chat" có xoá vĩnh viễn hay chỉ ẩn khỏi hiển thị — PM/mentor.
+5. Mục 9.2 — `[CẦN THÔNG TIN]` nguồn dữ liệu tên hiển thị bệnh nhân — chưa có thì giữ bản chào không tên,
+   không tự bịa nguồn.
+6. Mục 9.3 — phạm vi mục 3.3 đã mở rộng thêm 5 câu giải thích ngắn (1/category) — cùng quy trình duyệt PM +
+   Phạm Thành Đạt như 5 tiêu đề overlay, không phải nội dung mới cần quy trình riêng.

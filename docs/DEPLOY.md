@@ -1,6 +1,6 @@
 # Deploy
 
-Repo này có **2 app độc lập**, deploy vào **cùng 1 project Railway** (`gleaming-growth`,
+Repo này có **2 app độc lập**, deploy vào **cùng 1 project Railway** (`VMEC-04`,
 environment `production`) nhưng là **2 service riêng**:
 
 | App | Thư mục | Service Railway | Framework | URL |
@@ -76,7 +76,7 @@ Settings → Secrets and variables → Actions:
 
 | Secret | Giá trị |
 |---|---|
-| `RAILWAY_TOKEN` | Tạo ở https://railway.com/account/tokens (project token của `gleaming-growth` là đủ) |
+| `RAILWAY_TOKEN` | Tạo ở https://railway.com/account/tokens (project token của `VMEC-04` là đủ) |
 
 Chỉ cần **1 secret** — service và environment truyền qua cờ `--service` / `--environment`
 nên runner không cần `railway link`.
@@ -125,11 +125,11 @@ Mỗi thư mục link tới **1 service riêng** — link ở root **không** t�
 railway login
 
 # backend
-railway link --project gleaming-growth --environment production --service "VMEC-04/BE"
+railway link --project VMEC-04 --environment production --service "VMEC-04/BE"
 
 # frontend
 cd frontend
-railway link --project gleaming-growth --environment production --service "VMEC-04/FE"
+railway link --project VMEC-04 --environment production --service "VMEC-04/FE"
 ```
 
 Kéo env về máy để chạy local:
