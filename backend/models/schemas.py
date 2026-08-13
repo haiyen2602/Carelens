@@ -12,12 +12,16 @@ class LoginRequest(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    """POST /api/v1/auth/register (api-contracts.md §1)."""
+    """POST /api/v1/auth/register (api-contracts.md §1).
+
+    Tu dang ky chi cho 2 role: `patient` (benh nhan/nguoi than dung chung) va
+    `doctor`. `caregiver`/`admin` chi tao duoc qua account-api (§1b) boi admin.
+    """
 
     full_name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
-    role: Literal["doctor", "patient", "caregiver"] = "patient"
+    role: Literal["doctor", "patient"] = "patient"
 
 
 class VerifyEmailRequest(BaseModel):
@@ -73,6 +77,18 @@ class LoginResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
+
+
+class ChangePasswordResponse(LoginResponse):
+    """Response 200 cua POST /api/v1/auth/change-password.
+
+    KE THUA LoginResponse (tra ca access_token + refresh_token MOI) vi doi mat
+    khau THU HOI moi token cu (account.password_changed_at, migration 0018) -
+    ke ca token cua chinh thiet bi vua goi. Neu chi tra `detail`, nguoi vua doi
+    mat khau se bi dang xuat khoi chinh thiet bi cua minh ngay sau khi doi.
+    Giu `detail` de phia client cu (chi doc `detail`) khong vo."""
+
+    detail: str
 
 
 class MeResponse(BaseModel):

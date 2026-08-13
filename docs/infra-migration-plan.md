@@ -4,12 +4,18 @@
 > File này là nguồn sự thật DUY NHẤT về hạ tầng đang chuyển đổi — nếu thấy mô tả ở đây khác với
 > những gì đang chạy thật, tin vào cái đang chạy thật, sửa lại file này, không phải ngược lại.
 
+> **Cập nhật 2026-08-13 — kết quả thực tế khác kế hoạch bên dưới.** Cả 3 thành phần đều đã nằm trên
+> Railway (project `VMEC-04`): backend `https://vmec-04be-production.up.railway.app`, frontend
+> `https://vmec-04fe-production.up.railway.app`, database là service `Postgres` (pg 18.4 + pgvector)
+> — **không dùng Supabase**, **không còn dùng Vercel**. Kiến trúc và bảng trạng thái bên dưới giữ lại
+> làm hồ sơ quyết định; hạ tầng đang chạy xem `docs/DEPLOY.md`.
+
 ## Vấn đề đã xác nhận (không phải suy đoán)
 
 1. Database hiện chạy **local** (docker-compose, máy dev) — mỗi máy 1 dữ liệu khác nhau, backend
    deploy không có DB nào để trỏ tới.
 2. Backend (`capymedi` trên Vercel) **đang crash 500** (`FUNCTION_INVOCATION_FAILED`, xác nhận qua
-   `curl https://capymedi.vercel.app/api/v1/status` ngày 2026-08-11) — do thiếu `DATABASE_URL` thật
+   `curl <domain Vercel cũ>/api/v1/status` ngày 2026-08-11) — do thiếu `DATABASE_URL` thật
    và `INTERNAL_AUTH_SECRET` (validator fail-closed, `src/config.py`, mục 10 #10 của
    `chatbot-rag-design.md`).
 3. **Lý do sâu hơn, không chỉ thiếu env var:** backend dùng `AsyncIOScheduler` chạy TRONG process
@@ -38,8 +44,8 @@ Railway build thẳng từ đó — không cần sửa code, `AsyncIOScheduler` 
 | Cập nhật `DATABASE_URL` ở `.env` mọi máy dev | Chưa làm |
 | Deploy backend lên Railway (Dockerfile có sẵn) | Chưa làm — chờ `DATABASE_URL` Supabase |
 | Set env trên Railway (`DATABASE_URL`, `OPENAI_API_KEY`, `INTERNAL_AUTH_SECRET`, `CORS_ORIGINS`) | Chưa làm |
-| Đổi `NEXT_PUBLIC_API_URL` trên Vercel frontend → domain Railway | Chưa làm |
-| Bỏ project `capymedi` (backend cũ trên Vercel) | Chưa làm |
+| Đổi `NEXT_PUBLIC_API_URL` trên frontend → domain Railway | ✅ Xong — FE đã chuyển hẳn sang Railway, không còn deploy Vercel |
+| Bỏ project `capymedi` (backend cũ trên Vercel) | ✅ Không còn dùng — origin Vercel của nó đã xoá khỏi `CORS_ORIGINS` (2026-08-13) |
 | Cập nhật `docs/DEPLOY.md` theo kiến trúc mới | Chưa làm — làm sau khi Railway chạy thật, tránh mô tả cái chưa tồn tại |
 
 ## Việc tiếp theo, đúng thứ tự (không nhảy bước)

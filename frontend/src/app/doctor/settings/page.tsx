@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Switch } from "@/components/ui/switch";
 
 const options = [
@@ -29,6 +30,16 @@ export default function SettingsPage() {
           </div>
         ))}
       </div>
+
+      <section className="surface-card flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">Bảo mật</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Đổi mật khẩu đăng nhập của tài khoản bác sĩ đang dùng.
+          </p>
+        </div>
+        <ChangePasswordDialog />
+      </section>
     </div>
   );
 }

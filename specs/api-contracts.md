@@ -54,6 +54,8 @@
 }
 ```
 
+`role` khi tự đăng ký chỉ nhận `patient` | `doctor` (mặc định `patient`); giá trị khác trả `422`. Bệnh nhân và người thân dùng chung role `patient` trên form đăng ký; `caregiver`/`admin` chỉ được tạo bởi `admin` qua `account-api` §1b.
+
 ```json
 // POST /api/v1/auth/login, POST /api/v1/auth/register — response 200/201
 {

@@ -67,3 +67,33 @@ def decode_token(token: str) -> dict[str, Any]:
         return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except JWTError as exc:
         raise TokenError(str(exc)) from exc
+
+
+def token_revoked_by_password_change(
+    payload: dict[str, Any], password_changed_at: datetime | None
+) -> bool:
+    """True neu token nay duoc phat TRUOC lan doi mat khau gan nhat cua chu
+    tai khoan -> phai coi nhu het hieu luc.
+
+    JWT la stateless: da phat ra thi khong "xoa" duoc tu xa. Cach thu hoi duy
+    nhat ma khong can bang blacklist la so claim `iat` voi 1 moc trong DB
+    (`account.password_changed_at`, migration 0018). Doi mat khau => moc tang
+    len => moi token cu (ke ca refresh token han 30 ngay dang nam tren thiet
+    bi khac) roi vao qua khu cua moc va bi tu choi.
+
+    So sanh o do CHINH XAC TOI GIAY (int) co y: jose encode `iat` thanh
+    integer epoch (cat phan le), nen token vua phat trong cung giay voi
+    `password_changed_at` co the co iat NHO HON moc vai tram ms neu so bang
+    float - dieu do se tu thu hoi luon token moi vua tra cho chinh nguoi vua
+    doi mat khau.
+
+    Thieu `iat` (token khong do _create_token o day sinh ra) -> FAIL-CLOSED,
+    coi la da thu hoi: khong the chung minh token duoc phat sau moc."""
+    if password_changed_at is None:
+        return False
+    if password_changed_at.tzinfo is None:
+        password_changed_at = password_changed_at.replace(tzinfo=UTC)
+    iat = payload.get("iat")
+    if iat is None:
+        return True
+    return int(iat) < int(password_changed_at.timestamp())

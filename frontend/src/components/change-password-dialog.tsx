@@ -20,7 +20,7 @@ export function ChangePasswordDialog({
 }: {
   trigger?: React.ReactNode;
 }) {
-  const { accessToken } = useAuth();
+  const { accessToken, user, updateSession } = useAuth();
   const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -57,6 +57,10 @@ export function ChangePasswordDialog({
     setLoading(true);
 
     try {
+      if (!accessToken) {
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: {
@@ -69,9 +73,19 @@ export function ChangePasswordDialog({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
+        // 401 o day KHONG phai sai mat khau (sai mat khau hien tai la 400 -
+        // xem backend/api/auth_routes.py): access_token het han/khong con
+        // hop le, nen huong dan dang nhap lai thay vi bao "doi mat khau that
+        // bai" chung chung.
+        if (res.status === 401) {
+          throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        }
         throw new Error(data?.detail ?? "Đổi mật khẩu thất bại.");
+      }
+      if (data?.access_token && user) {
+        updateSession(data.access_token, { ...user, ...data.user });
       }
       setSuccess(true);
     } catch (err) {
@@ -121,6 +135,7 @@ export function ChangePasswordDialog({
                 <Input
                   id="current_pass"
                   type="password"
+                  autoComplete="current-password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="pl-9"
@@ -136,6 +151,7 @@ export function ChangePasswordDialog({
                 <Input
                   id="new_pass"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Tối thiểu 8 ký tự"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -152,6 +168,7 @@ export function ChangePasswordDialog({
                 <Input
                   id="confirm_new_pass"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Nhập lại mật khẩu mới"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

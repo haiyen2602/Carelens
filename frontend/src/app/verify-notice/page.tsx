@@ -3,19 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { ArrowLeft, CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
+import { useState, Suspense } from "react";
+import { ArrowLeft, CheckCircle2, Loader2, MailCheck, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function VerifyNoticePage() {
-  return (
-    <Suspense fallback={null}>
-      <VerifyNoticeContent />
-    </Suspense>
-  );
-}
-
-function VerifyNoticeContent() {
+function VerifyNoticePageContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "email của bạn";
 
@@ -104,5 +96,24 @@ function VerifyNoticeContent() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function VerifyNoticePage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/20 px-6 py-12">
+        <div className="mx-auto w-full max-w-md space-y-6 rounded-3xl border bg-card p-8 shadow-xl text-center">
+          <div className="space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Đang tải...</h1>
+          </div>
+        </div>
+      </main>
+    }>
+      <VerifyNoticePageContent />
+    </Suspense>
   );
 }

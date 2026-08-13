@@ -360,6 +360,12 @@ class Account(Base):
     email_verification_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     password_reset_token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     password_reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # THEM sau (migration 0018) - moc thoi gian doi mat khau gan nhat, dung de
+    # THU HOI moi token da phat truoc do (JWT khong the "xoa" tu xa, nen phai
+    # co 1 moc trong DB de so voi claim `iat` - xem backend/services/auth.py::
+    # token_revoked_by_password_change). NULL = chua tung doi mat khau ->
+    # khong thu hoi gi (tai khoan tao truoc migration 0018).
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 

@@ -287,6 +287,13 @@ async def test_change_password_success(unauthenticated_client, demo_account):
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
+    # Verify me works with original token
+    me_before = await unauthenticated_client.get("/api/v1/auth/me", headers=headers)
+    assert me_before.status_code == 200
+
+    import asyncio
+    await asyncio.sleep(1.1)
+
     new_pass = "changed-password-789"
     change_res = await unauthenticated_client.post(
         "/api/v1/auth/change-password",
@@ -294,7 +301,23 @@ async def test_change_password_success(unauthenticated_client, demo_account):
         json={"current_password": demo_account["password"], "new_password": new_pass},
     )
     assert change_res.status_code == 200
-    assert change_res.json()["detail"] == "Đổi mật khẩu thành công"
+    body = change_res.json()
+    assert body["detail"] == "Đổi mật khẩu thành công"
+    assert body["access_token"]
+    assert body["refresh_token"]
+    assert body["token_type"] == "bearer"
+    
+    new_token = body["access_token"]
+
+    # Verify old token is now revoked (should return 401)
+    me_old_token = await unauthenticated_client.get("/api/v1/auth/me", headers=headers)
+    assert me_old_token.status_code == 401
+
+    # Verify new token works (should return 200)
+    me_new_token = await unauthenticated_client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {new_token}"}
+    )
+    assert me_new_token.status_code == 200
 
     # Verify old password fails
     fail_res = await unauthenticated_client.post(
