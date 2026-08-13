@@ -11,23 +11,58 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1)
 
 
+class RegisterRequest(BaseModel):
+    """POST /api/v1/auth/register (api-contracts.md §1)."""
+
+    full_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    role: Literal["doctor", "patient", "caregiver"] = "patient"
+
+
+class VerifyEmailRequest(BaseModel):
+    """POST /api/v1/auth/verify-email."""
+
+    token: str = Field(..., min_length=1)
+
+
+class ResendVerificationRequest(BaseModel):
+    """POST /api/v1/auth/resend-verification."""
+
+    email: EmailStr
+
+
+class ForgotPasswordRequest(BaseModel):
+    """POST /api/v1/auth/forgot-password."""
+
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """POST /api/v1/auth/reset-password."""
+
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class ChangePasswordRequest(BaseModel):
+    """POST /api/v1/auth/change-password."""
+
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
 class UserOut(BaseModel):
-    """`user` object trong response cua /auth/login (api-contracts.md §1) -
-    KHONG bao gom password_hash hay lien ket noi bo (patient_id/doctor_id),
-    chi dung dung field mau trong contract."""
+    """`user` object trong response cua /auth/login (api-contracts.md §1)."""
 
     id: str
     full_name: str
     role: str
+    is_email_verified: bool = True
 
 
 class LoginResponse(BaseModel):
-    """Response 200 cua POST /api/v1/auth/login - khop JSON mau
-    api-contracts.md §1 (access_token/token_type/expires_in/user). Them
-    `refresh_token` NGOAI mau contract - contract co dinh nghia endpoint
-    POST /auth/refresh nhung KHONG noi ro client lay refresh_token dau tien
-    tu dau; day la khoang trong hop ly cua ban Draft, khong phai sai lech
-    contract co chu dinh."""
+    """Response 200 cua POST /api/v1/auth/login."""
 
     access_token: str
     token_type: str = "bearer"
@@ -41,17 +76,16 @@ class RefreshRequest(BaseModel):
 
 
 class MeResponse(BaseModel):
-    """GET /api/v1/auth/me (api-contracts.md §1) - "Thong tin user hien tai
-    + role + danh sach lien ket". `patient_id`/`doctor_id`: lien ket TOI
-    THIEU hien co tren Account (TASK-010) - CHUA phai mo hinh lien ket day
-    du bac si<->benh nhan<->nguoi than (user-roles.md, ngoai pham vi)."""
+    """GET /api/v1/auth/me."""
 
     id: str
     full_name: str
     email: str
     role: str
+    is_email_verified: bool = True
     patient_id: str | None = None
     doctor_id: str | None = None
+
 
 
 AccountRole = Literal["doctor", "patient", "caregiver", "admin"]
