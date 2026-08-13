@@ -409,18 +409,21 @@ function toMonitoredRelative(m: MonitoredPatient): MonitoredRelative {
 
 export function ProtoProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initial);
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   // Chi dung de dich patient_id -> ten hien thi trong flattenPrescriptions,
   // KHONG lien quan mang `patients` mock (age/condition/adherence/watch) -
   // hai nguon phuc vu hai muc dich khac han nhau, xem lib/patients.ts.
   const [tenBenhNhanThat, setTenBenhNhanThat] = useState<Record<string, string>>({});
 
   const refreshPrescriptions = useCallback(async () => {
-    const [records, benhNhan] = await Promise.all([listPrescriptions(), listPatients()]);
+    const [records, benhNhan] = await Promise.all([
+      listPrescriptions(),
+      listPatients(undefined, accessToken),
+    ]);
     const tenMoi = Object.fromEntries(benhNhan.map((b) => [b.id, b.fullName]));
     setTenBenhNhanThat(tenMoi);
     setState((s) => ({ ...s, prescriptions: flattenPrescriptions(records, tenMoi) }));
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     refreshPrescriptions().catch((err) => {
@@ -443,17 +446,17 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshEscalations = useCallback(async () => {
-    const records = await listEscalations();
+    const records = await listEscalations({}, accessToken);
     setState((s) => ({ ...s, alerts: records.map(toSysAlert) }));
-  }, []);
+  }, [accessToken]);
 
   const refreshAudit = useCallback(async () => {
-    const records = await listAuditLog();
+    const records = await listAuditLog(undefined, accessToken);
     setState((s) => ({ ...s, audit: records.map(toAuditEntry) }));
-  }, []);
+  }, [accessToken]);
 
   const refreshReportingPatients = useCallback(async () => {
-    const records = await listReportingPatients();
+    const records = await listReportingPatients(undefined, accessToken);
     const patients = records.map(toPatient);
     setState((s) => ({ ...s, patients }));
 
@@ -474,7 +477,7 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       })),
     );
     setState((s) => ({ ...s, familyContacts }));
-  }, []);
+  }, [accessToken]);
 
   const refreshMonitoredRelatives = useCallback(async (caregiverAccountId: string | null | undefined) => {
     if (!caregiverAccountId) {
@@ -604,7 +607,7 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       },
       toggleWatch: async (id) => {
         const p = state.patients.find((x) => x.id === id);
-        await setPatientWatch(id, !(p?.watch ?? false));
+        await setPatientWatch(id, !(p?.watch ?? false), accessToken);
         await refreshReportingPatients();
       },
       pushActivity: (title, detail) => {
@@ -626,7 +629,7 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, activity: s.activity.map((a) => ({ ...a, read: true })) }));
       },
     }),
-    [state, user, refreshPrescriptions, refreshDoses, refreshEscalations, refreshReportingPatients],
+    [state, user, accessToken, refreshPrescriptions, refreshDoses, refreshEscalations, refreshReportingPatients],
   );
 
   return <ProtoContext.Provider value={value}>{children}</ProtoContext.Provider>;

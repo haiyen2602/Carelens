@@ -20,9 +20,14 @@ type PatientApiItem = {
   note: string | null;
 };
 
-export async function listPatients(search?: string): Promise<PatientRecord[]> {
+export async function listPatients(
+  search?: string,
+  accessToken?: string | null,
+): Promise<PatientRecord[]> {
   const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
-  const response = await fetch(`/api/patients${qs}`);
+  const response = await fetch(`/api/patients${qs}`, {
+    headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  });
   if (!response.ok) {
     throw new Error(`Không tải được danh sách bệnh nhân (${response.status})`);
   }

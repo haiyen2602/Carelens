@@ -50,18 +50,30 @@ function toReportingPatient(p: ReportingPatientApi): ReportingPatient {
   };
 }
 
-export async function listReportingPatients(search?: string): Promise<ReportingPatient[]> {
+export async function listReportingPatients(
+  search?: string,
+  accessToken?: string | null,
+): Promise<ReportingPatient[]> {
   const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
-  const response = await fetch(`/api/reporting/patients${qs}`);
+  const response = await fetch(`/api/reporting/patients${qs}`, {
+    headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  });
   if (!response.ok) return loi(response);
   const items: ReportingPatientApi[] = await response.json();
   return items.map(toReportingPatient);
 }
 
-export async function setPatientWatch(patientId: string, watch: boolean): Promise<{ id: string; watch: boolean }> {
+export async function setPatientWatch(
+  patientId: string,
+  watch: boolean,
+  accessToken?: string | null,
+): Promise<{ id: string; watch: boolean }> {
   const response = await fetch(`/api/reporting/patients/${encodeURIComponent(patientId)}/watch`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({ watch }),
   });
   if (!response.ok) return loi(response);
@@ -81,10 +93,14 @@ export type PatientHealthPatch = {
 export async function updatePatientHealth(
   patientId: string,
   patch: { note?: string; gender?: string; heightCm?: number; weightKg?: number },
+  accessToken?: string | null,
 ): Promise<PatientHealthPatch> {
   const response = await fetch(`/api/patients/${encodeURIComponent(patientId)}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({
       note: patch.note,
       gender: patch.gender,

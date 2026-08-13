@@ -47,11 +47,16 @@ function toAuditLogEntry(a: AuditLogApi): AuditLogEntry {
   };
 }
 
-export async function listAuditLog(patientId?: string): Promise<AuditLogEntry[]> {
+export async function listAuditLog(
+  patientId?: string,
+  accessToken?: string | null,
+): Promise<AuditLogEntry[]> {
   const query = new URLSearchParams();
   if (patientId) query.set("patient_id", patientId);
 
-  const response = await fetch(`/api/audit-log?${query.toString()}`);
+  const response = await fetch(`/api/audit-log?${query.toString()}`, {
+    headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  });
   if (!response.ok) return loi(response);
   const items: AuditLogApi[] = await response.json();
   return items.map(toAuditLogEntry);
