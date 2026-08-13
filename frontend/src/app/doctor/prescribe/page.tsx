@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { goiYLieu } from "@/lib/drugs";
+import { listPatients, type PatientRecord } from "@/lib/patients";
 import { PatientCombobox } from "@/components/patient-combobox";
 import { DoseMiniCalendar } from "@/components/dose-mini-calendar";
 import { useProto } from "@/lib/proto-store";
 import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-schedule";
+
+// Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
+// anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
+// con so nguyen. Doc tam so dau tien trong chuoi - khong doan duoc thi de
+// trong, lieu do se roi ve nut bam xac nhan thay vi anh (van hop le, chi la
+// bang chung yeu hon).
+function docSoVien(dose: string): number | null {
+  const khop = dose.match(/\d+/);
+  return khop ? Number(khop[0]) : null;
+}
 
 const defaultTimes = DEFAULT_TIMES;
 
 type MedRow = {
   id: string;
   med: string;
+  // Danh tinh that trong danh muc thuoc. Rong khi bac si tu go mot ten khong
+  // co trong danh muc — van ke don duoc, nhung lieu do se khong xac minh duoc
+  // bang anh (khong biet dang bao che), phai xac nhan bang nut bam.
+  drugId: string;
+  dangThuoc: string;
   dose: string;
   perDay: number;
   meal: string;
@@ -40,6 +57,8 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
   return {
     id: crypto.randomUUID(),
     med: "",
+    drugId: "",
+    dangThuoc: "",
     dose: "1 viên",
     perDay: 1,
     meal: "Sau ăn",
@@ -53,29 +72,36 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
 }
 
 export default function PrescribePage() {
-  const { patients, createPrescription } = useProto();
-  const patientOptions = patients.map((p, i) => ({
+  const { createPrescription } = useProto();
+  // Danh sach benh nhan THAT (bang `patient`), khac han mang `patients` mock
+  // cua useProto() - mang do phuc vu dashboard tuan thu (age/condition/
+  // adherence), chua co ben backend. Xem lib/patients.ts.
+  const [benhNhanThat, setBenhNhanThat] = useState<PatientRecord[]>([]);
+  const [patientId, setPatientId] = useState("");
+  const [note, setNote] = useState("");
+  const [dangGui, setDangGui] = useState(false);
+  // Bat dau bang mot dong trong. Truoc day dien san "Amlodipine 5mg" - mot
+  // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
+  // se thanh don thuoc khong tra cuu duoc dang bao che.
+  const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
+
+  useEffect(() => {
+    listPatients()
+      .then((ds) => {
+        setBenhNhanThat(ds);
+        setPatientId((hienTai) => hienTai || (ds[0]?.id ?? ""));
+      })
+      .catch((err) => {
+        console.error("Không tải được danh sách bệnh nhân:", err);
+        toast.error("Không tải được danh sách bệnh nhân");
+      });
+  }, []);
+
+  const patientOptions = benhNhanThat.map((p, i) => ({
     id: p.id,
-    name: p.name,
+    name: p.fullName,
     displayId: `BN${String(i + 1).padStart(4, "0")}`,
   }));
-  const [patient, setPatient] = useState(patients[0]?.name ?? "");
-  const [note, setNote] = useState("Theo dõi huyết áp mỗi sáng");
-  const [meds, setMeds] = useState<MedRow[]>([
-    {
-      id: crypto.randomUUID(),
-      med: "Amlodipine 5mg",
-      dose: "1 viên",
-      perDay: 2,
-      meal: "Sau ăn",
-      times: defaultTimes[2] ?? ["08:00"],
-      startDate: today(),
-      endDate: "",
-      hasCycle: false,
-      cycleOnDays: 5,
-      cycleOffDays: 2,
-    },
-  ]);
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
     setMeds((prev) => {
@@ -108,7 +134,7 @@ export default function PrescribePage() {
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSubmit = meds.every((m) => m.med.trim().length > 0);
+  const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
 
   const activeMeds = meds.filter((m) => m.med.trim().length > 0);
   const timeline = [
@@ -124,29 +150,40 @@ export default function PrescribePage() {
       .entries(),
   ].sort((a, b) => a[0].localeCompare(b[0]));
 
-  const submit = () => {
-    const orderId = crypto.randomUUID();
-    for (const m of meds) {
-      createPrescription({
-        orderId,
-        patient,
-        med: m.med,
-        dose: m.dose,
-        perDay: m.perDay,
-        meal: m.meal,
+  const submit = async () => {
+    setDangGui(true);
+    try {
+      // MOT lan goi cho ca don, khong phai tung thuoc mot: hai thuoc cung gio
+      // phai nam chung mot phac do de backend gop dung 1 dose_event thay vi 2
+      // (backend/services/scheduling/generator.py - benh nhan bay ca nam
+      // thuoc ra roi chup MOT anh, khong phai chup tung thuoc).
+      await createPrescription({
+        patientId,
         note,
-        times: m.times,
-        startDate: m.startDate,
-        endDate: m.endDate,
-        cycle: m.hasCycle ? { onDays: m.cycleOnDays, offDays: m.cycleOffDays } : null,
+        items: meds.map((m) => ({
+          drugId: m.drugId || null,
+          tenThuoc: m.med,
+          dangThuoc: m.dangThuoc || null,
+          duongDung: null, // backend tu tra lai tu drugId neu co, xem service.py::_chuan_hoa_item
+          hamLuong: null,
+          lieuDung: m.dose,
+          thoiDiemDung: m.meal,
+          soVienMoiLan: docSoVien(m.dose),
+          gioNhac: m.times,
+        })),
       });
+      toast.success(
+        meds.length > 1
+          ? `Đã gửi đơn (${meds.length} thuốc) vào hàng đợi duyệt HITL`
+          : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
+      );
+      setMeds([newMedRow()]);
+      setNote("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tạo được đơn thuốc");
+    } finally {
+      setDangGui(false);
     }
-    toast.success(
-      meds.length > 1
-        ? `Đã gửi ${meds.length} thuốc vào hàng đợi duyệt HITL`
-        : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
-    );
-    setMeds([newMedRow()]);
   };
 
   return (
@@ -165,8 +202,9 @@ export default function PrescribePage() {
             <PatientCombobox
               id="patient"
               options={patientOptions}
-              value={patient}
-              onChange={setPatient}
+              value={patientId}
+              onChange={setPatientId}
+              placeholder={benhNhanThat.length === 0 ? "Đang tải…" : undefined}
             />
           </div>
 
@@ -194,7 +232,14 @@ export default function PrescribePage() {
                       id={`med-${m.id}`}
                       value={m.med}
                       onChange={(v) => updateMed(m.id, { med: v })}
-                      onSelectDrug={(d) => updateMed(m.id, { med: d.name, dose: d.defaultDose })}
+                      onSelectDrug={(d) =>
+                        updateMed(m.id, {
+                          med: d.tenThuoc,
+                          drugId: d.drugId,
+                          dangThuoc: d.dangThuoc,
+                          dose: goiYLieu(d),
+                        })
+                      }
                       placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
                     />
                   </div>

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { goiYLieu } from "@/lib/drugs";
 import { DEFAULT_TIMES } from "@/lib/dose-schedule";
 import type { Prescription } from "@/lib/proto-store";
 
@@ -110,7 +111,7 @@ export function PrescriptionEditDialog({
                     id={`edit-med-${m.id}`}
                     value={m.med}
                     onChange={(v) => updateRow(m.id, { med: v })}
-                    onSelectDrug={(d) => updateRow(m.id, { med: d.name, dose: d.defaultDose })}
+                    onSelectDrug={(d) => updateRow(m.id, { med: d.tenThuoc, dose: goiYLieu(d) })}
                     placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
                   />
                 </div>

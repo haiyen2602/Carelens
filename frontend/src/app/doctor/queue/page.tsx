@@ -57,9 +57,13 @@ function groupOrders(list: Prescription[]): Order[] {
 }
 
 export default function QueuePage() {
-  const { prescriptions, patients, decidePrescriptionOrder, updatePrescription } = useProto();
+  const { prescriptions, patients, decidePrescription, updatePrescription } = useProto();
   const [openId, setOpenId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // Khoa theo orderId dang cho ket qua Duyet/Tu choi - decidePrescription chi
+  // can id CUA MOT dong trong don (xem comment o proto-store.tsx) vi duyet/tu
+  // choi 1 dong la duyet/tu choi CA phac do that dang sau no.
+  const [dangXuLy, setDangXuLy] = useState<string | null>(null);
   const pendingOrders = groupOrders(prescriptions.filter((p) => p.status === "pending"));
   const doneOrders = groupOrders(prescriptions.filter((p) => p.status !== "pending"));
   const patientIdByName = new Map(
@@ -187,11 +191,19 @@ export default function QueuePage() {
 
                   <div className="flex flex-wrap gap-2">
                     <Button
-                      onClick={() => {
-                        decidePrescriptionOrder(order.orderId, true);
-                        toast.success(
-                          `Đã duyệt & kích hoạt ${order.meds.length} thuốc, thông báo bệnh nhân + người thân`,
-                        );
+                      disabled={dangXuLy === order.orderId}
+                      onClick={async () => {
+                        setDangXuLy(order.orderId);
+                        try {
+                          await decidePrescription(order.meds[0].id, true);
+                          toast.success(
+                            `Đã duyệt & kích hoạt ${order.meds.length} thuốc, thông báo bệnh nhân + người thân`,
+                          );
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Không duyệt được đơn thuốc");
+                        } finally {
+                          setDangXuLy(null);
+                        }
                       }}
                     >
                       <Check className="mr-1 h-4 w-4" /> Duyệt cả đơn
@@ -202,9 +214,17 @@ export default function QueuePage() {
                     <Button
                       variant="ghost"
                       className="text-destructive"
-                      onClick={() => {
-                        decidePrescriptionOrder(order.orderId, false);
-                        toast("Đã từ chối đơn thuốc");
+                      disabled={dangXuLy === order.orderId}
+                      onClick={async () => {
+                        setDangXuLy(order.orderId);
+                        try {
+                          await decidePrescription(order.meds[0].id, false);
+                          toast("Đã từ chối đơn thuốc");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Không từ chối được đơn thuốc");
+                        } finally {
+                          setDangXuLy(null);
+                        }
                       }}
                     >
                       <X className="mr-1 h-4 w-4" /> Từ chối cả đơn

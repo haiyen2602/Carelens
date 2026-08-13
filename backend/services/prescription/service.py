@@ -1,0 +1,249 @@
+"""
+Vòng đời phác đồ: `draft → approved → active → completed | stopped | rejected`.
+
+Quy tắc nền, business-rules.md §1:
+
+  BR-1.1  Agent CHỈ hoạt động trên phác đồ đã duyệt. `draft` không sinh liều,
+          không nhắc, không chat theo liều.
+  BR-1.3  Sửa phác đồ đang chạy chỉ sinh lại liều CHƯA tới hạn.
+  BR-1.4  Dừng phác đồ -> mọi liều PENDING thành CANCELLED.
+  BR-1.5  Mọi chuyển trạng thái ghi lại actor + thời điểm.
+
+`approve()` là CỬA DUY NHẤT đưa phác đồ sang trạng thái chạy được (ADR-0010).
+Không hàm nào khác trong module này set `status` thành `approved`/`active`.
+
+KHÔNG TIN DỮ LIỆU TRÌNH DUYỆT GỬI LÊN. Frontend gửi `drug_id`, backend tra lại
+bảng `drug` để lấy `dang_thuoc`/`duong_dung`. Hai trường đó quyết định một liều
+có xác minh được bằng ảnh hay không — nhận bừa từ trình duyệt thì chỉ cần sửa
+một giá trị trong DevTools là biến thuốc tiêm thành viên nén, và hệ thống sẽ
+đòi bệnh nhân chụp ảnh một thứ không thể chụp.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import UTC, datetime
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from backend.db.models import DoseEvent, Patient, Prescription
+from backend.services.drug_knowledge import lay_thuoc
+from backend.services.prescription.errors import (
+    KhongTimThayError,
+    TrangThaiKhongHopLeError,
+    ViPhamNghiepVuError,
+)
+from backend.services.scheduling.generator import huy_lieu_chua_toi_han, sinh_dose_event
+
+logger = logging.getLogger(__name__)
+
+DRAFT = "draft"
+ACTIVE = "active"
+STOPPED = "stopped"
+REJECTED = "rejected"
+
+# Chỉ phác đồ đang ở draft mới duyệt được. Duyệt lại cái đang chạy là 409 chứ
+# không phải lỗi im lặng — bác sĩ cần biết mình vừa bấm vào cái đã duyệt rồi.
+CHO_DUYET = frozenset({DRAFT})
+DANG_CHAY = frozenset({ACTIVE, "approved"})
+
+# Form của bác sĩ chưa có ô "số ngày điều trị" (xem prescribe/page.tsx — form
+# chỉ hỏi giờ uống trong MỘT ngày). Đặt mặc định ở đây, có tên rõ ràng, để khi
+# form bổ sung trường đó thì xoá đúng một chỗ.
+# TODO: xoá khi form có trường số ngày điều trị.
+SO_NGAY_MAC_DINH = 7
+
+
+def _chuan_hoa_item(db: Session, item: dict) -> dict:
+    """Một dòng thuốc trong đơn, đã đối chiếu lại với danh mục.
+
+    `drug_id` rỗng (bác sĩ tự gõ một tên không có trong danh mục) vẫn kê được:
+    đơn thuốc vẫn hợp lệ, chỉ là liều đó không xác minh được bằng ảnh vì không
+    biết dạng bào chế — sẽ rơi về nút bấm xác nhận. Chặn hẳn ở đây thì bác sĩ
+    không kê nổi thuốc mới chưa kịp vào danh mục.
+    """
+    drug_id = str(item.get("drug_id") or "").strip()
+    dang_thuoc = str(item.get("dang_thuoc") or "").strip()
+    duong_dung = str(item.get("duong_dung") or "").strip()
+
+    if drug_id:
+        thuoc = lay_thuoc(db, drug_id)
+        if thuoc is None:
+            raise ViPhamNghiepVuError(f"Không tìm thấy thuốc {drug_id!r} trong danh mục.", drug_id=drug_id)
+        # Danh mục thắng, luôn luôn.
+        dang_thuoc, duong_dung = thuoc.dang_thuoc, thuoc.duong_dung
+        item = {**item, "ten_thuoc": item.get("ten_thuoc") or thuoc.ten_thuoc}
+    elif dang_thuoc:
+        logger.info("Thuốc %r kê tay, không có trong danh mục.", item.get("ten_thuoc", "?"))
+
+    return {
+        "drug_id": drug_id,
+        "ten_thuoc": str(item.get("ten_thuoc") or "").strip(),
+        "dang_thuoc": dang_thuoc,
+        "duong_dung": duong_dung,
+        "ham_luong": str(item.get("ham_luong") or "").strip() or None,
+        "lieu_dung": str(item.get("lieu_dung") or "").strip(),
+        "thoi_diem_dung": str(item.get("thoi_diem_dung") or "").strip(),
+        "so_vien_moi_lan": item.get("so_vien_moi_lan"),
+        "gio_nhac": list(item.get("gio_nhac") or []),
+    }
+
+
+def tao_phac_do(
+    db: Session,
+    *,
+    patient_id: str,
+    doctor_id: str,
+    items: list[dict],
+    note: str | None = None,
+    start_date: str | None = None,
+    duration_days: int | None = None,
+) -> Prescription:
+    """Tạo phác đồ mới. LUÔN ở `draft` — BR-1.1, ADR-0010.
+
+    Không có tham số nào cho phép tạo thẳng ở trạng thái đã duyệt. Muốn chạy
+    thì phải gọi `duyet_phac_do()`, và chỗ đó ghi lại ai duyệt lúc nào.
+    """
+    if not items:
+        raise ViPhamNghiepVuError("Đơn thuốc phải có ít nhất một thuốc.")
+    if db.get(Patient, patient_id) is None:
+        raise KhongTimThayError(f"Không tìm thấy bệnh nhân {patient_id!r}.", patient_id=patient_id)
+
+    presc = Prescription(
+        patient_id=patient_id,
+        doctor_id=doctor_id,
+        status=DRAFT,
+        items=[_chuan_hoa_item(db, item) for item in items],
+        start_date=start_date or datetime.now(UTC).date().isoformat(),
+        duration_days=duration_days or SO_NGAY_MAC_DINH,
+        note=note or None,
+    )
+    db.add(presc)
+    db.commit()
+    db.refresh(presc)
+
+    logger.info("Bác sĩ %s tạo phác đồ %s cho bệnh nhân %s (draft).", doctor_id, presc.id, patient_id)
+    return presc
+
+
+def lay_phac_do(db: Session, prescription_id: str) -> Prescription:
+    presc = db.get(Prescription, prescription_id)
+    if presc is None:
+        raise KhongTimThayError(f"Không tìm thấy phác đồ {prescription_id!r}.", prescription_id=prescription_id)
+    return presc
+
+
+def liet_ke_phac_do(
+    db: Session, *, patient_id: str | None = None, status: str | None = None, gioi_han: int = 100
+) -> list[Prescription]:
+    """Hàng đợi duyệt = lọc `status=draft`."""
+    stmt = select(Prescription)
+    if patient_id:
+        stmt = stmt.where(Prescription.patient_id == patient_id)
+    if status:
+        stmt = stmt.where(Prescription.status == status)
+    stmt = stmt.order_by(Prescription.created_at.desc()).limit(max(1, min(gioi_han, 500)))
+    return list(db.execute(stmt).scalars().all())
+
+
+def duyet_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple[Prescription, int]:
+    """Duyệt phác đồ và sinh lịch uống. Trả về (phác đồ, số liều đã tạo).
+
+    Cửa duy nhất sang trạng thái chạy được (ADR-0010). Đổi trạng thái và sinh
+    liều nằm trong CÙNG một giao dịch: duyệt xong mà lịch không sinh được sẽ để
+    lại một phác đồ `active` không có liều nào, và không ai phát hiện cho tới
+    khi bệnh nhân thắc mắc sao không thấy nhắc.
+    """
+    presc = lay_phac_do(db, prescription_id)
+
+    if presc.status in DANG_CHAY:
+        raise TrangThaiKhongHopLeError(
+            "Phác đồ này đã được duyệt rồi.", prescription_id=prescription_id, status=presc.status
+        )
+    if presc.status not in CHO_DUYET:
+        raise TrangThaiKhongHopLeError(
+            f"Không duyệt được phác đồ đang ở trạng thái {presc.status!r}.",
+            prescription_id=prescription_id,
+            status=presc.status,
+        )
+
+    try:
+        presc.status = ACTIVE
+        presc.approved_by = doctor_id  # BR-1.5
+        presc.approved_at = datetime.now(UTC)
+        so_lieu = sinh_dose_event(db, presc)
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Duyệt phác đồ %s thất bại, đã hoàn tác.", prescription_id)
+        raise
+
+    db.refresh(presc)
+    logger.info("Bác sĩ %s duyệt phác đồ %s, sinh %d liều.", doctor_id, prescription_id, so_lieu)
+    return presc, so_lieu
+
+
+def tu_choi_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> Prescription:
+    """Từ chối phác đồ ở hàng đợi. Không sinh liều nào."""
+    presc = lay_phac_do(db, prescription_id)
+    if presc.status not in CHO_DUYET:
+        raise TrangThaiKhongHopLeError(
+            f"Chỉ từ chối được phác đồ đang chờ duyệt, phác đồ này đang {presc.status!r}.",
+            prescription_id=prescription_id,
+            status=presc.status,
+        )
+
+    presc.status = REJECTED
+    presc.approved_by = doctor_id  # ai quyết định, dù là quyết định từ chối
+    presc.approved_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(presc)
+
+    logger.info("Bác sĩ %s từ chối phác đồ %s.", doctor_id, prescription_id)
+    return presc
+
+
+def dung_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple[Prescription, int]:
+    """Dừng phác đồ đang chạy. Mọi liều chưa tới hạn thành CANCELLED (BR-1.4)."""
+    presc = lay_phac_do(db, prescription_id)
+    if presc.status not in DANG_CHAY:
+        raise TrangThaiKhongHopLeError(
+            f"Chỉ dừng được phác đồ đang chạy, phác đồ này đang {presc.status!r}.",
+            prescription_id=prescription_id,
+            status=presc.status,
+        )
+
+    try:
+        so_huy = huy_lieu_chua_toi_han(db, prescription_id)
+        presc.status = STOPPED
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    db.refresh(presc)
+    logger.info("Bác sĩ %s dừng phác đồ %s, huỷ %d liều.", doctor_id, prescription_id, so_huy)
+    return presc, so_huy
+
+
+def dem_lieu(db: Session, prescription_id: str) -> int:
+    return len(
+        db.execute(select(DoseEvent.id).where(DoseEvent.prescription_id == prescription_id)).scalars().all()
+    )
+
+
+__all__ = [
+    "ACTIVE",
+    "DRAFT",
+    "REJECTED",
+    "SO_NGAY_MAC_DINH",
+    "STOPPED",
+    "dem_lieu",
+    "dung_phac_do",
+    "duyet_phac_do",
+    "lay_phac_do",
+    "liet_ke_phac_do",
+    "tao_phac_do",
+    "tu_choi_phac_do",
+]

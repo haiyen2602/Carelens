@@ -1,4 +1,22 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { listPatients } from "@/lib/patients";
+import {
+  approvePrescription,
+  createPrescription as createPrescriptionApi,
+  DEMO_DOCTOR_ID,
+  listPrescriptions,
+  rejectPrescription,
+  type PrescriptionItemInput,
+  type PrescriptionRecord,
+} from "@/lib/prescriptions";
 
 export type Role = "doctor" | "patient" | "family";
 
@@ -237,6 +255,8 @@ const initial: State = {
       note: "Bệnh nhân báo đã uống nhưng quên chụp ảnh — cần người thân xác nhận",
     },
   ],
+  // Du lieu mau chi hien thi tam - ProtoProvider tu tai ngay khi mount va ghi
+  // de bang phac do that (POST /api/v1/prescriptions), xem refreshPrescriptions.
   prescriptions: [
     {
       id: "p1",
@@ -367,9 +387,22 @@ type Ctx = State & {
   requestSymptomCheck: () => void;
   clearSymptomCheck: () => void;
   setEmergency: (v: boolean) => void;
-  decidePrescription: (id: string, ok: boolean) => void;
-  decidePrescriptionOrder: (orderId: string, ok: boolean) => void;
-  createPrescription: (p: Omit<Prescription, "id" | "status">) => void;
+  // `id` la id gop (xem flattenPrescriptions) - duyet/tu choi mot dong se
+  // duyet/tu choi CA phac do that dang sau no (moi thuoc trong don). UI gop
+  // nhieu dong cung orderId thanh 1 the (xem queue/page.tsx groupOrders) nen
+  // chi can truyen id CUA MOT dong trong don la du.
+  decidePrescription: (id: string, ok: boolean) => Promise<void>;
+  // Gui MOT LAN cho ca don (nhieu thuoc), khong phai tung thuoc mot - hai
+  // thuoc cung gio phai nam chung mot phac do de backend gop dung 1 dose_event
+  // (backend/services/scheduling/generator.py).
+  createPrescription: (input: {
+    patientId: string;
+    note?: string;
+    items: PrescriptionItemInput[];
+  }) => Promise<void>;
+  // Chua co API sua don o backend (chi co create/list/approve/reject/stop) -
+  // ham nay CHI sua state cuc bo, mat khi refresh trang. Giu lai de nut "Dieu
+  // chinh thu cong" o queue/page.tsx khong vo, cho toi khi co endpoint that.
   updatePrescription: (id: string, patch: Partial<Omit<Prescription, "id" | "orderId">>) => void;
   verifyDose: (doseId: string, verdict: "correct" | "wrong" | "unclear" | "absent") => void;
   familyConfirmDose: (id: string, taken: boolean) => void;
@@ -379,8 +412,66 @@ type Ctx = State & {
 
 const ProtoContext = createContext<Ctx | null>(null);
 
+// backend/services/prescription/service.py dung 5 trang thai: draft|active|
+// rejected|stopped|completed. UI hien tai chi phan biet 3 nhom (cho duyet/da
+// duyet/tu choi) - stopped va completed gop chung vao "approved" vi chua co
+// nut "Dung phac do" nao trong UI de tao ra 2 trang thai do qua luong nay.
+function anhXaTrangThai(status: string): Prescription["status"] {
+  if (status === "draft") return "pending";
+  if (status === "rejected") return "rejected";
+  return "approved"; // active | stopped | completed
+}
+
+// Ky tu noi id phac do that voi so thu tu thuoc khi rai phang - "::" khong
+// xuat hien trong uuid nen tach lai an toan.
+const NOI_ID = "::";
+
+/**
+ * Rai MOT phac do that (nhieu thuoc, `items[]`) thanh NHIEU dong kieu
+ * `Prescription` cu (1 dong = 1 thuoc) - de queue/dashboard/badge dung nguyen
+ * khong phai doi UI. Duyet/tu choi mot dong se goi API tren CA phac do goc
+ * (moi thuoc di theo nhau), nen sau khi tai lai ca nhom dong cung doi trang
+ * thai mot luc - dung y, vi chung von la mot don.
+ */
+// Backend chua tra cycle (dot uong - dot nghi) va luon co duration_days huu
+// han (mac dinh 7, xem service.py::SO_NGAY_MAC_DINH) nen tinh duoc endDate.
+function tinhNgayKetThuc(startDate: string, durationDays: number): string {
+  const d = new Date(`${startDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + durationDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function flattenPrescriptions(records: PrescriptionRecord[], tenBenhNhan: Record<string, string>): Prescription[] {
+  const ra: Prescription[] = [];
+  for (const p of records) {
+    const trangThai = anhXaTrangThai(p.status);
+    p.items.forEach((item, idx) => {
+      ra.push({
+        id: `${p.id}${NOI_ID}${idx}`,
+        orderId: p.id,
+        patient: tenBenhNhan[p.patientId] ?? p.patientId,
+        med: item.tenThuoc,
+        dose: item.lieuDung,
+        perDay: item.gioNhac.length || 1,
+        meal: "",
+        note: p.note ?? "",
+        times: item.gioNhac,
+        startDate: p.startDate,
+        endDate: tinhNgayKetThuc(p.startDate, p.durationDays),
+        cycle: null,
+        status: trangThai,
+      });
+    });
+  }
+  return ra;
+}
+
 export function ProtoProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initial);
+  // Chi dung de dich patient_id -> ten hien thi trong flattenPrescriptions,
+  // KHONG lien quan mang `patients` mock (age/condition/adherence/watch) -
+  // hai nguon phuc vu hai muc dich khac han nhau, xem lib/patients.ts.
+  const [tenBenhNhanThat, setTenBenhNhanThat] = useState<Record<string, string>>({});
 
   const log = useCallback((actor: string, action: string) => {
     setState((s) => ({
@@ -395,6 +486,21 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       alerts: [{ ...a, id: uid(), at: now(), status: "new" }, ...s.alerts],
     }));
   }, []);
+
+  const refreshPrescriptions = useCallback(async () => {
+    const [records, benhNhan] = await Promise.all([listPrescriptions(), listPatients()]);
+    const tenMoi = Object.fromEntries(benhNhan.map((b) => [b.id, b.fullName]));
+    setTenBenhNhanThat(tenMoi);
+    setState((s) => ({ ...s, prescriptions: flattenPrescriptions(records, tenMoi) }));
+  }, []);
+
+  useEffect(() => {
+    refreshPrescriptions().catch((err) => {
+      // Khong chan render ca app vi mot lan tai loi - trang doctor/queue,
+      // doctor/page se chi thay danh sach rong cho toi lan refresh ke tiep.
+      console.error("Không tải được danh sách phác đồ:", err);
+    });
+  }, [refreshPrescriptions]);
 
   const value = useMemo<Ctx>(
     () => ({
@@ -475,39 +581,28 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       requestSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: true })),
       clearSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: false })),
       setEmergency: (v) => setState((s) => ({ ...s, emergency: v })),
-      decidePrescription: (id, ok) => {
-        setState((s) => ({
-          ...s,
-          prescriptions: s.prescriptions.map((p) =>
-            p.id === id ? { ...p, status: ok ? "approved" : "rejected" } : p,
-          ),
-        }));
+      decidePrescription: async (id, ok) => {
+        const prescriptionId = id.split(NOI_ID)[0];
         const p = state.prescriptions.find((x) => x.id === id);
+        await (ok ? approvePrescription(prescriptionId) : rejectPrescription(prescriptionId));
+        await refreshPrescriptions();
         log(
           "BS. Phạm Quốc Huy",
-          `${ok ? "Duyệt" : "Từ chối"} phác đồ ${p?.med ?? id} — ${p?.patient ?? ""}`,
+          `${ok ? "Duyệt" : "Từ chối"} phác đồ ${p?.med ?? prescriptionId} — ${p?.patient ?? ""}`,
         );
       },
-      decidePrescriptionOrder: (orderId, ok) => {
-        setState((s) => ({
-          ...s,
-          prescriptions: s.prescriptions.map((p) =>
-            p.orderId === orderId ? { ...p, status: ok ? "approved" : "rejected" } : p,
-          ),
-        }));
-        const meds = state.prescriptions.filter((x) => x.orderId === orderId);
-        const patient = meds[0]?.patient ?? "";
+      createPrescription: async (input) => {
+        await createPrescriptionApi({
+          patientId: input.patientId,
+          doctorId: DEMO_DOCTOR_ID,
+          note: input.note,
+          items: input.items,
+        });
+        await refreshPrescriptions();
         log(
           "BS. Phạm Quốc Huy",
-          `${ok ? "Duyệt" : "Từ chối"} đơn thuốc (${meds.length} thuốc) — ${patient}`,
+          `Tạo đơn thuốc (${input.items.length} thuốc) cho bệnh nhân ${input.patientId}, chờ duyệt HITL`,
         );
-      },
-      createPrescription: (p) => {
-        setState((s) => ({
-          ...s,
-          prescriptions: [{ ...p, id: uid(), status: "pending" }, ...s.prescriptions],
-        }));
-        log("BS. Phạm Quốc Huy", `Tạo đơn thuốc ${p.med} cho ${p.patient}, chờ duyệt HITL`);
       },
       updatePrescription: (id, patch) => {
         setState((s) => ({
@@ -585,7 +680,7 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         }));
       },
     }),
-    [state, log, pushAlert],
+    [state, log, pushAlert, refreshPrescriptions],
   );
 
   return <ProtoContext.Provider value={value}>{children}</ProtoContext.Provider>;

@@ -20,14 +20,14 @@ export function PatientCombobox({
   id?: string;
   options: PatientOption[];
   value: string;
-  onChange: (name: string) => void;
+  onChange: (id: string) => void;
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const selected = options.find((p) => p.name === value);
+  const selected = options.find((p) => p.id === value);
   const q = query.trim().toLowerCase();
   const matches = q
     ? options.filter(
@@ -40,7 +40,7 @@ export function PatientCombobox({
       <div className="relative">
         <Input
           id={id}
-          value={open ? query : (selected?.name ?? value)}
+          value={open ? query : (selected?.name ?? "")}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             setQuery("");
@@ -62,7 +62,7 @@ export function PatientCombobox({
             <p className="px-3 py-2 text-sm text-muted-foreground">Không tìm thấy bệnh nhân.</p>
           )}
           {matches.map((p) => {
-            const isSelected = p.name === value;
+            const isSelected = p.id === value;
             return (
               <button
                 key={p.id}
@@ -70,7 +70,7 @@ export function PatientCombobox({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   clearTimeout(closeTimer.current);
-                  onChange(p.name);
+                  onChange(p.id);
                   setQuery("");
                   setOpen(false);
                 }}

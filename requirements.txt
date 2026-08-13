@@ -4,6 +4,10 @@ uvicorn[standard]>=0.34.0
 pydantic>=2.10.0
 pydantic-settings>=2.7.0
 python-dotenv>=1.0.0
+# FastAPI can goi nay de doc UploadFile (multipart/form-data) - thieu no thi
+# POST /api/v1/doses/{id}/photo loi ngay luc chay, khong loi luc import (chi
+# phat hien khi co request that goi toi route dung UploadFile).
+python-multipart>=0.0.12
 
 # AI / LangChain
 langchain>=0.3.0

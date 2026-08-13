@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
-import { DEMO_PATIENT_ID } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 import {
@@ -30,7 +29,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const lastQuestion = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { accessToken } = useAuth();
+  const { user, accessToken } = useAuth();
   const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
 
   useEffect(() => {
@@ -92,7 +91,7 @@ export default function AssistantPage() {
     setInput("");
     reset();
     mutate(
-      { patient_id: DEMO_PATIENT_ID, message: content },
+      { patient_id: user?.patient_id ?? "", message: content },
       {
         onSuccess: (data) => {
           appendMessage(activeId, "assistant", data.reply);

@@ -37,7 +37,7 @@ import unicodedata
 from dataclasses import dataclass
 from enum import StrEnum
 
-from backend.vlm_demthuoc.prompts import COUNT_KEYS
+from backend.services.photo_verification.count_keys import COUNT_KEYS
 
 logger = logging.getLogger(__name__)
 
