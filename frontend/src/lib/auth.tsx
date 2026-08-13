@@ -43,8 +43,16 @@ type AuthState = {
   loading: boolean;
 };
 
+type RegisterData = {
+  full_name: string;
+  email: string;
+  password: string;
+  role?: string;
+};
+
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<AuthUser>;
+  register: (data: { full_name: string; email: string; password: string; role?: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
 };
 
@@ -101,14 +109,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
+  const register = useCallback(async (payload: { full_name: string; email: string; password: string; role?: string }) => {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.detail ?? "Đăng ký thất bại");
+    }
+    setState({ user: data.user, accessToken: data.access_token, loading: false });
+    return data.user as AuthUser;
+  }, []);
+
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setState({ user: null, accessToken: null, loading: false });
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, login, logout }),
-    [state, login, logout],
+    () => ({ ...state, login, register, logout }),
+    [state, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

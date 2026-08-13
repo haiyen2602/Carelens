@@ -37,11 +37,25 @@
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
 | POST | `/api/v1/auth/login` | public | Đăng nhập, trả JWT |
+| POST | `/api/v1/auth/register` | public | Đăng ký tài khoản mới, trả JWT |
+| POST | `/api/v1/auth/forgot-password` | public | Yêu cầu email đặt lại mật khẩu |
+| POST | `/api/v1/auth/reset-password` | public | Đặt lại mật khẩu mới qua token |
+| POST | `/api/v1/auth/change-password` | any | Đổi mật khẩu cho người dùng hiện tại (Bearer) |
 | POST | `/api/v1/auth/refresh` | any | Làm mới token |
 | GET | `/api/v1/auth/me` | any | Thông tin user hiện tại + role + danh sách liên kết |
 
 ```json
-// POST /api/v1/auth/login — response 200
+// POST /api/v1/auth/register — request
+{
+  "full_name": "Nguyễn Văn A",
+  "email": "patient@example.com",
+  "password": "mat-khau-toi-thieu-8-ky-tu",
+  "role": "patient"
+}
+```
+
+```json
+// POST /api/v1/auth/login, POST /api/v1/auth/register — response 200/201
 {
   "access_token": "eyJ...",
   "token_type": "bearer",

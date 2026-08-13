@@ -194,7 +194,12 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <a href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                    Quên mật khẩu?
+                  </a>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -219,8 +224,11 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <p className="text-center text-xs text-muted-foreground">
-              Chưa có tài khoản? Liên hệ quản trị hệ thống bệnh viện.
+            <p className="text-center text-sm text-muted-foreground">
+              Chưa có tài khoản?{" "}
+              <a href="/register" className="font-semibold text-primary hover:underline">
+                Đăng ký ngay
+              </a>
             </p>
           </div>
         </section>

@@ -21,7 +21,7 @@ import uuid
 from datetime import UTC, datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, DateTime, Float, Index, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -348,6 +348,12 @@ class Account(Base):
     # neu khong, tinh nang khoa tai khoan chi la UI gia, khong chan dang
     # nhap that.
     status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_verification_token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    email_verification_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_reset_token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    password_reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
 
 
 class PendingDrugConfirmation(Base):

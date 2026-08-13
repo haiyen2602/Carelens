@@ -18,7 +18,13 @@ from fastapi import status as http_status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, get_current_patient_id, get_current_user, require_internal_secret
+from backend.api.security import (
+    CurrentUser,
+    get_current_patient_id,
+    get_current_user,
+    require_role,
+    verify_patient_access,
+)
 from backend.db.base import get_db
 from backend.db.models import Escalation
 from backend.models.schemas import CurrentEscalationResponse, EscalationAckRequest, EscalationAckResponse
@@ -38,10 +44,12 @@ class _PatientIdQuery:
 @escalation_router.post(
     "/escalations/{escalation_id}/ack",
     response_model=EscalationAckResponse,
-    dependencies=[Depends(require_internal_secret)],
 )
 async def ack_escalation(
-    escalation_id: str, request: EscalationAckRequest, db: Session = Depends(get_db)
+    escalation_id: str,
+    request: EscalationAckRequest,
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(require_role("doctor", "caregiver", "admin")),
 ) -> EscalationAckResponse:
     row = db.get(Escalation, escalation_id)
     if row is None:

@@ -162,3 +162,24 @@ def get_current_patient_id(request: _HasPatientId, current_user: CurrentUser) ->
     if current_user.role == "patient" and current_user.patient_id:
         return current_user.patient_id
     return request.patient_id
+
+
+def verify_patient_access(
+    patient_id: str,
+    current_user: CurrentUser,
+) -> bool:
+    """Kiểm tra xem current_user có quyền truy cập dữ liệu của patient_id hay không (ReBAC).
+
+    - admin: Được truy cập mọi bệnh nhân.
+    - patient: Chỉ truy cập bệnh nhân của chính mình (current_user.patient_id).
+    - doctor / caregiver: Được truy cập dữ liệu bệnh nhân trong danh sách phụ trách / liên kết.
+    """
+    if current_user.role == "admin":
+        return True
+    if current_user.role == "patient":
+        return current_user.patient_id == patient_id
+    if current_user.role in ("doctor", "caregiver"):
+        # Trong tương lai có thể query DB check link, hiện tại cho phép nếu là doctor/caregiver
+        return True
+    return False
+
