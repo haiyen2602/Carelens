@@ -5,7 +5,7 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!INTERNAL_SECRET) {
     return Response.json(
       { detail: "Server misconfigured: INTERNAL_AUTH_SECRET chua duoc set cho VMEC-04/FE." },
@@ -13,7 +13,9 @@ export async function GET() {
     );
   }
 
-  const upstream = await fetch(`${BACKEND_URL}/api/v1/patients`, {
+  const search = new URL(request.url).searchParams.get("search");
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  const upstream = await fetch(`${BACKEND_URL}/api/v1/patients${qs}`, {
     headers: { "X-Internal-Secret": INTERNAL_SECRET },
   });
 

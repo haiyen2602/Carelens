@@ -72,16 +72,15 @@ def update_dose_status(
 ) -> DoseSummary:
     """Benh nhan/nguoi than/bac si tu cap nhat trang thai 1 lieu (vd tu bao
     "da uong" khong qua chatbot). Phan quyen (KHONG dung require_internal_secret
-    - can biet DUNG ai dang goi de kiem tra quan he, xem docstring 3 nhanh
+    - can biet DUNG ai dang goi de kiem tra quan he, xem docstring 2 nhanh
     ben duoi):
       - role=patient: chi sua duoc lieu CUA CHINH MINH (dose_event.patient_id
         == current_user.patient_id).
       - role=caregiver: chi sua duoc lieu cua benh nhan co CaregiverLink toi
         chinh tai khoan dang goi (specs/user-roles.md).
-      - role=doctor: chi sua duoc lieu cua benh nhan minh phu trach
-        (patient.doctor_id == current_user.id - JWT `sub` chinh la Account.id,
-        cung gia tri duoc dung lam doctor_id o cac noi khac, vd
-        Prescription.doctor_id trong prescription_routes.py).
+      - role=doctor: sua duoc lieu cua BAT KY benh nhan nao (khong con rang
+        buoc theo patient.doctor_id - bac si quan ly toan bo benh nhan qua
+        tim kiem theo ID, xem patient_routes.py).
     404 neu dose_event khong ton tai (kiem tra TRUOC 403 - khong lo thong tin
     "co ton tai nhung ban khong co quyen" cho lieu khong ton tai)."""
     dose = db.get(DoseEvent, dose_id)
@@ -102,8 +101,7 @@ def update_dose_status(
         )
         authorized = link is not None
     elif current_user.role == "doctor":
-        patient = db.get(Patient, dose.patient_id)
-        authorized = patient is not None and patient.doctor_id == current_user.id
+        authorized = db.get(Patient, dose.patient_id) is not None
 
     if not authorized:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền sửa liều này")

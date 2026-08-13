@@ -5,8 +5,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { useProto } from "@/lib/proto-store";
 import { listDoses, type Dose } from "@/lib/doses";
+import { listReportingPatients, setPatientWatch, type ReportingPatient } from "@/lib/reporting";
+
+const DEBOUNCE_MS = 300;
+
+function tinhTuoi(yearOfBirth: number | null): number {
+  return yearOfBirth ? new Date().getFullYear() - yearOfBirth : 0;
+}
 
 function gioHienThi(iso: string): string {
   return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -17,7 +23,6 @@ function moTaThuoc(d: Dose): string {
 }
 
 export default function PatientsPage() {
-  const { patients, toggleWatch } = useProto();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   // Lich uong hom nay CUA DUNG benh nhan dang mo ho so - GET /doses can
@@ -25,14 +30,36 @@ export default function PatientsPage() {
   // tai rieng moi khi mo mot ho so thay vi dung mot mang `doses` toan cuc.
   const [dosesCuaHoSo, setDosesCuaHoSo] = useState<Dose[]>([]);
   const [dangTai, setDangTai] = useState(false);
-  const withDisplayId = patients.map((p, i) => ({
-    ...p,
-    displayId: `BN${String(i + 1).padStart(4, "0")}`,
+  // Bat ky bac si nao cung xem/quan ly duoc toan bo benh nhan - tim theo ID
+  // hoac ten qua tham so `search` cua backend (khong con loc theo doctor_id),
+  // debounce de tranh goi API tren tung phim go.
+  const [patients, setPatients] = useState<ReportingPatient[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      listReportingPatients(q)
+        .then(setPatients)
+        .catch(() => undefined);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [q, refreshKey]);
+
+  const list = patients.map((p) => ({
+    id: p.id,
+    displayId: p.id,
+    name: p.fullName,
+    age: tinhTuoi(p.yearOfBirth),
+    condition: p.note ?? "",
+    adherence: p.adherencePct ?? 0,
+    watch: p.watch,
   }));
-  const query = q.trim().toLowerCase();
-  const list = withDisplayId.filter(
-    (p) => p.name.toLowerCase().includes(query) || p.displayId.toLowerCase().includes(query),
-  );
+
+  const toggleWatch = async (id: string) => {
+    const p = patients.find((x) => x.id === id);
+    await setPatientWatch(id, !(p?.watch ?? false));
+    setRefreshKey((k) => k + 1);
+  };
 
   useEffect(() => {
     if (!openId) {
