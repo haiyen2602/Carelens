@@ -56,10 +56,12 @@ def list_patients(
 @patient_router.patch(
     "/patients/{patient_id}",
     response_model=PatientSummary,
-    dependencies=[Depends(require_internal_secret)],
 )
 def update_patient_health(
-    patient_id: str, body: PatientHealthUpdateRequest, db: Session = Depends(get_db)
+    patient_id: str,
+    body: PatientHealthUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> PatientSummary:
     patient = db.get(Patient, patient_id)
     if patient is None:
