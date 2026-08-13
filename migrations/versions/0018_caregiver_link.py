@@ -4,8 +4,14 @@ gan voi nhieu benh nhan, CHI admin duoc quan ly lien ket nay). Xem ghi chu
 day du trong backend/db/models.py::CaregiverLink (vi sao khong dat FK,
 khac gi voi Account.patient_id da co tu TASK-010).
 
-Revision ID: 0016
-Revises: 0015
+LUU Y ve revision chain (doi so 0016 -> 0018, 2026-08-13): xem ghi chu day
+du trong 0017_patient_watch.py - trung so voi 0016_password_reset.py (PR
+#23) luc merge gan nhau vao main. File password_reset DA CHAY tren
+production nen giu nguyen so, file NAY doi thanh "0018", xep sau
+0017_patient_watch.py.
+
+Revision ID: 0018
+Revises: 0017
 Create Date: 2026-08-13
 
 """
@@ -13,8 +19,8 @@ Create Date: 2026-08-13
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0016"
-down_revision = "0015"
+revision = "0018"
+down_revision = "0017"
 branch_labels = None
 depends_on = None
 
