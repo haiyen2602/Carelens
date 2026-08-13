@@ -35,8 +35,16 @@ export function PatientCombobox({
       )
     : options;
 
+  const openNow = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" onMouseEnter={openNow} onMouseLeave={scheduleClose}>
       <div className="relative">
         <Input
           id={id}
@@ -44,11 +52,9 @@ export function PatientCombobox({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             setQuery("");
-            setOpen(true);
+            openNow();
           }}
-          onBlur={() => {
-            closeTimer.current = setTimeout(() => setOpen(false), 120);
-          }}
+          onBlur={scheduleClose}
           placeholder={placeholder ?? "Tìm theo tên hoặc ID bệnh nhân..."}
           autoComplete="off"
           className="pr-8"

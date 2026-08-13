@@ -64,19 +64,25 @@ export function MedicineCombobox({
   const isExactMatch = matches.some((d) => d.tenThuoc.toLowerCase() === query.toLowerCase());
   const hienGoiY = open && Boolean(query) && (matches.length > 0 || dangTai || Boolean(loi));
 
+  const openNow = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" onMouseEnter={openNow} onMouseLeave={scheduleClose}>
       <Input
         id={id}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
-          setOpen(true);
+          openNow();
         }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => {
-          closeTimer.current = setTimeout(() => setOpen(false), 120);
-        }}
+        onFocus={openNow}
+        onBlur={scheduleClose}
         placeholder={placeholder}
         autoComplete="off"
         aria-busy={dangTai}

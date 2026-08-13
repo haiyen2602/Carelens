@@ -4,28 +4,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Activity,
   BarChart3,
   Bell,
-  BookText,
-  ChevronDown,
   ChevronLeft,
-  ClipboardList,
   FileClock,
-  Grid3x3,
   HelpCircle,
   Home,
   LayoutGrid,
   LogOut,
   Menu,
-  MessagesSquare,
   Pill,
   Settings,
   UserCircle,
   Users,
   Users2,
 } from "lucide-react";
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
@@ -34,7 +29,7 @@ type NavItem = {
   label: string;
   icon: ComponentType<{ className?: string }>;
   exact?: boolean;
-  badge?: "queue" | "alerts";
+  badge?: "alerts";
 };
 
 const groups: { title: string; items: NavItem[] }[] = [
@@ -44,40 +39,54 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: "/doctor", label: "Dashboard", icon: Home, exact: true },
       { to: "/doctor/patients", label: "Quản lý bệnh nhân", icon: Users2 },
       { to: "/doctor/prescribe", label: "Kê đơn thuốc", icon: Pill },
-      { to: "/doctor/queue", label: "Hàng đợi duyệt (HITL)", icon: ClipboardList, badge: "queue" },
       { to: "/doctor/alerts", label: "Hộp cảnh báo", icon: Bell, badge: "alerts" },
-      { to: "/doctor/adherence", label: "Theo dõi tuân thủ", icon: Activity },
-      { to: "/doctor/symptoms", label: "Nhật ký triệu chứng", icon: BookText },
       { to: "/doctor/family", label: "Family member list", icon: Users },
       { to: "/doctor/audit", label: "Audit log", icon: FileClock },
     ],
   },
   {
     title: "Báo cáo",
-    items: [
-      { to: "/doctor/reports/adherence", label: "Adherence tổng quan", icon: BarChart3 },
-      { to: "/doctor/reports/heatmap", label: "Heatmap theo cữ uống", icon: Grid3x3 },
-      { to: "/doctor/reports/ai-log", label: "Log hội thoại AI", icon: MessagesSquare },
-    ],
-  },
-  {
-    title: "Cài đặt",
-    items: [
-      { to: "/doctor/profile", label: "Hồ sơ cá nhân", icon: UserCircle },
-      { to: "/doctor/settings", label: "Cài đặt", icon: Settings },
-    ],
+    items: [{ to: "/doctor/reports/adherence", label: "Adherence tổng quan", icon: BarChart3 }],
   },
 ];
 
 export default function DoctorLayout({ children }: { children: ReactNode }) {
-  const { alerts, prescriptions, logout: protoLogout } = useProto();
+  const { alerts, activity, markAllActivityRead, logout: protoLogout } = useProto();
   const { user, loading, logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const pendingCount = prescriptions.filter((p) => p.status === "pending").length;
-  const alertCount = alerts.filter((a) => a.status === "new").length;
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  // Cho mot chut truoc khi dong khi roi chuot, huy neu con tro quay lai truoc
+  // khi het gio - tranh dong ngay lap tuc khi chuot luot qua mep.
+  const accountMenuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openAccountMenu = () => {
+    if (accountMenuCloseTimer.current) clearTimeout(accountMenuCloseTimer.current);
+    setAccountMenuOpen(true);
+  };
+  const scheduleCloseAccountMenu = () => {
+    accountMenuCloseTimer.current = setTimeout(() => setAccountMenuOpen(false), 150);
+  };
+  useEffect(() => {
+    return () => {
+      if (accountMenuCloseTimer.current) clearTimeout(accountMenuCloseTimer.current);
+    };
+  }, []);
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [accountMenuOpen]);
+  const newAlerts = alerts.filter((a) => a.status === "new");
+  const alertCount = newAlerts.length;
+  const unreadActivity = activity.filter((a) => !a.read).length;
   const authChecked = !loading && !!user && user.role === "doctor";
 
   useEffect(() => {
@@ -127,8 +136,7 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
             <div className="space-y-0.5">
               {g.items.map((item) => {
                 const Icon = item.icon;
-                const badge =
-                  item.badge === "queue" ? pendingCount : item.badge === "alerts" ? alertCount : 0;
+                const badge = item.badge === "alerts" ? alertCount : 0;
                 const active = isActive(item);
                 return (
                   <Link
@@ -208,39 +216,123 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
           </button>
           <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">Dashboard</h2>
 
-          <Link
-            href="/doctor/alerts"
-            className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
-          >
-            <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {alertCount + pendingCount}
-            </span>
-          </Link>
+          <Popover onOpenChange={(open) => open && markAllActivityRead()}>
+            <PopoverTrigger asChild>
+              <button className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+                <Bell className="h-[18px] w-[18px]" />
+                {alertCount + unreadActivity > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                    {alertCount + unreadActivity}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-sm font-bold">Thông báo</p>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {newAlerts.length > 0 && (
+                  <div className="border-b border-border">
+                    <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Cảnh báo
+                    </p>
+                    {newAlerts.slice(0, 5).map((a) => (
+                      <Link
+                        key={a.id}
+                        href="/doctor/alerts"
+                        className="block px-4 py-2.5 hover:bg-muted"
+                      >
+                        <p className="truncate text-sm font-semibold">{a.title}</p>
+                        <p className="truncate text-xs text-muted-foreground">{a.detail}</p>
+                      </Link>
+                    ))}
+                    <Link
+                      href="/doctor/alerts"
+                      className="block px-4 py-2.5 text-center text-xs font-semibold text-primary hover:bg-muted"
+                    >
+                      Xem tất cả cảnh báo →
+                    </Link>
+                  </div>
+                )}
+
+                <div>
+                  <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Hoạt động
+                  </p>
+                  {activity.length === 0 && newAlerts.length === 0 && (
+                    <p className="px-4 py-4 text-sm text-muted-foreground">Chưa có thông báo nào.</p>
+                  )}
+                  {activity.length === 0 && newAlerts.length > 0 && (
+                    <p className="px-4 py-3 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
+                  )}
+                  {activity.map((n) => (
+                    <div key={n.id} className="px-4 py-2.5">
+                      <p className="truncate text-sm font-semibold">{n.title}</p>
+                      {n.detail && (
+                        <p className="truncate text-xs text-muted-foreground">{n.detail}</p>
+                      )}
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{n.at}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <button className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
             <HelpCircle className="h-[18px] w-[18px]" />
           </button>
 
-          <div className="flex shrink-0 items-center gap-2 border-l border-border pl-3">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
-              H
-            </span>
-            <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-semibold leading-tight">BS. Phạm Quốc Huy</p>
-              <p className="text-xs text-muted-foreground">Bác sĩ</p>
-            </div>
-            <button
-              title="Đăng xuất"
-              onClick={async () => {
-                await authLogout();
-                protoLogout();
-                router.push("/");
-              }}
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+          <div className="shrink-0 border-l border-border pl-3">
+            <div
+              ref={accountMenuRef}
+              className="relative w-56"
+              onMouseEnter={openAccountMenu}
+              onMouseLeave={scheduleCloseAccountMenu}
             >
-              <LogOut className="h-4 w-4" />
-            </button>
-            <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
+              <button
+                className="flex w-full items-center gap-2 rounded-lg py-1 pl-1 pr-2 outline-none hover:bg-muted"
+                onClick={() => setAccountMenuOpen((v) => !v)}
+              >
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                  H
+                </span>
+                <div className="hidden min-w-0 text-left sm:block">
+                  <p className="truncate text-sm font-semibold leading-tight">BS. Phạm Quốc Huy</p>
+                  <p className="text-xs text-muted-foreground">Bác sĩ</p>
+                </div>
+              </button>
+
+              {accountMenuOpen && (
+                <div className="absolute left-0 top-full z-50 w-full rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
+                  <Link
+                    href="/doctor/profile"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <UserCircle className="h-4 w-4" /> Hồ sơ cá nhân
+                  </Link>
+                  <Link
+                    href="/doctor/settings"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Settings className="h-4 w-4" /> Cài đặt
+                  </Link>
+                  <div className="my-1 h-px bg-muted" />
+                  <button
+                    onClick={async () => {
+                      await authLogout();
+                      protoLogout();
+                      router.push("/");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-destructive hover:bg-accent"
+                  >
+                    <LogOut className="h-4 w-4" /> Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
