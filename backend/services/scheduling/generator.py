@@ -24,6 +24,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -34,6 +35,12 @@ logger = logging.getLogger(__name__)
 
 # Cửa sổ uống thuốc: ±30 phút quanh giờ hẹn (business-rules.md §2).
 NUA_CUA_SO = timedelta(minutes=30)
+
+# Bac si chon "gio_nhac" (vd "08:00") tren form ke don nghi la gio Viet Nam,
+# khong phai UTC. Khong dung ZoneInfo("UTC") de "combine" thang - lam vay
+# doi 08:00 (y benh nhan uong 8h sang) thanh 08:00 UTC = 15:00 gio VN, lech
+# dung 7 tieng o moi lieu (phat hien 2026-08-13, xem generator ben duoi).
+GIO_VN = ZoneInfo("Asia/Ho_Chi_Minh")
 
 # Trạng thái coi như "đã đóng" — không sinh lại, không xoá khi duyệt lại.
 DA_DONG = frozenset({"TAKEN", "MISSED", "DELAYED", "SIDE_EFFECT", "CANCELLED"})
@@ -118,7 +125,7 @@ def sinh_dose_event(db: Session, presc: Prescription, *, bay_gio: datetime | Non
     for thu_may in range(so_ngay):
         ngay = ngay_dau + timedelta(days=thu_may)
         for gio, expected_items in sorted(theo_gio.items()):
-            hen = datetime.combine(ngay, gio, tzinfo=UTC)
+            hen = datetime.combine(ngay, gio, tzinfo=GIO_VN).astimezone(UTC)
             # Không sinh liều đã trôi qua: bấm Duyệt lúc 14h thì liều 08:00
             # sáng nay không còn ý nghĩa để nhắc, và tạo ra nó là lập tức có
             # một liều quá hạn mà bệnh nhân không có cơ hội nào để uống.

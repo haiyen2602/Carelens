@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { DEMO_PATIENT_ID } from "@/lib/api";
+import { CameraCapture } from "@/components/camera-capture";
 import {
   listDoses,
   pollPhotoVerification,
@@ -23,6 +23,7 @@ import {
   type Dose,
   type PhotoVerification,
 } from "@/lib/doses";
+import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
 // Nhan hien thi cho trang thai lieu THAT (backend/db/models.py::DoseEvent) -
@@ -46,9 +47,27 @@ function gioHienThi(iso: string): string {
   return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 
+// GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
+// mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
+// theo ngay. "Thoi khoa bieu hom nay" phai tu loc lai o day - so sanh theo
+// ngay-thang cuc bo cua trinh duyet (may nguoi dung dat gio VN) chu khong
+// phai ngay UTC, vi mot lieu 08:00 VN la 01:00 UTC hom sau/truoc bien gioi
+// ngay UTC.
+function laHomNay(iso: string): boolean {
+  const d = new Date(iso);
+  const nay = new Date();
+  return (
+    d.getFullYear() === nay.getFullYear() &&
+    d.getMonth() === nay.getMonth() &&
+    d.getDate() === nay.getDate()
+  );
+}
+
 export default function PatientToday() {
   const router = useRouter();
   const { reportHealth, requestSymptomCheck } = useProto();
+  const { user } = useAuth();
+  const patientId = user?.patient_id ?? "";
   const [checkinDone, setCheckinDone] = useState(false);
 
   const [doses, setDoses] = useState<Dose[]>([]);
@@ -60,11 +79,13 @@ export default function PatientToday() {
   const [xacMinh, setXacMinh] = useState<PhotoVerification | null>(null);
   const [dangGui, setDangGui] = useState(false);
   const [loiGui, setLoiGui] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const taiLaiDoses = async () => {
+    if (!patientId) return;
     setDangTaiDoses(true);
     try {
-      setDoses(await listDoses(DEMO_PATIENT_ID));
+      setDoses(await listDoses(patientId));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không tải được lịch uống thuốc");
     } finally {
@@ -74,10 +95,13 @@ export default function PatientToday() {
 
   useEffect(() => {
     taiLaiDoses();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
 
-  const next = doses.find((d) => d.status === "PENDING");
+  const dosesHomNay = doses.filter((d) => laHomNay(d.scheduledAt));
+  const next = dosesHomNay.find((d) => d.status === "PENDING");
 
+  const moCamera = () => setCameraOpen(true);
   const chonAnh = () => fileInputRef.current?.click();
 
   const guiAnh = async (doseId: string, file: File) => {
@@ -186,7 +210,7 @@ export default function PatientToday() {
             />
 
             {(!xacMinh || xacMinh.nextAction === "RETAKE" || xacMinh.status === "loi_he_thong") && (
-              <Button size="lg" className="w-full" disabled={dangGui} onClick={chonAnh}>
+              <Button size="lg" className="w-full" disabled={dangGui} onClick={moCamera}>
                 {dangGui ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                 ) : (
@@ -195,6 +219,16 @@ export default function PatientToday() {
                 {xacMinh?.nextAction === "RETAKE" ? "Chụp lại" : "Chụp ảnh xác nhận đã uống"}
               </Button>
             )}
+
+            <CameraCapture
+              open={cameraOpen}
+              onOpenChange={setCameraOpen}
+              onCapture={(file) => {
+                setCameraOpen(false);
+                guiAnh(next.id, file);
+              }}
+              onFallbackToFile={chonAnh}
+            />
 
             <Button
               variant="outline"
@@ -246,12 +280,12 @@ export default function PatientToday() {
         </section>
       )}
 
-      {doses.length > 0 && (
+      {dosesHomNay.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-bold uppercase text-muted-foreground">
             Thời khóa biểu hôm nay
           </h2>
-          {doses.map((d) => (
+          {dosesHomNay.map((d) => (
             <div key={d.id} className="surface-card p-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">

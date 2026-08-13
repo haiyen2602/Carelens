@@ -9,13 +9,33 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { request } from "@/lib/api";
 
 // TASK-010 (auth-api that, api-contracts.md §1) - thay the admin-auth.ts
 // (flag localStorage gia). access_token chi giu trong memory (React state)
 // - KHONG localStorage (tranh XSS doc duoc token). refresh_token la httpOnly
 // cookie do Route Handler (app/api/auth/*) quan ly - JS o day khong bao gio
 // dong cham truc tiep vao refresh_token.
-export type AuthUser = { id: string; full_name: string; role: string };
+export type AuthUser = {
+  id: string;
+  full_name: string;
+  role: string;
+  patient_id: string | null;
+  doctor_id: string | null;
+};
+
+// `/auth/login` (UserOut) CO Y chi tra id/full_name/role dung field mau
+// api-contracts.md §1 - khong sua schema do. patient_id/doctor_id lay rieng
+// tu /auth/me (MeResponse, da co san 2 truong nay) ngay sau khi dang nhap/
+// khoi phuc phien, goi thang backend kem Bearer token - cung pattern voi
+// lib/accounts.ts (khong lien quan cookie nen khong can qua Route Handler).
+async function layLienKet(accessToken: string): Promise<Pick<AuthUser, "patient_id" | "doctor_id">> {
+  const me = await request<{ patient_id: string | null; doctor_id: string | null }>(
+    "/api/v1/auth/me",
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return { patient_id: me.patient_id, doctor_id: me.doctor_id };
+}
 
 type AuthState = {
   user: AuthUser | null;
@@ -44,7 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/auth/refresh", { method: "POST" });
         if (!cancelled && res.ok) {
           const data = await res.json();
-          setState({ user: data.user, accessToken: data.access_token, loading: false });
+          const lienKet = await layLienKet(data.access_token);
+          if (!cancelled) {
+            setState({
+              user: { ...data.user, ...lienKet },
+              accessToken: data.access_token,
+              loading: false,
+            });
+          }
           return;
         }
       } catch {
@@ -68,8 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new Error(data?.detail ?? "Đăng nhập thất bại");
     }
-    setState({ user: data.user, accessToken: data.access_token, loading: false });
-    return data.user as AuthUser;
+    const lienKet = await layLienKet(data.access_token);
+    const user: AuthUser = { ...data.user, ...lienKet };
+    setState({ user, accessToken: data.access_token, loading: false });
+    return user;
   }, []);
 
   const logout = useCallback(async () => {

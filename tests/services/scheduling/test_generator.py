@@ -9,8 +9,15 @@ chỉ đọc thuộc tính, không tự query.
 """
 
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from backend.services.scheduling.generator import huy_lieu_chua_toi_han, sinh_dose_event
+
+# gio_nhac ("08:00") la gio Viet Nam (xem generator.py::GIO_VN) - bay_gio
+# trong 2 test "khong sinh lieu da troi qua" phai dung cung mui gio thi so
+# sanh voi window moi co y nghia, khong duoc de UTC "tinh co" trung so voi
+# gio VN nhu truoc khi sua bug lech 7 tieng (2026-08-13).
+GIO_VN = ZoneInfo("Asia/Ho_Chi_Minh")
 
 # "Ngày mai" tính động, không hardcode ngày cụ thể: các test không tự truyền
 # `bay_gio` mặc định gọi `sinh_dose_event(db, presc)` với bay_gio=None ->
@@ -144,7 +151,7 @@ def test_khong_sinh_lieu_da_qua_cua_so():
     """Duyệt lúc 14h thì liều 08:00 sáng nay không còn ý nghĩa để nhắc."""
     presc = _Presc(items=[thuoc("A")], start_date="2026-08-12", duration_days=1)
     db = _Db()
-    bay_gio = datetime(2026, 8, 12, 14, 0, tzinfo=UTC)
+    bay_gio = datetime(2026, 8, 12, 14, 0, tzinfo=GIO_VN)
 
     assert sinh_dose_event(db, presc, bay_gio=bay_gio) == 0
 
@@ -152,7 +159,7 @@ def test_khong_sinh_lieu_da_qua_cua_so():
 def test_lieu_con_trong_cua_so_van_duoc_sinh():
     presc = _Presc(items=[thuoc("A")], start_date="2026-08-12", duration_days=1)
     db = _Db()
-    bay_gio = datetime(2026, 8, 12, 8, 10, tzinfo=UTC)  # còn trong ±30'
+    bay_gio = datetime(2026, 8, 12, 8, 10, tzinfo=GIO_VN)  # còn trong ±30'
 
     assert sinh_dose_event(db, presc, bay_gio=bay_gio) == 1
 

@@ -17,7 +17,10 @@ import {
 import { MedicineCombobox } from "@/components/medicine-combobox";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
+import { PatientCombobox } from "@/components/patient-combobox";
+import { DoseMiniCalendar } from "@/components/dose-mini-calendar";
 import { useProto } from "@/lib/proto-store";
+import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-schedule";
 
 // Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
 // anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
@@ -29,12 +32,7 @@ function docSoVien(dose: string): number | null {
   return khop ? Number(khop[0]) : null;
 }
 
-const defaultTimes: Record<number, string[]> = {
-  1: ["08:00"],
-  2: ["08:00", "20:00"],
-  3: ["08:00", "13:00", "20:00"],
-  4: ["07:00", "12:00", "17:00", "21:00"],
-};
+const defaultTimes = DEFAULT_TIMES;
 
 type MedRow = {
   id: string;
@@ -48,9 +46,14 @@ type MedRow = {
   perDay: number;
   meal: string;
   times: string[];
+  startDate: string;
+  endDate: string;
+  hasCycle: boolean;
+  cycleOnDays: number;
+  cycleOffDays: number;
 };
 
-function newMedRow(): MedRow {
+function newMedRow(startDate?: string, endDate?: string): MedRow {
   return {
     id: crypto.randomUUID(),
     med: "",
@@ -60,6 +63,11 @@ function newMedRow(): MedRow {
     perDay: 1,
     meal: "Sau ăn",
     times: defaultTimes[1] ?? ["08:00"],
+    startDate: startDate ?? today(),
+    endDate: endDate ?? "",
+    hasCycle: false,
+    cycleOnDays: 5,
+    cycleOffDays: 2,
   };
 }
 
@@ -89,8 +97,25 @@ export default function PrescribePage() {
       });
   }, []);
 
+  const patientOptions = benhNhanThat.map((p, i) => ({
+    id: p.id,
+    name: p.fullName,
+    displayId: `BN${String(i + 1).padStart(4, "0")}`,
+  }));
+
   const updateMed = (id: string, patch: Partial<MedRow>) => {
-    setMeds((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+    setMeds((prev) => {
+      const isFirst = prev[0]?.id === id;
+      const syncDates: Partial<Pick<MedRow, "startDate" | "endDate">> = {};
+      if (isFirst && "startDate" in patch) syncDates.startDate = patch.startDate;
+      if (isFirst && "endDate" in patch) syncDates.endDate = patch.endDate;
+      const hasSync = Object.keys(syncDates).length > 0;
+      return prev.map((m, i) => {
+        if (m.id === id) return { ...m, ...patch };
+        if (hasSync && i > 0) return { ...m, ...syncDates };
+        return m;
+      });
+    });
   };
 
   const updatePerDay = (id: string, perDay: number) => {
@@ -110,6 +135,20 @@ export default function PrescribePage() {
   };
 
   const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
+
+  const activeMeds = meds.filter((m) => m.med.trim().length > 0);
+  const timeline = [
+    ...meds
+      .reduce((map, m) => {
+        for (const t of m.times) {
+          const list = map.get(t) ?? [];
+          list.push(m);
+          map.set(t, list);
+        }
+        return map;
+      }, new Map<string, MedRow[]>())
+      .entries(),
+  ].sort((a, b) => a[0].localeCompare(b[0]));
 
   const submit = async () => {
     setDangGui(true);
@@ -159,19 +198,14 @@ export default function PrescribePage() {
       <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
         <section className="surface-card space-y-5 p-5">
           <div className="space-y-2">
-            <Label>Bệnh nhân</Label>
-            <Select value={patientId} onValueChange={setPatientId} disabled={benhNhanThat.length === 0}>
-              <SelectTrigger>
-                <SelectValue placeholder={benhNhanThat.length === 0 ? "Đang tải…" : "Chọn bệnh nhân"} />
-              </SelectTrigger>
-              <SelectContent>
-                {benhNhanThat.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.fullName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="patient">Bệnh nhân</Label>
+            <PatientCombobox
+              id="patient"
+              options={patientOptions}
+              value={patientId}
+              onChange={setPatientId}
+              placeholder={benhNhanThat.length === 0 ? "Đang tải…" : undefined}
+            />
           </div>
 
           <div className="space-y-4">
@@ -274,6 +308,68 @@ export default function PrescribePage() {
                     Giờ mặc định theo số lần/ngày — chỉnh lại nếu bệnh nhân có lịch sinh hoạt khác.
                   </p>
                 </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor={`start-${m.id}`}>Ngày bắt đầu</Label>
+                    <Input
+                      id={`start-${m.id}`}
+                      type="date"
+                      value={m.startDate}
+                      onChange={(e) => updateMed(m.id, { startDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`end-${m.id}`}>Ngày kết thúc (nếu có)</Label>
+                    <Input
+                      id={`end-${m.id}`}
+                      type="date"
+                      value={m.endDate}
+                      min={m.startDate}
+                      onChange={(e) => updateMed(m.id, { endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      id={`cycle-${m.id}`}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-input"
+                      checked={m.hasCycle}
+                      onChange={(e) => updateMed(m.id, { hasCycle: e.target.checked })}
+                    />
+                    <Label htmlFor={`cycle-${m.id}`} className="cursor-pointer">
+                      Uống theo chu kỳ (đợt uống — đợt nghỉ)
+                    </Label>
+                  </div>
+                  {m.hasCycle && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Uống</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={m.cycleOnDays}
+                        onChange={(e) =>
+                          updateMed(m.id, { cycleOnDays: Number(e.target.value) || 1 })
+                        }
+                        className="w-20"
+                      />
+                      <span className="text-muted-foreground">ngày, nghỉ</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={m.cycleOffDays}
+                        onChange={(e) =>
+                          updateMed(m.id, { cycleOffDays: Number(e.target.value) || 0 })
+                        }
+                        className="w-20"
+                      />
+                      <span className="text-muted-foreground">ngày, lặp lại</span>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -281,7 +377,9 @@ export default function PrescribePage() {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => setMeds((prev) => [...prev, newMedRow()])}
+            onClick={() =>
+              setMeds((prev) => [...prev, newMedRow(prev[0]?.startDate, prev[0]?.endDate)])
+            }
           >
             <Plus className="mr-1 h-4 w-4" /> Thêm thuốc
           </Button>
@@ -302,36 +400,49 @@ export default function PrescribePage() {
               <Clock className="h-4 w-4 text-primary" /> Preview timeline 1 ngày
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Safeband ±30 phút quanh mỗi mốc giờ.
+              Safeband ±30 phút quanh mỗi mốc giờ. Mỗi khung giờ gộp tất cả thuốc cần uống cùng
+              lúc.
             </p>
           </div>
 
-          {meds.map((m) => {
-            const times = m.times;
-            return (
-              <div key={m.id}>
-                <p className="truncate text-sm font-semibold text-primary">
-                  {m.med || "(chưa đặt tên thuốc)"}
-                </p>
-                <ol className="mt-2 space-y-3">
-                  {times.map((t) => (
-                    <li key={t} className="flex gap-3">
-                      <span className="w-14 shrink-0 font-mono text-sm font-semibold">{t}</span>
-                      <div className="min-w-0 flex-1 rounded-lg border border-border p-3">
-                        <p className="truncate font-semibold">{m.med || "(chưa đặt tên thuốc)"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {m.dose} · {m.meal}
-                        </p>
-                        <p className="mt-1 text-xs text-primary">
-                          Khung an toàn: {shift(t, -30)} – {shift(t, 30)}
-                        </p>
-                      </div>
-                    </li>
+          <ol className="space-y-3">
+            {timeline.map(([t, ms]) => (
+              <li key={t} className="flex gap-3">
+                <span className="w-14 shrink-0 font-mono text-sm font-semibold">{t}</span>
+                <div className="min-w-0 flex-1 space-y-2">
+                  {ms.map((m) => (
+                    <div key={m.id} className="rounded-lg border border-border p-3">
+                      <p className="truncate font-semibold">
+                        {m.med || "(chưa đặt tên thuốc)"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {m.dose} · {m.meal}
+                      </p>
+                    </div>
                   ))}
-                </ol>
-              </div>
-            );
-          })}
+                  <p className="text-xs text-primary">
+                    Khung an toàn: {shiftTime(t, -30)} – {shiftTime(t, 30)}
+                  </p>
+                </div>
+              </li>
+            ))}
+            {timeline.length === 0 && (
+              <p className="text-sm text-muted-foreground">Chưa có giờ uống nào được đặt.</p>
+            )}
+          </ol>
+
+          <div>
+            <h2 className="font-bold">Lịch uống thuốc</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Chấm xanh đánh dấu ngày bệnh nhân cần uống thuốc.
+            </p>
+            <div className="mt-3">
+              <DoseMiniCalendar
+                initialDate={activeMeds[0]?.startDate}
+                isDoseDay={(iso) => activeMeds.some((m) => appliesOnDate(m, iso))}
+              />
+            </div>
+          </div>
 
           <div className="rounded-lg bg-accent p-4 text-sm text-accent-foreground">
             Sau khi bác sĩ duyệt: ghi audit log → kích hoạt phác đồ → thông báo bệnh nhân và người
@@ -341,10 +452,4 @@ export default function PrescribePage() {
       </div>
     </div>
   );
-}
-
-function shift(hhmm: string, minutes: number) {
-  const [h, m] = hhmm.split(":").map(Number);
-  const total = ((h ?? 0) * 60 + (m ?? 0) + minutes + 1440) % 1440;
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
