@@ -154,10 +154,17 @@ export async function listDoses(patientId: string): Promise<Dose[]> {
   return items.map(toDose);
 }
 
-export async function updateDoseStatus(doseId: string, status: string): Promise<Dose> {
+export async function updateDoseStatus(
+  doseId: string,
+  status: string,
+  accessToken?: string | null,
+): Promise<Dose> {
   const response = await fetch(`/api/doses/${encodeURIComponent(doseId)}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({ status }),
   });
   if (!response.ok) return loi(response);

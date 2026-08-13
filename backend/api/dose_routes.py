@@ -71,13 +71,19 @@ def update_dose_status(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> DoseSummary:
     """Benh nhan/nguoi than/bac si tu cap nhat trang thai 1 lieu (vd tu bao
-    "da uong" khong qua chatbot). Phan quyen (KHONG dung require_internal_secret
-    - can biet DUNG ai dang goi de kiem tra quan he, xem docstring 2 nhanh
-    ben duoi):
-      - role=patient: chi sua duoc lieu CUA CHINH MINH (dose_event.patient_id
-        == current_user.patient_id).
-      - role=caregiver: chi sua duoc lieu cua benh nhan co CaregiverLink toi
-        chinh tai khoan dang goi (specs/user-roles.md).
+    "da uong" khong qua chatbot, hoac nguoi than duyet 1 lieu AWAITING_CAREGIVER
+    sau khi xem anh - patient/family/[id]/page.tsx). Phan quyen (KHONG dung
+    require_internal_secret - can biet DUNG ai dang goi de kiem tra quan he,
+    xem cac nhanh ben duoi):
+      - Lieu CUA CHINH MINH (dose_event.patient_id == current_user.patient_id):
+        luon sua duoc, bat ke role - ap dung ca cho tai khoan role=patient
+        dang tu bao trang thai lieu cua ho.
+      - role=caregiver HOAC role=patient dang theo doi nguoi khac (1 benh
+        nhan co the dong thoi la nguoi than cua benh nhan khac, xem ghi chu
+        MonitoredRelative trong frontend/src/lib/proto-store.tsx): sua duoc
+        lieu cua benh nhan co CaregiverLink DA CHAP NHAN (status=accepted)
+        toi chinh tai khoan dang goi - loi moi con "pending" KHONG cho quyen
+        gi (xem POST /caregiver-links/invites).
       - role=doctor: sua duoc lieu cua BAT KY benh nhan nao (khong con rang
         buoc theo patient.doctor_id - bac si quan ly toan bo benh nhan qua
         tim kiem theo ID, xem patient_routes.py).
@@ -87,21 +93,20 @@ def update_dose_status(
     if dose is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Liều thuốc không tồn tại")
 
-    authorized = False
-    if current_user.role == "patient":
-        authorized = current_user.patient_id == dose.patient_id
-    elif current_user.role == "caregiver":
+    authorized = current_user.patient_id == dose.patient_id
+    if not authorized and current_user.role == "doctor":
+        authorized = db.get(Patient, dose.patient_id) is not None
+    if not authorized:
         link = (
             db.query(CaregiverLink)
             .filter(
                 CaregiverLink.caregiver_account_id == current_user.id,
                 CaregiverLink.patient_id == dose.patient_id,
+                CaregiverLink.status == "accepted",
             )
             .first()
         )
         authorized = link is not None
-    elif current_user.role == "doctor":
-        authorized = db.get(Patient, dose.patient_id) is not None
 
     if not authorized:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền sửa liều này")
