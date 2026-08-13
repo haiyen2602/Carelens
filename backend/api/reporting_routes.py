@@ -6,16 +6,15 @@ lieu that thay cho mock data, CHUA co trong api-contracts.md (endpoint moi,
 can Architect duyet truoc khi coi la contract on dinh - ADR-0003).
 
 Dung `require_internal_secret` (cung muc do tin cay voi patient_routes.py
-hien nay) - CHUA loc theo bac si dang dang nhap vi auth-api that (JWT) da co
-(TASK-010) nhung mo hinh lien ket bac si<->benh nhan day du (RBAC theo
-doctor_id) chua duoc ap dung o day, giu nguyen gioi han da ghi trong
-patient_routes.py cho toi khi co task rieng lam RBAC cho dashboard nay."""
+hien nay) - khong loc theo bac si dang dang nhap: bat ky bac si nao cung xem
+duoc toan bo benh nhan (khong con RBAC theo doctor_id), tim bang tham so
+`search` (khop theo ID hoac ten), cung quy uoc voi patient_routes.py."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
-from sqlalchemy import desc, select
+from sqlalchemy import desc, or_, select
 from sqlalchemy.orm import Session
 
 from backend.api.security import require_internal_secret
@@ -44,8 +43,15 @@ _AUDIT_LOG_LIMIT = 200
     response_model=list[ReportingPatientOut],
     dependencies=[Depends(require_internal_secret)],
 )
-def list_reporting_patients(db: Session = Depends(get_db)) -> list[ReportingPatientOut]:
-    rows = db.execute(select(Patient).order_by(Patient.full_name)).scalars().all()
+def list_reporting_patients(
+    search: str | None = Query(default=None, min_length=1),
+    db: Session = Depends(get_db),
+) -> list[ReportingPatientOut]:
+    query = select(Patient)
+    if search:
+        pattern = f"%{search}%"
+        query = query.where(or_(Patient.id.ilike(pattern), Patient.full_name.ilike(pattern)))
+    rows = db.execute(query.order_by(Patient.full_name)).scalars().all()
     return [
         ReportingPatientOut(
             id=p.id,

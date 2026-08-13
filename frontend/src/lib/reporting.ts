@@ -41,8 +41,9 @@ function toReportingPatient(p: ReportingPatientApi): ReportingPatient {
   };
 }
 
-export async function listReportingPatients(): Promise<ReportingPatient[]> {
-  const response = await fetch("/api/reporting/patients");
+export async function listReportingPatients(search?: string): Promise<ReportingPatient[]> {
+  const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
+  const response = await fetch(`/api/reporting/patients${qs}`);
   if (!response.ok) return loi(response);
   const items: ReportingPatientApi[] = await response.json();
   return items.map(toReportingPatient);

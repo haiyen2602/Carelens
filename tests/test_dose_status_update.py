@@ -1,9 +1,10 @@
 """PATCH /api/v1/doses/{dose_id} (backend/api/dose_routes.py) - test qua
 FastAPI TestClient that, DB that. Cung pattern voi tests/test_escalation_ack.py.
 
-3 nhanh phan quyen can kiem: patient tu sua duoc lieu cua chinh minh (khong
+Cac nhanh phan quyen can kiem: patient tu sua duoc lieu cua chinh minh (khong
 sua duoc cua nguoi khac), caregiver can co CaregiverLink toi dung benh nhan,
-doctor can Patient.doctor_id == chinh minh (JWT sub)."""
+doctor sua duoc lieu cua BAT KY benh nhan nao (khong con rang buoc theo
+Patient.doctor_id - bac si quan ly toan bo benh nhan qua tim kiem theo ID)."""
 
 import sys
 import uuid
@@ -161,7 +162,10 @@ async def test_doctor_in_charge_can_update(client):
 
 
 @pytest.mark.asyncio
-async def test_other_doctor_forbidden(client):
+async def test_other_doctor_can_update(client):
+    """Bac si khong phai doctor_id cua benh nhan van thao tac duoc - khong
+    con rang buoc theo Patient.doctor_id, bat ky bac si nao cung quan ly
+    duoc moi benh nhan."""
     patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
     _, dose_id = _seed_dose(patient_id, doctor_id="doctor-account-1")
     token = create_access_token(sub="doctor-account-2", role="doctor")
@@ -172,7 +176,8 @@ async def test_other_doctor_forbidden(client):
             json={"status": "MISSED"},
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert response.status_code == 403
+        assert response.status_code == 200
+        assert response.json()["status"] == "MISSED"
     finally:
         _cleanup(patient_id)
 

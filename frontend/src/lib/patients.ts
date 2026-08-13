@@ -20,8 +20,9 @@ type PatientApiItem = {
   note: string | null;
 };
 
-export async function listPatients(): Promise<PatientRecord[]> {
-  const response = await fetch("/api/patients");
+export async function listPatients(search?: string): Promise<PatientRecord[]> {
+  const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
+  const response = await fetch(`/api/patients${qs}`);
   if (!response.ok) {
     throw new Error(`Không tải được danh sách bệnh nhân (${response.status})`);
   }

@@ -12,10 +12,12 @@ function thieuSecret() {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!INTERNAL_SECRET) return thieuSecret();
 
-  const upstream = await fetch(`${BACKEND_URL}/api/v1/reporting/patients`, {
+  const search = new URL(request.url).searchParams.get("search");
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  const upstream = await fetch(`${BACKEND_URL}/api/v1/reporting/patients${qs}`, {
     headers: { "X-Internal-Secret": INTERNAL_SECRET },
   });
 
