@@ -14,9 +14,7 @@ export default function HistoryPage() {
               <p className="truncate font-semibold">
                 {d.time} · {d.med}
               </p>
-              <p className="truncate text-sm text-muted-foreground">
-                {d.photo ? "Có ảnh xác thực" : "Không có ảnh"} · nhắc {d.reminders} lần
-              </p>
+              <p className="truncate text-sm text-muted-foreground">{d.strength}</p>
             </div>
             <span className="shrink-0 text-xs font-bold text-muted-foreground">
               {statusLabel[d.status]}

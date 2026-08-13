@@ -349,3 +349,153 @@ class ChatHistoryResponse(BaseModel):
 
 class ChatHistoryHideResponse(BaseModel):
     hidden_count: int
+
+
+# ---------------------------------------------------------------------------
+# THEM 2026-08-13 - reporting domain (adherence, danh sach escalation/
+# audit-log cho dashboard bac si). Xem backend/api/reporting_routes.py va
+# backend/services/reporting/adherence.py. CHUA co trong api-contracts.md -
+# cung tinh trang voi PatientSummary/DoseSummary o tren (endpoint moi, chua
+# duoc Architect duyet - ADR-0003).
+# ---------------------------------------------------------------------------
+
+
+class ReportingPatientOut(BaseModel):
+    """GET /api/v1/reporting/patients - 1 dong trong danh sach benh nhan cua
+    dashboard bao cao. `adherence_pct` co the None (chua co lieu nao den han
+    - xem backend/services/reporting/adherence.py), KHONG suy ra la 0%."""
+
+    id: str
+    full_name: str
+    year_of_birth: int | None = None
+    note: str | None = None
+    watch: bool
+    adherence_pct: float | None = None
+
+
+class PatientWatchUpdateRequest(BaseModel):
+    watch: bool
+
+
+class PatientWatchOut(BaseModel):
+    id: str
+    watch: bool
+
+
+class EscalationOut(BaseModel):
+    """GET /api/v1/escalations - 1 dong Escalation nguyen ven (khong tong hop
+    gi them), xem backend/db/models.py::Escalation cho y nghia tung cot."""
+
+    id: str
+    patient_id: str
+    dose_event_id: str | None = None
+    severity: str
+    trigger: str
+    raw_utterance: str | None = None
+    reason: str
+    created_at: str
+    status: str
+    notified: list[str] = Field(default_factory=list)
+    reminder_count: int
+    last_reminder_at: str | None = None
+    resolved_at: str | None = None
+    resolved_by: str | None = None
+
+
+class AuditLogOut(BaseModel):
+    """GET /api/v1/audit-log - 1 dong AuditLog nguyen ven. `trace` giu nguyen
+    dinh dang JSON da luu (chatbot-rag-design.md muc 5.2), khong bien doi lai."""
+
+    id: str
+    patient_id: str
+    dose_event_id: str | None = None
+    utterance: str
+    created_at: str
+    trace: list
+    final_response: str
+    total_duration_ms: float
+
+
+# ---------------------------------------------------------------------------
+# THEM 2026-08-13 - caregiver/family domain (specs/user-roles.md: lien ket
+# bac si<->benh nhan<->nguoi than, chi admin quan ly). Xem
+# backend/api/caregiver_routes.py va backend/db/models.py::CaregiverLink.
+# ---------------------------------------------------------------------------
+
+
+class CaregiverLinkCreateRequest(BaseModel):
+    caregiver_account_id: str = Field(..., min_length=1)
+    patient_id: str = Field(..., min_length=1)
+    relationship: str = Field(..., min_length=1)
+
+
+class CaregiverLinkOut(BaseModel):
+    """Response cua POST /api/v1/caregiver-links (tao moi)."""
+
+    id: str
+    caregiver_account_id: str
+    patient_id: str
+    relationship: str
+    created_at: str
+
+
+class CaregiverLinkForPatientOut(BaseModel):
+    """1 phan tu trong GET /api/v1/caregiver-links?patient_id=... - man hinh
+    "nguoi lien he gia dinh" cua bac si khi xem 1 benh nhan. `caregiver_name`
+    lay tu Account.full_name qua join, KHONG luu lai trung lap tren
+    caregiver_link (tranh 2 nguon du lieu ten co the lech nhau khi nguoi
+    dung doi ten tai khoan)."""
+
+    id: str
+    caregiver_account_id: str
+    caregiver_name: str
+    relationship: str
+    created_at: str
+
+
+class OpenEscalationBrief(BaseModel):
+    """1 escalation OPEN rut gon, dung trong CaregiverMonitoredPatientOut ben
+    duoi - man hinh caregiver chi can biet co canh bao gi dang mo, khong can
+    day du nhu EscalationOut (xem GET /api/v1/escalations cho ban day du)."""
+
+    id: str
+    level: str
+    title: str
+    created_at: str
+
+
+class DayAdherenceStatus(BaseModel):
+    """1 ngay trong `week_history` cua CaregiverMonitoredPatientOut - suy ra
+    tu cac DoseEvent trong ngay do (khong phai 1 cot rieng trong DB). Ngay
+    khong co lieu nao duoc lich thi KHONG xuat hien trong mang (bo qua, xem
+    backend/api/caregiver_routes.py)."""
+
+    date: str  # "YYYY-MM-DD"
+    status: str  # taken|late|missed
+
+
+class CaregiverMonitoredPatientOut(BaseModel):
+    """1 phan tu trong GET /api/v1/caregiver-links?caregiver_account_id=... -
+    man hinh "nguoi than dang theo doi" cua chinh 1 tai khoan caregiver."""
+
+    link_id: str
+    patient_id: str
+    full_name: str
+    year_of_birth: int | None = None
+    note: str | None = None
+    relationship: str
+    adherence_pct: float | None = None
+    dose_taken_today: int
+    dose_total_today: int
+    open_escalations: list[OpenEscalationBrief] = Field(default_factory=list)
+    week_history: list[DayAdherenceStatus] = Field(default_factory=list)
+
+
+class DoseStatusUpdateRequest(BaseModel):
+    """PATCH /api/v1/doses/{dose_id} (backend/api/dose_routes.py) - benh
+    nhan/nguoi than/bac si tu cap nhat trang thai 1 lieu (vd tu bao "da
+    uong" khong qua chatbot)."""
+
+    status: str = Field(
+        ..., description="PENDING|TAKEN|MISSED|DELAYED|CANCELLED|AWAITING_CAREGIVER"
+    )

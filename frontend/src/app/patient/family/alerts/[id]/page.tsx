@@ -5,14 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Camera, Check, EyeOff, UserX, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useProto, statusLabel, type AlertLevel } from "@/lib/proto-store";
 
 const tone: Record<AlertLevel, string> = {
@@ -24,16 +16,7 @@ const tone: Record<AlertLevel, string> = {
 export default function PatientAlertDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const {
-    alerts,
-    doses,
-    respondDose,
-    sendPhoto,
-    remindAgain,
-    markMissed,
-    verifyDose,
-    familyConfirmDose,
-  } = useProto();
+  const { alerts, doses, respondDose, sendPhoto, verifyDose, familyConfirmDose } = useProto();
   const alert = alerts.find((a) => a.id === params.id);
   const dose = alert?.doseId ? doses.find((d) => d.id === alert.doseId) : undefined;
 
@@ -112,13 +95,7 @@ export default function PatientAlertDetailPage() {
                 className="w-full"
                 onClick={() => {
                   respondDose(dose.id, false);
-                  if (dose.reminders >= 1) {
-                    markMissed(dose.id);
-                    toast.error("Đã nhắc tối đa 2 lần (30 phút) — ghi nhận BỎ LIỀU");
-                  } else {
-                    remindAgain(dose.id);
-                    toast("Sẽ nhắc lại sau 15 phút");
-                  }
+                  toast.error("Đã ghi nhận BỎ LIỀU");
                   router.push("/patient/family");
                 }}
               >
@@ -132,35 +109,6 @@ export default function PatientAlertDetailPage() {
               <p className="text-sm text-muted-foreground">
                 Ảnh bị mờ hoặc không rõ vật thể — hãy xem lại ảnh và xác nhận giúp bệnh nhân.
               </p>
-              {dose.photo && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button className="grid h-40 w-full place-items-center rounded-lg bg-muted text-muted-foreground transition-opacity hover:opacity-90">
-                      <div className="text-center">
-                        <Camera className="mx-auto h-8 w-8" />
-                        <p className="mt-2 text-xs">Ảnh chụp thuốc gửi lúc {dose.time}</p>
-                        <p className="mt-1 text-[11px] font-semibold text-primary">
-                          Bấm để xem ảnh
-                        </p>
-                      </div>
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Ảnh chụp thuốc</DialogTitle>
-                      <DialogDescription>
-                        {dose.med} · liều {dose.time} · {dose.meal}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid h-64 place-items-center rounded-lg bg-muted text-muted-foreground">
-                      <div className="text-center">
-                        <Camera className="mx-auto h-10 w-10" />
-                        <p className="mt-2 text-xs">(Ảnh minh họa — chưa kết nối nguồn ảnh thật)</p>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   size="sm"

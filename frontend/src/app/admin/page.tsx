@@ -8,37 +8,13 @@ import {
   Link2,
   PillBottle,
   ShieldAlert,
-  Stethoscope,
   Users2,
 } from "lucide-react";
-import { ACCOUNTS, LINKS, MEDICINES, SYSTEM_AUDIT, roleLabel } from "@/lib/admin-mock";
-
-const donut = [
-  {
-    label: "Bệnh nhân",
-    sub: `${ACCOUNTS.filter((a) => a.role === "patient").length} tài khoản`,
-    color: "var(--primary)",
-    pct: 45,
-  },
-  {
-    label: "Bác sĩ",
-    sub: `${ACCOUNTS.filter((a) => a.role === "doctor").length} tài khoản`,
-    color: "var(--success)",
-    pct: 25,
-  },
-  {
-    label: "Người thân",
-    sub: `${ACCOUNTS.filter((a) => a.role === "caregiver").length} tài khoản`,
-    color: "var(--warning)",
-    pct: 25,
-  },
-  {
-    label: "Quản trị",
-    sub: `${ACCOUNTS.filter((a) => a.role === "admin").length} tài khoản`,
-    color: "var(--muted-foreground)",
-    pct: 5,
-  },
-];
+import { useEffect, useState } from "react";
+import { MEDICINES, SYSTEM_AUDIT, roleLabel } from "@/lib/admin-mock";
+import { listAccounts, type AccountRecord } from "@/lib/accounts";
+import { listCaregiverLinksForPatient } from "@/lib/caregivers";
+import { listReportingPatients } from "@/lib/reporting";
 
 const roleBadgeTone: Record<string, string> = {
   doctor: "bg-success/15 text-success",
@@ -49,11 +25,57 @@ const roleBadgeTone: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
-  const total = ACCOUNTS.length;
-  const pending = ACCOUNTS.filter((a) => a.status === "pending").length;
-  const locked = ACCOUNTS.filter((a) => a.status === "locked").length;
+  const [accounts, setAccounts] = useState<AccountRecord[]>([]);
+  const [linkCount, setLinkCount] = useState(0);
+  const [patientCount, setPatientCount] = useState(0);
+
+  useEffect(() => {
+    listAccounts()
+      .then(setAccounts)
+      .catch(() => undefined);
+    listReportingPatients()
+      .then(async (patients) => {
+        setPatientCount(patients.length);
+        const lists = await Promise.all(
+          patients.map((p) => listCaregiverLinksForPatient(p.id).catch(() => [])),
+        );
+        setLinkCount(lists.reduce((sum, l) => sum + l.length, 0));
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const total = accounts.length;
+  const pending = accounts.filter((a) => a.status === "pending").length;
+  const locked = accounts.filter((a) => a.status === "locked").length;
   const indexed = MEDICINES.filter((m) => m.status === "indexed").length;
   const needsAttention = MEDICINES.filter((m) => m.status !== "indexed").length;
+
+  const donut = [
+    {
+      label: "Bệnh nhân",
+      sub: `${accounts.filter((a) => a.role === "patient").length} tài khoản`,
+      color: "var(--primary)",
+      pct: 45,
+    },
+    {
+      label: "Bác sĩ",
+      sub: `${accounts.filter((a) => a.role === "doctor").length} tài khoản`,
+      color: "var(--success)",
+      pct: 25,
+    },
+    {
+      label: "Người thân",
+      sub: `${accounts.filter((a) => a.role === "caregiver").length} tài khoản`,
+      color: "var(--warning)",
+      pct: 25,
+    },
+    {
+      label: "Quản trị",
+      sub: `${accounts.filter((a) => a.role === "admin").length} tài khoản`,
+      color: "var(--muted-foreground)",
+      pct: 5,
+    },
+  ];
 
   const stats = [
     {
@@ -66,9 +88,9 @@ export default function AdminDashboard() {
       link: { to: "/admin/accounts", label: "Quản lý tài khoản" },
     },
     {
-      label: "Liên kết đang hoạt động",
-      value: LINKS.length,
-      note: "Bệnh nhân ↔ bác sĩ ↔ người thân",
+      label: "Liên kết người thân đang hoạt động",
+      value: linkCount,
+      note: "Bệnh nhân ↔ người thân",
       noteTone: "text-muted-foreground",
       icon: Link2,
       tone: "bg-success/15 text-success",
@@ -236,11 +258,10 @@ export default function AdminDashboard() {
           </div>
           <div className="rounded-xl border border-border p-4">
             <p className="flex items-center gap-2 text-sm font-semibold">
-              <Stethoscope className="h-4 w-4 text-success" /> Không có bệnh nhân nào thiếu bác sĩ
-              phụ trách
+              <Link2 className="h-4 w-4 text-primary" /> {patientCount} bệnh nhân trong hệ thống
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Tất cả {LINKS.length} bệnh nhân đã có liên kết bác sĩ hợp lệ.
+              Xem liên kết người thân của từng bệnh nhân.
             </p>
             <Link
               href="/admin/links"

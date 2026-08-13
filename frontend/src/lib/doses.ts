@@ -123,6 +123,16 @@ export async function listDoses(patientId: string): Promise<Dose[]> {
   return items.map(toDose);
 }
 
+export async function updateDoseStatus(doseId: string, status: string): Promise<Dose> {
+  const response = await fetch(`/api/doses/${encodeURIComponent(doseId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) return loi(response);
+  return toDose(await response.json());
+}
+
 /**
  * Gửi ảnh xác nhận. Trả về ngay (202) — một lần gọi mô hình đo được 26 đến
  * 265 giây, backend không giữ request chờ. Dùng `pollPhotoVerification` để

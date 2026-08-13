@@ -14,6 +14,11 @@ __pycache__
 docs/
 presentation/
 eval/
+# Service backend rieng, khong dung file nao trong day (Next.js co Dockerfile/
+# deploy rieng) - thieu dong nay lam build context phinh len ca GB vi
+# frontend/node_modules va frontend/.next, khien buoc "transferring context"
+# cham hang chuc phut moi lan build local.
+frontend/
 *.md
 !requirements.txt
 .dockerignore

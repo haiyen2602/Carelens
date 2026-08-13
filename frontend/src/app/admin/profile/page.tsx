@@ -1,26 +1,40 @@
 "use client";
 
-import { KeyRound, Mail, Phone, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { KeyRound, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ACCOUNTS } from "@/lib/admin-mock";
-
-const me = ACCOUNTS.find((a) => a.id === "ADM-001")!;
-
-const meta = [
-  ["Mã quản trị viên", me.id],
-  ["Vai trò", "Quản trị hệ thống"],
-  ["Ngày tạo tài khoản", me.createdAt],
-  ["Đăng nhập gần nhất", me.lastLogin],
-];
+import { useAuth } from "@/lib/auth";
+import { listAccounts, type AccountRecord } from "@/lib/accounts";
 
 export default function AdminProfilePage() {
-  const [name, setName] = useState(me.name);
-  const [email, setEmail] = useState(me.email);
-  const [phone, setPhone] = useState(me.phone);
+  const { user } = useAuth();
+  const [me, setMe] = useState<AccountRecord | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    listAccounts()
+      .then((accounts) => {
+        const found = accounts.find((a) => a.id === user.id) ?? null;
+        setMe(found);
+        setName(found?.fullName ?? user.full_name);
+        setEmail(found?.email ?? "");
+      })
+      .catch(() => undefined);
+  }, [user]);
+
+  const meta = me
+    ? [
+        ["Mã quản trị viên", me.id],
+        ["Vai trò", "Quản trị hệ thống"],
+        ["Ngày tạo tài khoản", me.createdAt],
+        ["Trạng thái", me.status],
+      ]
+    : [];
 
   const save = () => {
     setSaved(true);
@@ -40,11 +54,11 @@ export default function AdminProfilePage() {
         <section className="surface-card p-6">
           <div className="flex items-center gap-4">
             <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent text-xl font-bold text-accent-foreground">
-              {name.charAt(0)}
+              {(name || "?").charAt(0)}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-lg font-bold">{name}</p>
-              <p className="text-sm text-muted-foreground">Quản trị hệ thống · {me.id}</p>
+              <p className="truncate text-lg font-bold">{name || "…"}</p>
+              <p className="text-sm text-muted-foreground">Quản trị hệ thống · {me?.id ?? "…"}</p>
             </div>
           </div>
 
@@ -68,7 +82,7 @@ export default function AdminProfilePage() {
         <section className="surface-card p-6">
           <h2 className="text-lg font-bold">Cập nhật thông tin</h2>
           <p className="text-sm text-muted-foreground">
-            Thay đổi tên hiển thị và thông tin liên hệ (demo — chưa đồng bộ máy chủ).
+            Thay đổi tên hiển thị và email (demo — chưa có API cập nhật hồ sơ).
           </p>
 
           <div className="mt-4 space-y-4">
@@ -86,20 +100,6 @@ export default function AdminProfilePage() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="rounded-none border-0 px-0 shadow-none focus-visible:ring-0"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại</Label>
-              <div className="flex items-center overflow-hidden rounded-md border border-input bg-card focus-within:border-primary">
-                <span className="flex shrink-0 items-center px-3 text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                </span>
-                <Input
-                  id="phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
                   className="rounded-none border-0 px-0 shadow-none focus-visible:ring-0"
                 />
               </div>

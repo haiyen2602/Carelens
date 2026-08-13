@@ -22,17 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { roleLabel, statusLabel } from "@/lib/admin-mock";
 import {
   createAccount,
   listAccounts,
-  roleLabel,
-  statusLabel,
   updateAccountStatus,
-  type Account,
+  type AccountRecord,
   type AccountRole,
   type AccountStatus,
 } from "@/lib/accounts";
-import { useAuth } from "@/lib/auth";
 
 const roleTone: Record<AccountRole, string> = {
   doctor: "bg-success/15 text-success",
@@ -44,19 +42,19 @@ const roleTone: Record<AccountRole, string> = {
 const statusTone: Record<AccountStatus, string> = {
   active: "bg-success/15 text-success",
   locked: "bg-destructive/12 text-destructive",
+  pending: "bg-warning/25 text-warning-foreground",
 };
 
 const emptyForm = {
   email: "",
   password: "",
-  full_name: "",
+  fullName: "",
   role: "patient" as AccountRole,
-  patient_id: "",
-  doctor_id: "",
+  patientId: "",
+  doctorId: "",
 };
 
 export default function AccountsPage() {
-  const { accessToken } = useAuth();
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [role, setRole] = useState<"all" | AccountRole>("all");
@@ -67,19 +65,18 @@ export default function AccountsPage() {
 
   const accountsQuery = useQuery({
     queryKey: ["accounts"],
-    queryFn: () => listAccounts(accessToken!),
-    enabled: !!accessToken,
+    queryFn: listAccounts,
   });
 
   const createMutation = useMutation({
     mutationFn: () =>
-      createAccount(accessToken!, {
+      createAccount({
         email: form.email,
         password: form.password,
-        full_name: form.full_name,
+        fullName: form.fullName,
         role: form.role,
-        patient_id: form.role === "patient" ? form.patient_id || null : null,
-        doctor_id: form.role === "patient" ? form.doctor_id || null : null,
+        patientId: form.role === "patient" ? form.patientId || undefined : undefined,
+        doctorId: form.role === "patient" ? form.doctorId || undefined : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
@@ -94,7 +91,7 @@ export default function AccountsPage() {
 
   const statusMutation = useMutation({
     mutationFn: ({ id, next }: { id: string; next: AccountStatus }) =>
-      updateAccountStatus(accessToken!, id, next),
+      updateAccountStatus(id, next),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
   });
 
@@ -104,7 +101,7 @@ export default function AccountsPage() {
     () =>
       accounts.filter((a) => {
         const matchQ =
-          a.full_name.toLowerCase().includes(q.toLowerCase()) ||
+          a.fullName.toLowerCase().includes(q.toLowerCase()) ||
           a.email.toLowerCase().includes(q.toLowerCase());
         const matchRole = role === "all" || a.role === role;
         const matchStatus = status === "all" || a.status === status;
@@ -115,7 +112,7 @@ export default function AccountsPage() {
 
   const submitCreate = (e: FormEvent) => {
     e.preventDefault();
-    if (!form.email.trim() || !form.password.trim() || !form.full_name.trim()) {
+    if (!form.email.trim() || !form.password.trim() || !form.fullName.trim()) {
       setFormError("Vui lòng nhập đầy đủ email, mật khẩu và họ tên.");
       return;
     }
@@ -163,8 +160,8 @@ export default function AccountsPage() {
                 <Label htmlFor="full_name">Họ tên</Label>
                 <Input
                   id="full_name"
-                  value={form.full_name}
-                  onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                  value={form.fullName}
+                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -215,8 +212,8 @@ export default function AccountsPage() {
                     <Input
                       id="patient_id"
                       placeholder="vd demo-patient-01"
-                      value={form.patient_id}
-                      onChange={(e) => setForm((f) => ({ ...f, patient_id: e.target.value }))}
+                      value={form.patientId}
+                      onChange={(e) => setForm((f) => ({ ...f, patientId: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -226,8 +223,8 @@ export default function AccountsPage() {
                     </Label>
                     <Input
                       id="doctor_id"
-                      value={form.doctor_id}
-                      onChange={(e) => setForm((f) => ({ ...f, doctor_id: e.target.value }))}
+                      value={form.doctorId}
+                      onChange={(e) => setForm((f) => ({ ...f, doctorId: e.target.value }))}
                     />
                   </div>
                 </>
@@ -272,6 +269,7 @@ export default function AccountsPage() {
           <option value="all">Trạng thái: Tất cả</option>
           <option value="active">Hoạt động</option>
           <option value="locked">Đã khoá</option>
+          <option value="pending">Chờ kích hoạt</option>
         </select>
       </div>
 
@@ -302,15 +300,15 @@ export default function AccountsPage() {
                 </td>
               </tr>
             )}
-            {list.map((a: Account) => (
+            {list.map((a: AccountRecord) => (
               <tr key={a.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                      {a.full_name.charAt(0).toUpperCase()}
+                      {a.fullName.charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate font-semibold">{a.full_name}</p>
+                      <p className="truncate font-semibold">{a.fullName}</p>
                       <p className="truncate text-xs text-muted-foreground">{a.id}</p>
                     </div>
                   </div>
@@ -324,9 +322,9 @@ export default function AccountsPage() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{a.email}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {a.patient_id && <p>patient: {a.patient_id}</p>}
-                  {a.doctor_id && <p>doctor: {a.doctor_id}</p>}
-                  {!a.patient_id && !a.doctor_id && "—"}
+                  {a.patientId && <p>patient: {a.patientId}</p>}
+                  {a.doctorId && <p>doctor: {a.doctorId}</p>}
+                  {!a.patientId && !a.doctorId && "—"}
                 </td>
                 <td className="px-4 py-3">
                   <span
