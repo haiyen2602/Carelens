@@ -274,7 +274,12 @@ class PhotoSubmitResponse(BaseModel):
 
 
 class PhotoVerificationOut(BaseModel):
-    """GET /api/v1/photo-verifications/{id} — trang thai hien tai cua 1 lan gui anh."""
+    """GET /api/v1/photo-verifications/{id} — trang thai hien tai cua 1 lan gui anh.
+
+    Cung dung cho GET /api/v1/doses/{id}/photo-verifications (liet ke lich su
+    cac lan gui cua 1 lieu) - `created_at`/`has_image` them vao cho man hinh
+    lich su benh nhan (patient/history), khong pha vo response cu vi la truong
+    them, khong doi truong san co."""
 
     id: str
     dose_event_id: str
@@ -287,6 +292,8 @@ class PhotoVerificationOut(BaseModel):
     confidence: str | None = None
     next_action: str | None = None  # None khi con dang_xu_ly hoac loi_he_thong
     message: str
+    created_at: str
+    has_image: bool
 
 
 class ConversationChatRequest(BaseModel):
