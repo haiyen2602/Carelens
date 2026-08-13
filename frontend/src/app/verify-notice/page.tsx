@@ -3,11 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { ArrowLeft, CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function VerifyNoticePage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyNoticeContent />
+    </Suspense>
+  );
+}
+
+function VerifyNoticeContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "email của bạn";
 

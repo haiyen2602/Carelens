@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
