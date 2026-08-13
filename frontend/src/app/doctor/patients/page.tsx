@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
 import { DEFAULT_TIMES, today } from "@/lib/dose-schedule";
 import { goiYLieu } from "@/lib/drugs";
 import { listEscalations, type Escalation } from "@/lib/escalations";
@@ -85,16 +86,21 @@ function HealthTab({
 
   const age = tinhTuoi(patient.yearOfBirth);
   const { pushActivity } = useProto();
+  const { accessToken } = useAuth();
 
   const save = async () => {
     setSaving(true);
     try {
-      const patch = await updatePatientHealth(patient.id, {
-        gender: gender || undefined,
-        heightCm: heightCm ? Number(heightCm) : undefined,
-        weightKg: weightKg ? Number(weightKg) : undefined,
-        note: note || undefined,
-      });
+      const patch = await updatePatientHealth(
+        patient.id,
+        {
+          gender: gender || undefined,
+          heightCm: heightCm ? Number(heightCm) : undefined,
+          weightKg: weightKg ? Number(weightKg) : undefined,
+          note: note || undefined,
+        },
+        accessToken,
+      );
       onSaved(patch);
       pushActivity("Đã xử lý xong bệnh nhân", `Cập nhật hồ sơ sức khỏe của ${patient.fullName}.`);
       setEditing(false);
@@ -574,11 +580,12 @@ function PrescriptionsTab({ patientId, patientName }: { patientId: string; patie
 function AdherenceTab({ patient }: { patient: ReportingPatient }) {
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [dangTai, setDangTai] = useState(false);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
     setDangTai(true);
-    listEscalations({ patientId: patient.id })
+    listEscalations({ patientId: patient.id }, accessToken)
       .then((es) => {
         if (!cancelled) setEscalations(es);
       })
@@ -589,7 +596,7 @@ function AdherenceTab({ patient }: { patient: ReportingPatient }) {
     return () => {
       cancelled = true;
     };
-  }, [patient.id]);
+  }, [patient.id, accessToken]);
 
   return (
     <div className="space-y-6">
@@ -677,19 +684,20 @@ export default function PatientsPage() {
   // tung phim go.
   const [patients, setPatients] = useState<ReportingPatient[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      listReportingPatients(q)
+      listReportingPatients(q, accessToken)
         .then(setPatients)
         .catch(() => undefined);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [q, refreshKey]);
+  }, [q, refreshKey, accessToken]);
 
   const toggleWatch = async (id: string) => {
     const p = patients.find((x) => x.id === id);
-    await setPatientWatch(id, !(p?.watch ?? false));
+    await setPatientWatch(id, !(p?.watch ?? false), accessToken);
     setRefreshKey((k) => k + 1);
   };
 

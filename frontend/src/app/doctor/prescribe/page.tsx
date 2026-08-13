@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { useAuth } from "@/lib/auth";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
 import { PatientCombobox } from "@/components/patient-combobox";
@@ -89,6 +90,7 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
 
 export default function PrescribePage() {
   const { createPrescription, pushActivity } = useProto();
+  const { accessToken } = useAuth();
   // Danh sach benh nhan THAT (bang `patient`), khac han mang `patients` mock
   // cua useProto() - mang do phuc vu dashboard tuan thu (age/condition/
   // adherence), chua co ben backend. Xem lib/patients.ts.
@@ -103,7 +105,7 @@ export default function PrescribePage() {
   const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
 
   useEffect(() => {
-    listPatients()
+    listPatients(undefined, accessToken)
       .then((ds) => {
         setBenhNhanThat(ds);
         setPatientId((hienTai) => hienTai || (ds[0]?.id ?? ""));
@@ -112,7 +114,7 @@ export default function PrescribePage() {
         console.error("Không tải được danh sách bệnh nhân:", err);
         toast.error("Không tải được danh sách bệnh nhân");
       });
-  }, []);
+  }, [accessToken]);
 
   const patientOptions = benhNhanThat.map((p, i) => ({
     id: p.id,

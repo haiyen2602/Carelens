@@ -71,12 +71,15 @@ function toEscalation(e: EscalationApi): Escalation {
 
 export async function listEscalations(
   params: { patientId?: string; status?: string } = {},
+  accessToken?: string | null,
 ): Promise<Escalation[]> {
   const query = new URLSearchParams();
   if (params.patientId) query.set("patient_id", params.patientId);
   if (params.status) query.set("status", params.status);
 
-  const response = await fetch(`/api/escalations?${query.toString()}`);
+  const response = await fetch(`/api/escalations?${query.toString()}`, {
+    headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  });
   if (!response.ok) return loi(response);
   const items: EscalationApi[] = await response.json();
   return items.map(toEscalation);
