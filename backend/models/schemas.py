@@ -494,6 +494,7 @@ class CaregiverLinkOut(BaseModel):
     patient_id: str
     relationship: str
     created_at: str
+    status: str = "accepted"
 
 
 class CaregiverLinkForPatientOut(BaseModel):
@@ -506,6 +507,28 @@ class CaregiverLinkForPatientOut(BaseModel):
     id: str
     caregiver_account_id: str
     caregiver_name: str
+    relationship: str
+    created_at: str
+    status: str = "accepted"
+
+
+class CaregiverInviteCreateRequest(BaseModel):
+    """POST /api/v1/caregiver-links/invites - benh nhan dang dang nhap tu
+    moi 1 benh nhan khac de theo doi. `patient_id` la nguoi SE DUOC theo doi
+    (khong phai nguoi gui loi moi - do la current_user)."""
+
+    patient_id: str = Field(..., min_length=1)
+    relationship: str = Field(..., min_length=1)
+
+
+class PendingInviteOut(BaseModel):
+    """1 phan tu trong GET /api/v1/caregiver-links/pending - loi moi CHUA
+    duoc nguoi duoc theo doi chap nhan. `inviter_name` lay tu
+    Account.full_name qua join, cung ly do voi caregiver_name o tren."""
+
+    id: str
+    caregiver_account_id: str
+    inviter_name: str
     relationship: str
     created_at: str
 

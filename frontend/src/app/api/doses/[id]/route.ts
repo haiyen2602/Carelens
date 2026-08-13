@@ -1,22 +1,24 @@
 // Server-side proxy cho PATCH /api/v1/doses/{id}.
-// Cung ly do ton tai voi app/api/chat/route.ts.
+//
+// Backend doi hoi Authorization: Bearer <JWT> that (get_current_user, xem
+// backend/api/dose_routes.py::update_dose_status) - CHUA forward header nay
+// (chi gan X-Internal-Secret) nen truoc gio chua the goi thanh cong, phat
+// hien khi xay tinh nang nguoi than duyet lieu (patient/family/[id]/page.tsx).
+// Sua theo dung pattern app/api/chat/route.ts.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!INTERNAL_SECRET) {
-    return Response.json(
-      { detail: "Server misconfigured: INTERNAL_AUTH_SECRET chua duoc set cho VMEC-04/FE." },
-      { status: 500 },
-    );
-  }
-
   const { id } = await params;
   const body = await request.text();
+  const authorization = request.headers.get("authorization");
+
   const upstream = await fetch(`${BACKEND_URL}/api/v1/doses/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", "X-Internal-Secret": INTERNAL_SECRET },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authorization ? { Authorization: authorization } : {}),
+    },
     body,
   });
 

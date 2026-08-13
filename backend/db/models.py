@@ -430,3 +430,9 @@ class CaregiverLink(Base):
     patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     relationship: Mapped[str] = mapped_column(String, nullable=False)  # vd "Con gái"/"Vợ"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM 2026-08-13 (migration 0020) - "pending"|"accepted". Admin tao thang
+    # ("accepted") - da xac nhan thay. Benh nhan tu moi nhau qua POST
+    # /caregiver-links/invites bat dau "pending", chi hien trong danh sach
+    # dang theo doi (GET ?caregiver_account_id=) sau khi nguoi duoc theo doi
+    # tu chap nhan (POST /caregiver-links/{id}/accept).
+    status: Mapped[str] = mapped_column(String, nullable=False, default="accepted")

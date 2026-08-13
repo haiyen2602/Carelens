@@ -23,16 +23,18 @@ from fastapi import status as http_status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, require_internal_secret, require_role
+from backend.api.security import CurrentUser, get_current_user, require_internal_secret, require_role
 from backend.db.base import get_db
 from backend.db.models import Account, CaregiverLink, DoseEvent, Escalation, Patient
 from backend.models.schemas import (
+    CaregiverInviteCreateRequest,
     CaregiverLinkCreateRequest,
     CaregiverLinkForPatientOut,
     CaregiverLinkOut,
     CaregiverMonitoredPatientOut,
     DayAdherenceStatus,
     OpenEscalationBrief,
+    PendingInviteOut,
 )
 from backend.services.reporting.adherence import compute_adherence_pct
 
@@ -53,10 +55,15 @@ def create_caregiver_link(
     db: Session = Depends(get_db),
     _admin: CurrentUser = Depends(require_role("admin")),
 ) -> CaregiverLinkOut:
+    """Admin tao thang, KHONG can nguoi duoc theo doi dong y - admin da xac
+    nhan quan he ngoai doi truoc khi tao (BR ngam dinh cua man hinh
+    /admin/links), khac han POST /caregiver-links/invites ben duoi (tu benh
+    nhan, can nguoi kia chap nhan)."""
     link = CaregiverLink(
         caregiver_account_id=body.caregiver_account_id,
         patient_id=body.patient_id,
         relationship=body.relationship,
+        status="accepted",
     )
     db.add(link)
     db.commit()
@@ -67,6 +74,145 @@ def create_caregiver_link(
         patient_id=link.patient_id,
         relationship=link.relationship,
         created_at=link.created_at.isoformat(),
+        status=link.status,
+    )
+
+
+@caregiver_router.post(
+    "/caregiver-links/invites",
+    response_model=CaregiverLinkOut,
+    status_code=http_status.HTTP_201_CREATED,
+)
+def create_caregiver_invite(
+    body: CaregiverInviteCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> CaregiverLinkOut:
+    """Benh nhan dang dang nhap tu moi 1 benh nhan khac (`body.patient_id`)
+    de theo doi - KHONG can quyen admin, nhung can that su dang nhap (JWT)
+    vi `caregiver_account_id` lay tu chinh nguoi goi, khong tin body. Bat
+    dau "pending" - chi co hieu luc (xuat hien o GET ?caregiver_account_id=)
+    sau khi nguoi duoc theo doi tu chap nhan qua POST .../accept."""
+    if db.get(Patient, body.patient_id) is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bệnh nhân")
+    if current_user.patient_id == body.patient_id:
+        raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail="Không thể tự mời chính mình")
+
+    link = CaregiverLink(
+        caregiver_account_id=current_user.id,
+        patient_id=body.patient_id,
+        relationship=body.relationship,
+        status="pending",
+    )
+    db.add(link)
+    db.commit()
+    db.refresh(link)
+    return CaregiverLinkOut(
+        id=link.id,
+        caregiver_account_id=link.caregiver_account_id,
+        patient_id=link.patient_id,
+        relationship=link.relationship,
+        created_at=link.created_at.isoformat(),
+        status=link.status,
+    )
+
+
+@caregiver_router.get("/caregiver-links/pending", response_model=list[PendingInviteOut])
+def list_pending_invites(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> list[PendingInviteOut]:
+    """Loi moi dang cho CHINH nguoi dang dang nhap chap nhan (ho la nguoi SE
+    DUOC theo doi) - luon doc theo `current_user.patient_id`, khong nhan
+    patient_id tu query, cung ly do voi get_current_patient_id() o security.py
+    (khong cho doc ho loi moi cua nguoi khac)."""
+    if not current_user.patient_id:
+        return []
+
+    rows = db.execute(
+        select(CaregiverLink).where(
+            CaregiverLink.patient_id == current_user.patient_id,
+            CaregiverLink.status == "pending",
+        )
+    ).scalars().all()
+    if not rows:
+        return []
+
+    inviter_ids = {r.caregiver_account_id for r in rows}
+    accounts = db.execute(select(Account).where(Account.id.in_(inviter_ids))).scalars().all()
+    name_by_id = {a.id: a.full_name for a in accounts}
+
+    return [
+        PendingInviteOut(
+            id=r.id,
+            caregiver_account_id=r.caregiver_account_id,
+            inviter_name=name_by_id.get(r.caregiver_account_id, r.caregiver_account_id),
+            relationship=r.relationship,
+            created_at=r.created_at.isoformat(),
+        )
+        for r in rows
+    ]
+
+
+@caregiver_router.post("/caregiver-links/{link_id}/accept", response_model=CaregiverLinkOut)
+def accept_caregiver_invite(
+    link_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> CaregiverLinkOut:
+    """Chap nhan loi moi + tu dong tao chieu NGUOC LAI (nguoi vua chap nhan
+    cung theo doi duoc lai nguoi da moi) - "nguoi than" trong app nay la quan
+    he 2 chieu tu nhien (gia dinh theo doi lan nhau), khac han mo hinh
+    bac si<->benh nhan von 1 chieu. Chi tao duoc chieu nguoc neu nguoi moi
+    CUNG la 1 tai khoan benh nhan that (co Account.patient_id) - tai khoan
+    role=caregiver/doctor/admin tu moi (qua /admin/links) khong co danh
+    tinh benh nhan de duoc theo doi lai."""
+    link = db.get(CaregiverLink, link_id)
+    if link is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Lời mời không tồn tại")
+    if link.patient_id != current_user.patient_id:
+        raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền chấp nhận lời mời này")
+    if link.status != "pending":
+        raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail="Lời mời này đã được xử lý")
+
+    link.status = "accepted"
+
+    inviter = db.get(Account, link.caregiver_account_id)
+    if inviter is not None and inviter.patient_id and current_user.patient_id:
+        reverse = (
+            db.query(CaregiverLink)
+            .filter(
+                CaregiverLink.caregiver_account_id == current_user.id,
+                CaregiverLink.patient_id == inviter.patient_id,
+            )
+            .first()
+        )
+        if reverse is None:
+            # Nhan "Nguoi than" chung chung - khong doan duoc quan he NGUOC
+            # (vd "con gai" -> "me") tu 1 chuoi tu do nguoi dung go.
+            db.add(
+                CaregiverLink(
+                    caregiver_account_id=current_user.id,
+                    patient_id=inviter.patient_id,
+                    relationship="Người thân",
+                    status="accepted",
+                )
+            )
+        elif reverse.status == "pending":
+            # Ca 2 nguoi lo moi nhau cung luc (2 loi moi rieng) - chap nhan 1
+            # ben thi coi nhu ben kia cung duoc dong y luon, khong bat nguoi
+            # dung bam chap nhan lan thu 2 cho 1 quan he ho vua xac nhan roi.
+            reverse.status = "accepted"
+
+    db.commit()
+    db.refresh(link)
+    return CaregiverLinkOut(
+        id=link.id,
+        caregiver_account_id=link.caregiver_account_id,
+        patient_id=link.patient_id,
+        relationship=link.relationship,
+        created_at=link.created_at.isoformat(),
+        status=link.status,
     )
 
 
@@ -74,11 +220,21 @@ def create_caregiver_link(
 def delete_caregiver_link(
     link_id: str,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> None:
+    """Admin: go bat ky lien ket nao (quan tri). Ngoai admin, chi 2 phia CUA
+    CHINH lien ket do duoc dong: nguoi duoc theo doi (tu choi loi moi / rut
+    quyen xem) hoac chinh nguoi gui loi moi (huy loi moi / thoi theo doi) -
+    khong ai khac duoc dong lien ket cua 2 nguoi kia."""
     link = db.get(CaregiverLink, link_id)
     if link is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Liên kết không tồn tại")
+
+    la_admin = current_user.role == "admin"
+    la_nguoi_duoc_theo_doi = current_user.patient_id == link.patient_id
+    la_nguoi_gui_loi_moi = current_user.id == link.caregiver_account_id
+    if not (la_admin or la_nguoi_duoc_theo_doi or la_nguoi_gui_loi_moi):
+        raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền gỡ liên kết này")
 
     db.delete(link)
     db.commit()
@@ -120,14 +276,21 @@ def _list_links_for_patient(db: Session, patient_id: str) -> list[CaregiverLinkF
             caregiver_name=name_by_id.get(r.caregiver_account_id, r.caregiver_account_id),
             relationship=r.relationship,
             created_at=r.created_at.isoformat(),
+            status=r.status,
         )
         for r in rows
     ]
 
 
 def _list_monitored_patients(db: Session, caregiver_account_id: str) -> list[CaregiverMonitoredPatientOut]:
+    # Chi lien ket DA CHAP NHAN - loi moi con "pending" khong duoc coi la
+    # dang theo doi that (xem POST /caregiver-links/invites), tranh benh
+    # nhan chua dong y bi lo du lieu qua man hinh nay.
     links = db.execute(
-        select(CaregiverLink).where(CaregiverLink.caregiver_account_id == caregiver_account_id)
+        select(CaregiverLink).where(
+            CaregiverLink.caregiver_account_id == caregiver_account_id,
+            CaregiverLink.status == "accepted",
+        )
     ).scalars().all()
     if not links:
         return []
