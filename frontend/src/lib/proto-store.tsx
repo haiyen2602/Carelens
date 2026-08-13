@@ -81,6 +81,19 @@ export type SysAlert = {
   doseId?: string;
 };
 
+// Thong bao hoat dong CUC BO (dang nhap, duyet phac do, sua ho so...) - KHAC
+// voi `alerts` (canh bao lam sang that tu backend). Bell o header gop ca hai
+// nguon (xem doctor/layout.tsx), nhung day la thong bao "toi vua lam gi",
+// khong phai canh bao ve benh nhan - mat khi tai lai trang, chi song trong
+// phien lam viec hien tai (chua co endpoint/bang luu notification that).
+export type ActivityNotification = {
+  id: string;
+  title: string;
+  detail?: string;
+  at: string;
+  read: boolean;
+};
+
 // Thay the AuditEntry cu (actor/action tu bia) bang hinh dang audit-log THAT:
 // 1 ban ghi = 1 luot hoi AI cua benh nhan (utterance/final_response/trace).
 // Xem doctor/audit/page.tsx da doi theo hinh dang nay.
@@ -147,6 +160,7 @@ type State = {
   doses: Dose[];
   prescriptions: Prescription[];
   alerts: SysAlert[];
+  activity: ActivityNotification[];
   audit: AuditEntry[];
   patients: Patient[];
   familyContacts: FamilyContact[];
@@ -171,6 +185,7 @@ const initial: State = {
   // de bang phac do that (POST /api/v1/prescriptions), xem refreshPrescriptions.
   prescriptions: [],
   alerts: [],
+  activity: [],
   audit: [],
   patients: [],
   familyContacts: [],
@@ -213,6 +228,9 @@ type Ctx = State & {
   // Cung ly do/gioi han voi updatePrescription o tren.
   setAlertStatus: (id: string, status: SysAlert["status"]) => void;
   toggleWatch: (id: string) => Promise<void>;
+  pushActivity: (title: string, detail?: string) => void;
+  markActivityRead: (id: string) => void;
+  markAllActivityRead: () => void;
 };
 
 const ProtoContext = createContext<Ctx | null>(null);
@@ -542,12 +560,18 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         await refreshPrescriptions();
       },
       createPrescription: async (input) => {
-        await createPrescriptionApi({
+        // ADR-0010: bac si van la nguoi duyet (khong phai AI tu kich hoat) -
+        // nhung UI gop thao tac "chot phac do" va "duyet" thanh 1 buoc (dialog
+        // xac nhan o prescribe/page.tsx) thay vi bat sang trang hang doi rieng.
+        // Duyet ngay sau khi tao vi nguoi bam nut CHINH la bac si phu trach,
+        // dang xac nhan tai cho, khong phai mot nguoi khac duyet sau.
+        const created = await createPrescriptionApi({
           patientId: input.patientId,
           doctorId: DEMO_DOCTOR_ID,
           note: input.note,
           items: input.items,
         });
+        await approvePrescription(created.id, DEMO_DOCTOR_ID);
         await refreshPrescriptions();
       },
       updatePrescription: (id, patch) => {
@@ -582,6 +606,24 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         const p = state.patients.find((x) => x.id === id);
         await setPatientWatch(id, !(p?.watch ?? false));
         await refreshReportingPatients();
+      },
+      pushActivity: (title, detail) => {
+        setState((s) => ({
+          ...s,
+          activity: [
+            { id: uid(), title, detail, at: gioHienThi(new Date().toISOString()), read: false },
+            ...s.activity,
+          ].slice(0, 30),
+        }));
+      },
+      markActivityRead: (id) => {
+        setState((s) => ({
+          ...s,
+          activity: s.activity.map((a) => (a.id === id ? { ...a, read: true } : a)),
+        }));
+      },
+      markAllActivityRead: () => {
+        setState((s) => ({ ...s, activity: s.activity.map((a) => ({ ...a, read: true })) }));
       },
     }),
     [state, user, refreshPrescriptions, refreshDoses, refreshEscalations, refreshReportingPatients],

@@ -87,6 +87,10 @@ def _chuan_hoa_item(db: Session, item: dict) -> dict:
         "thoi_diem_dung": str(item.get("thoi_diem_dung") or "").strip(),
         "so_vien_moi_lan": item.get("so_vien_moi_lan"),
         "gio_nhac": list(item.get("gio_nhac") or []),
+        # Khoang ngay rieng cua thuoc nay - None nghia la dung chung khoang
+        # ngay cua ca phac do (xem PrescriptionItemIn trong schemas.py).
+        "start_date": item.get("start_date") or None,
+        "duration_days": item.get("duration_days"),
     }
 
 
@@ -181,6 +185,47 @@ def duyet_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple
 
     db.refresh(presc)
     logger.info("Bác sĩ %s duyệt phác đồ %s, sinh %d liều.", doctor_id, prescription_id, so_lieu)
+    return presc, so_lieu
+
+
+def sua_phac_do(
+    db: Session, prescription_id: str, *, doctor_id: str, items: list[dict], note: str | None = None
+) -> tuple[Prescription, int]:
+    """Sửa thuốc/liều/giờ của một phác đồ `draft` hoặc `active` (BR-1.3).
+
+    Sửa trực tiếp (ghi đè `items`), KHÔNG tạo bản ghi mới - khác `duyet_phac_do`
+    (ADR-0010 chỉ áp cho việc CHUYỂN sang trạng thái chạy, không áp cho việc
+    sửa thuốc trên một phác đồ bác sĩ phụ trách đã tự duyệt).
+
+    Nếu đang `active`: sinh lại CHỈ các `dose_event` CHƯA TỚI HẠN (idempotent,
+    xem sinh_dose_event/generator.py) - liều đã đóng (TAKEN/MISSED/...) giữ
+    nguyên vì đó là lịch sử y tế, sửa phác đồ không được viết lại quá khứ.
+    Nếu đang `draft`: chưa có liều nào để sinh (sinh lúc duyệt), trả 0.
+    """
+    if not items:
+        raise ViPhamNghiepVuError("Đơn thuốc phải có ít nhất một thuốc.")
+
+    presc = lay_phac_do(db, prescription_id)
+    if presc.status not in (DRAFT, *DANG_CHAY):
+        raise TrangThaiKhongHopLeError(
+            f"Không sửa được phác đồ đang ở trạng thái {presc.status!r}.",
+            prescription_id=prescription_id,
+            status=presc.status,
+        )
+
+    try:
+        presc.items = [_chuan_hoa_item(db, item) for item in items]
+        if note is not None:
+            presc.note = note or None
+        so_lieu = sinh_dose_event(db, presc) if presc.status in DANG_CHAY else 0
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Sửa phác đồ %s thất bại, đã hoàn tác.", prescription_id)
+        raise
+
+    db.refresh(presc)
+    logger.info("Bác sĩ %s sửa phác đồ %s, sinh lại %d liều.", doctor_id, prescription_id, so_lieu)
     return presc, so_lieu
 
 

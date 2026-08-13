@@ -68,29 +68,6 @@ def _expected_item(item: dict) -> dict:
     }
 
 
-def _gom_theo_gio(items: list[dict]) -> dict[time, list[dict]]:
-    """Trả về {giờ uống: [các thuốc uống vào giờ đó]}.
-
-    Một thuốc uống ngày 2 lần xuất hiện ở hai giờ khác nhau; hai thuốc cùng giờ
-    nằm chung một danh sách.
-    """
-    theo_gio: defaultdict[time, list[dict]] = defaultdict(list)
-
-    for item in items:
-        gio_nhac = item.get("gio_nhac") or [_GIO_MAC_DINH]
-        for chuoi in gio_nhac:
-            gio = _doc_gio(chuoi)
-            if gio is None:
-                logger.warning(
-                    "Giờ nhắc %r của thuốc %r không đọc được, bỏ qua.",
-                    chuoi, item.get("ten_thuoc", "?"),
-                )
-                continue
-            theo_gio[gio].append(_expected_item(item))
-
-    return dict(theo_gio)
-
-
 def _ngay_bat_dau(presc: Prescription) -> date:
     try:
         return date.fromisoformat(str(presc.start_date))
@@ -102,6 +79,47 @@ def _ngay_bat_dau(presc: Prescription) -> date:
         return datetime.now(UTC).date()
 
 
+def _khoang_ngay_cua_thuoc(item: dict, mac_dinh_bat_dau: date, mac_dinh_so_ngay: int) -> tuple[date, date]:
+    """(ngày bắt đầu, ngày kết thúc - exclusive) riêng của MỘT thuốc.
+
+    `start_date`/`duration_days` trên item là tuỳ chọn (PrescriptionItemIn) -
+    thuốc không có khoảng ngày riêng thì dùng chung khoảng ngày của cả phác đồ
+    (vd 2 thuốc trong cùng đơn nhưng uống số ngày khác nhau)."""
+    bat_dau = mac_dinh_bat_dau
+    raw = item.get("start_date")
+    if raw:
+        try:
+            bat_dau = date.fromisoformat(str(raw))
+        except (ValueError, TypeError):
+            logger.warning("start_date %r của thuốc %r không đọc được, dùng của cả phác đồ.", raw, item.get("ten_thuoc", "?"))
+
+    so_ngay = item.get("duration_days")
+    so_ngay = int(so_ngay) if so_ngay else mac_dinh_so_ngay
+    return bat_dau, bat_dau + timedelta(days=max(so_ngay, 0))
+
+
+def _lich_theo_thuoc(
+    items: list[dict], mac_dinh_bat_dau: date, mac_dinh_so_ngay: int
+) -> list[tuple[time, dict, date, date]]:
+    """Trả về [(giờ uống, expected_item, ngày bắt đầu, ngày kết thúc), ...] -
+    mỗi phần tử là MỘT giờ uống của MỘT thuốc, kèm khoảng ngày áp dụng riêng
+    của thuốc đó (xem `_khoang_ngay_cua_thuoc`)."""
+    ra: list[tuple[time, dict, date, date]] = []
+    for item in items:
+        bat_dau, ket_thuc = _khoang_ngay_cua_thuoc(item, mac_dinh_bat_dau, mac_dinh_so_ngay)
+        gio_nhac = item.get("gio_nhac") or [_GIO_MAC_DINH]
+        for chuoi in gio_nhac:
+            gio = _doc_gio(chuoi)
+            if gio is None:
+                logger.warning(
+                    "Giờ nhắc %r của thuốc %r không đọc được, bỏ qua.",
+                    chuoi, item.get("ten_thuoc", "?"),
+                )
+                continue
+            ra.append((gio, _expected_item(item), bat_dau, ket_thuc))
+    return ra
+
+
 def sinh_dose_event(db: Session, presc: Prescription, *, bay_gio: datetime | None = None) -> int:
     """Sinh lịch uống cho cả đợt điều trị. Trả về số liều đã tạo.
 
@@ -111,20 +129,33 @@ def sinh_dose_event(db: Session, presc: Prescription, *, bay_gio: datetime | Non
     nào, và không ai biết cho tới khi bệnh nhân thắc mắc sao không được nhắc.
     """
     bay_gio = bay_gio or datetime.now(UTC)
-    theo_gio = _gom_theo_gio(presc.items or [])
-    if not theo_gio:
+    ngay_dau_phac_do = _ngay_bat_dau(presc)
+    so_ngay_phac_do = max(int(presc.duration_days or 0), 0)
+
+    lich = _lich_theo_thuoc(presc.items or [], ngay_dau_phac_do, so_ngay_phac_do)
+    if not lich:
         logger.warning("Phác đồ %s không có giờ uống nào hợp lệ, không sinh liều.", presc.id)
         return 0
 
     _xoa_lieu_chua_toi_han(db, presc.id, bay_gio)
 
-    ngay_dau = _ngay_bat_dau(presc)
-    so_ngay = max(int(presc.duration_days or 0), 0)
+    # Bao ngoai: tu ngay som nhat toi ngay muon nhat trong so cac thuoc (moi
+    # thuoc co the co khoang ngay rieng, xem _khoang_ngay_cua_thuoc) - KHONG
+    # chi dung presc.start_date/duration_days, vi mot thuoc co the ket thuc
+    # muon hon ca "khoang ngay mac dinh" cua ca phac do.
+    ngay_dau = min(bat_dau for _, _, bat_dau, _ in lich)
+    ngay_cuoi = max(ket_thuc for _, _, _, ket_thuc in lich)
+    so_ngay = (ngay_cuoi - ngay_dau).days
     da_tao = 0
 
     for thu_may in range(so_ngay):
         ngay = ngay_dau + timedelta(days=thu_may)
-        for gio, expected_items in sorted(theo_gio.items()):
+        theo_gio_ngay: defaultdict[time, list[dict]] = defaultdict(list)
+        for gio, expected_item, bat_dau, ket_thuc in lich:
+            if bat_dau <= ngay < ket_thuc:
+                theo_gio_ngay[gio].append(expected_item)
+
+        for gio, expected_items in sorted(theo_gio_ngay.items()):
             hen = datetime.combine(ngay, gio, tzinfo=GIO_VN).astimezone(UTC)
             # Không sinh liều đã trôi qua: bấm Duyệt lúc 14h thì liều 08:00
             # sáng nay không còn ý nghĩa để nhắc, và tạo ra nó là lập tức có

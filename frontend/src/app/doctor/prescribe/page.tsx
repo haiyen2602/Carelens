@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
@@ -21,6 +23,8 @@ import { PatientCombobox } from "@/components/patient-combobox";
 import { DoseMiniCalendar } from "@/components/dose-mini-calendar";
 import { useProto } from "@/lib/proto-store";
 import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-schedule";
+
+const MEAL_OPTIONS = ["Trước ăn", "Sau ăn", "Không phụ thuộc bữa ăn", "Trước khi ngủ"];
 
 // Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
 // anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
@@ -30,6 +34,18 @@ import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-sched
 function docSoVien(dose: string): number | null {
   const khop = dose.match(/\d+/);
   return khop ? Number(khop[0]) : null;
+}
+
+// So ngay dung THUOC NAY, tinh tu startDate den endDate (ca 2 dau bao gom).
+// endDate rong -> tra null, backend tu dung mac dinh (SO_NGAY_MAC_DINH).
+function tinhSoNgayDung(startDate: string, endDate: string): number | null {
+  if (!endDate) return null;
+  const soNgay =
+    Math.round(
+      (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) /
+        86_400_000,
+    ) + 1;
+  return soNgay > 0 ? soNgay : null;
 }
 
 const defaultTimes = DEFAULT_TIMES;
@@ -72,7 +88,7 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
 }
 
 export default function PrescribePage() {
-  const { createPrescription } = useProto();
+  const { createPrescription, pushActivity } = useProto();
   // Danh sach benh nhan THAT (bang `patient`), khac han mang `patients` mock
   // cua useProto() - mang do phuc vu dashboard tuan thu (age/condition/
   // adherence), chua co ben backend. Xem lib/patients.ts.
@@ -80,6 +96,7 @@ export default function PrescribePage() {
   const [patientId, setPatientId] = useState("");
   const [note, setNote] = useState("");
   const [dangGui, setDangGui] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // Bat dau bang mot dong trong. Truoc day dien san "Amlodipine 5mg" - mot
   // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
   // se thanh don thuoc khong tra cuu duoc dang bao che.
@@ -170,21 +187,30 @@ export default function PrescribePage() {
           thoiDiemDung: m.meal,
           soVienMoiLan: docSoVien(m.dose),
           gioNhac: m.times,
+          startDate: m.startDate,
+          durationDays: tinhSoNgayDung(m.startDate, m.endDate),
         })),
       });
       toast.success(
         meds.length > 1
-          ? `Đã gửi đơn (${meds.length} thuốc) vào hàng đợi duyệt HITL`
-          : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
+          ? `Đã duyệt và kích hoạt phác đồ (${meds.length} thuốc)`
+          : "Đã duyệt và kích hoạt phác đồ",
+      );
+      pushActivity(
+        "Đã xử lý xong bệnh nhân",
+        `Kích hoạt phác đồ (${meds.length} thuốc) cho ${selectedPatientName || "bệnh nhân"}.`,
       );
       setMeds([newMedRow()]);
       setNote("");
+      setConfirmOpen(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không tạo được đơn thuốc");
     } finally {
       setDangGui(false);
     }
   };
+
+  const selectedPatientName = patientOptions.find((p) => p.id === patientId)?.name ?? "";
 
   return (
     <div className="space-y-6">
@@ -256,38 +282,22 @@ export default function PrescribePage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Số lần/ngày</Label>
-                    <Select
+                    <HoverSelect
                       value={String(m.perDay)}
-                      onValueChange={(v) => updatePerDay(m.id, Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4].map((n) => (
-                          <SelectItem key={n} value={String(n)}>
-                            {n} lần/ngày
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => updatePerDay(m.id, Number(v))}
+                      options={[1, 2, 3, 4].map((n) => ({
+                        value: String(n),
+                        label: `${n} lần/ngày`,
+                      }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Bữa ăn</Label>
-                    <Select value={m.meal} onValueChange={(v) => updateMed(m.id, { meal: v })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["Trước ăn", "Sau ăn", "Không phụ thuộc bữa ăn", "Trước khi ngủ"].map(
-                          (mm) => (
-                            <SelectItem key={mm} value={mm}>
-                              {mm}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <HoverSelect
+                      value={m.meal}
+                      onChange={(v) => updateMed(m.id, { meal: v })}
+                      options={MEAL_OPTIONS.map((mm) => ({ value: mm, label: mm }))}
+                    />
                   </div>
                 </div>
 
@@ -389,7 +399,12 @@ export default function PrescribePage() {
             <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
           </div>
 
-          <Button className="w-full" size="lg" disabled={!canSubmit} onClick={submit}>
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!canSubmit}
+            onClick={() => setConfirmOpen(true)}
+          >
             <Plus className="mr-1 h-4 w-4" /> Chốt phác đồ & gửi duyệt
           </Button>
         </section>
@@ -450,6 +465,46 @@ export default function PrescribePage() {
           </div>
         </section>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={(open) => !dangGui && setConfirmOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận duyệt phác đồ</DialogTitle>
+            <DialogDescription>
+              Bấm "Duyệt & kích hoạt" để chốt phác đồ này ngay — hệ thống sẽ ghi audit log, kích
+              hoạt lịch nhắc và thông báo tới bệnh nhân/người thân. Thao tác này thay cho bước
+              duyệt riêng ở hàng đợi.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-lg border border-border p-4 text-sm">
+            <p>
+              <span className="text-muted-foreground">Bệnh nhân: </span>
+              <span className="font-semibold">{selectedPatientName || "(chưa chọn)"}</span>
+            </p>
+            <ul className="space-y-1.5">
+              {activeMeds.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate font-medium">{m.med}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {m.dose} · {m.times.join(", ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {note && <p className="text-muted-foreground">Lưu ý: {note}</p>}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" disabled={dangGui} onClick={() => setConfirmOpen(false)}>
+              Huỷ
+            </Button>
+            <Button disabled={dangGui} onClick={submit}>
+              {dangGui ? "Đang duyệt…" : "Duyệt & kích hoạt"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

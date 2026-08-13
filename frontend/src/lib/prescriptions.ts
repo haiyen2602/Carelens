@@ -17,6 +17,10 @@ export type PrescriptionItemInput = {
   thoiDiemDung: string | null;
   soVienMoiLan: number | null;
   gioNhac: string[];
+  // Khoang ngay RIENG cua thuoc nay - null nghia la dung chung khoang ngay
+  // cua ca phac do (Prescription.startDate/durationDays).
+  startDate?: string | null;
+  durationDays?: number | null;
 };
 
 export type PrescriptionRecord = {
@@ -33,6 +37,8 @@ export type PrescriptionRecord = {
     dangThuoc: string;
     lieuDung: string;
     gioNhac: string[];
+    startDate: string | null;
+    durationDays: number | null;
   }[];
 };
 
@@ -42,6 +48,8 @@ type PrescriptionApiItem = {
   dang_thuoc: string;
   lieu_dung: string;
   gio_nhac: string[];
+  start_date: string | null;
+  duration_days: number | null;
 };
 
 type PrescriptionApiRecord = {
@@ -70,7 +78,25 @@ function toRecord(p: PrescriptionApiRecord): PrescriptionRecord {
       dangThuoc: it.dang_thuoc,
       lieuDung: it.lieu_dung,
       gioNhac: it.gio_nhac ?? [],
+      startDate: it.start_date ?? null,
+      durationDays: it.duration_days ?? null,
     })),
+  };
+}
+
+function toApiItem(it: PrescriptionItemInput) {
+  return {
+    drug_id: it.drugId || undefined,
+    ten_thuoc: it.tenThuoc,
+    dang_thuoc: it.dangThuoc || undefined,
+    duong_dung: it.duongDung || undefined,
+    ham_luong: it.hamLuong || undefined,
+    lieu_dung: it.lieuDung,
+    thoi_diem_dung: it.thoiDiemDung || undefined,
+    so_vien_moi_lan: it.soVienMoiLan ?? undefined,
+    gio_nhac: it.gioNhac,
+    start_date: it.startDate || undefined,
+    duration_days: it.durationDays ?? undefined,
   };
 }
 
@@ -111,17 +137,24 @@ export async function createPrescription(input: {
       patient_id: input.patientId,
       doctor_id: input.doctorId,
       note: input.note || undefined,
-      items: input.items.map((it) => ({
-        drug_id: it.drugId || undefined,
-        ten_thuoc: it.tenThuoc,
-        dang_thuoc: it.dangThuoc || undefined,
-        duong_dung: it.duongDung || undefined,
-        ham_luong: it.hamLuong || undefined,
-        lieu_dung: it.lieuDung,
-        thoi_diem_dung: it.thoiDiemDung || undefined,
-        so_vien_moi_lan: it.soVienMoiLan ?? undefined,
-        gio_nhac: it.gioNhac,
-      })),
+      items: input.items.map(toApiItem),
+    }),
+  });
+  if (!response.ok) return loi(response);
+  return toRecord(await response.json());
+}
+
+export async function updatePrescription(
+  prescriptionId: string,
+  input: { doctorId?: string; note?: string; items: PrescriptionItemInput[] },
+): Promise<PrescriptionRecord> {
+  const response = await fetch(`/api/prescriptions/${prescriptionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      doctor_id: input.doctorId ?? DEMO_DOCTOR_ID,
+      note: input.note || undefined,
+      items: input.items.map(toApiItem),
     }),
   });
   if (!response.ok) return loi(response);

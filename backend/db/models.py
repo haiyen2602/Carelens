@@ -168,6 +168,11 @@ class Patient(Base):
     # sat" bo sung, mac dinh False de danh sach theo doi khong tu dong day len
     # khi co benh nhan moi).
     watch: Mapped[bool] = mapped_column(nullable=False, default=False)
+    # THEM 2026-08-13 (migration 0020) - tab "Tinh trang suc khoe" o trang
+    # Quan ly benh nhan. Du lieu co cau truc (khac `note` la text tu do).
+    gender: Mapped[str | None] = mapped_column(String, nullable=True)  # "nam" | "nu" | "khac"
+    height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class Prescription(Base):

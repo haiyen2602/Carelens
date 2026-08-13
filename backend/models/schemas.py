@@ -173,13 +173,21 @@ class PatientSummary(BaseModel):
     full_name: str
     year_of_birth: int | None = None
     note: str | None = None
+    gender: str | None = None
+    height_cm: float | None = None
+    weight_kg: float | None = None
 
 
 class PrescriptionItemIn(BaseModel):
     """Mot dong thuoc trong don. `drug_id` rong van hop le (bac si tu go ten
     khong co trong danh muc) - se duoc chuan hoa lai o backend/services/
     prescription/service.py::_chuan_hoa_item, KHONG tin dang_thuoc/duong_dung
-    trinh duyet gui len."""
+    trinh duyet gui len.
+
+    `start_date`/`duration_days` la khoang ngay RIENG cua tung thuoc (vd 2
+    thuoc trong cung 1 phac do nhung uong so ngay khac nhau) - None nghia la
+    dung chung khoang ngay cua ca phac do (Prescription.start_date/
+    duration_days), xem backend/services/scheduling/generator.py."""
 
     drug_id: str | None = None
     ten_thuoc: str = Field(..., min_length=1)
@@ -190,6 +198,8 @@ class PrescriptionItemIn(BaseModel):
     thoi_diem_dung: str | None = None
     so_vien_moi_lan: int | None = Field(default=None, gt=0)
     gio_nhac: list[str] = Field(default_factory=list, min_length=1)
+    start_date: str | None = None
+    duration_days: int | None = Field(default=None, gt=0)
 
 
 class PrescriptionCreateRequest(BaseModel):
@@ -212,6 +222,17 @@ class PrescriptionDecisionRequest(BaseModel):
     """Body chung cho approve/reject/stop - chi can biet ai quyet dinh."""
 
     doctor_id: str = Field(..., min_length=1)
+
+
+class PrescriptionUpdateRequest(BaseModel):
+    """PUT /api/v1/prescriptions/{id} - sua thuoc/lich cua mot phac do dang
+    `draft` hoac `active` (BR-1.3, business-rules.md). Ghi de toan bo `items`
+    (khong merge tung dong) - don gian hon va dung voi cach form kê don gui
+    len (luon gui lai ca danh sach thuoc)."""
+
+    doctor_id: str = Field(..., min_length=1)
+    items: list[PrescriptionItemIn] = Field(..., min_length=1)
+    note: str | None = None
 
 
 class PrescriptionOut(BaseModel):
@@ -426,6 +447,9 @@ class ReportingPatientOut(BaseModel):
     full_name: str
     year_of_birth: int | None = None
     note: str | None = None
+    gender: str | None = None
+    height_cm: float | None = None
+    weight_kg: float | None = None
     watch: bool
     adherence_pct: float | None = None
 
@@ -437,6 +461,17 @@ class PatientWatchUpdateRequest(BaseModel):
 class PatientWatchOut(BaseModel):
     id: str
     watch: bool
+
+
+class PatientHealthUpdateRequest(BaseModel):
+    """PATCH /api/v1/patients/{id} - sua tab "Tinh trang suc khoe". Tat ca
+    field deu optional (partial update) - None nghia la "khong doi", KHONG
+    phai "xoa ve rong" (chua co nhu cau xoa ve None qua API nay)."""
+
+    note: str | None = None
+    gender: str | None = None
+    height_cm: float | None = None
+    weight_kg: float | None = None
 
 
 class EscalationOut(BaseModel):

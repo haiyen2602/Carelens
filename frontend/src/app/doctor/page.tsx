@@ -6,9 +6,7 @@ import {
   ArrowRight,
   Bell,
   ClipboardCheck,
-  Hourglass,
   MoreVertical,
-  PillBottle,
   Search,
   Users,
 } from "lucide-react";
@@ -71,11 +69,9 @@ const donut = [
 
 export default function DoctorDashboard() {
   const { patients, prescriptions, alerts } = useProto();
-  const pending = prescriptions.filter((p) => p.status === "pending");
   const newAlerts = alerts.filter((a) => a.status === "new");
   const avg = Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length);
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState(0);
 
   const stats = [
     {
@@ -100,13 +96,6 @@ export default function DoctorDashboard() {
       link: { to: "/doctor/alerts", label: "Xem chi tiết" },
       icon: Bell,
       tone: "bg-warning/25 text-warning-foreground",
-    },
-    {
-      label: "Chờ duyệt (HITL)",
-      value: pending.length,
-      link: { to: "/doctor/queue", label: "Xem hàng đợi" },
-      icon: Hourglass,
-      tone: "bg-accent text-accent-foreground",
     },
   ];
 
@@ -291,94 +280,7 @@ export default function DoctorDashboard() {
         </section>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <section className="surface-card p-5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold">Hàng đợi duyệt (HITL)</h2>
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-              {pending.length}
-            </span>
-          </div>
-          <div className="mt-4 flex gap-5 border-b border-border text-sm">
-            {[
-              `Đề xuất đổi giờ uống (${pending.length})`,
-              "Xác minh ảnh uống thuốc (3)",
-              "Khác (2)",
-            ].map((t, i) => (
-              <button
-                key={t}
-                onClick={() => setTab(i)}
-                className={`-mb-px border-b-2 pb-2.5 font-medium ${
-                  tab === i
-                    ? "border-primary font-semibold text-primary"
-                    : "border-transparent text-muted-foreground"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-2 divide-y divide-border">
-            {pending.map((p, i) => (
-              <div
-                key={p.id}
-                className="grid items-center gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_auto_auto]"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                    {p.patient.charAt(0)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{p.patient}</p>
-                    <p className="text-xs text-muted-foreground">
-                      ID: BN{String(i + 1).padStart(4, "0")}
-                    </p>
-                  </div>
-                </div>
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 truncate font-semibold">
-                    <PillBottle className="h-4 w-4 shrink-0 text-primary" />
-                    Đề xuất đổi giờ uống thuốc
-                  </p>
-                  <p className="truncate text-sm text-primary/80">
-                    {p.med} · {p.times.join(", ")} · {p.meal}
-                  </p>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  <p>AI đề xuất</p>
-                  <p>{p.perDay} lần/ngày</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Link
-                    href="/doctor/queue"
-                    className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-primary"
-                  >
-                    Xem chi tiết
-                  </Link>
-                  <Link
-                    href="/doctor/queue"
-                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
-                  >
-                    Duyệt
-                  </Link>
-                </div>
-              </div>
-            ))}
-            {pending.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                Không có mục nào chờ duyệt.
-              </p>
-            )}
-          </div>
-          <Link
-            href="/doctor/queue"
-            className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary"
-          >
-            Xem tất cả hàng đợi <ArrowRight className="h-4 w-4" />
-          </Link>
-        </section>
-
+      <div className="grid gap-5 xl:grid-cols-2">
         <section className="surface-card p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Adherence tổng quan</h2>

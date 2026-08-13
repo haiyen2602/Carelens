@@ -36,7 +36,7 @@ function LoginPageContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login: authLogin } = useAuth();
-  const { login: protoLogin } = useProto();
+  const { login: protoLogin, pushActivity } = useProto();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
@@ -58,6 +58,7 @@ function LoginPageContent() {
         // khong vo. KHONG PHAI nguon that cho danh tinh - danh tinh that la
         // useAuth().user (xem lib/auth.tsx).
         protoLogin(user.role, user.full_name);
+        pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${user.full_name}.`);
         router.push(user.role === "doctor" ? "/doctor" : "/patient");
       } else if (user.role === "admin") {
         router.push("/admin");
