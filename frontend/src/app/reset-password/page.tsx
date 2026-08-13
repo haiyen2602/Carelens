@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { AlertCircle, CheckCircle2, Lock, LogIn } from "lucide-react";
+import { useState, type FormEvent, Suspense } from "react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -165,5 +165,24 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/20 px-6 py-12">
+        <div className="mx-auto w-full max-w-md space-y-6 rounded-3xl border bg-card p-8 shadow-xl text-center">
+          <div className="space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Đang tải...</h1>
+          </div>
+        </div>
+      </main>
+    }>
+      <ResetPasswordPageContent />
+    </Suspense>
   );
 }

@@ -17,6 +17,7 @@ from backend.db.base import get_db
 from backend.db.models import Account
 from backend.models.schemas import (
     ChangePasswordRequest,
+    ChangePasswordResponse,
     ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
@@ -34,6 +35,7 @@ from backend.services.auth import (
     create_refresh_token,
     decode_token,
     hash_password,
+    token_revoked_by_password_change,
     verify_password,
 )
 from backend.services.email import send_password_reset_email, send_verification_email
@@ -176,12 +178,12 @@ async def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_d
     return {"detail": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."}
 
 
-@auth_router.post("/auth/change-password")
+@auth_router.post("/auth/change-password", response_model=ChangePasswordResponse)
 async def change_password(
     body: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
-):
+) -> ChangePasswordResponse:
     account = db.query(Account).filter(Account.id == current_user.id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tài khoản không tồn tại")
@@ -192,9 +194,19 @@ async def change_password(
         )
 
     account.password_hash = hash_password(body.new_password)
+    account.password_changed_at = datetime.now(UTC)
     db.commit()
+    db.refresh(account)
 
-    return {"detail": "Đổi mật khẩu thành công"}
+    login_res = _login_response(account)
+    return ChangePasswordResponse(
+        access_token=login_res.access_token,
+        token_type=login_res.token_type,
+        expires_in=login_res.expires_in,
+        refresh_token=login_res.refresh_token,
+        user=login_res.user,
+        detail="Đổi mật khẩu thành công"
+    )
 
 
 @auth_router.post("/auth/login", response_model=LoginResponse)

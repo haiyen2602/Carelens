@@ -33,7 +33,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"patient" | "doctor" | "caregiver">("patient");
+  const [role, setRole] = useState<"patient" | "doctor">("patient");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -186,14 +186,16 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="role">Vai trò</Label>
-              <Select value={role} onValueChange={(val) => setRole(val as "patient" | "doctor" | "caregiver")}>
+              <Select value={role} onValueChange={(val) => setRole(val as "patient" | "doctor")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn vai trò" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="patient">Bệnh nhân / Người dùng thuốc</SelectItem>
+                  {/* Chi 2 lua chon khi tu dang ky: benh nhan/nguoi than dung
+                      chung role `patient`; role `admin` chi do admin tao qua
+                      account-api (specs/api-contracts.md §1b). */}
+                  <SelectItem value="patient">Bệnh nhân / Người thân</SelectItem>
                   <SelectItem value="doctor">Bác sĩ phụ trách</SelectItem>
-                  <SelectItem value="caregiver">Người thân / Caregiver</SelectItem>
                 </SelectContent>
               </Select>
             </div>
