@@ -1,30 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { useAuth } from "@/lib/auth";
+import { goiYLieu } from "@/lib/drugs";
+import { listPatients, type PatientRecord } from "@/lib/patients";
 import { PatientCombobox } from "@/components/patient-combobox";
 import { DoseMiniCalendar } from "@/components/dose-mini-calendar";
 import { useProto } from "@/lib/proto-store";
 import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-schedule";
+
+const MEAL_OPTIONS = ["Trước ăn", "Sau ăn", "Không phụ thuộc bữa ăn", "Trước khi ngủ"];
+
+// Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
+// anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
+// con so nguyen. Doc tam so dau tien trong chuoi - khong doan duoc thi de
+// trong, lieu do se roi ve nut bam xac nhan thay vi anh (van hop le, chi la
+// bang chung yeu hon).
+function docSoVien(dose: string): number | null {
+  const khop = dose.match(/\d+/);
+  return khop ? Number(khop[0]) : null;
+}
+
+// So ngay dung THUOC NAY, tinh tu startDate den endDate (ca 2 dau bao gom).
+// endDate rong -> tra null, backend tu dung mac dinh (SO_NGAY_MAC_DINH).
+function tinhSoNgayDung(startDate: string, endDate: string): number | null {
+  if (!endDate) return null;
+  const soNgay =
+    Math.round(
+      (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) /
+        86_400_000,
+    ) + 1;
+  return soNgay > 0 ? soNgay : null;
+}
 
 const defaultTimes = DEFAULT_TIMES;
 
 type MedRow = {
   id: string;
   med: string;
+  // Danh tinh that trong danh muc thuoc. Rong khi bac si tu go mot ten khong
+  // co trong danh muc — van ke don duoc, nhung lieu do se khong xac minh duoc
+  // bang anh (khong biet dang bao che), phai xac nhan bang nut bam.
+  drugId: string;
+  dangThuoc: string;
   dose: string;
   perDay: number;
   meal: string;
@@ -40,6 +74,8 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
   return {
     id: crypto.randomUUID(),
     med: "",
+    drugId: "",
+    dangThuoc: "",
     dose: "1 viên",
     perDay: 1,
     meal: "Sau ăn",
@@ -53,29 +89,38 @@ function newMedRow(startDate?: string, endDate?: string): MedRow {
 }
 
 export default function PrescribePage() {
-  const { patients, createPrescription } = useProto();
-  const patientOptions = patients.map((p, i) => ({
+  const { createPrescription, pushActivity } = useProto();
+  const { accessToken } = useAuth();
+  // Danh sach benh nhan THAT (bang `patient`), khac han mang `patients` mock
+  // cua useProto() - mang do phuc vu dashboard tuan thu (age/condition/
+  // adherence), chua co ben backend. Xem lib/patients.ts.
+  const [benhNhanThat, setBenhNhanThat] = useState<PatientRecord[]>([]);
+  const [patientId, setPatientId] = useState("");
+  const [note, setNote] = useState("");
+  const [dangGui, setDangGui] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // Bat dau bang mot dong trong. Truoc day dien san "Amlodipine 5mg" - mot
+  // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
+  // se thanh don thuoc khong tra cuu duoc dang bao che.
+  const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
+
+  useEffect(() => {
+    listPatients(undefined, accessToken)
+      .then((ds) => {
+        setBenhNhanThat(ds);
+        setPatientId((hienTai) => hienTai || (ds[0]?.id ?? ""));
+      })
+      .catch((err) => {
+        console.error("Không tải được danh sách bệnh nhân:", err);
+        toast.error("Không tải được danh sách bệnh nhân");
+      });
+  }, [accessToken]);
+
+  const patientOptions = benhNhanThat.map((p, i) => ({
     id: p.id,
-    name: p.name,
+    name: p.fullName,
     displayId: `BN${String(i + 1).padStart(4, "0")}`,
   }));
-  const [patient, setPatient] = useState(patients[0]?.name ?? "");
-  const [note, setNote] = useState("Theo dõi huyết áp mỗi sáng");
-  const [meds, setMeds] = useState<MedRow[]>([
-    {
-      id: crypto.randomUUID(),
-      med: "Amlodipine 5mg",
-      dose: "1 viên",
-      perDay: 2,
-      meal: "Sau ăn",
-      times: defaultTimes[2] ?? ["08:00"],
-      startDate: today(),
-      endDate: "",
-      hasCycle: false,
-      cycleOnDays: 5,
-      cycleOffDays: 2,
-    },
-  ]);
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
     setMeds((prev) => {
@@ -108,7 +153,7 @@ export default function PrescribePage() {
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSubmit = meds.every((m) => m.med.trim().length > 0);
+  const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
 
   const activeMeds = meds.filter((m) => m.med.trim().length > 0);
   const timeline = [
@@ -124,30 +169,50 @@ export default function PrescribePage() {
       .entries(),
   ].sort((a, b) => a[0].localeCompare(b[0]));
 
-  const submit = () => {
-    const orderId = crypto.randomUUID();
-    for (const m of meds) {
-      createPrescription({
-        orderId,
-        patient,
-        med: m.med,
-        dose: m.dose,
-        perDay: m.perDay,
-        meal: m.meal,
+  const submit = async () => {
+    setDangGui(true);
+    try {
+      // MOT lan goi cho ca don, khong phai tung thuoc mot: hai thuoc cung gio
+      // phai nam chung mot phac do de backend gop dung 1 dose_event thay vi 2
+      // (backend/services/scheduling/generator.py - benh nhan bay ca nam
+      // thuoc ra roi chup MOT anh, khong phai chup tung thuoc).
+      await createPrescription({
+        patientId,
         note,
-        times: m.times,
-        startDate: m.startDate,
-        endDate: m.endDate,
-        cycle: m.hasCycle ? { onDays: m.cycleOnDays, offDays: m.cycleOffDays } : null,
+        items: meds.map((m) => ({
+          drugId: m.drugId || null,
+          tenThuoc: m.med,
+          dangThuoc: m.dangThuoc || null,
+          duongDung: null, // backend tu tra lai tu drugId neu co, xem service.py::_chuan_hoa_item
+          hamLuong: null,
+          lieuDung: m.dose,
+          thoiDiemDung: m.meal,
+          soVienMoiLan: docSoVien(m.dose),
+          gioNhac: m.times,
+          startDate: m.startDate,
+          durationDays: tinhSoNgayDung(m.startDate, m.endDate),
+        })),
       });
+      toast.success(
+        meds.length > 1
+          ? `Đã duyệt và kích hoạt phác đồ (${meds.length} thuốc)`
+          : "Đã duyệt và kích hoạt phác đồ",
+      );
+      pushActivity(
+        "Đã xử lý xong bệnh nhân",
+        `Kích hoạt phác đồ (${meds.length} thuốc) cho ${selectedPatientName || "bệnh nhân"}.`,
+      );
+      setMeds([newMedRow()]);
+      setNote("");
+      setConfirmOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tạo được đơn thuốc");
+    } finally {
+      setDangGui(false);
     }
-    toast.success(
-      meds.length > 1
-        ? `Đã gửi ${meds.length} thuốc vào hàng đợi duyệt HITL`
-        : "Đã gửi phác đồ vào hàng đợi duyệt HITL",
-    );
-    setMeds([newMedRow()]);
   };
+
+  const selectedPatientName = patientOptions.find((p) => p.id === patientId)?.name ?? "";
 
   return (
     <div className="space-y-6">
@@ -165,8 +230,9 @@ export default function PrescribePage() {
             <PatientCombobox
               id="patient"
               options={patientOptions}
-              value={patient}
-              onChange={setPatient}
+              value={patientId}
+              onChange={setPatientId}
+              placeholder={benhNhanThat.length === 0 ? "Đang tải…" : undefined}
             />
           </div>
 
@@ -194,7 +260,14 @@ export default function PrescribePage() {
                       id={`med-${m.id}`}
                       value={m.med}
                       onChange={(v) => updateMed(m.id, { med: v })}
-                      onSelectDrug={(d) => updateMed(m.id, { med: d.name, dose: d.defaultDose })}
+                      onSelectDrug={(d) =>
+                        updateMed(m.id, {
+                          med: d.tenThuoc,
+                          drugId: d.drugId,
+                          dangThuoc: d.dangThuoc,
+                          dose: goiYLieu(d),
+                        })
+                      }
                       placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
                     />
                   </div>
@@ -211,38 +284,22 @@ export default function PrescribePage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Số lần/ngày</Label>
-                    <Select
+                    <HoverSelect
                       value={String(m.perDay)}
-                      onValueChange={(v) => updatePerDay(m.id, Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4].map((n) => (
-                          <SelectItem key={n} value={String(n)}>
-                            {n} lần/ngày
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => updatePerDay(m.id, Number(v))}
+                      options={[1, 2, 3, 4].map((n) => ({
+                        value: String(n),
+                        label: `${n} lần/ngày`,
+                      }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Bữa ăn</Label>
-                    <Select value={m.meal} onValueChange={(v) => updateMed(m.id, { meal: v })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["Trước ăn", "Sau ăn", "Không phụ thuộc bữa ăn", "Trước khi ngủ"].map(
-                          (mm) => (
-                            <SelectItem key={mm} value={mm}>
-                              {mm}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <HoverSelect
+                      value={m.meal}
+                      onChange={(v) => updateMed(m.id, { meal: v })}
+                      options={MEAL_OPTIONS.map((mm) => ({ value: mm, label: mm }))}
+                    />
                   </div>
                 </div>
 
@@ -344,7 +401,12 @@ export default function PrescribePage() {
             <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
           </div>
 
-          <Button className="w-full" size="lg" disabled={!canSubmit} onClick={submit}>
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!canSubmit}
+            onClick={() => setConfirmOpen(true)}
+          >
             <Plus className="mr-1 h-4 w-4" /> Chốt phác đồ & gửi duyệt
           </Button>
         </section>
@@ -405,6 +467,46 @@ export default function PrescribePage() {
           </div>
         </section>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={(open) => !dangGui && setConfirmOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận duyệt phác đồ</DialogTitle>
+            <DialogDescription>
+              Bấm "Duyệt & kích hoạt" để chốt phác đồ này ngay — hệ thống sẽ ghi audit log, kích
+              hoạt lịch nhắc và thông báo tới bệnh nhân/người thân. Thao tác này thay cho bước
+              duyệt riêng ở hàng đợi.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-lg border border-border p-4 text-sm">
+            <p>
+              <span className="text-muted-foreground">Bệnh nhân: </span>
+              <span className="font-semibold">{selectedPatientName || "(chưa chọn)"}</span>
+            </p>
+            <ul className="space-y-1.5">
+              {activeMeds.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate font-medium">{m.med}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {m.dose} · {m.times.join(", ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {note && <p className="text-muted-foreground">Lưu ý: {note}</p>}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" disabled={dangGui} onClick={() => setConfirmOpen(false)}>
+              Huỷ
+            </Button>
+            <Button disabled={dangGui} onClick={submit}>
+              {dangGui ? "Đang duyệt…" : "Duyệt & kích hoạt"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

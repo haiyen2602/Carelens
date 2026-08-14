@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import {
   Activity,
   Bell,
@@ -30,14 +30,16 @@ const features = [
   { icon: BellRing, title: "Cảnh báo kịp thời", desc: "Thông báo ngay khi có dấu hiệu bất thường" },
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login: authLogin } = useAuth();
-  const { login: protoLogin } = useProto();
+  const { login: protoLogin, pushActivity } = useProto();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -56,6 +58,7 @@ export default function LoginPage() {
         // khong vo. KHONG PHAI nguon that cho danh tinh - danh tinh that la
         // useAuth().user (xem lib/auth.tsx).
         protoLogin(user.role, user.full_name);
+        pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${user.full_name}.`);
         router.push(user.role === "doctor" ? "/doctor" : "/patient");
       } else if (user.role === "admin") {
         router.push("/admin");
@@ -204,6 +207,13 @@ export default function LoginPage() {
                 />
               </div>
 
+              {justRegistered && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Đã đăng ký tài khoản thành công. Vui lòng đăng nhập.
+                </div>
+              )}
+
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
@@ -219,8 +229,11 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <p className="text-center text-xs text-muted-foreground">
-              Chưa có tài khoản? Liên hệ quản trị hệ thống bệnh viện.
+            <p className="text-center text-sm text-muted-foreground">
+              Chưa có tài khoản?{" "}
+              <a href="/register" className="font-semibold text-primary hover:underline">
+                Đăng ký ngay
+              </a>
             </p>
           </div>
         </section>
@@ -234,5 +247,13 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center bg-background"><p className="text-sm text-muted-foreground">Đang tải...</p></div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

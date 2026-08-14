@@ -108,7 +108,15 @@ def main() -> int:
         today = datetime.now(VN_TZ).replace(second=0, microsecond=0)
         morning = today.replace(hour=8, minute=0)
         evening = today.replace(hour=20, minute=0)
-        expected_items = [{"drug_id": DEMO_DRUG_ID, "ten_thuoc": ten_thuoc, "so_vien": 1}]
+        # dang_thuoc/duong_dung THEM 2026-08-12 (truoc do thieu, dong bo voi
+        # scripts/seed_photo_patients.py) - khong co 2 truong nay thi
+        # backend/services/photo_verification/dosage_form.py khong phan loai
+        # duoc, moi lieu cua benh nhan demo se bao "khong xac minh duoc bang
+        # anh" du la vien nang that (dang_thuoc="" bi coi la khong nhan dien duoc).
+        expected_items = [{
+            "drug_id": DEMO_DRUG_ID, "ten_thuoc": ten_thuoc, "so_vien": 1,
+            "dang_thuoc": "Viên nang cứng", "duong_dung": "Uống",
+        }]
 
         dose_taken = DoseEvent(
             prescription_id=presc.id,

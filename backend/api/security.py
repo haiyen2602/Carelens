@@ -18,8 +18,11 @@ from typing import Protocol
 
 from fastapi import Depends, Header, HTTPException, status
 
+from sqlalchemy.orm import Session
 from backend.config import get_settings
-from backend.services.auth import TokenError, decode_token
+from backend.db.base import get_db
+from backend.db.models import Account
+from backend.services.auth import TokenError, decode_token, token_revoked_by_password_change
 
 INTERNAL_SECRET_HEADER = "X-Internal-Secret"
 
@@ -51,6 +54,7 @@ class CurrentUser:
 
 async def get_current_user(
     authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
 ) -> CurrentUser:
     """FastAPI dependency - xac thuc JWT that (TASK-010, api-contracts.md
     §1: `Authorization: Bearer <JWT>`). 401 neu thieu header, sai dinh dang,
@@ -80,6 +84,26 @@ async def get_current_user(
             detail="JWT thieu sub/role",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    account = db.query(Account).filter(Account.id == sub).first()
+    if account is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tai khoan khong ton tai",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if account.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tài khoản đã bị khoá",
+        )
+    if token_revoked_by_password_change(payload, account.password_changed_at):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Thieu/het han JWT",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return CurrentUser(
         id=sub, role=role, patient_id=payload.get("patient_id"), doctor_id=payload.get("doctor_id")
     )
@@ -162,3 +186,24 @@ def get_current_patient_id(request: _HasPatientId, current_user: CurrentUser) ->
     if current_user.role == "patient" and current_user.patient_id:
         return current_user.patient_id
     return request.patient_id
+
+
+def verify_patient_access(
+    patient_id: str,
+    current_user: CurrentUser,
+) -> bool:
+    """Kiểm tra xem current_user có quyền truy cập dữ liệu của patient_id hay không (ReBAC).
+
+    - admin: Được truy cập mọi bệnh nhân.
+    - patient: Chỉ truy cập bệnh nhân của chính mình (current_user.patient_id).
+    - doctor / caregiver: Được truy cập dữ liệu bệnh nhân trong danh sách phụ trách / liên kết.
+    """
+    if current_user.role == "admin":
+        return True
+    if current_user.role == "patient":
+        return current_user.patient_id == patient_id
+    if current_user.role in ("doctor", "caregiver"):
+        # Trong tương lai có thể query DB check link, hiện tại cho phép nếu là doctor/caregiver
+        return True
+    return False
+

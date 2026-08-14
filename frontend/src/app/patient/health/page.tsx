@@ -1,22 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, HeartPulse, Pill } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
+import { listDoses, type Dose } from "@/lib/doses";
+import { listPatients, type PatientRecord } from "@/lib/patients";
 import { useProto, type AlertLevel } from "@/lib/proto-store";
 
 export default function HealthPage() {
-  const { patients, doses, prescriptions, healthLog, reportHealth, setEmergency } = useProto();
-  const patient = patients[0];
+  const { prescriptions, healthLog, reportHealth, setEmergency } = useProto();
+  const { user } = useAuth();
+  const patientId = user?.patient_id ?? "";
+  const [hoSo, setHoSo] = useState<PatientRecord | null>(null);
+  const [doses, setDoses] = useState<Dose[]>([]);
   const [reporting, setReporting] = useState(false);
   const [text, setText] = useState("");
   const [level, setLevel] = useState<AlertLevel>("low");
 
-  const takenCount = doses.filter((d) => d.status === "taken").length;
+  useEffect(() => {
+    if (!patientId) return;
+    listPatients()
+      .then((ds) => setHoSo(ds.find((p) => p.id === patientId) ?? null))
+      .catch(() => undefined);
+    listDoses(patientId)
+      .then(setDoses)
+      .catch(() => undefined);
+  }, [patientId]);
+
+  const takenCount = doses.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
   const myPrescriptions = prescriptions.filter(
-    (p) => p.patient === patient?.name && p.status !== "rejected",
+    (p) => p.patient === user?.full_name && p.status !== "rejected",
   );
 
   const submit = () => {
@@ -35,31 +51,29 @@ export default function HealthPage() {
 
   return (
     <div className="space-y-4">
-      {patient && (
+      {user && (
         <section className="surface-card p-5">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-lg font-bold text-accent-foreground">
-              {patient.name.charAt(0)}
+              {user.full_name.charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-bold">{patient.name}</p>
+              <p className="truncate font-bold">{user.full_name}</p>
               <p className="truncate text-sm text-muted-foreground">
-                {patient.age} tuổi · {patient.condition}
+                {[
+                  hoSo?.yearOfBirth ? `${new Date().getFullYear() - hoSo.yearOfBirth} tuổi` : null,
+                  hoSo?.note,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
-            <span className="shrink-0 text-xl font-extrabold text-primary">
-              {patient.adherence}%
-            </span>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${patient.adherence}%` }}
-            />
-          </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Tuân thủ điều trị 7 ngày qua · đã uống {takenCount}/{doses.length} liều hôm nay
-          </p>
+          {doses.length > 0 && (
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Đã uống {takenCount}/{doses.length} liều hôm nay
+            </p>
+          )}
         </section>
       )}
 

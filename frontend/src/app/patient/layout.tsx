@@ -28,8 +28,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
 
   return (
     <PhoneShell
-      title="Nguyễn Thị Lan"
-      subtitle="Bệnh nhân · BN-2049"
+      title={user?.full_name ?? ""}
+      subtitle={`Bệnh nhân · ${user?.patient_id ?? ""}`}
       tabs={[
         { to: "/patient", label: "Hôm nay", icon: <Home className="h-5 w-5" />, exact: true },
         { to: "/patient/health", label: "Sức khỏe", icon: <Bell className="h-5 w-5" /> },

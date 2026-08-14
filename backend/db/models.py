@@ -21,7 +21,7 @@ import uuid
 from datetime import UTC, datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, DateTime, Float, Index, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -73,6 +73,47 @@ class DrugChunk(Base):
     )
 
 
+class Drug(Base):
+    """Danh muc thuoc - 1 dong = 1 thuoc. THEM 2026-08-12 (migration 0012).
+
+    KHAC drug_chunks: bang do la san pham cua RAG (4 chunk/thuoc, moi chunk la
+    mot doan van ban co embedding), dung de TRA LOI CAU HOI. Bang nay la DANH
+    MUC: mot dong mot thuoc, chua thuoc tinh co cau truc (dang bao che, duong
+    dung, ham luong), dung de TRA CUU va DIEN VAO DON THUOC.
+
+    Vi sao phai co bang rieng thay vi them cot vao drug_chunks:
+      - drug_chunks lap 4 lan moi thuoc, them dang_thuoc vao do la lap 4 lan
+        cung mot gia tri.
+      - drug_chunks chi chua thuoc DA EMBED (hien 226/3562). Danh muc phai co
+        du 3562 thuoc thi bac si moi ke duoc don, khong phu thuoc tien embed.
+
+    `dang_thuoc` la truong quan trong nhat o day: no la dau vao cua
+    backend/services/photo_verification/dosage_form.py, quyet dinh mot lieu
+    thuoc co xac minh duoc bang anh hay khong.
+
+    `ten_thuoc_unaccent` build bang ham unaccent() NGAY TRONG SQL luc insert -
+    cung quy uoc voi drug_chunks, de index va cach xu ly cau hoi luc query dung
+    chung 1 logic (xem migration 0001)."""
+
+    __tablename__ = "drug"
+
+    # = 'id' trong 'data pharmacy/**/*.json', vd "agi-calci-agimexpharm-20x10".
+    # Cung khong gian dinh danh voi drug_chunks.drug_id.
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    ten_thuoc: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    ten_thuoc_unaccent: Mapped[str] = mapped_column(Text, nullable=False)
+
+    dang_thuoc: Mapped[str] = mapped_column(String, nullable=False)  # "Viên nén bao phim"...
+    duong_dung: Mapped[str] = mapped_column(String, nullable=False)  # "Uống"|"Tiêm"|"Bôi ngoài da"...
+    ham_luong: Mapped[str | None] = mapped_column(String, nullable=True)
+    tong_so_luong: Mapped[str | None] = mapped_column(String, nullable=True)  # "30 viên", "1 lọ 100ml"
+
+    danh_muc: Mapped[str | None] = mapped_column(String, nullable=True)
+    muc_nghiem_trong: Mapped[str | None] = mapped_column(String, nullable=True)  # Nhẹ|Trung bình|Nguy hiểm
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
 class AuditLog(Base):
     """1 dong = 1 AuditLogDTO (1 luot xu ly 1 utterance cua benh nhan).
     APPEND-ONLY (BR-7.5) - khong duoc UPDATE/DELETE tu code ung dung."""
@@ -120,6 +161,18 @@ class Patient(Base):
     doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)  # vd "Tang huyet ap, sau dot quy"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM 2026-08-13 (migration 0015) - bac si tu chon "theo doi" mot benh
+    # nhan cu the tren dashboard bao cao (backend/api/reporting_routes.py) hay
+    # khong. KHONG suy ra tu doctor_id (bac si phu trach van thay TAT CA benh
+    # nhan cua minh trong danh sach chinh; `watch` chi la 1 co "ghim/theo doi
+    # sat" bo sung, mac dinh False de danh sach theo doi khong tu dong day len
+    # khi co benh nhan moi).
+    watch: Mapped[bool] = mapped_column(nullable=False, default=False)
+    # THEM 2026-08-13 (migration 0020) - tab "Tinh trang suc khoe" o trang
+    # Quan ly benh nhan. Du lieu co cau truc (khac `note` la text tu do).
+    gender: Mapped[str | None] = mapped_column(String, nullable=True)  # "nam" | "nu" | "khac"
+    height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class Prescription(Base):
@@ -162,7 +215,11 @@ class DoseEvent(Base):
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False)  # PENDING|TAKEN|MISSED|DELAYED|CANCELLED
+    # PENDING|TAKEN|MISSED|DELAYED|CANCELLED|AWAITING_CAREGIVER - them
+    # AWAITING_CAREGIVER 2026-08-12 (khop api-contracts.md §3, cot nay truoc do
+    # thieu gia tri nay dung khong dong bo voi contract) khi ADR-0011 het 2 lan
+    # chup lai anh van khong khop - xem backend/services/photo_verification/verifier.py.
+    status: Mapped[str] = mapped_column(String, nullable=False)
     expected_items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
@@ -324,6 +381,18 @@ class Account(Base):
     # neu khong, tinh nang khoa tai khoan chi la UI gia, khong chan dang
     # nhap that.
     status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_verification_token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    email_verification_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_reset_token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    password_reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # THEM sau (migration 0018) - moc thoi gian doi mat khau gan nhat, dung de
+    # THU HOI moi token da phat truoc do (JWT khong the "xoa" tu xa, nen phai
+    # co 1 moc trong DB de so voi claim `iat` - xem backend/services/auth.py::
+    # token_revoked_by_password_change). NULL = chua tung doi mat khau ->
+    # khong thu hoi gi (tai khoan tao truoc migration 0018).
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
 
 
 class PendingDrugConfirmation(Base):
@@ -359,3 +428,37 @@ class PendingDrugConfirmation(Base):
     # khi phai hoi lai DUNG stage cu vi khong hieu reply. Vuot nguong ->
     # dung han, tranh vong lap vo han khi benh nhan go linh tinh.
     retry_count: Mapped[int] = mapped_column(nullable=False, default=0)
+
+
+class CaregiverLink(Base):
+    """Bang lien ket bac si<->benh nhan<->nguoi than THAT (specs/user-roles.md:
+    1 benh nhan co 0..n nguoi than, 1 nguoi than co the gan voi nhieu benh
+    nhan, CHI admin duoc quan ly lien ket nay). THEM 2026-08-13 (migration 0016).
+
+    Truoc bang nay, `Account.patient_id` (backend/db/models.py::Account) chi
+    cho 1 tai khoan role=caregiver gan voi DUY NHAT 1 patient_id - khong dung
+    duoc cho truong hop 1 nguoi than theo doi nhieu benh nhan (vd 1 nguoi con
+    cham 2 bo me). Bang nay KHONG thay the Account.patient_id (van giu de
+    tuong thich nguoc voi TASK-010), la lop lien ket RONG HON, dung rieng cho
+    2 man hinh moi: "nguoi lien he gia dinh" cua bac si (xem 1 benh nhan) va
+    "nguoi than dang theo doi" cua caregiver (xem nhieu benh nhan).
+
+    `caregiver_account_id`/`patient_id` la string tu do, KHONG dat FK that -
+    cung ly do da giai thich tren class Patient o tren: cac thanh vien khac
+    co the dang co san du lieu patient_id/account_id chua duoc don, them FK
+    ngay bay gio se lam `alembic upgrade` cua ho loi giua chung. Kiem tra ton
+    tai o tang service/route neu can (404 ro rang), khong dua vao rang buoc DB."""
+
+    __tablename__ = "caregiver_link"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    caregiver_account_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    relationship: Mapped[str] = mapped_column(String, nullable=False)  # vd "Con gái"/"Vợ"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # THEM 2026-08-13 (migration 0020) - "pending"|"accepted". Admin tao thang
+    # ("accepted") - da xac nhan thay. Benh nhan tu moi nhau qua POST
+    # /caregiver-links/invites bat dau "pending", chi hien trong danh sach
+    # dang theo doi (GET ?caregiver_account_id=) sau khi nguoi duoc theo doi
+    # tu chap nhan (POST /caregiver-links/{id}/accept).
+    status: Mapped[str] = mapped_column(String, nullable=False, default="accepted")

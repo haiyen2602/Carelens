@@ -20,14 +20,14 @@ export function PatientCombobox({
   id?: string;
   options: PatientOption[];
   value: string;
-  onChange: (name: string) => void;
+  onChange: (id: string) => void;
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const selected = options.find((p) => p.name === value);
+  const selected = options.find((p) => p.id === value);
   const q = query.trim().toLowerCase();
   const matches = q
     ? options.filter(
@@ -35,20 +35,26 @@ export function PatientCombobox({
       )
     : options;
 
+  const openNow = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" onMouseEnter={openNow} onMouseLeave={scheduleClose}>
       <div className="relative">
         <Input
           id={id}
-          value={open ? query : (selected?.name ?? value)}
+          value={open ? query : (selected?.name ?? "")}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             setQuery("");
-            setOpen(true);
+            openNow();
           }}
-          onBlur={() => {
-            closeTimer.current = setTimeout(() => setOpen(false), 120);
-          }}
+          onBlur={scheduleClose}
           placeholder={placeholder ?? "Tìm theo tên hoặc ID bệnh nhân..."}
           autoComplete="off"
           className="pr-8"
@@ -62,7 +68,7 @@ export function PatientCombobox({
             <p className="px-3 py-2 text-sm text-muted-foreground">Không tìm thấy bệnh nhân.</p>
           )}
           {matches.map((p) => {
-            const isSelected = p.name === value;
+            const isSelected = p.id === value;
             return (
               <button
                 key={p.id}
@@ -70,7 +76,7 @@ export function PatientCombobox({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   clearTimeout(closeTimer.current);
-                  onChange(p.name);
+                  onChange(p.id);
                   setQuery("");
                   setOpen(false);
                 }}

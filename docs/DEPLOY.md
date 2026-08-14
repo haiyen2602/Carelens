@@ -94,11 +94,15 @@ Env lưu trên Railway, **không** đọc từ `.env` khi deploy. Xem bằng `ra
 | `OPENAI_API_KEY` | |
 | `INTERNAL_AUTH_SECRET` | Bắt buộc — app **từ chối khởi động** nếu còn giá trị sentinel trong source |
 | `DATABASE_URL` | Reference var trỏ sang service `VMEC-04/DB` |
-| `CORS_ORIGINS` | `https://vmec-04fe-production.up.railway.app` + 2 origin Vercel cũ. Phân tách bằng dấu phẩy, **so khớp chính xác** |
+| `CORS_ORIGINS` | Chỉ còn `https://vmec-04fe-production.up.railway.app`. Phân tách bằng dấu phẩy, **so khớp chính xác** |
 | `APP_ENV` / `APP_HOST` / `LOG_LEVEL` / `EMBEDDING_MODEL` | Cấu hình app |
 
-Hai origin `*.vercel.app` trong `CORS_ORIGINS` là **rác còn lại** từ lần deploy Vercel cũ.
-Xoá được ngay khi không còn ai mở frontend trên Vercel nữa.
+Hai origin `*.vercel.app` (backend cũ project `capymedi` và frontend cũ `capymedi-web`) đã được
+**xoá hẳn** khỏi `CORS_ORIGINS` ngày 2026-08-13 — dự án không còn deploy trên Vercel. Frontend
+production giờ là `https://vmec-04fe-production.up.railway.app` (service `VMEC-04/FE`) và đó là
+origin duy nhất được phép. Biến đặt kèm `--skip-deploys` nên chỉ có hiệu lực sau lần
+restart/redeploy BE kế tiếp (`settings.cors_origins` đọc một lần lúc khởi động,
+`backend/main.py:58`).
 
 ### `VMEC-04/FE` (frontend)
 

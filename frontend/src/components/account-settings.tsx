@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-react";
 import { toast } from "sonner";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useProto } from "@/lib/proto-store";
 
@@ -72,14 +73,20 @@ export function AccountSettings() {
 
       <section className="surface-card p-5">
         <h2 className="text-sm font-bold uppercase text-muted-foreground">Bảo mật</h2>
-        <button
-          onClick={soon}
-          className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left"
-        >
-          <KeyRound className="h-5 w-5 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 font-medium">Đổi mã PIN</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
+        <ChangePasswordDialog
+          trigger={
+            <button className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left">
+              <KeyRound className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">Đổi mật khẩu</span>
+                <span className="block text-xs text-muted-foreground">
+                  Mật khẩu đăng nhập tài khoản CapyMedi
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          }
+        />
       </section>
 
       <section className="surface-card p-5">
