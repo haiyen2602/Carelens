@@ -33,6 +33,7 @@ from backend.services.auth import (
     hash_password,
     verify_password,
 )
+from backend.services.patient_id import generate_next_patient_id
 
 auth_router = APIRouter()
 
@@ -83,9 +84,14 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
     )
 
     if body.role == "patient":
-        patient = Patient(id=account_id, full_name=body.full_name)
+        # SUA 2026-08-14: patient_id KHONG con dung chung account_id (UUID) -
+        # đó là bug khiến UI hiển thị thẳng UUID thay vì ID ngắn gọn dạng
+        # BNxxxxx như dữ liệu cũ (vd "BN00002"). `Account.id` vẫn là UUID
+        # riêng (dùng để đăng nhập/JWT sub), độc lập với patient_id hiển thị.
+        patient_id = generate_next_patient_id(db)
+        patient = Patient(id=patient_id, full_name=body.full_name)
         db.add(patient)
-        account.patient_id = account_id
+        account.patient_id = patient_id
     elif body.role == "doctor":
         account.doctor_id = account_id
 

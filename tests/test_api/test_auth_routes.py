@@ -15,9 +15,10 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Account  # noqa: E402
+from backend.db.models import Account, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import hash_password  # noqa: E402
+from backend.services.patient_id import _PATIENT_ID_RE  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -165,10 +166,33 @@ async def test_register_creates_account_and_returns_jwt(unauthenticated_client):
     assert body["user"]["full_name"] == "Nguyễn Đăng Ký"
     assert body["user"]["role"] == "patient"
 
-    # Clean up DB after test
+    # SUA 2026-08-14 (thiet ke ID benh nhan, yeu cau PM kem anh chup man
+    # hinh that): account_id (UUID, tra ve trong body["user"]["id"]) KHONG
+    # con duoc dung lam patient_id nua - patient_id phai dang BNxxxxx (khop
+    # du lieu cu vd "BN00002"), khong phai UUID. UserOut khong tra
+    # patient_id truc tiep (xem docstring UserOut) - doc lai tu Account.
     account_id = body["user"]["id"]
     db = SessionLocal()
+    account = db.query(Account).filter(Account.id == account_id).first()
+    assert account is not None
+    assert account.patient_id is not None
+    assert account.patient_id != account_id  # KHONG con dung chung UUID
+    assert _PATIENT_ID_RE.match(account.patient_id), (
+        f"patient_id {account.patient_id!r} khong dung dang BNxxxxx"
+    )
+    patient_id = account.patient_id
+
+    # Dong bo hoa (yeu cau PM): duong tu dang ky PHAI tao dong Patient that
+    # dang sau patient_id, khong chi gan chuoi ID vao Account.
+    patient = db.get(Patient, patient_id)
+    assert patient is not None
+    assert patient.full_name == "Nguyễn Đăng Ký"
+
+    # Clean up DB after test - xoa CA Account LAN Patient (truoc day chi xoa
+    # Account, Patient rong con lai anh huong so dem BNxxxxx cua test/lan
+    # chay sau).
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+    db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
 
@@ -218,9 +242,14 @@ async def test_verify_email_flow(unauthenticated_client):
     acc_updated = db.query(Account).filter(Account.id == account_id).first()
     assert acc_updated.is_email_verified is True
     assert acc_updated.email_verification_token is None
+    patient_id = acc_updated.patient_id
 
-    # Clean up DB
+    # Clean up DB - xoa CA Account LAN Patient (register() vong 2026-08-14 tao
+    # them dong Patient that voi ID BNxxxxx rieng, khong con dung chung UUID
+    # cua account - de sot lai se anh huong so dem cua generate_next_patient_id()).
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+    if patient_id:
+        db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
 
