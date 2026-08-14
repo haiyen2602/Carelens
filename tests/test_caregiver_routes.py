@@ -204,7 +204,11 @@ async def test_list_monitored_patients_for_caregiver(client, admin_token):
                 patient_id=patient_id,
                 severity="HIGH",
                 trigger="missed_dose",
-                reason="Bỏ lỡ liều sáng",
+                # Reason THAT trong san xuat la chuoi ky thuat (audit/bac si,
+                # xem dose_confirmation_nodes.py) - co y KHONG dung 1 cau de
+                # doc nhu truoc, de bai test nay chung minh duoc `title` tra
+                # ve KHONG con la `reason` nguyen van nua (xem assertion duoi).
+                reason="SEVERITY=Nguy hiểm tu classification='MISSED' (BR-3.1-3.6)",
                 status="OPEN",
             )
         )
@@ -235,7 +239,10 @@ async def test_list_monitored_patients_for_caregiver(client, admin_token):
         assert row["dose_taken_today"] == 1
         assert row["dose_total_today"] == 2
         assert len(row["open_escalations"]) == 1
-        assert row["open_escalations"][0]["title"] == "Bỏ lỡ liều sáng"
+        # title phai la tieu de NGAN, DE HIEU (friendly_escalation_title) -
+        # KHONG con la `reason` ky thuat nguyen van nhu truoc (bug da sua
+        # 2026-08-14, xem backend/services/escalation.py).
+        assert row["open_escalations"][0]["title"] == "Bỏ lỡ liều thuốc – mức nguy hiểm"
     finally:
         _cleanup(patient_id)
 
