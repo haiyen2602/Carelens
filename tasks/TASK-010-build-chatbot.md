@@ -57,6 +57,15 @@ Xây dựng chatbot/RAG cho bệnh nhân hỏi về thuốc, lịch uống, đơ
 
 - [ ] #14 (precision@1 field_group thấp ở nhánh ngoài đơn) — để mở, không chặn, theo dõi thêm (xem `chatbot-rag-design.md` mục 15)
 
+**Vòng 4 — cải thiện chất lượng chatbot (`kickoff-prompt-vong-4.md`, bắt đầu 2026-08-13):**
+
+- [x] Điều tra routing câu ngoài phạm vi trong lúc chờ xác nhận thuốc: nguyên nhân là hai state reply-parsing tin mọi văn bản là tên/mô tả thuốc, không phải `intent_classification`; LLM gate nhị phân đã chặn trước search, có unit/E2E/eval thật.
+- [x] Fuzzy 2 tầng cho định danh thuốc ngoài đơn: dùng `similarity(ten_thuoc_unaccent)` lấy top-5; chỉ bỏ qua LLM chọn ứng viên khi `top1 >= 0.25` và `top1 - top2 >= 0.05`; mọi nhánh vẫn phải hỏi bệnh nhân xác nhận.
+- [x] Bổ sung regression an toàn cho bốn câu hỏi giả định quá liều đã xác minh sau deploy Vòng 3.
+- [x] Match triệu chứng với chunk `tac_dung_phu` của thuốc trong đơn vào audit trace; không kết luận nguyên nhân cho bệnh nhân và vẫn ghi entry này khi safety redflag cắt luồng. Cosine `0.20` chỉ lọc candidate, LLM nhị phân `temperature=0` xác minh match; eval live 12/12 đúng, FP=0/FN=0.
+- [x] Tóm tắt hội thoại độc lập theo giờ cho bệnh nhân có hoạt động, chỉ dùng khi `chat_history_query` yêu cầu hoặc dashboard tương lai; không đưa vào prompt intent/answer tự động.
+- [x] Áp dụng `soul.md` đúng phạm vi patient-facing: restyle Nhóm A, giữ nguyên tuyệt đối escalation Nhóm B; `answer_generation`/summary dùng persona Capy nhưng intent/safety classifier không dùng. Static regression + live check tiếng Anh/c3 đã pass, báo cáo ở `eval/soul_persona_report.json`.
+
 ## Context bắt buộc phải đọc trước khi làm (dành cho AI)
 
 - [ ] [`chatbot-rag-design.md`](../chat-bot-build/chatbot-rag-design.md) (toàn bộ) — nguồn thiết kế chính

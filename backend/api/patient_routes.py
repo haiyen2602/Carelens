@@ -16,7 +16,7 @@ from fastapi import status as http_status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, require_role
+from backend.api.security import CurrentUser, get_current_user, require_role
 from backend.db.base import get_db
 from backend.db.models import Patient
 from backend.models.schemas import (
@@ -75,20 +75,30 @@ def list_patients(
 
 @patient_router.get(
     "/patients/me",
-    response_model=PatientProfileOut,
+    response_model=PatientSummary,
 )
-def get_my_profile(
+def get_my_patient_profile(
     db: Session = Depends(get_db),
-    current_user: CurrentUser = Depends(require_role("patient")),
-) -> PatientProfileOut:
-    # Dang truoc "/patients/{patient_id}" trong file nay (co y) - Starlette
-    # khop route theo THU TU dang ky, khong theo do cu the: neu doi cho,
-    # PATCH /patients/me se roi vao update_patient_health voi patient_id="me"
-    # (403 vi endpoint do chi cho doctor/admin).
+    current_user: CurrentUser = Depends(get_current_user),
+) -> PatientSummary:
+    """Benh nhan tu xem ho so CHINH minh (tuoi/ghi chu/gender/height/weight)
+    - phan hoi review 2026-08-14: trang patient/health/page.tsx tung goi
+    list_patients() (chi doctor/admin) de tim ho so chinh minh, luon 403 voi
+    role=patient nen "tuoi · ghi chu" o dau trang luon rong (xac nhan qua DB
+    production, BN-0000). Route rieng nay dung current_user.patient_id tu
+    JWT (khong nhan patient_id tu client) - cung nguyen tac chong IDOR da
+    dung o get_current_patient_id(), khong mo lai duong doc patient_id song
+    song. KHONG dung require_role("doctor","admin") nhu list_patients() -
+    bat ky role nao co patient_id gan voi tai khoan (thuc te chi role=patient)
+    deu xem duoc DUNG ho so cua chinh minh, khong xem duoc nguoi khac."""
+    if not current_user.patient_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN, detail="Tài khoản không gắn với hồ sơ bệnh nhân nào"
+        )
     patient = db.get(Patient, current_user.patient_id)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
-    return _to_profile(patient)
+    return _to_summary(patient)
 
 
 @patient_router.patch(
@@ -100,10 +110,17 @@ def update_my_profile(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_role("patient")),
 ) -> PatientProfileOut:
-    """Onboarding: benh nhan tu dien thong tin ca nhan (migration 0022).
-    Sau khi luu, `profile_completed=True` - trang onboarding
-    (frontend/src/app/onboarding/profile/page.tsx) khong hoi lai nua, nhung
-    van co the sua lai sau qua man hinh Cai dat (goi lai endpoint nay)."""
+    """Onboarding: benh nhan tu dien thong tin ca nhan (migration 0023, xem
+    Patient.date_of_birth/phone/address/profile_completed). Sau khi luu,
+    `profile_completed=True` - trang onboarding (frontend/src/app/
+    onboarding/profile/page.tsx) khong hoi lai nua, nhung van co the sua lai
+    sau qua man hinh Cai dat (goi lai endpoint nay).
+
+    Dang SAU "/patients/me" (GET, xem get_my_patient_profile o tren) trong
+    file nay - Starlette khop route theo METHOD rieng, PATCH/GET tren cung 1
+    path khong xung dot, nhung van dang truoc "/patients/{patient_id}" (co
+    y): neu doi cho, PATCH /patients/me se roi vao update_patient_health voi
+    patient_id="me" (403 vi endpoint do chi cho doctor/admin)."""
     patient = db.get(Patient, current_user.patient_id)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")

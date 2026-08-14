@@ -141,6 +141,59 @@ async def test_recent_context_is_threaded_into_intent_classification(client):
 
 
 @pytest.mark.asyncio
+async def test_hourly_summary_never_appears_in_intent_classification_prompt(client):
+    """Vong 4, muc 5.5 - dung dang test da dung o §9.4 vong 3 (test_recent_
+    context_is_threaded_into_intent_classification o tren): benh nhan CO
+    tom tat gio truoc do (seed thang vao DB, gio da ket thuc) - xac nhan
+    utterance nhan duoc boi classify_intent() KHONG chua noi dung tom tat
+    do, chi co the chua ngu canh 15 phut (§7.2) neu co."""
+    from datetime import UTC, datetime, timedelta
+
+    from backend.db.models import HourlyConversationSummary
+
+    patient_id = f"test-chathist-e2e-{uuid.uuid4().hex[:8]}"
+    distinctive_summary = "TOM_TAT_GIO_TRUOC_KHONG_DUOC_RO_RI_VAO_INTENT_PROMPT_XYZ123"
+
+    db = SessionLocal()
+    completed_hour = (datetime.now(UTC) - timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    db.add(
+        HourlyConversationSummary(
+            patient_id=patient_id,
+            hour_bucket=completed_hour,
+            summary_text=distinctive_summary,
+            message_count=3,
+        )
+    )
+    db.commit()
+    db.close()
+
+    received_utterances = []
+
+    def recording_classify_intent(u: str):
+        received_utterances.append(u)
+        return ("greeting", 0.95)
+
+    _override_services(classify_intent=recording_classify_intent)
+    try:
+        resp = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": "câu hỏi mới"})
+        assert resp.status_code == 200
+
+        assert len(received_utterances) == 1
+        assert distinctive_summary not in received_utterances[0], (
+            "tom tat theo gio khong duoc tu dong ro ri vao prompt intent_classification "
+            "(muc 5.3 - chi doc khi chat_history_query yeu cau)"
+        )
+    finally:
+        _cleanup(patient_id)
+        db = SessionLocal()
+        db.query(HourlyConversationSummary).filter(HourlyConversationSummary.patient_id == patient_id).delete(
+            synchronize_session=False
+        )
+        db.commit()
+        db.close()
+
+
+@pytest.mark.asyncio
 async def test_patient_role_cannot_read_or_hide_another_patients_chat_history():
     """Phan hoi review PR #20 (IDOR) - get_current_patient_id() da chan dung
     (role=patient luon dung patient_id cua JWT, bo qua body), nhung truoc

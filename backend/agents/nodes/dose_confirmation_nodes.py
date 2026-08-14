@@ -37,8 +37,8 @@ from backend.services.severity import combine_severity
 
 CLASSIFY_CONFIDENCE_THRESHOLD = 0.7
 ASK_AGAIN_MESSAGE = (
-    "Mình chưa chắc bạn muốn xác nhận điều gì — bạn có thể nói rõ hơn không "
-    "(đã uống rồi, quên uống, uống trễ, hay đang có tác dụng phụ)?"
+    "Dạ, mình chưa hiểu rõ bạn muốn xác nhận điều gì ạ. Bạn có thể nói rõ hơn giúp mình: "
+    "đã uống rồi, quên uống, uống trễ, hay đang có tác dụng phụ?"
 )
 
 # BR-3.6 + muc 8: nguon RAG chinh cho SEVERITY la CA 2 chunk cong_dung (chua
@@ -53,30 +53,17 @@ LOW_ACTION = "log_and_monitor_48h"
 MEDIUM_ACTION = "escalate_family_and_doctor"
 HIGH_ACTION = "escalate_emergency"
 
-# TODO [CẦN CHỐT — noi dung chua duyet chinh thuc]: phat hien 2026-08-08 qua
-# 1 lan chay that qua /api/v1/chat - CA 3 nhanh duoi day (TAKEN, Nhẹ, Trung
-# bình) truoc do KHONG set `response` gi ca, khien benh nhan nhan ve chuoi
-# rong sau khi bao "toi chua uong lieu" - im lang tuyet doi, khong phan biet
-# duoc voi app loi/crash (te hon ca placeholder xau). KHAC voi
-# MISSED_DOSE_OVERLAY_MESSAGE/SIDE_EFFECT_OVERLAY_MESSAGE (src/services/
-# escalation.py) - do la noi dung MAN HINH KHUNG HOANG, can PM+mentor duyet
-# ky vi rui ro tam ly cao; 3 cau duoi day chi la XAC NHAN DA GHI NHAN, rui ro
-# chon sai cau chu THAP hon nhieu - van danh dau CAN CHOT (chua phai final
-# chinh thuc) nhung KHONG chan viec co 1 phan hoi thay vi im lang.
-# SUA vong 3, muc 9.1 (persona "Capy") - TAKEN/Nhẹ: "than thien vua phai,
-# khong can trang trong nhung cung khong can bieu tuong" - giu ten "Capy"
-# nhung KHONG dung "<3"/bieu tuong dang yeu (khac han GREETING_RESPONSE, du
-# ca 2 deu la tinh huong binh thuong - day la xac nhan 1 hanh dong y te,
-# khong phai loi chao thuan tuy). Trung binh tro len: nghiem tuc, xem
-# MEDIUM_ACTION_RESPONSE + cac overlay o escalation.py, khong doi giong o day.
-TAKEN_RESPONSE = "Capy đã ghi nhận bạn uống thuốc lần này rồi nhé. Cảm ơn bạn đã xác nhận!"
+# Vong 4, soul.md: 3 response non-emergency nay da duoc PM cho restyle; giu
+# nguyen hanh vi/ngu canh, chi doi giong Capy. Overlay escalation van nam o
+# escalation.py va khong duoc dong vao.
+TAKEN_RESPONSE = "Dạ, mình đã ghi nhận bạn uống thuốc lần này rồi ạ. Cảm ơn bạn đã xác nhận nhé."
 LOW_ACTION_RESPONSE = (
-    "Capy đã ghi nhận thông tin của bạn. Đây là mức độ nhẹ, hệ thống sẽ tiếp tục theo dõi trong 48 giờ tới."
+    "Dạ, mình đã ghi nhận thông tin của bạn rồi ạ. Mức độ này nhẹ, hệ thống sẽ tiếp tục theo dõi thêm cho bạn trong 48 giờ tới."
 )
 # "SEVERITY=Trung bình trở lên... nghiêm túc, rõ ràng, KHÔNG dùng biểu
 # tượng dễ thương, không đùa cợt - vẫn có thể giữ tên 'Capy Medi' trong câu
 # dẫn (không mất bản sắc), nhưng nội dung chính phải nghiêm túc" (muc 9.1).
-MEDIUM_ACTION_RESPONSE = "Capy Medi đã ghi nhận thông tin của bạn. Người thân và bác sĩ đã được thông báo để theo dõi thêm."
+MEDIUM_ACTION_RESPONSE = "Dạ, mình đã ghi nhận thông tin của bạn ạ. Để an toàn hơn, mình đã báo cho người thân và bác sĩ của bạn cùng theo dõi thêm."
 
 
 class DoseClassifyFn(Protocol):

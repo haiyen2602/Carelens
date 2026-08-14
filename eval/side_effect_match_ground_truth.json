@@ -1,0 +1,90 @@
+[
+  {
+    "id": "acarbose-bloating",
+    "utterance": "Từ khi uống thuốc tôi bị đầy bụng và chướng bụng.",
+    "active_drug_ids": ["acarbose-savi-50mg-10x10"],
+    "expected_match_drug_ids": ["acarbose-savi-50mg-10x10"],
+    "redflag": false,
+    "evidence": "Chunk tac_dung_phu ghi đầy bụng và bụng trướng."
+  },
+  {
+    "id": "acnemine-skin-irritation",
+    "utterance": "Chỗ da tôi bôi thuốc bị khô, đỏ và nóng rát.",
+    "active_drug_ids": ["acnemine-0-1-opv-15g"],
+    "expected_match_drug_ids": ["acnemine-0-1-opv-15g"],
+    "redflag": false,
+    "evidence": "Chunk tac_dung_phu ghi khô da, kích ứng da, nóng rát và đỏ da."
+  },
+  {
+    "id": "actapulgite-constipation",
+    "utterance": "Tôi bị táo bón sau khi dùng thuốc.",
+    "active_drug_ids": ["actapulgite-3g-ipsen-30-goi"],
+    "expected_match_drug_ids": ["actapulgite-3g-ipsen-30-goi"],
+    "redflag": false,
+    "evidence": "Chunk tac_dung_phu ghi táo bón là tác dụng không mong muốn thường gặp."
+  },
+  {
+    "id": "acenocoumarol-bleeding",
+    "utterance": "Tôi bị chảy máu chân răng nhiều hơn bình thường.",
+    "active_drug_ids": ["acenocoumarol-4-spm-3x10"],
+    "expected_match_drug_ids": ["acenocoumarol-4-spm-3x10"],
+    "redflag": false,
+    "evidence": "Chunk tac_dung_phu ghi chảy máu ở nhiều hệ cơ quan."
+  },
+  {
+    "id": "shared-nausea",
+    "utterance": "Tôi thấy buồn nôn từ sáng nay.",
+    "active_drug_ids": ["abanuti-1g-10ml-phuong-dong-20-ong-x-10ml", "acarbose-savi-50mg-10x10"],
+    "expected_match_drug_ids": ["abanuti-1g-10ml-phuong-dong-20-ong-x-10ml", "acarbose-savi-50mg-10x10"],
+    "redflag": false,
+    "evidence": "Cả hai chunk tac_dung_phu đều ghi buồn nôn."
+  },
+  {
+    "id": "shared-diarrhea",
+    "utterance": "Tôi bị tiêu chảy sau khi uống các thuốc này.",
+    "active_drug_ids": ["abanuti-1g-10ml-phuong-dong-20-ong-x-10ml", "aciclovir-800mg-meyer-bpc-3x10"],
+    "expected_match_drug_ids": ["abanuti-1g-10ml-phuong-dong-20-ong-x-10ml", "aciclovir-800mg-meyer-bpc-3x10"],
+    "redflag": false,
+    "evidence": "Cả hai chunk tac_dung_phu đều ghi tiêu chảy."
+  },
+  {
+    "id": "shared-itching",
+    "utterance": "Da tôi bị ngứa khó chịu.",
+    "active_drug_ids": ["acarbose-savi-50mg-10x10", "acnemine-0-1-opv-15g"],
+    "expected_match_drug_ids": ["acarbose-savi-50mg-10x10", "acnemine-0-1-opv-15g"],
+    "redflag": false,
+    "evidence": "Cả hai chunk tac_dung_phu đều ghi ngứa."
+  },
+  {
+    "id": "no-relation-shoulder-pain",
+    "utterance": "Tôi đau vai khi ngủ dậy.",
+    "active_drug_ids": ["acarbose-savi-50mg-10x10", "acnemine-0-1-opv-15g"],
+    "expected_match_drug_ids": [],
+    "redflag": false,
+    "evidence": "Không có chunk tac_dung_phu nào trong đơn này nêu đau vai."
+  },
+  {
+    "id": "no-relation-cough",
+    "utterance": "Tôi bị ho khan suốt đêm.",
+    "active_drug_ids": ["abanuti-1g-10ml-phuong-dong-20-ong-x-10ml", "actapulgite-3g-ipsen-30-goi"],
+    "expected_match_drug_ids": [],
+    "redflag": false,
+    "evidence": "Không có chunk tac_dung_phu nào trong đơn này nêu ho."
+  },
+  {
+    "id": "redflag-breathing",
+    "utterance": "Tôi thấy khó thở và cần được giúp ngay.",
+    "active_drug_ids": ["actapulgite-3g-ipsen-30-goi"],
+    "expected_match_drug_ids": ["actapulgite-3g-ipsen-30-goi"],
+    "redflag": true,
+    "evidence": "Chunk tac_dung_phu ghi khó thở trong phản ứng quá mẫn; response vẫn phải thuộc safety layer."
+  },
+  {
+    "id": "redflag-heavy-bleeding",
+    "utterance": "Tôi đang chảy máu nhiều không cầm được.",
+    "active_drug_ids": ["acenocoumarol-4-spm-3x10"],
+    "expected_match_drug_ids": ["acenocoumarol-4-spm-3x10"],
+    "redflag": true,
+    "evidence": "Chunk tac_dung_phu ghi chảy máu; response vẫn phải thuộc safety layer."
+  }
+]

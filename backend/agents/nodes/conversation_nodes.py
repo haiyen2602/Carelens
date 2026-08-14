@@ -36,16 +36,16 @@ from typing import Protocol
 from sqlalchemy.orm import Session
 
 from backend.agents.state import ConversationState
-from backend.agents.tools.chat_history_tool import get_chat_history_for_display
+from backend.agents.tools.chat_history_tool import get_chat_history_for_display, get_hourly_summaries_for_history
 from backend.agents.tools.drug_info_tool import EmbedFn, tra_cuu_thuoc_chung
 from backend.agents.tools.personal_tools import tra_cuu_don_thuoc_ca_nhan, tra_cuu_lich_uong_ca_nhan
 from backend.db.models import Patient
 from backend.services.retrieval import DrugInfoResult
 
-CAVEAT_LIEU_DUNG = "Đây là liều khuyến cáo chung theo nhãn thuốc, liều thực tế của bạn có thể khác theo chỉ định của bác sĩ."
-CAVEAT_THOI_DIEM_MISSING = "Thời điểm dùng cụ thể cần theo chỉ định của bác sĩ."
-NO_SOURCE_MESSAGE = "Xin lỗi, tôi không có thông tin đáng tin cậy về câu hỏi này. Vui lòng hỏi bác sĩ."
-NO_SCHEDULE_TODAY_MESSAGE = "Hôm nay bạn không có liều thuốc nào được lên lịch."
+CAVEAT_LIEU_DUNG = "Dạ, đây là liều khuyến cáo chung theo nhãn thuốc ạ. Liều thực tế của bạn có thể khác theo chỉ định của bác sĩ."
+CAVEAT_THOI_DIEM_MISSING = "Dạ, thời điểm dùng cụ thể cần theo chỉ định của bác sĩ ạ."
+NO_SOURCE_MESSAGE = "Dạ, mình chưa tìm được thông tin đáng tin cậy về câu hỏi này ạ. Bạn hỏi thêm bác sĩ hoặc dược sĩ để chắc chắn hơn nhé."
+NO_SCHEDULE_TODAY_MESSAGE = "Dạ, hôm nay bạn chưa có liều thuốc nào được lên lịch ạ."
 
 # Vong 3, muc 6 - cau tra loi CO DINH (khong LLM sinh, tiet kiem + tranh tu
 # suy dien khong can thiet cho 1 cau chao don gian), phu ca chao hoi thuan
@@ -64,7 +64,7 @@ NO_SCHEDULE_TODAY_MESSAGE = "Hôm nay bạn không có liều thuốc nào đư�
 # patient_id (du lieu test cua thanh vien khac) co the KHONG co dong Patient
 # tuong ung - fallback ve ban chao khong ten trong truong hop do, khong loi.
 GREETING_RESPONSE = (
-    "Chào bạn, Capy Medi sẵn sàng chăm sóc bạn <3 Mình có thể giúp bạn: "
+    "Dạ, chào bạn. Mình là Capy Medi, sẵn sàng hỗ trợ bạn <3 Mình có thể giúp bạn: "
     "hỏi thông tin về 1 loại thuốc, xem lịch uống thuốc hôm nay, "
     "hoặc báo đã/chưa uống 1 liều thuốc."
 )
@@ -80,7 +80,7 @@ def _greeting_response_for(full_name: str | None) -> str:
     if not full_name:
         return GREETING_RESPONSE
     return (
-        f"Chào {full_name}, Capy Medi sẵn sàng chăm sóc bạn <3 Mình có thể giúp bạn: "
+        f"Dạ, chào {full_name}. Mình là Capy Medi, sẵn sàng hỗ trợ bạn <3 Mình có thể giúp bạn: "
         "hỏi thông tin về 1 loại thuốc, xem lịch uống thuốc hôm nay, "
         "hoặc báo đã/chưa uống 1 liều thuốc."
     )
@@ -251,17 +251,30 @@ def build_chat_history_query_node(db: Session):
             return {"trace": _append_trace(state, entry)}
 
         t0 = time.monotonic()
-        history = get_chat_history_for_display(db, state["patient_id"])
+        summaries = get_hourly_summaries_for_history(db, state["patient_id"])
+        history = get_chat_history_for_display(db, state["patient_id"]) if not summaries else []
         patient_messages = [h for h in history if h["role"] == "patient"][-5:]
         duration_ms = (time.monotonic() - t0) * 1000
 
-        if not patient_messages:
-            response = "Mình chưa thấy lịch sử trò chuyện nào trước đó của bạn."
+        if summaries:
+            lines = [f"- {summary['summary_text']}" for summary in summaries]
+            response = "Dạ, đây là tóm tắt các cuộc trò chuyện trước đây của bạn:\n" + "\n".join(lines)
+            source = "hourly_summaries"
+        elif not patient_messages:
+            response = "Dạ, mình chưa thấy lịch sử trò chuyện nào trước đó của bạn ạ."
+            source = "none"
         else:
             lines = [f"- {m['content']}" for m in patient_messages]
-            response = "Gần đây bạn từng hỏi:\n" + "\n".join(lines)
+            response = "Dạ, gần đây bạn từng hỏi:\n" + "\n".join(lines)
+            source = "chat_messages"
 
-        entry = {"step": "chat_history_query", "message_count": len(patient_messages), "duration_ms": duration_ms}
+        entry = {
+            "step": "chat_history_query",
+            "source": source,
+            "message_count": len(patient_messages),
+            "summary_count": len(summaries),
+            "duration_ms": duration_ms,
+        }
         return {"response": response, "trace": _append_trace(state, entry)}
 
     return node
@@ -403,7 +416,7 @@ def build_answer_generation_node(generate_fn: AnswerGenerateFn, db: Session | No
 
         prescription_instruction = state.get("prescription_instruction")
         if prescription_instruction:
-            parts.append(f"Theo đơn thuốc của bạn: {prescription_instruction}.")
+            parts.append(f"Dạ, theo đơn thuốc của bạn: {prescription_instruction}.")
         elif rag_results:
             # co ket qua RAG (thuoc chung) nhung KHONG co chi dinh ca nhan cho
             # thuoc nay - phai noi ro, khong duoc im lang bo qua (muc 3.1).
@@ -525,7 +538,7 @@ def _group_events_by_hour(parsed: list[tuple[datetime, dict]]) -> dict[int, list
 
 def _format_full_day_answer(now: datetime, by_hour: dict[int, list[dict]]) -> str:
     """Muc 5.4 - format khi hoi CA NGAY ("hôm nay uống thuốc gì")."""
-    sections = [f"Hôm nay, ngày {now.day} tháng {now.month} năm {now.year}"]
+    sections = [f"Dạ, hôm nay, ngày {now.day} tháng {now.month} năm {now.year}"]
     for hour in sorted(by_hour):
         evs = by_hour[hour]
         buoi = _buoi_of_hour(hour)
@@ -568,11 +581,11 @@ def _format_buoi_answer(db: Session, patient_id: str, buoi: str, by_hour: dict[i
             names = ", ".join(n for n, _td in drug_entries)
             td = next(iter(distinct_thoi_diem)) if distinct_thoi_diem else None
             if td:
-                lines.append(f"Buổi {_BUOI_LABELS[buoi]} bạn cần uống {names} vào lúc {hour} giờ, {td}.")
+                lines.append(f"Dạ, buổi {_BUOI_LABELS[buoi]} bạn cần uống {names} vào lúc {hour} giờ, {td}.")
             else:
-                lines.append(f"Buổi {_BUOI_LABELS[buoi]} bạn cần uống {names} vào lúc {hour} giờ.")
+                lines.append(f"Dạ, buổi {_BUOI_LABELS[buoi]} bạn cần uống {names} vào lúc {hour} giờ ạ.")
         else:
-            lines.append(f"Buổi {_BUOI_LABELS[buoi]}, {hour} giờ bạn cần uống:")
+            lines.append(f"Dạ, buổi {_BUOI_LABELS[buoi]}, {hour} giờ bạn cần uống:")
             for n, td in drug_entries:
                 lines.append(f"- {n}, {td}." if td else f"- {n}.")
     return "\n".join(lines)

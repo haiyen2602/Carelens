@@ -57,6 +57,20 @@ class DrugInfoResult:
 
 
 @dataclass
+class SideEffectMatchResult:
+    """Mot chunk `tac_dung_phu` cua thuoc trong don active, xep theo cosine.
+
+    Khac `DrugInfoResult`: day khong phai ket qua RAG chung/RRF va chi dung
+    de audit noi bo, nen giu diem semantic duy nhat minh bach cho viec tune.
+    """
+
+    drug_id: str
+    ten_thuoc: str
+    noi_dung: str
+    score: float
+
+
+@dataclass
 class RetrievalResult:
     """Wrapper tra ve tu fuse_rrf()/hybrid_search() - TACH RIENG tin hieu
     "khong tim duoc nguon" (BR-7.3, muc 4.4) khoi list ket qua rong thong
@@ -205,6 +219,77 @@ def lexical_search(db: Session, query: str, nguong_lexical: float) -> list[Candi
         {"q": query, "pool_size": CANDIDATE_POOL_SIZE},
     ).fetchall()
     return [_row_to_candidate(r, r.lexical_score) for r in rows]
+
+
+def fuzzy_name_search(db: Session, query: str, top_k: int = 5) -> list[CandidateChunk]:
+    """Vong 4, muc 3.1 - fuzzy tang 1 THUAN cho `_search_distinct_drug_
+    candidates()` moi (drug_confirmation_nodes.py) - dung `similarity()`
+    (pg_trgm) tren `ten_thuoc_unaccent`, KHONG goi OpenAI embedding (cai
+    thien chi phi that, khong chi latency - xem chatbot-rag-design.md muc
+    10 #34: p90/p99 cu 5.2s/7.9s hoan toan tu API embedding, ham nay khong
+    goi API nao ca).
+
+    KHONG loc nguong truoc khi xep hang (khac vector_search()/lexical_
+    search()) - luon tra ve DUNG top_k phan biet theo drug_id, quyet dinh
+    "co tin duoc khong" thuoc ve tang 2 (NGUONG_CAO/NGUONG_CACH_BIET,
+    drug_confirmation_nodes.py), khong phai tang nay. Vi khong loc bang
+    toan tu `%`, KHONG dung duoc GIN trgm index cho phep loc tho - la full
+    scan tren drug_chunks, nhung do that (~50-60ms tren 3562 thuoc phan
+    biet, xem eval/tune_fuzzy_tier1.py) van nhanh hon nhieu p50 cu (~13ms
+    THUONG nhung co duoi p90/p99 toi 5-8s do goi API that).
+
+    `DISTINCT ON (drug_id)` lay dung 1 dong/thuoc (thuoc co the co nhieu
+    chunk field_group, cung 1 ten_thuoc - khong can xep hang trung lap)."""
+    rows = db.execute(
+        text(
+            """
+            SELECT DISTINCT ON (drug_id) id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung,
+                   similarity(ten_thuoc_unaccent, unaccent(:q)) AS name_sim
+            FROM drug_chunks
+            ORDER BY drug_id, name_sim DESC
+            """
+        ),
+        {"q": query},
+    ).fetchall()
+    candidates = [_row_to_candidate(r, r.name_sim) for r in rows]
+    candidates.sort(key=lambda c: c.score, reverse=True)
+    return candidates[:top_k]
+
+
+def search_active_side_effect_chunks(
+    db: Session, query_embedding: list[float], active_drug_ids: list[str]
+) -> list[SideEffectMatchResult]:
+    """So khop semantic chi trong `tac_dung_phu` cua thuoc active.
+
+    Ham co y khong ap dung nguong: eval va node goi sau nay dung cung mot
+    diem cosine, trong do nguong duoc chot bang sweep thay vi bi an trong SQL.
+    """
+    unique_drug_ids = list(dict.fromkeys(active_drug_ids))
+    if not unique_drug_ids:
+        return []
+
+    rows = db.execute(
+        text(
+            """
+            SELECT drug_id, ten_thuoc, noi_dung,
+                   1 - (embedding <=> :q) AS cosine_similarity
+            FROM drug_chunks
+            WHERE field_group = 'tac_dung_phu'
+              AND drug_id = ANY(CAST(:drug_ids AS text[]))
+            ORDER BY embedding <=> :q
+            """
+        ),
+        {"q": str(query_embedding), "drug_ids": unique_drug_ids},
+    ).fetchall()
+    return [
+        SideEffectMatchResult(
+            drug_id=row.drug_id,
+            ten_thuoc=row.ten_thuoc,
+            noi_dung=row.noi_dung,
+            score=row.cosine_similarity,
+        )
+        for row in rows
+    ]
 
 
 def hybrid_search(db: Session, query: str, query_embedding: list[float]) -> RetrievalResult:

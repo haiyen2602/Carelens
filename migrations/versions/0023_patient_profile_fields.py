@@ -11,16 +11,23 @@ date_of_birth.year de code cu khong phai sua (xem backend/api/patient_routes.py)
 redirect sang trang onboarding hay khong, KHONG suy tu viec cac cot khac co
 NULL hay khong (benh nhan co the co y de trong 1 truong nao do sau nay).
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0023
+Revises: 0022
 Create Date: 2026-08-14
+
+LUU Y ve revision chain: danh so ban dau la 0022/down_revision=0021, trung
+voi 0022_hourly_conversation_summaries.py (cung down_revision=0021, merge
+gan nhau vao main - cung tinh trang da xay ra o migration 0021, xem ghi chu
+trong file do). Doi lai so hieu 0023, xuong revise "0022" de co 1 chuoi
+tuyen tinh duy nhat 0021 -> 0022 -> 0023 -> 0024. Doi metadata thuan tuy
+truoc khi deploy that, khong anh huong noi dung migration.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0022"
-down_revision = "0021"
+revision = "0023"
+down_revision = "0022"
 branch_labels = None
 depends_on = None
 

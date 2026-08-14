@@ -1,0 +1,305 @@
+{
+  "total_llm_calls": 165,
+  "results": [
+    {
+      "id": "bug_repro_ve_sinh",
+      "reply": "tôi buồn đi vệ sinh",
+      "expect": false,
+      "runs": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "all_runs_match_expected": true,
+      "note": "Dung case that tung khop nham Coveram 10/5 30v qua _search_distinct_drug_candidates()"
+    },
+    {
+      "id": "bug_repro_an_pho",
+      "reply": "tôi thích ăn phở",
+      "expect": false,
+      "runs": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "all_runs_match_expected": true,
+      "note": "Case thu 2 tai hien cung loai bug (khop nham Bisoloc 5mg)"
+    },
+    {
+      "id": "bug_repro_greeting",
+      "reply": "xin chào bạn khoẻ không",
+      "expect": false,
+      "runs": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "bug_repro_weather",
+      "reply": "hôm nay trời đẹp quá",
+      "expect": false,
+      "runs": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_paracetamol",
+      "reply": "paracetamol",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_vitamin_c",
+      "reply": "vitamin C",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_panadol_extra",
+      "reply": "panadol extra",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_no_diacritics",
+      "reply": "vitamin c khong dau",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_abbreviation",
+      "reply": "cefixim",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "short_brand_generic",
+      "reply": "efferalgan",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "desc_ha_huyet_ap",
+      "reply": "thuốc hạ huyết áp",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "desc_mau_trang",
+      "reply": "thuốc màu trắng uống buổi sáng",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "desc_dau_bung",
+      "reply": "thuốc tôi hay uống khi bị đau bụng",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "desc_tieu_hoa",
+      "reply": "viên uống hỗ trợ tiêu hoá",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    },
+    {
+      "id": "desc_dau_dau",
+      "reply": "thuốc trị đau đầu",
+      "expect": true,
+      "runs": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_runs_match_expected": true,
+      "note": ""
+    }
+  ]
+}

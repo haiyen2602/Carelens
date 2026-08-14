@@ -291,6 +291,27 @@ class ChatMessage(Base):
     hidden: Mapped[bool] = mapped_column(nullable=False, default=False)
 
 
+class HourlyConversationSummary(Base):
+    """Vong 4, muc 5 - tom tat doc lap cua 1 gio hoi thoai da ket thuc.
+
+Khac voi cua so 15 phut, ban ghi nay khong bao gio duoc tu dong dua vao
+intent/answer prompt. Chi `chat_history_query` va dashboard tuong lai moi
+doc. `hidden` giu nguyen nghia "an lich su" cua ChatMessage cho ca summary.
+"""
+
+    __tablename__ = "hourly_conversation_summaries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    hour_bucket: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
+    message_count: Mapped[int] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    hidden: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    __table_args__ = (Index("uq_hourly_conversation_summaries_patient_hour", "patient_id", "hour_bucket", unique=True),)
+
+
 class PhotoVerification(Base):
     """1 dong = 1 LAN gui anh xac nhan lieu thuoc. THEM 2026-08-12 (migration 0011).
 

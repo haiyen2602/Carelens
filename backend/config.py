@@ -42,6 +42,19 @@ class Settings(BaseSettings):
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
+    # Pool SQLAlchemy — truoc day dung mac dinh ngam cua thu vien (pool_size=5,
+    # max_overflow=10, pool_timeout=30s) vi create_engine() khong truyen tham
+    # so nao. Demo that (nhieu nguoi cung dang nhap 1 tai khoan, cac trang poll
+    # nhieu endpoint lien tuc) xac nhan qua log production: "sqlalchemy.exc.
+    # TimeoutError: QueuePool limit of size 5 overflow 10 reached" -> 500 hang
+    # loat, ung dung "treo". Chi chay 1 uvicorn worker (xem Dockerfile, khong
+    # co --workers) nen toan bo traffic dung chung DUY NHAT pool nay - khong
+    # phai chia nho cho nhieu process. Postgres production xac nhan max_connections=100,
+    # dang dung ~14 luc kiem tra -> con du du dia de nang len.
+    db_pool_size: int = Field(default=20, ge=1)
+    db_max_overflow: int = Field(default=30, ge=0)
+    db_pool_timeout: float = Field(default=15.0, gt=0, description="Giay cho truoc khi bao loi thay vi 30s mac dinh - fail nhanh hon de FE bao loi ro thay vi treo lau")
+
     # VLM dem thuoc (backend/services/photo_verification/vlm_bridge.py) — DUNG
     # CHUNG bien VLM_* voi backend/vlm_demthuoc/ (cong cu CLI doc lap), khong
     # phai vo tinh trung ten: ca hai cung goi mot endpoint dem thuoc, nen dung
@@ -105,6 +118,34 @@ class Settings(BaseSettings):
     # eval/hnsw_recall_tuning.py.
     hnsw_ef_search: int = Field(
         default=100, description="Chot 2026-08-09 tu eval/hnsw_recall_tuning.py - xem chatbot-rag-design.md muc 15"
+    )
+    # Vong 4, muc 3.2 - chi dung cho fuzzy name search o nhanh thuoc NGOAI
+    # don. Sweep 4 tap eval (full/short GT, OOD, ambiguous) ban dau chot 0.25,
+    # nhung 0.25 chi co margin +0.012 tren tran OOD (0.238) - sweep MIN them
+    # 0.25-0.30 (buoc 0.01, phan hoi review 2026-08-14) xac nhan GT-short van
+    # 100% toi 0.28, tut xuong 90% (case "fluopas") tu 0.29 - chot 0.28 (diem
+    # cuoi TRUOC khi tut), margin tang len +0.042, khong danh doi gi (GT-full/
+    # GT-short/OOD/ambiguous deu giu nguyen so voi 0.25). Rieng OOD: bo sung
+    # 10 brand NGAN khong ton tai (eval/short_ood_nonexistent.json, 15 cau OOD
+    # cu deu la cau hoi day du, khong dai dien dung use-case ngan cua muc nay)
+    # - phat hien "feverex" (0.208, gap=0.093) se lot fast-path SAI o
+    # nguong_cao 0.15/0.20 (cu), cung co them ly do chon 0.28 thay vi so thap
+    # hon. gap la tuyen phong thu chinh de case nhieu SKU khong lot fast-path.
+    fuzzy_name_high_threshold: float = Field(
+        default=0.28, ge=0.0, le=1.0, description="Vong 4: top-1 fuzzy score toi thieu de bo qua LLM review"
+    )
+    fuzzy_name_gap_threshold: float = Field(
+        default=0.05, ge=0.0, le=1.0, description="Vong 4: cach biet top-1/top-2 toi thieu de bo qua LLM review"
+    )
+    # Vong 4, muc 4: cosine chi loc rong candidate tac_dung_phu cua thuoc
+    # active truoc LLM nhị phan. Sweep 11 case co nhan: 0.20 giu 12/12
+    # match dung (recall 100%); false positive con lai duoc LLM loai, khong
+    # bao gio ghi audit tu cosine don thuan.
+    side_effect_candidate_threshold: float = Field(
+        default=0.20,
+        ge=0.0,
+        le=1.0,
+        description="Vong 4: cosine toi thieu de dua chunk tac_dung_phu active vao LLM audit matcher",
     )
 
     # RAO CAN TAM cho /api/v1/chat (chatbot-rag-design.md muc 10 #10 - RUI RO

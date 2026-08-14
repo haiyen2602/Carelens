@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, ClipboardCheck, Search, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { presentAlert } from "@/lib/alert-presentation";
 import { useProto } from "@/lib/proto-store";
 
 const riskTone: Record<string, string> = {
@@ -22,6 +23,14 @@ function riskOf(adherence: number) {
   if (adherence < 75) return "Cao";
   if (adherence < 90) return "Trung bình";
   return "Thấp";
+}
+
+function formatDecimal(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  if (Number.isInteger(value)) return String(value);
+
+  const truncated = Math.trunc(value * 100) / 100;
+  return truncated.toFixed(2);
 }
 
 const alertTone = {
@@ -87,25 +96,28 @@ export default function DoctorDashboard() {
       ? Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length)
       : 0;
 
-  // Ten benh nhan cua tung canh bao - TRUOC DAY bi bug hardcode patients[0]
-  // (moi canh bao deu hien ten benh nhan DAU TIEN trong danh sach, sai voi
-  // du lieu that). SysAlert.patientId co san (proto-store.tsx) - tra dung
-  // ten qua patientId, "—" neu khong tim thay (vd benh nhan da bi xoa).
-  const patientNameById = useMemo(() => {
-    const m = new Map(patients.map((p) => [p.id, p.name]));
-    return m;
-  }, [patients]);
+  const watchedCount = patients.filter((p) => p.watch).length;
+  const pendingPrescriptions = prescriptions.filter((p) => p.status === "pending").length;
 
+  // Cac note "+N so voi tuan truoc" ban dau la chuoi bia cung, khong tinh tu
+  // du lieu that (Patient/Prescription that khong luu snapshot theo tuan) -
+  // thay bang so lieu that da co san trong `patients`/`prescriptions`, dung
+  // quy uoc note = so lieu phu that nhu admin/page.tsx dang dung.
   const stats = [
     {
       label: "Tổng bệnh nhân",
       value: patients.length,
+      note:
+        watchedCount > 0 ? `${watchedCount} đang theo dõi đặc biệt` : "Chưa có ca theo dõi đặc biệt",
+      noteTone: watchedCount > 0 ? "text-warning-foreground" : "text-muted-foreground",
       icon: Users,
       tone: "bg-primary/10 text-primary",
     },
     {
       label: "Đơn thuốc đang theo dõi",
       value: prescriptions.length,
+      note: pendingPrescriptions > 0 ? `${pendingPrescriptions} chờ duyệt` : "Không có đơn chờ duyệt",
+      noteTone: pendingPrescriptions > 0 ? "text-warning-foreground" : "text-success",
       icon: ClipboardCheck,
       tone: "bg-success/15 text-success",
     },
@@ -220,7 +232,7 @@ export default function DoctorDashboard() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <p className="text-xs font-semibold">{p.adherence}%</p>
+                        <p className="text-xs font-semibold">{formatDecimal(p.adherence)}%</p>
                         <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted">
                           <div
                             className={`h-full rounded-full ${barTone(p.adherence)}`}
@@ -257,6 +269,11 @@ export default function DoctorDashboard() {
                   <div className="min-w-0">
                     <p className="truncate text-xs text-muted-foreground">{s.label}</p>
                     <p className="mt-0.5 text-2xl font-extrabold leading-none">{s.value}</p>
+                    {s.note && (
+                      <p className={`mt-1.5 truncate text-[11px] font-semibold ${s.noteTone}`}>
+                        {s.note}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
@@ -276,6 +293,7 @@ export default function DoctorDashboard() {
               )}
               {alerts.slice(0, 3).map((a) => {
                 const t = alertTone[a.level];
+                const alert = presentAlert(a, patients);
                 return (
                   <div
                     key={a.id}
@@ -290,7 +308,7 @@ export default function DoctorDashboard() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="min-w-0 truncate font-semibold">{a.title}</p>
+                          <p className="min-w-0 truncate font-semibold">{alert.title}</p>
                           <span
                             className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${t.chip}`}
                           >
@@ -298,7 +316,11 @@ export default function DoctorDashboard() {
                           </span>
                         </div>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {patientNameById.get(a.patientId) ?? "—"} · {a.at} hôm nay
+                          {alert.patientName} · {a.at} hôm nay · {alert.severityLabel} ·{" "}
+                          {alert.statusLabel}
+                        </p>
+                        <p className="mt-1.5 truncate text-sm font-medium text-foreground">
+                          {alert.problem}
                         </p>
                       </div>
                     </div>
@@ -310,7 +332,7 @@ export default function DoctorDashboard() {
 
           <section className="surface-card shrink-0 p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-bold">Adherence tổng quan</h2>
+              <h2 className="text-lg font-bold">Tổng quan thông tin</h2>
             </div>
             <div className="mt-4 flex items-center gap-5">
               <div className="relative h-[110px] w-[110px] shrink-0">
@@ -328,10 +350,7 @@ export default function DoctorDashboard() {
               <ul className="min-w-0 flex-1 space-y-1.5">
                 {donut.map((d) => (
                   <li key={d.key} className="flex items-center gap-2">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: d.color }}
-                    />
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.color }} />
                     <p className="min-w-0 truncate text-xs text-muted-foreground">
                       {d.label}{" "}
                       <span className="text-foreground">
