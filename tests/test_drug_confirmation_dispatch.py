@@ -43,6 +43,7 @@ from backend.agents.nodes.drug_confirmation_nodes import (  # noqa: E402
 )
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import Prescription  # noqa: E402
+from backend.services.retrieval import fuzzy_name_search  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -123,6 +124,23 @@ def test_fuzzy_best_match_abbreviation():
 def test_fuzzy_best_match_no_match_returns_none():
     candidates = [CEFIXIM, DAFLAVON]
     assert _fuzzy_best_match("hoàn toàn không liên quan xyz123", candidates) is None
+
+
+def test_fuzzy_name_search_paracetamol_does_not_match_micardis(db_session_no_prescription):
+    """Vong 4, muc 3.4 - regression case THAT lay tu audit_log: "Paracetamol "
+    (co khoang trang cuoi) tung khop nham thanh micardis-40mg-boehringer-3x10
+    (thuoc huyet ap, hoan toan khong lien quan) qua _search_distinct_drug_
+    candidates() cu (embedding-based). fuzzy_name_search() moi (thuan
+    similarity() tren ten_thuoc_unaccent, khong embedding) phai xep dung ho
+    Paracetamol len top-1, khong con lap lai kieu match sai nay."""
+    top5 = fuzzy_name_search(db_session_no_prescription, "Paracetamol ", top_k=5)
+    assert top5, "phai tim duoc it nhat 1 ung vien (co Paracetamol that trong corpus)"
+    assert top5[0].drug_id != "micardis-40mg-boehringer-3x10", (
+        "tai hien dung bug goc - khong duoc khop nham sang thuoc huyet ap khong lien quan"
+    )
+    assert "paracetamol" in top5[0].ten_thuoc.lower(), (
+        f"top-1 phai la 1 san pham Paracetamol that, khong phai {top5[0].ten_thuoc!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +259,7 @@ def test_in_rx_confirm_r1_no_with_new_name_skips_ahead_to_confirm_r2(db_session_
     assert result.stop is False
     assert result.new_pending[1] == STAGE_IN_RX_CONFIRM_R2
     assert result.new_pending[0][0]["drug_id"] == DAFLAVON["drug_id"]
-    assert result.response == f"Bạn muốn thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không?"
+    assert result.response == f"Dạ, mình xin phép hỏi bạn muốn biết thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không ạ?"
 
 
 def test_in_rx_confirm_r1_no_with_unmatched_name_falls_back_to_ask_different_name(db_session_with_prescription):
@@ -279,6 +297,101 @@ def test_in_rx_awaiting_new_name_no_match_stops(db_session_with_prescription):
     assert result.resolved_drug_id is None
     assert result.stop is True
     assert result.response == NOT_FOUND_FINAL_MESSAGE
+
+
+# ---------------------------------------------------------------------------
+# Vong 4, muc 2.2/2.6 - LLM gate (is_drug_reply_fn) truoc 2 nhanh reply-
+# parsing. Test bang FAKE bool function (khong goi OpenAI that - do chinh
+# xac cua prompt that duoc do rieng o eval/drug_reply_gate_check.py, giong
+# pattern eval/safety_llm_check.py cho safety_layer).
+# ---------------------------------------------------------------------------
+
+
+def test_in_rx_awaiting_new_name_gate_rejects_stops_without_calling_fuzzy_match(db_session_with_prescription):
+    """Gate tra False - phai STOP giong het 'khong tim duoc gi' (DIEN GIAI
+    #2), KHONG duoc goi _fuzzy_best_match() (xac nhan bang db=None - se loi
+    neu code lo goi list_active_prescription_drug_items() voi db that)."""
+    result = _dispatch_stage(
+        None,
+        _fake_embed,
+        "p1",
+        STAGE_IN_RX_AWAITING_NEW_NAME,
+        [],
+        "orig q",
+        "tôi buồn đi vệ sinh",
+        is_drug_reply_fn=lambda _r: False,
+    )
+    assert result.resolved_drug_id is None
+    assert result.stop is True
+    assert result.response == NOT_FOUND_FINAL_MESSAGE
+
+
+def test_in_rx_awaiting_new_name_gate_accepts_proceeds_as_before(db_session_with_prescription):
+    """Gate tra True - hanh vi KHONG doi so voi truoc khi co gate (regression)."""
+    db, patient_id = db_session_with_prescription
+    result = _dispatch_stage(
+        db,
+        _fake_embed,
+        patient_id,
+        STAGE_IN_RX_AWAITING_NEW_NAME,
+        [],
+        "orig q",
+        "daflavon",
+        is_drug_reply_fn=lambda _r: True,
+    )
+    assert result.resolved_drug_id is None
+    assert result.new_pending[1] == STAGE_IN_RX_CONFIRM_R2
+    assert result.new_pending[0][0]["drug_id"] == DAFLAVON["drug_id"]
+
+
+def test_out_rx_awaiting_redescribe_gate_rejects_stops_without_calling_embed_or_search():
+    """Gate tra False - STOP truoc ca khi goi embed_query() (xac nhan bang
+    embed_query gay loi neu bi goi - phai KHONG duoc goi toi)."""
+
+    def _embed_should_not_be_called(_text: str) -> list[float]:
+        raise AssertionError("embed_query() khong duoc goi khi gate tra False")
+
+    result = _dispatch_stage(
+        None,
+        _embed_should_not_be_called,
+        "p1",
+        STAGE_OUT_RX_AWAITING_REDESCRIBE,
+        [],
+        "orig q",
+        "tôi thích ăn phở",
+        is_drug_reply_fn=lambda _r: False,
+    )
+    assert result.resolved_drug_id is None
+    assert result.stop is True
+    assert result.response == NOT_FOUND_FINAL_MESSAGE
+
+
+def test_out_rx_awaiting_redescribe_gate_accepts_proceeds_as_before(db_session_no_prescription):
+    """Gate tra True - hanh vi KHONG doi so voi truoc khi co gate (regression)."""
+    db = db_session_no_prescription
+    result = _dispatch_stage(
+        db,
+        _fake_embed,
+        "p1",
+        STAGE_OUT_RX_AWAITING_REDESCRIBE,
+        [],
+        "orig q",
+        "Cefixim 200mg Vidipha 1x10",
+        is_drug_reply_fn=lambda _r: True,
+    )
+    assert result.resolved_drug_id is None
+    assert result.new_pending[1] == STAGE_OUT_RX_CONFIRM_TOP1_R2
+    assert result.new_pending[0][0]["drug_id"] == CEFIXIM["drug_id"]
+
+
+def test_gate_default_is_permissive_when_not_passed():
+    """Khong truyen is_drug_reply_fn (default) - phai giu HANH VI CU (khong
+    chan gi), dam bao moi call site/test cu chua biet ve gate nay khong bi
+    pha vo."""
+    result = _dispatch_stage(
+        None, _fake_embed, "p1", STAGE_IN_RX_CONFIRM_R1, [CEFIXIM], "cefixim dùng sao", "có"
+    )
+    assert result.resolved_drug_id == CEFIXIM["drug_id"]
 
 
 def test_in_rx_confirm_r2_yes_resolves():
@@ -329,7 +442,7 @@ def test_out_rx_confirm_top1_r1_no_with_new_name_skips_ahead(db_session_with_pre
     assert result.stop is False
     assert result.new_pending[1] == STAGE_OUT_RX_CONFIRM_TOP1_R2
     assert result.new_pending[0][0]["drug_id"] == DAFLAVON["drug_id"]
-    assert result.response == f"Bạn muốn thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không?"
+    assert result.response == f"Dạ, mình xin phép hỏi bạn muốn biết thông tin về thuốc {DAFLAVON['ten_thuoc']} đúng không ạ?"
 
 
 def test_out_rx_confirm_top1_r1_no_with_unmatched_name_falls_back_to_top3(db_session_with_prescription):
@@ -357,7 +470,7 @@ def test_out_rx_choose_top3_picks_valid_index_asks_confirm():
     assert result.resolved_drug_id is None
     assert result.new_pending[1] == STAGE_OUT_RX_CONFIRM_PICK_R1
     assert result.new_pending[0][0] == FAKE_B, "picked candidate phai o dau danh sach"
-    assert result.response == "Bạn muốn thông tin về thuốc Fake Drug B đúng không?"
+    assert result.response == "Dạ, mình xin phép hỏi bạn muốn biết thông tin về thuốc Fake Drug B đúng không ạ?"
 
 
 def test_out_rx_choose_top3_not_found_asks_redescribe():

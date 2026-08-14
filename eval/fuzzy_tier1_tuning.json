@@ -1,0 +1,1105 @@
+{
+  "gt_full_runs": [
+    {
+      "utterance": "Vizicin 125 Hasan 30 GÓI dùng để điều trị bệnh gì?",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.5319149,
+      "gap": 0.29662078,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Vizicin 125 Hasan 30 GÓI có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.46296296,
+      "gap": 0.18127281,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Vizicin 125 Hasan 30 GÓI như thế nào?",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.44642857,
+      "gap": 0.18967182000000005,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Vizicin 125 Hasan 30 GÓI cần bảo quản như thế nào?",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.54347825,
+      "gap": 0.30910325000000005,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Bluepine 5mg BLUE 6x10 dùng để điều trị bệnh gì?",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.46341464,
+      "gap": 0.22267388999999999,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Bluepine 5mg BLUE 6x10 có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.3877551,
+      "gap": 0.17807769,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Bluepine 5mg BLUE 6x10 như thế nào?",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.37254903,
+      "gap": 0.16942403,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Bluepine 5mg BLUE 6x10 cần bảo quản như thế nào?",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.475,
+      "gap": 0.22971698,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Fluopas 0.025% Quảng BÌNH 10g dùng để điều trị bệnh gì?",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.5833333,
+      "gap": 0.30263154000000003,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Fluopas 0.025% Quảng BÌNH 10g có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.49122807,
+      "gap": 0.24880382,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Fluopas 0.025% Quảng BÌNH 10g như thế nào?",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.47457626,
+      "gap": 0.25718496,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Fluopas 0.025% Quảng BÌNH 10g cần bảo quản như thế nào?",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.62222224,
+      "gap": 0.34949496,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Vitamin b1 250mg Domesco 100v dùng để điều trị bệnh gì?",
+      "expect_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_score": 0.5882353,
+      "gap": 0.059933400000000026,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Vitamin b1 250mg Domesco 100v có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_score": 0.51724136,
+      "gap": 0.05057468999999998,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Vitamin b1 250mg Domesco 100v như thế nào?",
+      "expect_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_score": 0.5,
+      "gap": 0.048387100000000016,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Vitamin b1 250mg Domesco 100v cần bảo quản như thế nào?",
+      "expect_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_drug_id": "vitamin-b1-250mg-domesco-100v",
+      "top1_score": 0.5882353,
+      "gap": 0.059933400000000026,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Noklot 75 Cadila 3x10 dùng để điều trị bệnh gì?",
+      "expect_drug_id": "noklot-75-cadila-3x10",
+      "top1_drug_id": "noklot-75-cadila-3x10",
+      "top1_score": 0.4888889,
+      "gap": 0.19477124,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Noklot 75 Cadila 3x10 có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "noklot-75-cadila-3x10",
+      "top1_drug_id": "noklot-75-cadila-3x10",
+      "top1_score": 0.44,
+      "gap": 0.17214287,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Noklot 75 Cadila 3x10 như thế nào?",
+      "expect_drug_id": "noklot-75-cadila-3x10",
+      "top1_drug_id": "noklot-75-cadila-3x10",
+      "top1_score": 0.43137255,
+      "gap": 0.16821465000000002,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Noklot 75 Cadila 3x10 cần bảo quản như thế nào?",
+      "expect_drug_id": "noklot-75-cadila-3x10",
+      "top1_drug_id": "noklot-75-cadila-3x10",
+      "top1_score": 0.5365854,
+      "gap": 0.21743647,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "AME Prazol 40mg OPV 2x7 dùng để điều trị bệnh gì?",
+      "expect_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_score": 0.5106383,
+      "gap": 0.17101564999999996,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "AME Prazol 40mg OPV 2x7 có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_score": 0.4528302,
+      "gap": 0.14774546,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của AME Prazol 40mg OPV 2x7 như thế nào?",
+      "expect_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_score": 0.42857143,
+      "gap": 0.13824885999999997,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "AME Prazol 40mg OPV 2x7 cần bảo quản như thế nào?",
+      "expect_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_score": 0.5217391,
+      "gap": 0.17558524000000003,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Lotemax 0.5% Bausch LOMB 5ml dùng để điều trị bệnh gì?",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.5319149,
+      "gap": 0.32501833999999996,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Lotemax 0.5% Bausch LOMB 5ml có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.45454547,
+      "gap": 0.27272728,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Lotemax 0.5% Bausch LOMB 5ml như thế nào?",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.45454547,
+      "gap": 0.25454547,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Lotemax 0.5% Bausch LOMB 5ml cần bảo quản như thế nào?",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.5555556,
+      "gap": 0.34126988,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Xaravix 20mg DHG Pharma 1x14 dùng để điều trị bệnh gì?",
+      "expect_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_score": 0.5686275,
+      "gap": 0.07806144999999998,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Xaravix 20mg DHG Pharma 1x14 có thể gây ra tác dụng phụ nào?",
+      "expect_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_score": 0.51785713,
+      "gap": 0.06958126999999997,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Cách dùng và liều dùng của Xaravix 20mg DHG Pharma 1x14 như thế nào?",
+      "expect_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_score": 0.48333332,
+      "gap": 0.06397849,
+      "top1_correct": true,
+      "source": "full_sentence"
+    },
+    {
+      "utterance": "Xaravix 20mg DHG Pharma 1x14 cần bảo quản như thế nào?",
+      "expect_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_score": 0.5686275,
+      "gap": 0.07806144999999998,
+      "top1_correct": true,
+      "source": "full_sentence"
+    }
+  ],
+  "gt_short_runs": [
+    {
+      "utterance": "vizicin",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.32,
+      "gap": 0.18363636,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "vizicin 125",
+      "expect_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_drug_id": "vizicin-125-hasan-30-goi",
+      "top1_score": 0.48,
+      "gap": 0.27999999999999997,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "bluepine",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.47368422,
+      "gap": 0.22368422,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "bluepine 5mg",
+      "expect_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_drug_id": "bluepine-5mg-blue-6x10",
+      "top1_score": 0.68421054,
+      "gap": 0.40296054000000003,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "fluopas",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.2857143,
+      "gap": 0.11904762999999999,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "fluopas 0.025%",
+      "expect_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_drug_id": "fluopas-0-025-quang-binh-10g",
+      "top1_score": 0.4642857,
+      "gap": 0.2878151,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "ameprazol 40mg",
+      "expect_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_drug_id": "ame-prazol-40mg-opv-2x7",
+      "top1_score": 0.5,
+      "gap": 0.08620687999999999,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "lotemax",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.32,
+      "gap": 0.16,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "lotemax 0.5%",
+      "expect_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_drug_id": "lotemax-0-5-bausch-lomb-5ml",
+      "top1_score": 0.48,
+      "gap": 0.30142857,
+      "top1_correct": true,
+      "source": "short_name"
+    },
+    {
+      "utterance": "xaravix 20mg",
+      "expect_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_drug_id": "xaravix-20mg-dhg-pharma-1x14",
+      "top1_score": 0.44827586,
+      "gap": 0.12569522000000005,
+      "top1_correct": true,
+      "source": "short_name"
+    }
+  ],
+  "ood_runs": [
+    {
+      "utterance": "Adderall 20mg dùng để làm gì?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "Orieso 20mg ĐÔNG NAM 3x10",
+      "top1_score": 0.17391305,
+      "gap": 0.0072463800000000245
+    },
+    {
+      "utterance": "Xanax 0.5mg có tác dụng phụ gì không?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "Padolac TAB 5mg Kyung 10x10",
+      "top1_score": 0.20754717,
+      "gap": 0.01789199999999999
+    },
+    {
+      "utterance": "Wegovy dùng như thế nào?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "TUẦN HOÀN NÃO THÁI Dương 2x6",
+      "top1_score": 0.2195122,
+      "gap": 0.010209880000000005
+    },
+    {
+      "utterance": "Prozac 20mg bảo quản ra sao?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "Prazo PRO 20mg TVP 2x7",
+      "top1_score": 0.20512821,
+      "gap": 0.023310020000000015
+    },
+    {
+      "utterance": "Ritalin dùng để điều trị bệnh gì?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "Glumeform 850 DHG 10x5 - ĐIỀU TRỊ ĐÁI THÁO Đường",
+      "top1_score": 0.19354838,
+      "gap": 0.017077779999999987
+    },
+    {
+      "utterance": "Viagra 100mg có gây tác dụng phụ nào không?",
+      "label": "nonexistent_drug",
+      "top1_ten_thuoc": "Vinphason 100mg Vinphaco HỘP 1 LỌ + 1 ỐNG DUNG MÔI 2ml",
+      "top1_score": 0.21428572,
+      "gap": 0.003018120000000013
+    },
+    {
+      "utterance": "Vzcni125Hsan30Go dùng để làm gì?",
+      "label": "severe_typo",
+      "top1_ten_thuoc": "MỘC LONG NAM DƯỢC 10 GÓI",
+      "top1_score": 0.12244898,
+      "gap": 0.01335807
+    },
+    {
+      "utterance": "Blpuein5mgBule6x10 có tác dụng phụ gì không?",
+      "label": "severe_typo",
+      "top1_ten_thuoc": "BỔ GAN Trường PHÚC 3x10",
+      "top1_score": 0.1754386,
+      "gap": 0.008771930000000011
+    },
+    {
+      "utterance": "Nkolot75Cdila3x10 dùng như thế nào?",
+      "label": "severe_typo",
+      "top1_ten_thuoc": "AN THẢO NAM DƯỢC 5x10",
+      "top1_score": 0.19565217,
+      "gap": 0.01918156999999998
+    },
+    {
+      "utterance": "Xravix20mgDHGPhrma bảo quản ra sao?",
+      "label": "severe_typo",
+      "top1_ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+      "top1_score": 0.16666667,
+      "gap": 0.018518519999999983
+    },
+    {
+      "utterance": "Thời tiết hôm nay ở Hà Nội thế nào?",
+      "label": "unrelated_text",
+      "top1_ten_thuoc": "TIÊU ĐỘC NAM HÀ 20 ỐNG",
+      "top1_score": 0.2195122,
+      "gap": 0.03530168
+    },
+    {
+      "utterance": "Cách nấu phở bò truyền thống",
+      "label": "unrelated_text",
+      "top1_ten_thuoc": "BỔ GAN Trường PHÚC 3x10",
+      "top1_score": 0.23809524,
+      "gap": 0.015873020000000015
+    },
+    {
+      "utterance": "Giá vàng hôm nay bao nhiêu một lượng",
+      "label": "unrelated_text",
+      "top1_ten_thuoc": "Thăng LONG HOÀN BẢO LONG 10v HOÀN MỀM",
+      "top1_score": 0.21568628,
+      "gap": 0.022703830000000008
+    },
+    {
+      "utterance": "1 cộng 1 bằng mấy",
+      "label": "unrelated_text",
+      "top1_ten_thuoc": "Thăng LONG HOÀN BẢO LONG 10v HOÀN MỀM",
+      "top1_score": 0.2,
+      "gap": 0.038709680000000024
+    },
+    {
+      "utterance": "Đội tuyển Việt Nam đá bóng tối nay mấy giờ",
+      "label": "unrelated_text",
+      "top1_ten_thuoc": "KEM BÔI DA TRỊ NẤM Ciclopirox 0.77% VCP TUÝP 15g",
+      "top1_score": 0.2,
+      "gap": 0.0
+    }
+  ],
+  "short_ood_runs": [
+    {
+      "utterance": "paradol",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Samarin 140 Paradigm 10x10",
+      "top1_score": 0.1724138,
+      "gap": 0.047413800000000006
+    },
+    {
+      "utterance": "feverex",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Hepeverex OPV 10 GÓI",
+      "top1_score": 0.20833333,
+      "gap": 0.09294871400000002
+    },
+    {
+      "utterance": "coldrex",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Coldi-b DNH NAM HÀ 15ml",
+      "top1_score": 0.14285715,
+      "gap": 0.00649350999999998
+    },
+    {
+      "utterance": "fluzin",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Flucinar 15g",
+      "top1_score": 0.1764706,
+      "gap": 0.016470600000000002
+    },
+    {
+      "utterance": "nasoclear",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Alcoclear 500 Micro 3x10",
+      "top1_score": 0.16666667,
+      "gap": 0.03623188999999999
+    },
+    {
+      "utterance": "painex",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Pricefil Vianex 30ml",
+      "top1_score": 0.12,
+      "gap": 0.0
+    },
+    {
+      "utterance": "tussin",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Silvirin 20g SP (tuýp)",
+      "top1_score": 0.125,
+      "gap": 0.009615384000000005
+    },
+    {
+      "utterance": "gastrofix",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Gastropulgite Ipsen 30 GÓI",
+      "top1_score": 0.2,
+      "gap": 0.03333333000000002
+    },
+    {
+      "utterance": "dolorex",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Dolotin 20mg Domesco 1x10",
+      "top1_score": 0.14285715,
+      "gap": 0.039408869999999985
+    },
+    {
+      "utterance": "sinuclear",
+      "label": "nonexistent_drug_short",
+      "top1_ten_thuoc": "Alcoclear 500 Micro 3x10",
+      "top1_score": 0.12903225,
+      "gap": 0.013647633999999992
+    }
+  ],
+  "ambiguous_runs": [
+    {
+      "utterance": "vitamin b1",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Vitamin b1 Vinphaco 100 ỐNG",
+      "top1_score": 0.42307693,
+      "gap": 0.043766589999999994
+    },
+    {
+      "utterance": "vitamin b1 250mg",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Vitamin b1 250mg Vidipha 10x10",
+      "top1_score": 0.5862069,
+      "gap": 0.019540239999999987
+    },
+    {
+      "utterance": "noklot",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Noklot 75 Zydus 3x10",
+      "top1_score": 0.33333334,
+      "gap": 0.015151539999999963
+    },
+    {
+      "utterance": "noklot 75",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Noklot 75 Zydus 3x10",
+      "top1_score": 0.47619048,
+      "gap": 0.02164501000000002
+    },
+    {
+      "utterance": "ame prazol",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "AME Prazol 20mg OPV 5x6",
+      "top1_score": 0.45833334,
+      "gap": 0.0
+    },
+    {
+      "utterance": "xaravix",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Xaravix 10mg DHG Pharma 1x14",
+      "top1_score": 0.2857143,
+      "gap": 0.0
+    },
+    {
+      "utterance": "vitamin C",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Vitamin C 1000mg OPC 10v",
+      "top1_score": 0.4347826,
+      "gap": 0.018115939999999997
+    },
+    {
+      "utterance": "cefixim",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Cefixim 400 USP 1x10",
+      "top1_score": 0.3809524,
+      "gap": 0.047619060000000046
+    },
+    {
+      "utterance": "Paracetamol ",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Paracetamol KABI 1000mg Frensenius KABI 48 CHAI X 100ml",
+      "top1_score": 0.25531915,
+      "gap": 0.037137329999999996
+    },
+    {
+      "utterance": "panadol extra",
+      "label": "ambiguous",
+      "top1_ten_thuoc": "Tradin Extra Traphaco 2x10",
+      "top1_score": 0.19354838,
+      "gap": 0.022119799999999995
+    }
+  ],
+  "ood_ceiling_combined": 0.23809524,
+  "sweep": [
+    {
+      "nguong_cao": 0.15,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 100.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 6,
+      "ambiguous_skip_count": 3
+    },
+    {
+      "nguong_cao": 0.15,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 1,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.15,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 1,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.15,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.15,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.2,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 100.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 4,
+      "ambiguous_skip_count": 3
+    },
+    {
+      "nguong_cao": 0.2,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 1,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.2,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 1,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.2,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.2,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 100.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 3
+    },
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 100.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 2
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 80.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.35,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 100.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 2
+    },
+    {
+      "nguong_cao": 0.35,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.35,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.35,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 75.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 60.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.35,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 50.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.4,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 93.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 1
+    },
+    {
+      "nguong_cao": 0.4,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 90.625,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.4,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 70.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.4,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 68.75,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 60.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.4,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 62.5,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 50.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.5,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 50.0,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 20.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.5,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 46.875,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 20.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.5,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 28.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 20.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.5,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 28.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.5,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 28.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.6,
+      "nguong_cach_biet": 0.03,
+      "gt_full_skip_pct": 3.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.6,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 3.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.6,
+      "nguong_cach_biet": 0.08,
+      "gt_full_skip_pct": 3.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.6,
+      "nguong_cach_biet": 0.1,
+      "gt_full_skip_pct": 3.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    },
+    {
+      "nguong_cao": 0.6,
+      "nguong_cach_biet": 0.15,
+      "gt_full_skip_pct": 3.125,
+      "gt_full_skip_precision": 100.0,
+      "gt_short_skip_pct": 10.0,
+      "gt_short_skip_precision": 100.0,
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0
+    }
+  ],
+  "fine_sweep_0_25_to_0_30": [
+    {
+      "nguong_cao": 0.25,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_missed_cases": [],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.011904759999999986
+    },
+    {
+      "nguong_cao": 0.26,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_missed_cases": [],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.021904759999999995
+    },
+    {
+      "nguong_cao": 0.27,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_missed_cases": [],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.031904760000000004
+    },
+    {
+      "nguong_cao": 0.28,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 100.0,
+      "gt_short_missed_cases": [],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.04190476000000001
+    },
+    {
+      "nguong_cao": 0.29,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_missed_cases": [
+        "fluopas"
+      ],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.051904759999999966
+    },
+    {
+      "nguong_cao": 0.3,
+      "nguong_cach_biet": 0.05,
+      "gt_full_skip_pct": 96.875,
+      "gt_short_skip_pct": 90.0,
+      "gt_short_missed_cases": [
+        "fluopas"
+      ],
+      "ood_skip_count": 0,
+      "ambiguous_skip_count": 0,
+      "margin_over_ood_ceiling": 0.061904759999999975
+    }
+  ],
+  "avg_latency_ms": 114.21428571428632
+}

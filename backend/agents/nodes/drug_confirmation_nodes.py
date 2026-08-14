@@ -69,6 +69,7 @@ import logging
 import re
 import time
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 
@@ -79,7 +80,31 @@ from backend.agents.state import ConversationState
 from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, set_pending_confirmation
 from backend.agents.tools.personal_tools import list_active_prescription_drug_items
 from backend.config import get_settings
-from backend.services.retrieval import fuse_rrf, get_chunks_by_drug_id, lexical_search, vector_search
+from backend.services.retrieval import fuse_rrf, fuzzy_name_search, get_chunks_by_drug_id, lexical_search, vector_search
+
+# Vong 4, muc 2.2 - LLM gate hep pham vi, chay TRUOC _fuzzy_best_match()/
+# _search_distinct_drug_candidates() o 2 nhanh reply-parsing (STAGE_IN_RX_
+# AWAITING_NEW_NAME/STAGE_OUT_RX_AWAITING_REDESCRIBE). Mac dinh permissive
+# (luon True) - GIU NGUYEN hanh vi cu cho moi test/call site khong truyen
+# tham so nay tuong minh (tranh phai sua hang chuc test khong lien quan gate
+# nay); production (chat_deps.py::get_chat_services) LUON wire ham that
+# (classify_drug_reply_plausibility), khong dua vao default nay.
+DrugReplyPlausibilityFn = Callable[[str], bool]
+FuzzyCandidateSelectFn = Callable[[str, list[dict]], str | None]
+
+
+def _default_drug_reply_plausibility(_reply: str) -> bool:
+    return True
+
+
+def _default_fuzzy_candidate_select(_utterance: str, candidates: list[dict]) -> str | None:
+    """Compatibility default for tests/call sites not wired to the LLM service.
+
+    Production always injects `select_fuzzy_drug_candidate`. Khong co LLM thi
+    phai fail-closed, khong tu lay top-1 cua case mo ho/diem thap; xac nhan
+    benh nhan khong thay the duoc viec tranh tao candidate vo nghia.
+    """
+    return None
 
 # ---------------------------------------------------------------------------
 # Stage constants (luu trong PendingDrugConfirmation.stage)
@@ -103,25 +128,18 @@ STAGE_OUT_RX_CONFIRM_TOP1_R2 = "out_rx_confirm_top1_r2"
 # nghia phan biet). Tach ro 2 nhom.
 # ---------------------------------------------------------------------------
 
-# NHOM 1 - NGUYEN VAN tu kickoff-prompt-vong-2.md muc 5.2, DA qua PM luc chot
-# thiet ke - KHONG can marker CẦN CHỐT.
-NOT_FOUND_FINAL_MESSAGE = "Xin lỗi, thuốc bạn tìm kiếm hiện giờ không có thông tin."
-ASK_DIFFERENT_NAME_MESSAGE = "Bạn có thể cho tôi biết tên thuốc khác trong đơn không?"
-ASK_DESCRIBE_AGAIN_MESSAGE = "Bạn có thể mô tả lại tên thuốc rõ hơn không?"
-
-# NHOM 2 - TODO [CẦN CHỐT]: TU VIET, KHONG nam trong kickoff-prompt-vong-2.md
-# (kickoff chi mo ta HANH VI "hoi lai lich su"/"dung han", KHONG cho cau chu
-# cu the cho 3 truong hop nay) - cung muc do rui ro thap nhu TAKEN_RESPONSE/
-# LOW_ACTION_RESPONSE o dose_confirmation_nodes.py (khong phai man hinh khung
-# hoang) - uu tien co phan hoi thay vi im lang/vong lap vo han, KHONG coi la
-# noi dung da duyet chinh thuc.
-UNPARSEABLE_YES_NO_MESSAGE = 'Mình chưa hiểu ý bạn, bạn có thể trả lời "có" hoặc "không" được không?'
+# Vong 4, soul.md: day la toan bo response constants nhom A cua luong xac
+# nhan thuoc. Da duoc phep restyle, khong thay doi state machine hay overlay.
+NOT_FOUND_FINAL_MESSAGE = "Dạ, mình chưa tìm được thông tin về thuốc này ạ. Bạn hỏi thêm bác sĩ hoặc dược sĩ để chắc chắn hơn nhé."
+ASK_DIFFERENT_NAME_MESSAGE = "Dạ, bạn cho mình biết tên một thuốc khác trong đơn được không ạ?"
+ASK_DESCRIBE_AGAIN_MESSAGE = "Dạ, bạn mô tả lại tên thuốc rõ hơn giúp mình được không ạ?"
+UNPARSEABLE_YES_NO_MESSAGE = 'Dạ, mình chưa hiểu rõ ý bạn ạ. Bạn có thể trả lời "có" hoặc "không" giúp mình được không?'
 UNPARSEABLE_CHOICE_MESSAGE_TEMPLATE = (
-    "Mình chưa hiểu lựa chọn của bạn. Vui lòng chọn 1 trong 3 lựa chọn dưới đây, hoặc trả lời "
-    '"không tìm thấy":\n{options}'
+    "Dạ, mình chưa hiểu lựa chọn của bạn ạ. Bạn chọn một trong các thuốc dưới đây, hoặc trả lời "
+    '"không tìm thấy" nhé:\n{options}'
 )
 TOO_MANY_UNPARSEABLE_REPLIES_MESSAGE = (
-    "Xin lỗi, mình vẫn chưa hiểu được câu trả lời của bạn. Vui lòng liên hệ bác sĩ hoặc thử hỏi lại sau."
+    "Dạ, mình vẫn chưa hiểu rõ câu trả lời của bạn ạ. Bạn có thể hỏi lại khi tiện, hoặc liên hệ bác sĩ để được hỗ trợ thêm nhé."
 )
 # So lan LIEN TIEP toi da cho phep hoi lai CUNG 1 stage vi reply khong parse
 # duoc (yes/no/so thu tu) - KHAC round-budget (dem theo so ung vien da thu,
@@ -131,13 +149,13 @@ MAX_UNPARSEABLE_RETRIES = 3
 
 
 def _confirm_question(ten_thuoc: str) -> str:
-    return f"Bạn muốn thông tin về thuốc {ten_thuoc} đúng không?"
+    return f"Dạ, mình xin phép hỏi bạn muốn biết thông tin về thuốc {ten_thuoc} đúng không ạ?"
 
 
 def _top3_menu(candidates: list[dict]) -> str:
     lines = [f"{i + 1}. {c['ten_thuoc']}" for i, c in enumerate(candidates)]
-    lines.append('Hoặc trả lời "không tìm thấy" nếu không phải thuốc nào ở trên.')
-    return "Mình chưa chắc đúng thuốc bạn hỏi. Có phải bạn muốn hỏi 1 trong các thuốc sau không?\n" + "\n".join(
+    lines.append('Hoặc trả lời "không tìm thấy" nếu không phải thuốc nào ở trên nhé.')
+    return "Dạ, mình chưa chắc đây có đúng thuốc bạn hỏi không ạ. Bạn muốn hỏi một trong các thuốc sau phải không?\n" + "\n".join(
         lines
     )
 
@@ -363,7 +381,11 @@ def _log_rejection(patient_id: str, original_query: str, rejected_drug_id: str) 
 # ---------------------------------------------------------------------------
 
 
-def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
+def build_drug_identity_resolution_node(
+    db: Session,
+    embed_query: EmbedFn,
+    select_fuzzy_candidate_fn: FuzzyCandidateSelectFn = _default_fuzzy_candidate_select,
+):
     """THAY THE build_retrieval_node trong danh sach node chinh cho drug_info
     (muc 11 - chi dung o day khi KHONG co pending confirmation, do
     chat_routes.py dam bao qua viec chon danh sach node nao de chay)."""
@@ -404,13 +426,12 @@ def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
                 "trace": _append_trace(state, entry),
             }
 
-        # 11.2: khong khop don active - hybrid search tu do, lay top-1 (+3
-        # ung vien du phong, dedup theo drug_id).
-        embedding = embed_query(utterance)
-        candidates = _search_distinct_drug_candidates(db, utterance, embedding, n=4)
-        duration_ms = (time.monotonic() - t0) * 1000
-
-        if not candidates:
+        # Vong 4, muc 3.1-3.3: ngoai don dung fuzzy name search top-5 lam
+        # duong chinh, khong goi embedding. Hybrid chi con la fallback sau
+        # khi benh nhan tu choi va mo ta lai o STAGE_OUT_RX_AWAITING_REDESCRIBE.
+        fuzzy_top5 = fuzzy_name_search(db, utterance, top_k=5)
+        if not fuzzy_top5:
+            duration_ms = (time.monotonic() - t0) * 1000
             entry = {
                 "step": "drug_identity_resolution",
                 "branch": "out_of_prescription",
@@ -424,6 +445,49 @@ def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
                 "trace": _append_trace(state, entry),
             }
 
+        fuzzy_candidates = [
+            {"drug_id": candidate.drug_id, "ten_thuoc": candidate.ten_thuoc, "score": candidate.score}
+            for candidate in fuzzy_top5
+        ]
+        top1_score = fuzzy_candidates[0]["score"]
+        top2_score = fuzzy_candidates[1]["score"] if len(fuzzy_candidates) > 1 else 0.0
+        score_gap = top1_score - top2_score
+        settings = get_settings()
+        is_fast_path = (
+            top1_score >= settings.fuzzy_name_high_threshold
+            and score_gap >= settings.fuzzy_name_gap_threshold
+        )
+
+        if is_fast_path:
+            selected_candidates = fuzzy_candidates
+            candidate_selection = "fuzzy_fast_path"
+        else:
+            selected_drug_id = select_fuzzy_candidate_fn(utterance, fuzzy_candidates)
+            selected = next((candidate for candidate in fuzzy_candidates if candidate["drug_id"] == selected_drug_id), None)
+            if selected is None:
+                duration_ms = (time.monotonic() - t0) * 1000
+                entry = {
+                    "step": "drug_identity_resolution",
+                    "branch": "out_of_prescription",
+                    "stage": None,
+                    "result": "llm_no_safe_candidate",
+                    "top1_score": top1_score,
+                    "top2_score": top2_score,
+                    "score_gap": score_gap,
+                    "duration_ms": duration_ms,
+                }
+                return {
+                    "response": NOT_FOUND_FINAL_MESSAGE,
+                    "awaiting_drug_confirmation": True,
+                    "trace": _append_trace(state, entry),
+                }
+            selected_candidates = [selected, *(candidate for candidate in fuzzy_candidates if candidate != selected)]
+            candidate_selection = "llm_candidate_review"
+
+        # PendingDrugConfirmation chi la state machine UI; giu dung shape cu
+        # {drug_id, ten_thuoc}, khong luu diem fuzzy khong can thiet vao DB.
+        candidates = [{"drug_id": candidate["drug_id"], "ten_thuoc": candidate["ten_thuoc"]} for candidate in selected_candidates]
+        duration_ms = (time.monotonic() - t0) * 1000
         top1 = candidates[0]
         set_pending_confirmation(
             db, patient_id, candidates=candidates, stage=STAGE_OUT_RX_CONFIRM_TOP1_R1, original_query=utterance
@@ -433,6 +497,10 @@ def build_drug_identity_resolution_node(db: Session, embed_query: EmbedFn):
             "branch": "out_of_prescription",
             "stage": STAGE_OUT_RX_CONFIRM_TOP1_R1,
             "candidate_drug_id": top1["drug_id"],
+            "candidate_selection": candidate_selection,
+            "top1_score": top1_score,
+            "top2_score": top2_score,
+            "score_gap": score_gap,
             "duration_ms": duration_ms,
         }
         return {
@@ -485,10 +553,18 @@ def _infer_quick_replies(stage: str, candidates: list[dict]) -> list[str] | None
     return None
 
 
-def build_drug_confirmation_reply_node(db: Session, embed_query: EmbedFn, pending: dict):
+def build_drug_confirmation_reply_node(
+    db: Session,
+    embed_query: EmbedFn,
+    pending: dict,
+    is_drug_reply_fn: DrugReplyPlausibilityFn = _default_drug_reply_plausibility,
+):
     """`pending`: dict tra ve tu get_pending_confirmation() (chat_routes.py
     doc TRUOC khi goi node nay, truyen vao qua closure - khong doc lai tu DB
-    trong node de tranh race giua doc va handle trong CUNG 1 request)."""
+    trong node de tranh race giua doc va handle trong CUNG 1 request).
+
+    `is_drug_reply_fn`: vong 4 muc 2.2 - LLM gate hep pham vi, mac dinh
+    permissive (xem docstring DrugReplyPlausibilityFn dau file)."""
 
     async def node(state: ConversationState) -> dict:
         t0 = time.monotonic()
@@ -498,7 +574,7 @@ def build_drug_confirmation_reply_node(db: Session, embed_query: EmbedFn, pendin
         candidates = pending["candidates"]
         original_query = pending["original_query"]
 
-        result = _dispatch_stage(db, embed_query, patient_id, stage, candidates, original_query, reply)
+        result = _dispatch_stage(db, embed_query, patient_id, stage, candidates, original_query, reply, is_drug_reply_fn)
         duration_ms = (time.monotonic() - t0) * 1000
 
         if result.resolved_drug_id is not None:
@@ -576,6 +652,7 @@ def _dispatch_stage(
     candidates: list[dict],
     original_query: str,
     reply: str,
+    is_drug_reply_fn: DrugReplyPlausibilityFn = _default_drug_reply_plausibility,
 ) -> _StepResult:
     if stage == STAGE_IN_RX_CONFIRM_R1:
         yn = _parse_yes_no(reply)
@@ -606,6 +683,13 @@ def _dispatch_stage(
         )
 
     if stage == STAGE_IN_RX_AWAITING_NEW_NAME:
+        # Vong 4, muc 2.2/2.3 - LLM gate TRUOC khi fuzzy match: khong co
+        # nguong similarity nao tach sach duoc reply khong lien quan (xem
+        # docstring classify_drug_reply_plausibility, classification.py).
+        # Gate tra "khong" -> xu ly GIONG HET "khong tim duoc gi" (DIEN GIAI
+        # #2), khong goi _fuzzy_best_match() nua.
+        if not is_drug_reply_fn(reply):
+            return _StepResult(None, NOT_FOUND_FINAL_MESSAGE, None, True)
         # reply o day la TEN THUOC MOI (khong phai yes/no) - fuzzy match lai
         # trong don active cua benh nhan (muc 11.1).
         rx_items = list_active_prescription_drug_items(db, patient_id)
@@ -700,6 +784,11 @@ def _dispatch_stage(
         )
 
     if stage == STAGE_OUT_RX_AWAITING_REDESCRIBE:
+        # Vong 4, muc 2.2/2.3 - cung ly do voi nhanh STAGE_IN_RX_AWAITING_
+        # NEW_NAME o tren. Gate chay TRUOC ca embed_query() - tiet kiem luon
+        # 1 lan goi embedding khi reply ro rang khong lien quan.
+        if not is_drug_reply_fn(reply):
+            return _StepResult(None, NOT_FOUND_FINAL_MESSAGE, None, True)
         embedding = embed_query(reply)
         new_candidates = _search_distinct_drug_candidates(db, reply, embedding, n=1)
         if not new_candidates:

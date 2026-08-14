@@ -21,7 +21,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from backend.config import get_settings
 from backend.db.base import SessionLocal, engine
+from backend.services.classification import summarize_hourly_conversation
 from backend.services.escalation_reminder import check_and_send_reminders
+from backend.services.hourly_conversation_summary import create_completed_hour_summaries
 
 logger = logging.getLogger("escalation_scheduler")
 
@@ -38,6 +40,18 @@ async def _run_reminder_check() -> None:
             logger.info("Da nhac lai %d escalation", reminded)
     except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
         logger.exception("Loi khi chay escalation reminder check job")
+    finally:
+        db.close()
+
+
+async def _run_hourly_summary() -> None:
+    db = SessionLocal()
+    try:
+        created = await create_completed_hour_summaries(db, summarize_hourly_conversation)
+        if created:
+            logger.info("Da tao %d hourly conversation summaries", created)
+    except Exception:  # noqa: BLE001 - a failed summary run must not stop other jobs
+        logger.exception("Loi khi chay hourly conversation summary job")
     finally:
         db.close()
 
@@ -59,6 +73,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         id="escalation_reminder_check",
         replace_existing=True,
         max_instances=1,  # tranh 2 lan chay chong nhau neu 1 lan chay lau hon interval
+    )
+    _scheduler.add_job(
+        _run_hourly_summary,
+        "cron",
+        minute=0,
+        id="hourly_conversation_summary",
+        replace_existing=True,
+        max_instances=1,
     )
     _scheduler.start()
     logger.info(
