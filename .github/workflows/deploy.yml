@@ -59,7 +59,7 @@ jobs:
       - name: Verify runner toolchain
         run: |
           missing=""
-          for tool in git curl node npm; do
+          for tool in git curl; do
             command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
           done
           if [ -n "$missing" ]; then
@@ -68,7 +68,14 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
-      - run: npm install --global @railway/cli
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli
       # Source upload + remote build — giống `railway up` chạy ở máy local.
       # -c: stream build log rồi thoát; thiếu cờ này job treo ở log runtime.
       # --service/--environment truyền thẳng nên runner không cần `railway link`.
@@ -92,7 +99,7 @@ jobs:
       - name: Verify runner toolchain
         run: |
           missing=""
-          for tool in git curl node npm; do
+          for tool in git curl; do
             command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
           done
           if [ -n "$missing" ]; then
@@ -101,7 +108,14 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
-      - run: npm install --global @railway/cli
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli
       # working-directory: frontend là BẮT BUỘC — `railway up` upload thư mục
       # hiện tại. Chạy ở root sẽ upload cả repo và build Dockerfile của backend
       # vào service frontend.
