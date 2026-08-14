@@ -15,6 +15,11 @@ Xây dựng chatbot/RAG cho bệnh nhân hỏi về thuốc, lịch uống, đơ
 
 ## Acceptance Criteria (AC)
 
+**Giao diện Audit log của bác sĩ (2026-08-14):**
+
+- [x] Phân trang phía frontend với 10 bản ghi mỗi trang; bác sĩ có thể chuyển trang bằng nút Trước/Sau hoặc số trang và biết khoảng bản ghi đang xem.
+- [x] Không thay đổi API/contract Audit log hiện có; danh sách tối đa 200 bản ghi vẫn được tải và phân trang tại giao diện.
+
 **Backend — đã merge vào `main` qua PR #7 (`51c8b7b`), đối chiếu `chatbot-rag-design.md` mục 10 và 2 kickoff prompt:**
 
 - [x] DB schema + extension `pgvector`/`pg_trgm`/`unaccent`, bảng `drug_chunks` + `audit_log` (Phase 1)
