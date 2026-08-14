@@ -13,9 +13,10 @@ from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, require_role
 from backend.db.base import get_db
-from backend.db.models import Account
+from backend.db.models import Account, Patient
 from backend.models.schemas import AccountCreateRequest, AccountOut, AccountStatusUpdateRequest
 from backend.services.auth import hash_password
+from backend.services.patient_id import generate_next_patient_id
 
 account_router = APIRouter()
 
@@ -29,12 +30,31 @@ async def create_account(
     if db.query(Account).filter(Account.email == body.email).first() is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã có tài khoản")
 
+    # SUA 2026-08-14: dong bo voi auth_routes.py::register() - truoc do
+    # patient_id o day la chuoi TU DO admin go tay, khong tung tao dong
+    # `Patient` that dang sau (benh nhan "co ID nhung khong co ho so"),
+    # va khong theo dinh dang BNxxxxx cua du lieu cu (vd "BN00002").
+    #
+    # - Khong go patient_id (role=patient) -> tu sinh BNxxxxx ke tiep VA tao
+    #   dong Patient that, giong het duong tu dang ky.
+    # - CO go patient_id (vd link toi du lieu demo co san nhu
+    #   "demo-patient-01", dung y goc cua field nay - xem docstring
+    #   AccountCreateRequest) -> giu nguyen ID do (KHONG ep ve BNxxxxx, vi
+    #   day la lien ket toi ID DA CO TU TRUOC), chi tao dong Patient neu
+    #   THAT SU chua co (tranh de trong hop lai khong co ho so that).
+    patient_id = body.patient_id
+    if body.role == "patient":
+        if not patient_id:
+            patient_id = generate_next_patient_id(db)
+        if db.get(Patient, patient_id) is None:
+            db.add(Patient(id=patient_id, full_name=body.full_name))
+
     account = Account(
         full_name=body.full_name,
         email=body.email,
         password_hash=hash_password(body.password),
         role=body.role,
-        patient_id=body.patient_id,
+        patient_id=patient_id,
         doctor_id=body.doctor_id,
     )
     db.add(account)

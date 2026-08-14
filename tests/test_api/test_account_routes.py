@@ -15,9 +15,10 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Account  # noqa: E402
+from backend.db.models import Account, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import hash_password  # noqa: E402
+from backend.services.patient_id import _PATIENT_ID_RE  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -61,6 +62,18 @@ def _make_account(role: str, status: str = "active") -> dict:
 def _cleanup(account_id: str) -> None:
     db = SessionLocal()
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+    db.commit()
+    db.close()
+
+
+def _cleanup_with_patient(account_id: str, patient_id: str | None) -> None:
+    """Nhu `_cleanup()` nhung xoa THEM dong `Patient` - dung cho test tao
+    tai khoan role=patient (2026-08-14): create_account() gio co the tao
+    dong Patient that, khong chi gan patient_id vao Account nhu truoc."""
+    db = SessionLocal()
+    db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+    if patient_id:
+        db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
 
@@ -128,6 +141,75 @@ async def test_admin_creates_account_then_new_account_can_log_in(client, admin_t
         assert login_response.json()["user"]["role"] == "doctor"
     finally:
         _cleanup(created["id"])
+
+
+@pytest.mark.asyncio
+async def test_create_patient_account_without_patient_id_autogenerates_bn_id(client, admin_token):
+    """SUA 2026-08-14 (thiet ke ID benh nhan, yeu cau PM) - truoc do khong
+    go patient_id se tao Account voi patient_id=None VA khong tung tao dong
+    Patient nao (benh nhan "co tai khoan nhung khong co ho so"). Gio phai tu
+    sinh dung dang BNxxxxx (khop du lieu cu vd "BN00002" cua MCK) VA tao that
+    dong Patient dang sau, dong bo voi duong tu dang ky."""
+    new_email = f"test-created-{uuid.uuid4().hex[:8]}@example.com"
+    create_response = await client.post(
+        "/api/v1/accounts",
+        json={
+            "email": new_email,
+            "password": "a-real-test-password-123",
+            "full_name": "BN Test Moi",
+            "role": "patient",
+        },
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    patient_id = created["patient_id"]
+    assert patient_id is not None
+    assert _PATIENT_ID_RE.match(patient_id), f"patient_id {patient_id!r} không đúng dạng BNxxxxx"
+
+    try:
+        db = SessionLocal()
+        patient = db.get(Patient, patient_id)
+        assert patient is not None
+        assert patient.full_name == "BN Test Moi"
+        db.close()
+    finally:
+        _cleanup_with_patient(created["id"], patient_id)
+
+
+@pytest.mark.asyncio
+async def test_create_patient_account_with_explicit_patient_id_keeps_it_and_creates_patient_row(
+    client, admin_token
+):
+    """Van giu duoc cach link toi 1 patient_id CO SAN (dung y goc cua field
+    nay - vd du lieu demo "demo-patient-01", xem docstring
+    AccountCreateRequest) - KHONG bi ep ve dang BNxxxxx. Nhung PHAI tao dong
+    Patient that neu chua co (sua bug cu: truoc day khong bao gio tao)."""
+    new_email = f"test-created-{uuid.uuid4().hex[:8]}@example.com"
+    explicit_patient_id = f"demo-patient-{uuid.uuid4().hex[:8]}"
+    create_response = await client.post(
+        "/api/v1/accounts",
+        json={
+            "email": new_email,
+            "password": "a-real-test-password-123",
+            "full_name": "BN Link San",
+            "role": "patient",
+            "patient_id": explicit_patient_id,
+        },
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["patient_id"] == explicit_patient_id  # giu nguyen, khong doi sang BNxxxxx
+
+    try:
+        db = SessionLocal()
+        patient = db.get(Patient, explicit_patient_id)
+        assert patient is not None
+        assert patient.full_name == "BN Link San"
+        db.close()
+    finally:
+        _cleanup_with_patient(created["id"], explicit_patient_id)
 
 
 @pytest.mark.asyncio
