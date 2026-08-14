@@ -33,6 +33,7 @@ from backend.services.auth import (
     hash_password,
     verify_password,
 )
+from backend.services.doctor_watch import auto_watch_new_patient
 from backend.services.patient_id import generate_next_patient_id
 
 auth_router = APIRouter()
@@ -92,6 +93,10 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
         patient = Patient(id=patient_id, full_name=body.full_name)
         db.add(patient)
         account.patient_id = patient_id
+        # THEM 2026-08-14 (yeu cau PM): benh nhan MOI mac dinh duoc TAT CA
+        # bac si dang co theo doi ngay - khong con tinh trang "Cảnh báo mới
+        # nhất" rong vi chua ai bam "Theo dõi" benh nhan nay.
+        auto_watch_new_patient(db, patient_id)
     elif body.role == "doctor":
         account.doctor_id = account_id
 

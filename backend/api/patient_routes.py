@@ -44,7 +44,13 @@ def _to_profile(p: Patient) -> PatientProfileOut:
     )
 
 
-def _to_summary(p: Patient) -> PatientSummary:
+def _to_summary(p: Patient, *, full: bool = True) -> PatientSummary:
+    if not full:
+        # SUA 2026-08-14: dung cho nguoi goi role=patient (xem list_patients
+        # ben duoi) - KHONG tra ve note/gender/height_cm/weight_kg, day la
+        # thong tin suc khoe nhay cam cua 1 benh nhan KHAC, khong duoc lo qua
+        # 1 o tim kiem "moi nguoi than theo doi nhau".
+        return PatientSummary(id=p.id, full_name=p.full_name, year_of_birth=p.year_of_birth)
     return PatientSummary(
         id=p.id,
         full_name=p.full_name,
@@ -63,13 +69,28 @@ def _to_summary(p: Patient) -> PatientSummary:
 def list_patients(
     search: str | None = Query(default=None, min_length=1),
     db: Session = Depends(get_db),
-    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
+    # SUA 2026-08-14: mo them role=patient - form "Gửi lời mời theo dõi"
+    # (frontend/src/app/patient/family/page.tsx) can tim patient_id/ten benh
+    # nhan KHAC de moi theo doi nhau, truoc do goi thang endpoint chi
+    # doctor/admin nay nen luon 403, khien o tim kiem luon rong va khong ai
+    # moi duoc (bug bao cao that qua UI 2026-08-14). Buc tuong rieng: benh
+    # nhan KHONG duoc tra ve day du PatientSummary nhu doctor/admin - xem
+    # _to_summary(full=False) o duoi.
+    current_user: CurrentUser = Depends(require_role("doctor", "admin", "patient")),
 ) -> list[PatientSummary]:
     query = select(Patient)
     if search:
         pattern = f"%{search}%"
         query = query.where(or_(Patient.id.ilike(pattern), Patient.full_name.ilike(pattern)))
     rows = db.execute(query.order_by(Patient.full_name)).scalars().all()
+
+    if current_user.role == "patient":
+        # Khong can tu tim/tu moi chinh minh - loai khoi ket qua o tang
+        # server (khong chi dua vao frontend loc, cung nguyen tac IDOR da
+        # dung xuyen suot du an).
+        rows = [p for p in rows if p.id != current_user.patient_id]
+        return [_to_summary(p, full=False) for p in rows]
+
     return [_to_summary(p) for p in rows]
 
 

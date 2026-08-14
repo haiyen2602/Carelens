@@ -16,6 +16,7 @@ from backend.db.base import get_db
 from backend.db.models import Account, Patient
 from backend.models.schemas import AccountCreateRequest, AccountOut, AccountStatusUpdateRequest
 from backend.services.auth import hash_password
+from backend.services.doctor_watch import auto_watch_new_patient
 from backend.services.patient_id import generate_next_patient_id
 
 account_router = APIRouter()
@@ -48,6 +49,11 @@ async def create_account(
             patient_id = generate_next_patient_id(db)
         if db.get(Patient, patient_id) is None:
             db.add(Patient(id=patient_id, full_name=body.full_name))
+            # THEM 2026-08-14 (yeu cau PM) - CHI khi THAT SU vua tao Patient
+            # moi (khong goi khi patient_id la lien ket toi ho so DA CO SAN,
+            # vi do khong phai "benh nhan moi tao"): tu dong theo doi boi
+            # TAT CA bac si dang co, cung logic voi auth_routes.py::register().
+            auto_watch_new_patient(db, patient_id)
 
     account = Account(
         full_name=body.full_name,

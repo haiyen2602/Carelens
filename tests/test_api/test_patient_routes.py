@@ -125,3 +125,97 @@ async def test_patient_cannot_see_another_patients_profile_via_this_route(client
     finally:
         _cleanup(account_a, patient_a)
         _cleanup(account_b, patient_b)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/patients (list_patients) - SUA 2026-08-14: mo them role=patient
+# (bug that bao cao kem anh chup man hinh - form "Gửi lời mời theo dõi" o
+# /patient/family goi endpoint nay tim benh nhan khac de moi, truoc do LUON
+# 403 voi role=patient nen khong ai moi duoc nhau). Tra ve RUT GON (khong
+# note/gender/height/weight) cho nguoi goi la patient - xem
+# backend/api/patient_routes.py::_to_summary(full=False).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_patient_can_search_other_patients_via_list_patients(client):
+    account_a, patient_a = _seed_patient_account()
+    account_b, patient_b = _seed_patient_account()
+    token_a = create_access_token(sub=account_a, role="patient", patient_id=patient_a)
+
+    try:
+        response = await client.get(
+            "/api/v1/patients", params={"search": patient_b}, headers={"Authorization": f"Bearer {token_a}"}
+        )
+        assert response.status_code == 200
+        ids = [p["id"] for p in response.json()]
+        assert patient_b in ids
+    finally:
+        _cleanup(account_a, patient_a)
+        _cleanup(account_b, patient_b)
+
+
+@pytest.mark.asyncio
+async def test_patient_search_results_omit_sensitive_health_fields(client):
+    """Benh nhan B co `note`/`gender`/`height_cm`/`weight_kg` that trong DB
+    (_seed_patient_account luon dat note="Ghi chú test") - benh nhan A tim
+    thay B qua o "moi theo doi nhau" KHONG duoc thay nhung truong nay, chi
+    id/full_name/year_of_birth (dung y `_to_summary(full=False)`)."""
+    account_a, patient_a = _seed_patient_account()
+    account_b, patient_b = _seed_patient_account()
+    token_a = create_access_token(sub=account_a, role="patient", patient_id=patient_a)
+
+    try:
+        response = await client.get(
+            "/api/v1/patients", params={"search": patient_b}, headers={"Authorization": f"Bearer {token_a}"}
+        )
+        assert response.status_code == 200
+        found = next(p for p in response.json() if p["id"] == patient_b)
+        assert found["full_name"]
+        assert found.get("note") is None
+        assert found.get("gender") is None
+        assert found.get("height_cm") is None
+        assert found.get("weight_kg") is None
+    finally:
+        _cleanup(account_a, patient_a)
+        _cleanup(account_b, patient_b)
+
+
+@pytest.mark.asyncio
+async def test_patient_search_excludes_self(client):
+    """Khong can tu tim/tu moi chinh minh - server tu loai, khong chi dua
+    vao frontend loc (frontend/src/app/patient/family/page.tsx da loc, nhung
+    day la lop phong ve o tang API, dung nguyen tac IDOR da dung xuyen suot)."""
+    account_a, patient_a = _seed_patient_account()
+    token_a = create_access_token(sub=account_a, role="patient", patient_id=patient_a)
+
+    try:
+        response = await client.get(
+            "/api/v1/patients", params={"search": patient_a}, headers={"Authorization": f"Bearer {token_a}"}
+        )
+        assert response.status_code == 200
+        ids = [p["id"] for p in response.json()]
+        assert patient_a not in ids
+    finally:
+        _cleanup(account_a, patient_a)
+
+
+@pytest.mark.asyncio
+async def test_doctor_search_still_gets_full_fields_regression(client):
+    """Regression - doctor/admin KHONG bi anh huong boi thay doi tren, van
+    thay day du PatientSummary (note/gender/height/weight) nhu truoc gio."""
+    doctor_account_id = f"test-acct-{uuid.uuid4().hex[:8]}"
+    doctor_token = create_access_token(sub=doctor_account_id, role="doctor", doctor_id=doctor_account_id)
+    account_b, patient_b = _seed_patient_account()
+
+    try:
+        response = await client.get(
+            "/api/v1/patients",
+            params={"search": patient_b},
+            headers={"Authorization": f"Bearer {doctor_token}"},
+        )
+        assert response.status_code == 200
+        found = next(p for p in response.json() if p["id"] == patient_b)
+        assert found["note"] == "Ghi chú test"
+    finally:
+        _cleanup(account_b, patient_b)

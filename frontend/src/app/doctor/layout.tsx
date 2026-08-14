@@ -36,12 +36,12 @@ const groups: { title: string; items: NavItem[] }[] = [
   {
     title: "Bác sĩ",
     items: [
-      { to: "/doctor", label: "Dashboard", icon: Home, exact: true },
+      { to: "/doctor", label: "Trang chủ", icon: Home, exact: true },
       { to: "/doctor/patients", label: "Quản lý bệnh nhân", icon: Users2 },
       { to: "/doctor/prescribe", label: "Kê đơn thuốc", icon: Pill },
       { to: "/doctor/alerts", label: "Hộp cảnh báo", icon: Bell, badge: "alerts" },
-      { to: "/doctor/family", label: "Family member list", icon: Users },
-      { to: "/doctor/audit", label: "Audit log", icon: FileClock },
+      { to: "/doctor/family", label: "Danh sách người thân", icon: Users },
+      { to: "/doctor/audit", label: "Lịch sử", icon: FileClock },
     ],
   },
   {
@@ -214,7 +214,7 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">Dashboard</h2>
+          <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">Trang chủ</h2>
 
           <Popover onOpenChange={(open) => open && markAllActivityRead()}>
             <PopoverTrigger asChild>

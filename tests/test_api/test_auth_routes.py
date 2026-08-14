@@ -15,7 +15,7 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Account, Patient  # noqa: E402
+from backend.db.models import Account, DoctorWatch, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import hash_password  # noqa: E402
 from backend.services.patient_id import _PATIENT_ID_RE  # noqa: E402
@@ -188,13 +188,69 @@ async def test_register_creates_account_and_returns_jwt(unauthenticated_client):
     assert patient is not None
     assert patient.full_name == "Nguyễn Đăng Ký"
 
-    # Clean up DB after test - xoa CA Account LAN Patient (truoc day chi xoa
-    # Account, Patient rong con lai anh huong so dem BNxxxxx cua test/lan
-    # chay sau).
+    # Clean up DB after test - xoa CA Account, Patient LAN DoctorWatch (moi
+    # register() tu dong tao 1 dong DoctorWatch/bac si dang co, xem
+    # test_register_auto_watches_new_patient_for_existing_doctors ben duoi -
+    # sot lai khong anh huong dung/sai cua test nay nhung van don dep).
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
     db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+    db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
+
+
+@pytest.mark.asyncio
+async def test_register_auto_watches_new_patient_for_existing_doctors(unauthenticated_client):
+    """Yeu cau PM 2026-08-14: benh nhan MOI mac dinh duoc TAT CA bac si dang
+    co theo doi ngay - sua bug "Cảnh báo mới nhất" luon rong vi benh nhan moi
+    khong ai theo doi. Seed 1 bac si that truoc, dang ky 1 benh nhan moi, xac
+    nhan co dung 1 dong DoctorWatch noi bac si do toi benh nhan moi."""
+    db = SessionLocal()
+    doctor_account_id = f"test-doctor-{uuid.uuid4().hex[:8]}"
+    db.add(
+        Account(
+            id=doctor_account_id,
+            full_name="BS Test AutoWatch",
+            email=f"{doctor_account_id}@example.local",
+            password_hash="not-a-real-hash",
+            role="doctor",
+            status="active",
+            doctor_id=doctor_account_id,
+        )
+    )
+    db.commit()
+    db.close()
+
+    reg_email = f"test-reg-{uuid.uuid4().hex[:8]}@example.com"
+    reg_payload = {
+        "full_name": "Bệnh Nhân AutoWatch",
+        "email": reg_email,
+        "password": "register-test-pass-123",
+        "role": "patient",
+    }
+    response = await unauthenticated_client.post("/api/v1/auth/register", json=reg_payload)
+    assert response.status_code == 201
+    account_id = response.json()["user"]["id"]
+
+    db = SessionLocal()
+    try:
+        account = db.query(Account).filter(Account.id == account_id).first()
+        patient_id = account.patient_id
+
+        watch = (
+            db.query(DoctorWatch)
+            .filter(DoctorWatch.doctor_id == doctor_account_id, DoctorWatch.patient_id == patient_id)
+            .first()
+        )
+        assert watch is not None, "Bác sĩ đang có sẵn phải tự động theo dõi bệnh nhân mới đăng ký"
+    finally:
+        db.query(Account).filter(Account.id.in_([account_id, doctor_account_id])).delete(
+            synchronize_session=False
+        )
+        db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 @pytest.mark.asyncio
@@ -250,6 +306,7 @@ async def test_verify_email_flow(unauthenticated_client):
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
     if patient_id:
         db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
 

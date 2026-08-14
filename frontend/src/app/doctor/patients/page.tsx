@@ -684,10 +684,13 @@ const WATCH_FILTER_OPTIONS: { value: WatchFilter; label: string }[] = [
   { value: "not_watching", label: "Không theo dõi" },
 ];
 
+const PATIENTS_PAGE_SIZE = 10;
+
 export default function PatientsPage() {
   const [q, setQ] = useState("");
   const [watchFilter, setWatchFilter] = useState<WatchFilter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   // Bat ky bac si nao cung xem/quan ly duoc toan bo benh nhan - tim theo ID
   // hoac ten qua tham so `search` cua backend, debounce de tranh goi API tren
   // tung phim go.
@@ -715,6 +718,17 @@ export default function PatientsPage() {
     if (watchFilter === "not_watching") return !p.watch;
     return true;
   });
+
+  // Phan trang - toi da 10 benh nhan/trang (cung quy uoc voi doctor/page.tsx).
+  useEffect(() => {
+    setPage(1);
+  }, [q, watchFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PATIENTS_PAGE_SIZE));
+  const pageSafe = Math.min(page, totalPages);
+  const pagePatients = filteredPatients.slice(
+    (pageSafe - 1) * PATIENTS_PAGE_SIZE,
+    pageSafe * PATIENTS_PAGE_SIZE,
+  );
 
   const applyHealthPatch = (id: string, patch: PatientHealthPatch) => {
     setPatients((prev) =>
@@ -759,7 +773,7 @@ export default function PatientsPage() {
       </header>
 
       <div className="space-y-3">
-        {filteredPatients.map((p) => {
+        {pagePatients.map((p) => {
           const age = tinhTuoi(p.yearOfBirth);
           return (
             <div key={p.id} className="surface-card p-5">
@@ -814,6 +828,32 @@ export default function PatientsPage() {
           </p>
         )}
       </div>
+
+      {filteredPatients.length > 0 && (
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <p>
+            Trang {pageSafe}/{totalPages} · {filteredPatients.length} bệnh nhân
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pageSafe <= 1}
+              onClick={() => setPage(pageSafe - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pageSafe >= totalPages}
+              onClick={() => setPage(pageSafe + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
