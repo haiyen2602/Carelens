@@ -62,3 +62,5 @@ jobs:
         env:
           APP_ENV: test
           OPENAI_API_KEY: test-key
+          INTERNAL_AUTH_SECRET: test-internal-secret-for-ci-testing-only
+          JWT_SECRET: test-jwt-secret-for-ci-testing-only

@@ -3,13 +3,6 @@ name: Deploy
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      target:
-        description: Which app to deploy
-        type: choice
-        options: [both, api, web]
-        default: both
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -55,9 +48,7 @@ jobs:
 
   deploy-api:
     needs: changes
-    if: >-
-      needs.changes.outputs.api == 'true' ||
-      contains(fromJSON('["both","api"]'), inputs.target)
+    if: needs.changes.outputs.api == 'true'
     runs-on: [self-hosted, windows, x64]
     steps:
       # Workspace của self-hosted runner giữ nguyên rác từ lần chạy trước:
@@ -92,9 +83,7 @@ jobs:
 
   deploy-web:
     needs: changes
-    if: >-
-      needs.changes.outputs.web == 'true' ||
-      contains(fromJSON('["both","web"]'), inputs.target)
+    if: needs.changes.outputs.web == 'true'
     runs-on: [self-hosted, windows, x64]
     steps:
       # node_modules và .next sót lại từ lần chạy trước bị `railway up` gói vào
