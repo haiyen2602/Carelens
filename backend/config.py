@@ -42,6 +42,19 @@ class Settings(BaseSettings):
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
+    # Pool SQLAlchemy — truoc day dung mac dinh ngam cua thu vien (pool_size=5,
+    # max_overflow=10, pool_timeout=30s) vi create_engine() khong truyen tham
+    # so nao. Demo that (nhieu nguoi cung dang nhap 1 tai khoan, cac trang poll
+    # nhieu endpoint lien tuc) xac nhan qua log production: "sqlalchemy.exc.
+    # TimeoutError: QueuePool limit of size 5 overflow 10 reached" -> 500 hang
+    # loat, ung dung "treo". Chi chay 1 uvicorn worker (xem Dockerfile, khong
+    # co --workers) nen toan bo traffic dung chung DUY NHAT pool nay - khong
+    # phai chia nho cho nhieu process. Postgres production xac nhan max_connections=100,
+    # dang dung ~14 luc kiem tra -> con du du dia de nang len.
+    db_pool_size: int = Field(default=20, ge=1)
+    db_max_overflow: int = Field(default=30, ge=0)
+    db_pool_timeout: float = Field(default=15.0, gt=0, description="Giay cho truoc khi bao loi thay vi 30s mac dinh - fail nhanh hon de FE bao loi ro thay vi treo lau")
+
     # VLM dem thuoc (backend/services/photo_verification/vlm_bridge.py) — DUNG
     # CHUNG bien VLM_* voi backend/vlm_demthuoc/ (cong cu CLI doc lap), khong
     # phai vo tinh trung ten: ca hai cung goi mot endpoint dem thuoc, nen dung
