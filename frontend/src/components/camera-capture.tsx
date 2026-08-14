@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { Camera, Loader2, SwitchCamera, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,7 +28,13 @@ function moTaLoi(err: unknown): string {
 // ly that. Nhan dien va tranh cac ten hay gap, chi lay deviceId that.
 const WEBCAM_AO = /camo|obs|virtual|snap camera|manycam|droidcam|iriun|epoccam|elgato/i;
 
-async function layDeviceIdCameraThat(): Promise<string | undefined> {
+// Truoc day chi lay 1 deviceId (camera dau tien tim duoc) - tren dien thoai
+// enumerateDevices() thuong tra camera TRUOC o vi tri dau, nen nguoi dung
+// luon bi mo nham camera truoc, khong co cach doi sang camera sau (bat tien
+// khi chup thuoc). Gio tra ca danh sach, uu tien camera co nhan "back"/
+// "environment" len dau, de dialog mo dung camera sau mac dinh va cho doi
+// camera trong danh sach con lai.
+async function layDanhSachCameraThat(): Promise<MediaDeviceInfo[]> {
   // Nhan dang thiet bi (label) chi co sau khi da xin quyen it nhat 1 lan -
   // xin quyen tam bang constraint chung chung, dung ngay stream do, roi
   // enumerate lai de doc label that.
@@ -37,8 +43,12 @@ async function layDeviceIdCameraThat(): Promise<string | undefined> {
 
   const thietBi = await navigator.mediaDevices.enumerateDevices();
   const camera = thietBi.filter((d) => d.kind === "videoinput");
-  const camThat = camera.find((d) => !WEBCAM_AO.test(d.label));
-  return (camThat ?? camera[0])?.deviceId;
+  const camThat = camera.filter((d) => !WEBCAM_AO.test(d.label));
+  const danhSach = camThat.length > 0 ? camThat : camera;
+
+  const camSau = danhSach.filter((d) => /back|environment|rear/i.test(d.label));
+  const conLai = danhSach.filter((d) => !camSau.includes(d));
+  return [...camSau, ...conLai];
 }
 
 export function CameraCapture({
@@ -57,43 +67,63 @@ export function CameraCapture({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Danh sach camera that lay 1 lan moi khi mo dialog (khong enumerate lai
+  // moi lan bam doi camera) - luu bang ref vi khong can render lai theo no,
+  // chi can render lai theo soLuongCamera/viTriCamera.
+  const danhSachCameraRef = useRef<MediaDeviceInfo[]>([]);
   const [dangMo, setDangMo] = useState(false);
   const [loi, setLoi] = useState<string | null>(null);
+  const [viTriCamera, setViTriCamera] = useState(0);
+  const [soLuongCamera, setSoLuongCamera] = useState(0);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      danhSachCameraRef.current = [];
+      setViTriCamera(0);
+      setSoLuongCamera(0);
+      return;
+    }
     setLoi(null);
     setDangMo(true);
     let huy = false;
 
-    layDeviceIdCameraThat()
-      .then((deviceId) =>
-        navigator.mediaDevices.getUserMedia({
-          video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" },
-          audio: false,
-        }),
-      )
-      .then((stream) => {
-        if (huy) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        setDangMo(false);
-      })
-      .catch((err) => {
+    (async () => {
+      if (danhSachCameraRef.current.length === 0) {
+        danhSachCameraRef.current = await layDanhSachCameraThat();
         if (huy) return;
-        setDangMo(false);
-        setLoi(moTaLoi(err));
+        setSoLuongCamera(danhSachCameraRef.current.length);
+      }
+      const danhSach = danhSachCameraRef.current;
+      const deviceId = danhSach.length ? danhSach[viTriCamera % danhSach.length]?.deviceId : undefined;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" },
+        audio: false,
       });
+      if (huy) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setDangMo(false);
+    })().catch((err) => {
+      if (huy) return;
+      setDangMo(false);
+      setLoi(moTaLoi(err));
+    });
 
     return () => {
       huy = true;
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, [open]);
+  }, [open, viTriCamera]);
+
+  const doiCamera = () => {
+    if (soLuongCamera < 2) return;
+    setViTriCamera((v) => (v + 1) % soLuongCamera);
+  };
 
   const chup = () => {
     const video = videoRef.current;
@@ -137,6 +167,20 @@ export function CameraCapture({
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-white">
               <p>{loi}</p>
             </div>
+          )}
+          {soLuongCamera > 1 && !loi && (
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute right-2 top-2 rounded-full opacity-90"
+              disabled={dangMo}
+              onClick={doiCamera}
+              aria-label="Đổi camera"
+              title="Đổi camera"
+            >
+              <SwitchCamera className="h-4 w-4" />
+            </Button>
           )}
         </div>
 
