@@ -58,8 +58,17 @@ def _login_response(account: Account) -> LoginResponse:
     )
 
 
+# 5 route duoi day truoc la `async def` nhung goi thang Session dong bo cua
+# SQLAlchemy (khong co await nao ben trong) - FastAPI CHI tu day sang
+# threadpool cho route khai bao `def` thuong, `async def` thi chay ngay
+# tren event loop chinh. Goi DB dong bo (blocking) trong `async def` do se
+# chan cung event loop cua worker duy nhat (Dockerfile khong --workers),
+# nghen luon CA cac request khac khong lien quan gi toi auth trong luc dang
+# cho DB tra loi. Phat hien khi dieu tra "web treo khi nhieu nguoi cung 1
+# tai khoan" (login/refresh bi goi don dap) - doi ve `def` de dung dung co
+# che threadpool nhu 38 route con lai trong du an.
 @auth_router.post("/auth/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
     existing_account = db.query(Account).filter(Account.email == body.email).first()
     if existing_account is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã được sử dụng")
@@ -96,7 +105,7 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)) -> Logi
 
 
 @auth_router.post("/auth/change-password", response_model=ChangePasswordResponse)
-async def change_password(
+def change_password(
     body: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -127,7 +136,7 @@ async def change_password(
 
 
 @auth_router.post("/auth/login", response_model=LoginResponse)
-async def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
     account = db.query(Account).filter(Account.email == body.email).first()
     # Cung 1 thong bao du sai email hay sai password - khong tiet lo email
     # nao ton tai trong he thong (tranh do email that qua endpoint dang nhap).
@@ -144,7 +153,7 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginRespo
 
 
 @auth_router.post("/auth/refresh", response_model=LoginResponse)
-async def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> LoginResponse:
     try:
         payload = decode_token(body.refresh_token)
     except TokenError as exc:
@@ -161,7 +170,7 @@ async def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> LoginR
 
 
 @auth_router.get("/auth/me", response_model=MeResponse)
-async def me(
+def me(
     current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> MeResponse:
     account = db.query(Account).filter(Account.id == current_user.id).first()
