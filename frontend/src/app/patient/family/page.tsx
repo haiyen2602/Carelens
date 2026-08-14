@@ -78,12 +78,15 @@ export default function PatientFamilyPage() {
       return;
     }
     const timer = setTimeout(() => {
-      listPatients(tuKhoa)
+      // SUA 2026-08-14: thieu accessToken khien request luon 401 (chua xac
+      // thuc), khac han bug 403 truoc do (thieu role) - benh nhan van khong
+      // tim duoc ai du backend da mo quyen, loi bi .catch() nuot am tham.
+      listPatients(tuKhoa, accessToken)
         .then((ds) => setKetQuaTim(ds.filter((p) => p.id !== user?.patient_id)))
         .catch(() => setKetQuaTim([]));
     }, 300);
     return () => clearTimeout(timer);
-  }, [tuKhoa, dangMoi, user?.patient_id]);
+  }, [tuKhoa, dangMoi, user?.patient_id, accessToken]);
 
   const chapNhan = async (invite: PendingInvite) => {
     if (!accessToken) return;
