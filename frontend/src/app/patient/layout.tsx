@@ -9,7 +9,8 @@ import { useAuth } from "@/lib/auth";
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const authChecked = !loading && !!user && user.role === "patient" && user.profile_completed !== false;
+  const authChecked =
+    !loading && !!user && user.role === "patient" && user.profile_completed !== false;
 
   useEffect(() => {
     if (loading) return;

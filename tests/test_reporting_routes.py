@@ -14,7 +14,8 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import AuditLog, DoseEvent, Escalation, Patient  # noqa: E402
+from backend.db.models import Account, AuditLog, DoctorWatch, DoseEvent, Escalation, Patient  # noqa: E402
+from backend.services.auth import create_access_token  # noqa: E402
 
 
 def _db_available() -> bool:
@@ -29,15 +30,42 @@ def _db_available() -> bool:
 pytestmark = pytest.mark.skipif(not _db_available(), reason="Can Postgres that (docker compose up -d db)")
 
 
-def _seed_patient(*, watch: bool = False) -> str:
+def _seed_patient() -> str:
     patient_id = f"test-report-{uuid.uuid4().hex[:8]}"
     db = SessionLocal()
     try:
-        db.add(Patient(id=patient_id, full_name="Bệnh nhân báo cáo", watch=watch))
+        db.add(Patient(id=patient_id, full_name="Bệnh nhân báo cáo"))
         db.commit()
     finally:
         db.close()
     return patient_id
+
+
+def _seed_doctor() -> tuple[str, str]:
+    """Tao 1 Account THAT role=doctor (can cho get_current_user() query lai
+    DB tu JWT sub, xem backend/api/security.py) - tra ve (doctor_id, JWT).
+    Sau migration 0023/0024, "Theo doi" gan voi doctor_id CU THE (DoctorWatch)
+    - client rieng role=caregiver cua conftest.py khong du (require_role
+    ("doctor") tu choi caregiver o PATCH .../watch)."""
+    account_id = f"test-doctor-{uuid.uuid4().hex[:8]}"
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id=account_id,
+                full_name="BS Test",
+                email=f"{account_id}@example.com",
+                password_hash="unused",
+                role="doctor",
+                doctor_id=account_id,
+                status="active",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+    token = create_access_token(sub=account_id, role="doctor", doctor_id=account_id)
+    return account_id, token
 
 
 def _seed_due_dose(patient_id: str, status: str) -> None:
@@ -60,13 +88,16 @@ def _seed_due_dose(patient_id: str, status: str) -> None:
         db.close()
 
 
-def _cleanup(patient_id: str) -> None:
+def _cleanup(patient_id: str, doctor_id: str | None = None) -> None:
     db = SessionLocal()
     try:
         db.query(DoseEvent).filter(DoseEvent.patient_id == patient_id).delete(synchronize_session=False)
         db.query(Escalation).filter(Escalation.patient_id == patient_id).delete(synchronize_session=False)
         db.query(AuditLog).filter(AuditLog.patient_id == patient_id).delete(synchronize_session=False)
+        db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
         db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        if doctor_id is not None:
+            db.query(Account).filter(Account.id == doctor_id).delete(synchronize_session=False)
         db.commit()
     finally:
         db.close()
@@ -74,57 +105,82 @@ def _cleanup(patient_id: str) -> None:
 
 @pytest.mark.asyncio
 async def test_list_reporting_patients_includes_adherence_and_watch(client):
-    patient_id = _seed_patient(watch=False)
+    doctor_id, token = _seed_doctor()
+    patient_id = _seed_patient()
     _seed_due_dose(patient_id, "TAKEN")
     _seed_due_dose(patient_id, "MISSED")
     try:
-        response = await client.get("/api/v1/reporting/patients")
+        response = await client.get(
+            "/api/v1/reporting/patients", headers={"Authorization": f"Bearer {token}"}
+        )
         assert response.status_code == 200
         row = next(p for p in response.json() if p["id"] == patient_id)
         assert row["watch"] is False
         assert row["adherence_pct"] == 50.0
     finally:
-        _cleanup(patient_id)
+        _cleanup(patient_id, doctor_id)
 
 
 @pytest.mark.asyncio
 async def test_patient_with_no_due_doses_has_null_adherence(client):
+    doctor_id, token = _seed_doctor()
     patient_id = _seed_patient()
     try:
-        response = await client.get("/api/v1/reporting/patients")
+        response = await client.get(
+            "/api/v1/reporting/patients", headers={"Authorization": f"Bearer {token}"}
+        )
         row = next(p for p in response.json() if p["id"] == patient_id)
         assert row["adherence_pct"] is None
     finally:
-        _cleanup(patient_id)
+        _cleanup(patient_id, doctor_id)
 
 
 @pytest.mark.asyncio
 async def test_update_patient_watch(client):
-    patient_id = _seed_patient(watch=False)
+    """PATCH .../watch giờ ghi vào DoctorWatch (migration 0023/0024) - rieng
+    theo tung bac si, khong con la 1 co Patient.watch dung chung."""
+    doctor_id, token = _seed_doctor()
+    patient_id = _seed_patient()
     try:
-        response = await client.patch(f"/api/v1/reporting/patients/{patient_id}/watch", json={"watch": True})
+        response = await client.patch(
+            f"/api/v1/reporting/patients/{patient_id}/watch",
+            json={"watch": True},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         assert response.json() == {"id": patient_id, "watch": True}
 
         db = SessionLocal()
         try:
-            assert db.get(Patient, patient_id).watch is True
+            row = (
+                db.query(DoctorWatch)
+                .filter(DoctorWatch.doctor_id == doctor_id, DoctorWatch.patient_id == patient_id)
+                .first()
+            )
+            assert row is not None
         finally:
             db.close()
     finally:
-        _cleanup(patient_id)
+        _cleanup(patient_id, doctor_id)
 
 
 @pytest.mark.asyncio
 async def test_update_watch_for_unknown_patient_returns_404(client):
-    response = await client.patch(
-        "/api/v1/reporting/patients/does-not-exist/watch", json={"watch": True}
-    )
-    assert response.status_code == 404
+    doctor_id, token = _seed_doctor()
+    try:
+        response = await client.patch(
+            "/api/v1/reporting/patients/does-not-exist/watch",
+            json={"watch": True},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 404
+    finally:
+        _cleanup("does-not-exist", doctor_id)
 
 
 @pytest.mark.asyncio
 async def test_list_escalations_filters_by_patient_and_status(client):
+    doctor_id, token = _seed_doctor()
     patient_id = _seed_patient()
     db = SessionLocal()
     try:
@@ -151,18 +207,23 @@ async def test_list_escalations_filters_by_patient_and_status(client):
         db.close()
 
     try:
-        response = await client.get("/api/v1/escalations", params={"patient_id": patient_id, "status": "OPEN"})
+        response = await client.get(
+            "/api/v1/escalations",
+            params={"patient_id": patient_id, "status": "OPEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         rows = response.json()
         assert len(rows) == 1
         assert rows[0]["status"] == "OPEN"
         assert rows[0]["reason"] == "test open"
     finally:
-        _cleanup(patient_id)
+        _cleanup(patient_id, doctor_id)
 
 
 @pytest.mark.asyncio
 async def test_list_audit_log_filters_by_patient(client):
+    doctor_id, token = _seed_doctor()
     patient_id = _seed_patient()
     db = SessionLocal()
     try:
@@ -180,13 +241,17 @@ async def test_list_audit_log_filters_by_patient(client):
         db.close()
 
     try:
-        response = await client.get("/api/v1/audit-log", params={"patient_id": patient_id})
+        response = await client.get(
+            "/api/v1/audit-log",
+            params={"patient_id": patient_id},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response.status_code == 200
         rows = response.json()
         assert len(rows) == 1
         assert rows[0]["utterance"] == "test utterance"
     finally:
-        _cleanup(patient_id)
+        _cleanup(patient_id, doctor_id)
 
 
 @pytest.mark.asyncio

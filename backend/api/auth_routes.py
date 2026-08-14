@@ -5,11 +5,11 @@ ca 4 role (doctor|patient|caregiver|admin) - quyet dinh da chot voi PM
 
 from __future__ import annotations
 
+import uuid
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
-from datetime import UTC, datetime
-import uuid
 
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
@@ -31,10 +31,8 @@ from backend.services.auth import (
     create_refresh_token,
     decode_token,
     hash_password,
-    token_revoked_by_password_change,
     verify_password,
 )
-
 
 auth_router = APIRouter()
 

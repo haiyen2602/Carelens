@@ -17,7 +17,7 @@ from fastapi import status as http_status
 from sqlalchemy import desc, or_, select
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, get_current_user, require_role
+from backend.api.security import CurrentUser, require_role
 from backend.db.base import get_db
 from backend.db.models import AuditLog, DoctorWatch, Escalation, Patient
 from backend.models.schemas import (

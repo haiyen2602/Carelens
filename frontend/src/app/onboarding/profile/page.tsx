@@ -216,7 +216,11 @@ export default function OnboardingProfilePage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={submitting}>
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-semibold"
+            disabled={submitting}
+          >
             {submitting ? "Đang lưu..." : "Hoàn tất"}
           </Button>
         </form>

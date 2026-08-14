@@ -108,7 +108,9 @@ export default function DoctorDashboard() {
       label: "Tổng bệnh nhân",
       value: patients.length,
       note:
-        watchedCount > 0 ? `${watchedCount} đang theo dõi đặc biệt` : "Chưa có ca theo dõi đặc biệt",
+        watchedCount > 0
+          ? `${watchedCount} đang theo dõi đặc biệt`
+          : "Chưa có ca theo dõi đặc biệt",
       noteTone: watchedCount > 0 ? "text-warning-foreground" : "text-muted-foreground",
       icon: Users,
       tone: "bg-primary/10 text-primary",
@@ -116,7 +118,8 @@ export default function DoctorDashboard() {
     {
       label: "Đơn thuốc đang theo dõi",
       value: prescriptions.length,
-      note: pendingPrescriptions > 0 ? `${pendingPrescriptions} chờ duyệt` : "Không có đơn chờ duyệt",
+      note:
+        pendingPrescriptions > 0 ? `${pendingPrescriptions} chờ duyệt` : "Không có đơn chờ duyệt",
       noteTone: pendingPrescriptions > 0 ? "text-warning-foreground" : "text-success",
       icon: ClipboardCheck,
       tone: "bg-success/15 text-success",
@@ -350,7 +353,10 @@ export default function DoctorDashboard() {
               <ul className="min-w-0 flex-1 space-y-1.5">
                 {donut.map((d) => (
                   <li key={d.key} className="flex items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.color }} />
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: d.color }}
+                    />
                     <p className="min-w-0 truncate text-xs text-muted-foreground">
                       {d.label}{" "}
                       <span className="text-foreground">

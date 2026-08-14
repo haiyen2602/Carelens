@@ -291,7 +291,13 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="grid min-h-screen place-items-center bg-background"><p className="text-sm text-muted-foreground">Đang tải...</p></div>}>
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center bg-background">
+          <p className="text-sm text-muted-foreground">Đang tải...</p>
+        </div>
+      }
+    >
       <LoginPageContent />
     </Suspense>
   );
