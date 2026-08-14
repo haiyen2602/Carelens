@@ -264,7 +264,13 @@ function tinhNgayKetThuc(startDate: string, durationDays: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function flattenPrescriptions(records: PrescriptionRecord[], tenBenhNhan: Record<string, string>): Prescription[] {
+// Export - dung lai o patient/health/page.tsx (phan hoi review 2026-08-14):
+// trang benh nhan tu goi listPrescriptions({patientId}) rieng, KHONG qua
+// refreshPrescriptions() cua store nay (goi keo listPatients() - chi
+// doctor/admin, patient goi se 403 lam ca Promise.all reject, prescriptions
+// state khong bao gio duoc set). Tai dung dung ham rai phang nay thay vi
+// viet lai logic map item rieng cho trang benh nhan.
+export function flattenPrescriptions(records: PrescriptionRecord[], tenBenhNhan: Record<string, string>): Prescription[] {
   const ra: Prescription[] = [];
   for (const p of records) {
     const trangThai = anhXaTrangThai(p.status);
