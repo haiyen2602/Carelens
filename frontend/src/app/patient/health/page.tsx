@@ -7,33 +7,47 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
-import { listPatients, type PatientRecord } from "@/lib/patients";
-import { useProto, type AlertLevel } from "@/lib/proto-store";
+import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
+import { listPrescriptions } from "@/lib/prescriptions";
+import { flattenPrescriptions, useProto, type AlertLevel, type Prescription } from "@/lib/proto-store";
 
 export default function HealthPage() {
-  const { prescriptions, healthLog, reportHealth, setEmergency } = useProto();
-  const { user } = useAuth();
+  const { healthLog, reportHealth, setEmergency } = useProto();
+  const { user, accessToken } = useAuth();
   const patientId = user?.patient_id ?? "";
   const [hoSo, setHoSo] = useState<PatientRecord | null>(null);
   const [doses, setDoses] = useState<Dose[]>([]);
+  // Vong nay (2026-08-14): KHONG dung `prescriptions` cua useProto() nua -
+  // refreshPrescriptions() cua store do goi keo listPatients() (chi
+  // doctor/admin, 403 voi role=patient) qua Promise.all, nen voi tai khoan
+  // benh nhan promise do LUON reject va prescriptions o store KHONG BAO GIO
+  // duoc set (rong vinh vien du DB co don active that - bug that, xac nhan
+  // qua DB production: BN-0000 co 4 don active nhung UI hien "chua co don
+  // thuoc nao"). Trang nay tu goi listPrescriptions({patientId}) rieng - da
+  // loc dung 1 benh nhan o tang backend, khong can tra ten qua listPatients().
+  const [myPrescriptions, setMyPrescriptions] = useState<Prescription[]>([]);
   const [reporting, setReporting] = useState(false);
   const [text, setText] = useState("");
   const [level, setLevel] = useState<AlertLevel>("low");
 
   useEffect(() => {
     if (!patientId) return;
-    listPatients()
-      .then((ds) => setHoSo(ds.find((p) => p.id === patientId) ?? null))
+    // Cung ly do voi prescriptions o tren: listPatients() 403 voi
+    // role=patient - dung getMyPatientProfile() (GET /api/patients/me,
+    // backend tu doc patient_id qua JWT) thay vi tim trong toan bo danh
+    // sach chi doctor/admin xem duoc.
+    getMyPatientProfile(accessToken)
+      .then(setHoSo)
       .catch(() => undefined);
     listDoses(patientId)
       .then(setDoses)
       .catch(() => undefined);
-  }, [patientId]);
+    listPrescriptions({ patientId })
+      .then((records) => setMyPrescriptions(flattenPrescriptions(records, {}).filter((p) => p.status !== "rejected")))
+      .catch(() => undefined);
+  }, [patientId, accessToken]);
 
   const takenCount = doses.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
-  const myPrescriptions = prescriptions.filter(
-    (p) => p.patient === user?.full_name && p.status !== "rejected",
-  );
 
   const submit = () => {
     reportHealth(text || "Không mô tả chi tiết", level);
