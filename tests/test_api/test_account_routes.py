@@ -15,7 +15,7 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Account, Patient  # noqa: E402
+from backend.db.models import Account, DoctorWatch, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import hash_password  # noqa: E402
 from backend.services.patient_id import _PATIENT_ID_RE  # noqa: E402
@@ -67,13 +67,16 @@ def _cleanup(account_id: str) -> None:
 
 
 def _cleanup_with_patient(account_id: str, patient_id: str | None) -> None:
-    """Nhu `_cleanup()` nhung xoa THEM dong `Patient` - dung cho test tao
-    tai khoan role=patient (2026-08-14): create_account() gio co the tao
-    dong Patient that, khong chi gan patient_id vao Account nhu truoc."""
+    """Nhu `_cleanup()` nhung xoa THEM dong `Patient`/`DoctorWatch` - dung
+    cho test tao tai khoan role=patient (2026-08-14): create_account() gio
+    co the tao dong Patient that + tu dong DoctorWatch cho moi bac si dang
+    co (auto_watch_new_patient), khong chi gan patient_id vao Account nhu
+    truoc."""
     db = SessionLocal()
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
     if patient_id:
         db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
     db.commit()
     db.close()
 

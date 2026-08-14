@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Clock, UserRound } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { presentAlert } from "@/lib/alert-presentation";
@@ -27,6 +28,7 @@ const barTone: Record<AlertLevel, string> = {
 export default function AlertsPage() {
   const { alerts, patients, setAlertStatus } = useProto();
   const visible = alerts;
+  const watchedCount = patients.filter((p) => p.watch).length;
 
   return (
     <div className="space-y-6">
@@ -37,9 +39,19 @@ export default function AlertsPage() {
         </p>
       </header>
 
-      {visible.length === 0 && (
+      {visible.length === 0 && watchedCount === 0 && (
         <div className="surface-card p-10 text-center text-sm text-muted-foreground">
-          Chưa có cảnh báo nào tới bác sĩ.
+          Bạn chưa theo dõi bệnh nhân nào nên chưa có cảnh báo nào tới bác sĩ — bấm{" "}
+          <span className="font-semibold text-foreground">Theo dõi</span> ở trang{" "}
+          <Link href="/doctor/patients" className="font-semibold text-primary">
+            Quản lý bệnh nhân
+          </Link>{" "}
+          để nhận cảnh báo của họ tại đây.
+        </div>
+      )}
+      {visible.length === 0 && watchedCount > 0 && (
+        <div className="surface-card p-10 text-center text-sm text-muted-foreground">
+          Chưa có cảnh báo nào cho {watchedCount} bệnh nhân bạn đang theo dõi.
         </div>
       )}
 

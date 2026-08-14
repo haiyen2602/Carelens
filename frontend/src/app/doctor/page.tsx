@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, ClipboardCheck, Search, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { presentAlert } from "@/lib/alert-presentation";
 import { useProto } from "@/lib/proto-store";
 
@@ -133,6 +133,19 @@ export default function DoctorDashboard() {
     return true;
   });
 
+  // Phan trang - toi da 10 benh nhan/trang. Reset ve trang 1 moi khi bo loc
+  // doi (khong reset thi vd dang o trang 3, loc con 1 trang se hien bang
+  // rong du data van con, xem useEffect ben duoi).
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, totalPages);
+  const pageList = list.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, statusFilter, riskFilter]);
+
   // Phan bo THAT theo adherence_pct cua tung benh nhan (khong con la mock co
   // dinh) - tong so dong cua 4 bucket LUON = patients.length.
   const donut = ADHERENCE_BUCKETS.map((b) => ({
@@ -208,7 +221,7 @@ export default function DoctorDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((p, i) => {
+                {pageList.map((p) => {
                   const risk = riskOf(p.adherence);
                   return (
                     <tr key={p.id} className="border-b border-border last:border-0">
@@ -219,9 +232,7 @@ export default function DoctorDashboard() {
                           </span>
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-primary">{p.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              ID: BN{String(i + 1).padStart(4, "0")}
-                            </p>
+                            <p className="text-xs text-muted-foreground">ID: {p.id}</p>
                           </div>
                         </div>
                       </td>
@@ -256,6 +267,32 @@ export default function DoctorDashboard() {
               </tbody>
             </table>
           </div>
+
+          {list.length > 0 && (
+            <div className="mt-3 flex shrink-0 items-center justify-between gap-3 text-xs text-muted-foreground">
+              <p>
+                Trang {pageSafe}/{totalPages} · {list.length} bệnh nhân
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pageSafe <= 1}
+                  onClick={() => setPage(pageSafe - 1)}
+                  className="rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Trước
+                </button>
+                <button
+                  type="button"
+                  disabled={pageSafe >= totalPages}
+                  onClick={() => setPage(pageSafe + 1)}
+                  className="rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="flex flex-col gap-4">
@@ -291,8 +328,20 @@ export default function DoctorDashboard() {
               </Link>
             </div>
             <div className="mt-4 max-h-[280px] space-y-3 overflow-auto">
-              {alerts.length === 0 && (
-                <p className="text-sm text-muted-foreground">Chưa có cảnh báo nào.</p>
+              {alerts.length === 0 && watchedCount === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Bạn chưa theo dõi bệnh nhân nào nên chưa có cảnh báo để hiển thị — bấm{" "}
+                  <span className="font-semibold text-foreground">Theo dõi</span> ở trang{" "}
+                  <Link href="/doctor/patients" className="font-semibold text-primary">
+                    Quản lý bệnh nhân
+                  </Link>{" "}
+                  để nhận cảnh báo của họ tại đây.
+                </p>
+              )}
+              {alerts.length === 0 && watchedCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Chưa có cảnh báo nào cho {watchedCount} bệnh nhân bạn đang theo dõi.
+                </p>
               )}
               {alerts.slice(0, 3).map((a) => {
                 const t = alertTone[a.level];
