@@ -36,6 +36,7 @@ from backend.models.schemas import (
     OpenEscalationBrief,
     PendingInviteOut,
 )
+from backend.services.escalation import friendly_escalation_title
 from backend.services.reporting.adherence import compute_adherence_pct
 
 caregiver_router = APIRouter()
@@ -347,7 +348,15 @@ def _list_monitored_patients(db: Session, caregiver_account_id: str) -> list[Car
                 dose_total_today=len(today_doses),
                 open_escalations=[
                     OpenEscalationBrief(
-                        id=e.id, level=e.severity, title=e.reason, created_at=e.created_at.isoformat()
+                        id=e.id,
+                        level=e.severity,
+                        # SUA 2026-08-14: KHONG con dung `e.reason` truc tiep -
+                        # do la chuoi ky thuat cho audit/bac si (vd "SEVERITY=
+                        # Trung bình tu classification='SIDE_EFFECT' (BR-3.1-
+                        # 3.6)"), khong phai cho nguoi than doc. `title` la
+                        # tieu de rieng, ngan gon, xem friendly_escalation_title().
+                        title=friendly_escalation_title(e.trigger, e.severity),
+                        created_at=e.created_at.isoformat(),
                     )
                     for e in open_escalation_rows
                 ],

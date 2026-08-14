@@ -106,6 +106,41 @@ TRIGGER_SIDE_EFFECT = "side_effect"
 TRIGGER_PHOTO_MISMATCH = "photo_mismatch"
 
 
+# Vong 4 - tieu de NGAN, DE HIEU cho man hinh nguoi than (OpenEscalationBrief.
+# title, backend/api/caregiver_routes.py) - KHAC HAN cot `reason` o tren (chuoi
+# ky thuat phuc vu audit/bac si, vd "SEVERITY=Trung bình tu classification=
+# 'SIDE_EFFECT' (BR-3.1-3.6)" - xem dose_confirmation_nodes.py/orchestrator.py).
+# Phat hien 2026-08-14: man hinh nguoi than dang hien THANG `reason` ky thuat
+# do ra ngoai (khong phai chi bi cat ngan boi CSS - noi dung goc da sai doi
+# tuong doc), 2 muc dich khac nhau tuyet doi KHONG dung chung 1 gia tri - giu
+# `reason` nguyen ven cho audit (BR-7.5), chi doi field `title` rieng.
+_FRIENDLY_TITLE_BY_TRIGGER_SEVERITY: dict[tuple[str, str], str] = {
+    (TRIGGER_MISSED_DOSE, "HIGH"): "Bỏ lỡ liều thuốc – mức nguy hiểm",
+    (TRIGGER_MISSED_DOSE, "MEDIUM"): "Bỏ lỡ liều thuốc – cần theo dõi",
+    (TRIGGER_MISSED_DOSE, "LOW"): "Bỏ lỡ liều thuốc – mức nhẹ",
+    (TRIGGER_SIDE_EFFECT, "HIGH"): "Nghi ngờ tác dụng phụ – mức nguy hiểm",
+    (TRIGGER_SIDE_EFFECT, "MEDIUM"): "Nghi ngờ tác dụng phụ – cần theo dõi",
+    (TRIGGER_SIDE_EFFECT, "LOW"): "Nghi ngờ tác dụng phụ – mức nhẹ",
+    (TRIGGER_SAFETY_REDFLAG, "HIGH"): "Cảnh báo an toàn khẩn cấp",
+    (TRIGGER_SAFETY_REDFLAG, "MEDIUM"): "Có dấu hiệu cần chú ý",
+    (TRIGGER_SAFETY_REDFLAG, "LOW"): "Có dấu hiệu cần chú ý",
+    (TRIGGER_PHOTO_MISMATCH, "HIGH"): "Ảnh xác nhận uống thuốc không khớp",
+    (TRIGGER_PHOTO_MISMATCH, "MEDIUM"): "Ảnh xác nhận uống thuốc không khớp",
+    (TRIGGER_PHOTO_MISMATCH, "LOW"): "Ảnh xác nhận uống thuốc không khớp",
+}
+
+
+def friendly_escalation_title(trigger: str, severity: str) -> str:
+    """Tieu de NGAN cho `OpenEscalationBrief.title` (man hinh nguoi than) -
+    `severity` la quy uoc TIENG ANH (LOW|MEDIUM|HIEN, dung `Escalation.severity`
+    da luu trong DB, KHONG phai `Nhẹ|Trung bình|Nguy hiểm` noi bo). KHONG BAO
+    GIO tra ve `Escalation.reason` truc tiep. Fallback an toan (khong doan bua
+    nhu #17 tung canh bao) neu gap to hop trigger/severity chua liet ke - hien
+    khong nen xay ra voi 4 trigger + 3 severity hien co, nhung khong crash neu
+    du lieu cu/gia tri moi phat sinh sau nay (vd trigger tuong lai chua ro)."""
+    return _FRIENDLY_TITLE_BY_TRIGGER_SEVERITY.get((trigger, severity), "Có cảnh báo mới cần bạn xem")
+
+
 class EscalateFn(Protocol):
     async def __call__(
         self,
