@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { REFRESH_COOKIE_NAME } from "../login/route";
+import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS } from "../login/route";
 
 // TASK-010 - doc refresh_token tu httpOnly cookie (client khong doc duoc
 // truc tiep), goi backend /auth/refresh, roi luu lai refresh_token MOI vao
@@ -25,19 +25,14 @@ export async function POST() {
   const data = await backendResponse.json().catch(() => null);
 
   if (!backendResponse.ok) {
-    cookieStore.delete(REFRESH_COOKIE_NAME);
+    cookieStore.delete({ name: REFRESH_COOKIE_NAME, path: "/" });
     return NextResponse.json(data ?? { detail: "Phiên đăng nhập đã hết hạn" }, {
       status: backendResponse.status,
     });
   }
 
   const { refresh_token: newRefreshToken, ...clientSafeData } = data;
-  cookieStore.set(REFRESH_COOKIE_NAME, newRefreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/auth",
-  });
+  cookieStore.set(REFRESH_COOKIE_NAME, newRefreshToken, REFRESH_COOKIE_OPTIONS);
 
   return NextResponse.json(clientSafeData);
 }

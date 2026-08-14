@@ -534,6 +534,18 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
     refreshMonitoredRelatives,
   ]);
 
+  useEffect(() => {
+    if (user && (user.role === "doctor" || user.role === "patient")) {
+      setState((s) =>
+        s.role === user.role && s.phone === user.full_name
+          ? s
+          : { ...s, role: user.role as Role, phone: user.full_name },
+      );
+    } else {
+      setState((s) => (!s.role && !s.phone ? s : { ...s, role: null, phone: "" }));
+    }
+  }, [user]);
+
   const value = useMemo<Ctx>(
     () => ({
       ...state,
