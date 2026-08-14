@@ -16,7 +16,18 @@ from backend.config import get_settings
 
 settings = get_settings()
 
-engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    future=True,
+    # Truoc day khong truyen 3 tham so nay -> SQLAlchemy dung mac dinh ngam
+    # (pool_size=5, max_overflow=10) qua nho cho demo nhieu nguoi cung 1 tai
+    # khoan - da xac nhan qua log that (QueuePool limit of size 5 overflow 10
+    # reached). Xem backend/config.py::db_pool_size cho ly do chon so.
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_timeout=settings.db_pool_timeout,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
