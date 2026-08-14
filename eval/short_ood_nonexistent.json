@@ -1,0 +1,52 @@
+[
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "paradol",
+    "note": "Brand nghe hop ly nhung KHONG ton tai trong corpus (xac minh ILIKE truoc khi dua vao, 2026-08-14) - dang NGAN, dung use-case that cua muc 3 (khac 15 cau OOD cu deu la cau hoi day du)"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "feverex",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "coldrex",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "fluzin",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "nasoclear",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "painex",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "tussin",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "gastrofix",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "dolorex",
+    "note": "Xac minh 0 match corpus"
+  },
+  {
+    "category": "nonexistent_drug_short",
+    "utterance": "sinuclear",
+    "note": "Xac minh 0 match corpus"
+  }
+]

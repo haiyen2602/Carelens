@@ -272,7 +272,7 @@ async def test_full_day_format_matches_pm_example_shape():
         result = await node({"patient_id": patient_id, "intent": "today_schedule", "utterance": "hôm nay uống thuốc gì", "trace": []})
 
         response = result["response"]
-        assert response.startswith("Hôm nay, ngày")
+        assert response.startswith("Dạ, hôm nay, ngày")
         assert "Buổi sáng, 8 giờ bạn cần uống:" in response
         assert "Solufemo 100mg" in response
         assert "Hataphar" not in response, "ten rut gon phai bo hang san xuat"

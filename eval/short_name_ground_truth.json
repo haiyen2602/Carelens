@@ -1,0 +1,62 @@
+[
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "utterance": "vizicin",
+    "note": "Chi ten thuong hieu, khong ham luong/hang - da xac minh KHONG bi trung SKU nao khac trong corpus"
+  },
+  {
+    "drug_id": "vizicin-125-hasan-30-goi",
+    "ten_thuoc": "Vizicin 125 Hasan 30 GÓI",
+    "utterance": "vizicin 125",
+    "note": "Ten + ham luong"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "utterance": "bluepine",
+    "note": "Chi ten thuong hieu"
+  },
+  {
+    "drug_id": "bluepine-5mg-blue-6x10",
+    "ten_thuoc": "Bluepine 5mg BLUE 6x10",
+    "utterance": "bluepine 5mg",
+    "note": "Ten + ham luong"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "utterance": "fluopas",
+    "note": "Chi ten thuong hieu"
+  },
+  {
+    "drug_id": "fluopas-0-025-quang-binh-10g",
+    "ten_thuoc": "Fluopas 0.025% Quảng BÌNH 10g",
+    "utterance": "fluopas 0.025%",
+    "note": "Ten + ham luong"
+  },
+  {
+    "drug_id": "ame-prazol-40mg-opv-2x7",
+    "ten_thuoc": "AME Prazol 40mg OPV 2x7",
+    "utterance": "ameprazol 40mg",
+    "note": "Viet lien khong cach, co ham luong - da xac minh CHI khi co ham luong moi phan biet duoc voi AME Prazol 20mg (bare 'ame prazol' AMBIGUOUS - xem short_name_ambiguous.json)"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "utterance": "lotemax",
+    "note": "Chi ten thuong hieu"
+  },
+  {
+    "drug_id": "lotemax-0-5-bausch-lomb-5ml",
+    "ten_thuoc": "Lotemax 0.5% Bausch LOMB 5ml",
+    "utterance": "lotemax 0.5%",
+    "note": "Ten + ham luong"
+  },
+  {
+    "drug_id": "xaravix-20mg-dhg-pharma-1x14",
+    "ten_thuoc": "Xaravix 20mg DHG Pharma 1x14",
+    "utterance": "xaravix 20mg",
+    "note": "Ten + ham luong - da xac minh CHI khi co ham luong moi phan biet duoc voi Xaravix 10mg/15mg (bare 'xaravix' AMBIGUOUS - xem short_name_ambiguous.json)"
+  }
+]

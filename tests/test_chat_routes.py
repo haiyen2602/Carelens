@@ -138,11 +138,12 @@ async def test_drug_info_no_match_refuses_and_still_writes_audit_log(client):
     audit = _latest_audit_log(patient_id)
     assert audit is not None, "nhanh khong tim duoc ung vien nao cung phai ghi AuditLog, khong duoc bo sot"
     steps = [e.get("step") for e in audit.trace]
-    # Vong 2 (muc 11): khong con "refuse" - drug_identity_resolution tu tra
-    # ve NOT_FOUND_FINAL_MESSAGE ngay khi khong tim duoc ung vien nao.
+    # Vong 4: fuzzy luon co top-5, nhung fallback khong co LLM selector phai
+    # fail-closed. Ca hai result deu nghia la khong co candidate an toan de
+    # hoi xac nhan, va deu tra NOT_FOUND_FINAL_MESSAGE.
     assert "drug_identity_resolution" in steps
     resolution_entry = next(e for e in audit.trace if e.get("step") == "drug_identity_resolution")
-    assert resolution_entry.get("result") == "no_candidates_at_all"
+    assert resolution_entry.get("result") in {"no_candidates_at_all", "llm_no_safe_candidate"}
 
 
 @pytest.mark.asyncio

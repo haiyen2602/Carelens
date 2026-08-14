@@ -1,0 +1,580 @@
+{
+  "runs": [
+    {
+      "id": "acarbose-bloating",
+      "utterance": "Từ khi uống thuốc tôi bị đầy bụng và chướng bụng.",
+      "active_drug_ids": [
+        "acarbose-savi-50mg-10x10"
+      ],
+      "expected_match_drug_ids": [
+        "acarbose-savi-50mg-10x10"
+      ],
+      "redflag": false,
+      "evidence": "Chunk tac_dung_phu ghi đầy bụng và bụng trướng.",
+      "matches": [
+        {
+          "drug_id": "acarbose-savi-50mg-10x10",
+          "ten_thuoc": "Acarbose SAVI 50mg 10x10",
+          "score": 0.40773413206623466,
+          "side_effect_content": "Thuốc: Acarbose SAVI 50mg 10x10 (Acarbose 50mg, Viên nén bao phim) — Thuốc trị tiểu đường\n\nTác dụng phụ: Đa số các tác dụng không mong muốn là về tiêu hóa. Thường gặp, ADR > 1/100 Tiêu hóa: Đầy bụng, phân nát, tiêu chảy, buồn nôn, bụng trướng và đau. Ít gặp, 1/1000 < ADR < 1/100 Gan: Chức năng gan bất thường. Da: Ngứa, ngoại ban. Hiếm gặp, ADR < 1/1000 Gan: Vàng da, viêm gan. Hướng dẫn cách xử trí ADR Tác dụng không mong muốn về tiêu hóa có thể giảm khi vẫn tiếp tục điều trị và chỉ cần giảm lượng đường ăn (đường mía). Để giảm thiểu các tác dụng phụ về tiêu hóa, nên bắt đầu điều trị bằng liều thấp nhất và tăng dần cho tới khi đạt được kết quả mong muốn. Không dùng thuốc chống acid để điều trị các tác dụng phụ về tiêu hóa này. Lưu ý đặc biệt: Chống chỉ định: Không dùng thuốc Acarbose cho các trường hợp sau: Quá mẫn với Acarbose. Phụ nữ mang thai hoặc đang cho con bú. Viêm nhiễm đường ruột, đặc biệt kết hợp với loét. Do thuốc có khả năng tạo hơi trong ruột, không nên dùng Sulfonylurea. Tuy nhiên, vì Acarbose chủ yếu làm chậm hơn cho những người dễ bị bệnh lý do tăng áp lực ổ bụng (thoát là ngăn cản hấp thu Glucose, thuốc không làm mất nhiều vi). Những trường hợp suy gan, tăng men gan. Hạ đường máu . Đái tháo đường nhiễm toan thể ceton. Lưu ý đặc biệt: Thận trọng khi dùng thuốc: Vì có những trường hợp tăng men gan nên cần theo dõi Transaminase gan trong quá trình điều trị bằng Acarbose. Có thể xảy ra hạ Glucose máu khi dùng Acarbose đồng thời với một thuốc chống đái tháo đường Sulfonylurea hoặc Insulin. Khi điều trị hạ Glucose máu, phải dùng Glucose uống (Dextrose) mà không dùng Sucrose vi hấp thu Glucose không bị ức chế bởi Acarbose. Acarbose không có tác dụng khi dùng đơn độc ở những người bệnh đái tháo đường có biến chứng nhiễm toan tăng celon hoặc hôn mê, ở những trường hợp này phải dùng Insulin. Lưu ý đặc biệt: Tương tác thuốc: Điều trị phối hợp với Sulfonylurea như 1 thuốc phụ trợ chế - Trong khi điều trị bằng Acarbose, thức ăn chứa đường ăn (đường mía) thường gây khó chịu ở bụng hoặc tiêu chảy do tăng sự lên men carbohydrat ở đại tràng. Acarbose có thể cản trở hấp thu hoặc chuyển hóa sắt. Vì cơ chế tác dụng của Acarbose và của các thuốc chống đái tháo đường Sulfonylurea hoặc Biguanid khác nhau, nên tác dụng của chúng đối với kiểm soát Glucose máu có tính chất cộng hưởng khi dùng phối hợp. Cần tránh dùng đồng thời với các thuốc chống acid, Cholestyramin, các chất hấp phụ ở ruột và các men tiêu hóa vì có thể làm giảm tác dụng của Acarbose. Lưu ý đặc biệt: Đối tượng cần thận trọng: Suy gan thận Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        }
+      ]
+    },
+    {
+      "id": "acnemine-skin-irritation",
+      "utterance": "Chỗ da tôi bôi thuốc bị khô, đỏ và nóng rát.",
+      "active_drug_ids": [
+        "acnemine-0-1-opv-15g"
+      ],
+      "expected_match_drug_ids": [
+        "acnemine-0-1-opv-15g"
+      ],
+      "redflag": false,
+      "evidence": "Chunk tac_dung_phu ghi khô da, kích ứng da, nóng rát và đỏ da.",
+      "matches": [
+        {
+          "drug_id": "acnemine-0-1-opv-15g",
+          "ten_thuoc": "Acnemine 0.1% OPV 15g",
+          "score": 0.39147787202243656,
+          "side_effect_content": "Thuốc: Acnemine 0.1% OPV 15g (Adapalene 0.1%, Kem bôi ngoài) — Thuốc bôi ngoài da\n\nTác dụng phụ: Thường gặp (1/100 ≤ ADR > 1/10): Rối loạn da và mô dưới da: Khô da, kích ứng da, cảm giác nóng rát, đỏ da. Ít gặp (1/1000 < ADR < 1/100): Rối loạn da và mô dưới da: Viêm da tiếp xúc, khó chịu ở da, cháy nắng, ngứa, da tróc từng mảng, mụn trứng cá. Chưa biết tỷ lệ: Rối loạn da và mô dưới da: Viêm da dị ứng, đau ở da, da sưng, kích ứng mí mắt, đỏ da mí mắt, ngứa mí mắt, sưng mí mắt. Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Kem bôi da Acenemine chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Nếu xuất hiện phản ứng nhạy cảm hay kích ứng trầm trọng, nên ngưng thuốc. Thuốc này chỉ dùng ngoài da. Không nên để thuốc tiếp xúc vào mắt, miệng, hốc mũi, niêm mạc và vết thương hở. Nếu thuốc dây vào mắt do tai nạn phải rửa thật sạch ngay bằng nước ấm. Không nên bôi thuốc lên da bị trầy hay da bị eczema. Không nên sử dụng thuốc ở những bệnh nhân bị mụn trứng cá nặng hoặc mụn trên diện rộng của cơ thể; hạn chế tiếp xúc với ánh nắng mặt trời và tia UV trong thời gian dùng thuốc. Thuốc có chứa: Methyl paraben, propyl paraben: Có thể gây dị ứng (có thể phản ứng muộn). Propylen glycol: Có thể gây kích ứng da. Stearyl alcohol: Có thể gây phản ứng da tại chỗ (như viêm da tiếp xúc). Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Ảnh hưởng của thuốc đối với công việc: Không ảnh hưởng. Lưu ý đặc biệt: Thời kỳ mang thai: Không nên sử dụng Acenemine trong thai kỳ. Nếu phát hiện có thai thì ngừng sử dụng thuốc. Lưu ý đặc biệt: Thời kỳ cho con bú: Không sử dụng. Lưu ý đặc biệt: Tương tác thuốc: Không có tương tác nào được biết giữa các thuốc khác được sử dụng đồng thời trên da với adapalen; tuy nhiên, không nên dùng đồng thời các thuốc retinoid hay các thuốc khác có cùng phương thức tác động với adapalen. Adapalen bền vững với oxy và ánh sáng và không có phản ứng về mặt hóa học. Trong khi các nghiên cứu rộng rãi trên động vật và người không cho thấy khả năng bị tác hại của ánh sáng hay dị ứng ánh sáng với adapalen, tính an toàn của việc sử dụng adapalen khi tiếp xúc nhiều với ánh nắng hay tia cực tím chưa được xác định trên cả động vật và người. Nên tránh tiếp xúc nhiều với ánh nắng hay tia cực tím. Ở người, adapalen hấp thu qua da thấp, và do đó, tương tác với các thuốc có tác dụng toàn thân hầu như không xảy ra. Không có bằng chứng về ảnh hưởng của sự sử dụng adapalen ngoài da lên các thuốc dùng theo đường uống như thuốc ngừa thai và kháng sinh. Adapalen có khả năng gây kích ứng tại chỗ nhẹ, do đó, sự sử dụng đồng thời các thuốc có tác dụng bong da, se da hay những thuốc có tính kích ứng có thể gây kích ứng gộp. Tuy nhiên, các thuốc điều trị mụn trứng cá trên da như dung dịch erythromycin (với nồng độ đến 4%) hay clindamycin phosphat (1% dạng base) hay dạng gel nước benzoyl peroxid với nồng độ đến 10%, có thể được sử dụng vào buổi sáng trong khi adapalen được dùng vào buổi tối do không có sự phân hủy giữa các thuốc cũng như kích ứng gộp."
+        }
+      ]
+    },
+    {
+      "id": "actapulgite-constipation",
+      "utterance": "Tôi bị táo bón sau khi dùng thuốc.",
+      "active_drug_ids": [
+        "actapulgite-3g-ipsen-30-goi"
+      ],
+      "expected_match_drug_ids": [
+        "actapulgite-3g-ipsen-30-goi"
+      ],
+      "redflag": false,
+      "evidence": "Chunk tac_dung_phu ghi táo bón là tác dụng không mong muốn thường gặp.",
+      "matches": [
+        {
+          "drug_id": "actapulgite-3g-ipsen-30-goi",
+          "ten_thuoc": "Actapulgite 3g Ipsen 30 GÓI",
+          "score": 0.3718812485039309,
+          "side_effect_content": "Thuốc: Actapulgite 3g Ipsen 30 GÓI (Activated Attapulgite of Mormoiron 3g, Bột pha hỗn dịch uống) — Thuốc trị tiêu chảy\n\nTác dụng phụ: Khi sử dụng thuốc Actapulgite, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR >1/100 Có thể bị táo bón, đầy hơi, khó tiêu , trong trường hợp sử dụng kéo dài hoặc liều cao. Ít gặp, 1/1000 < ADR < 1/100 Phản ứng quá mẫn, ban đỏ, sưng, mày đay , rộp da, khó thở, khó nuốt; Đau đầu, choáng váng. Hướng dẫn cách xử trí ADR Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Actapulgite chống chỉ định trong các trường hợp sau: Mẫn cảm với hoạt chất hay bất kỳ thành phần nào của tá dược; Hẹp đường tiêu hóa. Lưu ý đặc biệt: Thận trọng khi sử dụng: Thận trọng trong trường hợp phình đại tràng, nhu động đại tràng bị thay đổi (nguy cơ u phân). Thuốc chứa glucose nên không khuyến cáo dùng cho bệnh nhân có hội chứng kém hấp thu glucose hoặc galactose. Trong tiêu chảy cấp ở trẻ em phải dùng cùng các thuốc bổ sung nước và chất điện giải. Phải luôn xem xét việc bù nước ở những bệnh nhân thể trạng yếu, trẻ nhũ nhi và trẻ em qua đường uống (ORS) hoặc đường truyền tĩnh mạch theo mức độ tiêu chảy, tuổi và bệnh cảnh lâm sàng của bệnh nhân. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Có thể sử dụng thuốc cho người lái xe hay vận hành máy móc. Tuy nhiên, cần lưu ý về tình trạng tiêu chảy, mất điện giải nhiều của bệnh nhân. Lưu ý đặc biệt: Thời kỳ mang thai: Không có nghiên cứu cho thấy gây quái thai trên động vật. Trong các nghiên cứu lâm sàng, cho đến nay chưa quan sát thấy có tác động liên quan đến gây dị tật hoặc độc cho bào thai. Tuy nhiên, việc theo dõi phụ nữ có thai phơi nhiễm với attapulgite là chưa đủ để loại trừ tất cả các rủi ro. Do đặc tính không hấp thu của attapulgite, thuốc này chỉ được cân nhắc dùng trong quá trình mang thai nếu thực sự cần thiết. Lưu ý đặc biệt: Thời kỳ cho con bú: Không có dữ liệu lâm sàng cho thấy attapulgite vào được sữa mẹ. Tuy nhiên, vì attapulgite không được hấp thu nên attapulgite dùng an toàn cho phụ nữ đang cho con bú. Lưu ý đặc biệt: Tương tác thuốc: Có sự giảm hấp thu qua đường tiêu hóa của các thuốc uống cùng lúc đã được ghi nhận. Lưu ý, các chất hấp phụ đều không nên uống cùng lúc với các thuốc khác. Nếu có thể, thuốc này nên dùng trước hoặc sau ít nhất 2 giờ với các thuốc sau: Thuốc kháng sinh kháng lao (ethambutol, isoniazid) (đường uống); Kháng sinh - nhóm cycline (đường uống), nhóm fluoroquinolone (đường uống), nhóm lincosamide (đường uống); Kháng histamine H2 (đường uống); Atenolol, metoprolol, propranolol (đường uống); Chloroquine (đường uống); Diflunisal (đường uống); Digoxin (đường uống); Biphosphonate (đường uống); Natri floride; Các glucocorticoid (đường uống) (prednisolone và dexamethasone); Indometacin (đường uống); Kayexalate (đường uống); Ketoconazole (đường uống); Lansoprazole; Thuốc an thần nhóm phenothiazine; Penicillamine (đường uống); Muối sắt (đường uống). Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        }
+      ]
+    },
+    {
+      "id": "acenocoumarol-bleeding",
+      "utterance": "Tôi bị chảy máu chân răng nhiều hơn bình thường.",
+      "active_drug_ids": [
+        "acenocoumarol-4-spm-3x10"
+      ],
+      "expected_match_drug_ids": [
+        "acenocoumarol-4-spm-3x10"
+      ],
+      "redflag": false,
+      "evidence": "Chunk tac_dung_phu ghi chảy máu ở nhiều hệ cơ quan.",
+      "matches": [
+        {
+          "drug_id": "acenocoumarol-4-spm-3x10",
+          "ten_thuoc": "Acenocoumarol 4 SPM 3x10",
+          "score": 0.3365635156430239,
+          "side_effect_content": "Thuốc: Acenocoumarol 4 SPM 3x10 (Acenocoumarol 4mg, Viên nén) — Thuốc chống đông máu\n\nTác dụng phụ: Khi sử dụng thuốc Acenocoumarol 4 mg, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR > 1/100 Toàn thân: Chảy máu. Thần kinh trung ương: Chảy máu. Tiêu hoá: Chảy máu. Mắt: Chảy máu. Ít gặp, 1/1000 < ADR < 1/100 Da: Dị ứng, rụng tóc, xuất huyết hoại tử da. Tiêu hoá: Tiêu chảy , rối loạn dạ dày - ruột. Xương khớp: Đau khớp riêng lẻ. Máu và hệ bạch huyết: Viêm mạch. Gan: Tổn thương gan. Hiếm gặp, 1/10.000 < ADR < 1/1000 Toàn thân: Rụng tóc. Tiêu hoá: Rối loạn tiêu hoá , mất cảm giác ngon miệng, buồn nôn , ói mửa. Da: Hoại tử da khu trú, có thể do di truyền thiếu protein C hay đồng yếu tố là protein S, mẫn da dị ứng. Máu và hệ bạch huyết: Viêm mạch. Hướng dẫn cách xử trí ADR: Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Acenocoumarol 4mg chống chỉ định trong các trường hợp sau: Quá mẫn cảm với acenocoumarol, các dẫn xuất của coumarin hay thành phần có trong thuốc. Phụ nữ mang thai. Người già yếu, nghiện rượu, bị rối loạn thần kinh hoặc người không có sự giám sát. Tất cả các điều kiện về nguy cơ xuất huyết quá mức có thể có lợi ích về lâm sàng như: Tạng xuất huyết và/hoặc loạn thể tạng xuất huyết. Ngay trước, hoặc sau phẫu thuật trên hệ thần kinh trung ương hoặc mắt và phẫu thuật chấn thương liên quan đến sự phơi bày quá mức của các mô. Loét tiêu hóa hoặc xuất huyết dạ bộ máy dày - ruột, bộ máy niệu - sinh dục hoặc hệ hô hấp. Xuất huyết mạch máu não. Viêm màng ngoài tim cấp, chảy dịch thế màng ngoài tim. Viêm nhiễm màng trong tim. Tăng huyết áp nặng. Suy gan nặng hoặc suy thận nặng và các trường hợp hoạt động phân hủy fibrin tăng theo các hoạt động của phổi, tiền liệt tuyến hoặc tử cung. Lưu ý đặc biệt: Thận trọng khi sử dụng: Sự chuyển đổi từ điều trị bằng heparin Trong các trạng thái lâm sàng yêu cầu kháng đông máu nhanh, điều trị ban đầu bằng heparin được thích hơn vì tác dụng kháng đông máu của acenocoumarol chậm. Việc chuyển đổi sang acenocoumarol có thể bắt đầu đồng thời với điều trị bằng heparin hoặc có thể chậm lại tùy thuộc vào trạng thái lâm sàng. Để đảm bảo kháng đông máu tiếp diễn, khuyến cáo nên tiếp tục kê đơn điều trị bằng heparin đủ liều trong ít nhất 4 ngày sau khi bắt đầu điều trị bằng acenocoumarol và tiếp tục điều trị bằng heparin đến khi INR nằm trong khoảng mục tiêu ít nhất hai ngày liên tục. Trong giai đoạn chuyển đổi, giám sát chặt tác dụng kháng đông máu là cần thiết. Điều trị trong nha khoa và phẫu thuật Các bệnh nhân dùng acenocoumarol, người trải qua quá trình phẫu thuật hoặc xâm lấn yêu cầu thăm dò chặt chẽ tình trạng đông máu của họ. Ở các điều kiện xác định, như khi vị trí phẫu thuật bị giới hạn và có thể tiếp cận được cho phép sử dụng hiệu quả các quy trình tại chỗ cho việc cầm máu, các quá trình nha khoa và phẫu thuật rất nhỏ có thể được thực hiện trong quá trình kháng đông máu được tiếp diễn, không có nguy cơ xuất huyết quá mức. Quyết định ngưng acenocoumarol, thậm chí trong một thời gian ngắn, phải cẩn thận xem xét các nguy cơ và các lợi ích riêng lẻ. Việc đưa vào kiểu bắc cầu điều trị kháng đông máu, như dùng heparin phải dựa trên đánh giá cẩn thận các nguy cơ tắc mạch và chảy máu. Suy gan Phải thận trọng ở các bệnh nhân suy gan nhẹ và vừa vì sự tổng hợp các yếu tố đông máu có thể bị suy giảm hoặc có thể có hoạt động bất thường của tiểu cầu. Suy thận Do khả năng tích lũy các chất chuyển hóa khi bị suy giảm chức năng thận, phải thận trọng ở các bệnh nhân suy thận nhẹ và vừa. Suy tim Trong suy tim nặng, thời biểu về liều vô cùng thận trọng phải được thực hiện, vì sung huyết có thể giảm hoạt tính của gamma - carboxyl hóa của các yếu tố đông máu. Tuy nhiên, với sự phục hồi của sung huyết gan, cần thiết có thể tăng liều. Huyết học Phải thận trọng với các bệnh nhân đã biết hoặc nghi ngờ chảy máu bất thường sau bị thương, thiếu hụt protein C hoặc protein S. Dân số đặc biệt Ở các bệnh nhân trẻ em và lớn tuổi (> 65 tuổi), thận trọng và giám sát thường xuyên hơn thời gian prothrombin và INR được khuyến cáo. Các thể khác: Giám sát y tế nghiêm ngặt phải được thực hiện trong các trường hợp bệnh hoặc điều kiện có thể giảm liên kết protein của acenocoumarol (như: Cường giáp, u, bệnh thận, viêm và nhiễm trùng). Các rối loạn ảnh hưởng đến sự hấp thu của dạ dày - ruột có thể thay đổi tác dụng kháng đông máu của acenocoumarol. Trong quá trình điều trị bằng các thuốc kháng đông máu, tiêm trong cơ có thể gây bướu máu và phải được tránh. Tiêm dưới da và tiêm tĩnh mạch có thể thực hiện mà không gây biến chứng này. Chăm sóc thật kỹ phải được thực hiện là cần thiết để rút ngắn PT/INR (thời gian thromboplastin) cho quá trình chẩn đoán hoặc điều trị (như: Chụp X quang, chọc dò tủy sống, phẫu thuật rất nhỏ, nhổ răng...). Các bệnh nhân có vấn đề di truyền hiếm về dung nạp galactose, sự thiếu Lapp lactase hoặc kém hấp thu glucose - galactose không được dùng thuốc này. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Không ảnh hưởng đến khả năng lái xe và sử dụng máy móc. Lưu ý đặc biệt: Thời kỳ mang thai: Đã có thống kê khoảng 4% dị dạng thai nhi khi người mẹ dùng thuốc này trong quý đầu thai kỳ. Vào các quý sau, vẫn thấy có nguy cơ (cả sảy thai). Vì vậy chỉ dùng thuốc khi không thể cho heparin. Lưu ý đặc biệt: Thời kỳ cho con bú: Tránh cho con bú. Nếu phải cho bú thì nên bù vitamin K cho đứa trẻ. Lưu ý đặc biệt: Tương tác thuốc: Rất nhiều thuốc có thể tương tác với thuốc kháng vitamin K nên cần theo dõi người bệnh 3 - 4 ngày sau khi thêm hay bớt thuốc phối hợp Chống chỉ định phối hợp: Aspirin (nhất là với liều cao trên 3 g/ngày) làm tăng tác dụng chống đông máu và nguy cơ chảy máu do ức chế kết tập tiểu cầu và chuyển dịch thuốc uống chống đông máu ra khỏi liên kết với protein huyết tương. Miconazol: Xuất huyết bất ngờ có thể nặng do tăng dạng tự do trong máu và ức chế chuyển hóa của thuốc kháng vitamin K. Phenylbutazon làm tăng tác dụng chống đông máu kết hợp với kích ứng niêm mạc đường tiêu hóa. Thuốc chống viêm không steroid nhóm Pyrazol: Tăng nguy cơ chảy máu do ức chế tiểu cầu và kích ứng niêm mạc đường tiêu hóa. Không nên phối hợp: Aspirin với liều dưới 3 g/ngày. Các thuốc chống viêm không steroid, kể cả loại ức chế chọn lọc COX - 2. Cloramphenicol: Tăng tác dụng của thuốc uống chống đông máu do làm giảm chuyển hóa thuốc này tại gan. Nếu không thể tránh phối hợp thì phải kiểm tra INR thường xuyên hơn, hiệu chỉnh liều trong và sau 8 ngày ngừng cloramphenicol. Diflunisal: Tăng tác dụng của thuốc uống chống đông máu do cạnh tranh liên kết với protein huyết tương. Nên dùng thuốc giảm đau khác, thí dụ Paracetamol. Thận trọng khi phối hợp: Allopurinol, aminoglutethimid, amiodaron, androgen, thuốc chống trầm cảm cường serotonin, benzbromaron, bosentan, carbamazepin, cephalosporin, cimetidin (trên 800 mg/ngày), cisaprid, cholestyramin, corticoid (trừ hydrocortison dùng điều trị thay thế trong bệnh Addison), cyclin, thuốc gây độc tế bào, fibrates, các azol trị nấm, fluoroquinolon, các loại heparin, nội tiết tố tuyến giáp, thuốc gây cảm ứng enzym, các statin, macrolid (trừ spiramycin), neviparin, efavirenz, nhóm imidazol, orlistat, pentoxifylin, phenytoin, propafenon, ritonavir, lopinavir, một số sulfamid (sulfamethoxazol, sulfafurazol, sulfamethizol), sucraflat, thuốc trị ung thư (tamoxifen, raloxifen), tibolon, vitamin E trên 500 mg/ngày, rượu, thuốc chống lập kết tiểu cầu, thuốc tiêu huyết khối,... cũng làm thay đổi tác dụng chống đông máu. Các thuốc làm tăng tác dụng chống đông máu của acenocoumarol: Allopurinol; Anabolic steroids; Androgen. Thuốc chống loạn nhịp tim (như amiodarone, quinidine). Thuốc kháng sinh, kháng sinh phổ rộng (như amoxicillin, coamoxiclav) macrolid (như erythromycin, clarithromycin). Cephalosporin thế hệ thứ hai và thứ ba. Metronidazole; Quinolone (như ciprofloxacin, norfloxacin, ofloxacin); Tetracyclines; Neomycin; Chloramphenicol; Fibrates (như acid clofibric). Các dẫn xuất của fibrates hoặc có cấu trúc tương tự (như gemfibrozil, fenofibrate). Disulfiram; Etacrynic acid; Glucagon; Thuốc kháng H2 (như cimetidine). Các dẫn xuất của imidazole (econazole, fluconazole, ketoconazole, miconazole). Paracetamol; Sulfonamides (bao gồm cả Co-trimoxazole); Antidiabetic (glibenclamide). Kích thích tố tuyến giáp (dextrothyroxine). Sulfinpyrazone; Sulphonylureas (tolbutamide và chlopropamide). Statin (atorvastatin, fluvastatin, simvastatin). Các chất ức chế sự tái hấp thu serotonin chọn lọc (fluoxetine, paroxetine); Tamoxifen; 5-fluorouracil; Tramadol. Corticosteroid (methylprednisolone, prednisone). Các chất ức chế của CYP2C9, thuốc cầm máu bao gồm heparin, chất ức chế tiểu cầu (clopidogrel, dipyridamole), acid salicylic và các dẫn xuất như acetylsalicylic acid, para - aminosalicylic acid; diflunisal, phenylbutazone và các dẫn xuất pyrazolone (sulfinpyrazone); chất chống viêm không steroid (NSAIDs) bao gồm thuốc ức chế COX - 2 (celecoxib) và methylprednisolone. Chúng có thể làm tăng nguy cơ xuất huyết. Trong trường hợp việc sử dụng đồng thời là không thể tránh khỏi thì việc xét nghiệm đông máu nên được thực hiện thường xuyên. Các thuốc làm giảm tác dụng chống đông máu của thuốc acenocoumarol: Aminoglutethimide. Các loại thuốc chống ung thư (azathioprine, 6-mercaptopurine); Barbiturates (Phenobarbital); Carbamazepine. Cholestyramine; Griseofulvin; Thuốc tránh thai; Rifampicin. Các thuốc lợi tiểu, các tác nhân gây cảm ứng: CYP2C19, CYP2C9 hoặc CYP3A4. Ngoài ra, thuốc ức chế protease (indinavir, nelfinavir, ritonavir, saquinavir) cũng có ảnh hưởng đến tác dụng chống đông máu của thuốc và chưa có báo cáo nào về việc tăng hay giảm hoạt động chống đông máu của thuốc. Nồng độ hydantoin trong huyết thanh có thể tăng khi điều trị đồng thời với những dẫn xuất của hydantoin (như phenytoin). Acenocoumarol có thể làm tăng tác dụng hạ đường huyết khi sử dụng những dẫn xuất của sulphonylurea (như glibenclamide, glimepiride). Bệnh nhân bị rối loạn chức năng gan khi điều trị với Acenocoumarol nên hạn chế uống rượu. Khi điều trị với Acenocoumarol, bệnh nhân nên tránh uống nước ép của quả quất. Tăng cường giám sát và theo dõi INR đối với bệnh nhân thường xuyên sử dụng nước ép quất. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        }
+      ]
+    },
+    {
+      "id": "shared-nausea",
+      "utterance": "Tôi thấy buồn nôn từ sáng nay.",
+      "active_drug_ids": [
+        "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+        "acarbose-savi-50mg-10x10"
+      ],
+      "expected_match_drug_ids": [
+        "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+        "acarbose-savi-50mg-10x10"
+      ],
+      "redflag": false,
+      "evidence": "Cả hai chunk tac_dung_phu đều ghi buồn nôn.",
+      "matches": [
+        {
+          "drug_id": "acarbose-savi-50mg-10x10",
+          "ten_thuoc": "Acarbose SAVI 50mg 10x10",
+          "score": 0.22107355659848948,
+          "side_effect_content": "Thuốc: Acarbose SAVI 50mg 10x10 (Acarbose 50mg, Viên nén bao phim) — Thuốc trị tiểu đường\n\nTác dụng phụ: Đa số các tác dụng không mong muốn là về tiêu hóa. Thường gặp, ADR > 1/100 Tiêu hóa: Đầy bụng, phân nát, tiêu chảy, buồn nôn, bụng trướng và đau. Ít gặp, 1/1000 < ADR < 1/100 Gan: Chức năng gan bất thường. Da: Ngứa, ngoại ban. Hiếm gặp, ADR < 1/1000 Gan: Vàng da, viêm gan. Hướng dẫn cách xử trí ADR Tác dụng không mong muốn về tiêu hóa có thể giảm khi vẫn tiếp tục điều trị và chỉ cần giảm lượng đường ăn (đường mía). Để giảm thiểu các tác dụng phụ về tiêu hóa, nên bắt đầu điều trị bằng liều thấp nhất và tăng dần cho tới khi đạt được kết quả mong muốn. Không dùng thuốc chống acid để điều trị các tác dụng phụ về tiêu hóa này. Lưu ý đặc biệt: Chống chỉ định: Không dùng thuốc Acarbose cho các trường hợp sau: Quá mẫn với Acarbose. Phụ nữ mang thai hoặc đang cho con bú. Viêm nhiễm đường ruột, đặc biệt kết hợp với loét. Do thuốc có khả năng tạo hơi trong ruột, không nên dùng Sulfonylurea. Tuy nhiên, vì Acarbose chủ yếu làm chậm hơn cho những người dễ bị bệnh lý do tăng áp lực ổ bụng (thoát là ngăn cản hấp thu Glucose, thuốc không làm mất nhiều vi). Những trường hợp suy gan, tăng men gan. Hạ đường máu . Đái tháo đường nhiễm toan thể ceton. Lưu ý đặc biệt: Thận trọng khi dùng thuốc: Vì có những trường hợp tăng men gan nên cần theo dõi Transaminase gan trong quá trình điều trị bằng Acarbose. Có thể xảy ra hạ Glucose máu khi dùng Acarbose đồng thời với một thuốc chống đái tháo đường Sulfonylurea hoặc Insulin. Khi điều trị hạ Glucose máu, phải dùng Glucose uống (Dextrose) mà không dùng Sucrose vi hấp thu Glucose không bị ức chế bởi Acarbose. Acarbose không có tác dụng khi dùng đơn độc ở những người bệnh đái tháo đường có biến chứng nhiễm toan tăng celon hoặc hôn mê, ở những trường hợp này phải dùng Insulin. Lưu ý đặc biệt: Tương tác thuốc: Điều trị phối hợp với Sulfonylurea như 1 thuốc phụ trợ chế - Trong khi điều trị bằng Acarbose, thức ăn chứa đường ăn (đường mía) thường gây khó chịu ở bụng hoặc tiêu chảy do tăng sự lên men carbohydrat ở đại tràng. Acarbose có thể cản trở hấp thu hoặc chuyển hóa sắt. Vì cơ chế tác dụng của Acarbose và của các thuốc chống đái tháo đường Sulfonylurea hoặc Biguanid khác nhau, nên tác dụng của chúng đối với kiểm soát Glucose máu có tính chất cộng hưởng khi dùng phối hợp. Cần tránh dùng đồng thời với các thuốc chống acid, Cholestyramin, các chất hấp phụ ở ruột và các men tiêu hóa vì có thể làm giảm tác dụng của Acarbose. Lưu ý đặc biệt: Đối tượng cần thận trọng: Suy gan thận Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        },
+        {
+          "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "ten_thuoc": "Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml",
+          "score": 0.21728142185324817,
+          "side_effect_content": "Thuốc: Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml (Levocarnitin 1g, Dung dịch uống) — Thuốc trị bệnh gan\n\nTác dụng phụ: Khi sử dụng thuốc Abanuti có thể gặp các tác dụng không mong muốn (ADR) như: Có thể xuất hiện tạm thời các triệu trứng như buồn nôn, nôn, đau bụng, đau dạ dày, tiêu chảy và mùi cơ thể. Hướng dẫn cách xử trí ADR: Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Thuốc Abanuti chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Cần rất thận trọng khi dùng thuốc cho người bệnh trong các trường hợp sau: Uống carnitin quá nhanh có thể gây rối loạn tiêu hóa. Do đó nên uống chậm và chia liều dùng thành nhiều phần bằng nhau uống trong ngày đến tăng khả năng dung nap. Lưu ý đặc biệt: Ảnh hưởng của thuốc lên khả năng lái xe và vận hành máy móc: Thuốc không ảnh hưởng lên khả năng lái xe và vận hành máy móc. Lưu ý đặc biệt: Sử dụng thuốc cho phụ nữ trong thời kỳ mang thai và cho con bú: An toàn của thuốc đối với phụ nữ có thai chưa được xác định. Do đó, chỉ dùng thuốc này cho phụ nữ có thai hoặc có khả năng mang thai khi đã cân nhắc giữa lợi ích do điều trị mang lại và nguy cơ có thể xảy ra. Sử dụng levocarnitin ở phụ nữ cho con bú hiện chưa được nghiên cứu. Ở những người đang cho con bú uống levorcanitin cần cân nhắc giữa nguy cơ đối với trẻ và lợi ích cho mẹ. Nên xem xét ngưng cho con bú hoặc ngưng điều trị bằng levocarnitin. Lưu ý đặc biệt: Tương tác thuốc: L-carnitin tương tác với một số thuốc chống đông như Fluindione, Warfarin, Acenocumarol. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        }
+      ]
+    },
+    {
+      "id": "shared-diarrhea",
+      "utterance": "Tôi bị tiêu chảy sau khi uống các thuốc này.",
+      "active_drug_ids": [
+        "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+        "aciclovir-800mg-meyer-bpc-3x10"
+      ],
+      "expected_match_drug_ids": [
+        "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+        "aciclovir-800mg-meyer-bpc-3x10"
+      ],
+      "redflag": false,
+      "evidence": "Cả hai chunk tac_dung_phu đều ghi tiêu chảy.",
+      "matches": [
+        {
+          "drug_id": "aciclovir-800mg-meyer-bpc-3x10",
+          "ten_thuoc": "Aciclovir 800mg Meyer - BPC 3x10",
+          "score": 0.3824549713636698,
+          "side_effect_content": "Thuốc: Aciclovir 800mg Meyer - BPC 3x10 (Acyclovir 800mg, Viên nén) — Thuốc kháng virus\n\nTác dụng phụ: Khi sử dụng thuốc Aciclovir Meyer, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR >1/100 Tiêu hóa: Buồn nôn, nôn, tiêu chảy, đau bụng. Tâm thần: Nhức đầu . Da và mô dưới da: Ban da. Ít gặp, 1/1000 < ADR < 1/100 Tâm thần: Chóng mặt , tình trạng lẫn lộn, ảo giác, buồn ngủ. Triệu chứng này thường gặp ở bệnh nhân suy thận hay có những yếu tố tạo khuynh hướng mắc bệnh. Hướng dẫn cách xử trí ADR Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Aciclovir Meyer chống chỉ định trong các trường hợp người bệnh mẫn cảm với thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Với bệnh nhân suy thận: Phải chỉnh liều theo độ thanh thải creatinin. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Có thể dùng thuốc khi lái xe và vận hành máy móc. Tuy nhiên cần thận trọng với bệnh nhân suy thận vì thuốc có thể gây chóng mặt, ảo giác, lẫn lộn, buồn ngủ. Lưu ý đặc biệt: Thời kỳ mang thai: Chỉ nên dùng cho phụ nữ mang thai khi lợi ích điều trị hơn hẳn rủi ro có thể xảy ra cho bào thai. Lưu ý đặc biệt: Thời kỳ cho con bú: Thuốc được bài tiết qua sữa mẹ khi dùng đường uống. Nên thận trọng khi dùng thuốc đối với người cho con bú. Lưu ý đặc biệt: Tương tác thuốc: Dùng đồng thời zidovudin và acyclovir có thể gây trạng thái ngủ lịm và lơ mơ. Probenecid ức chế cạnh tranh đào thải acyclovir qua ống thận, nên tăng tới 40% và giảm thải trừ qua nước tiểu và độ thanh thải của acyclovir. Amphotericin B và ketoconazol làm tăng hiệu lực chống virus của acyclovir. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        },
+        {
+          "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "ten_thuoc": "Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml",
+          "score": 0.3595002683818713,
+          "side_effect_content": "Thuốc: Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml (Levocarnitin 1g, Dung dịch uống) — Thuốc trị bệnh gan\n\nTác dụng phụ: Khi sử dụng thuốc Abanuti có thể gặp các tác dụng không mong muốn (ADR) như: Có thể xuất hiện tạm thời các triệu trứng như buồn nôn, nôn, đau bụng, đau dạ dày, tiêu chảy và mùi cơ thể. Hướng dẫn cách xử trí ADR: Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Thuốc Abanuti chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Cần rất thận trọng khi dùng thuốc cho người bệnh trong các trường hợp sau: Uống carnitin quá nhanh có thể gây rối loạn tiêu hóa. Do đó nên uống chậm và chia liều dùng thành nhiều phần bằng nhau uống trong ngày đến tăng khả năng dung nap. Lưu ý đặc biệt: Ảnh hưởng của thuốc lên khả năng lái xe và vận hành máy móc: Thuốc không ảnh hưởng lên khả năng lái xe và vận hành máy móc. Lưu ý đặc biệt: Sử dụng thuốc cho phụ nữ trong thời kỳ mang thai và cho con bú: An toàn của thuốc đối với phụ nữ có thai chưa được xác định. Do đó, chỉ dùng thuốc này cho phụ nữ có thai hoặc có khả năng mang thai khi đã cân nhắc giữa lợi ích do điều trị mang lại và nguy cơ có thể xảy ra. Sử dụng levocarnitin ở phụ nữ cho con bú hiện chưa được nghiên cứu. Ở những người đang cho con bú uống levorcanitin cần cân nhắc giữa nguy cơ đối với trẻ và lợi ích cho mẹ. Nên xem xét ngưng cho con bú hoặc ngưng điều trị bằng levocarnitin. Lưu ý đặc biệt: Tương tác thuốc: L-carnitin tương tác với một số thuốc chống đông như Fluindione, Warfarin, Acenocumarol. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        }
+      ]
+    },
+    {
+      "id": "shared-itching",
+      "utterance": "Da tôi bị ngứa khó chịu.",
+      "active_drug_ids": [
+        "acarbose-savi-50mg-10x10",
+        "acnemine-0-1-opv-15g"
+      ],
+      "expected_match_drug_ids": [
+        "acarbose-savi-50mg-10x10",
+        "acnemine-0-1-opv-15g"
+      ],
+      "redflag": false,
+      "evidence": "Cả hai chunk tac_dung_phu đều ghi ngứa.",
+      "matches": [
+        {
+          "drug_id": "acarbose-savi-50mg-10x10",
+          "ten_thuoc": "Acarbose SAVI 50mg 10x10",
+          "score": 0.2871880915507685,
+          "side_effect_content": "Thuốc: Acarbose SAVI 50mg 10x10 (Acarbose 50mg, Viên nén bao phim) — Thuốc trị tiểu đường\n\nTác dụng phụ: Đa số các tác dụng không mong muốn là về tiêu hóa. Thường gặp, ADR > 1/100 Tiêu hóa: Đầy bụng, phân nát, tiêu chảy, buồn nôn, bụng trướng và đau. Ít gặp, 1/1000 < ADR < 1/100 Gan: Chức năng gan bất thường. Da: Ngứa, ngoại ban. Hiếm gặp, ADR < 1/1000 Gan: Vàng da, viêm gan. Hướng dẫn cách xử trí ADR Tác dụng không mong muốn về tiêu hóa có thể giảm khi vẫn tiếp tục điều trị và chỉ cần giảm lượng đường ăn (đường mía). Để giảm thiểu các tác dụng phụ về tiêu hóa, nên bắt đầu điều trị bằng liều thấp nhất và tăng dần cho tới khi đạt được kết quả mong muốn. Không dùng thuốc chống acid để điều trị các tác dụng phụ về tiêu hóa này. Lưu ý đặc biệt: Chống chỉ định: Không dùng thuốc Acarbose cho các trường hợp sau: Quá mẫn với Acarbose. Phụ nữ mang thai hoặc đang cho con bú. Viêm nhiễm đường ruột, đặc biệt kết hợp với loét. Do thuốc có khả năng tạo hơi trong ruột, không nên dùng Sulfonylurea. Tuy nhiên, vì Acarbose chủ yếu làm chậm hơn cho những người dễ bị bệnh lý do tăng áp lực ổ bụng (thoát là ngăn cản hấp thu Glucose, thuốc không làm mất nhiều vi). Những trường hợp suy gan, tăng men gan. Hạ đường máu . Đái tháo đường nhiễm toan thể ceton. Lưu ý đặc biệt: Thận trọng khi dùng thuốc: Vì có những trường hợp tăng men gan nên cần theo dõi Transaminase gan trong quá trình điều trị bằng Acarbose. Có thể xảy ra hạ Glucose máu khi dùng Acarbose đồng thời với một thuốc chống đái tháo đường Sulfonylurea hoặc Insulin. Khi điều trị hạ Glucose máu, phải dùng Glucose uống (Dextrose) mà không dùng Sucrose vi hấp thu Glucose không bị ức chế bởi Acarbose. Acarbose không có tác dụng khi dùng đơn độc ở những người bệnh đái tháo đường có biến chứng nhiễm toan tăng celon hoặc hôn mê, ở những trường hợp này phải dùng Insulin. Lưu ý đặc biệt: Tương tác thuốc: Điều trị phối hợp với Sulfonylurea như 1 thuốc phụ trợ chế - Trong khi điều trị bằng Acarbose, thức ăn chứa đường ăn (đường mía) thường gây khó chịu ở bụng hoặc tiêu chảy do tăng sự lên men carbohydrat ở đại tràng. Acarbose có thể cản trở hấp thu hoặc chuyển hóa sắt. Vì cơ chế tác dụng của Acarbose và của các thuốc chống đái tháo đường Sulfonylurea hoặc Biguanid khác nhau, nên tác dụng của chúng đối với kiểm soát Glucose máu có tính chất cộng hưởng khi dùng phối hợp. Cần tránh dùng đồng thời với các thuốc chống acid, Cholestyramin, các chất hấp phụ ở ruột và các men tiêu hóa vì có thể làm giảm tác dụng của Acarbose. Lưu ý đặc biệt: Đối tượng cần thận trọng: Suy gan thận Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        },
+        {
+          "drug_id": "acnemine-0-1-opv-15g",
+          "ten_thuoc": "Acnemine 0.1% OPV 15g",
+          "score": 0.2503175852061841,
+          "side_effect_content": "Thuốc: Acnemine 0.1% OPV 15g (Adapalene 0.1%, Kem bôi ngoài) — Thuốc bôi ngoài da\n\nTác dụng phụ: Thường gặp (1/100 ≤ ADR > 1/10): Rối loạn da và mô dưới da: Khô da, kích ứng da, cảm giác nóng rát, đỏ da. Ít gặp (1/1000 < ADR < 1/100): Rối loạn da và mô dưới da: Viêm da tiếp xúc, khó chịu ở da, cháy nắng, ngứa, da tróc từng mảng, mụn trứng cá. Chưa biết tỷ lệ: Rối loạn da và mô dưới da: Viêm da dị ứng, đau ở da, da sưng, kích ứng mí mắt, đỏ da mí mắt, ngứa mí mắt, sưng mí mắt. Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Kem bôi da Acenemine chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Nếu xuất hiện phản ứng nhạy cảm hay kích ứng trầm trọng, nên ngưng thuốc. Thuốc này chỉ dùng ngoài da. Không nên để thuốc tiếp xúc vào mắt, miệng, hốc mũi, niêm mạc và vết thương hở. Nếu thuốc dây vào mắt do tai nạn phải rửa thật sạch ngay bằng nước ấm. Không nên bôi thuốc lên da bị trầy hay da bị eczema. Không nên sử dụng thuốc ở những bệnh nhân bị mụn trứng cá nặng hoặc mụn trên diện rộng của cơ thể; hạn chế tiếp xúc với ánh nắng mặt trời và tia UV trong thời gian dùng thuốc. Thuốc có chứa: Methyl paraben, propyl paraben: Có thể gây dị ứng (có thể phản ứng muộn). Propylen glycol: Có thể gây kích ứng da. Stearyl alcohol: Có thể gây phản ứng da tại chỗ (như viêm da tiếp xúc). Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Ảnh hưởng của thuốc đối với công việc: Không ảnh hưởng. Lưu ý đặc biệt: Thời kỳ mang thai: Không nên sử dụng Acenemine trong thai kỳ. Nếu phát hiện có thai thì ngừng sử dụng thuốc. Lưu ý đặc biệt: Thời kỳ cho con bú: Không sử dụng. Lưu ý đặc biệt: Tương tác thuốc: Không có tương tác nào được biết giữa các thuốc khác được sử dụng đồng thời trên da với adapalen; tuy nhiên, không nên dùng đồng thời các thuốc retinoid hay các thuốc khác có cùng phương thức tác động với adapalen. Adapalen bền vững với oxy và ánh sáng và không có phản ứng về mặt hóa học. Trong khi các nghiên cứu rộng rãi trên động vật và người không cho thấy khả năng bị tác hại của ánh sáng hay dị ứng ánh sáng với adapalen, tính an toàn của việc sử dụng adapalen khi tiếp xúc nhiều với ánh nắng hay tia cực tím chưa được xác định trên cả động vật và người. Nên tránh tiếp xúc nhiều với ánh nắng hay tia cực tím. Ở người, adapalen hấp thu qua da thấp, và do đó, tương tác với các thuốc có tác dụng toàn thân hầu như không xảy ra. Không có bằng chứng về ảnh hưởng của sự sử dụng adapalen ngoài da lên các thuốc dùng theo đường uống như thuốc ngừa thai và kháng sinh. Adapalen có khả năng gây kích ứng tại chỗ nhẹ, do đó, sự sử dụng đồng thời các thuốc có tác dụng bong da, se da hay những thuốc có tính kích ứng có thể gây kích ứng gộp. Tuy nhiên, các thuốc điều trị mụn trứng cá trên da như dung dịch erythromycin (với nồng độ đến 4%) hay clindamycin phosphat (1% dạng base) hay dạng gel nước benzoyl peroxid với nồng độ đến 10%, có thể được sử dụng vào buổi sáng trong khi adapalen được dùng vào buổi tối do không có sự phân hủy giữa các thuốc cũng như kích ứng gộp."
+        }
+      ]
+    },
+    {
+      "id": "no-relation-shoulder-pain",
+      "utterance": "Tôi đau vai khi ngủ dậy.",
+      "active_drug_ids": [
+        "acarbose-savi-50mg-10x10",
+        "acnemine-0-1-opv-15g"
+      ],
+      "expected_match_drug_ids": [],
+      "redflag": false,
+      "evidence": "Không có chunk tac_dung_phu nào trong đơn này nêu đau vai.",
+      "matches": [
+        {
+          "drug_id": "acarbose-savi-50mg-10x10",
+          "ten_thuoc": "Acarbose SAVI 50mg 10x10",
+          "score": 0.28670939867053913,
+          "side_effect_content": "Thuốc: Acarbose SAVI 50mg 10x10 (Acarbose 50mg, Viên nén bao phim) — Thuốc trị tiểu đường\n\nTác dụng phụ: Đa số các tác dụng không mong muốn là về tiêu hóa. Thường gặp, ADR > 1/100 Tiêu hóa: Đầy bụng, phân nát, tiêu chảy, buồn nôn, bụng trướng và đau. Ít gặp, 1/1000 < ADR < 1/100 Gan: Chức năng gan bất thường. Da: Ngứa, ngoại ban. Hiếm gặp, ADR < 1/1000 Gan: Vàng da, viêm gan. Hướng dẫn cách xử trí ADR Tác dụng không mong muốn về tiêu hóa có thể giảm khi vẫn tiếp tục điều trị và chỉ cần giảm lượng đường ăn (đường mía). Để giảm thiểu các tác dụng phụ về tiêu hóa, nên bắt đầu điều trị bằng liều thấp nhất và tăng dần cho tới khi đạt được kết quả mong muốn. Không dùng thuốc chống acid để điều trị các tác dụng phụ về tiêu hóa này. Lưu ý đặc biệt: Chống chỉ định: Không dùng thuốc Acarbose cho các trường hợp sau: Quá mẫn với Acarbose. Phụ nữ mang thai hoặc đang cho con bú. Viêm nhiễm đường ruột, đặc biệt kết hợp với loét. Do thuốc có khả năng tạo hơi trong ruột, không nên dùng Sulfonylurea. Tuy nhiên, vì Acarbose chủ yếu làm chậm hơn cho những người dễ bị bệnh lý do tăng áp lực ổ bụng (thoát là ngăn cản hấp thu Glucose, thuốc không làm mất nhiều vi). Những trường hợp suy gan, tăng men gan. Hạ đường máu . Đái tháo đường nhiễm toan thể ceton. Lưu ý đặc biệt: Thận trọng khi dùng thuốc: Vì có những trường hợp tăng men gan nên cần theo dõi Transaminase gan trong quá trình điều trị bằng Acarbose. Có thể xảy ra hạ Glucose máu khi dùng Acarbose đồng thời với một thuốc chống đái tháo đường Sulfonylurea hoặc Insulin. Khi điều trị hạ Glucose máu, phải dùng Glucose uống (Dextrose) mà không dùng Sucrose vi hấp thu Glucose không bị ức chế bởi Acarbose. Acarbose không có tác dụng khi dùng đơn độc ở những người bệnh đái tháo đường có biến chứng nhiễm toan tăng celon hoặc hôn mê, ở những trường hợp này phải dùng Insulin. Lưu ý đặc biệt: Tương tác thuốc: Điều trị phối hợp với Sulfonylurea như 1 thuốc phụ trợ chế - Trong khi điều trị bằng Acarbose, thức ăn chứa đường ăn (đường mía) thường gây khó chịu ở bụng hoặc tiêu chảy do tăng sự lên men carbohydrat ở đại tràng. Acarbose có thể cản trở hấp thu hoặc chuyển hóa sắt. Vì cơ chế tác dụng của Acarbose và của các thuốc chống đái tháo đường Sulfonylurea hoặc Biguanid khác nhau, nên tác dụng của chúng đối với kiểm soát Glucose máu có tính chất cộng hưởng khi dùng phối hợp. Cần tránh dùng đồng thời với các thuốc chống acid, Cholestyramin, các chất hấp phụ ở ruột và các men tiêu hóa vì có thể làm giảm tác dụng của Acarbose. Lưu ý đặc biệt: Đối tượng cần thận trọng: Suy gan thận Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        },
+        {
+          "drug_id": "acnemine-0-1-opv-15g",
+          "ten_thuoc": "Acnemine 0.1% OPV 15g",
+          "score": 0.27541848252824286,
+          "side_effect_content": "Thuốc: Acnemine 0.1% OPV 15g (Adapalene 0.1%, Kem bôi ngoài) — Thuốc bôi ngoài da\n\nTác dụng phụ: Thường gặp (1/100 ≤ ADR > 1/10): Rối loạn da và mô dưới da: Khô da, kích ứng da, cảm giác nóng rát, đỏ da. Ít gặp (1/1000 < ADR < 1/100): Rối loạn da và mô dưới da: Viêm da tiếp xúc, khó chịu ở da, cháy nắng, ngứa, da tróc từng mảng, mụn trứng cá. Chưa biết tỷ lệ: Rối loạn da và mô dưới da: Viêm da dị ứng, đau ở da, da sưng, kích ứng mí mắt, đỏ da mí mắt, ngứa mí mắt, sưng mí mắt. Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Kem bôi da Acenemine chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Nếu xuất hiện phản ứng nhạy cảm hay kích ứng trầm trọng, nên ngưng thuốc. Thuốc này chỉ dùng ngoài da. Không nên để thuốc tiếp xúc vào mắt, miệng, hốc mũi, niêm mạc và vết thương hở. Nếu thuốc dây vào mắt do tai nạn phải rửa thật sạch ngay bằng nước ấm. Không nên bôi thuốc lên da bị trầy hay da bị eczema. Không nên sử dụng thuốc ở những bệnh nhân bị mụn trứng cá nặng hoặc mụn trên diện rộng của cơ thể; hạn chế tiếp xúc với ánh nắng mặt trời và tia UV trong thời gian dùng thuốc. Thuốc có chứa: Methyl paraben, propyl paraben: Có thể gây dị ứng (có thể phản ứng muộn). Propylen glycol: Có thể gây kích ứng da. Stearyl alcohol: Có thể gây phản ứng da tại chỗ (như viêm da tiếp xúc). Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Ảnh hưởng của thuốc đối với công việc: Không ảnh hưởng. Lưu ý đặc biệt: Thời kỳ mang thai: Không nên sử dụng Acenemine trong thai kỳ. Nếu phát hiện có thai thì ngừng sử dụng thuốc. Lưu ý đặc biệt: Thời kỳ cho con bú: Không sử dụng. Lưu ý đặc biệt: Tương tác thuốc: Không có tương tác nào được biết giữa các thuốc khác được sử dụng đồng thời trên da với adapalen; tuy nhiên, không nên dùng đồng thời các thuốc retinoid hay các thuốc khác có cùng phương thức tác động với adapalen. Adapalen bền vững với oxy và ánh sáng và không có phản ứng về mặt hóa học. Trong khi các nghiên cứu rộng rãi trên động vật và người không cho thấy khả năng bị tác hại của ánh sáng hay dị ứng ánh sáng với adapalen, tính an toàn của việc sử dụng adapalen khi tiếp xúc nhiều với ánh nắng hay tia cực tím chưa được xác định trên cả động vật và người. Nên tránh tiếp xúc nhiều với ánh nắng hay tia cực tím. Ở người, adapalen hấp thu qua da thấp, và do đó, tương tác với các thuốc có tác dụng toàn thân hầu như không xảy ra. Không có bằng chứng về ảnh hưởng của sự sử dụng adapalen ngoài da lên các thuốc dùng theo đường uống như thuốc ngừa thai và kháng sinh. Adapalen có khả năng gây kích ứng tại chỗ nhẹ, do đó, sự sử dụng đồng thời các thuốc có tác dụng bong da, se da hay những thuốc có tính kích ứng có thể gây kích ứng gộp. Tuy nhiên, các thuốc điều trị mụn trứng cá trên da như dung dịch erythromycin (với nồng độ đến 4%) hay clindamycin phosphat (1% dạng base) hay dạng gel nước benzoyl peroxid với nồng độ đến 10%, có thể được sử dụng vào buổi sáng trong khi adapalen được dùng vào buổi tối do không có sự phân hủy giữa các thuốc cũng như kích ứng gộp."
+        }
+      ]
+    },
+    {
+      "id": "no-relation-cough",
+      "utterance": "Tôi bị ho khan suốt đêm.",
+      "active_drug_ids": [
+        "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+        "actapulgite-3g-ipsen-30-goi"
+      ],
+      "expected_match_drug_ids": [],
+      "redflag": false,
+      "evidence": "Không có chunk tac_dung_phu nào trong đơn này nêu ho.",
+      "matches": [
+        {
+          "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "ten_thuoc": "Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml",
+          "score": 0.20354388575166138,
+          "side_effect_content": "Thuốc: Abanuti 1g/10ml Phương ĐÔNG 20 ỐNG X 10ml (Levocarnitin 1g, Dung dịch uống) — Thuốc trị bệnh gan\n\nTác dụng phụ: Khi sử dụng thuốc Abanuti có thể gặp các tác dụng không mong muốn (ADR) như: Có thể xuất hiện tạm thời các triệu trứng như buồn nôn, nôn, đau bụng, đau dạ dày, tiêu chảy và mùi cơ thể. Hướng dẫn cách xử trí ADR: Thông báo cho thầy thuốc các tác dụng không mong muốn gặp phải khi sử dụng thuốc. Lưu ý đặc biệt: Chống chỉ định: Thuốc Abanuti chống chỉ định trong các trường hợp sau: Quá mẫn với bất cứ thành phần nào của thuốc. Lưu ý đặc biệt: Thận trọng khi sử dụng: Cần rất thận trọng khi dùng thuốc cho người bệnh trong các trường hợp sau: Uống carnitin quá nhanh có thể gây rối loạn tiêu hóa. Do đó nên uống chậm và chia liều dùng thành nhiều phần bằng nhau uống trong ngày đến tăng khả năng dung nap. Lưu ý đặc biệt: Ảnh hưởng của thuốc lên khả năng lái xe và vận hành máy móc: Thuốc không ảnh hưởng lên khả năng lái xe và vận hành máy móc. Lưu ý đặc biệt: Sử dụng thuốc cho phụ nữ trong thời kỳ mang thai và cho con bú: An toàn của thuốc đối với phụ nữ có thai chưa được xác định. Do đó, chỉ dùng thuốc này cho phụ nữ có thai hoặc có khả năng mang thai khi đã cân nhắc giữa lợi ích do điều trị mang lại và nguy cơ có thể xảy ra. Sử dụng levocarnitin ở phụ nữ cho con bú hiện chưa được nghiên cứu. Ở những người đang cho con bú uống levorcanitin cần cân nhắc giữa nguy cơ đối với trẻ và lợi ích cho mẹ. Nên xem xét ngưng cho con bú hoặc ngưng điều trị bằng levocarnitin. Lưu ý đặc biệt: Tương tác thuốc: L-carnitin tương tác với một số thuốc chống đông như Fluindione, Warfarin, Acenocumarol. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        },
+        {
+          "drug_id": "actapulgite-3g-ipsen-30-goi",
+          "ten_thuoc": "Actapulgite 3g Ipsen 30 GÓI",
+          "score": 0.16145042461057313,
+          "side_effect_content": "Thuốc: Actapulgite 3g Ipsen 30 GÓI (Activated Attapulgite of Mormoiron 3g, Bột pha hỗn dịch uống) — Thuốc trị tiêu chảy\n\nTác dụng phụ: Khi sử dụng thuốc Actapulgite, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR >1/100 Có thể bị táo bón, đầy hơi, khó tiêu , trong trường hợp sử dụng kéo dài hoặc liều cao. Ít gặp, 1/1000 < ADR < 1/100 Phản ứng quá mẫn, ban đỏ, sưng, mày đay , rộp da, khó thở, khó nuốt; Đau đầu, choáng váng. Hướng dẫn cách xử trí ADR Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Actapulgite chống chỉ định trong các trường hợp sau: Mẫn cảm với hoạt chất hay bất kỳ thành phần nào của tá dược; Hẹp đường tiêu hóa. Lưu ý đặc biệt: Thận trọng khi sử dụng: Thận trọng trong trường hợp phình đại tràng, nhu động đại tràng bị thay đổi (nguy cơ u phân). Thuốc chứa glucose nên không khuyến cáo dùng cho bệnh nhân có hội chứng kém hấp thu glucose hoặc galactose. Trong tiêu chảy cấp ở trẻ em phải dùng cùng các thuốc bổ sung nước và chất điện giải. Phải luôn xem xét việc bù nước ở những bệnh nhân thể trạng yếu, trẻ nhũ nhi và trẻ em qua đường uống (ORS) hoặc đường truyền tĩnh mạch theo mức độ tiêu chảy, tuổi và bệnh cảnh lâm sàng của bệnh nhân. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Có thể sử dụng thuốc cho người lái xe hay vận hành máy móc. Tuy nhiên, cần lưu ý về tình trạng tiêu chảy, mất điện giải nhiều của bệnh nhân. Lưu ý đặc biệt: Thời kỳ mang thai: Không có nghiên cứu cho thấy gây quái thai trên động vật. Trong các nghiên cứu lâm sàng, cho đến nay chưa quan sát thấy có tác động liên quan đến gây dị tật hoặc độc cho bào thai. Tuy nhiên, việc theo dõi phụ nữ có thai phơi nhiễm với attapulgite là chưa đủ để loại trừ tất cả các rủi ro. Do đặc tính không hấp thu của attapulgite, thuốc này chỉ được cân nhắc dùng trong quá trình mang thai nếu thực sự cần thiết. Lưu ý đặc biệt: Thời kỳ cho con bú: Không có dữ liệu lâm sàng cho thấy attapulgite vào được sữa mẹ. Tuy nhiên, vì attapulgite không được hấp thu nên attapulgite dùng an toàn cho phụ nữ đang cho con bú. Lưu ý đặc biệt: Tương tác thuốc: Có sự giảm hấp thu qua đường tiêu hóa của các thuốc uống cùng lúc đã được ghi nhận. Lưu ý, các chất hấp phụ đều không nên uống cùng lúc với các thuốc khác. Nếu có thể, thuốc này nên dùng trước hoặc sau ít nhất 2 giờ với các thuốc sau: Thuốc kháng sinh kháng lao (ethambutol, isoniazid) (đường uống); Kháng sinh - nhóm cycline (đường uống), nhóm fluoroquinolone (đường uống), nhóm lincosamide (đường uống); Kháng histamine H2 (đường uống); Atenolol, metoprolol, propranolol (đường uống); Chloroquine (đường uống); Diflunisal (đường uống); Digoxin (đường uống); Biphosphonate (đường uống); Natri floride; Các glucocorticoid (đường uống) (prednisolone và dexamethasone); Indometacin (đường uống); Kayexalate (đường uống); Ketoconazole (đường uống); Lansoprazole; Thuốc an thần nhóm phenothiazine; Penicillamine (đường uống); Muối sắt (đường uống). Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        }
+      ]
+    },
+    {
+      "id": "redflag-breathing",
+      "utterance": "Tôi thấy khó thở và cần được giúp ngay.",
+      "active_drug_ids": [
+        "actapulgite-3g-ipsen-30-goi"
+      ],
+      "expected_match_drug_ids": [
+        "actapulgite-3g-ipsen-30-goi"
+      ],
+      "redflag": true,
+      "evidence": "Chunk tac_dung_phu ghi khó thở trong phản ứng quá mẫn; response vẫn phải thuộc safety layer.",
+      "matches": [
+        {
+          "drug_id": "actapulgite-3g-ipsen-30-goi",
+          "ten_thuoc": "Actapulgite 3g Ipsen 30 GÓI",
+          "score": 0.3408980233369824,
+          "side_effect_content": "Thuốc: Actapulgite 3g Ipsen 30 GÓI (Activated Attapulgite of Mormoiron 3g, Bột pha hỗn dịch uống) — Thuốc trị tiêu chảy\n\nTác dụng phụ: Khi sử dụng thuốc Actapulgite, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR >1/100 Có thể bị táo bón, đầy hơi, khó tiêu , trong trường hợp sử dụng kéo dài hoặc liều cao. Ít gặp, 1/1000 < ADR < 1/100 Phản ứng quá mẫn, ban đỏ, sưng, mày đay , rộp da, khó thở, khó nuốt; Đau đầu, choáng váng. Hướng dẫn cách xử trí ADR Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Actapulgite chống chỉ định trong các trường hợp sau: Mẫn cảm với hoạt chất hay bất kỳ thành phần nào của tá dược; Hẹp đường tiêu hóa. Lưu ý đặc biệt: Thận trọng khi sử dụng: Thận trọng trong trường hợp phình đại tràng, nhu động đại tràng bị thay đổi (nguy cơ u phân). Thuốc chứa glucose nên không khuyến cáo dùng cho bệnh nhân có hội chứng kém hấp thu glucose hoặc galactose. Trong tiêu chảy cấp ở trẻ em phải dùng cùng các thuốc bổ sung nước và chất điện giải. Phải luôn xem xét việc bù nước ở những bệnh nhân thể trạng yếu, trẻ nhũ nhi và trẻ em qua đường uống (ORS) hoặc đường truyền tĩnh mạch theo mức độ tiêu chảy, tuổi và bệnh cảnh lâm sàng của bệnh nhân. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Có thể sử dụng thuốc cho người lái xe hay vận hành máy móc. Tuy nhiên, cần lưu ý về tình trạng tiêu chảy, mất điện giải nhiều của bệnh nhân. Lưu ý đặc biệt: Thời kỳ mang thai: Không có nghiên cứu cho thấy gây quái thai trên động vật. Trong các nghiên cứu lâm sàng, cho đến nay chưa quan sát thấy có tác động liên quan đến gây dị tật hoặc độc cho bào thai. Tuy nhiên, việc theo dõi phụ nữ có thai phơi nhiễm với attapulgite là chưa đủ để loại trừ tất cả các rủi ro. Do đặc tính không hấp thu của attapulgite, thuốc này chỉ được cân nhắc dùng trong quá trình mang thai nếu thực sự cần thiết. Lưu ý đặc biệt: Thời kỳ cho con bú: Không có dữ liệu lâm sàng cho thấy attapulgite vào được sữa mẹ. Tuy nhiên, vì attapulgite không được hấp thu nên attapulgite dùng an toàn cho phụ nữ đang cho con bú. Lưu ý đặc biệt: Tương tác thuốc: Có sự giảm hấp thu qua đường tiêu hóa của các thuốc uống cùng lúc đã được ghi nhận. Lưu ý, các chất hấp phụ đều không nên uống cùng lúc với các thuốc khác. Nếu có thể, thuốc này nên dùng trước hoặc sau ít nhất 2 giờ với các thuốc sau: Thuốc kháng sinh kháng lao (ethambutol, isoniazid) (đường uống); Kháng sinh - nhóm cycline (đường uống), nhóm fluoroquinolone (đường uống), nhóm lincosamide (đường uống); Kháng histamine H2 (đường uống); Atenolol, metoprolol, propranolol (đường uống); Chloroquine (đường uống); Diflunisal (đường uống); Digoxin (đường uống); Biphosphonate (đường uống); Natri floride; Các glucocorticoid (đường uống) (prednisolone và dexamethasone); Indometacin (đường uống); Kayexalate (đường uống); Ketoconazole (đường uống); Lansoprazole; Thuốc an thần nhóm phenothiazine; Penicillamine (đường uống); Muối sắt (đường uống). Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai"
+        }
+      ]
+    },
+    {
+      "id": "redflag-heavy-bleeding",
+      "utterance": "Tôi đang chảy máu nhiều không cầm được.",
+      "active_drug_ids": [
+        "acenocoumarol-4-spm-3x10"
+      ],
+      "expected_match_drug_ids": [
+        "acenocoumarol-4-spm-3x10"
+      ],
+      "redflag": true,
+      "evidence": "Chunk tac_dung_phu ghi chảy máu; response vẫn phải thuộc safety layer.",
+      "matches": [
+        {
+          "drug_id": "acenocoumarol-4-spm-3x10",
+          "ten_thuoc": "Acenocoumarol 4 SPM 3x10",
+          "score": 0.320616494411722,
+          "side_effect_content": "Thuốc: Acenocoumarol 4 SPM 3x10 (Acenocoumarol 4mg, Viên nén) — Thuốc chống đông máu\n\nTác dụng phụ: Khi sử dụng thuốc Acenocoumarol 4 mg, bạn có thể gặp các tác dụng không mong muốn (ADR). Thường gặp, ADR > 1/100 Toàn thân: Chảy máu. Thần kinh trung ương: Chảy máu. Tiêu hoá: Chảy máu. Mắt: Chảy máu. Ít gặp, 1/1000 < ADR < 1/100 Da: Dị ứng, rụng tóc, xuất huyết hoại tử da. Tiêu hoá: Tiêu chảy , rối loạn dạ dày - ruột. Xương khớp: Đau khớp riêng lẻ. Máu và hệ bạch huyết: Viêm mạch. Gan: Tổn thương gan. Hiếm gặp, 1/10.000 < ADR < 1/1000 Toàn thân: Rụng tóc. Tiêu hoá: Rối loạn tiêu hoá , mất cảm giác ngon miệng, buồn nôn , ói mửa. Da: Hoại tử da khu trú, có thể do di truyền thiếu protein C hay đồng yếu tố là protein S, mẫn da dị ứng. Máu và hệ bạch huyết: Viêm mạch. Hướng dẫn cách xử trí ADR: Khi gặp tác dụng phụ của thuốc, cần ngưng sử dụng và thông báo cho bác sĩ hoặc đến cơ sở y tế gần nhất để được xử trí kịp thời. Lưu ý đặc biệt: Chống chỉ định: Thuốc Acenocoumarol 4mg chống chỉ định trong các trường hợp sau: Quá mẫn cảm với acenocoumarol, các dẫn xuất của coumarin hay thành phần có trong thuốc. Phụ nữ mang thai. Người già yếu, nghiện rượu, bị rối loạn thần kinh hoặc người không có sự giám sát. Tất cả các điều kiện về nguy cơ xuất huyết quá mức có thể có lợi ích về lâm sàng như: Tạng xuất huyết và/hoặc loạn thể tạng xuất huyết. Ngay trước, hoặc sau phẫu thuật trên hệ thần kinh trung ương hoặc mắt và phẫu thuật chấn thương liên quan đến sự phơi bày quá mức của các mô. Loét tiêu hóa hoặc xuất huyết dạ bộ máy dày - ruột, bộ máy niệu - sinh dục hoặc hệ hô hấp. Xuất huyết mạch máu não. Viêm màng ngoài tim cấp, chảy dịch thế màng ngoài tim. Viêm nhiễm màng trong tim. Tăng huyết áp nặng. Suy gan nặng hoặc suy thận nặng và các trường hợp hoạt động phân hủy fibrin tăng theo các hoạt động của phổi, tiền liệt tuyến hoặc tử cung. Lưu ý đặc biệt: Thận trọng khi sử dụng: Sự chuyển đổi từ điều trị bằng heparin Trong các trạng thái lâm sàng yêu cầu kháng đông máu nhanh, điều trị ban đầu bằng heparin được thích hơn vì tác dụng kháng đông máu của acenocoumarol chậm. Việc chuyển đổi sang acenocoumarol có thể bắt đầu đồng thời với điều trị bằng heparin hoặc có thể chậm lại tùy thuộc vào trạng thái lâm sàng. Để đảm bảo kháng đông máu tiếp diễn, khuyến cáo nên tiếp tục kê đơn điều trị bằng heparin đủ liều trong ít nhất 4 ngày sau khi bắt đầu điều trị bằng acenocoumarol và tiếp tục điều trị bằng heparin đến khi INR nằm trong khoảng mục tiêu ít nhất hai ngày liên tục. Trong giai đoạn chuyển đổi, giám sát chặt tác dụng kháng đông máu là cần thiết. Điều trị trong nha khoa và phẫu thuật Các bệnh nhân dùng acenocoumarol, người trải qua quá trình phẫu thuật hoặc xâm lấn yêu cầu thăm dò chặt chẽ tình trạng đông máu của họ. Ở các điều kiện xác định, như khi vị trí phẫu thuật bị giới hạn và có thể tiếp cận được cho phép sử dụng hiệu quả các quy trình tại chỗ cho việc cầm máu, các quá trình nha khoa và phẫu thuật rất nhỏ có thể được thực hiện trong quá trình kháng đông máu được tiếp diễn, không có nguy cơ xuất huyết quá mức. Quyết định ngưng acenocoumarol, thậm chí trong một thời gian ngắn, phải cẩn thận xem xét các nguy cơ và các lợi ích riêng lẻ. Việc đưa vào kiểu bắc cầu điều trị kháng đông máu, như dùng heparin phải dựa trên đánh giá cẩn thận các nguy cơ tắc mạch và chảy máu. Suy gan Phải thận trọng ở các bệnh nhân suy gan nhẹ và vừa vì sự tổng hợp các yếu tố đông máu có thể bị suy giảm hoặc có thể có hoạt động bất thường của tiểu cầu. Suy thận Do khả năng tích lũy các chất chuyển hóa khi bị suy giảm chức năng thận, phải thận trọng ở các bệnh nhân suy thận nhẹ và vừa. Suy tim Trong suy tim nặng, thời biểu về liều vô cùng thận trọng phải được thực hiện, vì sung huyết có thể giảm hoạt tính của gamma - carboxyl hóa của các yếu tố đông máu. Tuy nhiên, với sự phục hồi của sung huyết gan, cần thiết có thể tăng liều. Huyết học Phải thận trọng với các bệnh nhân đã biết hoặc nghi ngờ chảy máu bất thường sau bị thương, thiếu hụt protein C hoặc protein S. Dân số đặc biệt Ở các bệnh nhân trẻ em và lớn tuổi (> 65 tuổi), thận trọng và giám sát thường xuyên hơn thời gian prothrombin và INR được khuyến cáo. Các thể khác: Giám sát y tế nghiêm ngặt phải được thực hiện trong các trường hợp bệnh hoặc điều kiện có thể giảm liên kết protein của acenocoumarol (như: Cường giáp, u, bệnh thận, viêm và nhiễm trùng). Các rối loạn ảnh hưởng đến sự hấp thu của dạ dày - ruột có thể thay đổi tác dụng kháng đông máu của acenocoumarol. Trong quá trình điều trị bằng các thuốc kháng đông máu, tiêm trong cơ có thể gây bướu máu và phải được tránh. Tiêm dưới da và tiêm tĩnh mạch có thể thực hiện mà không gây biến chứng này. Chăm sóc thật kỹ phải được thực hiện là cần thiết để rút ngắn PT/INR (thời gian thromboplastin) cho quá trình chẩn đoán hoặc điều trị (như: Chụp X quang, chọc dò tủy sống, phẫu thuật rất nhỏ, nhổ răng...). Các bệnh nhân có vấn đề di truyền hiếm về dung nạp galactose, sự thiếu Lapp lactase hoặc kém hấp thu glucose - galactose không được dùng thuốc này. Lưu ý đặc biệt: Khả năng lái xe và vận hành máy móc: Không ảnh hưởng đến khả năng lái xe và sử dụng máy móc. Lưu ý đặc biệt: Thời kỳ mang thai: Đã có thống kê khoảng 4% dị dạng thai nhi khi người mẹ dùng thuốc này trong quý đầu thai kỳ. Vào các quý sau, vẫn thấy có nguy cơ (cả sảy thai). Vì vậy chỉ dùng thuốc khi không thể cho heparin. Lưu ý đặc biệt: Thời kỳ cho con bú: Tránh cho con bú. Nếu phải cho bú thì nên bù vitamin K cho đứa trẻ. Lưu ý đặc biệt: Tương tác thuốc: Rất nhiều thuốc có thể tương tác với thuốc kháng vitamin K nên cần theo dõi người bệnh 3 - 4 ngày sau khi thêm hay bớt thuốc phối hợp Chống chỉ định phối hợp: Aspirin (nhất là với liều cao trên 3 g/ngày) làm tăng tác dụng chống đông máu và nguy cơ chảy máu do ức chế kết tập tiểu cầu và chuyển dịch thuốc uống chống đông máu ra khỏi liên kết với protein huyết tương. Miconazol: Xuất huyết bất ngờ có thể nặng do tăng dạng tự do trong máu và ức chế chuyển hóa của thuốc kháng vitamin K. Phenylbutazon làm tăng tác dụng chống đông máu kết hợp với kích ứng niêm mạc đường tiêu hóa. Thuốc chống viêm không steroid nhóm Pyrazol: Tăng nguy cơ chảy máu do ức chế tiểu cầu và kích ứng niêm mạc đường tiêu hóa. Không nên phối hợp: Aspirin với liều dưới 3 g/ngày. Các thuốc chống viêm không steroid, kể cả loại ức chế chọn lọc COX - 2. Cloramphenicol: Tăng tác dụng của thuốc uống chống đông máu do làm giảm chuyển hóa thuốc này tại gan. Nếu không thể tránh phối hợp thì phải kiểm tra INR thường xuyên hơn, hiệu chỉnh liều trong và sau 8 ngày ngừng cloramphenicol. Diflunisal: Tăng tác dụng của thuốc uống chống đông máu do cạnh tranh liên kết với protein huyết tương. Nên dùng thuốc giảm đau khác, thí dụ Paracetamol. Thận trọng khi phối hợp: Allopurinol, aminoglutethimid, amiodaron, androgen, thuốc chống trầm cảm cường serotonin, benzbromaron, bosentan, carbamazepin, cephalosporin, cimetidin (trên 800 mg/ngày), cisaprid, cholestyramin, corticoid (trừ hydrocortison dùng điều trị thay thế trong bệnh Addison), cyclin, thuốc gây độc tế bào, fibrates, các azol trị nấm, fluoroquinolon, các loại heparin, nội tiết tố tuyến giáp, thuốc gây cảm ứng enzym, các statin, macrolid (trừ spiramycin), neviparin, efavirenz, nhóm imidazol, orlistat, pentoxifylin, phenytoin, propafenon, ritonavir, lopinavir, một số sulfamid (sulfamethoxazol, sulfafurazol, sulfamethizol), sucraflat, thuốc trị ung thư (tamoxifen, raloxifen), tibolon, vitamin E trên 500 mg/ngày, rượu, thuốc chống lập kết tiểu cầu, thuốc tiêu huyết khối,... cũng làm thay đổi tác dụng chống đông máu. Các thuốc làm tăng tác dụng chống đông máu của acenocoumarol: Allopurinol; Anabolic steroids; Androgen. Thuốc chống loạn nhịp tim (như amiodarone, quinidine). Thuốc kháng sinh, kháng sinh phổ rộng (như amoxicillin, coamoxiclav) macrolid (như erythromycin, clarithromycin). Cephalosporin thế hệ thứ hai và thứ ba. Metronidazole; Quinolone (như ciprofloxacin, norfloxacin, ofloxacin); Tetracyclines; Neomycin; Chloramphenicol; Fibrates (như acid clofibric). Các dẫn xuất của fibrates hoặc có cấu trúc tương tự (như gemfibrozil, fenofibrate). Disulfiram; Etacrynic acid; Glucagon; Thuốc kháng H2 (như cimetidine). Các dẫn xuất của imidazole (econazole, fluconazole, ketoconazole, miconazole). Paracetamol; Sulfonamides (bao gồm cả Co-trimoxazole); Antidiabetic (glibenclamide). Kích thích tố tuyến giáp (dextrothyroxine). Sulfinpyrazone; Sulphonylureas (tolbutamide và chlopropamide). Statin (atorvastatin, fluvastatin, simvastatin). Các chất ức chế sự tái hấp thu serotonin chọn lọc (fluoxetine, paroxetine); Tamoxifen; 5-fluorouracil; Tramadol. Corticosteroid (methylprednisolone, prednisone). Các chất ức chế của CYP2C9, thuốc cầm máu bao gồm heparin, chất ức chế tiểu cầu (clopidogrel, dipyridamole), acid salicylic và các dẫn xuất như acetylsalicylic acid, para - aminosalicylic acid; diflunisal, phenylbutazone và các dẫn xuất pyrazolone (sulfinpyrazone); chất chống viêm không steroid (NSAIDs) bao gồm thuốc ức chế COX - 2 (celecoxib) và methylprednisolone. Chúng có thể làm tăng nguy cơ xuất huyết. Trong trường hợp việc sử dụng đồng thời là không thể tránh khỏi thì việc xét nghiệm đông máu nên được thực hiện thường xuyên. Các thuốc làm giảm tác dụng chống đông máu của thuốc acenocoumarol: Aminoglutethimide. Các loại thuốc chống ung thư (azathioprine, 6-mercaptopurine); Barbiturates (Phenobarbital); Carbamazepine. Cholestyramine; Griseofulvin; Thuốc tránh thai; Rifampicin. Các thuốc lợi tiểu, các tác nhân gây cảm ứng: CYP2C19, CYP2C9 hoặc CYP3A4. Ngoài ra, thuốc ức chế protease (indinavir, nelfinavir, ritonavir, saquinavir) cũng có ảnh hưởng đến tác dụng chống đông máu của thuốc và chưa có báo cáo nào về việc tăng hay giảm hoạt động chống đông máu của thuốc. Nồng độ hydantoin trong huyết thanh có thể tăng khi điều trị đồng thời với những dẫn xuất của hydantoin (như phenytoin). Acenocoumarol có thể làm tăng tác dụng hạ đường huyết khi sử dụng những dẫn xuất của sulphonylurea (như glibenclamide, glimepiride). Bệnh nhân bị rối loạn chức năng gan khi điều trị với Acenocoumarol nên hạn chế uống rượu. Khi điều trị với Acenocoumarol, bệnh nhân nên tránh uống nước ép của quả quất. Tăng cường giám sát và theo dõi INR đối với bệnh nhân thường xuyên sử dụng nước ép quất. Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ có thai Lưu ý đặc biệt: Đối tượng cần thận trọng: Phụ nữ cho con bú"
+        }
+      ]
+    }
+  ],
+  "sweep": [
+    {
+      "threshold": 0.2,
+      "precision": 0.8,
+      "recall": 1.0,
+      "false_positive_count": 3,
+      "false_negative_count": 0,
+      "exact_case_accuracy": 0.8181818181818182,
+      "redflag_exact_case_accuracy": 1.0
+    },
+    {
+      "threshold": 0.25,
+      "precision": 0.8333333333333334,
+      "recall": 0.8333333333333334,
+      "false_positive_count": 2,
+      "false_negative_count": 2,
+      "exact_case_accuracy": 0.8181818181818182,
+      "redflag_exact_case_accuracy": 1.0
+    },
+    {
+      "threshold": 0.3,
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "false_positive_count": 0,
+      "false_negative_count": 4,
+      "exact_case_accuracy": 0.8181818181818182,
+      "redflag_exact_case_accuracy": 1.0
+    },
+    {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 0.4166666666666667,
+      "false_positive_count": 0,
+      "false_negative_count": 7,
+      "exact_case_accuracy": 0.5454545454545454,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.4,
+      "precision": 1.0,
+      "recall": 0.08333333333333333,
+      "false_positive_count": 0,
+      "false_negative_count": 11,
+      "exact_case_accuracy": 0.2727272727272727,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.45,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.55,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.6,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.65,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    },
+    {
+      "threshold": 0.8,
+      "precision": 1.0,
+      "recall": 0.0,
+      "false_positive_count": 0,
+      "false_negative_count": 12,
+      "exact_case_accuracy": 0.18181818181818182,
+      "redflag_exact_case_accuracy": 0.0
+    }
+  ],
+  "llm_validation": {
+    "candidate_threshold": 0.2,
+    "precision": 1.0,
+    "recall": 1.0,
+    "false_positive_count": 0,
+    "false_negative_count": 0,
+    "per_case": [
+      {
+        "id": "acarbose-bloating",
+        "expected": [
+          "acarbose-savi-50mg-10x10"
+        ],
+        "actual": [
+          "acarbose-savi-50mg-10x10"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acarbose-savi-50mg-10x10",
+            "score": 0.40773413206623466,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "acnemine-skin-irritation",
+        "expected": [
+          "acnemine-0-1-opv-15g"
+        ],
+        "actual": [
+          "acnemine-0-1-opv-15g"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acnemine-0-1-opv-15g",
+            "score": 0.39147787202243656,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "actapulgite-constipation",
+        "expected": [
+          "actapulgite-3g-ipsen-30-goi"
+        ],
+        "actual": [
+          "actapulgite-3g-ipsen-30-goi"
+        ],
+        "decisions": [
+          {
+            "drug_id": "actapulgite-3g-ipsen-30-goi",
+            "score": 0.3718812485039309,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "acenocoumarol-bleeding",
+        "expected": [
+          "acenocoumarol-4-spm-3x10"
+        ],
+        "actual": [
+          "acenocoumarol-4-spm-3x10"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acenocoumarol-4-spm-3x10",
+            "score": 0.3365635156430239,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "shared-nausea",
+        "expected": [
+          "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "acarbose-savi-50mg-10x10"
+        ],
+        "actual": [
+          "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "acarbose-savi-50mg-10x10"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acarbose-savi-50mg-10x10",
+            "score": 0.22107355659848948,
+            "is_match": true
+          },
+          {
+            "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+            "score": 0.21728142185324817,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "shared-diarrhea",
+        "expected": [
+          "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "aciclovir-800mg-meyer-bpc-3x10"
+        ],
+        "actual": [
+          "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+          "aciclovir-800mg-meyer-bpc-3x10"
+        ],
+        "decisions": [
+          {
+            "drug_id": "aciclovir-800mg-meyer-bpc-3x10",
+            "score": 0.3824549713636698,
+            "is_match": true
+          },
+          {
+            "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+            "score": 0.3595002683818713,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "shared-itching",
+        "expected": [
+          "acarbose-savi-50mg-10x10",
+          "acnemine-0-1-opv-15g"
+        ],
+        "actual": [
+          "acarbose-savi-50mg-10x10",
+          "acnemine-0-1-opv-15g"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acarbose-savi-50mg-10x10",
+            "score": 0.2871880915507685,
+            "is_match": true
+          },
+          {
+            "drug_id": "acnemine-0-1-opv-15g",
+            "score": 0.2503175852061841,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "no-relation-shoulder-pain",
+        "expected": [],
+        "actual": [],
+        "decisions": [
+          {
+            "drug_id": "acarbose-savi-50mg-10x10",
+            "score": 0.28670939867053913,
+            "is_match": false
+          },
+          {
+            "drug_id": "acnemine-0-1-opv-15g",
+            "score": 0.27541848252824286,
+            "is_match": false
+          }
+        ]
+      },
+      {
+        "id": "no-relation-cough",
+        "expected": [],
+        "actual": [],
+        "decisions": [
+          {
+            "drug_id": "abanuti-1g-10ml-phuong-dong-20-ong-x-10ml",
+            "score": 0.20354388575166138,
+            "is_match": false
+          }
+        ]
+      },
+      {
+        "id": "redflag-breathing",
+        "expected": [
+          "actapulgite-3g-ipsen-30-goi"
+        ],
+        "actual": [
+          "actapulgite-3g-ipsen-30-goi"
+        ],
+        "decisions": [
+          {
+            "drug_id": "actapulgite-3g-ipsen-30-goi",
+            "score": 0.3408980233369824,
+            "is_match": true
+          }
+        ]
+      },
+      {
+        "id": "redflag-heavy-bleeding",
+        "expected": [
+          "acenocoumarol-4-spm-3x10"
+        ],
+        "actual": [
+          "acenocoumarol-4-spm-3x10"
+        ],
+        "decisions": [
+          {
+            "drug_id": "acenocoumarol-4-spm-3x10",
+            "score": 0.320616494411722,
+            "is_match": true
+          }
+        ]
+      }
+    ]
+  }
+}

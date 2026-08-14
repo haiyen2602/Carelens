@@ -61,6 +61,10 @@ from backend.agents.nodes.drug_confirmation_nodes import (
     build_drug_confirmation_reply_node,
     build_drug_identity_resolution_node,
 )
+from backend.agents.nodes.side_effect_audit_nodes import (
+    build_redflag_side_effect_audit,
+    build_side_effect_audit_node,
+)
 from backend.agents.orchestrator import run_conversation
 from backend.agents.state import ConversationState
 from backend.agents.tools.chat_history_tool import (
@@ -109,6 +113,9 @@ async def chat(
     t0 = time.monotonic()
     patient_id = get_current_patient_id(request, current_user)
     escalate_fn = build_db_escalate_fn(db)
+    redflag_side_effect_audit = build_redflag_side_effect_audit(
+        db, services.embed_query, services.classify_side_effect_match
+    )
 
     initial_state: ConversationState = {
         "patient_id": patient_id,
@@ -148,7 +155,9 @@ async def chat(
             # 1 cau tra loi xac nhan, khong duoc bo qua kiem tra nay).
             initial_state["intent"] = "drug_info"
             reply_nodes = [
-                build_drug_confirmation_reply_node(db, services.embed_query, pending),
+                build_drug_confirmation_reply_node(
+                    db, services.embed_query, pending, services.classify_drug_reply_plausibility
+                ),
                 build_prescription_lookup_node(db),
                 build_answer_generation_node(services.generate_answer, db=db),
             ]
@@ -157,6 +166,7 @@ async def chat(
                 nodes=reply_nodes,
                 safety_check=services.safety_check,
                 escalate_fn=escalate_fn,
+                redflag_audit_fn=redflag_side_effect_audit,
             )
         else:
             # Giai doan 1: chi intent_classification. Neu redflag toi ngay o
@@ -167,6 +177,7 @@ async def chat(
                 nodes=[build_intent_classification_node(services.classify_intent, db=db)],
                 safety_check=services.safety_check,
                 escalate_fn=escalate_fn,
+                redflag_audit_fn=redflag_side_effect_audit,
             )
 
             if stage1.get("safety_flag"):
@@ -179,11 +190,14 @@ async def chat(
                 # node cu (muc 11) - hybrid search gio chi dung de tim ung
                 # vien dua ra hoi xac nhan, khong con tra loi truc tiep.
                 remaining_nodes = [
-                    build_drug_identity_resolution_node(db, services.embed_query),
+                    build_drug_identity_resolution_node(
+                        db, services.embed_query, services.select_fuzzy_candidate
+                    ),
                     build_prescription_lookup_node(db),
                     build_answer_generation_node(services.generate_answer, db=db),
                     build_today_schedule_node(db),
                     build_classify_node(services.classify_dose),
+                    build_side_effect_audit_node(db, services.embed_query, services.classify_side_effect_match),
                     build_severity_node(db, services.classify_severity),
                     build_level_action_node(escalate_fn),
                     build_greeting_node(db),
@@ -194,6 +208,7 @@ async def chat(
                     nodes=remaining_nodes,
                     safety_check=services.safety_check,
                     escalate_fn=escalate_fn,
+                    redflag_audit_fn=redflag_side_effect_audit,
                 )
 
     # Vong 3, muc 4 - fix bug thuc: neu safety_layer trigger redflag (bat ke

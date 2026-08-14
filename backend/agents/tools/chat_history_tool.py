@@ -21,7 +21,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.db.models import ChatMessage
+from backend.db.models import ChatMessage, HourlyConversationSummary
 
 # Muc 7.2 - "Da chot: 15 phut" (kickoff-prompt-vong-3.md), tieu chi thoi gian
 # THUAN, khong gioi han them theo so luong tin nhan.
@@ -56,8 +56,41 @@ def hide_all_chat_messages(db: Session, patient_id: str) -> int:
     rows = db.execute(stmt).scalars().all()
     for r in rows:
         r.hidden = True
+    summaries = db.execute(
+        select(HourlyConversationSummary).where(
+            HourlyConversationSummary.patient_id == patient_id,
+            HourlyConversationSummary.hidden.is_(False),
+        )
+    ).scalars().all()
+    for summary in summaries:
+        summary.hidden = True
     db.commit()
     return len(rows)
+
+
+def get_hourly_summaries_for_history(db: Session, patient_id: str, limit: int = 5) -> list[dict]:
+    """Nguon history dai han uu tien theo Vong 4; khong dung cho context 15 phut."""
+    rows = (
+        db.execute(
+            select(HourlyConversationSummary)
+            .where(
+                HourlyConversationSummary.patient_id == patient_id,
+                HourlyConversationSummary.hidden.is_(False),
+            )
+            .order_by(HourlyConversationSummary.hour_bucket.desc())
+            .limit(limit)
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "hour_bucket": row.hour_bucket.isoformat(),
+            "summary_text": row.summary_text,
+            "message_count": row.message_count,
+        }
+        for row in rows
+    ]
 
 
 def get_recent_context(

@@ -453,23 +453,19 @@ async def test_expired_pending_confirmation_treats_next_message_as_fresh_questio
         "/api/v1/chat", json={"patient_id": patient_id, "message": "daflavon dùng sao"}
     )
     assert response.status_code == 200
-    assert "Daflavon" in response.json()["reply"], "phai duoc xu ly nhu CAU HOI MOI, khong phai reply xac nhan cu"
 
     audit = _latest_audit_log(patient_id)
     steps = [e.get("step") for e in audit.trace]
     assert "intent_classification" in steps, "phai chay lai tu dau, khong di qua nhanh drug_confirmation_reply"
     assert "drug_confirmation_reply" not in steps
+    assert "drug_identity_resolution" in steps
 
 
 @pytest.mark.asyncio
 async def test_bluepine_case_never_silently_answers_with_wrong_drug_content(client, seeded_patient):
-    """Muc 11.5 test DAC BIET (kickoff yeu cau ro): chay lai dung case
-    Bluepine da biet (muc 10 #17, retrieval-miss-toan-bo - khong field_group
-    nao cua Bluepine lot top-5, ca 3 ung vien tra ve deu la thuoc KHAC hoan
-    toan khong lien quan: Eporon/Lenvima/Agilosart). Luong CU (#17) tra loi
-    tu tin bang noi dung sai thuoc. Luong MOI phai LUON hoi xac nhan truoc -
-    xac nhan qua toan bo hoi thoai KHONG co buoc nao tra loi thang bang
-    drug_id khac Bluepine ma khong hoi."""
+    """Regression Bluepine (#17): fuzzy Vong 4 tim dung candidate nhung
+    van PHAI hoi xac nhan; sau bat ky luot tu choi nao cung khong duoc tra
+    loi thang bang noi dung cua thuoc khac."""
     patient_id = seeded_patient
     _override_services()
 
@@ -477,19 +473,14 @@ async def test_bluepine_case_never_silently_answers_with_wrong_drug_content(clie
     turn1 = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": utterance})
     assert turn1.status_code == 200
     body1 = turn1.json()
-    # Ung vien dau tien PHAI la 1 trong 3 thuoc sai da biet (Eporon/Lenvima/
-    # Agilosart) - dung y bug that, khong phai gia dinh.
     assert body1["sources"] == [], "luot 1 chi hoi xac nhan, TUYET DOI khong duoc co sources (khong duoc tra loi luon)"
-    assert "Bluepine" not in body1["reply"], "cau hoi xac nhan phai nhac ten UNG VIEN tim duoc, khong phai Bluepine that"
+    assert "Bluepine" in body1["reply"], "fuzzy Vong 4 phai tim duoc dung ten Bluepine truoc khi hoi xac nhan"
 
     db = SessionLocal()
     pending = get_pending_confirmation(db, patient_id)
     db.close()
     assert pending is not None
-    wrong_drug_ids = {"eporon-samchundang-5ml", "lenvima-4mg-eisai-2x10", "agilosart-h-100-12-5-agimexpharm-3x10"}
-    assert pending["candidates"][0]["drug_id"] in wrong_drug_ids, (
-        "xac nhan dung bug that da biet - ung vien dau tien LA 1 thuoc sai"
-    )
+    assert pending["candidates"][0]["drug_id"] == "bluepine-5mg-blue-6x10"
 
     # Tu choi tat ca - khong bao gio duoc co 1 luot nao tra ve sources KHAC
     # rong (tuc KHONG bao gio tu tin tra loi bang thuoc sai) trong toan bo
@@ -500,3 +491,73 @@ async def test_bluepine_case_never_silently_answers_with_wrong_drug_content(clie
         assert turn.json()["sources"] == [], (
             f"reply={reply!r}: KHONG duoc tra loi bang sources nao ca khi con dang tu choi/chua xac nhan"
         )
+
+
+# ---------------------------------------------------------------------------
+# Vong 4, muc 2.2/2.6 - LLM gate wiring THAT qua /api/v1/chat (khong chi
+# _dispatch_stage() don le - xac nhan ChatServices/chat_routes.py truyen
+# dung is_drug_reply_fn xuong build_drug_confirmation_reply_node()). Bug
+# that tai hien: "tôi buồn đi vệ sinh" tung khop nham thanh Coveram 10/5 30v
+# qua _search_distinct_drug_candidates() khi khong co gate nao chan truoc.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_out_rx_awaiting_redescribe_gate_blocks_unrelated_reply_e2e(client, seeded_patient):
+    """Seed thang pending o dung stage out_rx_awaiting_redescribe (giong
+    pattern test_exhausting_both_rounds - tranh phu thuoc chuoi luot truoc do
+    khong lien quan test nay). Gate fake tra False cho dung reply da gay bug
+    that - xac nhan KHONG tao pending moi voi candidate sai, tra ve dung
+    NOT_FOUND_FINAL_MESSAGE, va KHONG con pending nao treo sau do."""
+    from backend.agents.nodes.drug_confirmation_nodes import (
+        NOT_FOUND_FINAL_MESSAGE,
+        STAGE_OUT_RX_AWAITING_REDESCRIBE,
+    )
+    from backend.agents.tools.drug_confirmation_store import set_pending_confirmation
+
+    patient_id = seeded_patient
+    _override_services(classify_drug_reply_plausibility=lambda _reply: False)
+
+    db = SessionLocal()
+    set_pending_confirmation(
+        db, patient_id, candidates=[], stage=STAGE_OUT_RX_AWAITING_REDESCRIBE, original_query="thuốc gì đó"
+    )
+    db.close()
+
+    response = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": "tôi buồn đi vệ sinh"})
+    assert response.status_code == 200
+    assert response.json()["reply"] == NOT_FOUND_FINAL_MESSAGE
+
+    db = SessionLocal()
+    pending = get_pending_confirmation(db, patient_id)
+    db.close()
+    assert pending is None, "gate tu choi -> STOP, khong duoc tao pending moi voi candidate sai (dung bug Coveram)"
+
+
+@pytest.mark.asyncio
+async def test_out_rx_awaiting_redescribe_gate_allows_valid_reply_e2e(client, seeded_patient):
+    """Regression - gate tra True (mac dinh/permissive) van cho hanh vi cu
+    chay binh thuong: mo ta hop le tim duoc dung ung vien qua
+    _search_distinct_drug_candidates() nhu truoc khi co gate."""
+    from backend.agents.nodes.drug_confirmation_nodes import STAGE_OUT_RX_AWAITING_REDESCRIBE
+    from backend.agents.tools.drug_confirmation_store import set_pending_confirmation
+
+    patient_id = seeded_patient
+    _override_services(classify_drug_reply_plausibility=lambda _reply: True)
+
+    db = SessionLocal()
+    set_pending_confirmation(
+        db, patient_id, candidates=[], stage=STAGE_OUT_RX_AWAITING_REDESCRIBE, original_query="thuốc gì đó"
+    )
+    db.close()
+
+    response = await client.post(
+        "/api/v1/chat", json={"patient_id": patient_id, "message": "Daflavon 450mg Pymepharco 4x15"}
+    )
+    assert response.status_code == 200
+    assert "Daflavon" in response.json()["reply"]
+
+    db = SessionLocal()
+    pending = get_pending_confirmation(db, patient_id)
+    db.close()
+    assert pending is not None, "gate cho qua -> van tiep tuc hoi xac nhan ung vien tim duoc (chua resolve, moi R2)"

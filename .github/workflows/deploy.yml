@@ -23,7 +23,7 @@ defaults:
 
 env:
   # Một token cho cả hai job. Tạo ở https://railway.com/account/tokens
-  # (loại "Project token" gắn với project gleaming-growth là đủ).
+  # (loại "Project token" gắn với project VMEC-04 là đủ).
   RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
 jobs:

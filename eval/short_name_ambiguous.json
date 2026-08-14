@@ -1,0 +1,42 @@
+[
+  {
+    "utterance": "vitamin b1",
+    "note": "Ten chung, KHONG co ham luong - it nhat 5 SKU khac hang/lieu cung ten trong corpus (Vinphaco/F.T/Vidipha/Domesco/Mekophar) - KHONG co dap an unique, chi kiem tra gap thap (khong duoc fast-path nham 1 SKU)"
+  },
+  {
+    "utterance": "vitamin b1 250mg",
+    "note": "Co ham luong nhung van con >=4 hang khac nhau cung ham luong (Vidipha/Domesco/Mekophar) - van AMBIGUOUS"
+  },
+  {
+    "utterance": "noklot",
+    "note": "Chi ten thuong hieu - it nhat 2 hang (Zydus/Cadila) cung ten+ham luong 75mg trong corpus"
+  },
+  {
+    "utterance": "noklot 75",
+    "note": "Co ham luong nhung van con Zydus vs Cadila cung ten - van AMBIGUOUS"
+  },
+  {
+    "utterance": "ame prazol",
+    "note": "Khong ham luong - AME Prazol 20mg va 40mg (ca 2 cung OPV) hoa DIEM TUYET DOI (0.458) - khong the phan biet duoc bang fuzzy thuan, dung y AMBIGUOUS"
+  },
+  {
+    "utterance": "xaravix",
+    "note": "Khong ham luong - Xaravix 10mg/15mg/20mg gan nhu hoa diem - AMBIGUOUS"
+  },
+  {
+    "utterance": "vitamin C",
+    "note": "Ten hoat chat rat pho bien - >=10 SKU khac hang/ham luong trong corpus - AMBIGUOUS ro rang"
+  },
+  {
+    "utterance": "cefixim",
+    "note": "Ten hoat chat pho bien - nhieu SKU khac hang - AMBIGUOUS"
+  },
+  {
+    "utterance": "Paracetamol ",
+    "note": "Ten hoat chat + khoang trang cuoi (dung case that tung khop nham Micardis truoc khi co fuzzy_name_search) - co it nhat 3 SKU Paracetamol KABI trong corpus (dang tiem truyen) - van AMBIGUOUS giua chinh cac SKU do, nhung KHONG con khop sang thuoc huyet ap nua (dung huong sua)"
+  },
+  {
+    "utterance": "panadol extra",
+    "note": "Brand pho bien THAT SU KHONG co trong corpus (xac nhan mucd 1.2) - khong co dap an dung, chi kiem tra diem thap/gap thap (khong fast-path tu tin sai)"
+  }
+]

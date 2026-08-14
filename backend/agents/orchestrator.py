@@ -52,6 +52,7 @@ from backend.services.safety import SafetyFlag
 
 SafetyCheckFn = Callable[[str], Awaitable[SafetyFlag]]
 NodeFn = Callable[[ConversationState], Awaitable[dict]]
+RedflagAuditFn = Callable[[ConversationState, SafetyFlag], Awaitable[dict]]
 
 __all__ = [
     "OVERDOSE_OVERLAY_MESSAGE",
@@ -117,11 +118,32 @@ def _apply_redflag(
     }
 
 
+async def _run_redflag_audit(
+    redflag_audit_fn: RedflagAuditFn | None, current_state: ConversationState, flag: SafetyFlag
+) -> ConversationState:
+    """Audit khong duoc phep chan overlay an toan neu no bi loi."""
+    if redflag_audit_fn is None:
+        return current_state
+    try:
+        update = await redflag_audit_fn(current_state, flag)
+    except Exception as exc:  # noqa: BLE001 - safety response phai fail-safe
+        entry = {
+            "step": "side_effect_audit",
+            "trigger": "safety_redflag",
+            "result": "unavailable",
+            "error": type(exc).__name__,
+            "duration_ms": 0.0,
+        }
+        return {**current_state, "trace": [*current_state.get("trace", []), entry]}
+    return {**current_state, **update}
+
+
 async def run_conversation(
     state: ConversationState,
     nodes: list[NodeFn],
     safety_check: SafetyCheckFn,
     escalate_fn: EscalateFn | None = None,
+    redflag_audit_fn: RedflagAuditFn | None = None,
 ) -> ConversationState:
     """Chay `nodes` tuan tu, song song voi `safety_check(state["utterance"])`
     chay nhu 1 asyncio.Task doc lap ngay tu dau. Kiem tra task nay giua moi
@@ -147,6 +169,7 @@ async def run_conversation(
         if safety_task.done():
             flag = safety_task.result()
             if flag.is_redflag:
+                current_state = await _run_redflag_audit(redflag_audit_fn, current_state, flag)
                 escalation = await _maybe_escalate(escalate_fn, current_state, flag)
                 return _apply_redflag(current_state, flag, last_completed_step, escalation)
 
@@ -159,6 +182,7 @@ async def run_conversation(
     # cuoi dang chay va xong ngay sau do.
     flag = await safety_task
     if flag.is_redflag:
+        current_state = await _run_redflag_audit(redflag_audit_fn, current_state, flag)
         escalated = await _maybe_escalate(escalate_fn, current_state, flag)
         return _apply_redflag(current_state, flag, last_completed_step, escalated)
 

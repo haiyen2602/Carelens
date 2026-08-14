@@ -29,7 +29,7 @@ clean:
 	find . -type d -name .ruff_cache -exec rm -rf {} +
 
 # --- Deploy (Railway) --- see docs/DEPLOY.md
-# Project `gleaming-growth`, environment `production`:
+# Project `VMEC-04`, environment `production`:
 #   api = FastAPI, service VMEC-04/BE, root .
 #   web = Next.js,  service VMEC-04/FE, root frontend/
 #
