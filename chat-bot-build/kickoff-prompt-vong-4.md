@@ -15,23 +15,26 @@ doc, không đoán), giữ nguyên style đã dùng — không đánh số lại
 
 ---
 
-## 0.5. VÁ NGAY, TÁCH KHỎI TRÌNH TỰ VÒNG 4 — `safety_layer` bỏ lọt câu hỏi dạng "quá liều X có nguy hiểm không"
+## 0.5. ĐÃ ĐIỀU TRA, ĐÓNG — KHÔNG CẦN SỬA `safety_layer`
 
-Phát hiện khi phân tích `audit_log` thật: câu hỏi *"uống quá liều panadol thì có nguy hiểm không"* — dạng
-**câu hỏi giả định**, không phải phát biểu ý định — cho kết quả `safety_layer: keyword_hit=false,
-llm_flag=false`, hoàn toàn không được đánh giá, dù chứa cả "quá liều" lẫn "nguy hiểm". Đây là khoảng hở an
-toàn thật đang tồn tại trên bản đã deploy, không phải rủi ro lý thuyết.
+Nghi ngờ ban đầu (từ phân tích `audit_log` — 64 bản ghi khớp câu "uống quá liều panadol thì có nguy hiểm
+không") **không phải khoảng hở an toàn thật**. Nguyên nhân: dữ liệu phân tích trải qua mốc deploy fix vòng 3
+mục 3 (2026-08-12) mà không lọc theo thời gian trước khi kết luận.
 
-**Sửa nhỏ, tái dùng hạ tầng LLM-first đã có** (mục 3, vòng 3) — bổ sung vào taxonomy (mục 3.1 vòng 3) rằng
-**câu hỏi giả định về nguy hiểm/quá liều cũng tính là tín hiệu cần đánh giá**, không chỉ phát biểu ý định
-("tôi muốn uống X viên"). Chỉ cần sửa 1 đoạn trong prompt classifier đã có, không xây gì mới.
+**Bằng chứng đóng (ghi vào `chatbot-rag-design.md` mục 10, không xoá dấu vết):**
+- 64 bản ghi TRƯỚC 12/08 → `keyword_hit=false, llm_flag=false` — đúng bug gốc vòng 3 (lúc đó
+  `check_safety()` gọi không kèm `llm_classifier`), **đã sửa từ trước, không phải phát hiện mới**.
+- 12 bản ghi SAU 12/08, cùng câu hỏi y hệt → `llm_flag=true, level='Nguy hiểm', category='dosage_risk'`,
+  đầy đủ escalate. 0/12 lọt.
+- Quét rộng mọi bản ghi sau 12/08 chứa "nguy hiểm"/"quá liều"/"an toàn"/"có sao không" → 0 case lọt.
+- Gọi trực tiếp `classify_safety_llm()` (live, OpenAI thật) với 4 biến thể câu hỏi giả định → cả 4 đúng
+  `Nguy hiểm`/`dosage_risk` với prompt hiện tại trong repo.
 
-**Vá việc này TRƯỚC, độc lập với thứ tự mục 1-7 bên dưới** — mức độ khẩn khác hẳn phần còn lại của vòng 4.
-
-**Test bắt buộc**: đúng câu đã lộ ra bug ("uống quá liều panadol thì có nguy hiểm không") + biến thể cho
-2-3 thuốc khác → xác nhận `safety_layer` giờ đánh giá được (không nhất thiết phải trigger redflag, nhưng
-phải chạy qua đánh giá, không phải bỏ qua hoàn toàn như hiện tại). Regression: câu hỏi thông tin thuốc bình
-thường không chứa "quá liều"/"nguy hiểm" vẫn không bị đánh giá nhầm thành đáng ngại.
+**Việc cần làm — không phải sửa code, mà khoá lại bằng regression test:**
+Thêm 4 câu đã verify (panadol, paracetamol, aspirin, câu chung chung "nếu tôi lỡ uống quá liều thuốc thì
+sao") vào `eval/safety_llm_check.py` làm case cố định — không phải vì đang lỗi, mà để tránh tái phát khi
+mục 2 (sửa `intent_classification`) hoặc bất kỳ thay đổi model/prompt nào sau này vô tình làm hỏng lại đúng
+pattern câu hỏi giả định này.
 
 ---
 
@@ -85,66 +88,104 @@ biến còn thiếu), **không phải việc sửa code trong vòng 4**, không 
 
 ---
 
-## 2. Điều tra + sửa `intent_classification` — câu không liên quan bị đẩy nhầm sang tìm thuốc
+## 2. Sàn độ tin cậy cho `_search_distinct_drug_candidates()` — sửa đúng chỗ 2 nhánh reply-parsing tin mù kết quả search
 
-### 2.1. Điều tra trước, không đổi model ngay
+**ĐÃ ĐIỀU TRA, ĐỔI HƯỚNG HOÀN TOÀN** — root cause KHÔNG nằm ở `intent_classification` như bản kickoff gốc
+nghi ngờ. Bằng chứng: gọi trực tiếp `classify_intent()` (prompt hiện tại) với đúng câu bug + 4 câu
+out-of-scope khác → 5/5 đúng `greeting`, confidence 0.9-0.95. `intent_classification` đã được sửa đúng
+nguyên tắc chung từ vòng 3 (#25 trong design doc) — không cần sửa lại, xoá bỏ toàn bộ kế hoạch sửa prompt
+đã ghi trong bản kickoff trước.
 
-Case thật: "tôi buồn đi vệ sinh" → hệ thống hỏi xác nhận 1 loại thuốc ngẫu nhiên (Coveram 10/5 30v), dù câu
-này hoàn toàn không liên quan tới thuốc. Mục 6 (vòng 3) đã thêm nhãn `greeting`/`out_of_scope` vào
-`intent_classification` — case này lọt qua nghĩa là nhãn đó chưa phủ đủ.
+### 2.0. Trước khi giữ lại bất kỳ phần nào của kế hoạch cũ — re-verify bằng chứng, không tin dữ liệu cũ
 
-**Không vội đổi sang model mạnh hơn.** Nghi ngờ hợp lý nhất: phần mô tả "thế nào là out_of_scope" trong
-prompt classifier hiện dựa vào vài **ví dụ hẹp** (chào hỏi, hỏi thời tiết...) thay vì **nguyên tắc chung**
-("bất cứ điều gì không liên quan tới thuốc/lịch uống/triệu chứng → out_of_scope"). Đây đúng dạng lỗi mà
-model mạnh hơn không chắc sửa được (vẫn đi theo đúng prompt hẹp, chỉ giỏi hơn trong phạm vi đã định nghĩa) —
-và đúng dạng lỗi đã sửa thành công 1 lần rồi ở `safety_layer` (chuyển từ keyword-list sang taxonomy dựa trên
-nguyên tắc, mục 3 vòng 3). Áp dụng lại đúng hướng đã kiểm chứng.
+Bài học từ mục 0.5 (đóng vì dữ liệu `audit_log` phân tích trải qua mốc fix mà không lọc theo thời gian) áp
+dụng lại y hệt ở đây: phát hiện "`intent_classification` đã sửa từ #25" đặt dấu hỏi cho chính bằng chứng
+"9/9 case confidence <0.8 đều sai" đã dùng để đề xuất ngưỡng confidence trước đó.
 
-### 2.2. Bổ sung — ngưỡng confidence, rẻ hơn sửa prompt, làm TRƯỚC
+**Việc cần làm trước**: lọc lại đúng 9 case đó theo thời gian, đối chiếu với mốc deploy #25. Nếu toàn bộ 9
+case đều xảy ra **trước** #25 — bỏ hẳn ý tưởng ngưỡng confidence cho `intent_classification` (không phải sai
+nguyên tắc, chỉ là không còn bằng chứng thật ủng hộ trên code hiện tại). Nếu có case **sau** #25 vẫn confidence
+thấp và sai — giữ lại ý tưởng này như 1 lớp phòng vệ phụ, ưu tiên thấp hơn mục 2.1 bên dưới.
 
-Phân tích `audit_log` thật (660 bản ghi `drug_info`): confidence gần như luôn đúng **0.95** cho case đúng
-(p10=p50=0.95), chỉ rơi xuống thấp khi có gì bất thường. Quét toàn bộ 9 case confidence <0.8 — **cả 9/9 đều
-sai** (câu test thô, câu chào, câu giả danh kỹ thuật, câu triệu chứng, câu không liên quan).
+### 2.1. Root cause thật — tái hiện được, có bằng chứng cụ thể
 
-Confidence đã được tính và ghi log sẵn nhưng **chưa hề được dùng để quyết định gì** — hệ thống tin nhãn
-`drug_info` y hệt nhau dù confidence 0.95 hay 0.1. Thêm ngưỡng gate (vd <0.75 → không tự tin xử lý theo
-nhãn đó, hỏi lại thay vì đoán, hoặc route sang `out_of_scope`) — rẻ hơn nhiều so với chỉ sửa prompt, độc
-lập bổ sung (không thay thế) cho hướng 2.3. `[CẦN CHỐT — thực nghiệm]` cho số ngưỡng cụ thể, nhưng cơ chế
-này nên làm **trước** bước sửa prompt (2.3) vì nhanh và có bằng chứng mạnh hơn.
+Cơ chế: khi bệnh nhân có `pending_drug_confirmation` treo (đang giữa luồng xác nhận thuốc từ lượt trước) —
+`chat_routes.py` bỏ qua `intent_classification` hoàn toàn theo đúng thiết kế đã có (mục 11, vòng 2), ép cứng
+`intent="drug_info"`. Đây không phải bug, là thiết kế cố ý.
 
-### 2.3. Quy trình sửa prompt (bổ sung cho 2.2, không thay thế)
+Bug thật nằm ở 2 nhánh xử lý reply trong luồng đó — `STAGE_IN_RX_AWAITING_NEW_NAME`/
+`STAGE_OUT_RX_AWAITING_REDESCRIBE` (khi bot đã hỏi "cho tôi tên thuốc khác"/"mô tả lại giúp mình") — coi
+**bất kỳ văn bản nào** người dùng gõ tiếp theo là tên/mô tả thuốc mới, không kiểm tra gì trước khi đưa vào
+`_search_distinct_drug_candidates()`. Hàm này (embedding-based, cùng hàm sẽ làm fallback reflexion vòng 2 ở
+mục 3.3 bên dưới) trên 1 corpus không rỗng **luôn trả về "gần nhất"**, bất kể có liên quan hay không (đúng
+#15) — 2 nhánh trên tin tưởng mù quáng kết quả đó, không có bước lọc nào.
 
-1. Lấy trace thật của case "tôi buồn đi vệ sinh" — `intent_classification` trả về nhãn gì, confidence bao
-   nhiêu (nếu có field này).
-2. Tạo thêm 5-10 câu "rõ ràng không liên quan tới thuốc" khác (không phải chào hỏi, không phải hỏi thời
-   tiết — cần đa dạng hơn 2 ví dụ hiện có trong prompt) để test cùng lúc, tránh sửa xong 1 case lại lộ case
-   khác cùng loại.
-3. Đọc lại prompt hiện tại của `intent_classification` — xác nhận cách mô tả `out_of_scope` là liệt kê ví dụ
-   hay nguyên tắc chung.
-4. Sửa theo hướng nguyên tắc chung (nếu xác nhận đúng nghi ngờ ở 2.1) — đo lại bằng đúng bộ câu ở bước 2.
-5. **Chỉ khi đã sửa prompt đúng cách mà vẫn không đạt** (đo bằng eval, không cảm tính) — mới cân nhắc model
-   mạnh hơn, và khi đó **chỉ đổi riêng cho `intent_classification`**, không đổi toàn bộ hệ thống. Đây là
-   quyết định chi phí, đánh dấu `[CẦN CHỐT — Architect, kèm số liệu eval trước/sau]`, không tự đổi.
+Tái hiện trực tiếp:
+```
+'tôi buồn đi vệ sinh'  -> [{'drug_id': 'coveram-10-5-30v', ...}]    ← khớp đúng bug đã báo cáo
+'tôi thích ăn phở'     -> [{'drug_id': 'bisoloc-5mg-united-3x10', ...}]  ← cũng sai
+'hôm nay trời đẹp quá' -> []                                        ← case này đúng, không match
+```
 
-### 2.4. Vì sao ưu tiên cao nhất trong cả vòng
+### 2.2. ĐÃ ĐIỀU TRA — không phải bài toán chỉnh ngưỡng, đổi hướng sang LLM gate hẹp
 
-Nếu `intent_classification` vẫn đẩy nhầm câu không liên quan sang `drug_info`, dù mục 3 (fuzzy 2 tầng) có
-tốt tới đâu cũng không cứu được — fuzzy/hybrid search trên 1 corpus không rỗng luôn trả về "gần nhất", input
-đã sai ngay từ đầu thì kết quả luôn sai theo, bất kể tầng tìm kiếm bên dưới tinh vi thế nào.
+Test thật trên cả 3 kênh (lexical `word_similarity` trên `noi_dung`, vector `NGUONG_VECTOR`, name-similarity
+trên `ten_thuoc`) — **không kênh nào, ở bất kỳ ngưỡng nào, tách sạch được** câu hợp lệ (tên/mô tả thuốc)
+khỏi câu vô nghĩa. Bằng chứng: lexical bị nhiễu bởi prefix lặp lại ("Thuốc: ... — danh_mục") khiến câu vô
+nghĩa khớp giả tạo cao hơn cả câu hợp lệ; vector đúng với câu vô nghĩa (0 match) nhưng cũng từ chối luôn câu
+hợp lệ dạng chỉ có tên ngắn (ngưỡng 0.60 tune cho câu hỏi đầy đủ, không hợp bối cảnh reply ngắn).
 
-### 2.5. Test bắt buộc
+**Nguyên nhân gốc**: cơ chế **OR** giữa 2 kênh (đúng cho RAG retrieval — ưu tiên không bỏ sót, đã chốt từ
+vòng 1) ở ngữ cảnh này cộng dồn nhược điểm cả 2 chiều — lexical sai theo hướng thừa (nhận nhầm) vẫn lọt qua
+vì OR chỉ cần 1 kênh đồng ý, vector đúng theo hướng từ chối nonsense không cứu được gì vì logic OR không
+quan tâm kênh kia nói không. Đây là 2 bài toán khác bản chất: RAG retrieval cần recall (đừng bỏ sót), cổng
+lọc reply ở đây cần precision (đừng nhận nhầm) — cùng 1 cơ chế đúng chỗ này lại sai chỗ khác.
 
-- **Test case thật lấy từ `audit_log`** (không phải tự nghĩ ra): "tôi buồn đi vệ sinh", "xin chao"/"hi"/
-  "hello" (giữ làm regression cố định dù bằng chứng gần nhất trong log đã đúng — tránh tái phát), câu giả
-  danh "tôi phụ trách kỹ thuật cho ứng dụng này..." (input_guardrail đã chặn phần lớn nhưng nên chặn 100%
-  qua cả 2 lớp, không chỉ 1 lớp) — toàn bộ phải ra `out_of_scope` hoặc bị input_guardrail chặn trước khi
-  tới `intent_classification`, không rơi vào `drug_info`.
-- Test riêng cho ngưỡng confidence (2.2): case confidence giả lập thấp → xác nhận không tự động xử lý theo
-  nhãn gốc.
-- Regression: câu hỏi thuốc hợp lệ (kể cả viết tắt/không dấu) vẫn phải ra đúng `drug_info` — không sửa quá
-  tay khiến nhãn `out_of_scope`/ngưỡng confidence "nuốt" luôn cả câu hỏi thật.
-- Nếu đổi model (2.3 bước 5, có điều kiện) — chạy lại toàn bộ `eval/ground_truth.json` + bộ câu out_of_scope
-  mới, so sánh chi phí/độ chính xác trước/sau, ghi vào doc.
+**Hướng sửa mới, thay hoàn toàn cho việc "siết ngưỡng"**: thêm 1 lớp LLM gate hẹp phạm vi, chạy **trước khi
+search**, chỉ trả lời nhị phân "văn bản này có vẻ là tên/mô tả thuốc không?" — đúng nguyên tắc đã dùng thành
+công cho `safety_layer` (chuyển từ similarity/keyword sang LLM khi tín hiệu thô không tách được, mục 3 vòng
+3). Input ngắn, output có/không, `temperature=0` — chi phí thấp hơn nhiều so với 1 lần gọi LLM thông thường,
+nhưng vẫn là **+1 lời gọi LLM mới** trong 2 nhánh reply-parsing này, cần đánh dấu cost như mọi quyết định
+tương tự trong dự án.
+
+Việc phụ, làm nếu tiện (không phải fix chính): sửa lexical search bỏ qua dòng prefix "Thuốc: ... —
+danh_mục" trước khi tính `word_similarity` — giảm nhiễu ở kênh này, nhưng không đủ để giải quyết toàn bộ vấn
+đề 1 mình (recall vector vẫn kém với câu ngắn), không thay thế được LLM gate.
+
+### 2.3. Sửa 2 nhánh reply-parsing — thêm LLM gate trước search, không phải chỉnh sàn
+
+Khi LLM gate trả lời "không" (không phải tên/mô tả thuốc) — xử lý y hệt trường hợp "không tìm thấy gì" đã
+có sẵn ở §5.2 (vòng 2): tiếp tục đúng cơ chế trần 2 vòng + câu xin lỗi cố định, không xây luồng mới. Khi gate
+trả lời "có" — mới chạy `_search_distinct_drug_candidates()` như hiện tại (ngưỡng `NGUONG_VECTOR`/
+`NGUONG_LEXICAL` giữ nguyên, không đổi — không phải nguồn gốc vấn đề như đã xác nhận).
+
+### 2.4. Liên hệ mục 3 — LLM gate là lớp riêng, KHÔNG cần sửa `_search_distinct_drug_candidates()`
+
+Khác dự tính ban đầu (đặt ngưỡng bên trong hàm) — vì LLM gate chạy **trước khi gọi hàm search**, hàm
+`_search_distinct_drug_candidates()` giữ nguyên hoàn toàn (ngưỡng `NGUONG_VECTOR`/`NGUONG_LEXICAL` không
+đổi). Mục 3.3 (fuzzy 2 tầng, bên dưới) dùng lại đúng hàm này cho reflexion vòng 2 — **không bị ảnh hưởng
+bởi thay đổi ở mục 2**, không cần đồng bộ gì thêm giữa 2 mục. Vẫn nên làm mục 2 trước mục 3 vì mục 2 chặn
+đúng nguồn gây bug đã xác nhận, nhưng không còn phụ thuộc kỹ thuật bắt buộc giữa 2 mục như bản trước.
+
+### 2.5. Vì sao vẫn ưu tiên cao nhất trong cả vòng
+
+Root cause đổi nhưng kết luận ưu tiên không đổi: nếu 2 nhánh reply-parsing vẫn tin mù kết quả search chưa
+lọc, dù mục 3 (fuzzy 2 tầng cho đường chính) có tốt tới đâu cũng không cứu được — bug xảy ra ở 1 nhánh khác,
+song song, không đi qua đường chính đó.
+
+### 2.6. Test bắt buộc
+
+- **Test case thật đã tái hiện**: "tôi buồn đi vệ sinh", "tôi thích ăn phở" trong đúng ngữ cảnh
+  `STAGE_IN_RX_AWAITING_NEW_NAME`/`STAGE_OUT_RX_AWAITING_REDESCRIBE` (giả lập đang có pending confirmation
+  treo) → xác nhận LLM gate trả lời "không", KHÔNG chạy search, KHÔNG tạo pending confirmation mới với
+  candidate sai — xử lý như "chưa tìm thấy".
+- **Test riêng cho LLM gate**: bộ câu hợp lệ ngắn (chỉ tên thuốc, kể cả viết tắt/không dấu — "paracetamol",
+  "vitamin C", "panadol extra") → gate phải trả lời "có", không chặn nhầm reply hợp lệ. Đây là test quan
+  trọng nhất — nếu gate quá nghiêm, tái tạo đúng vấn đề "recall kém" đã thấy ở kênh vector.
+- Regression: reply hợp lệ trong đúng 2 nhánh này (bệnh nhân mô tả lại đúng, tên thuốc viết tắt/không dấu)
+  vẫn phải tìm được candidate đúng sau khi qua gate — không siết gate quá tay khiến reflexion hợp lệ bị chặn.
+- Nếu mục 2.0 xác nhận có case `intent_classification` sai sau #25 — thêm bộ test riêng theo đúng hướng cũ
+  (ngưỡng confidence cho `intent_classification`), độc lập với LLM gate ở mục này.
 
 ---
 
@@ -210,6 +251,30 @@ hơn fuzzy tên riêng. Giữ nguyên trần 2 vòng, không mở rộng thêm.
 - Đo lại p50/p90/p99 latency của `drug_identity_resolution` sau khi đổi, so với số liệu cũ (p90=5.3s,
   p99=8.9s ở trên) — xác nhận cải thiện thật bằng số, không chỉ tin "chắc sẽ nhanh hơn".
 
+**Kết quả thực hiện 2026-08-13:** `fuzzy_name_search()` mới (`backend/services/retrieval.py`) dùng
+`similarity(ten_thuoc_unaccent)`, không embedding, latency thật ~50-130ms/câu (so với đuôi cũ p90=5.2s,
+p99=7.9s — cải thiện thật, đo trong `eval/tune_fuzzy_tier1.py`). Sweep 4 tập dữ liệu (`ground_truth.json` 32
+câu đầy đủ, `short_name_ground_truth.json` 10 câu ngắn/viết tắt đã xác minh unique, `out_of_domain.json` 15
+câu, `short_name_ambiguous.json` 10 câu tên thật nhưng nhiều SKU) chốt tạm `NGUONG_CAO=0.25`/
+`NGUONG_CACH_BIET=0.05` — phát hiện quan trọng: **gap mới là tuyến phòng thủ chính**, không phải điểm tuyệt
+đối (tập ambiguous có điểm cao tới 0.586 nhưng gap luôn ≤0.048, dưới ngưỡng 0.05 nên không bao giờ lọt
+fast-path). Tầng 2 dùng `select_fuzzy_drug_candidate()` (`classification.py`) — LLM chọn 1 trong top-5 hoặc
+trả `null` nếu không an toàn; mặc định fail-closed (`None`) khi chưa wire LLM. Case "Paracetamol " (khoảng
+trắng cuối) nay xếp đúng Paracetamol lên đầu, không còn khớp nhầm Micardis.
+
+**Tinh chỉnh 2026-08-14 (phản hồi review, điều kiện cuối trước khi đóng mục 3):** (1) 15 câu
+`out_of_domain.json` đều là câu hỏi đầy đủ, không đại diện use-case ngắn thật — thêm
+`eval/short_ood_nonexistent.json` (10 brand ngắn giả định, đã xác minh 0 match ILIKE), phát hiện `feverex`
+(score=0.208, gap=0.093) lẽ ra lọt fast-path sai ở ngưỡng cũ 0.15/0.20. Trần OOD gộp vẫn `0.238`. (2) Sweep
+mịn bước 0.01 trong 0.25-0.30 (biệt cố định 0.05): GT-short giữ 100% tới `0.28`, tụt xuống 90% (case
+"fluopas") từ `0.29` — **chốt `NGUONG_CAO=0.28`** (`backend/config.py::fuzzy_name_high_threshold`, điểm cuối
+trước khi tụt), margin trên trần OOD tăng từ +0.012 lên +0.042, không đánh đổi gì so với 0.25 (GT-full/
+GT-short/OOD/ambiguous giữ nguyên). `NGUONG_CACH_BIET=0.05` không đổi (`fuzzy_name_gap_threshold`).
+
+Test: `tests/test_fuzzy_drug_identity_resolution.py` (3 test khoá invariant fast-path/LLM-review/fail-closed,
+không cần Postgres/LLM) + `tests/test_drug_confirmation_dispatch.py::test_fuzzy_name_search_paracetamol_does_not_match_micardis`
+(DB thật, khoá đúng regression case đã lộ bug gốc). Xem `chatbot-rag-design.md` mục 10 #34 cho số liệu sweep đầy đủ.
+
 ---
 
 ## 4. Match triệu chứng ↔ `tac_dung_phu` — hỗ trợ bác sĩ, không kết luận cho bệnh nhân
@@ -235,6 +300,25 @@ hơn fuzzy tên riêng. Giữ nguyên trần 2 vòng, không mở rộng thêm.
 buồn nôn") đang chạy `severity_assessment` với `drug_id: null` — nghĩa là hiện tại đánh giá mức độ nghiêm
 trọng cho triệu chứng **không hề dựa vào thuốc cụ thể nào trong đơn**, chỉ dùng mức sàn mặc định
 (`fallback_severity: "Trung bình"`). Mục này khắc phục đúng khoảng trống đó.
+
+**Quyết định đã chốt (Vòng 4)**: trước khi chốt ngưỡng cho match này, tạo một bộ `eval/` có nhãn thủ công
+gồm: triệu chứng khớp rõ với 1 thuốc, không có liên hệ rõ ràng, nhiều thuốc cùng khớp, và triệu chứng đi kèm
+redflag. Sweep các ngưỡng trên chính bộ này, đo false positive/false negative trước khi đưa số cuối vào config.
+Không được lấy kết quả gần nhất rồi ghi log như một match; chỉ các thuốc vượt ngưỡng đã được thực nghiệm mới
+được ghi, vẫn liệt kê đầy đủ nếu có nhiều thuốc vượt ngưỡng. Số ngưỡng cụ thể là kết quả của eval, không đoán
+trước.
+
+**Quyết định bổ sung sau sweep**: cosine trên chunk dài không tách sạch được match đúng khỏi không liên quan
+(vd triệu chứng đúng có thể thấp hơn một kết quả sai). Vì vậy dùng **2 tầng**: (1) cosine chỉ lọc một tập ứng
+viên rộng trong thuốc active, không tự kết luận match; (2) LLM nhị phân, `temperature=0`, đọc triệu chứng gốc
+và đúng chunk `tac_dung_phu` của từng ứng viên để trả lời `match`/`không match`. Chỉ `match` từ tầng 2 mới
+được ghi audit. Đây là lời gọi LLM nội bộ có chi phí đã được phê duyệt, không tạo nội dung mới cho bệnh nhân;
+với redflag vẫn chạy audit này nhưng response chỉ thuộc safety layer.
+
+**Kết quả thực hiện**: dùng cosine `>=0.20` để lọc ứng viên (giữ 12/12 liên hệ đúng ở tầng 1), sau đó chạy
+LLM nhị phân trên ứng viên còn lại. `eval/tune_side_effect_match.py --validate-llm --candidate-threshold 0.20`
+đạt precision 100%, recall 100%, `FP=0`, `FN=0` trên bộ 11 case đã gán nhãn; chỉ các match LLM xác nhận được
+ghi trace.
 
 ### 4.3. Test bắt buộc
 
@@ -300,6 +384,18 @@ phút, vốn tính theo mỗi lượt chat). Ghi vào doc như mọi quyết đ�
   tồn tại — chỉ 15 phút gần nhất (§7.2) được đưa vào.
 - Test `chat_history_query` (§7.3(a)) đọc đúng bản tóm tắt khi bệnh nhân hỏi lại lịch sử — không đọc lại
   toàn bộ `chat_messages` thô nếu đã có tóm tắt giờ đó.
+
+**Kết quả thực hiện 2026-08-13/14:** bảng `hourly_conversation_summaries` (migration `0015`) — 1 summary độc
+lập/`(patient_id, hour_bucket)`, unique constraint làm job idempotent. Job mới `_run_hourly_summary` dùng
+chung `AsyncIOScheduler`, chạy phút 0 mỗi giờ (`max_instances=1`, tránh chồng lượt), chỉ gọi LLM cho bệnh
+nhân có `chat_messages` chưa ẩn trong giờ vừa kết thúc — `create_completed_hour_summaries()`
+(`backend/services/hourly_conversation_summary.py`). `get_hourly_summaries_for_history()` (đọc, dùng trong
+`chat_history_query`) tách biệt hoàn toàn `get_recent_context()` (đọc, dùng trong intent/answer) — 2 hàm
+độc lập, không hàm nào gọi hàm kia. Test: 4 test đơn vị/tích hợp (`tests/test_hourly_conversation_summary.py`
+— bucket, tạo/không tạo summary, `chat_history_query` ưu tiên đọc summary) + mới thêm 2026-08-14
+`tests/test_chat_history_e2e.py::test_hourly_summary_never_appears_in_intent_classification_prompt` (e2e
+qua `/api/v1/chat` thật, đúng dạng test đã dùng ở §9.4 vòng 3 — seed 1 summary với nội dung riêng biệt, xác
+nhận `classify_intent()` không nhận được nội dung đó). **Cần chạy migration `0015` ở môi trường deploy.**
 
 ---
 
@@ -367,6 +463,12 @@ thần cho các câu còn lại trong nhóm A:**
   đo giữ nguyên gốc. Đồng thời xác nhận `intent_classification`/safety classifier vẫn hiểu đúng câu tiếng
   Anh này (không cần trả lời tiếng Việt, nhưng vẫn phải phân loại đúng) — 2 test riêng, không gộp chung.
 
+**Kết quả thực hiện 2026-08-14:** `tests/test_soul_persona.py` xác nhận tĩnh persona chỉ nằm ở phần sinh nội
+dung patient-facing, không nằm trong prompt `intent_classification`/safety; các response Nhóm B trong
+`escalation.py` không đổi. `eval/soul_persona_check.py` chạy 9 lời gọi live: case c3 lặp 6/6 không tự dựng
+liều tối đa, câu hỏi tiếng Anh được trả lời bằng tiếng Việt và giữ nguyên `Vitamin C 500mg`, intent trả
+`drug_info`, safety trả `Nguy hiểm`/`clinical_symptom`. Báo cáo lưu tại `eval/soul_persona_report.json`.
+
 ### 6.4. Điểm nối mới — kết quả xác thực ảnh uống thuốc (từ hệ CV của Phạm Thành Đạt)
 
 Phát hiện khi viết `soul.md`: app có tính năng chụp ảnh xác nhận uống thuốc, xử lý bằng CV (YOLOv8, Phạm
@@ -386,10 +488,10 @@ API contract trước khi xây endpoint/logic nhận kết quả CV.
 
 ## 7. Thứ tự
 
-1. **Mục 0.5 (vá `safety_layer` — câu hỏi giả định về nguy hiểm)** — làm ngay đầu tiên, tách khỏi trình tự
-   còn lại, mức độ khẩn khác hẳn (an toàn đang thiếu trên bản deploy thật).
-2. Mục 1.2 (kiểm tra dữ liệu "Panadol") — làm song song, không phải code, chỉ 1 câu SQL, biết sớm để không
-   giao nhầm việc cho agent coding.
+1. **Mục 0.5** — đã đóng, không cần làm gì (xem ghi chú trong mục đó) — chỉ cần thêm 4 câu vào regression
+   test khi tiện, không phải việc ưu tiên.
+2. Mục 1.2 (kiểm tra dữ liệu "Panadol") — làm song song/đầu tiên trong các việc thật, không phải code, chỉ
+   1 câu SQL, biết sớm để không giao nhầm việc cho agent coding.
 3. Mục 2 (điều tra + sửa `intent_classification`, gồm cả ngưỡng confidence) — đầu tiên trong phần code
    chính, ảnh hưởng mọi luồng phía sau.
 4. Mục 3 (fuzzy 2 tầng) — sau mục 2, có thể liên quan trực tiếp #14, có số liệu latency thật ủng hộ ưu tiên.
@@ -401,9 +503,11 @@ API contract trước khi xây endpoint/logic nhận kết quả CV.
 
 **Khi nào dừng lại hỏi:**
 
-1. Mục 2.3, bước 5 — đổi model cho `intent_classification` cần số liệu eval trước/sau, không tự quyết.
-2. Mục 2.2 và Mục 3.2 — các ngưỡng confidence/`NGƯỠNG_CAO`/`NGƯỠNG_CÁCH_BIỆT` cần tune bằng `eval/`, không
-   đoán số khởi điểm rồi dùng luôn làm final.
+1. Mục 2.0 — chỉ giữ lại ngưỡng confidence cho `intent_classification` nếu có bằng chứng sau mốc #25, không
+   mặc định làm theo kế hoạch cũ.
+2. Mục 2.2 — thêm LLM gate là **+1 lời gọi LLM mới**, cần xác nhận cost trước khi build, không âm thầm
+   thêm. Mục 3.2 — `NGƯỠNG_CAO`/`NGƯỠNG_CÁCH_BIỆT` cần tune bằng `eval/`, độc lập với mục 2.2 (không còn phụ
+   thuộc nhau như bản kế hoạch trước — xem mục 2.4), không đoán số khởi điểm rồi dùng luôn làm final.
 3. Nếu phát hiện #14 biến mất hoàn toàn sau khi đổi cơ chế tìm ứng viên (mục 3) — xác nhận lại với Architect
    trước khi đóng #14 trong mục 10, cần bằng chứng cụ thể (so sánh trước/sau), không chỉ suy đoán.
 4. Bất kỳ nội dung patient-facing mới nào phát sinh khi viết `soul.md` (vd câu ví dụ mẫu) trùng phạm vi đã
