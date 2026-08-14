@@ -1,8 +1,10 @@
 # Kế hoạch chuyển hạ tầng — DB + backend + frontend ra khỏi local/Vercel serverless
 
-> **Quyết định 2026-08-11, cập nhật 2026-08-12** (Nguyễn Minh Đạt, PM) — trạng thái: **ĐANG THỰC HIỆN**.
+> **Quyết định 2026-08-11, cập nhật 2026-08-12, 2026-08-13** (Nguyễn Minh Đạt, PM) — trạng thái: **ĐÃ HOÀN TẤT**
+> (chỉ còn 1 việc dọn dẹp không chặn hoạt động, xem "Việc còn lại").
 > File này là nguồn sự thật DUY NHẤT về hạ tầng đang chuyển đổi — nếu thấy mô tả ở đây khác với
-> những gì đang chạy thật, tin vào cái đang chạy thật, sửa lại file này, không phải ngược lại.
+> những gì đang chạy thật, tin vào cái đang chạy thật, sửa lại file này, không phải ngược lại. Hạ
+> tầng đang chạy thật xem thêm `docs/DEPLOY.md`.
 
 ## Vấn đề đã xác nhận (không phải suy đoán)
 
@@ -22,9 +24,9 @@ Railway project "VMEC-04" (environment production), 3 service cùng project — 
 "gleaming-growth" lúc mới tạo, đã đổi tên thành "VMEC-04" (xác nhận 2026-08-12, sau khi cả
 DEPLOY.md/Makefile/CI đã viết xong dựa trên tên cũ — đã sửa lại đồng bộ, xem "Việc còn lại"):
 
-  VMEC-04/FE  (Next.js frontend)   ── domain public vmec-04fe-production.up.railway.app
-  VMEC-04/BE  (FastAPI backend, code ở backend/, KHÔNG còn ở src/) ── domain public vmec-04be-production.up.railway.app
-  VMEC-04/DB  (Postgres+pgvector, tự deploy Docker, có volume db-volume)
+  VMEC-04/FE  (Next.js frontend)   ── https://vmec-04fe-production.up.railway.app
+  VMEC-04/BE  (FastAPI backend, code ở backend/, KHÔNG còn ở src/) ── https://vmec-04be-production.up.railway.app
+  VMEC-04/DB  (service `Postgres`, pg 18.4 + pgvector, tự deploy Docker, có volume db-volume)
 ```
 
 **Phát hiện 2026-08-12 (review lại trước khi sửa DEPLOY.md):** `src/` đã được **đổi tên hẳn** thành
@@ -58,13 +60,14 @@ Lợi thế: cả 3 service cùng 1 Railway project → dùng được mạng n�
 | Set env cho `VMEC-04/FE`: `NEXT_PUBLIC_API_URL`, `INTERNAL_AUTH_SECRET` (khớp BE) | ✅ Đã làm |
 | Redeploy BE + FE sau khi set env | ✅ Đã làm — cả 2 Online |
 | Smoke test end-to-end qua chính domain Railway FE | ✅ **Đã xác nhận 2026-08-12 — chatbot chat được bình thường qua domain FE thật**, không phải qua Vercel |
-| Dừng/xoá project Vercel `capymedi` (backend cũ, đang crash) và `capymedi-web` (frontend cũ, không còn dùng) | ⏳ Còn lại — dọn dẹp, không chặn hoạt động |
+| Xoá origin Vercel cũ (`capymedi`) khỏi `CORS_ORIGINS` của `VMEC-04/BE` | ✅ Đã làm — 2026-08-13 |
+| Dừng/xoá hẳn project Vercel `capymedi` (backend cũ, đang crash) và `capymedi-web` (frontend cũ, không còn dùng) | ✅ **Đã xoá hẳn cả 2 project — 2026-08-13** |
 | Cập nhật `docs/DEPLOY.md` theo kiến trúc Railway-only | ✅ **Đã xong** — phát hiện 2026-08-12, viết chi tiết hơn bản định làm trong phiên này (tên project `gleaming-growth`, `railway.json`, các gotcha PORT/HOSTNAME đã fix) — không sửa thêm, tránh ghi đè mất thông tin thật |
 | Đổi tên `src/` → `backend/`, thêm `railway.json`, cập nhật `Makefile`/`scripts/deploy.ps1` sang `railway up` | ✅ Đã xong (phát hiện 2026-08-12, không rõ làm lúc nào/qua công cụ gì) |
 | Xoá rác thư mục `src/` rỗng (chỉ còn `__pycache__`) | ⏳ Cần Nguyễn Minh Đạt xác nhận đây là chủ đích trước khi xoá hẳn |
 
 ## Việc còn lại
 
-1. Vercel: dừng/xoá project `capymedi` (backend cũ, đang crash 500) và `capymedi-web` (frontend cũ) —
-   tránh người sau mở nhầm domain cũ tưởng đang chạy thật.
-2. Xác nhận `src/` rỗng là chủ đích (đã chuyển hẳn sang `backend/`) rồi dọn nốt thư mục rỗng.
+1. Xác nhận `src/` rỗng là chủ đích (đã chuyển hẳn sang `backend/`) rồi dọn nốt thư mục rỗng —
+   việc dọn dẹp duy nhất còn lại, không chặn hoạt động (Vercel `capymedi`/`capymedi-web` đã xoá hẳn,
+   xem bảng trạng thái).
