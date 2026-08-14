@@ -464,6 +464,12 @@ def build_drug_identity_resolution_node(
         else:
             selected_drug_id = select_fuzzy_candidate_fn(utterance, fuzzy_candidates)
             selected = next((candidate for candidate in fuzzy_candidates if candidate["drug_id"] == selected_drug_id), None)
+            # Phan hoi review PR#37 (bot phoenix-mentor): fuzzy_name_search()
+            # dung DISTINCT ON (drug_id) nen fuzzy_candidates khong co drug_id
+            # trung (retrieval.py) - nhung so sanh o day van dung drug_id
+            # TUONG MINH (khong dua vao "!=" so sanh ca dict) de invariant nay
+            # khong phu thuoc ngam vao 1 file khac, tranh vo neu logic dedupe
+            # ben do thay doi sau nay.
             if selected is None:
                 duration_ms = (time.monotonic() - t0) * 1000
                 entry = {
@@ -481,7 +487,10 @@ def build_drug_identity_resolution_node(
                     "awaiting_drug_confirmation": True,
                     "trace": _append_trace(state, entry),
                 }
-            selected_candidates = [selected, *(candidate for candidate in fuzzy_candidates if candidate != selected)]
+            selected_candidates = [
+                selected,
+                *(candidate for candidate in fuzzy_candidates if candidate["drug_id"] != selected_drug_id),
+            ]
             candidate_selection = "llm_candidate_review"
 
         # PendingDrugConfirmation chi la state machine UI; giu dung shape cu

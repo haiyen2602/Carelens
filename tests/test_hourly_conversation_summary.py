@@ -38,7 +38,7 @@ def test_completed_hour_bucket_uses_previous_utc_hour():
 @pytest.fixture
 def hourly_summary_fixture():
     if not _db_available():
-        pytest.skip("Can Postgres that da apply migration 0015 (alembic upgrade head)")
+        pytest.skip("Can Postgres that da apply migration 0022 (alembic upgrade head)")
 
     patient_id = f"test-hourly-summary-{uuid.uuid4().hex[:8]}"
     # Bucket xa trong tuong lai de job test khong tao summary cho chat data

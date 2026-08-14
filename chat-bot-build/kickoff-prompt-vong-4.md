@@ -385,7 +385,9 @@ phút, vốn tính theo mỗi lượt chat). Ghi vào doc như mọi quyết đ�
 - Test `chat_history_query` (§7.3(a)) đọc đúng bản tóm tắt khi bệnh nhân hỏi lại lịch sử — không đọc lại
   toàn bộ `chat_messages` thô nếu đã có tóm tắt giờ đó.
 
-**Kết quả thực hiện 2026-08-13/14:** bảng `hourly_conversation_summaries` (migration `0015`) — 1 summary độc
+**Kết quả thực hiện 2026-08-13/14:** bảng `hourly_conversation_summaries` (migration `0022`, đổi số từ `0015`
+sau khi phát hiện trùng với `0015_email_verification.py` trên `main` — xem ghi chú trong chính file
+migration) — 1 summary độc
 lập/`(patient_id, hour_bucket)`, unique constraint làm job idempotent. Job mới `_run_hourly_summary` dùng
 chung `AsyncIOScheduler`, chạy phút 0 mỗi giờ (`max_instances=1`, tránh chồng lượt), chỉ gọi LLM cho bệnh
 nhân có `chat_messages` chưa ẩn trong giờ vừa kết thúc — `create_completed_hour_summaries()`
@@ -395,7 +397,7 @@ nhân có `chat_messages` chưa ẩn trong giờ vừa kết thúc — `create_c
 — bucket, tạo/không tạo summary, `chat_history_query` ưu tiên đọc summary) + mới thêm 2026-08-14
 `tests/test_chat_history_e2e.py::test_hourly_summary_never_appears_in_intent_classification_prompt` (e2e
 qua `/api/v1/chat` thật, đúng dạng test đã dùng ở §9.4 vòng 3 — seed 1 summary với nội dung riêng biệt, xác
-nhận `classify_intent()` không nhận được nội dung đó). **Cần chạy migration `0015` ở môi trường deploy.**
+nhận `classify_intent()` không nhận được nội dung đó). **Cần chạy migration `0022` ở môi trường deploy.**
 
 ---
 
