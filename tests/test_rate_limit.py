@@ -14,7 +14,11 @@ from fastapi import HTTPException  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from backend.api.rate_limit import RATE_LIMIT_MESSAGE, SlidingWindowRateLimiter, reset_default_limiter_for_tests  # noqa: E402
+from backend.api.rate_limit import (  # noqa: E402
+    RATE_LIMIT_MESSAGE,
+    SlidingWindowRateLimiter,
+    reset_default_limiter_for_tests,
+)
 
 
 class _FakeClock:

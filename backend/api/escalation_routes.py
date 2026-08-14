@@ -23,7 +23,6 @@ from backend.api.security import (
     get_current_patient_id,
     get_current_user,
     require_role,
-    verify_patient_access,
 )
 from backend.db.base import get_db
 from backend.db.models import Escalation
