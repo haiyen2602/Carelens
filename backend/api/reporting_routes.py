@@ -17,9 +17,9 @@ from fastapi import status as http_status
 from sqlalchemy import desc, or_, select
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, get_current_user, require_role
+from backend.api.security import CurrentUser, require_role
 from backend.db.base import get_db
-from backend.db.models import AuditLog, Escalation, Patient
+from backend.db.models import AuditLog, DoctorWatch, Escalation, Patient
 from backend.models.schemas import (
     AuditLogOut,
     EscalationOut,
@@ -48,12 +48,26 @@ def list_reporting_patients(
     current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> list[ReportingPatientOut]:
     query = select(Patient)
-    if current_user.role == "doctor" and current_user.doctor_id:
-        query = query.where(Patient.doctor_id == current_user.doctor_id)
+    # KHONG loc theo doctor_id (quyet dinh PM 2026-08-14): bac si nao cung
+    # xem duoc toan bo benh nhan de ke don/theo doi; "chi dinh rieng" la bac
+    # si tu bam nut "Theo doi" - tu migration 0023, do la DoctorWatch (rieng
+    # tung bac si), KHONG con la Patient.doctor_id.
     if search:
         pattern = f"%{search}%"
         query = query.where(or_(Patient.id.ilike(pattern), Patient.full_name.ilike(pattern)))
     rows = db.execute(query.order_by(Patient.full_name)).scalars().all()
+
+    # `watch` tra ve la "CURRENT_USER co dang theo doi benh nhan nay khong"
+    # (rieng tung bac si, migration 0023) - admin luon thay watch=False (admin
+    # khong co doctor_id, khong co khai niem "theo doi" rieng).
+    watched_ids: set[str] = set()
+    if current_user.role == "doctor" and current_user.doctor_id:
+        watched_ids = set(
+            db.execute(
+                select(DoctorWatch.patient_id).where(DoctorWatch.doctor_id == current_user.doctor_id)
+            ).scalars().all()
+        )
+
     return [
         ReportingPatientOut(
             id=p.id,
@@ -63,7 +77,7 @@ def list_reporting_patients(
             gender=p.gender,
             height_cm=p.height_cm,
             weight_kg=p.weight_kg,
-            watch=p.watch,
+            watch=p.id in watched_ids,
             adherence_pct=compute_adherence_pct(db, p.id),
         )
         for p in rows
@@ -78,15 +92,31 @@ def update_patient_watch(
     patient_id: str,
     body: PatientWatchUpdateRequest,
     db: Session = Depends(get_db),
-    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
+    current_user: CurrentUser = Depends(require_role("doctor")),
 ) -> PatientWatchOut:
+    """Tu migration 0023: bat/tat theo doi la RIENG cho CURRENT_USER (bac si
+    dang dang nhap), khong con la 1 co dung chung cho ca benh nhan. Chi
+    role=doctor moi co doctor_id (dinh danh de ghi DoctorWatch) - admin
+    khong con goi duoc endpoint nay (truoc day co the, nhung "admin theo
+    doi" khong co y nghia ro rang - khong co dashboard rieng doc no)."""
     patient = db.get(Patient, patient_id)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
 
-    patient.watch = body.watch
-    db.commit()
-    return PatientWatchOut(id=patient.id, watch=patient.watch)
+    existing = db.execute(
+        select(DoctorWatch).where(
+            DoctorWatch.doctor_id == current_user.doctor_id, DoctorWatch.patient_id == patient_id
+        )
+    ).scalar_one_or_none()
+
+    if body.watch and existing is None:
+        db.add(DoctorWatch(doctor_id=current_user.doctor_id, patient_id=patient_id))
+        db.commit()
+    elif not body.watch and existing is not None:
+        db.delete(existing)
+        db.commit()
+
+    return PatientWatchOut(id=patient.id, watch=body.watch)
 
 
 @reporting_router.get(
@@ -101,7 +131,23 @@ def list_escalations(
 ) -> list[EscalationOut]:
     query = select(Escalation)
     if patient_id:
+        # Xem canh bao cua 1 benh nhan CU THE (vd tab "Tuan thu" trong ho so
+        # benh nhan, doctor/patients/page.tsx) - bac si nao cung xem duoc,
+        # KHONG loc theo DoctorWatch (khac ban chat voi "Hop canh bao" tong
+        # hop o duoi: day la xem ho so 1 nguoi cu the, khong phai feed chung).
         query = query.where(Escalation.patient_id == patient_id)
+    elif current_user.role == "doctor" and current_user.doctor_id:
+        # "Hop canh bao"/chuong thong bao (frontend/src/app/doctor/alerts,
+        # doctor/layout.tsx) - THEM 2026-08-14 (quyet dinh PM, sua hieu lam
+        # truoc do voi Web Push): bac si CHI thay canh bao cua benh nhan
+        # dang "Theo doi" (DoctorWatch), KHONG phai toan bo benh nhan trong
+        # he thong - khac voi "Quan ly benh nhan" (van thay tat ca de ke don).
+        watched_patient_ids = db.execute(
+            select(DoctorWatch.patient_id).where(DoctorWatch.doctor_id == current_user.doctor_id)
+        ).scalars().all()
+        if not watched_patient_ids:
+            return []
+        query = query.where(Escalation.patient_id.in_(watched_patient_ids))
     if status:
         query = query.where(Escalation.status == status)
     query = query.order_by(desc(Escalation.created_at))

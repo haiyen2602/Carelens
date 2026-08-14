@@ -49,7 +49,7 @@ function LoginPageContent() {
       if (user.role === "doctor") {
         router.replace("/doctor");
       } else if (user.role === "patient") {
-        router.replace("/patient");
+        router.replace(user.profile_completed === false ? "/onboarding/profile" : "/patient");
       } else if (user.role === "admin") {
         router.replace("/admin");
       }
@@ -67,9 +67,18 @@ function LoginPageContent() {
     try {
       const u = await authLogin(email.trim(), password);
       if (u.role === "doctor" || u.role === "patient") {
+        // Cau noi TAM: dashboard doctor/patient van la UI mock tinh (chua
+        // doi theo tai khoan dang nhap that) - van can state role/phone cua
+        // proto-store de cac UI hien co (PhoneShell header, banner...)
+        // khong vo. KHONG PHAI nguon that cho danh tinh - danh tinh that la
+        // useAuth().user (xem lib/auth.tsx).
         protoLogin(u.role, u.full_name);
         pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${u.full_name}.`);
-        router.push(u.role === "doctor" ? "/doctor" : "/patient");
+        if (u.role === "patient" && u.profile_completed === false) {
+          router.push("/onboarding/profile");
+        } else {
+          router.push(u.role === "doctor" ? "/doctor" : "/patient");
+        }
       } else if (u.role === "admin") {
         router.push("/admin");
       } else {
@@ -282,7 +291,13 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="grid min-h-screen place-items-center bg-background"><p className="text-sm text-muted-foreground">Đang tải...</p></div>}>
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center bg-background">
+          <p className="text-sm text-muted-foreground">Đang tải...</p>
+        </div>
+      }
+    >
       <LoginPageContent />
     </Suspense>
   );
