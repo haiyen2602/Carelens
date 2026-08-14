@@ -45,7 +45,6 @@ def _override_services(**fakes) -> None:
         "safety_check": None,
     }
     defaults.update(fakes)
-    from backend.agents.orchestrator import default_safety_check
 
     if defaults["safety_check"] is None:
         async def _clean(utterance: str):

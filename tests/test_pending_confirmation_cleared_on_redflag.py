@@ -18,7 +18,10 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
-from backend.agents.tools.drug_confirmation_store import get_pending_confirmation, set_pending_confirmation  # noqa: E402
+from backend.agents.tools.drug_confirmation_store import (  # noqa: E402
+    get_pending_confirmation,
+    set_pending_confirmation,
+)
 from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.main import app  # noqa: E402

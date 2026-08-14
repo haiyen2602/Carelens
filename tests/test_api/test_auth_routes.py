@@ -306,7 +306,7 @@ async def test_change_password_success(unauthenticated_client, demo_account):
     assert body["access_token"]
     assert body["refresh_token"]
     assert body["token_type"] == "bearer"
-    
+
     new_token = body["access_token"]
 
     # Verify old token is now revoked (should return 401)

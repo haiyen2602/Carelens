@@ -34,7 +34,6 @@ from backend.agents.nodes.drug_confirmation_nodes import (  # noqa: E402
     STAGE_OUT_RX_CONFIRM_PICK_R1,
     STAGE_OUT_RX_CONFIRM_TOP1_R1,
     STAGE_OUT_RX_CONFIRM_TOP1_R2,
-    UNPARSEABLE_CHOICE_MESSAGE_TEMPLATE,
     UNPARSEABLE_YES_NO_MESSAGE,
     _dispatch_stage,
     _fuzzy_best_match,
@@ -149,7 +148,11 @@ def test_fuzzy_name_search_paracetamol_does_not_match_micardis(db_session_no_pre
 
 
 def test_fresh_pending_confirmation_is_returned_normally():
-    from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, get_pending_confirmation, set_pending_confirmation
+    from backend.agents.tools.drug_confirmation_store import (
+        clear_pending_confirmation,
+        get_pending_confirmation,
+        set_pending_confirmation,
+    )
 
     db = SessionLocal()
     patient_id = f"test-ttl-fresh-{uuid.uuid4().hex[:8]}"
@@ -562,15 +565,15 @@ def test_full_chain_rejected_candidates_never_reappear_in_later_menus():
     """Review 2026-08-09: chuoi DAY DU - tu choi top-1 (A), duoc menu [B,C,D],
     chon B, tu choi B, PHAI duoc menu chi con [C,D] - KHONG duoc A hay B xuat
     hien lai o bat ky buoc nao sau do."""
-    D = {"drug_id": "fake-drug-d", "ten_thuoc": "Fake Drug D"}
-    candidates_r0 = [FAKE_A, FAKE_B, FAKE_C, D]
+    fake_d = {"drug_id": "fake-drug-d", "ten_thuoc": "Fake Drug D"}
+    candidates_r0 = [FAKE_A, FAKE_B, FAKE_C, fake_d]
 
     # Buoc 1: tu choi top-1 (FAKE_A)
     r1 = _dispatch_stage(None, _fake_embed, "p1", STAGE_OUT_RX_CONFIRM_TOP1_R1, candidates_r0, "orig q", "không")
     assert r1.new_pending[1] == STAGE_OUT_RX_CHOOSE_TOP3_R1
     menu1_candidates = r1.new_pending[0]
     assert FAKE_A not in menu1_candidates, "A (top-1 vua tu choi) khong duoc xuat hien trong menu top-3"
-    assert menu1_candidates == [FAKE_B, FAKE_C, D]
+    assert menu1_candidates == [FAKE_B, FAKE_C, fake_d]
 
     # Buoc 2: chon "1" (=FAKE_B) tu menu
     r2 = _dispatch_stage(
@@ -587,7 +590,7 @@ def test_full_chain_rejected_candidates_never_reappear_in_later_menus():
     final_menu = r3.new_pending[0]
     assert FAKE_A not in final_menu, "A khong duoc xuat hien lai o buoc sau"
     assert FAKE_B not in final_menu, "B (vua tu choi lan 2) khong duoc xuat hien lai"
-    assert final_menu == [FAKE_C, D]
+    assert final_menu == [FAKE_C, fake_d]
     assert "Fake Drug A" not in r3.response
     assert "Fake Drug B" not in r3.response
 

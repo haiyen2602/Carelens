@@ -17,8 +17,8 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from fastapi import Depends, Header, HTTPException, status
-
 from sqlalchemy.orm import Session
+
 from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import Account
