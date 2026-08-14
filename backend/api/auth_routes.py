@@ -167,6 +167,15 @@ async def me(
     account = db.query(Account).filter(Account.id == current_user.id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tai khoan khong ton tai")
+
+    # THEM (migration 0022) - frontend dung de biet co bat buoc redirect
+    # sang /onboarding/profile hay khong. Chi tra gia tri khi role=patient
+    # (con lai None - chua co onboarding tuong tu cho role khac).
+    profile_completed: bool | None = None
+    if account.role == "patient" and account.patient_id:
+        patient = db.query(Patient).filter(Patient.id == account.patient_id).first()
+        profile_completed = patient.profile_completed if patient is not None else False
+
     return MeResponse(
         id=account.id,
         full_name=account.full_name,
@@ -175,6 +184,7 @@ async def me(
         is_email_verified=getattr(account, "is_email_verified", True),
         patient_id=account.patient_id,
         doctor_id=account.doctor_id,
+        profile_completed=profile_completed,
     )
 
 

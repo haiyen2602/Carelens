@@ -22,19 +22,26 @@ export type AuthUser = {
   role: string;
   patient_id: string | null;
   doctor_id: string | null;
+  // THEM (migration 0022) - chi co y nghia khi role="patient" (frontend
+  // dung de bat buoc redirect sang /onboarding/profile). null cho role khac.
+  profile_completed: boolean | null;
 };
 
 // `/auth/login` (UserOut) CO Y chi tra id/full_name/role dung field mau
-// api-contracts.md §1 - khong sua schema do. patient_id/doctor_id lay rieng
-// tu /auth/me (MeResponse, da co san 2 truong nay) ngay sau khi dang nhap/
-// khoi phuc phien, goi thang backend kem Bearer token - cung pattern voi
-// lib/accounts.ts (khong lien quan cookie nen khong can qua Route Handler).
-async function layLienKet(accessToken: string): Promise<Pick<AuthUser, "patient_id" | "doctor_id">> {
-  const me = await request<{ patient_id: string | null; doctor_id: string | null }>(
-    "/api/v1/auth/me",
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
-  return { patient_id: me.patient_id, doctor_id: me.doctor_id };
+// api-contracts.md §1 - khong sua schema do. patient_id/doctor_id/
+// profile_completed lay rieng tu /auth/me (MeResponse, da co san cac
+// truong nay) ngay sau khi dang nhap/khoi phuc phien, goi thang backend
+// kem Bearer token - cung pattern voi lib/accounts.ts (khong lien quan
+// cookie nen khong can qua Route Handler).
+async function layLienKet(
+  accessToken: string,
+): Promise<Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed">> {
+  const me = await request<{
+    patient_id: string | null;
+    doctor_id: string | null;
+    profile_completed: boolean | null;
+  }>("/api/v1/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } });
+  return { patient_id: me.patient_id, doctor_id: me.doctor_id, profile_completed: me.profile_completed };
 }
 
 type AuthState = {

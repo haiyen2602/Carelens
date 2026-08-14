@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
@@ -101,6 +101,11 @@ class MeResponse(BaseModel):
     is_email_verified: bool = True
     patient_id: str | None = None
     doctor_id: str | None = None
+    # THEM (migration 0022) - chi co y nghia khi role="patient" (frontend
+    # dung de quyet dinh co bat buoc redirect sang /onboarding/profile hay
+    # khong). None cho role khac patient - CHUA co onboarding tuong tu cho
+    # doctor/caregiver/admin.
+    profile_completed: bool | None = None
 
 
 
@@ -472,6 +477,36 @@ class PatientHealthUpdateRequest(BaseModel):
     gender: str | None = None
     height_cm: float | None = None
     weight_kg: float | None = None
+
+
+class PatientProfileUpdateRequest(BaseModel):
+    """PATCH /api/v1/patients/me - benh nhan tu dien thong tin ca nhan o
+    trang onboarding (migration 0022). Tat ca field optional (partial
+    update, cung quy uoc voi PatientHealthUpdateRequest o tren) - nhung
+    frontend yeu cau nhap du date_of_birth/phone/address/gender truoc khi
+    goi, de lan goi dau tien la lan danh dau profile_completed=True."""
+
+    date_of_birth: date | None = None
+    phone: str | None = Field(default=None, max_length=20)
+    address: str | None = Field(default=None, max_length=255)
+    gender: str | None = None
+    height_cm: float | None = None
+    weight_kg: float | None = None
+
+
+class PatientProfileOut(BaseModel):
+    """GET/PATCH /api/v1/patients/me."""
+
+    id: str
+    full_name: str
+    date_of_birth: date | None = None
+    year_of_birth: int | None = None
+    phone: str | None = None
+    address: str | None = None
+    gender: str | None = None
+    height_cm: float | None = None
+    weight_kg: float | None = None
+    profile_completed: bool = False
 
 
 class EscalationOut(BaseModel):

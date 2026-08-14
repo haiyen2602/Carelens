@@ -676,8 +676,17 @@ function PatientDetail({
   );
 }
 
+type WatchFilter = "all" | "watching" | "not_watching";
+
+const WATCH_FILTER_OPTIONS: { value: WatchFilter; label: string }[] = [
+  { value: "all", label: "Tất cả" },
+  { value: "watching", label: "Đang theo dõi" },
+  { value: "not_watching", label: "Không theo dõi" },
+];
+
 export default function PatientsPage() {
   const [q, setQ] = useState("");
+  const [watchFilter, setWatchFilter] = useState<WatchFilter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   // Bat ky bac si nao cung xem/quan ly duoc toan bo benh nhan - tim theo ID
   // hoac ten qua tham so `search` cua backend, debounce de tranh goi API tren
@@ -700,6 +709,12 @@ export default function PatientsPage() {
     await setPatientWatch(id, !(p?.watch ?? false), accessToken);
     setRefreshKey((k) => k + 1);
   };
+
+  const filteredPatients = patients.filter((p) => {
+    if (watchFilter === "watching") return p.watch;
+    if (watchFilter === "not_watching") return !p.watch;
+    return true;
+  });
 
   const applyHealthPatch = (id: string, patch: PatientHealthPatch) => {
     setPatients((prev) =>
@@ -726,16 +741,25 @@ export default function PatientsPage() {
             Tìm theo tên hoặc ID, mở hồ sơ để xem tình trạng sức khỏe và tuân thủ điều trị.
           </p>
         </div>
-        <Input
-          placeholder="Tìm theo tên hoặc ID bệnh nhân…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="w-full sm:w-64"
-        />
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Input
+            placeholder="Tìm theo tên hoặc ID bệnh nhân…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <div className="w-40 shrink-0">
+            <HoverSelect
+              value={watchFilter}
+              onChange={(v) => setWatchFilter(v as WatchFilter)}
+              options={WATCH_FILTER_OPTIONS}
+            />
+          </div>
+        </div>
       </header>
 
       <div className="space-y-3">
-        {patients.map((p) => {
+        {filteredPatients.map((p) => {
           const age = tinhTuoi(p.yearOfBirth);
           return (
             <div key={p.id} className="surface-card p-5">
@@ -784,7 +808,7 @@ export default function PatientsPage() {
             </div>
           );
         })}
-        {patients.length === 0 && (
+        {filteredPatients.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             Không tìm thấy bệnh nhân phù hợp.
           </p>

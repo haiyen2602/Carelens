@@ -18,10 +18,10 @@ migrations/versions/, chi duoc INSERT.
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, DateTime, Float, Index, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -161,18 +161,25 @@ class Patient(Base):
     doctor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)  # vd "Tang huyet ap, sau dot quy"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
-    # THEM 2026-08-13 (migration 0015) - bac si tu chon "theo doi" mot benh
-    # nhan cu the tren dashboard bao cao (backend/api/reporting_routes.py) hay
-    # khong. KHONG suy ra tu doctor_id (bac si phu trach van thay TAT CA benh
-    # nhan cua minh trong danh sach chinh; `watch` chi la 1 co "ghim/theo doi
-    # sat" bo sung, mac dinh False de danh sach theo doi khong tu dong day len
-    # khi co benh nhan moi).
-    watch: Mapped[bool] = mapped_column(nullable=False, default=False)
     # THEM 2026-08-13 (migration 0020) - tab "Tinh trang suc khoe" o trang
     # Quan ly benh nhan. Du lieu co cau truc (khac `note` la text tu do).
     gender: Mapped[str | None] = mapped_column(String, nullable=True)  # "nam" | "nu" | "khac"
     height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # `watch` (co boolean dung chung) DA BI XOA o migration 0023 - thay bang
+    # bang DoctorWatch (theo doi rieng tung bac si, xem class ben duoi).
+    # THEM 2026-08-14 (migration 0022) - trang onboarding "Thong tin ca nhan"
+    # ma benh nhan tu dien ngay sau lan dang nhap dau tien (frontend/src/app/
+    # onboarding/profile/page.tsx). `date_of_birth` KHONG thay `year_of_birth`
+    # o tren (van con nhieu noi doc year_of_birth) - luc luu dong bo
+    # year_of_birth = date_of_birth.year (xem backend/api/patient_routes.py).
+    phone: Mapped[str | None] = mapped_column(String, nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # False = chua hoan tat onboarding -> frontend bat buoc redirect. KHONG
+    # suy tu cac cot khac co NULL hay khong (benh nhan co the chu y bo trong
+    # 1 truong nao do sau khi da "hoan tat").
+    profile_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class Prescription(Base):
@@ -441,3 +448,30 @@ class CaregiverLink(Base):
     # dang theo doi (GET ?caregiver_account_id=) sau khi nguoi duoc theo doi
     # tu chap nhan (POST /caregiver-links/{id}/accept).
     status: Mapped[str] = mapped_column(String, nullable=False, default="accepted")
+
+
+class DoctorWatch(Base):
+    """1 bac si dang "theo doi" 1 benh nhan (THEM 2026-08-14, migration 0023,
+    thay `Patient.watch` cu - xem ghi chu tren class Patient). Khac
+    `Patient.doctor_id` (bac si PHU TRACH, chi 1) - 1 benh nhan co the duoc
+    NHIEU bac si theo doi doc lap (vd hoi chan), moi nguoi tu bam nut "Theo
+    doi" rieng, khong anh huong nhau.
+
+    Dung lam DICH loc "Hop canh bao"/chuong thong bao trong app (GET
+    /escalations, backend/api/reporting_routes.py::list_escalations) - bac
+    si CHI thay canh bao cua benh nhan minh dang theo doi, khong phai toan
+    bo benh nhan (quyet dinh PM 2026-08-14).
+
+    `doctor_id`/`patient_id` la string tu do, KHONG dat FK that - cung ly do
+    da giai thich o CaregiverLink/Patient o tren."""
+
+    __tablename__ = "doctor_watch"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_doctor_watch_doctor_patient", "doctor_id", "patient_id", unique=True),
+    )

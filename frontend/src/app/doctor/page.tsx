@@ -1,16 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  ClipboardCheck,
-  MoreVertical,
-  Search,
-  Users,
-} from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ArrowRight, ClipboardCheck, Search, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useProto } from "@/lib/proto-store";
 
 const riskTone: Record<string, string> = {
@@ -50,96 +42,106 @@ const alertTone = {
   },
 } as const;
 
-const donut = [
-  { label: "Tuân thủ tốt (≥ 90%)", sub: "35 bệnh nhân (27%)", color: "var(--success)", pct: 27 },
+// 4 muc tuan thu dung CHUNG nguong voi riskOf() (Cao/Trung binh/Thap o bang
+// ben trai) - CHI khac cach chia (4 bac thay vi 3) de khop UI dashboard cu.
+// Dem THAT tu `patients` (adherence_pct that tu backend, xem lib/reporting.ts),
+// KHONG con la mock co dinh 35/62/21/10.
+const ADHERENCE_BUCKETS = [
   {
+    key: "good",
+    label: "Tuân thủ tốt (≥ 90%)",
+    color: "var(--success)",
+    test: (v: number) => v >= 90,
+  },
+  {
+    key: "mid",
     label: "Tuân thủ trung bình (70-89%)",
-    sub: "62 bệnh nhân (48%)",
     color: "var(--primary)",
-    pct: 48,
+    test: (v: number) => v >= 70 && v < 90,
   },
-  { label: "Tuân thủ kém (50-69%)", sub: "21 bệnh nhân (16%)", color: "var(--warning)", pct: 16 },
   {
-    label: "Tuân thủ rất kém (< 50%)",
-    sub: "10 bệnh nhân (8%)",
-    color: "var(--destructive)",
-    pct: 9,
+    key: "poor",
+    label: "Tuân thủ kém (50-69%)",
+    color: "var(--warning)",
+    test: (v: number) => v >= 50 && v < 70,
   },
-];
+  {
+    key: "veryPoor",
+    label: "Tuân thủ rất kém (< 50%)",
+    color: "var(--destructive)",
+    test: (v: number) => v < 50,
+  },
+] as const;
+
+type StatusFilter = "all" | "watching";
+type RiskFilter = "all" | "Cao" | "Trung bình" | "Thấp";
 
 export default function DoctorDashboard() {
   const { patients, prescriptions, alerts } = useProto();
-  const newAlerts = alerts.filter((a) => a.status === "new");
-  const avg = Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length);
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
+
+  const avg =
+    patients.length > 0
+      ? Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length)
+      : 0;
+
+  // Ten benh nhan cua tung canh bao - TRUOC DAY bi bug hardcode patients[0]
+  // (moi canh bao deu hien ten benh nhan DAU TIEN trong danh sach, sai voi
+  // du lieu that). SysAlert.patientId co san (proto-store.tsx) - tra dung
+  // ten qua patientId, "—" neu khong tim thay (vd benh nhan da bi xoa).
+  const patientNameById = useMemo(() => {
+    const m = new Map(patients.map((p) => [p.id, p.name]));
+    return m;
+  }, [patients]);
 
   const stats = [
     {
       label: "Tổng bệnh nhân",
       value: patients.length,
-      note: "+8 so với tuần trước",
-      noteTone: "text-success",
       icon: Users,
       tone: "bg-primary/10 text-primary",
     },
     {
       label: "Đơn thuốc đang theo dõi",
       value: prescriptions.length,
-      note: "+12 so với tuần trước",
-      noteTone: "text-success",
       icon: ClipboardCheck,
       tone: "bg-success/15 text-success",
     },
-    {
-      label: "Cảnh báo chưa xử lý",
-      value: newAlerts.length,
-      link: { to: "/doctor/alerts", label: "Xem chi tiết" },
-      icon: Bell,
-      tone: "bg-warning/25 text-warning-foreground",
-    },
   ];
 
-  const list = patients.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
+  const list = patients.filter((p) => {
+    if (!p.name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (statusFilter === "watching" && !p.watch) return false;
+    if (riskFilter !== "all" && riskOf(p.adherence) !== riskFilter) return false;
+    return true;
+  });
+
+  // Phan bo THAT theo adherence_pct cua tung benh nhan (khong con la mock co
+  // dinh) - tong so dong cua 4 bucket LUON = patients.length.
+  const donut = ADHERENCE_BUCKETS.map((b) => ({
+    ...b,
+    count: patients.filter((p) => b.test(p.adherence)).length,
+  }));
+  const total = patients.length;
   let acc = 0;
-  const gradient = donut
-    .map((d) => {
-      const from = acc;
-      acc += d.pct;
-      return `${d.color} ${from}% ${acc}%`;
-    })
-    .join(", ");
+  const gradient =
+    total === 0
+      ? "var(--muted) 0% 100%"
+      : donut
+          .map((d) => {
+            const from = acc;
+            acc += (d.count / total) * 100;
+            return `${d.color} ${from}% ${acc}%`;
+          })
+          .join(", ");
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="surface-card flex items-start gap-4 p-5">
-              <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${s.tone}`}>
-                <Icon className="h-6 w-6" />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm text-muted-foreground">{s.label}</p>
-                <p className="mt-1 text-3xl font-extrabold leading-none">{s.value}</p>
-                {s.note && <p className={`mt-2 text-xs font-semibold ${s.noteTone}`}>{s.note}</p>}
-                {s.link && (
-                  <Link
-                    href={s.link.to}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                  >
-                    {s.link.label} <ArrowRight className="h-3 w-3" />
-                  </Link>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <section className="surface-card p-5">
-          <div className="flex items-center justify-between gap-3">
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] xl:items-stretch">
+        <section className="surface-card flex min-h-0 flex-col p-5 xl:h-full">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Bệnh nhân cần theo dõi</h2>
             <Link
               href="/doctor/patients"
@@ -149,7 +151,7 @@ export default function DoctorDashboard() {
             </Link>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex shrink-0 flex-wrap gap-2">
             <div className="relative min-w-[200px] flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -159,27 +161,35 @@ export default function DoctorDashboard() {
                 className="h-10 w-full rounded-xl border border-input bg-card pl-9 pr-3 text-sm outline-none focus:border-primary"
               />
             </div>
-            <select className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none">
-              <option>Trạng thái: Tất cả</option>
-              <option>Đang theo dõi</option>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
+            >
+              <option value="all">Trạng thái: Tất cả</option>
+              <option value="watching">Đang theo dõi</option>
             </select>
-            <select className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none">
-              <option>Mức độ nguy cơ: Tất cả</option>
-              <option>Cao</option>
+            <select
+              value={riskFilter}
+              onChange={(e) => setRiskFilter(e.target.value as RiskFilter)}
+              className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
+            >
+              <option value="all">Mức độ nguy cơ: Tất cả</option>
+              <option value="Cao">Cao</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Thấp">Thấp</option>
             </select>
           </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
+          <div className="mt-4 min-h-0 flex-1 overflow-auto">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead className="sticky top-0 z-10 bg-card">
                 <tr className="border-y border-border bg-muted/60 text-left align-middle text-xs font-semibold text-muted-foreground">
                   <th className="px-3 py-3 align-middle">Bệnh nhân</th>
                   <th className="px-3 py-3 align-middle">Tuổi</th>
                   <th className="w-48 px-3 py-3 align-middle">Chẩn đoán chính</th>
                   <th className="px-3 py-3 align-middle">Mức độ nguy cơ</th>
                   <th className="whitespace-nowrap px-3 py-3 align-middle">Tuân thủ (7 ngày)</th>
-                  <th className="whitespace-nowrap px-3 py-3 align-middle">Cập nhật cuối</th>
-                  <th className="px-3 py-3 align-middle" />
                 </tr>
               </thead>
               <tbody>
@@ -200,8 +210,8 @@ export default function DoctorDashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3">{p.age}</td>
-                      <td className="px-3 py-3">{p.condition}</td>
+                      <td className="px-3 py-3">{p.age || "—"}</td>
+                      <td className="px-3 py-3">{p.condition || "—"}</td>
                       <td className="px-3 py-3">
                         <span
                           className={`inline-block whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${riskTone[risk]}`}
@@ -218,112 +228,129 @@ export default function DoctorDashboard() {
                           />
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-muted-foreground">Hôm nay, 08:30</td>
-                      <td className="px-3 py-3 text-right">
-                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                      </td>
                     </tr>
                   );
                 })}
+                {list.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                      Không tìm thấy bệnh nhân phù hợp.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </section>
 
-        <section className="surface-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Cảnh báo mới nhất</h2>
-            <Link href="/doctor/alerts" className="text-xs font-semibold text-primary">
-              Xem tất cả
-            </Link>
-          </div>
-          <div className="mt-4 space-y-3">
-            {alerts.slice(0, 3).map((a) => {
-              const t = alertTone[a.level];
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            {stats.map((s) => {
+              const Icon = s.icon;
               return (
-                <div
-                  key={a.id}
-                  className="relative overflow-hidden rounded-xl border border-border p-4 pl-5"
-                >
-                  <span className={`absolute inset-y-0 left-0 w-1 ${t.bar}`} />
-                  <div className="flex gap-3">
-                    <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${t.icon}`}
-                    >
-                      <AlertTriangle className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="min-w-0 font-semibold">{a.title}</p>
-                        <span
-                          className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${t.chip}`}
-                        >
-                          Cần xem
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {patients[0]?.name} · {a.at} hôm nay
-                      </p>
-                      <p className="mt-1.5 text-sm text-muted-foreground">{a.detail}</p>
-                    </div>
+                <div key={s.label} className="surface-card flex items-start gap-3 p-4">
+                  <span
+                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${s.tone}`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-muted-foreground">{s.label}</p>
+                    <p className="mt-0.5 text-2xl font-extrabold leading-none">{s.value}</p>
                   </div>
                 </div>
               );
             })}
           </div>
-          <Link
-            href="/doctor/alerts"
-            className="mt-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary"
-          >
-            Xem tất cả cảnh báo <ArrowRight className="h-4 w-4" />
-          </Link>
-        </section>
-      </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <section className="surface-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Adherence tổng quan</h2>
-            <select className="h-9 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none">
-              <option>7 ngày qua</option>
-              <option>30 ngày qua</option>
-            </select>
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-6">
-            <div className="relative h-[170px] w-[170px] shrink-0">
-              <div
-                className="h-full w-full rounded-full"
-                style={{ background: `conic-gradient(${gradient})` }}
-              />
-              <div className="absolute inset-[26px] grid place-items-center rounded-full bg-card">
-                <div className="text-center">
-                  <p className="text-3xl font-extrabold leading-none">{avg}%</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Trung bình</p>
+          <section className="surface-card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold">Cảnh báo mới nhất</h2>
+              <Link href="/doctor/alerts" className="text-xs font-semibold text-primary">
+                Xem tất cả
+              </Link>
+            </div>
+            <div className="mt-4 max-h-[280px] space-y-3 overflow-auto">
+              {alerts.length === 0 && (
+                <p className="text-sm text-muted-foreground">Chưa có cảnh báo nào.</p>
+              )}
+              {alerts.slice(0, 3).map((a) => {
+                const t = alertTone[a.level];
+                return (
+                  <div
+                    key={a.id}
+                    className="relative overflow-hidden rounded-xl border border-border p-3 pl-4"
+                  >
+                    <span className={`absolute inset-y-0 left-0 w-1 ${t.bar}`} />
+                    <div className="flex gap-3">
+                      <span
+                        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${t.icon}`}
+                      >
+                        <AlertTriangle className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 truncate font-semibold">{a.title}</p>
+                          <span
+                            className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${t.chip}`}
+                          >
+                            Cần xem
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {patientNameById.get(a.patientId) ?? "—"} · {a.at} hôm nay
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="surface-card shrink-0 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold">Adherence tổng quan</h2>
+            </div>
+            <div className="mt-4 flex items-center gap-5">
+              <div className="relative h-[110px] w-[110px] shrink-0">
+                <div
+                  className="h-full w-full rounded-full"
+                  style={{ background: `conic-gradient(${gradient})` }}
+                />
+                <div className="absolute inset-[18px] grid place-items-center rounded-full bg-card">
+                  <div className="text-center">
+                    <p className="text-xl font-extrabold leading-none">{avg}%</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">Trung bình</p>
+                  </div>
                 </div>
               </div>
+              <ul className="min-w-0 flex-1 space-y-1.5">
+                {donut.map((d) => (
+                  <li key={d.key} className="flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: d.color }}
+                    />
+                    <p className="min-w-0 truncate text-xs text-muted-foreground">
+                      {d.label}{" "}
+                      <span className="text-foreground">
+                        · {d.count} bệnh nhân ({total > 0 ? Math.round((d.count / total) * 100) : 0}
+                        %)
+                      </span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="min-w-[190px] flex-1 space-y-3">
-              {donut.map((d) => (
-                <li key={d.label} className="flex gap-2.5">
-                  <span
-                    className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ background: d.color }}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight">{d.label}</p>
-                    <p className="text-xs text-muted-foreground">{d.sub}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <Link
-            href="/doctor/reports/adherence"
-            className="mt-5 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary"
-          >
-            Xem báo cáo chi tiết <ArrowRight className="h-4 w-4" />
-          </Link>
-        </section>
+            <Link
+              href="/doctor/reports/adherence"
+              className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary"
+            >
+              Xem báo cáo chi tiết <ArrowRight className="h-4 w-4" />
+            </Link>
+          </section>
+        </div>
       </div>
     </div>
   );
