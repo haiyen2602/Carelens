@@ -74,6 +74,7 @@ export type SysAlert = {
   id: string;
   patientId: string;
   level: AlertLevel;
+  trigger: string;
   title: string;
   detail: string;
   at: string;
@@ -221,7 +222,10 @@ type Ctx = State & {
   // ham nay CHI sua state cuc bo, mat khi refresh trang. Giu lai de nut "Dieu
   // chinh thu cong" o queue/page.tsx khong vo, cho toi khi co endpoint that.
   updatePrescription: (id: string, patch: Partial<Omit<Prescription, "id" | "orderId">>) => void;
-  verifyDose: (doseId: string, verdict: "correct" | "wrong" | "unclear" | "absent") => Promise<void>;
+  verifyDose: (
+    doseId: string,
+    verdict: "correct" | "wrong" | "unclear" | "absent",
+  ) => Promise<void>;
   familyConfirmDose: (id: string, taken: boolean) => Promise<void>;
   // Chua co API sua trang thai escalation o backend (BE contract chi co GET
   // /escalations) - ham nay CHI sua state cuc bo, mat khi refresh trang.
@@ -270,7 +274,10 @@ function tinhNgayKetThuc(startDate: string, durationDays: number): string {
 // doctor/admin, patient goi se 403 lam ca Promise.all reject, prescriptions
 // state khong bao gio duoc set). Tai dung dung ham rai phang nay thay vi
 // viet lai logic map item rieng cho trang benh nhan.
-export function flattenPrescriptions(records: PrescriptionRecord[], tenBenhNhan: Record<string, string>): Prescription[] {
+export function flattenPrescriptions(
+  records: PrescriptionRecord[],
+  tenBenhNhan: Record<string, string>,
+): Prescription[] {
   const ra: Prescription[] = [];
   for (const p of records) {
     const trangThai = anhXaTrangThai(p.status);
@@ -317,9 +324,7 @@ function anhXaTrangThaiLieu(status: string): DoseStatus {
 
 function moTaThuoc(d: DoseRecord): { med: string; strength: string } {
   const ten = d.expectedItems.map((it) => it.tenThuoc).join(", ") || "(chưa rõ tên thuốc)";
-  const luong = d.expectedItems
-    .map((it) => `${it.soVien} ${it.dangThuoc ?? "đơn vị"}`)
-    .join(", ");
+  const luong = d.expectedItems.map((it) => `${it.soVien} ${it.dangThuoc ?? "đơn vị"}`).join(", ");
   return { med: ten, strength: luong };
 }
 
@@ -354,6 +359,7 @@ function toSysAlert(e: Escalation): SysAlert {
     id: e.id,
     patientId: e.patientId,
     level: anhXaMucDo(e.severity),
+    trigger: e.trigger,
     title: e.reason || e.trigger,
     detail: e.rawUtterance || e.trigger,
     at: gioHienThi(e.createdAt),
@@ -471,7 +477,9 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
     // song song theo tung patient_id (chap nhan duoc o quy mo prototype).
     const linkLists = await Promise.all(
       patients.map((p) =>
-        listCaregiverLinksForPatient(p.id).catch(() => [] as Awaited<ReturnType<typeof listCaregiverLinksForPatient>>),
+        listCaregiverLinksForPatient(p.id).catch(
+          () => [] as Awaited<ReturnType<typeof listCaregiverLinksForPatient>>,
+        ),
       ),
     );
     const familyContacts: FamilyContact[] = linkLists.flatMap((links, i) =>
@@ -485,14 +493,17 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, familyContacts }));
   }, [accessToken]);
 
-  const refreshMonitoredRelatives = useCallback(async (caregiverAccountId: string | null | undefined) => {
-    if (!caregiverAccountId) {
-      setState((s) => ({ ...s, monitoredRelatives: [] }));
-      return;
-    }
-    const records = await listMonitoredPatients(caregiverAccountId);
-    setState((s) => ({ ...s, monitoredRelatives: records.map(toMonitoredRelative) }));
-  }, []);
+  const refreshMonitoredRelatives = useCallback(
+    async (caregiverAccountId: string | null | undefined) => {
+      if (!caregiverAccountId) {
+        setState((s) => ({ ...s, monitoredRelatives: [] }));
+        return;
+      }
+      const records = await listMonitoredPatients(caregiverAccountId);
+      setState((s) => ({ ...s, monitoredRelatives: records.map(toMonitoredRelative) }));
+    },
+    [],
+  );
 
   useEffect(() => {
     refreshDoses(user?.patient_id).catch((err) => {
@@ -557,7 +568,10 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       reportHealth: (text, level) => {
         setState((s) => ({
           ...s,
-          healthLog: [{ id: uid(), at: gioHienThi(new Date().toISOString()), text, level }, ...s.healthLog],
+          healthLog: [
+            { id: uid(), at: gioHienThi(new Date().toISOString()), text, level },
+            ...s.healthLog,
+          ],
         }));
       },
       requestSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: true })),
@@ -635,7 +649,15 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, activity: s.activity.map((a) => ({ ...a, read: true })) }));
       },
     }),
-    [state, user, accessToken, refreshPrescriptions, refreshDoses, refreshEscalations, refreshReportingPatients],
+    [
+      state,
+      user,
+      accessToken,
+      refreshPrescriptions,
+      refreshDoses,
+      refreshEscalations,
+      refreshReportingPatients,
+    ],
   );
 
   return <ProtoContext.Provider value={value}>{children}</ProtoContext.Provider>;

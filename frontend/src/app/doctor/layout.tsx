@@ -46,7 +46,7 @@ const groups: { title: string; items: NavItem[] }[] = [
   },
   {
     title: "Báo cáo",
-    items: [{ to: "/doctor/reports/adherence", label: "Adherence tổng quan", icon: BarChart3 }],
+    items: [{ to: "/doctor/reports/adherence", label: "Tổng quan thông tin", icon: BarChart3 }],
   },
 ];
 
@@ -261,10 +261,14 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                     Hoạt động
                   </p>
                   {activity.length === 0 && newAlerts.length === 0 && (
-                    <p className="px-4 py-4 text-sm text-muted-foreground">Chưa có thông báo nào.</p>
+                    <p className="px-4 py-4 text-sm text-muted-foreground">
+                      Chưa có thông báo nào.
+                    </p>
                   )}
                   {activity.length === 0 && newAlerts.length > 0 && (
-                    <p className="px-4 py-3 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
+                    <p className="px-4 py-3 text-sm text-muted-foreground">
+                      Chưa có hoạt động nào.
+                    </p>
                   )}
                   {activity.map((n) => (
                     <div key={n.id} className="px-4 py-2.5">

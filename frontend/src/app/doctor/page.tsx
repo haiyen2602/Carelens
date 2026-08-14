@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import { presentAlert } from "@/lib/alert-presentation";
 import { useProto } from "@/lib/proto-store";
 
 const riskTone: Record<string, string> = {
@@ -30,6 +31,14 @@ function riskOf(adherence: number) {
   if (adherence < 75) return "Cao";
   if (adherence < 90) return "Trung bình";
   return "Thấp";
+}
+
+function formatDecimal(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  if (Number.isInteger(value)) return String(value);
+
+  const truncated = Math.trunc(value * 100) / 100;
+  return truncated.toFixed(2);
 }
 
 const alertTone = {
@@ -70,23 +79,37 @@ const donut = [
 export default function DoctorDashboard() {
   const { patients, prescriptions, alerts } = useProto();
   const newAlerts = alerts.filter((a) => a.status === "new");
-  const avg = Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length);
+  const avg = patients.length
+    ? Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length)
+    : 0;
   const [q, setQ] = useState("");
 
+  const watchedCount = patients.filter((p) => p.watch).length;
+  const pendingPrescriptions = prescriptions.filter((p) => p.status === "pending").length;
+  const highRiskCount = patients.filter((p) => riskOf(p.adherence) === "Cao").length;
+
+  // Cac note "+N so voi tuan truoc" ban dau la chuoi bia cung, khong tinh tu
+  // du lieu that (Patient/Prescription that khong luu snapshot theo tuan) -
+  // thay bang so lieu phai/that da co san trong `patients`/`prescriptions`,
+  // dung quy uoc note = so lieu phu that nhu admin/page.tsx dang dung.
   const stats = [
     {
       label: "Tổng bệnh nhân",
       value: patients.length,
-      note: "+8 so với tuần trước",
-      noteTone: "text-success",
+      note:
+        watchedCount > 0
+          ? `${watchedCount} đang theo dõi đặc biệt`
+          : "Chưa có ca theo dõi đặc biệt",
+      noteTone: watchedCount > 0 ? "text-warning-foreground" : "text-muted-foreground",
       icon: Users,
       tone: "bg-primary/10 text-primary",
     },
     {
       label: "Đơn thuốc đang theo dõi",
       value: prescriptions.length,
-      note: "+12 so với tuần trước",
-      noteTone: "text-success",
+      note:
+        pendingPrescriptions > 0 ? `${pendingPrescriptions} chờ duyệt` : "Không có đơn chờ duyệt",
+      noteTone: pendingPrescriptions > 0 ? "text-warning-foreground" : "text-success",
       icon: ClipboardCheck,
       tone: "bg-success/15 text-success",
     },
@@ -96,6 +119,14 @@ export default function DoctorDashboard() {
       link: { to: "/doctor/alerts", label: "Xem chi tiết" },
       icon: Bell,
       tone: "bg-warning/25 text-warning-foreground",
+    },
+    {
+      label: "Bệnh nhân nguy cơ cao",
+      value: highRiskCount,
+      note: "Tuân thủ dưới 75% (7 ngày)",
+      noteTone: highRiskCount > 0 ? "text-destructive" : "text-success",
+      icon: AlertTriangle,
+      tone: "bg-destructive/12 text-destructive",
     },
   ];
 
@@ -210,7 +241,7 @@ export default function DoctorDashboard() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <p className="text-xs font-semibold">{p.adherence}%</p>
+                        <p className="text-xs font-semibold">{formatDecimal(p.adherence)}%</p>
                         <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted">
                           <div
                             className={`h-full rounded-full ${barTone(p.adherence)}`}
@@ -240,6 +271,7 @@ export default function DoctorDashboard() {
           <div className="mt-4 space-y-3">
             {alerts.slice(0, 3).map((a) => {
               const t = alertTone[a.level];
+              const alert = presentAlert(a, patients);
               return (
                 <div
                   key={a.id}
@@ -254,17 +286,23 @@ export default function DoctorDashboard() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="min-w-0 font-semibold">{a.title}</p>
+                        <p className="min-w-0 font-semibold">{alert.title}</p>
                         <span
                           className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${t.chip}`}
                         >
                           Cần xem
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="hidden">
                         {patients[0]?.name} · {a.at} hôm nay
                       </p>
-                      <p className="mt-1.5 text-sm text-muted-foreground">{a.detail}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {alert.patientName} · {a.at} hôm nay · {alert.severityLabel} ·{" "}
+                        {alert.statusLabel}
+                      </p>
+                      <p className="mt-1.5 text-sm font-medium text-foreground">{alert.problem}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{alert.evidence}</p>
+                      <p className="mt-2 text-xs font-semibold text-primary">{alert.action}</p>
                     </div>
                   </div>
                 </div>
@@ -283,7 +321,7 @@ export default function DoctorDashboard() {
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="surface-card p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Adherence tổng quan</h2>
+            <h2 className="text-lg font-bold">Tổng quan thông tin</h2>
             <select className="h-9 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none">
               <option>7 ngày qua</option>
               <option>30 ngày qua</option>
