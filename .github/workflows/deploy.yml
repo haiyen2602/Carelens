@@ -8,8 +8,7 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
-# Runner self-hosted có thể là Windows, nơi shell mặc định là PowerShell.
-# Ép bash để `curl ... > /dev/null` và dấu `\` xuống dòng chạy đúng trên mọi OS.
+# Runner self-hosted chạy Linux x64 (pool ephemeral runners cohort3).
 defaults:
   run:
     shell: bash
@@ -22,8 +21,7 @@ env:
 jobs:
   # Detect which app changed so a frontend-only commit does not redeploy the API.
   changes:
-    # Ghim nhãn cụ thể (xem ci.yml) — nhãn trần `self-hosted` có thể đưa job sang máy khác OS.
-    runs-on: [self-hosted, windows, x64]
+    runs-on: [self-hosted, linux, x64, cohort3]
     outputs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
@@ -49,7 +47,7 @@ jobs:
   deploy-api:
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: [self-hosted, windows, x64]
+    runs-on: [self-hosted, linux, x64, cohort3]
     steps:
       # Workspace của self-hosted runner giữ nguyên rác từ lần chạy trước:
       # __pycache__ lọt vào bundle upload của `railway up`.
@@ -60,7 +58,6 @@ jobs:
 
       - name: Verify runner toolchain
         run: |
-          # Step này chạy được nghĩa là bash đã có (defaults.run.shell: bash).
           missing=""
           for tool in git curl node npm; do
             command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
@@ -84,7 +81,7 @@ jobs:
   deploy-web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: [self-hosted, windows, x64]
+    runs-on: [self-hosted, linux, x64, cohort3]
     steps:
       # node_modules và .next sót lại từ lần chạy trước bị `railway up` gói vào
       # bundle upload, làm upload chậm và có thể lẫn build cũ vào image.
@@ -94,7 +91,6 @@ jobs:
 
       - name: Verify runner toolchain
         run: |
-          # Step này chạy được nghĩa là bash đã có (defaults.run.shell: bash).
           missing=""
           for tool in git curl node npm; do
             command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"

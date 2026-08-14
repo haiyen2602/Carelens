@@ -6,17 +6,15 @@ on:
   pull_request:
     branches: [main]
 
-# Runner self-hosted có thể là Windows, nơi shell mặc định là PowerShell.
-# Ép bash để các step chạy giống nhau trên mọi OS.
+# Runner self-hosted chạy Linux x64 (pool ephemeral runners cohort3).
 defaults:
   run:
     shell: bash
 
 jobs:
   lint-and-test:
-    # Ghim nhãn cụ thể: nhãn `self-hosted` trần khớp mọi runner của repo/organization,
-    # job có thể rơi vào máy khác OS. `windows` + `x64` là nhãn mặc định của runner này.
-    runs-on: [self-hosted, windows, x64]
+    # Sử dụng pool self-hosted Linux x64 của Cohort 3
+    runs-on: [self-hosted, linux, x64, cohort3]
 
     steps:
       # Workspace không được tạo lại như máy ảo hosted. Xoá rác trước khi checkout
@@ -28,8 +26,6 @@ jobs:
 
       - name: Verify runner toolchain
         run: |
-          # Step này chạy được nghĩa là bash đã có (defaults.run.shell: bash).
-          # Trên Windows, bash đến từ Git for Windows.
           missing=""
           for tool in git curl; do
             command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
