@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,21 @@ import { useAuth } from "@/lib/auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const redirectedRef = useRef(false);
+
+  useEffect(() => {
+    if (authLoading || !user || redirectedRef.current) return;
+    if (user.role === "admin") {
+      redirectedRef.current = true;
+      router.replace("/admin");
+    }
+  }, [user, authLoading, router]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,8 +36,8 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
     try {
-      const user = await login(username.trim(), password);
-      if (user.role !== "admin") {
+      const u = await login(username.trim(), password);
+      if (u.role !== "admin") {
         setError("Tài khoản này không phải quản trị viên.");
         setLoading(false);
         return;
@@ -39,6 +48,14 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading || (user && user.role === "admin")) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <p className="text-sm text-muted-foreground">Đang kiểm tra phiên đăng nhập...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-secondary/70 via-background to-accent/40 px-4 py-12">

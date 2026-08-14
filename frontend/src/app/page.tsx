@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
   Bell,
@@ -35,11 +35,26 @@ function LoginPageContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login: authLogin } = useAuth();
+  const { user, loading: authLoading, login: authLogin } = useAuth();
   const { login: protoLogin, pushActivity } = useProto();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
+  const redirectedRef = useRef(false);
+
+  useEffect(() => {
+    if (authLoading || !user || redirectedRef.current) return;
+    if (user.role === "doctor" || user.role === "patient" || user.role === "admin") {
+      redirectedRef.current = true;
+      if (user.role === "doctor") {
+        router.replace("/doctor");
+      } else if (user.role === "patient") {
+        router.replace("/patient");
+      } else if (user.role === "admin") {
+        router.replace("/admin");
+      }
+    }
+  }, [user, authLoading, router]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,17 +65,12 @@ function LoginPageContent() {
     setError("");
     setLoading(true);
     try {
-      const user = await authLogin(email.trim(), password);
-      if (user.role === "doctor" || user.role === "patient") {
-        // Cau noi TAM: dashboard doctor/patient van la UI mock tinh (chua
-        // doi theo tai khoan dang nhap that) - van can state role/phone cua
-        // proto-store de cac UI hien co (PhoneShell header, banner...)
-        // khong vo. KHONG PHAI nguon that cho danh tinh - danh tinh that la
-        // useAuth().user (xem lib/auth.tsx).
-        protoLogin(user.role, user.full_name);
-        pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${user.full_name}.`);
-        router.push(user.role === "doctor" ? "/doctor" : "/patient");
-      } else if (user.role === "admin") {
+      const u = await authLogin(email.trim(), password);
+      if (u.role === "doctor" || u.role === "patient") {
+        protoLogin(u.role, u.full_name);
+        pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${u.full_name}.`);
+        router.push(u.role === "doctor" ? "/doctor" : "/patient");
+      } else if (u.role === "admin") {
         router.push("/admin");
       } else {
         setError("Vai trò người thân/caregiver chưa được hỗ trợ trên giao diện web.");
@@ -71,6 +81,26 @@ function LoginPageContent() {
       setLoading(false);
     }
   };
+
+  if (authLoading || user) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Image
+            src="/logo-capymedi-v2.png"
+            alt="CapyMedi"
+            width={48}
+            height={48}
+            className="h-12 w-12 animate-pulse"
+            priority
+          />
+          <p className="text-sm font-medium text-muted-foreground">
+            {user ? "Đang chuyển hướng..." : "Đang kiểm tra phiên đăng nhập..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="grid min-h-screen bg-background lg:grid-cols-2">

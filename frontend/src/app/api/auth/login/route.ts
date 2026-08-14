@@ -9,6 +9,14 @@ import { NextRequest, NextResponse } from "next/server";
 // trong memory (xem frontend/src/lib/auth.ts).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export const REFRESH_COOKIE_NAME = "capymedi_refresh_token";
+export const REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 ngày (2,592,000 giây)
+export const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: REFRESH_COOKIE_MAX_AGE,
+};
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -31,12 +39,7 @@ export async function POST(request: NextRequest) {
 
   const { refresh_token: refreshToken, ...clientSafeData } = data;
   const cookieStore = await cookies();
-  cookieStore.set(REFRESH_COOKIE_NAME, refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/auth",
-  });
+  cookieStore.set(REFRESH_COOKIE_NAME, refreshToken, REFRESH_COOKIE_OPTIONS);
 
   return NextResponse.json(clientSafeData);
 }
