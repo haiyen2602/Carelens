@@ -1,0 +1,280 @@
+{
+  "data_loss_text": "-",
+  "drug_product_ingredient_rows": 5793,
+  "duplicate_legacy_ids": [],
+  "duplicate_mappings": 0,
+  "generated_at": "2026-08-16T09:04:43.854514+00:00",
+  "id_mappings": 3562,
+  "ingredient_parse_successes": 5299,
+  "ingredient_warnings": 494,
+  "input_hashes": {
+    "Thuốc bổ và vitamin\\thuoc.json": "5418C1004A7951BF5958FBF37A6B5A1653834A1EB242ECE04BC0DA7FDFF0E3D4",
+    "Thuốc da liễu\\thuoc.json": "12D2E6BA311ADA00B6C1A101BB00A1D938A517D0AA0441186B9ED62F9272EC58",
+    "Thuốc kháng sinh\\thuoc.json": "E61A767BD187EFE256F199217AB69B9E44242541DD42FF63DC2A67A11DBBD7F8",
+    "Thuốc kháng virus\\thuoc.json": "618806C0E980697071AB1A8C78A9E34C0BA892060BFBBBA299ACB7DB6D7ABB3B",
+    "Thuốc mắt, tai, mũi, họng\\thuoc.json": "4094628AA03751CCD8026F8A089E4795EA63EA64848B861F07591AB0F1B7E471",
+    "Thuốc thần kinh\\thuoc.json": "D1D10D270A694B3A0C8AA32CF40BD8570BF23FC02016A2645F26B75CDA670606",
+    "Thuốc tim mạch và máu\\thuoc.json": "4BCD71255CCFFE594FDC38FAEEF95CBDC036D9199306A27AD3849EE30A0751C5",
+    "Thuốc tiêm chích và dịch truyền\\thuoc.json": "EFC7212058DEE842C78BC299A1760455E0A1AA8899296121369E6C5ED7F1A50C",
+    "Thuốc tiêu hoá và gan mật\\thuoc.json": "76000CFCB23B678D21CAFAF188104485808D288747994058921F66C31B84FEC8",
+    "Thuốc trị tiểu đường\\thuoc.json": "51BE8D80946179682F56E243761E59724F5F32BFED68ECBF3B9C5508FF340BA4",
+    "Thuốc điều trị ung thư\\thuoc.json": "A786DC6BA1BAF6B33543B83820BFFADD654FF151029AA493C2BF9955A6A28FE8"
+  },
+  "knowledge_items": 42654,
+  "knowledge_loss_fields": {},
+  "knowledge_type_counts": {
+    "ADMINISTRATION": 3562,
+    "ADVERSE_EFFECT": 3562,
+    "CONTRAINDICATION": 3550,
+    "DRIVING_WARNING": 3410,
+    "GENERAL_DOSAGE": 3562,
+    "INDICATION": 3562,
+    "INTERACTION": 3555,
+    "PRECAUTION": 8860,
+    "PREGNANCY_LACTATION": 5496,
+    "REVIEW_REQUIRED": 21,
+    "STORAGE": 3514
+  },
+  "legacy_drugs": 3562,
+  "legacy_modified": false,
+  "open_issues": [
+    "494 ingredient segments preserved raw with warning",
+    "21 luu_y_dac_biet headings require review"
+  ],
+  "open_issues_text": "- 494 ingredient segments preserved raw with warning\n- 21 luu_y_dac_biet headings require review",
+  "output_dir": "data pharmacy\\v2",
+  "output_hashes": {
+    "drug_id_map.jsonl": "A6E87EAE97FC831B46B2FC5F026B7B5BFD75D2CF4EF4BFF487F7CB8AF522D831",
+    "drug_knowledge.jsonl": "3F89A786E2AC4A399B93321431EBFB688024CF385FF8E8D6A45825E284A79440",
+    "drug_product.jsonl": "D34EED98CBD3377A0D29075A44B138CEDCA1666DA33C326E3A69B0090E30D71D",
+    "drug_product_ingredient.jsonl": "6999FE7D249E87AA863BB27D44C4E9530E4BEB7F968B39393CBB8B016BE9071D",
+    "ingredient.jsonl": "D11FCF546BA388963EE3C8C0B0E2FA16AF3378685E384C3CB1ECB9968BF2F73C",
+    "ingredient_parse_warnings.jsonl": "BE5EE0D97CB7DC177881A532CEF0CDB04E6BFBC2EC865AF0468D754FFF135FF6"
+  },
+  "production_modified": false,
+  "random_review_sample": [
+    {
+      "danh_muc": "Bổ xương khớp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc bổ và vitamin",
+      "legacy_drug_id": "trixlazi-davi-3x10",
+      "ten_thuoc": "Trixlazi DAVI 3x10"
+    },
+    {
+      "danh_muc": "Thuốc bôi ngoài da",
+      "duong_dung": "Bôi ngoài da",
+      "folder": "Thuốc da liễu",
+      "legacy_drug_id": "mekoderm-neomycin-mekophar-10g",
+      "ten_thuoc": "Mekoderm-neomycin Mekophar 10g"
+    },
+    {
+      "danh_muc": "Thuốc dạ dày",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tiêu hoá và gan mật",
+      "legacy_drug_id": "savi-pantoprazole-40mg-2x10",
+      "ten_thuoc": "SAVI Pantoprazole 40mg 2x10"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "actelsar-40mg-actavis-2x14",
+      "ten_thuoc": "Actelsar 40mg Actavis 2x14"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "dorotril-h-domesco-2x14",
+      "ten_thuoc": "Dorotril-h Domesco 2x14"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "amlor-5mg-viatris-3x10-tablets",
+      "ten_thuoc": "Amlor 5mg Viatris 3x10 Tablets"
+    },
+    {
+      "danh_muc": "Thuốc kháng virus",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng virus",
+      "legacy_drug_id": "medskin-clovir-800mg-dhg-3x10",
+      "ten_thuoc": "Medskin Clovir 800mg DHG 3x10"
+    },
+    {
+      "danh_muc": "Thuốc trị mỡ máu",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "vasulax-10mg-micro-3x10",
+      "ten_thuoc": "Vasulax 10mg Micro 3x10"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "bihasal-2-5mg-hasan-5x10",
+      "ten_thuoc": "Bihasal 2.5mg Hasan 5x10"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "hasitec-10mg-hasan-3x10",
+      "ten_thuoc": "Hasitec 10mg Hasan 3x10"
+    },
+    {
+      "danh_muc": "Thuốc tiêm chích",
+      "duong_dung": "Tiêm",
+      "folder": "Thuốc tiêm chích và dịch truyền",
+      "legacy_drug_id": "lovenox-4000-sanofi-2-ong",
+      "ten_thuoc": "Lovenox 4000 Sanofi 2 ỐNG"
+    },
+    {
+      "danh_muc": "Thuốc nhỏ mắt",
+      "duong_dung": "Nhỏ mắt",
+      "folder": "Thuốc mắt, tai, mũi, họng",
+      "legacy_drug_id": "biracin-e-bidiphar-5ml",
+      "ten_thuoc": "Biracin-e Bidiphar 5ml"
+    },
+    {
+      "danh_muc": "Thuốc kháng sinh",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng sinh",
+      "legacy_drug_id": "franmoxy-500mg-eloge-10x10",
+      "ten_thuoc": "Franmoxy 500mg Eloge 10x10"
+    },
+    {
+      "danh_muc": "Dịch truyền",
+      "duong_dung": "Tiêm truyền",
+      "folder": "Thuốc tiêm chích và dịch truyền",
+      "legacy_drug_id": "nephrosteril-250ml",
+      "ten_thuoc": "Nephrosteril 250ml"
+    },
+    {
+      "danh_muc": "Thuốc bổ",
+      "duong_dung": "Uống",
+      "folder": "Thuốc bổ và vitamin",
+      "legacy_drug_id": "regatonic-phil-6x10",
+      "ten_thuoc": "Regatonic PHIL 6x10"
+    },
+    {
+      "danh_muc": "Thuốc tiêu hoá",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tiêu hoá và gan mật",
+      "legacy_drug_id": "bioflora-250mg-biocodex-2x5",
+      "ten_thuoc": "Bioflora 250mg Biocodex 2x5"
+    },
+    {
+      "danh_muc": "Thuốc kháng sinh",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng sinh",
+      "legacy_drug_id": "cefixim-50mg-vidipha-10-goi",
+      "ten_thuoc": "Cefixim 50mg Vidipha 10 GÓI"
+    },
+    {
+      "danh_muc": "Thuốc tai mũi họng",
+      "duong_dung": "Uống",
+      "folder": "Thuốc mắt, tai, mũi, họng",
+      "legacy_drug_id": "halixol-30mg-egis-2x10",
+      "ten_thuoc": "Halixol 30mg EGIS 2x10"
+    },
+    {
+      "danh_muc": "Thuốc bổ",
+      "duong_dung": "Uống",
+      "folder": "Thuốc bổ và vitamin",
+      "legacy_drug_id": "novobion-cpc1-2x15",
+      "ten_thuoc": "Novobion cpc1 2x15"
+    },
+    {
+      "danh_muc": "Thuốc kháng sinh",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng sinh",
+      "legacy_drug_id": "auclanityl-250-31-25mg-tipharco-12-goi",
+      "ten_thuoc": "Auclanityl 250/31.25mg Tipharco 12 GÓI"
+    },
+    {
+      "danh_muc": "Thuốc tim mạch huyết áp",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "captopril-25mg-stella-10x10",
+      "ten_thuoc": "Captopril 25mg Stella 10x10"
+    },
+    {
+      "danh_muc": "Thuốc kháng sinh",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng sinh",
+      "legacy_drug_id": "cefurobiotic-500mg-tenamyd-5x10",
+      "ten_thuoc": "Cefurobiotic 500mg Tenamyd 5x10"
+    },
+    {
+      "danh_muc": "Thuốc bôi ngoài da",
+      "duong_dung": "Bôi ngoài da",
+      "folder": "Thuốc da liễu",
+      "legacy_drug_id": "patylcrem-hasan-10g",
+      "ten_thuoc": "Patylcrem Hasan 10g"
+    },
+    {
+      "danh_muc": "Thuốc tiêu hoá",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tiêu hoá và gan mật",
+      "legacy_drug_id": "dromasm-fort-80mg-hataphar-10x10",
+      "ten_thuoc": "Dromasm FORT 80mg Hataphar 10x10"
+    },
+    {
+      "danh_muc": "Thuốc bôi ngoài da",
+      "duong_dung": "Bôi ngoài da",
+      "folder": "Thuốc da liễu",
+      "legacy_drug_id": "dibetalic-traphaco-15g",
+      "ten_thuoc": "Dibetalic Traphaco 15g"
+    },
+    {
+      "danh_muc": "Thuốc tăng cường tuần hoàn não",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tim mạch và máu",
+      "legacy_drug_id": "histudon-200mg-1ml-ha-tay-60ml",
+      "ten_thuoc": "Histudon 200mg/1ml HÀ TÂY 60ml"
+    },
+    {
+      "danh_muc": "Thuốc nhỏ mắt",
+      "duong_dung": "Nhỏ mắt",
+      "folder": "Thuốc mắt, tai, mũi, họng",
+      "legacy_drug_id": "sanlein-mini-0-1-santen-30-ong-x-0-4ml",
+      "ten_thuoc": "Sanlein MINI 0.1% Santen 30 ỐNG X 0.4ml"
+    },
+    {
+      "danh_muc": "Thuốc kháng sinh",
+      "duong_dung": "Uống",
+      "folder": "Thuốc kháng sinh",
+      "legacy_drug_id": "cefixim-200mg-cuu-long-2x10",
+      "ten_thuoc": "Cefixim 200mg CỬU LONG 2x10"
+    },
+    {
+      "danh_muc": "Thuốc chống trầm cảm",
+      "duong_dung": "Uống",
+      "folder": "Thuốc thần kinh",
+      "legacy_drug_id": "eslo-10-hetero-3x10",
+      "ten_thuoc": "ESLO 10 Hetero 3x10"
+    },
+    {
+      "danh_muc": "Thuốc dạ dày",
+      "duong_dung": "Uống",
+      "folder": "Thuốc tiêu hoá và gan mật",
+      "legacy_drug_id": "pantoloc-20-takeda-1x14",
+      "ten_thuoc": "Pantoloc 20 Takeda 1x14"
+    }
+  ],
+  "status": "PASS WITH ISSUES",
+  "structured_ingredients": 1408,
+  "unintended_knowledge_loss": 0,
+  "unmapped_heading_counts": {
+    "chỉ định": 1,
+    "các nhóm bệnh nhân đặc biệt": 1,
+    "các đối tượng đặc biệt": 4,
+    "các đối tượng đặc biệt khác": 14,
+    "trẻ sơ sinh và trẻ nhỏ": 1
+  },
+  "unmapped_heading_total": 21,
+  "unmapped_legacy_ids": 0,
+  "v2_drugs": 3562
+}

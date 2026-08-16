@@ -1,0 +1,39 @@
+{
+  "active_canonical": 3556,
+  "artifact_hashes": {
+    "drug_id_map.jsonl": "E44AAD49DAAF2D7B3B2A3DF1F08CBCAE725ED47D1DDCA6D4C3899719C4BD8ADB",
+    "drug_knowledge.jsonl": "5ED6263C507DD8AFAEF28D24B51707C376524E55C633AD0B1FFFBCF41A97DCD5",
+    "drug_product.jsonl": "32E996934876899A861D207F3C786D0D19CB4E60AAE3E7D4FE82A11171D756C6",
+    "drug_product_ingredient.jsonl": "2CC3148E8D324DE1B428903963D3AD6CE5F123590D8F06C70A213312A4BE54E6",
+    "final_promotion_decisions.jsonl": "BB9BDE6839136C2B5A5E38FE9D2E8A80135A76417D47B2711A933772A7D8AC0E",
+    "ingredient.jsonl": "CAA232B7647B3C995FD16A2D5C5B5673B552FFBFC5149B18F4F069DF5125F657",
+    "ingredient_parse_warnings.jsonl": "B523C857ACBC8E5771F29ABA48D0AD7A93BE55075B1B5A5222F80777C61FF4B8"
+  },
+  "excluded_ids": [
+    "bisoprolol-stada-5mg-3x10",
+    "esonix-40-3x10",
+    "lucass-200-2x10",
+    "pantogen-500ml",
+    "scort-100-10x10",
+    "vicometrim-960-10x10"
+  ],
+  "generated_at": "2026-08-16T14:17:04.233917+00:00",
+  "quality_status": "PASS",
+  "rag_artifact_hashes": {
+    "rag\\eval_results.json": "37294BA16D3DB7CBCBE3F52277117F5D3DE1641443E28DF72F8EB952EB3844B3",
+    "rag\\v2_chunks.jsonl": "6C7049645FAE5ACCD74FC7B5083871374D140C6457A4AE3930EC724156D093CD",
+    "rag\\v2_embedding_index.jsonl": "CC755B3033E9AC897056041E6984D3938D747DE31E41DD5D99CE601D45917617"
+  },
+  "rag_status": "PASS",
+  "runner_version": "final-canonical-v2.0.0",
+  "source_artifacts": {
+    "reparse": "data pharmacy\\v2\\full_recrawl\\reparse",
+    "targeted_fresh": "data pharmacy\\v2\\final_canonical\\targeted_fresh"
+  },
+  "terminal_decision_counts": {
+    "EXCLUDE_ACTIVE_CORPUS": 6,
+    "KEEP_LEGACY": 9,
+    "PROMOTED_FRESH": 3547
+  },
+  "version": "canonical-v2-final-2026-08-16"
+}

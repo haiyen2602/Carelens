@@ -1,0 +1,2346 @@
+{
+  "default_backend": "v2",
+  "generated_at": "2026-08-16T10:37:54.869966+00:00",
+  "metrics": {
+    "errors": 0,
+    "eval_cases": 64,
+    "fail_closed_cases": 8,
+    "fail_closed_rate": 1.0,
+    "known_cases": 56,
+    "latency_ms": {
+      "max": 3793.7192999997933,
+      "p50": 17.464700000346056,
+      "p95": 2049.4382999986556
+    },
+    "no_result": 0,
+    "rag_route_cases": 6,
+    "structured_cases": 50,
+    "structured_extra_rag": 0,
+    "v1_rollback_cases": 11,
+    "wrong_drug": 0,
+    "wrong_type": 0
+  },
+  "open_issues": [],
+  "p0_p1_issues": [],
+  "results": [
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_00",
+      "category": "Bổ xương khớp",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 46.1632999995345,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_01",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 21.265600000333507,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_02",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 21.436500001073,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_03",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 21.074999998745625,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_04",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 21.642800000336138,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADVERSE_EFFECT",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_05",
+      "category": "Bổ xương khớp",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 21.004700000048615,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADVERSE_EFFECT",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_06",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 22.00010000160546,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADVERSE_EFFECT",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_07",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 20.791899998584995,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADVERSE_EFFECT",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_08",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 19.307900000057998,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADVERSE_EFFECT",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_09",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 18.818099999407423,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_10",
+      "category": "Bổ xương khớp",
+      "expected_type": "CONTRAINDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 20.206500001222594,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_11",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "CONTRAINDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 19.62180000009539,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_12",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "CONTRAINDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 19.66800000082003,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_13",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "CONTRAINDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 25.590999999622,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_14",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "CONTRAINDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.4418999995396,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "PRECAUTION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "precaution_15",
+      "category": "Bổ xương khớp",
+      "expected_type": "PRECAUTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.831799999636132,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "PRECAUTION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "precaution_16",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "PRECAUTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.95370000015828,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "PRECAUTION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "precaution_17",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "PRECAUTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.61670000066806,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "PRECAUTION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "precaution_18",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "PRECAUTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.937899999902584,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "PRECAUTION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "precaution_19",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "PRECAUTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.629700001431047,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_20",
+      "category": "Bổ xương khớp",
+      "expected_type": "INTERACTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.649699999106815,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_21",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "INTERACTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.464700000346056,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_22",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "INTERACTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.359299999952782,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_23",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "INTERACTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.41749999928288,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_24",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "INTERACTION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.457699999795295,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 2,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_lactation_25",
+      "category": "Bổ xương khớp",
+      "expected_type": "PREGNANCY_LACTATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.47079999950074,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 2,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_lactation_26",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "PREGNANCY_LACTATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.20019999993383,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 2,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_lactation_27",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "PREGNANCY_LACTATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 18.043600000964943,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_lactation_28",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "PREGNANCY_LACTATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 18.41009999952803,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_lactation_29",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "PREGNANCY_LACTATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 20.67890000034822,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "DRIVING_WARNING",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "driving_warning_30",
+      "category": "Bổ xương khớp",
+      "expected_type": "DRIVING_WARNING",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 18.4095000004163,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "DRIVING_WARNING",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "driving_warning_31",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "DRIVING_WARNING",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.779699999664444,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "DRIVING_WARNING",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "driving_warning_32",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "DRIVING_WARNING",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.84110000153305,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "DRIVING_WARNING",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "driving_warning_33",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "DRIVING_WARNING",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.666499999904772,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "DRIVING_WARNING",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "driving_warning_34",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "DRIVING_WARNING",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.795199999251054,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADMINISTRATION",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "administration_35",
+      "category": "Bổ xương khớp",
+      "expected_type": "ADMINISTRATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.716700000164565,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADMINISTRATION",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "administration_36",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "ADMINISTRATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.816999999718973,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADMINISTRATION",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "administration_37",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "ADMINISTRATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.847500000949367,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADMINISTRATION",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "administration_38",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "ADMINISTRATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.49639999959618,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "ADMINISTRATION",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "administration_39",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "ADMINISTRATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.070200001398916,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "general_dosage_40",
+      "category": "Bổ xương khớp",
+      "expected_type": "GENERAL_DOSAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.83500000035565,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "general_dosage_41",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "GENERAL_DOSAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.618199999356875,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "general_dosage_42",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "GENERAL_DOSAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.325200000414043,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "general_dosage_43",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "GENERAL_DOSAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.826600000058534,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "general_dosage_44",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "GENERAL_DOSAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.413000001193723,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "7d8e4103-e5c3-542c-bedb-6c69af3113df",
+        "duration_ms": 0.0,
+        "knowledge_type": "STORAGE",
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "storage_45",
+      "category": "Bổ xương khớp",
+      "expected_type": "STORAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.172899999422953,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "bao_quan"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "93986401-a8ac-5ea2-af9c-9b36d74eec39",
+        "duration_ms": 0.0,
+        "knowledge_type": "STORAGE",
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "storage_46",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "STORAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.86899999913294,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "bao_quan"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "bc57977b-f0fb-5f2e-a94d-cc34ae38dd37",
+        "duration_ms": 0.0,
+        "knowledge_type": "STORAGE",
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "storage_47",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "STORAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.893899999558926,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "bao_quan"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "a97f785d-6ca8-5acc-b6d4-87878ecfe97a",
+        "duration_ms": 0.0,
+        "knowledge_type": "STORAGE",
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "storage_48",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "STORAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.540000000532018,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "bao_quan"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9451dc69-79c7-5d46-8dfb-6d31d11b7d87",
+        "duration_ms": 0.0,
+        "knowledge_type": "STORAGE",
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "storage_49",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "STORAGE",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.756099999838625,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "bao_quan"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_00",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.470700000354555,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "tardyferon-b9-3x10",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_01",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.1518000006472,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "berocca-bayer-10v",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_02",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.448200000013458,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "4a0a9cca-1cd4-550c-8e90-cff6a18fd108",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "agiclovir-5-agimexpharm",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_03",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 17.024999999193824,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_04",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.615599999568076,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "03b691a1-d92a-59e2-9d68-c995ec1e801d",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open_05",
+      "category": "semantic",
+      "expected_type": null,
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v2_default",
+      "latency_ms": 16.77220000055968,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "cefixim-200mg-cuu-long-2x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "cefixim-200mg-cuu-long-2x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "cefixim-200mg-cuu-long-2x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "cefixim-200mg-cuu-long-2x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "cefixim-200mg-cuu-long-2x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_00",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 495.03980000008596,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_01",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 1459.7180000000662,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_02",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 2604.85030000018,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_03",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 238.56630000045698,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_04",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 3386.141500001031,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_05",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 3793.7192999997933,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_06",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 2049.4382999986556,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_07",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v2_default",
+      "latency_ms": 2004.9722000003385,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_00",
+      "category": "Bổ xương khớp",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 23.73489999990852,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_01",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 17.755799999576993,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_02",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 16.52300000023388,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_03",
+      "category": "Thuốc trị thiếu máu",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 17.402699999365723,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "atiferlit-50mg-5ml-an-thien-30-ong-x-10ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 16.00000000144064,
+        "legacy_drug_id": "abiratred-250mg-dr-reddy-120v",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "indication_04",
+      "category": "Thuốc điều trị ung thư",
+      "expected_type": "INDICATION",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 17.419599998902413,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "abiratred-250mg-dr-reddy-120v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_05",
+      "category": "Bổ xương khớp",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 16.91670000036538,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "vien-xuong-khop-fengshi-opc-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_06",
+      "category": "Thuốc bù điện giải",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 17.861299998912727,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "compound-sodium-lactate-intravenous-infusion-b-p-b-braun-500ml",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "adverse_effect_07",
+      "category": "Thuốc sát khuẩn",
+      "expected_type": "ADVERSE_EFFECT",
+      "fail_closed": false,
+      "kind": "known",
+      "label": "v1_rollback",
+      "latency_ms": 17.56279999972321,
+      "no_result": false,
+      "sources": [
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "alcool-70-do-opc-1000ml-trang-co-voi-nhan",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_00",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v1_rollback",
+      "latency_ms": 496.14130000009027,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_01",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v1_rollback",
+      "latency_ms": 1489.4413000001805,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "fail_closed_02",
+      "category": "fail_closed",
+      "expected_type": null,
+      "fail_closed": true,
+      "kind": "fail_closed",
+      "label": "v1_rollback",
+      "latency_ms": 2632.9686000008223,
+      "no_result": true,
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    }
+  ],
+  "status": "PASS WITH ISSUES",
+  "technical_debt": [
+    "494 ingredient parsing warnings remain RAW_PRESERVED/REVIEW_REQUIRED",
+    "21 unmapped headings remain REVIEW_REQUIRED",
+    "11 NEW_PRODUCT rows remain in review queue"
+  ],
+  "warmup": {
+    "chunks": 42654,
+    "duration_ms": 8031.000000000859,
+    "products": 3562
+  }
+}

@@ -1,0 +1,1740 @@
+{
+  "embedding_model": "local-tfidf-hash-v1",
+  "excluded_chunk_leaks": [],
+  "excluded_lookup_resolution": {
+    "bisoprolol-stada-5mg-3x10": "RESOLVED",
+    "esonix-40-3x10": "AMBIGUOUS",
+    "lucass-200-2x10": "AMBIGUOUS",
+    "pantogen-500ml": "NOT_FOUND",
+    "scort-100-10x10": "AMBIGUOUS",
+    "vicometrim-960-10x10": "RESOLVED"
+  },
+  "regressions": [],
+  "status": "PASS",
+  "v1": {
+    "cases": 18,
+    "hit_at_k": 1.0,
+    "latency_ms": {
+      "max": 38.51859999849694,
+      "p50": 25.29599999979837,
+      "p95": 37.004599998908816
+    },
+    "no_result_rate": 0.0,
+    "recall_at_k": 1.0,
+    "resolved_cases": 14,
+    "results": [
+      {
+        "case_id": "indication_known",
+        "detected_type": "INDICATION",
+        "expected_drug_id": "berocca-bayer-10v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 14.633599999797298,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": null,
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 1,
+            "score": 0.462275,
+            "source": "cong_dung - berocca-bayer-10v"
+          },
+          {
+            "drug_product_id": "64a59129-f9fb-5a22-b676-e6f5f21f692b",
+            "knowledge_type": null,
+            "legacy_drug_id": "brilinta-90-astrazeneca-6x10",
+            "rank": 2,
+            "score": 0.453016,
+            "source": "bao_quan - brilinta-90-astrazeneca-6x10"
+          },
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": null,
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 3,
+            "score": 0.45239,
+            "source": "bao_quan - berocca-bayer-10v"
+          },
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": null,
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 4,
+            "score": 0.377767,
+            "source": "cach_dung - berocca-bayer-10v"
+          },
+          {
+            "drug_product_id": "01042f23-5057-5e7b-bc14-92f9338e7c35",
+            "knowledge_type": null,
+            "legacy_drug_id": "nifin-100mg-dhg-2x10",
+            "rank": 5,
+            "score": 0.360542,
+            "source": "bao_quan - nifin-100mg-dhg-2x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Berocca Bayer 10v có công dụng gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "adr_known",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "ADVERSE_EFFECT",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 22.823700001026737,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 1,
+            "score": 0.761515,
+            "source": "bao_quan - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 2,
+            "score": 0.516769,
+            "source": "cach_dung - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 3,
+            "score": 0.482593,
+            "source": "cong_dung - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "ff5fea71-5c60-5497-a1f9-72f40ae15af7",
+            "knowledge_type": null,
+            "legacy_drug_id": "promethazin-cream-2-medipharco-10g",
+            "rank": 4,
+            "score": 0.482418,
+            "source": "bao_quan - promethazin-cream-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "ff5fea71-5c60-5497-a1f9-72f40ae15af7",
+            "knowledge_type": null,
+            "legacy_drug_id": "promethazin-cream-2-medipharco-10g",
+            "rank": 5,
+            "score": 0.45977,
+            "source": "cong_dung - promethazin-cream-2-medipharco-10g"
+          }
+        ],
+        "type_hit_at_k": false,
+        "type_hit_rank": null,
+        "utterance": "Ketoconazol 2% Medipharco 10g có tác dụng phụ gì?",
+        "wrong_drug": false,
+        "wrong_type": true
+      },
+      {
+        "case_id": "contraindication_known",
+        "detected_type": "CONTRAINDICATION",
+        "expected_drug_id": "agiclovir-5-agimexpharm",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "CONTRAINDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 23.452400000678608,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "4a0a9cca-1cd4-550c-8e90-cff6a18fd108",
+            "knowledge_type": null,
+            "legacy_drug_id": "agiclovir-5-agimexpharm",
+            "rank": 1,
+            "score": 0.568061,
+            "source": "bao_quan - agiclovir-5-agimexpharm"
+          },
+          {
+            "drug_product_id": "fa472ff1-1775-503b-a13f-7cf4c94d7129",
+            "knowledge_type": null,
+            "legacy_drug_id": "hornol-davi-3x10",
+            "rank": 2,
+            "score": 0.543643,
+            "source": "bao_quan - hornol-davi-3x10"
+          },
+          {
+            "drug_product_id": "4a0a9cca-1cd4-550c-8e90-cff6a18fd108",
+            "knowledge_type": null,
+            "legacy_drug_id": "agiclovir-5-agimexpharm",
+            "rank": 3,
+            "score": 0.539362,
+            "source": "cong_dung - agiclovir-5-agimexpharm"
+          },
+          {
+            "drug_product_id": "afb57820-e90b-5992-84bd-92db658b60ef",
+            "knowledge_type": null,
+            "legacy_drug_id": "agiclovir-400mg-agimexpharm-3x10",
+            "rank": 4,
+            "score": 0.527702,
+            "source": "bao_quan - agiclovir-400mg-agimexpharm-3x10"
+          },
+          {
+            "drug_product_id": "696fdeb1-0798-5334-9379-113d68d6bac7",
+            "knowledge_type": null,
+            "legacy_drug_id": "otifar-pharmedic-8ml",
+            "rank": 5,
+            "score": 0.506259,
+            "source": "cong_dung - otifar-pharmedic-8ml"
+          }
+        ],
+        "type_hit_at_k": false,
+        "type_hit_rank": null,
+        "utterance": "Agiclovir 5% Agimexpharm chống chỉ định gì?",
+        "wrong_drug": false,
+        "wrong_type": true
+      },
+      {
+        "case_id": "interaction_known",
+        "detected_type": "INTERACTION",
+        "expected_drug_id": "procare-diamond-216mg-catalent-30v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INTERACTION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 33.844800000224495,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+            "knowledge_type": null,
+            "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+            "rank": 1,
+            "score": 0.595108,
+            "source": "cach_dung - procare-diamond-216mg-catalent-30v"
+          },
+          {
+            "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+            "knowledge_type": null,
+            "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+            "rank": 2,
+            "score": 0.530042,
+            "source": "tac_dung_phu - procare-diamond-216mg-catalent-30v"
+          },
+          {
+            "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+            "knowledge_type": null,
+            "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+            "rank": 3,
+            "score": 0.488546,
+            "source": "cong_dung - procare-diamond-216mg-catalent-30v"
+          },
+          {
+            "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+            "knowledge_type": null,
+            "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+            "rank": 4,
+            "score": 0.424833,
+            "source": "bao_quan - procare-diamond-216mg-catalent-30v"
+          },
+          {
+            "drug_product_id": "ad436aea-811a-5894-b34b-8b716e23889a",
+            "knowledge_type": null,
+            "legacy_drug_id": "zytovyrin-10mg-korea-united-3x10",
+            "rank": 5,
+            "score": 0.344971,
+            "source": "cong_dung - zytovyrin-10mg-korea-united-3x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 2,
+        "utterance": "Procare Diamond 216mg Catalent 30v có tương tác thuốc không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "dosage_typo",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 25.137299999187235,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "189c9cdd-2259-5fbd-84e2-ee5f5aca52a6",
+            "knowledge_type": null,
+            "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+            "rank": 1,
+            "score": 0.842029,
+            "source": "cong_dung - magne-b6-corbiere-sanofi-5x10"
+          },
+          {
+            "drug_product_id": "189c9cdd-2259-5fbd-84e2-ee5f5aca52a6",
+            "knowledge_type": null,
+            "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+            "rank": 2,
+            "score": 0.683434,
+            "source": "bao_quan - magne-b6-corbiere-sanofi-5x10"
+          },
+          {
+            "drug_product_id": "189c9cdd-2259-5fbd-84e2-ee5f5aca52a6",
+            "knowledge_type": null,
+            "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+            "rank": 3,
+            "score": 0.628315,
+            "source": "cach_dung - magne-b6-corbiere-sanofi-5x10"
+          },
+          {
+            "drug_product_id": "981359e3-045b-5ea7-b807-1c151f569928",
+            "knowledge_type": null,
+            "legacy_drug_id": "capriles-800mg-ha-tay-20-ong-x-10ml",
+            "rank": 4,
+            "score": 0.455914,
+            "source": "cong_dung - capriles-800mg-ha-tay-20-ong-x-10ml"
+          },
+          {
+            "drug_product_id": "9d69e22a-306f-570c-b084-959a5741db1d",
+            "knowledge_type": null,
+            "legacy_drug_id": "magne-b6-stella-5x10",
+            "rank": 5,
+            "score": 0.43356,
+            "source": "bao_quan - magne-b6-stella-5x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 3,
+        "utterance": "Magne b6 Corbiere Sanofi 5x10 lieu dung the nao?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "storage_known",
+        "detected_type": "STORAGE",
+        "expected_drug_id": "tothema-2x10-ong-10ml",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "STORAGE",
+        "hit_at_k": true,
+        "hit_rank": 2,
+        "latency_ms": 37.004599998908816,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "017a2f01-e867-55de-a75c-30e5564341ce",
+            "knowledge_type": null,
+            "legacy_drug_id": "amalgel-500mg-an-thien-3x10",
+            "rank": 1,
+            "score": 0.53865,
+            "source": "cong_dung - amalgel-500mg-an-thien-3x10"
+          },
+          {
+            "drug_product_id": "29c59e24-64f4-5b07-acc1-daac07164be3",
+            "knowledge_type": null,
+            "legacy_drug_id": "tothema-2x10-ong-10ml",
+            "rank": 2,
+            "score": 0.521345,
+            "source": "bao_quan - tothema-2x10-ong-10ml"
+          },
+          {
+            "drug_product_id": "463e8477-20c5-5d73-b4ee-b7021661e160",
+            "knowledge_type": null,
+            "legacy_drug_id": "op-zen-160mg-opc-5x10",
+            "rank": 3,
+            "score": 0.472198,
+            "source": "cong_dung - op-zen-160mg-opc-5x10"
+          },
+          {
+            "drug_product_id": "a07e4b39-834a-53f3-9f99-444ba2a1ccf4",
+            "knowledge_type": null,
+            "legacy_drug_id": "unasyn-375mg-pfizer-2x4",
+            "rank": 4,
+            "score": 0.45666,
+            "source": "cach_dung - unasyn-375mg-pfizer-2x4"
+          },
+          {
+            "drug_product_id": "017a2f01-e867-55de-a75c-30e5564341ce",
+            "knowledge_type": null,
+            "legacy_drug_id": "amalgel-500mg-an-thien-3x10",
+            "rank": 5,
+            "score": 0.451137,
+            "source": "bao_quan - amalgel-500mg-an-thien-3x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 2,
+        "utterance": "Tothema 2x10 ỐNG 10ml bảo quản thế nào?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "pregnancy_known",
+        "detected_type": "PREGNANCY_LACTATION",
+        "expected_drug_id": "tardyferon-b9-3x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "PREGNANCY_LACTATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 31.84789999795612,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": null,
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 1,
+            "score": 0.599424,
+            "source": "cong_dung - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": null,
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 2,
+            "score": 0.547518,
+            "source": "bao_quan - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "5b0af1e4-aa23-52c3-8e82-c3257acc598b",
+            "knowledge_type": null,
+            "legacy_drug_id": "fenostad-200mg-stada-3x10",
+            "rank": 3,
+            "score": 0.438944,
+            "source": "bao_quan - fenostad-200mg-stada-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": null,
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 4,
+            "score": 0.429683,
+            "source": "tac_dung_phu - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "111f8767-91dc-5db0-8a4c-c7951127a6a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "jakavi-15mg-novartis-4x14",
+            "rank": 5,
+            "score": 0.426812,
+            "source": "bao_quan - jakavi-15mg-novartis-4x14"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 4,
+        "utterance": "Tardyferon b9 3x10 phụ nữ mang thai dùng được không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "administration_known",
+        "detected_type": "ADMINISTRATION",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "ADMINISTRATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 21.14660000006552,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 1,
+            "score": 0.553658,
+            "source": "cach_dung - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "a9345ad6-da40-5e29-ae8b-28edad062301",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-40mg-agimexpharm-3x10",
+            "rank": 2,
+            "score": 0.553588,
+            "source": "cong_dung - spas-agi-40mg-agimexpharm-3x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 3,
+            "score": 0.547342,
+            "source": "bao_quan - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "6e837bed-45b4-582e-890c-eeb652308553",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-60mg-agimexpharm-6x10",
+            "rank": 4,
+            "score": 0.529517,
+            "source": "cong_dung - spas-agi-60mg-agimexpharm-6x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 5,
+            "score": 0.522154,
+            "source": "cong_dung - 3b-agi-neurin-agimexpharm-10x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 cách dùng như thế nào?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "driving_warning",
+        "detected_type": "DRIVING_WARNING",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "DRIVING_WARNING",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 27.006999996956438,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 1,
+            "score": 0.561326,
+            "source": "bao_quan - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "a9345ad6-da40-5e29-ae8b-28edad062301",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-40mg-agimexpharm-3x10",
+            "rank": 2,
+            "score": 0.536217,
+            "source": "cong_dung - spas-agi-40mg-agimexpharm-3x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 3,
+            "score": 0.531444,
+            "source": "cach_dung - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "6e837bed-45b4-582e-890c-eeb652308553",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-60mg-agimexpharm-6x10",
+            "rank": 4,
+            "score": 0.512901,
+            "source": "cong_dung - spas-agi-60mg-agimexpharm-6x10"
+          },
+          {
+            "drug_product_id": "a9345ad6-da40-5e29-ae8b-28edad062301",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-40mg-agimexpharm-3x10",
+            "rank": 5,
+            "score": 0.510164,
+            "source": "bao_quan - spas-agi-40mg-agimexpharm-3x10"
+          }
+        ],
+        "type_hit_at_k": false,
+        "type_hit_rank": null,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 có ảnh hưởng lái xe không?",
+        "wrong_drug": false,
+        "wrong_type": true
+      },
+      {
+        "case_id": "precaution",
+        "detected_type": "PRECAUTION",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "PRECAUTION",
+        "hit_at_k": true,
+        "hit_rank": 2,
+        "latency_ms": 24.4273999996949,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "a9345ad6-da40-5e29-ae8b-28edad062301",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-40mg-agimexpharm-3x10",
+            "rank": 1,
+            "score": 0.563334,
+            "source": "cong_dung - spas-agi-40mg-agimexpharm-3x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 2,
+            "score": 0.554599,
+            "source": "cach_dung - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 3,
+            "score": 0.545309,
+            "source": "bao_quan - 3b-agi-neurin-agimexpharm-10x10"
+          },
+          {
+            "drug_product_id": "6e837bed-45b4-582e-890c-eeb652308553",
+            "knowledge_type": null,
+            "legacy_drug_id": "spas-agi-60mg-agimexpharm-6x10",
+            "rank": 4,
+            "score": 0.534569,
+            "source": "cong_dung - spas-agi-60mg-agimexpharm-6x10"
+          },
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": null,
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 5,
+            "score": 0.531315,
+            "source": "cong_dung - 3b-agi-neurin-agimexpharm-10x10"
+          }
+        ],
+        "type_hit_at_k": false,
+        "type_hit_rank": null,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 cần thận trọng gì?",
+        "wrong_drug": false,
+        "wrong_type": true
+      },
+      {
+        "case_id": "similar_name_exact",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 25.302199999714503,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "03b691a1-d92a-59e2-9d68-c995ec1e801d",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-200mg-cuu-long-2x10",
+            "rank": 1,
+            "score": 0.69645,
+            "source": "bao_quan - cefixim-200mg-cuu-long-2x10"
+          },
+          {
+            "drug_product_id": "ba64c61f-40fd-56d2-a568-4116d09d3c2d",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-200mg-cophavina-2x10",
+            "rank": 2,
+            "score": 0.653729,
+            "source": "bao_quan - cefixim-200mg-cophavina-2x10"
+          },
+          {
+            "drug_product_id": "d16dd8c2-ca33-5308-8d0c-4a713a239a50",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-200mg-vidipha-1x10",
+            "rank": 3,
+            "score": 0.540875,
+            "source": "bao_quan - cefixim-200mg-vidipha-1x10"
+          },
+          {
+            "drug_product_id": "204a3c96-9683-5073-a46b-b3a4fd917385",
+            "knowledge_type": null,
+            "legacy_drug_id": "orenko-200mg-tv-pharm-2x10",
+            "rank": 4,
+            "score": 0.456435,
+            "source": "bao_quan - orenko-200mg-tv-pharm-2x10"
+          },
+          {
+            "drug_product_id": "256f9576-8cc7-5f55-a708-d135512ecbfb",
+            "knowledge_type": null,
+            "legacy_drug_id": "bicebid-200mg-bidiphar-2x10",
+            "rank": 5,
+            "score": 0.446403,
+            "source": "bao_quan - bicebid-200mg-bidiphar-2x10"
+          }
+        ],
+        "type_hit_at_k": false,
+        "type_hit_rank": null,
+        "utterance": "Cefixim 200mg CỬU LONG 2x10 liều dùng?",
+        "wrong_drug": false,
+        "wrong_type": true
+      },
+      {
+        "case_id": "diacriticless",
+        "detected_type": "INDICATION",
+        "expected_drug_id": "upsa-c-10v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 33.76869999920018,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 1,
+            "score": 0.738298,
+            "source": "cong_dung - upsa-c-10v"
+          },
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 2,
+            "score": 0.693674,
+            "source": "bao_quan - upsa-c-10v"
+          },
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 3,
+            "score": 0.473826,
+            "source": "cach_dung - upsa-c-10v"
+          },
+          {
+            "drug_product_id": "432493b8-1a63-56ca-9b01-b9f4d06cd2bf",
+            "knowledge_type": null,
+            "legacy_drug_id": "vitamin-c-1000mg-opc-10v",
+            "rank": 4,
+            "score": 0.464016,
+            "source": "bao_quan - vitamin-c-1000mg-opc-10v"
+          },
+          {
+            "drug_product_id": "212e868d-19b3-536d-bb2b-ef2bf4acf02a",
+            "knowledge_type": null,
+            "legacy_drug_id": "biolac-biopharco-100v",
+            "rank": 5,
+            "score": 0.427622,
+            "source": "bao_quan - biolac-biopharco-100v"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Upsa c 10v co cong dung gi?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "semantic_open",
+        "detected_type": null,
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_resolution": "RESOLVED",
+        "expected_type": null,
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 27.341400000295835,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 1,
+            "score": 0.739894,
+            "source": "bao_quan - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 2,
+            "score": 0.582819,
+            "source": "cach_dung - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "ff5fea71-5c60-5497-a1f9-72f40ae15af7",
+            "knowledge_type": null,
+            "legacy_drug_id": "promethazin-cream-2-medipharco-10g",
+            "rank": 3,
+            "score": 0.531217,
+            "source": "bao_quan - promethazin-cream-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "ff5fea71-5c60-5497-a1f9-72f40ae15af7",
+            "knowledge_type": null,
+            "legacy_drug_id": "promethazin-cream-2-medipharco-10g",
+            "rank": 4,
+            "score": 0.511184,
+            "source": "cong_dung - promethazin-cream-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": null,
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 5,
+            "score": 0.503736,
+            "source": "cong_dung - ketoconazol-2-medipharco-10g"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Ketoconazol 2% Medipharco 10g dùng khi bị nấm ngoài da không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "semantic_open_2",
+        "detected_type": null,
+        "expected_drug_id": "tardyferon-b9-3x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": null,
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 27.111600000353064,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": null,
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 1,
+            "score": 0.645365,
+            "source": "cong_dung - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": null,
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 2,
+            "score": 0.638896,
+            "source": "bao_quan - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "111f8767-91dc-5db0-8a4c-c7951127a6a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "jakavi-15mg-novartis-4x14",
+            "rank": 3,
+            "score": 0.463161,
+            "source": "bao_quan - jakavi-15mg-novartis-4x14"
+          },
+          {
+            "drug_product_id": "5b0af1e4-aa23-52c3-8e82-c3257acc598b",
+            "knowledge_type": null,
+            "legacy_drug_id": "fenostad-200mg-stada-3x10",
+            "rank": 4,
+            "score": 0.458203,
+            "source": "bao_quan - fenostad-200mg-stada-3x10"
+          },
+          {
+            "drug_product_id": "ac571622-c040-5725-9508-8f9e736e234c",
+            "knowledge_type": null,
+            "legacy_drug_id": "fenostad-200mg-stella-3x10",
+            "rank": 5,
+            "score": 0.443285,
+            "source": "bao_quan - fenostad-200mg-stella-3x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Tôi thiếu sắt thì Tardyferon b9 3x10 liên quan gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "case_id": "ambiguous_alias",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": null,
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 15.690099997300422,
+        "leaked_on_unresolved": true,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "b5c78e55-0792-57fd-b7e8-1a66a815de05",
+            "knowledge_type": null,
+            "legacy_drug_id": "katovastin-20mg-deva-holding-3x10",
+            "rank": 1,
+            "score": 0.649796,
+            "source": "cach_dung - katovastin-20mg-deva-holding-3x10"
+          },
+          {
+            "drug_product_id": "d16dd8c2-ca33-5308-8d0c-4a713a239a50",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-200mg-vidipha-1x10",
+            "rank": 2,
+            "score": 0.587682,
+            "source": "bao_quan - cefixim-200mg-vidipha-1x10"
+          },
+          {
+            "drug_product_id": "ba64c61f-40fd-56d2-a568-4116d09d3c2d",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-200mg-cophavina-2x10",
+            "rank": 3,
+            "score": 0.583436,
+            "source": "bao_quan - cefixim-200mg-cophavina-2x10"
+          },
+          {
+            "drug_product_id": "ee37d40d-c8bb-5c5b-8f04-b68e96f08759",
+            "knowledge_type": null,
+            "legacy_drug_id": "cefixim-50mg-vidipha-10-goi",
+            "rank": 4,
+            "score": 0.57409,
+            "source": "bao_quan - cefixim-50mg-vidipha-10-goi"
+          },
+          {
+            "drug_product_id": "ebdff3d6-5457-5cda-a1b9-e664dcbdd40e",
+            "knowledge_type": null,
+            "legacy_drug_id": "ganasef-3000mg-hasan-10-goi-x-5g",
+            "rank": 5,
+            "score": 0.572052,
+            "source": "cach_dung - ganasef-3000mg-hasan-10-goi-x-5g"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Cefixim liều dùng?",
+        "wrong_drug": true,
+        "wrong_type": false
+      },
+      {
+        "case_id": "multiple_drugs",
+        "detected_type": "INDICATION",
+        "expected_drug_id": null,
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 20.33060000030673,
+        "leaked_on_unresolved": true,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 1,
+            "score": 0.542583,
+            "source": "cong_dung - upsa-c-10v"
+          },
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": null,
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 2,
+            "score": 0.522182,
+            "source": "bao_quan - upsa-c-10v"
+          },
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": null,
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 3,
+            "score": 0.421898,
+            "source": "bao_quan - berocca-bayer-10v"
+          },
+          {
+            "drug_product_id": "444a4370-8b0f-52be-b677-a4ee3327ed76",
+            "knowledge_type": null,
+            "legacy_drug_id": "methylcobalamin-capsules-1500mcg-softgel-3x10",
+            "rank": 4,
+            "score": 0.384961,
+            "source": "bao_quan - methylcobalamin-capsules-1500mcg-softgel-3x10"
+          },
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": null,
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 5,
+            "score": 0.381553,
+            "source": "cong_dung - berocca-bayer-10v"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Berocca Bayer 10v và Upsa-c 10v thuốc nào có công dụng gì?",
+        "wrong_drug": true,
+        "wrong_type": false
+      },
+      {
+        "case_id": "nonexistent",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": null,
+        "expected_resolution": "NOT_FOUND",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 38.51859999849694,
+        "leaked_on_unresolved": true,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "3d1a9650-771c-5750-b097-9a572a02ecc6",
+            "knowledge_type": null,
+            "legacy_drug_id": "carhurol-20-brv-3x10",
+            "rank": 1,
+            "score": 0.545228,
+            "source": "bao_quan - carhurol-20-brv-3x10"
+          },
+          {
+            "drug_product_id": "afa54c96-4766-50c2-a5a7-248aa7ae9992",
+            "knowledge_type": null,
+            "legacy_drug_id": "dotium-10mg-domesco-10x10",
+            "rank": 2,
+            "score": 0.524207,
+            "source": "cong_dung - dotium-10mg-domesco-10x10"
+          },
+          {
+            "drug_product_id": "6d11c294-ac7e-5145-b708-1e2676250f12",
+            "knowledge_type": null,
+            "legacy_drug_id": "kem-boi-da-befucid-mediplantex-15g",
+            "rank": 3,
+            "score": 0.470199,
+            "source": "cong_dung - kem-boi-da-befucid-mediplantex-15g"
+          },
+          {
+            "drug_product_id": "d8ffec7d-bc25-5779-ad06-da75160fd8f0",
+            "knowledge_type": null,
+            "legacy_drug_id": "carhurol-10mg-brv-3x10",
+            "rank": 4,
+            "score": 0.461725,
+            "source": "bao_quan - carhurol-10mg-brv-3x10"
+          },
+          {
+            "drug_product_id": "3181d5bf-a9c5-5bc8-a148-704ce92cdf93",
+            "knowledge_type": null,
+            "legacy_drug_id": "cttprozil-500mg-medisun-1x10",
+            "rank": 5,
+            "score": 0.459394,
+            "source": "cong_dung - cttprozil-500mg-medisun-1x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Thuốc Không Tồn Tại ABCXYZ có tác dụng phụ gì?",
+        "wrong_drug": true,
+        "wrong_type": false
+      },
+      {
+        "case_id": "near_name_fail_closed",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": null,
+        "expected_resolution": "NOT_FOUND",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 25.29599999979837,
+        "leaked_on_unresolved": true,
+        "no_result": false,
+        "resolution_status": "GLOBAL_SEARCH",
+        "top_results": [
+          {
+            "drug_product_id": "dc5e1b85-c02e-5adc-af68-1f1d51af603b",
+            "knowledge_type": null,
+            "legacy_drug_id": "papaverin-40mg-vidipha-10x10",
+            "rank": 1,
+            "score": 0.507569,
+            "source": "cong_dung - papaverin-40mg-vidipha-10x10"
+          },
+          {
+            "drug_product_id": "dc5e1b85-c02e-5adc-af68-1f1d51af603b",
+            "knowledge_type": null,
+            "legacy_drug_id": "papaverin-40mg-vidipha-10x10",
+            "rank": 2,
+            "score": 0.442143,
+            "source": "bao_quan - papaverin-40mg-vidipha-10x10"
+          },
+          {
+            "drug_product_id": "65d81442-35e2-5edc-8867-1e070a7f0732",
+            "knowledge_type": null,
+            "legacy_drug_id": "atasart-h-28-5mg-getz-4x7",
+            "rank": 3,
+            "score": 0.438761,
+            "source": "cong_dung - atasart-h-28-5mg-getz-4x7"
+          },
+          {
+            "drug_product_id": "7934ff4f-6da3-51e5-9776-4dd9be5bdca2",
+            "knowledge_type": null,
+            "legacy_drug_id": "lisonorm-mezo-20-5mg-gedeon-3x10",
+            "rank": 4,
+            "score": 0.431997,
+            "source": "cong_dung - lisonorm-mezo-20-5mg-gedeon-3x10"
+          },
+          {
+            "drug_product_id": "dc5e1b85-c02e-5adc-af68-1f1d51af603b",
+            "knowledge_type": null,
+            "legacy_drug_id": "papaverin-40mg-vidipha-10x10",
+            "rank": 5,
+            "score": 0.431456,
+            "source": "cach_dung - papaverin-40mg-vidipha-10x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Panadol Extra Plus Ultra tác dụng phụ gì?",
+        "wrong_drug": true,
+        "wrong_type": false
+      }
+    ],
+    "safety_cases": 4,
+    "safety_wrong_drug_rate": 1.0,
+    "type_hit_at_k": 0.5833333333333334,
+    "wrong_drug_rate": 0.2222222222222222,
+    "wrong_type_rate": 0.4166666666666667
+  },
+  "v1_chunks": 14200,
+  "v2": {
+    "cases": 18,
+    "hit_at_k": 1.0,
+    "latency_ms": {
+      "max": 341.90250000028755,
+      "p50": 2.880899999581743,
+      "p95": 305.71250000139116
+    },
+    "no_result_rate": 0.2222222222222222,
+    "recall_at_k": 1.0,
+    "resolved_cases": 14,
+    "results": [
+      {
+        "candidates": [],
+        "case_id": "indication_known",
+        "detected_type": "INDICATION",
+        "expected_drug_id": "berocca-bayer-10v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 3.506299999571638,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "berocca-bayer-10v",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+            "knowledge_type": "INDICATION",
+            "legacy_drug_id": "berocca-bayer-10v",
+            "rank": 1,
+            "score": 0.374734,
+            "source": "INDICATION - berocca-bayer-10v"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Berocca Bayer 10v có công dụng gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "adr_known",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "ADVERSE_EFFECT",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 3.0270999995991588,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "ketoconazol-2-medipharco-10g",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "ADVERSE_EFFECT",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 1,
+            "score": 0.155203,
+            "source": "ADVERSE_EFFECT - ketoconazol-2-medipharco-10g"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Ketoconazol 2% Medipharco 10g có tác dụng phụ gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "contraindication_known",
+        "detected_type": "CONTRAINDICATION",
+        "expected_drug_id": "agiclovir-5-agimexpharm",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "CONTRAINDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.9137000019545667,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "agiclovir-5-agimexpharm",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "4a0a9cca-1cd4-550c-8e90-cff6a18fd108",
+            "knowledge_type": "CONTRAINDICATION",
+            "legacy_drug_id": "agiclovir-5-agimexpharm",
+            "rank": 1,
+            "score": 0.575125,
+            "source": "CONTRAINDICATION - agiclovir-5-agimexpharm"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Agiclovir 5% Agimexpharm chống chỉ định gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "interaction_known",
+        "detected_type": "INTERACTION",
+        "expected_drug_id": "procare-diamond-216mg-catalent-30v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INTERACTION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.9184000013628975,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "procare-diamond-216mg-catalent-30v",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+            "knowledge_type": "INTERACTION",
+            "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+            "rank": 1,
+            "score": 0.035599,
+            "source": "INTERACTION - procare-diamond-216mg-catalent-30v"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Procare Diamond 216mg Catalent 30v có tương tác thuốc không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "dosage_typo",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.880899999581743,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "189c9cdd-2259-5fbd-84e2-ee5f5aca52a6",
+            "knowledge_type": "GENERAL_DOSAGE",
+            "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+            "rank": 1,
+            "score": 0.092348,
+            "source": "GENERAL_DOSAGE - magne-b6-corbiere-sanofi-5x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Magne b6 Corbiere Sanofi 5x10 lieu dung the nao?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "storage_known",
+        "detected_type": "STORAGE",
+        "expected_drug_id": "tothema-2x10-ong-10ml",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "STORAGE",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.9571000013675075,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "tothema-2x10-ong-10ml",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "29c59e24-64f4-5b07-acc1-daac07164be3",
+            "knowledge_type": "STORAGE",
+            "legacy_drug_id": "tothema-2x10-ong-10ml",
+            "rank": 1,
+            "score": 0.179103,
+            "source": "STORAGE - tothema-2x10-ong-10ml"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Tothema 2x10 ỐNG 10ml bảo quản thế nào?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "pregnancy_known",
+        "detected_type": "PREGNANCY_LACTATION",
+        "expected_drug_id": "tardyferon-b9-3x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "PREGNANCY_LACTATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.7924999994866084,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "tardyferon-b9-3x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "PREGNANCY_LACTATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 1,
+            "score": 0.52522,
+            "source": "PREGNANCY_LACTATION - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "PREGNANCY_LACTATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 2,
+            "score": 0.411342,
+            "source": "PREGNANCY_LACTATION - tardyferon-b9-3x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Tardyferon b9 3x10 phụ nữ mang thai dùng được không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "administration_known",
+        "detected_type": "ADMINISTRATION",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "ADMINISTRATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.7521999982127454,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": "ADMINISTRATION",
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 1,
+            "score": 0.7606,
+            "source": "ADMINISTRATION - 3b-agi-neurin-agimexpharm-10x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 cách dùng như thế nào?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "driving_warning",
+        "detected_type": "DRIVING_WARNING",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "DRIVING_WARNING",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.7112000025226735,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": "DRIVING_WARNING",
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 1,
+            "score": 0.177166,
+            "source": "DRIVING_WARNING - 3b-agi-neurin-agimexpharm-10x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 có ảnh hưởng lái xe không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "precaution",
+        "detected_type": "PRECAUTION",
+        "expected_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "PRECAUTION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.6397000001452398,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "d2b80d29-9599-5274-bb46-a70f90b65a1b",
+            "knowledge_type": "PRECAUTION",
+            "legacy_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+            "rank": 1,
+            "score": 0.397134,
+            "source": "PRECAUTION - 3b-agi-neurin-agimexpharm-10x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "3b Agi-neurin Agimexpharm 10x10 cần thận trọng gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "similar_name_exact",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.6947000005748123,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "03b691a1-d92a-59e2-9d68-c995ec1e801d",
+            "knowledge_type": "GENERAL_DOSAGE",
+            "legacy_drug_id": "cefixim-200mg-cuu-long-2x10",
+            "rank": 1,
+            "score": 0.146696,
+            "source": "GENERAL_DOSAGE - cefixim-200mg-cuu-long-2x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Cefixim 200mg CỬU LONG 2x10 liều dùng?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "diacriticless",
+        "detected_type": "INDICATION",
+        "expected_drug_id": "upsa-c-10v",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INDICATION",
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.7786999999079853,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "upsa-c-10v",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "82da2fb2-67f9-53c5-b5da-765e5e2961a7",
+            "knowledge_type": "INDICATION",
+            "legacy_drug_id": "upsa-c-10v",
+            "rank": 1,
+            "score": 0.677625,
+            "source": "INDICATION - upsa-c-10v"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": 1,
+        "utterance": "Upsa c 10v co cong dung gi?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "semantic_open",
+        "detected_type": null,
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_resolution": "RESOLVED",
+        "expected_type": null,
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.9063999973004684,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "ketoconazol-2-medipharco-10g",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "INDICATION",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 1,
+            "score": 0.327515,
+            "source": "INDICATION - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "ADMINISTRATION",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 2,
+            "score": 0.299315,
+            "source": "ADMINISTRATION - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "GENERAL_DOSAGE",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 3,
+            "score": 0.272997,
+            "source": "GENERAL_DOSAGE - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "CONTRAINDICATION",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 4,
+            "score": 0.248407,
+            "source": "CONTRAINDICATION - ketoconazol-2-medipharco-10g"
+          },
+          {
+            "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+            "knowledge_type": "PRECAUTION",
+            "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+            "rank": 5,
+            "score": 0.230213,
+            "source": "PRECAUTION - ketoconazol-2-medipharco-10g"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Ketoconazol 2% Medipharco 10g dùng khi bị nấm ngoài da không?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "semantic_open_2",
+        "detected_type": null,
+        "expected_drug_id": "tardyferon-b9-3x10",
+        "expected_resolution": "RESOLVED",
+        "expected_type": null,
+        "hit_at_k": true,
+        "hit_rank": 1,
+        "latency_ms": 2.8240999999979977,
+        "leaked_on_unresolved": false,
+        "no_result": false,
+        "resolution_status": "RESOLVED",
+        "resolved_drug_id": "tardyferon-b9-3x10",
+        "resolver_method": "utterance_name_contains",
+        "top_results": [
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "CONTRAINDICATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 1,
+            "score": 0.595882,
+            "source": "CONTRAINDICATION - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "PREGNANCY_LACTATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 2,
+            "score": 0.459734,
+            "source": "PREGNANCY_LACTATION - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "INDICATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 3,
+            "score": 0.437695,
+            "source": "INDICATION - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "PREGNANCY_LACTATION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 4,
+            "score": 0.404768,
+            "source": "PREGNANCY_LACTATION - tardyferon-b9-3x10"
+          },
+          {
+            "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+            "knowledge_type": "INTERACTION",
+            "legacy_drug_id": "tardyferon-b9-3x10",
+            "rank": 5,
+            "score": 0.393987,
+            "source": "INTERACTION - tardyferon-b9-3x10"
+          }
+        ],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Tôi thiếu sắt thì Tardyferon b9 3x10 liên quan gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [
+          "cefixim-100-hv-usp-3x10",
+          "cefixim-100mg-usp-10-goi-x-1-5g",
+          "cefixim-200mg-cophavina-2x10",
+          "cefixim-200mg-cuu-long-2x10",
+          "cefixim-200mg-vidipha-1x10",
+          "cefixim-400-usp-1x10",
+          "cefixim-50mg-tipharco-20-goi",
+          "cefixim-50mg-vidipha-10-goi"
+        ],
+        "case_id": "ambiguous_alias",
+        "detected_type": "GENERAL_DOSAGE",
+        "expected_drug_id": null,
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 50.41680000067572,
+        "leaked_on_unresolved": false,
+        "no_result": true,
+        "resolution_status": "AMBIGUOUS",
+        "resolved_drug_id": null,
+        "resolver_method": "utterance_alias_contains",
+        "top_results": [],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Cefixim liều dùng?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [
+          "berocca-bayer-10v",
+          "upsa-c-10v"
+        ],
+        "case_id": "multiple_drugs",
+        "detected_type": "INDICATION",
+        "expected_drug_id": null,
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 0.3983999995398335,
+        "leaked_on_unresolved": false,
+        "no_result": true,
+        "resolution_status": "AMBIGUOUS",
+        "resolved_drug_id": null,
+        "resolver_method": "utterance_name_contains",
+        "top_results": [],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Berocca Bayer 10v và Upsa-c 10v thuốc nào có công dụng gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "nonexistent",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": null,
+        "expected_resolution": "NOT_FOUND",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 305.71250000139116,
+        "leaked_on_unresolved": false,
+        "no_result": true,
+        "resolution_status": "NOT_FOUND",
+        "resolved_drug_id": null,
+        "resolver_method": null,
+        "top_results": [],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Thuốc Không Tồn Tại ABCXYZ có tác dụng phụ gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      },
+      {
+        "candidates": [],
+        "case_id": "near_name_fail_closed",
+        "detected_type": "ADVERSE_EFFECT",
+        "expected_drug_id": null,
+        "expected_resolution": "NOT_FOUND",
+        "expected_type": null,
+        "hit_at_k": false,
+        "hit_rank": null,
+        "latency_ms": 341.90250000028755,
+        "leaked_on_unresolved": false,
+        "no_result": true,
+        "resolution_status": "NOT_FOUND",
+        "resolved_drug_id": null,
+        "resolver_method": null,
+        "top_results": [],
+        "type_hit_at_k": true,
+        "type_hit_rank": null,
+        "utterance": "Panadol Extra Plus Ultra tác dụng phụ gì?",
+        "wrong_drug": false,
+        "wrong_type": false
+      }
+    ],
+    "safety_cases": 4,
+    "safety_wrong_drug_rate": 0.0,
+    "type_hit_at_k": 1.0,
+    "wrong_drug_rate": 0.0,
+    "wrong_type_rate": 0.0
+  },
+  "v2_chunks": 42588
+}

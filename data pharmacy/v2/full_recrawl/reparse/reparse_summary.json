@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-08-16T13:31:48.810931+00:00",
+  "legacy_total": 3562,
+  "missing_fields_after": 2,
+  "missing_fields_before": 38,
+  "parser_issues_after": 2,
+  "parser_issues_before": 63,
+  "parser_version": "longchau-v2.1.0",
+  "promotion_gate": {
+    "ambiguous": 8,
+    "approved": 3516,
+    "changed_classifications": {
+      "PARSER_ISSUE": 2,
+      "SOURCE_CHANGE": 35
+    },
+    "changed_reviewed": 37,
+    "changed_total": 37,
+    "generated_at": "2026-08-16T13:31:48.796933+00:00",
+    "ingredient_warnings": 491,
+    "input_dir": "data pharmacy/v2/full_recrawl/reparse",
+    "keep_legacy": 2,
+    "legacy_total": 3562,
+    "missing_fields_reviewed": 2,
+    "missing_findings": {
+      "PARSER_ISSUE": 2
+    },
+    "missing_from_source": 1,
+    "missing_total": 2,
+    "output_dir": "data pharmacy/v2/full_recrawl/reparse",
+    "p0_p1_unresolved": 0,
+    "ready_to_promote_canonical_v2": false,
+    "review_required": 44,
+    "runner_version": "final-promotion-gate-v2.0.0",
+    "silent_data_loss": 0,
+    "status": "PASS WITH ISSUES"
+  },
+  "reconciliation_status_counts": {
+    "AMBIGUOUS": 8,
+    "CHANGED": 37,
+    "MATCHED": 3516,
+    "MISSING_FROM_SOURCE": 1
+  },
+  "regression_count": 0,
+  "remaining_parser_issue_ids": [
+    "micospray-20mg-cpc1hn-15ml",
+    "nady-rosa-nadyphar-80g"
+  ],
+  "reparse_validation_failures": 0,
+  "runner_version": "raw-reparse-v2.1.0",
+  "status": "PASS WITH ISSUES"
+}

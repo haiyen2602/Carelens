@@ -1,0 +1,82 @@
+{
+  "category_url_counts": {
+    "https://nhathuoclongchau.com.vn/thuoc/thuoc-bo-and-vitamin": 12,
+    "https://nhathuoclongchau.com.vn/thuoc/thuoc-da-lieu": 12,
+    "https://nhathuoclongchau.com.vn/thuoc/thuoc-khang-sinh-khang-nam": 12,
+    "https://nhathuoclongchau.com.vn/thuoc/thuoc-tim-mach-and-mau": 12
+  },
+  "fresh_v2_drugs": 48,
+  "fresh_v2_knowledge_items": 576,
+  "generated_at": "2026-08-16T09:22:00.274279+00:00",
+  "knowledge_loss": 0,
+  "legacy_vs_fresh_field_comparison": {
+    "dang_thuoc": {
+      "exact": 37
+    },
+    "duong_dung": {
+      "exact": 35,
+      "missing_one_side": 2
+    },
+    "ham_luong": {
+      "exact": 37
+    },
+    "huong_dan_bao_quan": {
+      "exact": 37
+    },
+    "huong_dan_su_dung": {
+      "exact": 37
+    },
+    "lieu_dung": {
+      "exact": 37
+    },
+    "luu_y_dac_biet": {
+      "exact": 37
+    },
+    "tac_dung": {
+      "exact": 37
+    },
+    "tac_dung_phu": {
+      "exact": 37
+    },
+    "ten_thuoc": {
+      "exact": 37
+    },
+    "tong_so_luong": {
+      "exact": 37
+    }
+  },
+  "matched_legacy_v1": 37,
+  "matched_migrated_v2": 37,
+  "open_issues": [
+    "Fresh drug_id `alzental-400mg-shinpoong-1x1-thuoc-tri-giun` not found in Legacy V1",
+    "Fresh drug_id `alzental-400mg-shinpoong-1x1-thuoc-tri-giun` not found in migrated V2",
+    "Fresh drug_id `azoltel-400mg-stella-1x1` not found in Legacy V1",
+    "Fresh drug_id `azoltel-400mg-stella-1x1` not found in migrated V2",
+    "Fresh drug_id `fubenzon-500mg-dhg-1x1` not found in Legacy V1",
+    "Fresh drug_id `fubenzon-500mg-dhg-1x1` not found in migrated V2",
+    "Fresh drug_id `fucagi-500mg-agimexpharm-1v` not found in Legacy V1",
+    "Fresh drug_id `fucagi-500mg-agimexpharm-1v` not found in migrated V2",
+    "Fresh drug_id `fugacar-500mg-lusomedicamenta-1v` not found in Legacy V1",
+    "Fresh drug_id `fugacar-500mg-lusomedicamenta-1v` not found in migrated V2",
+    "Fresh drug_id `fugacar-500mg-olic-1v` not found in Legacy V1",
+    "Fresh drug_id `fugacar-500mg-olic-1v` not found in migrated V2",
+    "Fresh drug_id `mebendazol-500mg-nam-ha-1v-giun-nui` not found in Legacy V1",
+    "Fresh drug_id `mebendazol-500mg-nam-ha-1v-giun-nui` not found in migrated V2",
+    "Fresh drug_id `mebendazole-500mg-mekophar-1v` not found in Legacy V1",
+    "Fresh drug_id `mebendazole-500mg-mekophar-1v` not found in migrated V2",
+    "Fresh drug_id `nyst-25000iu-opc-10-goi` not found in Legacy V1",
+    "Fresh drug_id `nyst-25000iu-opc-10-goi` not found in migrated V2",
+    "Fresh drug_id `shampoo-clobetasol-vcp-100ml` not found in Legacy V1",
+    "Fresh drug_id `shampoo-clobetasol-vcp-100ml` not found in migrated V2",
+    "Fresh drug_id `timbov-farmaprim-1x3` not found in Legacy V1",
+    "Fresh drug_id `timbov-farmaprim-1x3` not found in migrated V2"
+  ],
+  "product_urls_discovered": 48,
+  "product_urls_fetched": 48,
+  "raw_snapshots_written": 48,
+  "source_metadata_rows": 48,
+  "status": "PASS WITH ISSUES",
+  "validation_fail": 0,
+  "validation_pass": 43,
+  "validation_warning": 5
+}
