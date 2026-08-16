@@ -15,7 +15,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from backend.db.base import SessionLocal, engine
-from backend.db.models import DoseEvent, Drug, Patient, Prescription
+from backend.db.models import DoseEvent, Patient, Prescription
+from backend.services.drug_knowledge.v2_agent import get_v2_agent_knowledge_service
 from backend.services.prescription import (
     KhongTimThayError,
     TrangThaiKhongHopLeError,
@@ -69,7 +70,8 @@ def benh_nhan(db):
 @pytest.fixture
 def thuoc_that(db):
     """Một thuốc thật bất kỳ trong danh mục — không quan tâm tên cụ thể."""
-    return db.query(Drug).first()
+    del db
+    return get_v2_agent_knowledge_service().catalog_items[0]
 
 
 # "Ngày mai" tính động: sinh_dose_event() cố ý bỏ liều đã trôi qua giờ hẹn
