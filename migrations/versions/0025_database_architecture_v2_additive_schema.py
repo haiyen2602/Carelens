@@ -1,7 +1,7 @@
 """Add Database Architecture V2 additive schema.
 
-Revision ID: 0023
-Revises: 0022
+Revision ID: 0025
+Revises: 0024
 Create Date: 2026-08-17
 
 DB-4A only:
@@ -10,13 +10,20 @@ DB-4A only:
 - Use `dose_event_log` for V2 immutable events during migration.
 - Keep backfill-dependent columns nullable.
 - Do not import Drug V2, backfill, dual-write, cut over, or deploy.
+
+Renumbered from 0023 -> 0025 (down_revision 0022 -> 0024): 0023/0024 were
+taken by 0023_patient_profile_fields.py -> 0024_doctor_watch.py, merged
+into main after this migration was originally drafted. Local dev DB was
+still at alembic_version 0022 (this migration had never been stamped) when
+renumbered, so no DB-side fix was needed - see git history for the original
+0023 file if needed.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0023"
-down_revision = "0022"
+revision = "0025"
+down_revision = "0024"
 branch_labels = None
 depends_on = None
 
