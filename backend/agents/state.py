@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-from backend.services.retrieval import DrugInfoResult
+from backend.services.drug_knowledge.v2_agent import DrugInfoResult
 
 
 class AgentState(TypedDict, total=False):

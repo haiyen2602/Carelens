@@ -17,12 +17,12 @@ from backend.agents.state import ConversationState
 from backend.agents.tools.drug_info_tool import EmbedFn
 from backend.agents.tools.personal_tools import list_active_prescription_drug_items
 from backend.config import get_settings
-from backend.services.retrieval import SideEffectMatchResult, search_active_side_effect_chunks
+from backend.services.drug_knowledge.v2_agent import SideEffectMatchResult, search_active_adverse_effects
 from backend.services.safety import SafetyFlag
 
 SideEffectMatchFn = Callable[[str, str], bool]
 ActivePrescriptionItemsFn = Callable[[Session, str], list[dict]]
-SideEffectSearchFn = Callable[[Session, list[float], list[str]], list[SideEffectMatchResult]]
+SideEffectSearchFn = Callable[[Session, str, list[str], EmbedFn], list[SideEffectMatchResult]]
 
 
 def _default_side_effect_match(_utterance: str, _side_effect_content: str) -> bool:
@@ -50,7 +50,7 @@ def _audit_side_effect_matches(
     t0 = time.monotonic()
     active_items = list_active_items_fn(db, state["patient_id"])
     active_drug_ids = [item["drug_id"] for item in active_items]
-    raw_candidates = search_fn(db, embed_query(state["utterance"]), active_drug_ids) if active_drug_ids else []
+    raw_candidates = search_fn(db, state["utterance"], active_drug_ids, embed_query) if active_drug_ids else []
     candidate_threshold = get_settings().side_effect_candidate_threshold
     candidates = [candidate for candidate in raw_candidates if candidate.score >= candidate_threshold]
 
@@ -81,6 +81,7 @@ def _audit_side_effect_matches(
         "candidate_threshold": candidate_threshold,
         "raw_candidate_count": len(raw_candidates),
         "candidate_count": len(candidates),
+        "knowledge_backend": get_settings().drug_knowledge_backend,
         "matches": matches,
         "result": "matched" if matches else ("unavailable" if matcher_failures else "không tìm thấy liên hệ rõ ràng"),
         "matcher_failures": matcher_failures,
@@ -94,7 +95,7 @@ def build_side_effect_audit_node(
     embed_query: EmbedFn,
     match_fn: SideEffectMatchFn = _default_side_effect_match,
     list_active_items_fn: ActivePrescriptionItemsFn = list_active_prescription_drug_items,
-    search_fn: SideEffectSearchFn = search_active_side_effect_chunks,
+    search_fn: SideEffectSearchFn = search_active_adverse_effects,
 ):
     """Chay sau CLASSIFY chi khi nhan `SIDE_EFFECT`; khong sua response."""
 
@@ -119,7 +120,7 @@ def build_redflag_side_effect_audit(
     embed_query: EmbedFn,
     match_fn: SideEffectMatchFn = _default_side_effect_match,
     list_active_items_fn: ActivePrescriptionItemsFn = list_active_prescription_drug_items,
-    search_fn: SideEffectSearchFn = search_active_side_effect_chunks,
+    search_fn: SideEffectSearchFn = search_active_adverse_effects,
 ):
     """Callback cho orchestrator, chi audit redflag co trieu chung."""
 

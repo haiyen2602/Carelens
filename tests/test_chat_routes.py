@@ -24,6 +24,7 @@ from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import AuditLog, DoseEvent, DrugChunk, Escalation, Prescription  # noqa: E402
 from backend.main import app  # noqa: E402
+from backend.services.drug_knowledge.v2_agent import get_v2_agent_knowledge_service  # noqa: E402
 
 # Vector "khong lien quan gi" that co y nghia - KHAC vector 0 (degenerate,
 # cosine similarity voi vector 0 khong xac dinh/co the loi len sai qua
@@ -216,12 +217,14 @@ async def test_dose_confirmation_missed_high_severity_sets_safety_flag_and_escal
     goi, va ket qua se rot ve fallback "Trung bình" - da xay ra 1 lan luc
     viet test nay, khong phai bug o code that)."""
     patient_id = f"test-chat-severe-{uuid.uuid4().hex[:8]}"
-    drug_id = f"test-chat-drug-{uuid.uuid4().hex[:8]}"
+    v2_drug = get_v2_agent_knowledge_service().catalog_items[0]
+    drug_id = v2_drug.drug_id
+    legacy_chunk_id = f"test-chat-drug-{uuid.uuid4().hex[:8]}"
 
     db = SessionLocal()
     try:
         chunk = DrugChunk(
-            drug_id=drug_id,
+            drug_id=legacy_chunk_id,
             ten_thuoc="Thuốc Tim Test",
             danh_muc="Danh mục test",
             muc_nghiem_trong="Nhẹ",
@@ -274,7 +277,7 @@ async def test_dose_confirmation_missed_high_severity_sets_safety_flag_and_escal
         db.query(Escalation).filter(Escalation.patient_id == patient_id).delete(synchronize_session=False)
         db.query(DoseEvent).filter(DoseEvent.patient_id == patient_id).delete(synchronize_session=False)
         db.query(Prescription).filter(Prescription.patient_id == patient_id).delete(synchronize_session=False)
-        db.query(DrugChunk).filter(DrugChunk.drug_id == drug_id).delete(synchronize_session=False)
+        db.query(DrugChunk).filter(DrugChunk.drug_id == legacy_chunk_id).delete(synchronize_session=False)
         db.commit()
         db.close()
 

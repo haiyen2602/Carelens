@@ -11,10 +11,24 @@
 # `cd frontend && railway up`. Thu muc frontend/ da duoc `railway link` rieng nen
 # goi upload cua no chi gom frontend/, khong dinh file nao o day.
 frontend/
+.env
 
-# Du lieu thuoc (~32MB) + crawler: chi dung cho script seed/embed chay TAY
-# (scripts/chunk_drugs.py, scripts/embed_and_insert.py), KHONG doc luc runtime.
-data pharmacy/
+# Legacy data and crawler stay out of the backend upload. Only the promoted
+# Final Canonical V2 artifact and its rebuilt RAG index are runtime inputs.
+data pharmacy/*
+!data pharmacy/v2/
+data pharmacy/v2/*
+!data pharmacy/v2/final_canonical/
+data pharmacy/v2/final_canonical/*
+!data pharmacy/v2/final_canonical/manifest.json
+!data pharmacy/v2/final_canonical/drug_product.jsonl
+!data pharmacy/v2/final_canonical/drug_id_map.jsonl
+!data pharmacy/v2/final_canonical/drug_product_ingredient.jsonl
+!data pharmacy/v2/final_canonical/drug_knowledge.jsonl
+!data pharmacy/v2/final_canonical/rag/
+data pharmacy/v2/final_canonical/rag/*
+!data pharmacy/v2/final_canonical/rag/v2_chunks.jsonl
+!data pharmacy/v2/final_canonical/rag/v2_embedding_index.jsonl
 crawler/
 
 # Tooling VLM dem thuoc dung rieng (requirements.txt rieng), khong duoc

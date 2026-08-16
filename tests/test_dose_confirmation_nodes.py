@@ -36,6 +36,7 @@ from backend.agents.nodes.dose_confirmation_nodes import (  # noqa: E402
 )
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import DoseEvent, DrugChunk, Prescription  # noqa: E402
+from backend.services.drug_knowledge.v2_agent import SAFE_DEFAULT_SEVERITY, SeveritySource  # noqa: E402
 from backend.services.escalation import MISSED_DOSE_OVERLAY_MESSAGE, SIDE_EFFECT_OVERLAY_MESSAGE  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -103,6 +104,15 @@ def _db_available() -> bool:
 def _fake_embedding() -> list[float]:
     return [0.0] * 1536
 
+
+def _v2_severity_source(_db, drug_id: str) -> SeveritySource:
+    return SeveritySource(
+        drug_id,
+        "Thu\u1ed1c d\u00f9ng \u0111\u1ec3 h\u1ea1 s\u1ed1t, gi\u1ea3m \u0111au th\u00f4ng th\u01b0\u1eddng.\n\nC\u00f3 th\u1ec3 g\u00e2y bu\u1ed3n n\u00f4n nh\u1eb9.",
+        SAFE_DEFAULT_SEVERITY,
+        "REVIEW_REQUIRED",
+        ("INDICATION", "ADVERSE_EFFECT"),
+    )
 
 @pytest.fixture
 def severity_fixture():
@@ -174,7 +184,7 @@ def severity_fixture():
 async def test_severity_node_skips_when_classification_not_applicable(severity_fixture):
     db = SessionLocal()
     try:
-        node = build_severity_node(db, classify_severity_fn=lambda text: "Nguy hiểm")
+        node = build_severity_node(db, classify_severity_fn=lambda text: "Nguy hiểm", source_fn=_v2_severity_source)
         state = _base_state(
             patient_id=severity_fixture["patient_id"],
             dose_event_id=severity_fixture["dose_event_id"],
@@ -197,7 +207,7 @@ async def test_severity_node_never_downgrades_below_rag_result(severity_fixture)
     fallback thap hon."""
     db = SessionLocal()
     try:
-        node = build_severity_node(db, classify_severity_fn=lambda text: "Nguy hiểm")
+        node = build_severity_node(db, classify_severity_fn=lambda text: "Nguy hiểm", source_fn=_v2_severity_source)
         state = _base_state(
             patient_id=severity_fixture["patient_id"],
             dose_event_id=severity_fixture["dose_event_id"],
@@ -209,7 +219,7 @@ async def test_severity_node_never_downgrades_below_rag_result(severity_fixture)
 
     assert result["severity"] == "Nguy hiểm"
     entry = result["trace"][-1]
-    assert entry["fallback_severity"] == "Nhẹ"
+    assert entry["fallback_severity"] == SAFE_DEFAULT_SEVERITY
     assert entry["rag_severity"] == "Nguy hiểm"
     assert entry["result"] == "Nguy hiểm"
 
@@ -227,7 +237,7 @@ async def test_severity_node_combines_cong_dung_and_tac_dung_phu_only(severity_f
 
     db = SessionLocal()
     try:
-        node = build_severity_node(db, classify_severity_fn=spy_classify)
+        node = build_severity_node(db, classify_severity_fn=spy_classify, source_fn=_v2_severity_source)
         state = _base_state(
             patient_id=severity_fixture["patient_id"],
             dose_event_id=severity_fixture["dose_event_id"],
@@ -270,7 +280,7 @@ async def test_severity_node_uses_dose_event_drug_not_rag_results_from_other_bra
 
     db = SessionLocal()
     try:
-        node = build_severity_node(db, classify_severity_fn=spy_classify)
+        node = build_severity_node(db, classify_severity_fn=spy_classify, source_fn=_v2_severity_source)
         state = _base_state(
             patient_id=severity_fixture["patient_id"],
             dose_event_id=severity_fixture["dose_event_id"],

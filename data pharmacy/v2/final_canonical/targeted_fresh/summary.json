@@ -1,0 +1,12 @@
+{
+  "artifact_hash": "529731A089EC5DAA1AAC6300C66C373B89019494E5A3FB80020FD8149353857A",
+  "ingredient_warnings": 0,
+  "knowledge_items": 25,
+  "parser_version": "longchau-v2.1.0",
+  "products": 2,
+  "source_hashes": {
+    "lamivudine-savi-100mg-3x10": "2B5619871E5F2174145F7FC46146B3E35F8915394F8B5682DA1951869B89E37A",
+    "philclonestyl-125mg-boston-5x10": "83EAA2EEFE393CAD994D4D92494476B54DE826B14D5B619DCBA97421F197A438"
+  },
+  "targets": 2
+}

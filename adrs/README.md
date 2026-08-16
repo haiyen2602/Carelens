@@ -19,6 +19,7 @@
 | [0009](./0009-safety-layer-dual-classifier.md) | Safety Layer — dual classifier (OR) | Accepted | Báo thừa còn hơn bỏ sót. Lớp an toàn phải sống cả khi mọi thứ khác đã chết. |
 | [0010](./0010-human-in-the-loop.md) | Human-in-the-loop — bác sĩ duyệt | Accepted | AI nhắc và thu bằng chứng. Bác sĩ vẫn quyết định điều trị. |
 | [0011](./0011-photo-verification-fallback.md) | Xác nhận ảnh — 2 lần rồi fallback người thân | Accepted | Bằng chứng phân tầng theo độ tin cậy, bác sĩ luôn biết đang xem tầng nào. |
+| [0012](./0012-drug-data-v2-compatibility-and-provenance.md) | Drug Data V2 Compatibility And Provenance | Proposed | Xây V2 bên cạnh V1: slug vẫn là hợp đồng ngoài, UUID là lõi nội bộ, provenance tăng dần và không đoán dữ liệu y tế. |
 
 ## Nhóm theo chủ đề
 

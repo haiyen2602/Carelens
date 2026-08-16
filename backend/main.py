@@ -16,6 +16,7 @@ from backend.api.prescription_routes import prescription_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.routes import router
 from backend.config import get_settings
+from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
 
 
@@ -35,6 +36,13 @@ async def lifespan(app: FastAPI):
     # day chinh la moi truong dev cua du an nay). Dung ASCII thuan, giong
     # quy uoc comment/docstring da dung xuyen suot repo.
     print("[INFO] TEMP AUTH GATE - INTERNAL_AUTH_SECRET da cau hinh. Nho retire khi auth-api that co (muc 10 #10).")
+
+    if settings.drug_knowledge_backend in ("v2", "shadow"):
+        warmup = warm_v2_agent_knowledge_service()
+        print(
+            "[INFO] Drug Knowledge V2 warmup complete: "
+            f"products={warmup['products']} chunks={warmup['chunks']} duration_ms={warmup['duration_ms']:.2f}"
+        )
 
     # Vong 2, muc 13 (chatbot-rag-design.md) - scheduler nhac lai escalation.
     # SQLAlchemyJobStore (khong in-memory) - xem docstring escalation_scheduler.py.
