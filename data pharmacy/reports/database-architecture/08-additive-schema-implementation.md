@@ -24,8 +24,9 @@ Code changes:
 - Kept legacy physical table `dose_event` unchanged.
 - Added V2 immutable event table as `dose_event_log`, per DB-3 decision.
 - Added nullable DB-4A columns to legacy tables:
-  - `patient`: `user_id`, `display_name`, `date_of_birth`, `sex`, `timezone`, `status`
+  - `patient`: `user_id`, `display_name`, `sex`, `timezone`, `status`
   - `prescription`: `end_date`, `prescribed_by`, `prescribed_at`, `source_type`
+- `patient.date_of_birth` is owned by revision `0023_patient_profile_fields.py` after merge conflict resolution; DB-4A revision `0025` must not add or drop it.
 
 New V2 tables:
 
@@ -141,6 +142,12 @@ dose_event_missing_expected_cols []
 dose_event_extra_v2_collision_cols []
 ```
 
+Post-merge note:
+
+- Revision `0025` was checked after conflict resolution against the new chain `0022 -> 0023_patient_profile_fields -> 0024_doctor_watch -> 0025_database_architecture_v2_additive_schema`.
+- `patient.date_of_birth` is intentionally not added by `0025` because `0023_patient_profile_fields` already owns it.
+- Clean upgrade on `vmec04_db4a_conflict_check` passed through the full new chain to revision `0025`.
+
 Index checks:
 
 ```text
@@ -230,8 +237,23 @@ dose_event_log_is_separate_table True
 Allowed additive legacy columns:
 
 ```text
-patient_additive_columns ['date_of_birth', 'display_name', 'sex', 'status', 'timezone', 'user_id']
+patient_additive_columns ['display_name', 'sex', 'status', 'timezone', 'user_id']
 prescription_additive_columns ['end_date', 'prescribed_at', 'prescribed_by', 'source_type']
+```
+
+Post-conflict downgrade validation for renumbered revision:
+
+```text
+revision 0024
+v2_tables_after_0025_downgrade []
+date_of_birth_still_present True
+db4a_patient_cols_still_present []
+```
+
+Post-conflict re-upgrade:
+
+```text
+0024 -> 0025 succeeded
 ```
 
 Conclusion:

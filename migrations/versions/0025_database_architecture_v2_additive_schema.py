@@ -32,7 +32,6 @@ def upgrade() -> None:
     # Additive columns on legacy tables. All nullable until validation/backfill.
     op.add_column("patient", sa.Column("user_id", sa.String(), nullable=True))
     op.add_column("patient", sa.Column("display_name", sa.String(), nullable=True))
-    op.add_column("patient", sa.Column("date_of_birth", sa.Date(), nullable=True))
     op.add_column("patient", sa.Column("sex", sa.String(), nullable=True))
     op.add_column("patient", sa.Column("timezone", sa.String(), nullable=True))
     op.add_column("patient", sa.Column("status", sa.String(), nullable=True))
@@ -505,6 +504,5 @@ def downgrade() -> None:
     op.drop_column("patient", "status")
     op.drop_column("patient", "timezone")
     op.drop_column("patient", "sex")
-    op.drop_column("patient", "date_of_birth")
     op.drop_column("patient", "display_name")
     op.drop_column("patient", "user_id")
