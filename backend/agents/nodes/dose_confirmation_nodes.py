@@ -17,6 +17,7 @@ LEVEL: 3 nhanh hanh dong (business-rules.md §3) - Nhe/Trung binh/Nguy hiem.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from typing import Protocol
 
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ from sqlalchemy.orm import Session
 from backend.agents.nodes.conversation_nodes import _append_trace
 from backend.agents.state import ConversationState
 from backend.agents.tools.personal_tools import tra_cuu_dose_event_ca_nhan
+from backend.services.drug_knowledge.v2_agent import SAFE_DEFAULT_SEVERITY, SeveritySource, get_severity_source
 from backend.services.escalation import (
     MISSED_DOSE_OVERLAY_MESSAGE,
     SIDE_EFFECT_OVERLAY_MESSAGE,
@@ -32,7 +34,6 @@ from backend.services.escalation import (
     EscalateFn,
     trigger_emergency_escalation,
 )
-from backend.services.retrieval import get_chunks_by_drug_id
 from backend.services.severity import combine_severity
 
 CLASSIFY_CONFIDENCE_THRESHOLD = 0.7
@@ -47,7 +48,7 @@ ASK_AGAIN_MESSAGE = (
 # thao luan truoc khi code Phase 5b - van ban muc 8 chi ghi "tac_dung" nhung
 # mapping thuc te (muc 3.1) la field_group "cong_dung", con "tac_dung_phu"
 # (rui ro) moi la nguon hop ly hon rieng le - gop ca 2 de khong phai chon 1).
-SEVERITY_SOURCE_FIELD_GROUPS = ("cong_dung", "tac_dung_phu")
+SEVERITY_SOURCE_FIELD_GROUPS = ("INDICATION", "ADVERSE_EFFECT")
 
 LOW_ACTION = "log_and_monitor_48h"
 MEDIUM_ACTION = "escalate_family_and_doctor"
@@ -119,7 +120,11 @@ def build_classify_node(classify_fn: DoseClassifyFn, model_name: str = "gpt-4o-m
     return node
 
 
-def build_severity_node(db: Session, classify_severity_fn: SeverityClassifyFn):
+def build_severity_node(
+    db: Session,
+    classify_severity_fn: SeverityClassifyFn,
+    source_fn: Callable[[Session, str], SeveritySource] = get_severity_source,
+):
     """FEAT-007. Bo qua (khong chay danh gia) neu CLASSIFY khong cho ra 1
     trong 3 nhan can danh gia muc do - bao gom ca truong hop TAKEN (khong can
     danh gia) LAN truong hop confidence thap (CLASSIFY da hoi lai, chua biet
@@ -146,14 +151,15 @@ def build_severity_node(db: Session, classify_severity_fn: SeverityClassifyFn):
         expected_items = (dose_event or {}).get("expected_items") or []
         drug_id = expected_items[0]["drug_id"] if expected_items else None
 
-        chunks = get_chunks_by_drug_id(db, drug_id) if drug_id else []
-        relevant = [c for c in chunks if c.field_group in SEVERITY_SOURCE_FIELD_GROUPS]
-        combined_text = "\n\n".join(c.noi_dung for c in relevant)
+        source = source_fn(db, drug_id) if drug_id else SeveritySource("", "", SAFE_DEFAULT_SEVERITY, "REVIEW_REQUIRED", ())
+        combined_text = source.text
 
         # BR-3.2: khong xac dinh duoc thuoc/khong co chunk nao lien quan ->
         # an toan truoc, fallback toi thieu la "Trung bình" (khong suy dien
         # "Nhẹ" tu viec thieu du lieu).
-        fallback_severity = relevant[0].muc_nghiem_trong if relevant else "Trung bình"
+        # V2 deliberately does not turn legacy muc_nghiem_trong into a medical
+        # fact. Missing reviewed policy remains REVIEW_REQUIRED and fails safe.
+        fallback_severity = source.fallback_severity
         rag_severity = classify_severity_fn(combined_text) if combined_text else None
         final_severity = combine_severity(rag_severity, fallback_severity)
         duration_ms = (time.monotonic() - t0) * 1000
@@ -161,7 +167,8 @@ def build_severity_node(db: Session, classify_severity_fn: SeverityClassifyFn):
         entry = {
             "step": "severity_assessment",
             "drug_id": drug_id,
-            "source_field_groups": list(SEVERITY_SOURCE_FIELD_GROUPS),
+            "source_field_groups": list(source.source_types),
+            "source_status": source.status,
             "rag_severity": rag_severity,
             "fallback_severity": fallback_severity,
             "result": final_severity,

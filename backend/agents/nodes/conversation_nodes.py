@@ -40,7 +40,7 @@ from backend.agents.tools.chat_history_tool import get_chat_history_for_display,
 from backend.agents.tools.drug_info_tool import EmbedFn, tra_cuu_thuoc_chung
 from backend.agents.tools.personal_tools import tra_cuu_don_thuoc_ca_nhan, tra_cuu_lich_uong_ca_nhan
 from backend.db.models import Patient
-from backend.services.retrieval import DrugInfoResult
+from backend.services.drug_knowledge.v2_agent import DrugInfoResult
 
 CAVEAT_LIEU_DUNG = "Dạ, đây là liều khuyến cáo chung theo nhãn thuốc ạ. Liều thực tế của bạn có thể khác theo chỉ định của bác sĩ."
 CAVEAT_THOI_DIEM_MISSING = "Dạ, thời điểm dùng cụ thể cần theo chỉ định của bác sĩ ạ."

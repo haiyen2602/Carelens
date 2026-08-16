@@ -106,6 +106,14 @@ class Settings(BaseSettings):
     hnsw_ef_search: int = Field(
         default=100, description="Chot 2026-08-09 tu eval/hnsw_recall_tuning.py - xem chatbot-rag-design.md muc 15"
     )
+    drug_knowledge_backend: Literal["v1", "v2", "shadow"] = Field(
+        default="v2",
+        description="Controlled V2 default. Use v1 for rollback; shadow returns V1 while comparing V2.",
+    )
+    drug_knowledge_v2_dir: str | None = Field(
+        default=None,
+        description="Directory containing deployable Canonical V2 JSONL artifacts. Defaults to the local migration output.",
+    )
     # Vong 4, muc 3.2 - chi dung cho fuzzy name search o nhanh thuoc NGOAI
     # don. Sweep 4 tap eval (full/short GT, OOD, ambiguous) ban dau chot 0.25,
     # nhung 0.25 chi co margin +0.012 tren tran OOD (0.238) - sweep MIN them
