@@ -18,13 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
@@ -33,7 +26,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"patient" | "doctor">("patient");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -64,7 +56,7 @@ export default function RegisterPage() {
         full_name: fullName.trim(),
         email: email.trim(),
         password,
-        role,
+        role: "patient",
       });
 
       router.push("/?registered=true");
@@ -185,19 +177,18 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Vai trò</Label>
-              <Select value={role} onValueChange={(val) => setRole(val as "patient" | "doctor")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn vai trò" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Chi 2 lua chon khi tu dang ky: benh nhan/nguoi than dung
-                      chung role `patient`; role `admin` chi do admin tao qua
-                      account-api (specs/api-contracts.md §1b). */}
-                  <SelectItem value="patient">Bệnh nhân / Người thân</SelectItem>
-                  <SelectItem value="doctor">Bác sĩ phụ trách</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Vai trò</Label>
+              {/* SUA 2026-08-17 (yeu cau PM): bo Select vai tro - tu dang ky
+                  CHI tao duoc tai khoan `patient` (benh nhan/nguoi than dung
+                  chung role nay). Tai khoan bac si/admin chi do admin tao qua
+                  account-api (specs/api-contracts.md §1b). */}
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2.5 text-sm">
+                <UserCheck className="h-4 w-4 text-primary shrink-0" />
+                <span className="font-medium">Bệnh nhân / Người thân</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tài khoản Bác sĩ phụ trách do quản trị viên cấp, không thể tự đăng ký.
+              </p>
             </div>
 
             <div className="space-y-2">

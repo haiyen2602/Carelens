@@ -267,6 +267,26 @@ async def test_register_duplicate_email_returns_409(unauthenticated_client, demo
 
 
 @pytest.mark.asyncio
+async def test_register_rejects_doctor_role(unauthenticated_client):
+    """Yeu cau PM 2026-08-17: khong cho tu dang ky tai khoan bac si - chi admin
+    tao duoc qua account-api. Pydantic Literal["patient"] tra 422."""
+    reg_payload = {
+        "full_name": "BS Tu Dang Ky",
+        "email": f"test-reg-doctor-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "register-test-pass-123",
+        "role": "doctor",
+    }
+    response = await unauthenticated_client.post("/api/v1/auth/register", json=reg_payload)
+    assert response.status_code == 422
+
+    db = SessionLocal()
+    try:
+        assert db.query(Account).filter(Account.email == reg_payload["email"]).first() is None
+    finally:
+        db.close()
+
+
+@pytest.mark.asyncio
 async def test_verify_email_flow(unauthenticated_client):
     reg_email = f"test-verify-{uuid.uuid4().hex[:8]}@example.com"
     reg_payload = {
