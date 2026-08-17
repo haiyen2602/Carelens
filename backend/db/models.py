@@ -598,6 +598,11 @@ class MissedDoseAssessment(Base):
     risk_level: Mapped[str] = mapped_column(String, nullable=False)
     recommended_action: Mapped[str] = mapped_column(String, nullable=False)
     policy_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Immutable policy-provenance snapshots added by DB-4H.  The referenced
+    # policy can later be superseded, but the historical assessment must still
+    # show whether its decision came from reviewed, legacy, or default logic.
+    policy_source_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    policy_review_status: Mapped[str | None] = mapped_column(String, nullable=True)
     reason_code: Mapped[str] = mapped_column(String, nullable=False)
     assessment_version: Mapped[str] = mapped_column(String, nullable=False)
     evaluator: Mapped[str] = mapped_column(String, nullable=False)
