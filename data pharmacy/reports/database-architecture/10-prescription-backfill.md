@@ -179,6 +179,27 @@ READY FOR DOSE OCCURRENCE BACKFILL:
 
 NO
 
+## DB-4C closeout decision
+
+DB-4C.1 established that the only available local/dev operational source has
+`0` legacy prescriptions and `0` legacy prescription items. Consequently, the
+operational legacy-prescription backfill at this time is **NO-OP / NOT
+APPLICABLE**, not an incomplete data migration.
+
+The DB-4C importer, focused tests, clean-database integration run, deterministic
+migration keys, and exception handling remain retained as validated migration
+capability. No mock dataset is promoted to patient data, no real patient data
+is copied into Git, and no prescription/dose row is created as part of this
+closeout.
+
+The absence of legacy data does not authorize a dose-occurrence backfill: there
+is no source occurrence data to migrate, and the required DB-4D schedule/dose
+schema review has not yet been implemented. A later non-empty legacy source
+must still use the retained DB-4C reconciliation gate before operational use.
+
+DB-4C CLOSEOUT: PASS — NO-OP / NOT APPLICABLE for the currently empty
+operational legacy database.
+
 ## DB-4C.1 legacy prescription reconciliation
 
 The local/dev PostgreSQL source available to this workspace was identified by
@@ -212,13 +233,12 @@ Exception classification:
 - `REVIEW_REQUIRED`: none from the empty source. Any rows in a later approved
   snapshot with unmapped IDs, invalid dates/times, or malformed JSON must stay
   in this class and cannot be guessed.
-- `BLOCKER`: no approved, non-PII, reproducible legacy prescription snapshot
-  exists. A raw Docker volume is machine-local state and is not an acceptable
-  reconciliation input.
+- `BLOCKER`: none. The confirmed empty operational source makes this backfill
+  a NO-OP / NOT APPLICABLE; it does not require synthetic patient data.
 
 ## REAL LEGACY RECONCILIATION:
 
-BLOCKED
+NOT APPLICABLE — the confirmed operational source is empty.
 
 TOTAL PRESCRIPTIONS:
 
@@ -254,8 +274,8 @@ REVIEW_REQUIRED:
 
 BLOCKERS:
 
-1 — a privacy-safe, reproducible snapshot/export of actual legacy
-`prescription.items` is absent.
+0 for the current no-op operational backfill. A future non-empty source must
+still be exported/snapshotted through a privacy-safe reconciliation workflow.
 
 IDEMPOTENCY:
 
@@ -264,4 +284,5 @@ integration corpus described above.
 
 READY FOR DOSE OCCURRENCE BACKFILL:
 
-NO
+NO — no legacy occurrence source exists, and DB-4D schema implementation has
+not begun.
