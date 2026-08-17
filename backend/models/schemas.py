@@ -14,14 +14,16 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     """POST /api/v1/auth/register (api-contracts.md §1).
 
-    Tu dang ky chi cho 2 role: `patient` (benh nhan/nguoi than dung chung) va
-    `doctor`. `caregiver`/`admin` chi tao duoc qua account-api (§1b) boi admin.
+    SUA 2026-08-17 (yeu cau PM): tu dang ky CHI cho role `patient` (benh
+    nhan/nguoi than dung chung). `doctor`/`caregiver`/`admin` chi tao duoc qua
+    account-api (§1b) boi admin - truoc day `doctor` mo cho tu dang ky nen ai
+    cung tao duoc tai khoan bac si va thay du lieu benh nhan.
     """
 
     full_name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
-    role: Literal["doctor", "patient"] = "patient"
+    role: Literal["patient"] = "patient"
 
 
 class VerifyEmailRequest(BaseModel):

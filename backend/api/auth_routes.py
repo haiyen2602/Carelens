@@ -97,8 +97,6 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
         # bac si dang co theo doi ngay - khong con tinh trang "Cảnh báo mới
         # nhất" rong vi chua ai bam "Theo dõi" benh nhan nay.
         auto_watch_new_patient(db, patient_id)
-    elif body.role == "doctor":
-        account.doctor_id = account_id
 
     db.add(account)
     db.commit()
