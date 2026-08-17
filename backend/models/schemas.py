@@ -58,6 +58,20 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=128)
 
 
+class SetPasswordRequest(BaseModel):
+    """POST /api/v1/auth/set-password (them 2026-08-17, api-contracts.md §1c).
+
+    KHONG co `current_password` - day la diem khac biet duy nhat so voi
+    ChangePasswordRequest, va la ly do endpoint nay phai ton tai rieng: tai
+    khoan tao qua Google chua he co mat khau nguoi dung nao de nhap vao do.
+    Bu lai, endpoint CHI nhan tai khoan `auth_provider="google"` - tai khoan
+    da co mat khau van buoc phai di duong /auth/change-password (co xac minh
+    mat khau cu), neu khong thi 1 access_token bi lo se doi duoc mat khau ma
+    khong can biet mat khau cu."""
+
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
 class UserOut(BaseModel):
     """`user` object trong response cua /auth/login (api-contracts.md §1)."""
 
@@ -79,6 +93,32 @@ class LoginResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
+
+
+class OAuthLoginRequest(BaseModel):
+    """POST /api/v1/auth/oauth/google - "Login with Google" (api-contracts.md §1).
+
+    KHONG co `password`, KHONG co `role`: nguoi goi la Route Handler cua chinh
+    frontend (server-to-server, chan bang header X-Internal-Secret), gui sang
+    danh tinh Google DA duoc Better Auth xac thuc xong. Tai khoan tao qua duong
+    nay luon la `patient` - giong rang buoc cua RegisterRequest (chi admin tao
+    duoc doctor/caregiver/admin, xem §1b), khong the nang quyen bang cach tu go
+    role vao body.
+
+    `provider_account_id` la `sub` cua Google (dinh danh on dinh, KHONG doi khi
+    nguoi dung doi email hien thi) - luu de doi chieu/ho tro dieu tra sau nay.
+    Viec GHEP voi tai khoan cu van dua tren `email`: bang `account` chi co UNIQUE
+    tren email, va Google da xac thuc chinh email do (email_verified).
+    """
+
+    email: EmailStr
+    full_name: str = Field(..., min_length=1, max_length=100)
+    provider_account_id: str = Field(..., min_length=1)
+    # Google tra `email_verified=false` cho mot so tai khoan Workspace cau hinh
+    # dac biet. Fail-closed: backend TU CHOI (400) neu chua xac thuc, vi neu
+    # khong, ai co email chua xac thuc trung voi 1 tai khoan mat khau san co se
+    # chiem duoc tai khoan do.
+    email_verified: bool = True
 
 
 class ChangePasswordResponse(LoginResponse):
@@ -108,6 +148,11 @@ class MeResponse(BaseModel):
     # khong). None cho role khac patient - CHUA co onboarding tuong tu cho
     # doctor/caregiver/admin.
     profile_completed: bool | None = None
+    # THEM (migration 0025, Login with Google) - frontend dung de biet tai
+    # khoan nay co mat khau hay khong: "google" => chua co, phai hien "Đặt mật
+    # khẩu" (POST /auth/set-password) thay vi "Đổi mật khẩu" (doi mat khau cu
+    # ma nguoi dung khong the co). Xem components/account-settings.tsx.
+    auth_provider: str = "password"
 
 
 

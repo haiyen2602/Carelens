@@ -14,6 +14,8 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
+from backend.api.security import INTERNAL_SECRET_HEADER  # noqa: E402
+from backend.config import get_settings  # noqa: E402
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import Account, DoctorWatch, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
@@ -462,6 +464,385 @@ async def test_change_password_unauthenticated_returns_401(unauthenticated_clien
         json={"current_password": "pass", "new_password": "new-pass-12345"},
     )
     assert res.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# "Login with Google" - POST /api/v1/auth/oauth/google (api-contracts.md §1).
+# Endpoint nay KHONG public: no khong co mat khau nao de kiem tra, toan bo niem
+# tin nam o cho "nguoi goi (Route Handler cua Next.js) da xac thuc Google giup
+# roi" -> chan bang X-Internal-Secret. Cac test duoi day khoa dung nhung tinh
+# chat an toan do lai.
+# ---------------------------------------------------------------------------
+
+
+def _internal_headers() -> dict[str, str]:
+    return {INTERNAL_SECRET_HEADER: get_settings().internal_auth_secret}
+
+
+def _delete_account_cascade(email: str) -> None:
+    db = SessionLocal()
+    account = db.query(Account).filter(Account.email == email).first()
+    if account is not None:
+        patient_id = account.patient_id
+        db.query(Account).filter(Account.id == account.id).delete(synchronize_session=False)
+        if patient_id:
+            db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(
+                synchronize_session=False
+            )
+            db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+    db.commit()
+    db.close()
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_without_internal_secret_returns_401(unauthenticated_client):
+    """Rao can require_internal_secret phai duoc wire that su. Neu quen, bat ky
+    ai cung POST duoc mot email tuy y vao day va nhan lai JWT cua chu email do."""
+    res = await unauthenticated_client.post(
+        "/api/v1/auth/oauth/google",
+        json={
+            "email": f"test-oauth-nosecret-{uuid.uuid4().hex[:8]}@example.com",
+            "full_name": "Kẻ Gọi Lạ",
+            "provider_account_id": "google-sub-attacker",
+        },
+    )
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_first_login_creates_patient_account(unauthenticated_client):
+    email = f"test-oauth-new-{uuid.uuid4().hex[:8]}@example.com"
+    try:
+        res = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={
+                "email": email,
+                "full_name": "Nguyễn Văn Google",
+                "provider_account_id": "google-sub-1234567890",
+            },
+        )
+        assert res.status_code == 200
+        body = res.json()
+        assert body["token_type"] == "bearer"
+        assert body["access_token"]
+        assert body["refresh_token"]
+        assert body["user"]["role"] == "patient"
+        assert body["user"]["full_name"] == "Nguyễn Văn Google"
+
+        db = SessionLocal()
+        account = db.query(Account).filter(Account.email == email).first()
+        assert account is not None
+        assert account.auth_provider == "google"
+        assert account.is_email_verified is True
+        # Giong het duong /auth/register: patient_id dang BNxxxxx + dong Patient
+        # that dang sau no (khong chi gan chuoi ID vao Account).
+        assert account.patient_id is not None
+        assert _PATIENT_ID_RE.match(account.patient_id)
+        assert db.get(Patient, account.patient_id) is not None
+        db.close()
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_cannot_login_with_password(unauthenticated_client):
+    """Tai khoan tao qua Google co password_hash la bcrypt cua 1 chuoi ngau
+    nhien khong luu o dau -> POST /auth/login phai luon 401, va KHONG duoc 500
+    (verify_password voi hash rong se nem loi)."""
+    email = f"test-oauth-nopass-{uuid.uuid4().hex[:8]}@example.com"
+    try:
+        create = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Không Mật Khẩu", "provider_account_id": "g-sub-2"},
+        )
+        assert create.status_code == 200
+
+        for guess in ("", "password", "123456789"):
+            res = await unauthenticated_client.post(
+                "/api/v1/auth/login", json={"email": email, "password": guess}
+            )
+            assert res.status_code in (401, 422), f"mat khau {guess!r} -> {res.status_code}"
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_unverified_email_returns_400(unauthenticated_client):
+    """Fail-closed: Google noi email chua xac thuc -> khong duoc dung no de nhan
+    danh chu tai khoan cung email (duong chiem tai khoan)."""
+    email = f"test-oauth-unverified-{uuid.uuid4().hex[:8]}@example.com"
+    try:
+        res = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={
+                "email": email,
+                "full_name": "Chưa Xác Thực",
+                "provider_account_id": "g-sub-3",
+                "email_verified": False,
+            },
+        )
+        assert res.status_code == 400
+        db = SessionLocal()
+        assert db.query(Account).filter(Account.email == email).first() is None
+        db.close()
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_existing_password_account_keeps_role_and_provider(
+    unauthenticated_client, demo_account
+):
+    """Tai khoan da co (dang nhap bang mat khau) lien ket Google: dang nhap
+    duoc, nhung KHONG bi ha thanh "khong co mat khau" - `auth_provider` giu
+    nguyen "password" de /auth/change-password van hoat dong."""
+    res = await unauthenticated_client.post(
+        "/api/v1/auth/oauth/google",
+        headers=_internal_headers(),
+        json={
+            "email": demo_account["email"],
+            "full_name": "Tên Từ Google",
+            "provider_account_id": "g-sub-4",
+        },
+    )
+    assert res.status_code == 200
+    assert res.json()["access_token"]
+
+    db = SessionLocal()
+    account = db.query(Account).filter(Account.id == demo_account["id"]).first()
+    assert account is not None
+    assert account.auth_provider == "password"
+    assert account.role == "patient"
+    db.close()
+
+    # Mat khau cu VAN dung sau khi lien ket Google.
+    login_res = await unauthenticated_client.post(
+        "/api/v1/auth/login",
+        json={"email": demo_account["email"], "password": demo_account["password"]},
+    )
+    assert login_res.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_locked_account_returns_403(unauthenticated_client, demo_account):
+    """Nut "khoa tai khoan" cua admin (account.status) khong duoc di duong
+    OAuth de lach qua."""
+    db = SessionLocal()
+    account = db.query(Account).filter(Account.id == demo_account["id"]).first()
+    account.status = "locked"
+    db.commit()
+    db.close()
+
+    res = await unauthenticated_client.post(
+        "/api/v1/auth/oauth/google",
+        headers=_internal_headers(),
+        json={
+            "email": demo_account["email"],
+            "full_name": "Bị Khoá",
+            "provider_account_id": "g-sub-5",
+        },
+    )
+    assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_change_password_on_google_account_returns_400(unauthenticated_client):
+    """Tai khoan Google chua he co mat khau nguoi dung -> /auth/change-password
+    phai bao ro dieu do thay vi "mat khau hien tai khong chinh xac"."""
+    email = f"test-oauth-chpass-{uuid.uuid4().hex[:8]}@example.com"
+    try:
+        create = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Google User", "provider_account_id": "g-sub-6"},
+        )
+        assert create.status_code == 200
+        token = create.json()["access_token"]
+
+        res = await unauthenticated_client.post(
+            "/api/v1/auth/change-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"current_password": "bat-ky-gi", "new_password": "new-password-789"},
+        )
+        assert res.status_code == 400
+        assert "Google" in res.json()["detail"]
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_me_exposes_auth_provider(unauthenticated_client, demo_account):
+    """Frontend can `auth_provider` de biet hien "Đặt mật khẩu" hay "Đổi mật
+    khẩu" TRUOC khi mo dialog (components/account-settings.tsx)."""
+    login_res = await unauthenticated_client.post(
+        "/api/v1/auth/login",
+        json={"email": demo_account["email"], "password": demo_account["password"]},
+    )
+    token = login_res.json()["access_token"]
+    me_res = await unauthenticated_client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert me_res.status_code == 200
+    assert me_res.json()["auth_provider"] == "password"
+
+
+@pytest.mark.asyncio
+async def test_set_password_lets_google_account_login_both_ways(unauthenticated_client):
+    """Quyet dinh PM 2026-08-17: tai khoan Google DAT duoc mat khau lan dau,
+    sau do dang nhap duoc CA HAI duong. Day la duong thoat duy nhat neu nguoi
+    dung mat quyen truy cap Gmail (backend chua co /auth/forgot-password)."""
+    email = f"test-oauth-setpass-{uuid.uuid4().hex[:8]}@example.com"
+    new_password = "mat-khau-moi-dat-lan-dau-123"
+    try:
+        create = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Google User", "provider_account_id": "g-sub-7"},
+        )
+        assert create.status_code == 200
+        token = create.json()["access_token"]
+
+        set_res = await unauthenticated_client.post(
+            "/api/v1/auth/set-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"new_password": new_password},
+        )
+        assert set_res.status_code == 200
+        body = set_res.json()
+        assert body["detail"] == "Đặt mật khẩu thành công"
+        # Ke thua LoginResponse: tra token MOI vi dat mat khau thu hoi token cu
+        # - neu chi tra `detail`, nguoi vua dat mat khau bi dang xuat ngay.
+        assert body["access_token"]
+        assert body["refresh_token"]
+
+        # Duong 1: email + mat khau vua dat.
+        pw_login = await unauthenticated_client.post(
+            "/api/v1/auth/login", json={"email": email, "password": new_password}
+        )
+        assert pw_login.status_code == 200
+
+        # Duong 2: Google van dang nhap duoc, va KHONG bi ha lai thanh "chua co
+        # mat khau" (oauth_google giu nguyen auth_provider cua tai khoan da co).
+        g_login = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Google User", "provider_account_id": "g-sub-7"},
+        )
+        assert g_login.status_code == 200
+
+        db = SessionLocal()
+        account = db.query(Account).filter(Account.email == email).first()
+        assert account.auth_provider == "password"
+        db.close()
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_set_password_is_single_use(unauthenticated_client):
+    """Cong `auth_provider == "google"` chi mo duoc MOT lan. Neu khong, 1
+    access_token bi lo se doi duoc mat khau ma khong can biet mat khau cu."""
+    email = f"test-oauth-setpass2-{uuid.uuid4().hex[:8]}@example.com"
+    try:
+        create = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Google User", "provider_account_id": "g-sub-8"},
+        )
+        token = create.json()["access_token"]
+
+        first = await unauthenticated_client.post(
+            "/api/v1/auth/set-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"new_password": "mat-khau-lan-dau-123"},
+        )
+        assert first.status_code == 200
+        # Dung token MOI (token cu da bi thu hoi boi password_changed_at) de
+        # chac chan 400 den tu dieu kien auth_provider, khong phai tu 401.
+        new_token = first.json()["access_token"]
+
+        second = await unauthenticated_client.post(
+            "/api/v1/auth/set-password",
+            headers={"Authorization": f"Bearer {new_token}"},
+            json={"new_password": "mat-khau-lan-hai-456"},
+        )
+        assert second.status_code == 400
+        assert "đã có mật khẩu" in second.json()["detail"]
+    finally:
+        _delete_account_cascade(email)
+
+
+@pytest.mark.asyncio
+async def test_set_password_rejects_password_account(unauthenticated_client, demo_account):
+    """Tai khoan thuong KHONG duoc di duong nay - phai qua
+    /auth/change-password (co xac minh mat khau cu)."""
+    login_res = await unauthenticated_client.post(
+        "/api/v1/auth/login",
+        json={"email": demo_account["email"], "password": demo_account["password"]},
+    )
+    token = login_res.json()["access_token"]
+
+    res = await unauthenticated_client.post(
+        "/api/v1/auth/set-password",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"new_password": "mat-khau-cuop-tai-khoan-123"},
+    )
+    assert res.status_code == 400
+
+    # Mat khau cu VAN nguyen - endpoint khong duoc doi gi truoc khi tu choi.
+    still = await unauthenticated_client.post(
+        "/api/v1/auth/login",
+        json={"email": demo_account["email"], "password": demo_account["password"]},
+    )
+    assert still.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_set_password_unauthenticated_returns_401(unauthenticated_client):
+    res = await unauthenticated_client.post(
+        "/api/v1/auth/set-password", json={"new_password": "khong-co-token-123"}
+    )
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_works_after_set_password(unauthenticated_client):
+    """Sau khi dat mat khau, tai khoan Google dung /auth/change-password binh
+    thuong (guard "đăng nhập bằng Google" khong con chan nua)."""
+    email = f"test-oauth-then-ch-{uuid.uuid4().hex[:8]}@example.com"
+    first_pw = "mat-khau-dat-lan-dau-123"
+    second_pw = "mat-khau-doi-tiep-456"
+    try:
+        create = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={"email": email, "full_name": "Google User", "provider_account_id": "g-sub-9"},
+        )
+        set_res = await unauthenticated_client.post(
+            "/api/v1/auth/set-password",
+            headers={"Authorization": f"Bearer {create.json()['access_token']}"},
+            json={"new_password": first_pw},
+        )
+        token = set_res.json()["access_token"]
+
+        ch_res = await unauthenticated_client.post(
+            "/api/v1/auth/change-password",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"current_password": first_pw, "new_password": second_pw},
+        )
+        assert ch_res.status_code == 200
+
+        login = await unauthenticated_client.post(
+            "/api/v1/auth/login", json={"email": email, "password": second_pw}
+        )
+        assert login.status_code == 200
+    finally:
+        _delete_account_cascade(email)
+
+
 
 
 

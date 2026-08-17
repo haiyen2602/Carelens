@@ -399,7 +399,15 @@ class Account(Base):
     # token_revoked_by_password_change). NULL = chua tung doi mat khau ->
     # khong thu hoi gi (tai khoan tao truoc migration 0018).
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
+    # THEM sau (migration 0025, "Login with Google") - "password" | "google".
+    # Tai khoan sinh ra tu Google KHONG co mat khau nguoi dung nao ca:
+    # `password_hash` cua no la bcrypt cua 1 chuoi ngau nhien khong ai biet
+    # (xem auth_routes.py::_oauth_upsert_account) - co y, de POST /auth/login
+    # bang mat khau khong bao gio dang nhap duoc vao tai khoan Google, thay vi
+    # de password_hash rong/NULL (verify_password se nem loi thay vi tra False).
+    # Cot nay la cach DUY NHAT phan biet "chua tung dat mat khau" - thieu no
+    # thi luong doi mat khau se doi "mat khau hien tai" cua thu khong ton tai.
+    auth_provider: Mapped[str] = mapped_column(String, nullable=False, default="password")
 
 
 class PendingDrugConfirmation(Base):

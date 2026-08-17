@@ -16,6 +16,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
@@ -227,6 +228,18 @@ export default function RegisterPage() {
               {loading ? "Đang đăng ký..." : "Đăng ký tài khoản"}
             </Button>
           </form>
+
+          {/* Cung 1 nut voi trang dang nhap: Google khong phan biet dang
+              nhap/dang ky - email chua ton tai thi backend tao tai khoan
+              `patient` moi (backend/api/auth_routes.py::oauth_google). */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-xs font-medium text-muted-foreground">hoặc</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleSignInButton label="Đăng ký bằng Google" />
+          </div>
 
           <p className="text-center text-sm text-muted-foreground">
             Đã có tài khoản?{" "}

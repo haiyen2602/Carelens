@@ -5,13 +5,14 @@ ca 4 role (doctor|patient|caregiver|admin) - quyet dinh da chot voi PM
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, get_current_user
+from backend.api.security import CurrentUser, get_current_user, require_internal_secret
 from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import Account, Patient
@@ -21,8 +22,10 @@ from backend.models.schemas import (
     LoginRequest,
     LoginResponse,
     MeResponse,
+    OAuthLoginRequest,
     RefreshRequest,
     RegisterRequest,
+    SetPasswordRequest,
     UserOut,
 )
 from backend.services.auth import (
@@ -58,6 +61,21 @@ def _login_response(account: Account) -> LoginResponse:
     )
 
 
+def _provision_patient(db: Session, account: Account, full_name: str) -> None:
+    """Tao ban ghi `Patient` + patient_id ngan gon (BNxxxxx) cho 1 Account
+    role=patient, va cho TAT CA bac si theo doi ngay.
+
+    Tach ra khoi register() de POST /auth/oauth/google dung DUNG khoi logic
+    nay - neu copy sang do, bat ky sua doi sau nay (vd them buoc onboarding)
+    se chi duoc ap dung cho 1 trong 2 duong dang ky, va benh nhan dang nhap
+    bang Google se roi vao trang thai khac benh nhan dang ky bang mat khau.
+    KHONG commit - nguoi goi quyet dinh ranh gioi transaction."""
+    patient_id = generate_next_patient_id(db)
+    db.add(Patient(id=patient_id, full_name=full_name))
+    account.patient_id = patient_id
+    auto_watch_new_patient(db, patient_id)
+
+
 # 5 route duoi day truoc la `async def` nhung goi thang Session dong bo cua
 # SQLAlchemy (khong co await nao ben trong) - FastAPI CHI tu day sang
 # threadpool cho route khai bao `def` thuong, `async def` thi chay ngay
@@ -82,6 +100,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
         role=body.role,
         status="active",
         is_email_verified=True,
+        auth_provider="password",
     )
 
     if body.role == "patient":
@@ -89,20 +108,95 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
         # đó là bug khiến UI hiển thị thẳng UUID thay vì ID ngắn gọn dạng
         # BNxxxxx như dữ liệu cũ (vd "BN00002"). `Account.id` vẫn là UUID
         # riêng (dùng để đăng nhập/JWT sub), độc lập với patient_id hiển thị.
-        patient_id = generate_next_patient_id(db)
-        patient = Patient(id=patient_id, full_name=body.full_name)
-        db.add(patient)
-        account.patient_id = patient_id
         # THEM 2026-08-14 (yeu cau PM): benh nhan MOI mac dinh duoc TAT CA
         # bac si dang co theo doi ngay - khong con tinh trang "Cảnh báo mới
         # nhất" rong vi chua ai bam "Theo dõi" benh nhan nay.
-        auto_watch_new_patient(db, patient_id)
+        _provision_patient(db, account, body.full_name)
 
     db.add(account)
     db.commit()
     db.refresh(account)
 
     return _login_response(account)
+
+
+@auth_router.post(
+    "/auth/oauth/google",
+    response_model=LoginResponse,
+    dependencies=[Depends(require_internal_secret)],
+)
+def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+    """"Login with Google" - doi danh tinh Google DA xac thuc thanh JWT cua
+    chinh he thong nay (api-contracts.md §1).
+
+    Better Auth (frontend/src/lib/better-auth.ts) chay TRONG Next.js va CHI lam
+    moi gioi OAuth: no noi chuyen voi Google, xac minh chu ky, roi Route Handler
+    frontend/src/app/api/auth/google-bridge/route.ts goi endpoint nay. Nguon su
+    that ve danh tinh VAN LA bang `account` + JWT nay - nho vay 40 route backend
+    con lai (doc role/patient_id tu JWT) khong phai doi gi.
+
+    Chan bang `require_internal_secret` (server-to-server), KHONG public: neu mo
+    public thi bat ky ai cung POST duoc mot email tuy y vao day va nhan lai JWT
+    hop le cua chu email do - endpoint nay khong co mat khau nao de kiem tra,
+    toan bo niem tin nam o cho "nguoi goi da xac thuc Google giup roi". Do la ly
+    do `require_internal_secret` (backend/api/security.py) chua duoc xoa han."""
+    if not body.email_verified:
+        # Fail-closed: Google noi email nay chua xac thuc -> khong duoc phep
+        # dung no de nhan danh chu tai khoan cung email trong bang `account`.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email Google chưa được xác thực, không thể dùng để đăng nhập",
+        )
+
+    account = db.query(Account).filter(Account.email == body.email).first()
+
+    if account is None:
+        # Lan dau dang nhap Google -> tao tai khoan `patient` moi, giong het
+        # duong /auth/register (ke ca patient_id BNxxxxx + auto-watch).
+        account = Account(
+            id=str(uuid.uuid4()),
+            full_name=body.full_name,
+            email=body.email,
+            # KHONG co mat khau nguoi dung. Dat bcrypt cua 1 chuoi ngau nhien
+            # 32 byte (khong luu o dau, khong ai biet) thay vi de rong: cot
+            # `password_hash` NOT NULL, va quan trong hon - verify_password()
+            # voi hash rong se NEM LOI thay vi tra False, bien 401 thanh 500.
+            # Cach nay khien POST /auth/login bang mat khau khong bao gio vao
+            # duoc tai khoan Google, du co doan trung gi.
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            role="patient",
+            status="active",
+            # Google da xac thuc email (da check email_verified o tren) - khong
+            # bat nguoi dung xac thuc lai email lan hai.
+            is_email_verified=True,
+            auth_provider="google",
+        )
+        _provision_patient(db, account, body.full_name)
+        db.add(account)
+        db.commit()
+        db.refresh(account)
+        return _login_response(account)
+
+    # Da co tai khoan cung email -> DANG NHAP vao chinh tai khoan do, giu
+    # nguyen role (doctor/admin dang nhap bang Google van la doctor/admin) va
+    # giu nguyen `auth_provider`: tai khoan mat khau lien ket them Google VAN
+    # con mat khau cua no, khong duoc ha xuong thanh "google" (lam vay se noi
+    # doi rang no chua tung dat mat khau).
+    if account.status != "active":
+        # Cung 403 + cung thong bao nhu /auth/login - nut "khoa tai khoan" cua
+        # admin phai chan CA duong Google, neu khong no chi la UI gia.
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản đã bị khoá")
+
+    # Tai khoan cu (truoc migration 0021, khi chua co luong xac thuc email)
+    # hoac tao boi admin: Google vua chung minh chu email nay - danh dau da
+    # xac thuc de nguoi dung khong bi chan boi buoc verify email.
+    if not account.is_email_verified:
+        account.is_email_verified = True
+        db.commit()
+        db.refresh(account)
+
+    return _login_response(account)
+
 
 
 
@@ -120,6 +214,17 @@ def change_password(
     account = db.query(Account).filter(Account.id == current_user.id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tài khoản không tồn tại")
+
+    # THEM (migration 0025, Login with Google): tai khoan tao qua Google KHONG
+    # co mat khau nguoi dung nao. Neu de chay tiep, verify_password() se so voi
+    # bcrypt cua 1 chuoi ngau nhien va tra ve "Mật khẩu hiện tại không chính
+    # xác" - dung ky thuat nhung sai thong tin, nguoi dung se ngoi thu lai cac
+    # mat khau ho nho. Bao dung ly do de ho biet day khong phai loi go sai.
+    if account.auth_provider == "google":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tài khoản này đăng nhập bằng Google nên chưa có mật khẩu để đổi",
+        )
 
     if not verify_password(body.current_password, account.password_hash):
         raise HTTPException(
@@ -139,6 +244,65 @@ def change_password(
         refresh_token=login_res.refresh_token,
         user=login_res.user,
         detail="Đổi mật khẩu thành công"
+    )
+
+
+@auth_router.post("/auth/set-password", response_model=ChangePasswordResponse)
+def set_password(
+    body: SetPasswordRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ChangePasswordResponse:
+    """DAT mat khau lan dau cho tai khoan tao qua Google (api-contracts.md §1c,
+    quyet dinh PM 2026-08-17).
+
+    Vi sao KHONG dung /auth/change-password: endpoint do doi `current_password`
+    va xac minh no. Tai khoan Google khong co mat khau nguoi dung nao ca
+    (`password_hash` chi la bcrypt cua 1 chuoi ngau nhien khong ai biet, xem
+    oauth_google), nen khong the nhap dung duoc gi.
+
+    Vi sao no khong lam yeu he thong du KHONG doi mat khau cu: dieu kien
+    `auth_provider == "google"` la mot cong CHI MO DUOC MOT LAN. Ngay sau khi
+    dat mat khau, cot doi thanh "password", nen lan goi thu hai vao chinh
+    endpoint nay se bi tu choi 400 - tu do tro di moi thay doi mat khau buoc
+    phai di /auth/change-password (co xac minh mat khau cu). Neu thieu dieu
+    kien nay, 1 access_token bi lo se doi duoc mat khau cua BAT KY tai khoan
+    ma khong can biet mat khau hien tai.
+
+    Sau khi dat: tai khoan dang nhap duoc CA HAI duong (Google va email/mat
+    khau) - do la muc dich, va la duong thoat duy nhat neu nguoi dung mat
+    quyen truy cap Gmail (backend chua co /auth/forgot-password)."""
+    account = db.query(Account).filter(Account.id == current_user.id).first()
+    if account is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tài khoản không tồn tại")
+
+    if account.auth_provider != "google":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tài khoản này đã có mật khẩu, hãy dùng chức năng đổi mật khẩu",
+        )
+
+    account.password_hash = hash_password(body.new_password)
+    # Tu day tai khoan co mat khau THAT -> khong con di duong set-password nua,
+    # va /auth/change-password bat dau hoat dong binh thuong. Dang nhap bang
+    # Google VAN duoc: oauth_google() tim theo email va giu nguyen
+    # `auth_provider` cua tai khoan da ton tai.
+    account.auth_provider = "password"
+    # Giong /auth/change-password: THU HOI moi token cu (migration 0018). O day
+    # y nghia bao mat con ro hon - neu truoc do co phien nao khac dang mo tren
+    # tai khoan chua co mat khau, chung phai bi dang xuat.
+    account.password_changed_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(account)
+
+    login_res = _login_response(account)
+    return ChangePasswordResponse(
+        access_token=login_res.access_token,
+        token_type=login_res.token_type,
+        expires_in=login_res.expires_in,
+        refresh_token=login_res.refresh_token,
+        user=login_res.user,
+        detail="Đặt mật khẩu thành công",
     )
 
 
@@ -201,6 +365,7 @@ def me(
         patient_id=account.patient_id,
         doctor_id=account.doctor_id,
         profile_completed=profile_completed,
+        auth_provider=account.auth_provider,
     )
 
 
