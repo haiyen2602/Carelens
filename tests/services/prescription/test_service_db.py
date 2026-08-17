@@ -7,6 +7,7 @@ nhân trong fixture — ở đây tự tạo để test không phụ thuộc scr
 Không cần webcam, không cần mạng ngoài — chỉ SQL.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -14,8 +15,19 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
+from backend.config import get_settings
 from backend.db.base import SessionLocal, engine
-from backend.db.models import DoseEvent, Patient, Prescription
+from backend.db.models import (
+    DoseEvent,
+    DoseOccurrence,
+    MedicationPlan,
+    Patient,
+    Prescription,
+    PrescriptionItem,
+    ScheduleRule,
+    ScheduleRuleCycle,
+    ScheduleRuleTime,
+)
 from backend.services.drug_knowledge.v2_agent import get_v2_agent_knowledge_service
 from backend.services.prescription import (
     KhongTimThayError,
@@ -25,6 +37,7 @@ from backend.services.prescription import (
     duyet_phac_do,
     lay_phac_do,
     liet_ke_phac_do,
+    sua_phac_do,
     tao_phac_do,
     tu_choi_phac_do,
 )
@@ -61,6 +74,26 @@ def benh_nhan(db):
     db.add(p)
     db.commit()
     yield p
+    v2_item_ids = [row[0] for row in db.query(PrescriptionItem.id).filter(PrescriptionItem.patient_id == p.id).all()]
+    plan_ids = [row[0] for row in db.query(MedicationPlan.id).filter(MedicationPlan.patient_id == p.id).all()]
+    rule_ids = (
+        [row[0] for row in db.query(ScheduleRule.id).filter(ScheduleRule.medication_plan_id.in_(plan_ids)).all()]
+        if plan_ids
+        else []
+    )
+    if rule_ids:
+        db.query(ScheduleRuleTime).filter(ScheduleRuleTime.schedule_rule_id.in_(rule_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(ScheduleRuleCycle).filter(ScheduleRuleCycle.schedule_rule_id.in_(rule_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(ScheduleRule).filter(ScheduleRule.id.in_(rule_ids)).delete(synchronize_session=False)
+    if v2_item_ids:
+        db.query(PrescriptionItem).filter(PrescriptionItem.id.in_(v2_item_ids)).delete(synchronize_session=False)
+    if plan_ids:
+        db.query(MedicationPlan).filter(MedicationPlan.id.in_(plan_ids)).delete(synchronize_session=False)
+    db.query(DoseOccurrence).filter(DoseOccurrence.patient_id == p.id).delete(synchronize_session=False)
     db.query(DoseEvent).filter(DoseEvent.patient_id == p.id).delete(synchronize_session=False)
     db.query(Prescription).filter(Prescription.patient_id == p.id).delete(synchronize_session=False)
     db.query(Patient).filter(Patient.id == p.id).delete(synchronize_session=False)
@@ -84,6 +117,15 @@ NGAY_MAI = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
 def _item(thuoc, so_vien=1, gio=("08:00",)):
     return {"drug_id": thuoc.id, "ten_thuoc": thuoc.ten_thuoc, "lieu_dung": f"{so_vien} đơn vị",
             "so_vien_moi_lan": so_vien, "gio_nhac": list(gio)}
+
+
+def _set_prescription_v2_mode(monkeypatch, mode: str) -> None:
+    monkeypatch.setenv("PRESCRIPTION_V2_MODE", mode)
+    get_settings.cache_clear()
+
+
+def _restore_prescription_v2_mode() -> None:
+    get_settings.cache_clear()
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +176,190 @@ def test_bac_si_tu_go_thuoc_khong_co_trong_danh_muc_van_ke_duoc(db, benh_nhan):
     )
 
     assert presc.items[0]["drug_id"] == ""
+
+
+def test_shadow_mode_writes_resolved_v2_sidecar_and_stops_intent(db, benh_nhan, thuoc_that, monkeypatch, caplog):
+    _set_prescription_v2_mode(monkeypatch, "shadow")
+    monkeypatch.setenv("DOSE_RUNTIME_MODE", "shadow")
+    get_settings.cache_clear()
+    try:
+        caplog.set_level(logging.INFO, logger="backend.services.prescription.service")
+        item = _item(thuoc_that, gio=("08:00", "20:00"))
+        item.update({"doses_per_day": 2, "thoi_diem_dung": "Sau \u0103n"})
+        presc = tao_phac_do(
+            db,
+            patient_id=benh_nhan.id,
+            doctor_id="bs1",
+            items=[item],
+            duration_days=2,
+            start_date=NGAY_MAI,
+        )
+        sidecar = db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == presc.id).one()
+        assert sidecar.drug_product_id is not None
+        assert sidecar.status == "DRAFT"
+        assert sidecar.end_date.isoformat() == (datetime.fromisoformat(NGAY_MAI) + timedelta(days=1)).date().isoformat()
+        assert any(
+            "prescription_v2_shadow" in record.getMessage()
+            and "mismatch=False" in record.getMessage()
+            and presc.id in record.getMessage()
+            for record in caplog.records
+        )
+
+        duyet_phac_do(db, presc.id, doctor_id="bs_duyet")
+        assert db.query(MedicationPlan).filter(MedicationPlan.prescription_item_id == sidecar.id).one().status == "ACTIVE"
+        assert db.query(DoseOccurrence).filter(DoseOccurrence.prescription_item_id == sidecar.id).count() == 4
+
+        da_dung, _ = dung_phac_do(db, presc.id, doctor_id="bs_duyet")
+        assert da_dung.status == "stopped"
+        assert db.query(MedicationPlan).filter(MedicationPlan.prescription_item_id == sidecar.id).one().status == "STOPPED"
+        assert {row.status for row in db.query(DoseOccurrence).filter(DoseOccurrence.prescription_item_id == sidecar.id)} == {"CANCELLED"}
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_shadow_mode_keeps_unresolved_drug_in_review_required(db, benh_nhan, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "shadow")
+    try:
+        presc = tao_phac_do(
+            db,
+            patient_id=benh_nhan.id,
+            doctor_id="bs1",
+            items=[{"ten_thuoc": "Thuá»‘c kÃª tay", "lieu_dung": "1 viÃªn", "gio_nhac": ["08:00"], "thoi_diem_dung": "Sau \u0103n"}],
+            duration_days=1,
+            start_date=NGAY_MAI,
+        )
+        sidecar = db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == presc.id).one()
+        assert sidecar.drug_product_id is None
+        assert sidecar.status == "REVIEW_REQUIRED"
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_shadow_edit_supersedes_only_future_v2_occurrences(db, benh_nhan, thuoc_that, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "shadow")
+    monkeypatch.setenv("DOSE_RUNTIME_MODE", "shadow")
+    get_settings.cache_clear()
+    try:
+        original = _item(thuoc_that, gio=("08:00",))
+        original["thoi_diem_dung"] = "Sau \u0103n"
+        presc = tao_phac_do(
+            db,
+            patient_id=benh_nhan.id,
+            doctor_id="bs1",
+            items=[original],
+            duration_days=1,
+            start_date=NGAY_MAI,
+        )
+        duyet_phac_do(db, presc.id, doctor_id="bs_duyet")
+        replacement = _item(thuoc_that, gio=("20:00",))
+        replacement["thoi_diem_dung"] = "Sau \u0103n"
+
+        sua_phac_do(db, presc.id, doctor_id="bs_duyet", items=[replacement])
+
+        occurrences = db.query(DoseOccurrence).filter(DoseOccurrence.patient_id == benh_nhan.id).all()
+        assert {occurrence.status for occurrence in occurrences} == {"CANCELLED", "SCHEDULED"}
+        assert len({occurrence.generation_key for occurrence in occurrences}) == 2
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_legacy_mode_does_not_write_v2_sidecar(db, benh_nhan, thuoc_that, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "legacy")
+    try:
+        presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)])
+        assert db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == presc.id).count() == 0
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_shadow_approve_resyncs_legacy_created_prescription(db, benh_nhan, thuoc_that, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "legacy")
+    try:
+        item = _item(thuoc_that)
+        item["thoi_diem_dung"] = "Sau \u0103n"
+        presc = tao_phac_do(
+            db,
+            patient_id=benh_nhan.id,
+            doctor_id="bs1",
+            items=[item],
+            duration_days=1,
+            start_date=NGAY_MAI,
+        )
+        _set_prescription_v2_mode(monkeypatch, "shadow")
+        duyet_phac_do(db, presc.id, doctor_id="bs_duyet")
+        assert db.query(MedicationPlan).filter(MedicationPlan.patient_id == benh_nhan.id).one().status == "ACTIVE"
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_shadow_create_rolls_back_legacy_write_when_sidecar_fails(db, benh_nhan, thuoc_that, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "shadow")
+
+    def fail_sync(*_args, **_kwargs):
+        raise RuntimeError("sidecar write failure")
+
+    monkeypatch.setattr("backend.services.prescription.service.sync_prescription_schedule", fail_sync)
+    try:
+        with pytest.raises(RuntimeError, match="sidecar write failure"):
+            tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)])
+        assert db.query(Prescription).filter(Prescription.patient_id == benh_nhan.id).count() == 0
+        assert db.query(PrescriptionItem).filter(PrescriptionItem.patient_id == benh_nhan.id).count() == 0
+    finally:
+        _restore_prescription_v2_mode()
+
+
+def test_mutation_lock_blocks_a_second_postgres_session(db, benh_nhan, thuoc_that):
+    presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[_item(thuoc_that)])
+    locker = SessionLocal()
+    contender = SessionLocal()
+    try:
+        lay_phac_do(locker, presc.id, for_update=True)
+        contender.execute(text("SET LOCAL lock_timeout = '100ms'"))
+        with pytest.raises(OperationalError):
+            lay_phac_do(contender, presc.id, for_update=True)
+    finally:
+        contender.rollback()
+        contender.close()
+        locker.rollback()
+        locker.close()
+
+
+def test_shadow_stop_cancels_future_v2_occurrence(db, benh_nhan, thuoc_that, monkeypatch):
+    _set_prescription_v2_mode(monkeypatch, "shadow")
+    try:
+        item = _item(thuoc_that)
+        item["thoi_diem_dung"] = "Sau \u0103n"
+        presc = tao_phac_do(
+            db,
+            patient_id=benh_nhan.id,
+            doctor_id="bs1",
+            items=[item],
+            duration_days=1,
+            start_date=NGAY_MAI,
+        )
+        duyet_phac_do(db, presc.id, doctor_id="bs_duyet")
+        sidecar = db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == presc.id).one()
+        plan = db.query(MedicationPlan).filter(MedicationPlan.prescription_item_id == sidecar.id).one()
+        occurrence = DoseOccurrence(
+                medication_plan_id=plan.id,
+                prescription_item_id=sidecar.id,
+                patient_id=benh_nhan.id,
+                drug_product_id=sidecar.drug_product_id,
+                legacy_drug_id=sidecar.legacy_drug_id,
+                scheduled_at=datetime.now(UTC) + timedelta(days=1),
+                generation_key=f"test-stop-conflict-{uuid.uuid4()}",
+                status="SCHEDULED",
+        )
+        db.add(occurrence)
+        db.commit()
+
+        da_dung, _ = dung_phac_do(db, presc.id, doctor_id="bs_duyet")
+        db.refresh(presc)
+        assert da_dung.status == "stopped"
+        assert presc.status == "stopped"
+        assert db.query(DoseOccurrence).filter(DoseOccurrence.id == occurrence.id).one().status == "CANCELLED"
+    finally:
+        _restore_prescription_v2_mode()
 
 
 # ---------------------------------------------------------------------------

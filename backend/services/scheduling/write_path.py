@@ -24,6 +24,7 @@ from backend.db.models import (
     ScheduleRuleCycle,
     ScheduleRuleTime,
 )
+from backend.services.scheduling.dose_state import cancel_future_dose_occurrences
 
 DEFAULT_TIMEZONE = "Asia/Ho_Chi_Minh"
 WRITE_SOURCE = "DOCTOR_WRITE_PATH"
@@ -331,4 +332,84 @@ def activate_prescription_schedule(db: Session, prescription_id: str) -> None:
     db.flush()
 
 
-__all__ = ["activate_prescription_schedule", "sync_prescription_schedule"]
+def cancel_prescription_future_occurrences(
+    db: Session,
+    *,
+    prescription_id: str,
+    event_at: datetime,
+    source: str,
+    actor_type: str | None = None,
+    actor_id: str | None = None,
+) -> int:
+    """Cancel only future V2 occurrences before an edit or stop mutates intent."""
+
+    items = list(
+        db.execute(
+            select(PrescriptionItem)
+            .where(
+                PrescriptionItem.prescription_id == prescription_id,
+                PrescriptionItem.migration_source == WRITE_SOURCE,
+            )
+            .with_for_update()
+        ).scalars()
+    )
+    return cancel_future_dose_occurrences(
+        db,
+        prescription_item_ids={item.id for item in items},
+        event_at=event_at,
+        source=source,
+        actor_type=actor_type,
+        actor_id=actor_id,
+    )
+
+
+def stop_prescription_schedule(
+    db: Session,
+    prescription_id: str,
+    *,
+    event_at: datetime | None = None,
+    actor_type: str | None = None,
+    actor_id: str | None = None,
+) -> int:
+    """Stop V2 intent and cancel only future non-terminal V2 occurrences."""
+
+    event_at = event_at or datetime.now(UTC)
+    cancelled = cancel_prescription_future_occurrences(
+        db,
+        prescription_id=prescription_id,
+        event_at=event_at,
+        source="PRESCRIPTION_STOP",
+        actor_type=actor_type,
+        actor_id=actor_id,
+    )
+    items = list(
+        db.execute(
+            select(PrescriptionItem)
+            .where(
+                PrescriptionItem.prescription_id == prescription_id,
+                PrescriptionItem.migration_source == WRITE_SOURCE,
+            )
+            .with_for_update()
+        ).scalars()
+    )
+
+    for item in items:
+        item.status = "STOPPED"
+        plan_id = _deterministic_id("medication-plan", item.id)
+        rule_id = _deterministic_id("schedule-rule", plan_id)
+        plan = db.get(MedicationPlan, plan_id)
+        rule = db.get(ScheduleRule, rule_id)
+        if plan is not None:
+            plan.status = "STOPPED"
+        if rule is not None:
+            rule.status = "STOPPED"
+    db.flush()
+    return cancelled
+
+
+__all__ = [
+    "activate_prescription_schedule",
+    "cancel_prescription_future_occurrences",
+    "stop_prescription_schedule",
+    "sync_prescription_schedule",
+]

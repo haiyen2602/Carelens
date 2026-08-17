@@ -26,8 +26,16 @@ class InvalidReminderConfigurationError(VmecError):
     http_status = 422
 
 
+class V2ScheduleStopConflictError(VmecError):
+    """A V2 plan with generated occurrences cannot be stopped before APP-4."""
+
+    ma_loi = "V2_SCHEDULE_STOP_CONFLICT"
+    http_status = 409
+
+
 __all__ = [
     "DoseOccurrenceNotFoundError",
     "InvalidDoseTransitionError",
     "InvalidReminderConfigurationError",
+    "V2ScheduleStopConflictError",
 ]

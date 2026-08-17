@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
+from hashlib import sha256
 from uuid import NAMESPACE_URL, uuid5
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -114,9 +115,38 @@ def _eligible_rule(
     return item, product, timezone, times, cycle
 
 
-def _generation_key(rule_id: str, local_date: date, local_time: time, timezone: str) -> str:
+def _schedule_revision(
+    *, item: PrescriptionItem, plan: MedicationPlan, rule: ScheduleRule, cycle: ScheduleRuleCycle | None, times: list[time]
+) -> str:
+    """Fingerprint executable schedule semantics, not mutable database timestamps.
+
+    Editing a schedule must create a new future occurrence identity after the
+    prior future occurrence has been cancelled.  A stable content fingerprint
+    permits retries to reuse that new identity without reusing the old one.
+    """
+
+    values = (
+        item.drug_product_id,
+        item.legacy_drug_id,
+        item.start_date.isoformat() if item.start_date else None,
+        item.end_date.isoformat() if item.end_date else None,
+        item.doses_per_day,
+        plan.timezone,
+        rule.rule_type,
+        rule.frequency,
+        rule.interval_value,
+        rule.interval_unit,
+        tuple(local_time.isoformat() for local_time in times),
+        (cycle.anchor_date.isoformat(), cycle.on_days, cycle.off_days) if cycle else None,
+    )
+    return sha256(repr(values).encode("utf-8")).hexdigest()[:16]
+
+
+def _generation_key(
+    rule_id: str, schedule_revision: str, local_date: date, local_time: time, timezone: str
+) -> str:
     return (
-        f"rule:{rule_id}:local-date:{local_date.isoformat()}:"
+        f"rule:{rule_id}:revision:{schedule_revision}:local-date:{local_date.isoformat()}:"
         f"local-time:{local_time.isoformat()}:timezone:{timezone}"
     )
 
@@ -132,10 +162,11 @@ def _insert_occurrence(
     local_time: time,
     timezone_name: str,
     scheduled_at: datetime,
+    schedule_revision: str,
 ) -> bool:
     """Stage one row, returning False when a previous retry already wrote it."""
 
-    generation_key = _generation_key(rule.id, local_date, local_time, timezone_name)
+    generation_key = _generation_key(rule.id, schedule_revision, local_date, local_time, timezone_name)
     if db.execute(
         select(DoseOccurrence.id).where(DoseOccurrence.generation_key == generation_key)
     ).scalar_one_or_none() is not None:
@@ -162,7 +193,7 @@ def _insert_occurrence(
 
 
 def generate_dose_occurrences(
-    db: Session, *, window_start: date, window_end: date
+    db: Session, *, window_start: date, window_end: date, medication_plan_ids: set[str] | None = None
 ) -> GenerationResult:
     """Generate active V2 occurrences in one explicit finite local-date window.
 
@@ -174,9 +205,12 @@ def generate_dose_occurrences(
     if window_end < window_start:
         raise ValueError("window_end must be on or after window_start")
     result = GenerationResult()
-    plans = db.execute(
-        select(MedicationPlan).where(MedicationPlan.status == ACTIVE)
-    ).scalars()
+    plan_query = select(MedicationPlan).where(MedicationPlan.status == ACTIVE)
+    if medication_plan_ids is not None:
+        if not medication_plan_ids:
+            return GenerationResult()
+        plan_query = plan_query.where(MedicationPlan.id.in_(medication_plan_ids))
+    plans = db.execute(plan_query.with_for_update()).scalars()
     for plan in plans:
         rules = db.execute(
             select(ScheduleRule).where(
@@ -190,6 +224,7 @@ def generate_dose_occurrences(
                 result.invalid_rules += 1
                 continue
             item, product, timezone, times, cycle = eligible
+            schedule_revision = _schedule_revision(item=item, plan=plan, rule=rule, cycle=cycle, times=times)
             range_start = max(window_start, item.start_date)
             range_end = min(window_end, item.end_date) if item.end_date is not None else window_end
             if range_end < range_start:
@@ -216,6 +251,7 @@ def generate_dose_occurrences(
                             local_time=local_time,
                             timezone_name=timezone.key,
                             scheduled_at=utc_instant,
+                            schedule_revision=schedule_revision,
                         ):
                             result.inserted += 1
                         else:
@@ -225,4 +261,51 @@ def generate_dose_occurrences(
     return result
 
 
-__all__ = ["GenerationResult", "generate_dose_occurrences"]
+def generate_prescription_dose_occurrences(
+    db: Session, *, prescription_id: str, now: datetime | None = None
+) -> GenerationResult:
+    """Generate one finite, prescription-scoped V2 schedule window.
+
+    APP-3 writes an inclusive end date for every complete doctor schedule.
+    An active row without that bound is intentionally not generated here; a
+    future worker must provide its own explicit bounded window.
+    """
+
+    now = (now or datetime.now(UTC)).astimezone(UTC)
+    pairs = list(
+        db.execute(
+            select(MedicationPlan, PrescriptionItem).join(
+                PrescriptionItem, PrescriptionItem.id == MedicationPlan.prescription_item_id
+            ).where(
+                PrescriptionItem.prescription_id == prescription_id,
+                PrescriptionItem.status == ACTIVE,
+                MedicationPlan.status == ACTIVE,
+            )
+        ).all()
+    )
+    result = GenerationResult()
+    for plan, item in pairs:
+        if item.start_date is None or item.end_date is None:
+            result.invalid_rules += 1
+            continue
+        try:
+            current_local_date = now.astimezone(ZoneInfo(plan.timezone or "")).date()
+        except ZoneInfoNotFoundError:
+            result.invalid_rules += 1
+            continue
+        if item.end_date < current_local_date:
+            continue
+        generated = generate_dose_occurrences(
+            db,
+            window_start=max(item.start_date, current_local_date),
+            window_end=item.end_date,
+            medication_plan_ids={plan.id},
+        )
+        result.inserted += generated.inserted
+        result.existing += generated.existing
+        result.invalid_rules += generated.invalid_rules
+        result.skipped_local_dates += generated.skipped_local_dates
+    return result
+
+
+__all__ = ["GenerationResult", "generate_dose_occurrences", "generate_prescription_dose_occurrences"]

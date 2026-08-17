@@ -18,7 +18,7 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import CaregiverLink, DoseEvent, Patient  # noqa: E402
+from backend.db.models import Account, CaregiverLink, DoseEvent, Patient  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
 
 
@@ -38,6 +38,27 @@ def _seed_dose(patient_id: str, doctor_id: str | None = None) -> tuple[str, str]
     """Tra ve (patient_id, dose_id) - tao ca Patient lan DoseEvent."""
     db = SessionLocal()
     try:
+        accounts = (
+            ("acct-1", "patient", patient_id),
+            ("acct-2", "patient", "someone-else"),
+            ("cg-account-1", "caregiver", None),
+            ("cg-account-no-link", "caregiver", None),
+            ("doctor-account-1", "doctor", None),
+            ("doctor-account-2", "doctor", None),
+        )
+        for account_id, role, linked_patient_id in accounts:
+            if db.get(Account, account_id) is None:
+                db.add(
+                    Account(
+                        id=account_id,
+                        full_name=f"Dose status test {account_id}",
+                        email=f"{account_id}@example.local",
+                        password_hash="not-a-real-hash",
+                        role=role,
+                        status="active",
+                        patient_id=linked_patient_id,
+                    )
+                )
         db.add(Patient(id=patient_id, full_name="Bệnh nhân dose test", doctor_id=doctor_id))
         now = datetime.now(UTC)
         dose = DoseEvent(
@@ -63,6 +84,18 @@ def _cleanup(patient_id: str) -> None:
         db.query(CaregiverLink).filter(CaregiverLink.patient_id == patient_id).delete(synchronize_session=False)
         db.query(DoseEvent).filter(DoseEvent.patient_id == patient_id).delete(synchronize_session=False)
         db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        db.query(Account).filter(
+            Account.id.in_(
+                (
+                    "acct-1",
+                    "acct-2",
+                    "cg-account-1",
+                    "cg-account-no-link",
+                    "doctor-account-1",
+                    "doctor-account-2",
+                )
+            )
+        ).delete(synchronize_session=False)
         db.commit()
     finally:
         db.close()
@@ -184,10 +217,33 @@ async def test_other_doctor_can_update(client):
 
 @pytest.mark.asyncio
 async def test_unknown_dose_returns_404(client):
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id="doctor-account-1",
+                full_name="Dose status test doctor",
+                email="doctor-account-1@example.local",
+                password_hash="not-a-real-hash",
+                role="doctor",
+                status="active",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
     token = create_access_token(sub="doctor-account-1", role="doctor")
-    response = await client.patch(
-        f"/api/v1/doses/{uuid.uuid4().hex}",
-        json={"status": "TAKEN"},
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 404
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{uuid.uuid4().hex}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 404
+    finally:
+        db = SessionLocal()
+        try:
+            db.query(Account).filter(Account.id == "doctor-account-1").delete(synchronize_session=False)
+            db.commit()
+        finally:
+            db.close()

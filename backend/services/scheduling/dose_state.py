@@ -29,21 +29,21 @@ TAKEN = "TAKEN"
 DELAYED = "DELAYED"
 MISSED = "MISSED"
 SKIPPED = "SKIPPED"
+CANCELLED = "CANCELLED"
 
 QUEUED = "QUEUED"
 PROCESSING = "PROCESSING"
 RETRY = "RETRY"
 SENT = "SENT"
-CANCELLED = "CANCELLED"
 
 DOSE_WINDOW_HALF_WIDTH = timedelta(minutes=30)
 NOTIFICATION_TYPE_DOSE_REMINDER = "DOSE_REMINDER"
 RECIPIENT_PATIENT = "PATIENT"
 
-_TERMINAL_STATES = frozenset({TAKEN, DELAYED, MISSED, SKIPPED})
+_TERMINAL_STATES = frozenset({TAKEN, DELAYED, MISSED, SKIPPED, CANCELLED})
 _ALLOWED_TARGETS = {
     SCHEDULED: frozenset({DUE}),
-    DUE: _TERMINAL_STATES,
+    DUE: frozenset({TAKEN, DELAYED, MISSED, SKIPPED}),
 }
 
 
@@ -296,6 +296,58 @@ def transition_dose_occurrence(
     return result
 
 
+def cancel_future_dose_occurrences(
+    db: Session,
+    *,
+    prescription_item_ids: set[str],
+    event_at: datetime,
+    source: str,
+    actor_type: str | None = None,
+    actor_id: str | None = None,
+) -> int:
+    """Cancel only still-scheduled future doses and retain immutable history.
+
+    Cancellation is an APP-4 system command, not a patient dose-state action.
+    It deliberately cannot touch terminal occurrences and it does not invoke
+    the safety domain.  Pending notification jobs are cancelled in the same
+    transaction and every changed occurrence receives one immutable event.
+    """
+
+    event_at = _require_utc_instant(event_at, "event_at")
+    if not prescription_item_ids:
+        return 0
+    occurrences = list(
+        db.execute(
+            select(DoseOccurrence)
+            .where(
+                DoseOccurrence.prescription_item_id.in_(prescription_item_ids),
+                DoseOccurrence.status == SCHEDULED,
+                DoseOccurrence.scheduled_at > event_at,
+            )
+            .with_for_update()
+        ).scalars()
+    )
+    cancelled = 0
+    for occurrence in occurrences:
+        occurrence.status = CANCELLED
+        occurrence.status_reason = "PRESCRIPTION_SCHEDULE_SUPERSEDED"
+        occurrence.updated_at = event_at
+        _append_event(
+            db,
+            occurrence,
+            event_type="OCCURRENCE_CANCELLED",
+            event_at=event_at,
+            source=source,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            metadata={"from_status": SCHEDULED, "to_status": CANCELLED},
+        )
+        _cancel_pending_jobs(db, occurrence, event_at=event_at, source=source)
+        cancelled += 1
+    db.flush()
+    return cancelled
+
+
 def _validated_offsets(offsets: Sequence[timedelta]) -> tuple[timedelta, ...]:
     unique_offsets = tuple(sorted(set(offsets)))
     if any(offset < timedelta() or offset > DOSE_WINDOW_HALF_WIDTH for offset in unique_offsets):
@@ -504,6 +556,7 @@ __all__ = [
     "ReminderAdvanceResult",
     "StateTransitionResult",
     "advance_dose_occurrences",
+    "cancel_future_dose_occurrences",
     "claim_notification_job",
     "complete_notification_job",
     "transition_dose_occurrence",

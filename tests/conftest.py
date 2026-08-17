@@ -6,6 +6,8 @@ from httpx import ASGITransport, AsyncClient
 
 from backend.api.security import INTERNAL_SECRET_HEADER
 from backend.config import get_settings
+from backend.db.base import SessionLocal
+from backend.db.models import Account
 from backend.main import app
 from backend.services.auth import create_access_token
 
@@ -37,8 +39,25 @@ async def client():
         INTERNAL_SECRET_HEADER: settings.internal_auth_secret,
         "Authorization": f"Bearer {token}",
     }
-    async with AsyncClient(transport=transport, base_url="http://test", headers=headers) as ac:
-        yield ac
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id=_TEST_CALLER_ID,
+                full_name="Test caregiver caller",
+                email="test-caregiver-conftest@example.local",
+                password_hash="not-a-real-hash",
+                role="caregiver",
+                status="active",
+            )
+        )
+        db.commit()
+        async with AsyncClient(transport=transport, base_url="http://test", headers=headers) as ac:
+            yield ac
+    finally:
+        db.query(Account).filter(Account.id == _TEST_CALLER_ID).delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 @pytest.fixture

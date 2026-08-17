@@ -19,6 +19,7 @@ from backend.services.scheduling.dose_state import (
     SKIPPED,
     TAKEN,
     advance_dose_occurrences,
+    cancel_future_dose_occurrences,
     claim_notification_job,
     complete_notification_job,
     transition_dose_occurrence,
@@ -237,3 +238,36 @@ def test_state_and_events_roll_back_together(db: Session) -> None:
     assert db.get(DoseOccurrence, occurrence.id).status == "SCHEDULED"
     assert db.execute(select(DoseEventLog)).scalars().all() == []
     assert db.execute(select(NotificationJob)).scalars().all() == []
+
+
+def test_prescription_cancellation_preserves_terminal_history_and_cancels_jobs(db: Session) -> None:
+    occurrence = _occurrence(db)
+    occurrence.scheduled_at = SCHEDULED_AT + timedelta(days=1)
+    occurrence.prescription_item_id = "item-1"
+    db.add(
+        NotificationJob(
+            id="job-1",
+            patient_id="patient-1",
+            dose_occurrence_id=occurrence.id,
+            notification_type="DOSE_REMINDER",
+            recipient_type="PATIENT",
+            scheduled_at=occurrence.scheduled_at,
+            status="QUEUED",
+            idempotency_key="job-key-1",
+            payload={},
+        )
+    )
+    db.flush()
+
+    cancelled = cancel_future_dose_occurrences(
+        db,
+        prescription_item_ids={"item-1"},
+        event_at=SCHEDULED_AT,
+        source="PRESCRIPTION_STOP",
+    )
+
+    assert cancelled == 1
+    assert occurrence.status == CANCELLED
+    assert db.get(NotificationJob, "job-1").status == CANCELLED
+    assert "OCCURRENCE_CANCELLED" in _event_types(db)
+    assert not any(event.startswith("SAFETY_") for event in _event_types(db))

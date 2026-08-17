@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from backend.db.models import (
+    DoseEventLog,
     DoseOccurrence,
     DrugIdMap,
     DrugProduct,
     MedicationPlan,
+    NotificationJob,
     Patient,
     Prescription,
     PrescriptionItem,
@@ -19,7 +23,11 @@ from backend.db.models import (
     ScheduleRuleTime,
 )
 from backend.models.schemas import PrescriptionItemIn
-from backend.services.scheduling.write_path import activate_prescription_schedule, sync_prescription_schedule
+from backend.services.scheduling.write_path import (
+    activate_prescription_schedule,
+    stop_prescription_schedule,
+    sync_prescription_schedule,
+)
 
 TABLES = (
     Patient.__table__,
@@ -32,6 +40,8 @@ TABLES = (
     ScheduleRuleTime.__table__,
     ScheduleRuleCycle.__table__,
     DoseOccurrence.__table__,
+    DoseEventLog.__table__,
+    NotificationJob.__table__,
 )
 
 
@@ -169,3 +179,45 @@ def test_legacy_request_remains_valid_without_db4e_fields() -> None:
     assert item.has_cycle is False
     assert item.cycle_on_days is None
     assert item.cycle_off_days is None
+
+
+def test_stop_marks_v2_schedule_intent_without_occurrences(db: Session) -> None:
+    prescription = _prescription([_valid_item()])
+    db.add(prescription)
+    db.flush()
+    sync_prescription_schedule(db, prescription)
+    activate_prescription_schedule(db, prescription.id)
+
+    stop_prescription_schedule(db, prescription.id)
+    db.commit()
+
+    assert db.execute(select(PrescriptionItem)).scalar_one().status == "STOPPED"
+    assert db.execute(select(MedicationPlan)).scalar_one().status == "STOPPED"
+    assert db.execute(select(ScheduleRule)).scalar_one().status == "STOPPED"
+
+
+def test_stop_cancels_future_v2_occurrence_and_preserves_history(db: Session) -> None:
+    prescription = _prescription([_valid_item()])
+    db.add(prescription)
+    db.flush()
+    sync_prescription_schedule(db, prescription)
+    item = db.execute(select(PrescriptionItem)).scalar_one()
+    db.add(
+        DoseOccurrence(
+            id="occurrence-1",
+            prescription_item_id=item.id,
+                patient_id="patient-1",
+                scheduled_at=datetime(2026, 8, 17, 1, tzinfo=UTC),
+                status="SCHEDULED",
+                generation_key="test-occurrence-1",
+        )
+    )
+    db.commit()
+
+    cancelled = stop_prescription_schedule(
+        db, prescription.id, event_at=datetime(2026, 8, 16, 1, tzinfo=UTC)
+    )
+
+    assert cancelled == 1
+    assert db.get(DoseOccurrence, "occurrence-1").status == "CANCELLED"
+    assert db.execute(select(PrescriptionItem)).scalar_one().status == "STOPPED"
