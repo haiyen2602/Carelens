@@ -1,13 +1,28 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field
+
+from backend.services.email_identity import normalize_email
+
+# SUA 2026-08-17 (yeu cau PM: "Google va dang nhap thu cong cung 1 email thi
+# phai la CUNG 1 tai khoan"): chuan hoa email NGAY O BIEN thay vi o tung route.
+# Truoc day "MCK@gmail.com" (dang ky thu cong) va "mck@gmail.com" (Google luon
+# tra ve dang chuan) la 2 tai khoan khac nhau, vi `account.email` co UNIQUE
+# nhung Postgres so sanh chuoi phan biet chu hoa/thuong.
+#
+# Dat o day (pydantic BeforeValidator) de dung duoc cho CA duong doc va duong
+# ghi trong cung 1 dinh nghia: request nao khai bao `NormalizedEmail` thi email
+# vao route DA la dang chuan, khong route nao phai tu nho goi .lower().
+# `BeforeValidator` chay TRUOC EmailStr nen " MCK@Gmail.com " vua duoc lam sach
+# vua van bi kiem tra dinh dang email.
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(normalize_email)]
 
 
 class LoginRequest(BaseModel):
     """POST /api/v1/auth/login (api-contracts.md §1)."""
 
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=1)
 
 
@@ -21,7 +36,7 @@ class RegisterRequest(BaseModel):
     """
 
     full_name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=8, max_length=128)
     role: Literal["patient"] = "patient"
 
@@ -35,13 +50,13 @@ class VerifyEmailRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     """POST /api/v1/auth/resend-verification."""
 
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class ForgotPasswordRequest(BaseModel):
     """POST /api/v1/auth/forgot-password."""
 
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class ResetPasswordRequest(BaseModel):
@@ -111,7 +126,7 @@ class OAuthLoginRequest(BaseModel):
     tren email, va Google da xac thuc chinh email do (email_verified).
     """
 
-    email: EmailStr
+    email: NormalizedEmail
     full_name: str = Field(..., min_length=1, max_length=100)
     provider_account_id: str = Field(..., min_length=1)
     # Google tra `email_verified=false` cho mot so tai khoan Workspace cau hinh
@@ -166,7 +181,7 @@ class AccountCreateRequest(BaseModel):
     (text tu do, admin go tay khop du lieu demo co san vd 'demo-patient-01')
     - CHUA co UI chon tu danh sach, ngoai pham vi (xem tasks/TASK-010-auth-api.md)."""
 
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=1)
     role: AccountRole

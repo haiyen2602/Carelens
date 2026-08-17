@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.db.base import SessionLocal  # noqa: E402
 from backend.db.models import Account  # noqa: E402
 from backend.services.auth import hash_password  # noqa: E402
+from backend.services.email_identity import find_account_by_email, normalize_email  # noqa: E402
 
 
 def main() -> int:
@@ -48,14 +49,21 @@ def main() -> int:
 
     db = SessionLocal()
     try:
-        existing = db.query(Account).filter(Account.email == args.email).first()
+        # Script nay KHONG di qua pydantic schema nen phai tu chuan hoa email
+        # (route thi da co NormalizedEmail lo viec do) - neu khong, admin tao
+        # bang tay voi "Admin@vmec04.dev" se khong dang nhap duoc bang
+        # "admin@vmec04.dev" va se vi pham unique index
+        # `ux_account_email_normalized` neu email chuan da ton tai.
+        email = normalize_email(args.email)
+
+        existing = find_account_by_email(db, email)
         if existing is not None:
-            print(f"LOI: email {args.email!r} da co tai khoan (role={existing.role}).")
+            print(f"LOI: email {email!r} da co tai khoan (role={existing.role}).")
             return 1
 
         account = Account(
             full_name=args.full_name,
-            email=args.email,
+            email=email,
             password_hash=hash_password(args.password),
             role="admin",
         )

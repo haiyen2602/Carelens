@@ -235,6 +235,28 @@ async def test_create_account_with_duplicate_email_returns_409(client, admin_tok
 
 
 @pytest.mark.asyncio
+async def test_create_account_with_email_differing_only_by_case_returns_409(client, admin_token):
+    """SUA 2026-08-17 (migration 0026): email la danh tinh KHONG phan biet chu
+    hoa/thuong. Neu admin tao duoc "MCK@..." khi da co "mck@...", he thong lai
+    co 2 tai khoan cho cung 1 nguoi - dung bug vua sua o duong dang ky/Google."""
+    existing = _make_account("patient")
+    try:
+        response = await client.post(
+            "/api/v1/accounts",
+            json={
+                "email": existing["email"].upper(),
+                "password": "another-password-123",
+                "full_name": "Dup Chữ Hoa",
+                "role": "patient",
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 409
+    finally:
+        _cleanup(existing["id"])
+
+
+@pytest.mark.asyncio
 async def test_list_accounts_requires_admin_role(client, doctor_token):
     response = await client.get("/api/v1/accounts", headers={"Authorization": f"Bearer {doctor_token}"})
     assert response.status_code == 403

@@ -17,6 +17,7 @@ from backend.db.models import Account, Patient
 from backend.models.schemas import AccountCreateRequest, AccountOut, AccountStatusUpdateRequest
 from backend.services.auth import hash_password
 from backend.services.doctor_watch import auto_watch_new_patient
+from backend.services.email_identity import find_account_by_email
 from backend.services.patient_id import generate_next_patient_id
 
 account_router = APIRouter()
@@ -28,7 +29,11 @@ async def create_account(
     db: Session = Depends(get_db),
     _admin: CurrentUser = Depends(require_role("admin")),
 ) -> Account:
-    if db.query(Account).filter(Account.email == body.email).first() is not None:
+    # Khong phan biet chu hoa/thuong (SUA 2026-08-17): admin tao tai khoan
+    # "MCK@gmail.com" khi da co "mck@gmail.com" phai bi tu choi 409, neu khong
+    # se sinh ra 2 tai khoan cho cung 1 nguoi. Xem
+    # backend/services/email_identity.py.
+    if find_account_by_email(db, body.email) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã có tài khoản")
 
     # SUA 2026-08-14: dong bo voi auth_routes.py::register() - truoc do

@@ -21,7 +21,7 @@ import uuid
 from datetime import UTC, date, datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, Index, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, Index, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -368,6 +368,22 @@ class Account(Base):
     - Patient la 1 khai niem khac, xem class Patient o tren)."""
 
     __tablename__ = "account"
+
+    # UNIQUE tren BIEU THUC `lower(btrim(email))` (migration 0026): "1 email =
+    # 1 tai khoan" khong phan biet chu hoa/thuong. UNIQUE tren cot `email` o
+    # duoi KHONG du - Postgres so sanh chuoi co phan biet chu hoa/thuong, nen
+    # "MCK@gmail.com" va "mck@gmail.com" la 2 dong hop le, tao ra 2 tai khoan
+    # cho cung 1 nguoi (bug that 2026-08-17: dang ky tay bang chu hoa roi bam
+    # "Login with Google" - Google tra ve email chuan hoa).
+    #
+    # Khai bao o day de model KHOP voi DB that, va de bieu thuc chi ton tai o
+    # 3 cho PHAI trung nhau tung chu: index nay, migration 0026, va
+    # backend/services/email_identity.py::account_email_key() (bieu thuc dung
+    # khi tra cuu - lech mot ky tu la Postgres bo qua index, moi lan dang nhap
+    # thanh 1 lan quet ca bang).
+    __table_args__ = (
+        Index("ux_account_email_normalized", text("lower(btrim(email))"), unique=True),
+    )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
