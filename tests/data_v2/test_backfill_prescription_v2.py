@@ -54,7 +54,7 @@ def test_backfill_maps_valid_item_and_creates_daily_schedule_rule() -> None:
     assert item["dose_text"] == "1 tablet"
     assert item["frequency_text"] == "after breakfast"
     assert item["instructions"] == "Use after meals"
-    assert item["end_date"] == date(2026, 8, 24)
+    assert item["end_date"] == date(2026, 8, 23)
     assert medication_plan["status"] == "ACTIVE"
     assert medication_plan["timezone"] == DEFAULT_TIMEZONE
     assert rule["times_of_day"] == ["08:00", "20:00"]

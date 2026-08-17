@@ -112,7 +112,7 @@ def parse_schedule_times(value: object) -> tuple[list[str] | None, str | None]:
 def parse_date_range(
     prescription: dict[str, Any], item: dict[str, Any]
 ) -> tuple[date | None, date | None, str | None]:
-    """Map legacy inclusive-day duration to V2's exclusive end-date boundary."""
+    """Map a legacy duration to DB-4D's inclusive V2 end-date boundary."""
 
     raw_start = item.get("start_date") if item.get("start_date") not in (None, "") else prescription.get("start_date")
     raw_duration = item.get("duration_days") if item.get("duration_days") not in (None, "") else prescription.get("duration_days")
@@ -128,7 +128,7 @@ def parse_date_range(
             raise ValueError
     except (TypeError, ValueError):
         return start, None, "INVALID_DURATION_DAYS"
-    return start, start + timedelta(days=duration), None
+    return start, start + timedelta(days=duration - 1), None
 
 
 def local_midnight_as_utc(value: date | None) -> datetime | None:

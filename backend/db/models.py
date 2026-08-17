@@ -18,7 +18,7 @@ migrations/versions/, chi duoc INSERT.
 """
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -32,6 +32,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    Time,
     UniqueConstraint,
     text,
 )
@@ -230,9 +231,6 @@ class Prescription(Base):
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     approved_by: Mapped[str | None] = mapped_column(String, nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # DB Architecture V2 additive columns. Nullable until backfill validates
-    # current rows and service cutover is planned.
-    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     prescribed_by: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     prescribed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source_type: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -333,7 +331,11 @@ class PrescriptionItem(Base):
     frequency_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # When set, ``end_date`` is an inclusive local clinical calendar date.
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    doses_per_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meal_instruction_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    meal_instruction_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str | None] = mapped_column(String, nullable=True)
     migration_source: Mapped[str | None] = mapped_column(String, nullable=True)
     migration_source_id: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -395,6 +397,41 @@ class ScheduleRule(Base):
     )
 
 
+class ScheduleRuleTime(Base):
+    """One normalized local wall-clock time within a DB-4D schedule rule.
+
+    ``schedule_rule_id`` intentionally has no FK until operational validation
+    is complete. The unique pair prevents duplicate per-rule daily times.
+    """
+
+    __tablename__ = "schedule_rule_time"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    schedule_rule_id: Mapped[str] = mapped_column(String, nullable=False)
+    local_time: Mapped[time] = mapped_column(Time, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (UniqueConstraint("schedule_rule_id", "local_time", name="uq_schedule_rule_time_local_time"),)
+
+
+class ScheduleRuleCycle(Base):
+    """Optional repeating on/off cycle attached one-to-one to a schedule rule.
+
+    Checks and the parent FK are intentionally delayed until DB-4D operational
+    validation; no scheduler consumes this table in the current task.
+    """
+
+    __tablename__ = "schedule_rule_cycle"
+
+    schedule_rule_id: Mapped[str] = mapped_column(String, primary_key=True)
+    anchor_date: Mapped[date] = mapped_column(Date, nullable=False)
+    on_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    off_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
 class DoseOccurrence(Base):
     """DB Architecture V2: one medicine / one scheduled dose."""
 
@@ -408,6 +445,9 @@ class DoseOccurrence(Base):
     legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True)
     schedule_rule_id: Mapped[str | None] = mapped_column(String, nullable=True)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    scheduled_local_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    scheduled_local_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String, nullable=True)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -427,6 +467,12 @@ class DoseOccurrence(Base):
         Index("ix_dose_occurrence_status_scheduled", "status", "scheduled_at"),
         Index("ix_dose_occurrence_patient_status_scheduled", "patient_id", "status", "scheduled_at"),
         Index("ix_dose_occurrence_legacy_drug_scheduled", "legacy_drug_id", "scheduled_at"),
+        Index(
+            "ix_dose_occurrence_patient_local_schedule",
+            "patient_id",
+            "scheduled_local_date",
+            "scheduled_local_time",
+        ),
     )
 
 
