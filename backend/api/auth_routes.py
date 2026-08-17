@@ -37,6 +37,7 @@ from backend.services.auth import (
     verify_password,
 )
 from backend.services.doctor_watch import auto_watch_new_patient
+from backend.services.email_identity import find_account_by_email
 from backend.services.patient_id import generate_next_patient_id
 
 auth_router = APIRouter()
@@ -87,7 +88,11 @@ def _provision_patient(db: Session, account: Account, full_name: str) -> None:
 # che threadpool nhu 38 route con lai trong du an.
 @auth_router.post("/auth/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginResponse:
-    existing_account = db.query(Account).filter(Account.email == body.email).first()
+    # Tra cuu KHONG phan biet chu hoa/thuong (SUA 2026-08-17): neu chi so
+    # `Account.email == body.email` thi "MCK@gmail.com" dang ky duoc lan 2 duoi
+    # dang "mck@gmail.com" -> 2 tai khoan cho cung 1 nguoi. Xem
+    # backend/services/email_identity.py.
+    existing_account = find_account_by_email(db, body.email)
     if existing_account is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã được sử dụng")
 
@@ -148,7 +153,13 @@ def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> Logi
             detail="Email Google chưa được xác thực, không thể dùng để đăng nhập",
         )
 
-    account = db.query(Account).filter(Account.email == body.email).first()
+    # Tra cuu KHONG phan biet chu hoa/thuong - DAY la cho quan trong nhat cua
+    # ban sua 2026-08-17: neu so `Account.email == body.email`, tai khoan dang
+    # ky thu cong bang "MCK@gmail.com" se KHONG duoc tim thay khi Google tra ve
+    # "mck@gmail.com", va nhanh `account is None` ben duoi se tao them mot tai
+    # khoan THU HAI cho cung 1 nguoi (patient_id moi, ho so trong), trong khi
+    # don thuoc/lich uong thuoc/canh bao van nam o tai khoan cu.
+    account = find_account_by_email(db, body.email)
 
     if account is None:
         # Lan dau dang nhap Google -> tao tai khoan `patient` moi, giong het
@@ -190,8 +201,31 @@ def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> Logi
     # Tai khoan cu (truoc migration 0021, khi chua co luong xac thuc email)
     # hoac tao boi admin: Google vua chung minh chu email nay - danh dau da
     # xac thuc de nguoi dung khong bi chan boi buoc verify email.
+    thay_doi = False
     if not account.is_email_verified:
         account.is_email_verified = True
+        thay_doi = True
+
+    # SUA 2026-08-17 (bug that tren production, phat hien khi so localhost voi
+    # production): nhanh "tai khoan DA CO SAN" nay TUNG khong cap patient_id,
+    # trong khi nhanh "tao moi" o tren goi _provision_patient(). Hau qua tren
+    # 1 tai khoan role=patient con thieu patient_id:
+    #   - header /patient hien "Bệnh nhân ·" bo trong (JWT claim patient_id =
+    #     None), va MeResponse.profile_completed = None nen cong onboarding
+    #     (patient/layout.tsx) khong bao gio bat -> ho so trong vinh vien;
+    #   - moi endpoint doc du lieu benh nhan qua get_current_patient_id()
+    #     (backend/api/security.py) roi ve patient_id cua NGUOI KHAC neu ho tu
+    #     go vao body, vi role=patient chi duoc uu tien khi patient_id co that.
+    # Tai khoan dang trong tinh trang nay la tai khoan tao TRUOC khi co
+    # _provision_patient (dang ky som, hoac admin tao thieu buoc) - Google
+    # khong sinh ra chung, nhung day la lan duy nhat ta chac chan ho la chu
+    # email do, nen cap bu ngay tai day. Chi cap khi THAT SU con thieu, khong
+    # bao gio ghi de patient_id da co.
+    if account.role == "patient" and not account.patient_id:
+        _provision_patient(db, account, account.full_name)
+        thay_doi = True
+
+    if thay_doi:
         db.commit()
         db.refresh(account)
 
@@ -308,7 +342,10 @@ def set_password(
 
 @auth_router.post("/auth/login", response_model=LoginResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
-    account = db.query(Account).filter(Account.email == body.email).first()
+    # Khong phan biet chu hoa/thuong (SUA 2026-08-17): nguoi dung go
+    # "MCK@gmail.com" hom nay va "mck@gmail.com" hom sau van phai vao dung 1
+    # tai khoan. Xem backend/services/email_identity.py.
+    account = find_account_by_email(db, body.email)
     # Cung 1 thong bao du sai email hay sai password - khong tiet lo email
     # nao ton tai trong he thong (tranh do email that qua endpoint dang nhap).
     if account is None or not verify_password(body.password, account.password_hash):

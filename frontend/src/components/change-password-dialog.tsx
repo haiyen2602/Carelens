@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CheckCircle2, KeyRound, Lock } from "lucide-react";
+import { CheckCircle2, HelpCircle, KeyRound, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +24,7 @@ export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode })
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [hienTroGiup, setHienTroGiup] = useState(false);
 
   // THEM 2026-08-17 (quyet dinh PM, api-contracts.md §1c): tai khoan tao qua
   // Login with Google chua he co mat khau nguoi dung nao. Voi ho day la DAT
@@ -32,7 +33,21 @@ export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode })
   // thu lai cac mat khau ho nho va nhan 400 mai. Sau khi dat xong, backend
   // doi `auth_provider` thanh "password" nen lan sau chinh dialog nay tu dong
   // tro lai che do doi mat khau binh thuong.
+  //
+  // GHI CHU 2026-08-17 (sau khi so localhost voi production): 2 moi truong
+  // hien 2 dialog KHAC NHAU cho cung mot email dang nhap bang Google KHONG
+  // phai bug - `auth_provider` la trang thai DU LIEU cua tung tai khoan:
+  //   - tai khoan sinh ra TU Google  -> "google"   -> "Đặt mật khẩu";
+  //   - tai khoan da co san (dang ky bang mat khau, hoac do admin tao) roi
+  //     moi lien ket Google -> giu "password" -> "Đổi mật khẩu", vi ho THAT SU
+  //     co mat khau va /auth/set-password se tu choi (400, xem
+  //     backend/api/auth_routes.py::set_password - cong 1 lan duy nhat).
+  // Vi vay KHONG dong bo bang cach ep 1 trong 2 che do; chi lam ro copy va
+  // them loi thoat ben duoi cho nguoi khong nho mat khau cu.
   const dangDatMatKhau = user?.auth_provider === "google";
+  // Dialog nay cung duoc mount o /admin/settings. Loi khuyen "lien he quan tri
+  // vien" vo nghia voi chinh quan tri vien - doi cau chu cho dung nguoi doc.
+  const laAdmin = user?.role === "admin";
 
   const resetState = () => {
     setCurrentPassword("");
@@ -41,6 +56,7 @@ export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode })
     setError("");
     setSuccess(false);
     setLoading(false);
+    setHienTroGiup(false);
   };
 
   const submit = async (e: FormEvent) => {
@@ -137,8 +153,8 @@ export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode })
           </DialogTitle>
           <DialogDescription>
             {dangDatMatKhau
-              ? "Tài khoản của bạn đang đăng nhập bằng Google và chưa có mật khẩu. Đặt mật khẩu để có thể đăng nhập bằng cả email và Google."
-              : "Nhập mật khẩu hiện tại và mật khẩu mới để cập nhật thông tin bảo mật."}
+              ? "Tài khoản này được tạo qua Google nên chưa có mật khẩu riêng. Đặt mật khẩu để đăng nhập được bằng cả email và Google."
+              : "Tài khoản này đã có mật khẩu riêng (kể cả khi bạn vừa đăng nhập bằng Google). Nhập mật khẩu hiện tại để đổi sang mật khẩu mới."}
           </DialogDescription>
         </DialogHeader>
 
@@ -165,6 +181,29 @@ export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode })
                     required
                   />
                 </div>
+                {/* THEM 2026-08-17: loi thoat cho nguoi khong nho mat khau cu.
+                    Truoc day dialog nay la duong CUT - dang nhap bang Google
+                    xong van bi hoi mat khau hien tai, khong nho thi khong con
+                    gi bam duoc. CHUA co /forgot-password (route backend +
+                    trang FE deu chua ton tai) nen day la huong dan that su
+                    kha thi hom nay, KHONG phai link den trang 404. Khi
+                    /auth/forgot-password duoc xay, thay khoi nay bang link do. */}
+                <button
+                  type="button"
+                  onClick={() => setHienTroGiup((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  Không nhớ mật khẩu hiện tại?
+                </button>
+                {hienTroGiup && (
+                  <p className="rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">
+                    Chức năng tự đặt lại mật khẩu qua email chưa có.{" "}
+                    {laAdmin
+                      ? "Hãy nhờ một quản trị viên khác cấp lại mật khẩu cho tài khoản này, sau đó quay lại đây để đổi sang mật khẩu bạn tự chọn."
+                      : "Nếu tài khoản của bạn đã liên kết Google, bạn vẫn đăng nhập được bằng Google nên không mất quyền truy cập. Hãy liên hệ quản trị viên để được cấp lại mật khẩu, sau đó quay lại đây để đổi sang mật khẩu bạn tự chọn."}
+                  </p>
+                )}
               </div>
             )}
 

@@ -58,6 +58,8 @@
 
 `role` khi tự đăng ký chỉ nhận `patient` (mặc định `patient`); giá trị khác — kể cả `doctor` — trả `422`. Bệnh nhân và người thân dùng chung role `patient` trên form đăng ký; `doctor`/`caregiver`/`admin` chỉ được tạo bởi `admin` qua `account-api` §1b (sửa 2026-08-17 theo yêu cầu PM: trước đây `doctor` mở cho tự đăng ký).
 
+**Ràng buộc contract — `email` là danh tính, không phân biệt chữ hoa/thường (sửa 2026-08-17, migration 0026):** mọi endpoint nhận `email` (`/auth/register`, `/auth/login`, `/auth/oauth/google`, `POST /accounts`) chuẩn hoá về `trim` + `lower` **trước** khi tra cứu hoặc lưu, và bảng `account` có unique index trên biểu thức `lower(btrim(email))`. Vì vậy `MCK@gmail.com` và `mck@gmail.com` là **một** tài khoản: đăng ký lại bằng biến thể chữ hoa trả `409`, đăng nhập bằng biến thể nào cũng vào đúng tài khoản đó, và "Login with Google" vào tài khoản đã đăng ký thủ công thay vì tạo tài khoản thứ hai. Chuẩn hoá **chỉ** gồm `trim` + `lower` — **không** bỏ dấu `.` và **không** cắt `+tag` (quy ước riêng của Gmail; áp dụng chung sẽ gộp sai hai email khác nhau ở nhà cung cấp khác, mà gộp sai tài khoản là lỗi không sửa ngược được).
+
 ```json
 // POST /api/v1/auth/login, POST /api/v1/auth/register — response 200/201
 {
@@ -126,6 +128,7 @@ Response: **giống hệt** `POST /auth/login` (§1, `LoginResponse`) — không
 - `role` **không** nằm trong request. Tài khoản tạo qua đường này luôn là `patient`; tài khoản đã tồn tại giữ nguyên `role` sẵn có (không leo thang quyền qua body).
 - Endpoint **internal**, chặn bằng `X-Internal-Secret` (`require_internal_secret`) và **không được mở public**: nó không có mật khẩu nào để kiểm tra, toàn bộ niềm tin nằm ở chỗ người gọi đã xác thực Google giúp rồi. Public hoá = ai cũng nhận được JWT của email bất kỳ.
 - `email_verified: false` → `400` (fail-closed). Nếu chấp nhận, một địa chỉ Google chưa xác thực trùng email tài khoản mật khẩu sẽ thành đường chiếm tài khoản.
+- Tra cứu tài khoản theo email **không phân biệt chữ hoa/thường** (§1, migration 0026). Đây là điểm quan trọng nhất của bản sửa 2026-08-17: trước đó tài khoản đăng ký thủ công bằng `MCK@gmail.com` không được tìm thấy khi Google trả về `mck@gmail.com`, nên endpoint tạo **tài khoản thứ hai** với `patient_id` mới và hồ sơ trống, trong khi đơn thuốc/lịch uống thuốc/cảnh báo vẫn nằm ở tài khoản đầu.
 - Vẫn kiểm tra `status == "active"` → `locked` trả `403`, giống §1 (nút khoá tài khoản của admin không lách được qua OAuth).
 - Cột mới `account.auth_provider` (`password`\|`google`, migration 0025): tài khoản Google không có mật khẩu người dùng nên `POST /auth/change-password` trả `400` thay vì "mật khẩu hiện tại không chính xác". `GET /auth/me` trả thêm trường `auth_provider` để frontend biết **trước khi mở dialog** là phải hiện "Đặt mật khẩu" hay "Đổi mật khẩu" — nếu chỉ biết sau khi gọi API thì người dùng đã điền xong 3 ô mật khẩu rồi mới nhận lỗi.
 
@@ -400,6 +403,7 @@ Mọi lỗi trả về cùng một hình dạng:
 | 2026-08-13 | `account-api` (mới, §1b) | Thêm contract mới — cần khi wire login thật cho doctor/patient (không có luồng tự đăng ký, cần admin tạo tài khoản qua API thay vì chỉ CLI `scripts/create_admin.py`). Xem `tasks/TASK-010-auth-api.md`. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c mới) | Thêm `POST /auth/oauth/google` (internal, `X-Internal-Secret`) cho nút "Đăng nhập bằng Google" — Better Auth chỉ làm môi giới OAuth, JWT vẫn do backend phát. Kèm cột mới `account.auth_provider` (migration 0025). Không breaking: mọi endpoint cũ giữ nguyên request/response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c-2 mới) | Thêm `POST /auth/set-password` (Bearer, chỉ tài khoản `auth_provider="google"`, không hỏi mật khẩu cũ) cho phép tài khoản Google đặt mật khẩu lần đầu và đăng nhập được cả hai đường; `GET /auth/me` trả thêm `auth_provider`. Không breaking: thêm endpoint + thêm field response. | `[chờ Architect/PM review]` |
+| 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.
