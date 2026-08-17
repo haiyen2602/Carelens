@@ -133,11 +133,24 @@
       "thoi_diem_dung": "sau ăn sáng và sau ăn tối",
       "so_vien_moi_lan": 1,
       "gio_nhac": ["08:00", "20:00"],
+      "doses_per_day": 2,
+      "has_cycle": true,
+      "cycle_on_days": 5,
+      "cycle_off_days": 2,
       "drug_id": "panadol-extra"
     }
   ]
 }
 ```
+
+`doses_per_day`, `has_cycle`, `cycle_on_days`, and `cycle_off_days` are
+optional additive fields for DB-4E. Clients that do not send them remain
+compatible: the backend derives doses/day from `gio_nhac` and writes no cycle.
+When `has_cycle=true`, `cycle_on_days > 0` and `cycle_off_days >= 0` are
+required. A doctor-selected `gio_nhac` count must equal `doses_per_day` before
+the V2 plan/rule can become active; unresolved drug identity or any uncertain
+schedule remains `REVIEW_REQUIRED` in V2. This does not change legacy
+prescription or `dose_event` responses.
 
 ```json
 // POST /api/v1/prescriptions/{id}/approve — response 200
@@ -356,6 +369,7 @@ Mọi lỗi trả về cùng một hình dạng:
 |---|---|---|---|
 | 2026-08-04 | tất cả | Bản draft đầu tiên, dựng từ `README.md` + `ARCHITECTURE.md` + PRD Gate 01 | `[chờ Architect + Tech Lead review]` |
 | 2026-08-13 | `account-api` (mới, §1b) | Thêm contract mới — cần khi wire login thật cho doctor/patient (không có luồng tự đăng ký, cần admin tạo tài khoản qua API thay vì chỉ CLI `scripts/create_admin.py`). Xem `tasks/TASK-010-auth-api.md`. | `[chờ Architect/PM review]` |
+| 2026-08-17 | `prescription-api` (§2) | DB-4E đề xuất bổ sung optional `doses_per_day` và cycle (`has_cycle`, `cycle_on_days`, `cycle_off_days`) vào item. Không breaking: payload/response cũ giữ nguyên; backend fallback theo `gio_nhac`. | `[chờ Architect/PM review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

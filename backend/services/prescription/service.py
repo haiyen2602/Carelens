@@ -35,6 +35,7 @@ from backend.services.prescription.errors import (
     ViPhamNghiepVuError,
 )
 from backend.services.scheduling.generator import huy_lieu_chua_toi_han, sinh_dose_event
+from backend.services.scheduling.write_path import activate_prescription_schedule, sync_prescription_schedule
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,10 @@ def _chuan_hoa_item(db: Session, item: dict) -> dict:
         "thoi_diem_dung": str(item.get("thoi_diem_dung") or "").strip(),
         "so_vien_moi_lan": item.get("so_vien_moi_lan"),
         "gio_nhac": list(item.get("gio_nhac") or []),
+        "doses_per_day": item.get("doses_per_day"),
+        "has_cycle": bool(item.get("has_cycle")),
+        "cycle_on_days": item.get("cycle_on_days"),
+        "cycle_off_days": item.get("cycle_off_days"),
         # Khoang ngay rieng cua thuoc nay - None nghia la dung chung khoang
         # ngay cua ca phac do (xem PrescriptionItemIn trong schemas.py).
         "start_date": item.get("start_date") or None,
@@ -114,17 +119,24 @@ def tao_phac_do(
     if db.get(Patient, patient_id) is None:
         raise KhongTimThayError(f"Không tìm thấy bệnh nhân {patient_id!r}.", patient_id=patient_id)
 
-    presc = Prescription(
-        patient_id=patient_id,
-        doctor_id=doctor_id,
-        status=DRAFT,
-        items=[_chuan_hoa_item(db, item) for item in items],
-        start_date=start_date or datetime.now(UTC).date().isoformat(),
-        duration_days=duration_days or SO_NGAY_MAC_DINH,
-        note=note or None,
-    )
-    db.add(presc)
-    db.commit()
+    try:
+        presc = Prescription(
+            patient_id=patient_id,
+            doctor_id=doctor_id,
+            status=DRAFT,
+            items=[_chuan_hoa_item(db, item) for item in items],
+            start_date=start_date or datetime.now(UTC).date().isoformat(),
+            duration_days=duration_days or SO_NGAY_MAC_DINH,
+            note=note or None,
+        )
+        db.add(presc)
+        db.flush()
+        sync_prescription_schedule(db, presc)
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Tạo phác đồ cho bệnh nhân %s thất bại, đã hoàn tác.", patient_id)
+        raise
     db.refresh(presc)
 
     logger.info("Bác sĩ %s tạo phác đồ %s cho bệnh nhân %s (draft).", doctor_id, presc.id, patient_id)
@@ -176,6 +188,9 @@ def duyet_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple
         presc.status = ACTIVE
         presc.approved_by = doctor_id  # BR-1.5
         presc.approved_at = datetime.now(UTC)
+        # DB-4E only activates V2 metadata that is fully validated and mapped.
+        # It does not generate a V2 dose occurrence.
+        activate_prescription_schedule(db, presc.id)
         so_lieu = sinh_dose_event(db, presc)
         db.commit()
     except Exception:
@@ -217,6 +232,9 @@ def sua_phac_do(
         presc.items = [_chuan_hoa_item(db, item) for item in items]
         if note is not None:
             presc.note = note or None
+        sync_prescription_schedule(db, presc)
+        if presc.status in DANG_CHAY:
+            activate_prescription_schedule(db, presc.id)
         so_lieu = sinh_dose_event(db, presc) if presc.status in DANG_CHAY else 0
         db.commit()
     except Exception:
