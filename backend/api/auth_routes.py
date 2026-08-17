@@ -190,8 +190,31 @@ def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> Logi
     # Tai khoan cu (truoc migration 0021, khi chua co luong xac thuc email)
     # hoac tao boi admin: Google vua chung minh chu email nay - danh dau da
     # xac thuc de nguoi dung khong bi chan boi buoc verify email.
+    thay_doi = False
     if not account.is_email_verified:
         account.is_email_verified = True
+        thay_doi = True
+
+    # SUA 2026-08-17 (bug that tren production, phat hien khi so localhost voi
+    # production): nhanh "tai khoan DA CO SAN" nay TUNG khong cap patient_id,
+    # trong khi nhanh "tao moi" o tren goi _provision_patient(). Hau qua tren
+    # 1 tai khoan role=patient con thieu patient_id:
+    #   - header /patient hien "Bệnh nhân ·" bo trong (JWT claim patient_id =
+    #     None), va MeResponse.profile_completed = None nen cong onboarding
+    #     (patient/layout.tsx) khong bao gio bat -> ho so trong vinh vien;
+    #   - moi endpoint doc du lieu benh nhan qua get_current_patient_id()
+    #     (backend/api/security.py) roi ve patient_id cua NGUOI KHAC neu ho tu
+    #     go vao body, vi role=patient chi duoc uu tien khi patient_id co that.
+    # Tai khoan dang trong tinh trang nay la tai khoan tao TRUOC khi co
+    # _provision_patient (dang ky som, hoac admin tao thieu buoc) - Google
+    # khong sinh ra chung, nhung day la lan duy nhat ta chac chan ho la chu
+    # email do, nen cap bu ngay tai day. Chi cap khi THAT SU con thieu, khong
+    # bao gio ghi de patient_id da co.
+    if account.role == "patient" and not account.patient_id:
+        _provision_patient(db, account, account.full_name)
+        thay_doi = True
+
+    if thay_doi:
         db.commit()
         db.refresh(account)
 

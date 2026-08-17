@@ -19,7 +19,7 @@ from backend.config import get_settings  # noqa: E402
 from backend.db.base import SessionLocal, engine  # noqa: E402
 from backend.db.models import Account, DoctorWatch, Patient  # noqa: E402
 from backend.main import app  # noqa: E402
-from backend.services.auth import hash_password  # noqa: E402
+from backend.services.auth import decode_token, hash_password  # noqa: E402
 from backend.services.patient_id import _PATIENT_ID_RE  # noqa: E402
 
 
@@ -624,6 +624,63 @@ async def test_oauth_google_existing_password_account_keeps_role_and_provider(
         json={"email": demo_account["email"], "password": demo_account["password"]},
     )
     assert login_res.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_oauth_google_existing_patient_account_backfills_missing_patient_id(
+    unauthenticated_client,
+):
+    """BUG THAT tren production (sua 2026-08-17): nhanh "tai khoan DA CO SAN"
+    cua /auth/oauth/google tung khong cap patient_id, trong khi nhanh "tao
+    moi" goi _provision_patient(). Tai khoan role=patient thieu patient_id thi
+    header /patient hien "Bệnh nhân ·" bo trong, cong onboarding khong bao gio
+    bat, va get_current_patient_id() (backend/api/security.py) khong the uu
+    tien patient_id cua chinh JWT nua.
+
+    Test dung tai khoan role=patient co mat khau nhung patient_id NULL (dung
+    trang thai cua 3 tai khoan tren prod) - sau khi dang nhap Google, phai co
+    patient_id dang BNxxxxx + dong Patient that, va auth_provider VAN la
+    "password" (khong bi ha thanh tai khoan khong co mat khau)."""
+    email = f"test-oauth-backfill-{uuid.uuid4().hex[:8]}@example.com"
+    db = SessionLocal()
+    account = Account(
+        full_name="Thiếu Patient ID",
+        email=email,
+        password_hash=hash_password("a-real-test-password-123"),
+        role="patient",
+        patient_id=None,
+    )
+    db.add(account)
+    db.commit()
+    account_id = account.id
+    db.close()
+
+    try:
+        res = await unauthenticated_client.post(
+            "/api/v1/auth/oauth/google",
+            headers=_internal_headers(),
+            json={
+                "email": email,
+                "full_name": "Tên Từ Google",
+                "provider_account_id": "g-sub-backfill",
+            },
+        )
+        assert res.status_code == 200
+        # patient_id phai co ngay trong JWT tra ve lan nay (get_current_patient_id
+        # doc claim nay), khong phai doi lan dang nhap sau.
+        claims = decode_token(res.json()["access_token"])
+        assert _PATIENT_ID_RE.match(claims["patient_id"] or "")
+
+        db = SessionLocal()
+        account = db.query(Account).filter(Account.id == account_id).first()
+        assert account is not None
+        assert account.patient_id is not None
+        assert _PATIENT_ID_RE.match(account.patient_id)
+        assert db.get(Patient, account.patient_id) is not None
+        assert account.auth_provider == "password"
+        db.close()
+    finally:
+        _delete_account_cascade(email)
 
 
 @pytest.mark.asyncio
