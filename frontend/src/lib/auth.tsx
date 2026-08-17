@@ -25,6 +25,11 @@ export type AuthUser = {
   // THEM (migration 0022) - chi co y nghia khi role="patient" (frontend
   // dung de bat buoc redirect sang /onboarding/profile). null cho role khac.
   profile_completed: boolean | null;
+  // THEM (migration 0025) - "google" = tai khoan tao qua Login with Google,
+  // CHUA co mat khau nguoi dung nao. UI dung de hien "Đặt mật khẩu"
+  // (/api/auth/set-password) thay vi "Đổi mật khẩu" - hoi mat khau hien tai
+  // cua mot thu khong ton tai thi nguoi dung se ngoi thu lai vo ich.
+  auth_provider: string;
 };
 
 // `/auth/login` (UserOut) CO Y chi tra id/full_name/role dung field mau
@@ -35,16 +40,21 @@ export type AuthUser = {
 // cookie nen khong can qua Route Handler).
 async function layLienKet(
   accessToken: string,
-): Promise<Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed">> {
+): Promise<Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "auth_provider">> {
   const me = await request<{
     patient_id: string | null;
     doctor_id: string | null;
     profile_completed: boolean | null;
+    auth_provider: string;
   }>("/api/v1/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } });
   return {
     patient_id: me.patient_id,
     doctor_id: me.doctor_id,
     profile_completed: me.profile_completed,
+    // Backend cu (chua co migration 0025) khong tra truong nay - mac dinh
+    // "password" de UI khong bao gio nham tuong tai khoan thuong la tai khoan
+    // Google roi an mat nut doi mat khau cua ho.
+    auth_provider: me.auth_provider ?? "password",
   };
 }
 
@@ -63,6 +73,7 @@ type RegisterData = {
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<AuthUser>;
+  loginWithGoogle: () => Promise<AuthUser>;
   register: (data: {
     full_name: string;
     email: string;
@@ -103,7 +114,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mat mang/backend down luc khoi phuc phien - coi nhu chua dang nhap,
         // khong chan UI.
       }
-      if (!cancelled) setState({ user: null, accessToken: null, loading: false });
+      // Dang ky/dang nhap co the DA hoan tat trong luc request khoi phuc dang
+      // bay (ro nhat o /auth/google/callback: trang do goi loginWithGoogle()
+      // ngay khi mount, song song voi /api/auth/refresh o day - refresh tra 401
+      // vi chua he co cookie, va neu ghi de vo dieu kien thi phien Google vua
+      // lay duoc se bi xoa). Chi ghi "chua dang nhap" khi that su chua co ai.
+      if (!cancelled) {
+        setState((prev) =>
+          prev.user
+            ? { ...prev, loading: false }
+            : { user: null, accessToken: null, loading: false },
+        );
+      }
     })();
     return () => {
       cancelled = true;
@@ -119,6 +141,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       throw new Error(data?.detail ?? "Đăng nhập thất bại");
+    }
+    const lienKet = await layLienKet(data.access_token);
+    const user: AuthUser = { ...data.user, ...lienKet };
+    setState({ user, accessToken: data.access_token, loading: false });
+    return user;
+  }, []);
+
+  // "Login with Google" - buoc CUOI cua luong OAuth, khong phai buoc dau.
+  // Buoc dau la signInWithGoogle() (lib/better-auth-client.ts) chuyen trinh
+  // duyet sang Google; sau khi Google tra ve /auth/google/callback, trang do
+  // goi ham nay de doi phien Better Auth thanh JWT that.
+  //
+  // Tu cho nay tro di GIONG HET `login` o tren (cung /auth/me de lay lien ket,
+  // cung setState) - co y dung chung 1 dinh dang phien duy nhat, khong co
+  // "phien Google" rieng biet nao trong app.
+  const loginWithGoogle = useCallback(async () => {
+    const res = await fetch("/api/auth/google-bridge", { method: "POST" });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.detail ?? "Đăng nhập bằng Google thất bại");
     }
     const lienKet = await layLienKet(data.access_token);
     const user: AuthUser = { ...data.user, ...lienKet };
@@ -153,8 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, login, register, logout, updateSession }),
-    [state, login, register, logout, updateSession],
+    () => ({ ...state, login, loginWithGoogle, register, logout, updateSession }),
+    [state, login, loginWithGoogle, register, logout, updateSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

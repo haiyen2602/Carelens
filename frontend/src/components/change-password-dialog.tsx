@@ -15,11 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 
-export function ChangePasswordDialog({
-  trigger,
-}: {
-  trigger?: React.ReactNode;
-}) {
+export function ChangePasswordDialog({ trigger }: { trigger?: React.ReactNode }) {
   const { accessToken, user, updateSession } = useAuth();
   const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -28,6 +24,15 @@ export function ChangePasswordDialog({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // THEM 2026-08-17 (quyet dinh PM, api-contracts.md §1c): tai khoan tao qua
+  // Login with Google chua he co mat khau nguoi dung nao. Voi ho day la DAT
+  // mat khau lan dau (POST /api/auth/set-password, khong hoi mat khau hien
+  // tai) - hoi "mat khau hien tai" cua mot thu khong ton tai se khien ho ngoi
+  // thu lai cac mat khau ho nho va nhan 400 mai. Sau khi dat xong, backend
+  // doi `auth_provider` thanh "password" nen lan sau chinh dialog nay tu dong
+  // tro lai che do doi mat khau binh thuong.
+  const dangDatMatKhau = user?.auth_provider === "google";
 
   const resetState = () => {
     setCurrentPassword("");
@@ -40,7 +45,7 @@ export function ChangePasswordDialog({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword) {
+    if ((!dangDatMatKhau && !currentPassword) || !newPassword) {
       setError("Vui lòng điền đầy đủ thông tin.");
       return;
     }
@@ -61,17 +66,21 @@ export function ChangePasswordDialog({
         throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       }
 
-      const res = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+      const res = await fetch(
+        dangDatMatKhau ? "/api/auth/set-password" : "/api/auth/change-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(
+            dangDatMatKhau
+              ? { new_password: newPassword }
+              : { current_password: currentPassword, new_password: newPassword },
+          ),
         },
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
-        }),
-      });
+      );
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -82,10 +91,20 @@ export function ChangePasswordDialog({
         if (res.status === 401) {
           throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         }
-        throw new Error(data?.detail ?? "Đổi mật khẩu thất bại.");
+        throw new Error(
+          data?.detail ?? (dangDatMatKhau ? "Đặt mật khẩu thất bại." : "Đổi mật khẩu thất bại."),
+        );
       }
       if (data?.access_token && user) {
-        updateSession(data.access_token, { ...user, ...data.user });
+        // `auth_provider` cua tai khoan vua doi tu "google" sang "password" o
+        // backend, nhung ChangePasswordResponse.user (UserOut) khong tra
+        // truong do - dat tay o day de dialog khong con o che do "dat mat
+        // khau" ma phai cho tai lai trang.
+        updateSession(data.access_token, {
+          ...user,
+          ...data.user,
+          auth_provider: dangDatMatKhau ? "password" : user.auth_provider,
+        });
       }
       setSuccess(true);
     } catch (err) {
@@ -106,17 +125,20 @@ export function ChangePasswordDialog({
       <DialogTrigger asChild>
         {trigger ?? (
           <Button variant="outline" className="gap-2">
-            <KeyRound className="h-4 w-4" /> Đổi mật khẩu
+            <KeyRound className="h-4 w-4" /> {dangDatMatKhau ? "Đặt mật khẩu" : "Đổi mật khẩu"}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5 text-primary" /> Đổi mật khẩu tài khoản
+            <KeyRound className="h-5 w-5 text-primary" />{" "}
+            {dangDatMatKhau ? "Đặt mật khẩu đăng nhập" : "Đổi mật khẩu tài khoản"}
           </DialogTitle>
           <DialogDescription>
-            Nhập mật khẩu hiện tại và mật khẩu mới để cập nhật thông tin bảo mật.
+            {dangDatMatKhau
+              ? "Tài khoản của bạn đang đăng nhập bằng Google và chưa có mật khẩu. Đặt mật khẩu để có thể đăng nhập bằng cả email và Google."
+              : "Nhập mật khẩu hiện tại và mật khẩu mới để cập nhật thông tin bảo mật."}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,24 +150,26 @@ export function ChangePasswordDialog({
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="current_pass">Mật khẩu hiện tại</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="current_pass"
-                  type="password"
-                  autoComplete="current-password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="pl-9"
-                  required
-                />
+            {!dangDatMatKhau && (
+              <div className="space-y-2">
+                <Label htmlFor="current_pass">Mật khẩu hiện tại</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="current_pass"
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="pl-9"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
-              <Label htmlFor="new_pass">Mật khẩu mới</Label>
+              <Label htmlFor="new_pass">{dangDatMatKhau ? "Mật khẩu" : "Mật khẩu mới"}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -162,14 +186,16 @@ export function ChangePasswordDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm_new_pass">Xác nhận mật khẩu mới</Label>
+              <Label htmlFor="confirm_new_pass">
+                {dangDatMatKhau ? "Xác nhận mật khẩu" : "Xác nhận mật khẩu mới"}
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirm_new_pass"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder={dangDatMatKhau ? "Nhập lại mật khẩu" : "Nhập lại mật khẩu mới"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-9"
@@ -179,15 +205,11 @@ export function ChangePasswordDialog({
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Đang lưu..." : "Cập nhật mật khẩu"}
+                {loading ? "Đang lưu..." : dangDatMatKhau ? "Đặt mật khẩu" : "Cập nhật mật khẩu"}
               </Button>
             </div>
           </form>
@@ -196,9 +218,13 @@ export function ChangePasswordDialog({
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-success/15 text-success">
               <CheckCircle2 className="h-6 w-6" />
             </div>
-            <p className="font-semibold text-base">Đổi mật khẩu thành công!</p>
+            <p className="font-semibold text-base">
+              {dangDatMatKhau ? "Đặt mật khẩu thành công!" : "Đổi mật khẩu thành công!"}
+            </p>
             <p className="text-sm text-muted-foreground">
-              Mật khẩu mới của bạn đã có hiệu lực lập tức.
+              {dangDatMatKhau
+                ? "Từ giờ bạn có thể đăng nhập bằng email và mật khẩu này, hoặc tiếp tục đăng nhập bằng Google."
+                : "Mật khẩu mới của bạn đã có hiệu lực lập tức."}
             </p>
             <Button
               className="w-full"
