@@ -11,7 +11,6 @@ from backend.services.drug_knowledge.v2_agent import (
     get_v2_agent_knowledge_service,
 )
 
-
 EXCLUDED_IDS = (
     "bisoprolol-stada-5mg-3x10",
     "esonix-40-3x10",

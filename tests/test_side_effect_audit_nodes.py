@@ -11,8 +11,8 @@ from backend.agents.nodes.side_effect_audit_nodes import (
     build_side_effect_audit_node,
 )
 from backend.agents.orchestrator import run_conversation
-from backend.services.escalation import SYMPTOM_OVERLAY_MESSAGE
 from backend.services.drug_knowledge.v2_agent import SideEffectMatchResult
+from backend.services.escalation import SYMPTOM_OVERLAY_MESSAGE
 from backend.services.retrieval import search_active_side_effect_chunks
 from backend.services.safety import SafetyFlag
 
