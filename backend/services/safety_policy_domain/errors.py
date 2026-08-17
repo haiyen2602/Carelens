@@ -26,4 +26,16 @@ class LegacyPolicySeedError(VmecError):
     http_status = 422
 
 
-__all__ = ["DoseSafetyOccurrenceNotFoundError", "DoseSafetyStateError", "LegacyPolicySeedError"]
+class SafetyAssessmentNotFoundError(VmecError):
+    """The requested durable safety assessment does not exist."""
+
+    ma_loi = "SAFETY_ASSESSMENT_NOT_FOUND"
+    http_status = 404
+
+
+__all__ = [
+    "DoseSafetyOccurrenceNotFoundError",
+    "DoseSafetyStateError",
+    "LegacyPolicySeedError",
+    "SafetyAssessmentNotFoundError",
+]
