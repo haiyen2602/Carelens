@@ -178,3 +178,90 @@ P0/P1:
 READY FOR DOSE OCCURRENCE BACKFILL:
 
 NO
+
+## DB-4C.1 legacy prescription reconciliation
+
+The local/dev PostgreSQL source available to this workspace was identified by
+read-only Docker inspection as `p-067-db-1`, backed by local-only volume
+`p-067_pgdata`. It is at Alembic revision `0014`, before the additive DB-4A
+schema. No data or credentials were exported, and no patient data or secrets
+were written to Git.
+
+Read-only aggregate queries against that database returned:
+
+| Source check | Result |
+|---|---:|
+| `prescription` rows | 0 |
+| JSON-array `items` entries | 0 |
+| Prescriptions with non-array `items` | 0 |
+
+No other PostgreSQL container or workspace-managed database snapshot/dump was
+available. Therefore there is no real legacy input from which to make a
+reproducible, privacy-safe validation clone. The controlled five-prescription
+corpus above remains implementation/integration evidence only; it is not used
+as a substitute for local/dev legacy data in this reconciliation.
+
+Because the real source has no rows, unmapped drugs, invalid schedules/dates,
+malformed items, target orphans, duplicate migration keys, and active
+prescriptions without items cannot be meaningfully reconciled. No DB-4C
+backfill run was made against this empty source, and no dose data was created.
+
+Exception classification:
+
+- `AUTO_SAFE`: none. There are no source rows to classify.
+- `REVIEW_REQUIRED`: none from the empty source. Any rows in a later approved
+  snapshot with unmapped IDs, invalid dates/times, or malformed JSON must stay
+  in this class and cannot be guessed.
+- `BLOCKER`: no approved, non-PII, reproducible legacy prescription snapshot
+  exists. A raw Docker volume is machine-local state and is not an acceptable
+  reconciliation input.
+
+## REAL LEGACY RECONCILIATION:
+
+BLOCKED
+
+TOTAL PRESCRIPTIONS:
+
+0 in the only discovered local/dev legacy database.
+
+TOTAL ITEMS:
+
+0 in the only discovered local/dev legacy database.
+
+UNMAPPED DRUGS:
+
+0 observed; not meaningful without source rows.
+
+INVALID SCHEDULES:
+
+0 observed; not meaningful without source rows.
+
+MALFORMED ITEMS:
+
+0 observed; not meaningful without source rows.
+
+ORPHANS:
+
+NOT RECONCILED against a real legacy validation clone.
+
+DUPLICATES:
+
+NOT RECONCILED against a real legacy validation clone.
+
+REVIEW_REQUIRED:
+
+0 observed; no source rows to classify.
+
+BLOCKERS:
+
+1 — a privacy-safe, reproducible snapshot/export of actual legacy
+`prescription.items` is absent.
+
+IDEMPOTENCY:
+
+NOT RUN against real legacy data. It remains PASS only for the controlled
+integration corpus described above.
+
+READY FOR DOSE OCCURRENCE BACKFILL:
+
+NO
