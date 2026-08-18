@@ -122,8 +122,8 @@ export default function PatientToday() {
         <section className="surface-card overflow-hidden">
           <div className="brand-gradient p-5 text-primary-foreground">
             <p className="text-sm opacity-85">Đến giờ uống thuốc</p>
-            <p className="text-4xl font-extrabold">{gioHienThi(next.scheduledAt)}</p>
-            <p className="mt-1 text-sm opacity-90">{moTaThuoc(next)}</p>
+            <p className="font-display text-4xl font-extrabold">{gioHienThi(next.scheduledAt)}</p>
+            <p className="font-display mt-1 text-sm opacity-90">{moTaThuoc(next)}</p>
           </div>
           <div className="space-y-4 p-5">
             {!xacMinh && !dangGui && (
@@ -272,7 +272,7 @@ export default function PatientToday() {
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold">
-                    {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
+                    <span className="font-mono">{gioHienThi(d.scheduledAt)}</span> · {moTaThuoc(d)}
                   </p>
                 </div>
                 <span

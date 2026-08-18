@@ -187,6 +187,15 @@
   --gradient-brand: linear-gradient(135deg, #16386e, #0e2749);
   --shadow-card: 0 1px 2px rgba(22, 56, 110, 0.06), 0 8px 24px rgba(22, 56, 110, 0.08);
   --shadow-phone: 0 24px 60px rgba(22, 56, 110, 0.22);
+
+  /* Context pastels (design.md legend: sky=upcoming, mint=done, cream=health/
+     Capy, peach=needs attention, lavender=Capy AI) - decorative backgrounds
+     for specific screen sections, not full semantic color scales like above. */
+  --capy-sky: #cfe6ff;
+  --capy-mint: #bfebdc;
+  --capy-cream: #fff0d6;
+  --capy-peach: #ffd5c2;
+  --capy-lavender: #e4ddfb;
 }
 
 @layer base {

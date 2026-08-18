@@ -9,7 +9,19 @@ import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
 import { listPrescriptions } from "@/lib/prescriptions";
-import { flattenPrescriptions, useProto, type AlertLevel, type Prescription } from "@/lib/proto-store";
+import {
+  flattenPrescriptions,
+  useProto,
+  type AlertLevel,
+  type Prescription,
+} from "@/lib/proto-store";
+
+const MOOD_EMOJI: Record<AlertLevel, string> = { low: "🙂", mid: "😐", high: "😣" };
+const CHIP_STATUS: Record<string, string> = {
+  approved: "bg-success/15 text-success",
+  pending: "bg-warning/25 text-warning-foreground",
+};
+const LABEL_STATUS: Record<string, string> = { approved: "Đang dùng", pending: "Chờ duyệt" };
 
 export default function HealthPage() {
   const { healthLog, reportHealth, setEmergency } = useProto();
@@ -43,7 +55,11 @@ export default function HealthPage() {
       .then(setDoses)
       .catch(() => undefined);
     listPrescriptions({ patientId })
-      .then((records) => setMyPrescriptions(flattenPrescriptions(records, {}).filter((p) => p.status !== "rejected")))
+      .then((records) =>
+        setMyPrescriptions(
+          flattenPrescriptions(records, {}).filter((p) => p.status !== "rejected"),
+        ),
+      )
       .catch(() => undefined);
   }, [patientId, accessToken]);
 
@@ -66,14 +82,14 @@ export default function HealthPage() {
   return (
     <div className="space-y-4">
       {user && (
-        <section className="surface-card p-5">
+        <section className="rounded-[28px] p-5" style={{ backgroundColor: "var(--capy-cream)" }}>
           <div className="flex items-center gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-lg font-bold text-accent-foreground">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-lg font-bold text-accent-foreground">
               {user.full_name.charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-bold">{user.full_name}</p>
-              <p className="truncate text-sm text-muted-foreground">
+              <p className="font-display truncate text-lg font-bold">{user.full_name}</p>
+              <p className="truncate text-sm text-foreground/70">
                 {[
                   hoSo?.yearOfBirth ? `${new Date().getFullYear() - hoSo.yearOfBirth} tuổi` : null,
                   hoSo?.note,
@@ -84,28 +100,37 @@ export default function HealthPage() {
             </div>
           </div>
           {doses.length > 0 && (
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Đã uống {takenCount}/{doses.length} liều hôm nay
+            <p className="font-mono mt-3 text-[11px] text-foreground/70">
+              Hôm nay {takenCount}/{doses.length} liều
             </p>
           )}
         </section>
       )}
 
-      <section className="surface-card p-5">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
-          <Pill className="h-4 w-4" /> Đơn thuốc hiện tại
-        </h2>
-        <div className="mt-3 divide-y divide-border">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+            <Pill className="h-4 w-4" /> Đơn thuốc hiện tại
+          </h2>
+          <Button
+            size="sm"
+            className="rounded-full"
+            onClick={() => toast("Thêm thuốc chưa nối API — sắp có")}
+          >
+            + Thêm thuốc
+          </Button>
+        </div>
+        <div className="space-y-2.5">
           {myPrescriptions.map((p) => (
-            <div key={p.id} className="py-3">
+            <div key={p.id} className="surface-card p-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold">{p.med}</p>
-                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold text-secondary-foreground">
-                  {p.status === "approved"
-                    ? "Đang dùng"
-                    : p.status === "pending"
-                      ? "Chờ duyệt"
-                      : "Bản nháp"}
+                <p className="font-display font-bold">{p.med}</p>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    CHIP_STATUS[p.status] ?? "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {LABEL_STATUS[p.status] ?? "Bản nháp"}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -114,20 +139,34 @@ export default function HealthPage() {
             </div>
           ))}
           {myPrescriptions.length === 0 && (
-            <p className="py-3 text-sm text-muted-foreground">Chưa có đơn thuốc nào.</p>
+            <p className="surface-card p-4 text-sm text-muted-foreground">Chưa có đơn thuốc nào.</p>
           )}
         </div>
       </section>
 
-      <section className="surface-card space-y-3 p-5">
+      <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
             <HeartPulse className="h-4 w-4" /> Nhật ký sức khỏe
           </h2>
           {!reporting && (
-            <Button size="sm" variant="outline" onClick={() => setReporting(true)}>
-              <AlertTriangle className="mr-1 h-4 w-4" /> Báo vấn đề
-            </Button>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                size="sm"
+                className="rounded-full"
+                onClick={() => toast("Ghi nhật ký nhanh chưa nối API — sắp có")}
+              >
+                + Ghi nhật ký
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setReporting(true)}
+              >
+                <AlertTriangle className="mr-1 h-4 w-4" /> Báo vấn đề
+              </Button>
+            </div>
           )}
         </div>
 
@@ -170,19 +209,23 @@ export default function HealthPage() {
         )}
 
         {healthLog.length === 0 && !reporting && (
-          <p className="text-sm text-muted-foreground">Chưa có nhật ký nào.</p>
+          <p className="surface-card p-4 text-sm text-muted-foreground">Chưa có nhật ký nào.</p>
         )}
         {healthLog.length > 0 && (
-          <ul className="space-y-2 text-sm">
+          <div className="space-y-2.5">
             {healthLog.map((h) => (
-              <li key={h.id} className="flex gap-3">
-                <span className="w-12 shrink-0 font-mono text-xs text-muted-foreground">
-                  {h.at}
-                </span>
-                <span className="min-w-0">{h.text}</span>
-              </li>
+              <div
+                key={h.id}
+                className="surface-card grid grid-cols-[auto_minmax(0,1fr)] gap-3 p-4"
+              >
+                <span className="text-xl leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">{h.text}</p>
+                  <p className="font-mono mt-0.5 text-xs text-muted-foreground">{h.at}</p>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

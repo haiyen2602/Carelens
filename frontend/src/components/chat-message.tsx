@@ -27,11 +27,12 @@ export function ChatMessage({ message, at }: { message: ChatMessageT; at?: strin
       )}
       <div className={`flex max-w-[80%] flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
         <div
-          className={`rounded-2xl px-4 py-2.5 text-sm ${
+          className={`px-4 py-2.5 text-sm ${
             isUser
-              ? "rounded-tr-sm bg-primary text-primary-foreground"
-              : "rounded-tl-sm bg-muted text-foreground"
+              ? "rounded-[20px_20px_6px_20px] bg-primary text-primary-foreground"
+              : "rounded-[20px_20px_20px_6px] text-foreground"
           }`}
+          style={isUser ? undefined : { backgroundColor: "var(--capy-lavender)" }}
         >
           <MarkdownRenderer content={message.content} />
         </div>

@@ -21,6 +21,13 @@ import {
   titleFromMessage,
 } from "@/lib/chat-history";
 
+const SUGGESTED_PROMPTS = [
+  "Liều tiếp theo lúc mấy giờ?",
+  "Tôi đã uống thuốc sáng chưa?",
+  "Tuần này tôi làm tốt không?",
+  "Tôi tăng liều được không?",
+];
+
 export default function AssistantPage() {
   const { symptomCheckPending, clearSymptomCheck } = useProto();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -133,7 +140,7 @@ export default function AssistantPage() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="mb-4 flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-extrabold">Trợ lý AI</h1>
+          <h1 className="font-display text-2xl font-extrabold">Capy AI</h1>
           <p className="text-sm text-muted-foreground">
             Hỏi về triệu chứng, thuốc đang dùng hoặc cách chăm sóc.
           </p>
@@ -149,9 +156,22 @@ export default function AssistantPage() {
 
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto">
         {messages.length === 0 && (
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Gửi câu hỏi để bắt đầu trò chuyện.
-          </p>
+          <div className="mt-6 space-y-4">
+            <p className="text-center text-sm text-muted-foreground">
+              Gửi câu hỏi để bắt đầu trò chuyện.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGGESTED_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => submit(p)}
+                  className="rounded-full border border-border bg-card px-3.5 py-2.5 text-[13px] font-medium text-foreground"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {messages.map((m) => (
           <ChatMessage key={m.id} message={m} at={formatMessageTime(m.at)} />
@@ -165,19 +185,29 @@ export default function AssistantPage() {
         )}
       </div>
 
-      <div className="mt-3 flex shrink-0 gap-2 border-t border-border pt-3">
-        <Textarea
-          rows={1}
-          placeholder="Nhập câu hỏi..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isPending}
-          className="resize-none"
-        />
-        <Button size="icon" disabled={isPending || !input.trim()} onClick={() => submit(input)}>
-          <Send className="h-4 w-4" />
-        </Button>
+      <div className="mt-3 shrink-0 space-y-2 border-t border-border pt-3">
+        <div className="flex gap-2">
+          <Textarea
+            rows={1}
+            placeholder="Hỏi Capy..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isPending}
+            className="resize-none rounded-[20px]"
+          />
+          <Button
+            size="icon"
+            className="rounded-2xl"
+            disabled={isPending || !input.trim()}
+            onClick={() => submit(input)}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+        <p className="font-mono text-center text-[11px] leading-relaxed text-muted-foreground">
+          Capy không kê thuốc hay đổi liều — hỏi bác sĩ hoặc dược sĩ cho quyết định điều trị.
+        </p>
       </div>
 
       {historyOpen && (

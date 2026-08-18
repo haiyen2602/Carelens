@@ -58,7 +58,9 @@ export default function PatientFamilyPage() {
       ]);
       setRelatives(ds);
       setPending(moi);
-      const badges = await Promise.all(ds.map(async (r) => [r.patientId, await demSoCanhBao(r)] as const));
+      const badges = await Promise.all(
+        ds.map(async (r) => [r.patientId, await demSoCanhBao(r)] as const),
+      );
       setBadgeByPatientId(Object.fromEntries(badges));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không tải được danh sách người thân");
@@ -120,7 +122,10 @@ export default function PatientFamilyPage() {
     if (!accessToken || !nguoiDuocChon || !quanHe.trim()) return;
     setDangGuiMoi(true);
     try {
-      await sendCaregiverInvite(accessToken, { patientId: nguoiDuocChon.id, relationship: quanHe.trim() });
+      await sendCaregiverInvite(accessToken, {
+        patientId: nguoiDuocChon.id,
+        relationship: quanHe.trim(),
+      });
       toast.success(`Đã gửi lời mời tới ${nguoiDuocChon.fullName} — chờ họ đồng ý`);
       setDangMoi(false);
       setTuKhoa("");
@@ -136,10 +141,8 @@ export default function PatientFamilyPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-extrabold">Người thân</h1>
-        <p className="text-sm text-muted-foreground">
-          Theo dõi mức tuân thủ và cảnh báo của người thân bạn quan tâm.
-        </p>
+        <h1 className="font-display text-2xl font-extrabold">Người thân</h1>
+        <p className="text-sm text-muted-foreground">Cùng chăm sóc những người bạn thương.</p>
       </header>
 
       {pending.length > 0 && (
@@ -198,27 +201,44 @@ export default function PatientFamilyPage() {
         <div className="space-y-3">
           {relatives.map((r) => {
             const badge = badgeByPatientId[r.patientId] ?? 0;
+            const canChu = badge > 0 || r.openEscalations.length > 0;
+            const xong = r.adherencePct === 100;
             return (
-              <Link key={r.linkId} href={`/patient/family/${r.patientId}`} className="surface-card block p-4">
+              <Link
+                key={r.linkId}
+                href={`/patient/family/${r.patientId}`}
+                className="surface-card block p-4"
+              >
                 <div className="flex items-center gap-3">
-                  <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-accent-foreground">
+                  <span
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-display font-bold"
+                    style={{
+                      backgroundColor: canChu
+                        ? "var(--capy-peach)"
+                        : xong
+                          ? "var(--capy-mint)"
+                          : "var(--capy-sky)",
+                      color: canChu ? "#8A3521" : xong ? "#1F6A50" : "#16386E",
+                    }}
+                  >
                     {r.fullName.charAt(0)}
-                    {badge > 0 && (
-                      <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                        {badge}
-                      </span>
-                    )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{r.fullName}</p>
+                    <p className="font-display truncate font-bold">{r.fullName}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {r.relationship}
                       {r.note ? ` · ${r.note}` : ""}
                     </p>
                   </div>
-                  {r.adherencePct !== null && (
-                    <span className="shrink-0 text-lg font-extrabold text-primary">
-                      {Math.round(r.adherencePct)}%
+                  {(canChu || xong) && (
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        canChu
+                          ? "bg-warning/25 text-warning-foreground"
+                          : "bg-success/15 text-success"
+                      }`}
+                    >
+                      {canChu ? `Còn ${badge || r.openEscalations.length} liều` : "✓ Xong"}
                     </span>
                   )}
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -232,7 +252,7 @@ export default function PatientFamilyPage() {
                     />
                   </div>
                 )}
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                <p className="font-mono mt-1.5 text-[11px] text-muted-foreground">
                   Đã uống {r.doseTakenToday}/{r.doseTotalToday} liều hôm nay
                   {r.openEscalations.length > 0 && ` · ${r.openEscalations.length} cảnh báo`}
                 </p>
@@ -245,7 +265,7 @@ export default function PatientFamilyPage() {
       <section className="surface-card p-4">
         {!dangMoi ? (
           <>
-            <p className="font-semibold">Theo dõi thêm người thân</p>
+            <p className="font-display font-bold">Theo dõi thêm người thân</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Gửi lời mời — họ cần đồng ý thì bạn mới xem được tình trạng uống thuốc của họ.
             </p>
@@ -311,7 +331,11 @@ export default function PatientFamilyPage() {
               disabled={!nguoiDuocChon || !quanHe.trim() || dangGuiMoi}
               onClick={guiLoiMoi}
             >
-              {dangGuiMoi ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
+              {dangGuiMoi ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="mr-1 h-4 w-4" />
+              )}
               Gửi lời mời
             </Button>
           </div>
