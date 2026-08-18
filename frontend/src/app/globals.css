@@ -18,7 +18,9 @@
  */
 
 @theme inline {
-  --font-sans: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -69,6 +71,8 @@
 :root {
   --radius: 0.875rem;
   --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: var(--font-display);
+  --font-mono: ui-monospace, "SFMono-Regular", monospace;
   --background: oklch(0.98 0.008 240);
   --foreground: oklch(0.24 0.04 258);
   --card: oklch(1 0 0);
@@ -144,6 +148,45 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+/*
+ * Patient-portal rebrand ("CapyMedi" visual design, see CapyMedi/ prototype).
+ * Scoped override, not touched in :root/.dark, so doctor/admin/login keep the
+ * original theme. Hex values used directly (not oklch) for exact brand
+ * fidelity to the design prototype.
+ */
+.capymedi-theme {
+  --radius: 1.25rem;
+  --font-display: "Baloo 2", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", monospace;
+  --background: #f1f1f6;
+  --foreground: #1b2a44;
+  --card: #ffffff;
+  --card-foreground: #1b2a44;
+  --popover: #ffffff;
+  --popover-foreground: #1b2a44;
+  --primary: #16386e;
+  --primary-foreground: #ffffff;
+  --secondary: #edf0f6;
+  --secondary-foreground: #5b6a85;
+  --muted: #edf0f6;
+  --muted-foreground: #5b6a85;
+  --accent: #cfe6ff;
+  --accent-foreground: #16386e;
+  --destructive: #b4432c;
+  --destructive-foreground: #ffffff;
+  --success: #1f6a50;
+  --success-foreground: #ffffff;
+  --warning: #f7af27;
+  --warning-foreground: #8a6516;
+  --border: #e3e8f1;
+  --input: #e3e8f1;
+  --ring: #16386e;
+  --gradient-brand: linear-gradient(135deg, #16386e, #0e2749);
+  --shadow-card: 0 1px 2px rgba(22, 56, 110, 0.06), 0 8px 24px rgba(22, 56, 110, 0.08);
+  --shadow-phone: 0 24px 60px rgba(22, 56, 110, 0.22);
 }
 
 @layer base {
