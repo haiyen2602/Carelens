@@ -1,7 +1,7 @@
 """
 Nhận ảnh xác nhận liều thuốc, đối chiếu với đơn thuốc (ADR-0011).
 
-`POST` trả `202` ngay — một lần gọi mô hình đo được 26 đến 265 giây (xem
+`POST` trả `202` ngay — một lần gọi mô hình mất khá nhiều thời gian (xem
 `backend/services/photo_verification/vlm_bridge.py`), quá lâu để giữ trong một
 request HTTP đồng bộ. Việc nặng chạy nền qua `BackgroundTasks` của FastAPI,
 frontend hỏi lại kết quả bằng `GET`.
@@ -27,11 +27,13 @@ from backend.models.schemas import PhotoSubmitResponse, PhotoVerificationOut
 from backend.services.photo_verification import (
     MAX_ANH_BYTES,
     MAX_ATTEMPTS,
+    AnhKhongHopLeError,
     HanMucVuotQuaError,
     KetQua,
     KhongXacMinhDuocError,
     hoan_tat_xac_minh,
     khoi_tao_xac_minh,
+    nen_anh,
     xac_dinh_next_action,
 )
 
@@ -66,6 +68,12 @@ async def submit_photo(
             status.HTTP_400_BAD_REQUEST,
             detail=f"Ảnh quá lớn ({len(anh) // 1024}KB > {MAX_ANH_BYTES // 1024}KB).",
         )
+
+    settings = get_settings()
+    try:
+        anh = nen_anh(anh, settings.photo_max_edge_px, settings.photo_jpeg_quality)
+    except AnhKhongHopLeError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     duong_dan = _duong_dan_moi(dose_id)
     try:
