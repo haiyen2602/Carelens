@@ -265,6 +265,12 @@ class PrescriptionItemIn(BaseModel):
     thoi_diem_dung: str | None = None
     so_vien_moi_lan: int | None = Field(default=None, gt=0)
     gio_nhac: list[str] = Field(default_factory=list, min_length=1)
+    # DB-4E additive schedule fields. Older clients can omit all of them;
+    # backend then derives doses/day from ``gio_nhac`` and writes no cycle.
+    doses_per_day: int | None = Field(default=None, gt=0)
+    has_cycle: bool = False
+    cycle_on_days: int | None = Field(default=None, gt=0)
+    cycle_off_days: int | None = Field(default=None, ge=0)
     start_date: str | None = None
     duration_days: int | None = Field(default=None, gt=0)
 

@@ -137,6 +137,18 @@ class Settings(BaseSettings):
         default=None,
         description="Directory containing deployable Canonical V2 JSONL artifacts. Defaults to the local migration output.",
     )
+    prescription_v2_mode: Literal["legacy", "shadow"] = Field(
+        default="legacy",
+        description="APP-3 server-side prescription mode. Shadow writes deterministic V2 sidecar rows atomically.",
+    )
+    dose_runtime_mode: Literal["legacy", "shadow", "v2"] = Field(
+        default="legacy",
+        description="APP-4 dose runtime mode. Shadow generates/reconciles V2 rows; v2 serves the legacy-compatible V2 adapter.",
+    )
+    safety_runtime_mode: Literal["legacy", "shadow"] = Field(
+        default="legacy",
+        description="APP-5 safety mode. Shadow persists audited V2 safety/outbox decisions; legacy disables this runtime path.",
+    )
     # Vong 4, muc 3.2 - chi dung cho fuzzy name search o nhanh thuoc NGOAI
     # don. Sweep 4 tap eval (full/short GT, OOD, ambiguous) ban dau chot 0.25,
     # nhung 0.25 chi co margin +0.012 tren tran OOD (0.238) - sweep MIN them

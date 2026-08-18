@@ -178,11 +178,24 @@ Response: **giống hệt** `POST /auth/change-password` (`ChangePasswordRespons
       "thoi_diem_dung": "sau ăn sáng và sau ăn tối",
       "so_vien_moi_lan": 1,
       "gio_nhac": ["08:00", "20:00"],
+      "doses_per_day": 2,
+      "has_cycle": true,
+      "cycle_on_days": 5,
+      "cycle_off_days": 2,
       "drug_id": "panadol-extra"
     }
   ]
 }
 ```
+
+`doses_per_day`, `has_cycle`, `cycle_on_days`, and `cycle_off_days` are
+optional additive fields for DB-4E. Clients that do not send them remain
+compatible: the backend derives doses/day from `gio_nhac` and writes no cycle.
+When `has_cycle=true`, `cycle_on_days > 0` and `cycle_off_days >= 0` are
+required. A doctor-selected `gio_nhac` count must equal `doses_per_day` before
+the V2 plan/rule can become active; unresolved drug identity or any uncertain
+schedule remains `REVIEW_REQUIRED` in V2. This does not change legacy
+prescription or `dose_event` responses.
 
 ```json
 // POST /api/v1/prescriptions/{id}/approve — response 200
@@ -401,6 +414,7 @@ Mọi lỗi trả về cùng một hình dạng:
 |---|---|---|---|
 | 2026-08-04 | tất cả | Bản draft đầu tiên, dựng từ `README.md` + `ARCHITECTURE.md` + PRD Gate 01 | `[chờ Architect + Tech Lead review]` |
 | 2026-08-13 | `account-api` (mới, §1b) | Thêm contract mới — cần khi wire login thật cho doctor/patient (không có luồng tự đăng ký, cần admin tạo tài khoản qua API thay vì chỉ CLI `scripts/create_admin.py`). Xem `tasks/TASK-010-auth-api.md`. | `[chờ Architect/PM review]` |
+| 2026-08-17 | `prescription-api` (§2) | DB-4E đề xuất bổ sung optional `doses_per_day` và cycle (`has_cycle`, `cycle_on_days`, `cycle_off_days`) vào item. Không breaking: payload/response cũ giữ nguyên; backend fallback theo `gio_nhac`. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c mới) | Thêm `POST /auth/oauth/google` (internal, `X-Internal-Secret`) cho nút "Đăng nhập bằng Google" — Better Auth chỉ làm môi giới OAuth, JWT vẫn do backend phát. Kèm cột mới `account.auth_provider` (migration 0025). Không breaking: mọi endpoint cũ giữ nguyên request/response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c-2 mới) | Thêm `POST /auth/set-password` (Bearer, chỉ tài khoản `auth_provider="google"`, không hỏi mật khẩu cũ) cho phép tài khoản Google đặt mật khẩu lần đầu và đăng nhập được cả hai đường; `GET /auth/me` trả thêm `auth_provider`. Không breaking: thêm endpoint + thêm field response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |

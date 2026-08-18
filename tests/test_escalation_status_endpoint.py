@@ -14,7 +14,7 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Escalation  # noqa: E402
+from backend.db.models import Account, Escalation  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
 
@@ -68,6 +68,42 @@ def _cleanup(escalation_id: str) -> None:
 def _clear_overrides():
     yield
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _seed_authenticated_accounts():
+    """JWT subjects must refer to persisted active accounts on clean PostgreSQL."""
+
+    db = SessionLocal()
+    account_ids = ("test-caregiver-escalation-status", "test-patient-escalation-status")
+    try:
+        db.add_all(
+            [
+                Account(
+                    id=account_ids[0],
+                    full_name="Escalation status caregiver",
+                    email="test-caregiver-escalation-status@example.local",
+                    password_hash="not-a-real-hash",
+                    role="caregiver",
+                    status="active",
+                ),
+                Account(
+                    id=account_ids[1],
+                    full_name="Escalation status patient",
+                    email="test-patient-escalation-status@example.local",
+                    password_hash="not-a-real-hash",
+                    role="patient",
+                    status="active",
+                    patient_id="test-escstatus-own-placeholder",
+                ),
+            ]
+        )
+        db.commit()
+        yield
+    finally:
+        db.query(Account).filter(Account.id.in_(account_ids)).delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 @pytest.mark.asyncio

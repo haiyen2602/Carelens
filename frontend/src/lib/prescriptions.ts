@@ -17,6 +17,10 @@ export type PrescriptionItemInput = {
   thoiDiemDung: string | null;
   soVienMoiLan: number | null;
   gioNhac: string[];
+  dosesPerDay?: number | null;
+  hasCycle?: boolean;
+  cycleOnDays?: number | null;
+  cycleOffDays?: number | null;
   // Khoang ngay RIENG cua thuoc nay - null nghia la dung chung khoang ngay
   // cua ca phac do (Prescription.startDate/durationDays).
   startDate?: string | null;
@@ -95,6 +99,10 @@ function toApiItem(it: PrescriptionItemInput) {
     thoi_diem_dung: it.thoiDiemDung || undefined,
     so_vien_moi_lan: it.soVienMoiLan ?? undefined,
     gio_nhac: it.gioNhac,
+    doses_per_day: it.dosesPerDay ?? undefined,
+    has_cycle: it.hasCycle ?? undefined,
+    cycle_on_days: it.cycleOnDays ?? undefined,
+    cycle_off_days: it.cycleOffDays ?? undefined,
     start_date: it.startDate || undefined,
     duration_days: it.durationDays ?? undefined,
   };

@@ -50,6 +50,14 @@ jobs:
       - name: Install dependencies
         run: pip install --default-timeout=100 --retries 5 -r requirements.txt
 
+      # backend/vlm_demthuoc/ co requirements.txt rieng (.railwayignore loai no
+      # khoi backend deploy - khong module nao trong backend/api|agents|services
+      # import no). tests/vlm_demthuoc/ va test_vlm_prompts_dong_bo.py van can
+      # opencv-python/numpy cua no de import duoc, nen cai them o day thay vi
+      # gop vao requirements.txt goc.
+      - name: Install vlm_demthuoc tool dependencies (for its tests)
+        run: pip install --default-timeout=100 --retries 5 -r backend/vlm_demthuoc/requirements.txt
+
       - name: Lint with ruff
         run: ruff check backend/ tests/
 

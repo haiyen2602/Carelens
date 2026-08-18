@@ -14,6 +14,8 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from backend.agents.orchestrator import default_safety_check  # noqa: E402
 from backend.api.chat_deps import ChatServices, get_chat_services  # noqa: E402
+from backend.db.base import SessionLocal  # noqa: E402
+from backend.db.models import Account  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
 
@@ -77,10 +79,28 @@ async def test_valid_bearer_token_is_not_rejected_by_the_gate(unauthorized_clien
         safety_check=default_safety_check,
     )
 
-    token = create_access_token(sub="test-caregiver-gate", role="caregiver")
-    response = await unauthorized_client.post(
-        "/api/v1/chat",
-        json={"patient_id": "p1", "message": "test"},
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code != 401
+    account_id = "test-caregiver-gate"
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id=account_id,
+                full_name="Chat security test caregiver",
+                email="test-caregiver-gate@example.local",
+                password_hash="not-a-real-hash",
+                role="caregiver",
+                status="active",
+            )
+        )
+        db.commit()
+        token = create_access_token(sub=account_id, role="caregiver")
+        response = await unauthorized_client.post(
+            "/api/v1/chat",
+            json={"patient_id": "p1", "message": "test"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code != 401
+    finally:
+        db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+        db.commit()
+        db.close()

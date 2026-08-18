@@ -329,6 +329,26 @@ class V2AgentKnowledgeService:
         query = (query or "").strip()
         if not query:
             return []
+        normalized_query = normalize_text(query)
+        query_tokens = normalized_query.split()
+        # The doctor combobox searches after every keystroke.  Short fragments
+        # are intentionally not accepted by ``_name_score`` because that
+        # scorer is also used by the clinical identity-candidate path, where a
+        # one-character fuzzy hit is unsafe.  Catalog browsing is different:
+        # a short *prefix* is deterministic, does not resolve an identity by
+        # itself, and lets the clinician explicitly choose the displayed item.
+        if len(query_tokens) == 1 and len(query_tokens[0]) <= 3:
+            prefix = query_tokens[0]
+            ranked_prefixes = [
+                (
+                    1 if normalize_text(item.ten_thuoc).startswith(prefix) else 0,
+                    item,
+                )
+                for item in self.catalog_items
+                if any(token.startswith(prefix) for token in normalize_text(item.ten_thuoc).split())
+            ]
+            ranked_prefixes.sort(key=lambda item: (-item[0], normalize_text(item[1].ten_thuoc), item[1].drug_id))
+            return [item for _, item in ranked_prefixes[: max(1, min(limit, 50))]]
         ranked = [
             (self._name_score(query, item.ten_thuoc), item)
             for item in self.catalog_items

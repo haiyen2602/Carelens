@@ -22,12 +22,14 @@ một giá trị trong DevTools là biến thuốc tiêm thành viên nén, và 
 from __future__ import annotations
 
 import logging
+from collections import Counter
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.db.models import DoseEvent, Patient, Prescription
+from backend.config import get_settings
+from backend.db.models import DoseEvent, Patient, Prescription, PrescriptionItem
 from backend.services.drug_knowledge import lay_thuoc
 from backend.services.prescription.errors import (
     KhongTimThayError,
@@ -35,6 +37,13 @@ from backend.services.prescription.errors import (
     ViPhamNghiepVuError,
 )
 from backend.services.scheduling.generator import huy_lieu_chua_toi_han, sinh_dose_event
+from backend.services.scheduling.occurrence_generator import generate_prescription_dose_occurrences
+from backend.services.scheduling.write_path import (
+    activate_prescription_schedule,
+    cancel_prescription_future_occurrences,
+    stop_prescription_schedule,
+    sync_prescription_schedule,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +62,36 @@ DANG_CHAY = frozenset({ACTIVE, "approved"})
 # form bổ sung trường đó thì xoá đúng một chỗ.
 # TODO: xoá khi form có trường số ngày điều trị.
 SO_NGAY_MAC_DINH = 7
+
+
+def _shadow_v2_enabled() -> bool:
+    return get_settings().prescription_v2_mode == "shadow"
+
+
+def _v2_dose_runtime_enabled() -> bool:
+    return get_settings().dose_runtime_mode in {"shadow", "v2"}
+
+
+def _log_v2_shadow(db: Session, operation: str, prescription: Prescription) -> None:
+    """Record redacted V2 reconciliation state without logging clinical data."""
+
+    statuses = Counter(
+        db.execute(
+            select(PrescriptionItem.status).where(PrescriptionItem.prescription_id == prescription.id)
+        ).scalars()
+    )
+    expected_items = len(prescription.items) if isinstance(prescription.items, list) else 0
+    actual_items = sum(statuses.values())
+    logger.info(
+        "prescription_v2_shadow operation=%s prescription_id=%s expected_items=%d actual_items=%d mismatch=%s "
+        "sidecar_statuses=%s",
+        operation,
+        prescription.id,
+        expected_items,
+        actual_items,
+        expected_items != actual_items,
+        dict(sorted(statuses.items())),
+    )
 
 
 def _chuan_hoa_item(db: Session, item: dict) -> dict:
@@ -87,6 +126,10 @@ def _chuan_hoa_item(db: Session, item: dict) -> dict:
         "thoi_diem_dung": str(item.get("thoi_diem_dung") or "").strip(),
         "so_vien_moi_lan": item.get("so_vien_moi_lan"),
         "gio_nhac": list(item.get("gio_nhac") or []),
+        "doses_per_day": item.get("doses_per_day"),
+        "has_cycle": bool(item.get("has_cycle")),
+        "cycle_on_days": item.get("cycle_on_days"),
+        "cycle_off_days": item.get("cycle_off_days"),
         # Khoang ngay rieng cua thuoc nay - None nghia la dung chung khoang
         # ngay cua ca phac do (xem PrescriptionItemIn trong schemas.py).
         "start_date": item.get("start_date") or None,
@@ -114,25 +157,37 @@ def tao_phac_do(
     if db.get(Patient, patient_id) is None:
         raise KhongTimThayError(f"Không tìm thấy bệnh nhân {patient_id!r}.", patient_id=patient_id)
 
-    presc = Prescription(
-        patient_id=patient_id,
-        doctor_id=doctor_id,
-        status=DRAFT,
-        items=[_chuan_hoa_item(db, item) for item in items],
-        start_date=start_date or datetime.now(UTC).date().isoformat(),
-        duration_days=duration_days or SO_NGAY_MAC_DINH,
-        note=note or None,
-    )
-    db.add(presc)
-    db.commit()
+    try:
+        presc = Prescription(
+            patient_id=patient_id,
+            doctor_id=doctor_id,
+            status=DRAFT,
+            items=[_chuan_hoa_item(db, item) for item in items],
+            start_date=start_date or datetime.now(UTC).date().isoformat(),
+            duration_days=duration_days or SO_NGAY_MAC_DINH,
+            note=note or None,
+        )
+        db.add(presc)
+        db.flush()
+        if _shadow_v2_enabled():
+            sync_prescription_schedule(db, presc)
+            _log_v2_shadow(db, "create", presc)
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Tạo phác đồ cho bệnh nhân %s thất bại, đã hoàn tác.", patient_id)
+        raise
     db.refresh(presc)
 
     logger.info("Bác sĩ %s tạo phác đồ %s cho bệnh nhân %s (draft).", doctor_id, presc.id, patient_id)
     return presc
 
 
-def lay_phac_do(db: Session, prescription_id: str) -> Prescription:
-    presc = db.get(Prescription, prescription_id)
+def lay_phac_do(db: Session, prescription_id: str, *, for_update: bool = False) -> Prescription:
+    stmt = select(Prescription).where(Prescription.id == prescription_id)
+    if for_update:
+        stmt = stmt.with_for_update()
+    presc = db.execute(stmt).scalar_one_or_none()
     if presc is None:
         raise KhongTimThayError(f"Không tìm thấy phác đồ {prescription_id!r}.", prescription_id=prescription_id)
     return presc
@@ -159,7 +214,7 @@ def duyet_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple
     lại một phác đồ `active` không có liều nào, và không ai phát hiện cho tới
     khi bệnh nhân thắc mắc sao không thấy nhắc.
     """
-    presc = lay_phac_do(db, prescription_id)
+    presc = lay_phac_do(db, prescription_id, for_update=True)
 
     if presc.status in DANG_CHAY:
         raise TrangThaiKhongHopLeError(
@@ -176,6 +231,17 @@ def duyet_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple
         presc.status = ACTIVE
         presc.approved_by = doctor_id  # BR-1.5
         presc.approved_at = datetime.now(UTC)
+        # DB-4E only activates V2 metadata that is fully validated and mapped.
+        # It does not generate a V2 dose occurrence.
+        if _shadow_v2_enabled():
+            # A prescription may have been created while the server was in
+            # LEGACY mode. Re-sync before activation so enabling SHADOW never
+            # activates a missing or stale sidecar.
+            sync_prescription_schedule(db, presc)
+            activate_prescription_schedule(db, presc.id)
+            if _v2_dose_runtime_enabled():
+                generate_prescription_dose_occurrences(db, prescription_id=presc.id)
+            _log_v2_shadow(db, "approve", presc)
         so_lieu = sinh_dose_event(db, presc)
         db.commit()
     except Exception:
@@ -205,7 +271,7 @@ def sua_phac_do(
     if not items:
         raise ViPhamNghiepVuError("Đơn thuốc phải có ít nhất một thuốc.")
 
-    presc = lay_phac_do(db, prescription_id)
+    presc = lay_phac_do(db, prescription_id, for_update=True)
     if presc.status not in (DRAFT, *DANG_CHAY):
         raise TrangThaiKhongHopLeError(
             f"Không sửa được phác đồ đang ở trạng thái {presc.status!r}.",
@@ -214,9 +280,26 @@ def sua_phac_do(
         )
 
     try:
+        event_at = datetime.now(UTC)
+        if _shadow_v2_enabled() and presc.status in DANG_CHAY:
+            cancel_prescription_future_occurrences(
+                db,
+                prescription_id=presc.id,
+                event_at=event_at,
+                source="PRESCRIPTION_EDIT",
+                actor_type="DOCTOR",
+                actor_id=doctor_id,
+            )
         presc.items = [_chuan_hoa_item(db, item) for item in items]
         if note is not None:
             presc.note = note or None
+        if _shadow_v2_enabled():
+            sync_prescription_schedule(db, presc)
+            _log_v2_shadow(db, "edit", presc)
+        if presc.status in DANG_CHAY and _shadow_v2_enabled():
+            activate_prescription_schedule(db, presc.id)
+            if _v2_dose_runtime_enabled():
+                generate_prescription_dose_occurrences(db, prescription_id=presc.id, now=event_at)
         so_lieu = sinh_dose_event(db, presc) if presc.status in DANG_CHAY else 0
         db.commit()
     except Exception:
@@ -231,7 +314,7 @@ def sua_phac_do(
 
 def tu_choi_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> Prescription:
     """Từ chối phác đồ ở hàng đợi. Không sinh liều nào."""
-    presc = lay_phac_do(db, prescription_id)
+    presc = lay_phac_do(db, prescription_id, for_update=True)
     if presc.status not in CHO_DUYET:
         raise TrangThaiKhongHopLeError(
             f"Chỉ từ chối được phác đồ đang chờ duyệt, phác đồ này đang {presc.status!r}.",
@@ -251,7 +334,7 @@ def tu_choi_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> Pre
 
 def dung_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple[Prescription, int]:
     """Dừng phác đồ đang chạy. Mọi liều chưa tới hạn thành CANCELLED (BR-1.4)."""
-    presc = lay_phac_do(db, prescription_id)
+    presc = lay_phac_do(db, prescription_id, for_update=True)
     if presc.status not in DANG_CHAY:
         raise TrangThaiKhongHopLeError(
             f"Chỉ dừng được phác đồ đang chạy, phác đồ này đang {presc.status!r}.",
@@ -261,6 +344,15 @@ def dung_phac_do(db: Session, prescription_id: str, *, doctor_id: str) -> tuple[
 
     try:
         so_huy = huy_lieu_chua_toi_han(db, prescription_id)
+        if _shadow_v2_enabled():
+            stop_prescription_schedule(
+                db,
+                prescription_id,
+                event_at=datetime.now(UTC),
+                actor_type="DOCTOR",
+                actor_id=doctor_id,
+            )
+            _log_v2_shadow(db, "stop", presc)
         presc.status = STOPPED
         db.commit()
     except Exception:
