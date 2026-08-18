@@ -24,6 +24,7 @@ from backend.db.base import SessionLocal, engine
 from backend.services.classification import summarize_hourly_conversation
 from backend.services.escalation_reminder import check_and_send_reminders
 from backend.services.hourly_conversation_summary import create_completed_hour_summaries
+from backend.services.photo_cleanup import xoa_anh_het_han
 
 logger = logging.getLogger("escalation_scheduler")
 
@@ -56,6 +57,18 @@ async def _run_hourly_summary() -> None:
         db.close()
 
 
+async def _run_photo_cleanup() -> None:
+    db = SessionLocal()
+    try:
+        da_xoa = xoa_anh_het_han(db)
+        if da_xoa:
+            logger.info("Da xoa %d file anh xac nhan lieu qua han", da_xoa)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        logger.exception("Loi khi chay photo cleanup job")
+    finally:
+        db.close()
+
+
 def start_escalation_scheduler() -> AsyncIOScheduler:
     """Goi trong FastAPI lifespan (src/main.py) luc app khoi dong. Idempotent
     - goi nhieu lan chi tao scheduler 1 lan (vd test import lai module)."""
@@ -79,6 +92,15 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         "cron",
         minute=0,
         id="hourly_conversation_summary",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_photo_cleanup,
+        "cron",
+        hour=3,
+        minute=0,
+        id="photo_cleanup",
         replace_existing=True,
         max_instances=1,
     )

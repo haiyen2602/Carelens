@@ -38,6 +38,13 @@ apscheduler>=3.11.0
 # Vector Store — pgvector (extension trong PostgreSQL, xem ADR-0008), KHONG dung ChromaDB rieng
 pgvector>=0.3.6
 
+# Xu ly anh — nen/resize anh xac nhan lieu thuoc truoc khi luu + gui VLM
+# (backend/services/photo_verification/image_processing.py). Chon Pillow
+# (~3MB) thay vi opencv (~60MB) - dung dung tinh than "giu image nhe" da neu
+# trong vlm_bridge.py, o day chi can resize/nen JPEG, khong can xu ly ma tran
+# pixel nhu vlm_demthuoc/ (webcam).
+Pillow>=10.4.0
+
 # LLM client truc tiep (dung cho batch embedding script, Phase 3 - ngoai LangGraph)
 openai>=1.54.0
 tiktoken>=0.8.0

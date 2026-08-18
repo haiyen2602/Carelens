@@ -69,12 +69,9 @@ class Settings(BaseSettings):
     vlm_base_url: str = ""
     vlm_model: str = ""
     vlm_json_mode: Literal["schema", "object", "off"] = "schema"
-    # Mot lan dem that do duoc ~26s; 45s da rong rai. Xem ghi chu lich su o
-    # backend/vlm_demthuoc/config.py::Settings.timeout - cung con so, cung ly do:
     # SDK openai mac dinh tu thu lai 2 lan khi qua gio, am tham nhan gap 3.
     vlm_timeout: float = Field(default=45.0, gt=0)
-    # api.vilao.ai hong ~50% so lan goi (tra SSE rong kem HTTP 200), 5 lan cho
-    # ~97% thanh cong. Endpoint lanh manh khong bao gio cham toi co che nay.
+    # Endpoint lanh manh khong bao gio cham toi co che nay.
     vlm_retries: int = Field(default=5, ge=1)
     # Doi giua 2 lan thu. Test cua vlm_bridge.py dat 0 de khong ngu that giay
     # nao trong luc chay test (xem tests/services/photo_verification/test_vlm_bridge.py).
@@ -82,9 +79,22 @@ class Settings(BaseSettings):
 
     # Anh xac nhan lieu thuoc la du lieu y te (BR-4.3) - luu ngoai repo, DB chi
     # giu duong dan (backend/db/models.py::PhotoVerification.image_path).
-    # "./data/..." cung quy uoc voi CHROMA_PERSIST_DIR cu; can volume ben ngoai
-    # container thi moi song qua lan deploy lai (xem docs/DEPLOY.md ve volume).
+    # Can gan Railway Volume vao mount path chua thu muc nay thi anh moi song
+    # qua lan deploy lai (xem docs/DEPLOY.md muc "Volume anh xac nhan lieu").
     photo_storage_dir: str = "./data/photo_verifications"
+    # Canh dai nhat sau khi resize + chat luong nen JPEG - dong bo voi
+    # max_edge=1600, jpeg_quality=90 da tune tren golden dataset trong
+    # backend/vlm_demthuoc/vlm_client.py::encode_frame, khong bia so moi.
+    photo_max_edge_px: int = Field(default=1600, gt=0)
+    photo_jpeg_quality: int = Field(default=90, ge=1, le=95)
+    # So ngay giu FILE anh truoc khi backend/services/photo_cleanup.py xoa
+    # (dong DB van giu lai lam audit trail, chi image_path ve None). Chia
+    # theo ket_qua vi muc do can bang chung khac nhau - xem photo_cleanup.py.
+    # [CAN CHOT]: 3 gia tri duoi la de xuat mac dinh, chua phai quyet dinh
+    # san pham cuoi cung.
+    photo_retention_days_khop: int = Field(default=14, gt=0)
+    photo_retention_days_lech: int = Field(default=90, gt=0)
+    photo_retention_days_stuck: int = Field(default=3, gt=0)
 
     # Retrieval (specs/chatbot-rag-design.md muc 4) — DA CHOT bang so lieu that
     # Phase 7 (2026-08-08, eval/run_eval.py + eval/eval_report.json), khong con

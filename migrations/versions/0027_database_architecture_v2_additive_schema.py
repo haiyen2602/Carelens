@@ -1,7 +1,7 @@
 """Add Database Architecture V2 additive schema.
 
-Revision ID: 0025
-Revises: 0024
+Revision ID: 0027
+Revises: 0026
 Create Date: 2026-08-17
 
 DB-4A only:
@@ -17,13 +17,19 @@ into main after this migration was originally drafted. Local dev DB was
 still at alembic_version 0022 (this migration had never been stamped) when
 renumbered, so no DB-side fix was needed - see git history for the original
 0023 file if needed.
+
+Renumbered again from 0025 -> 0027 (down_revision 0024 -> 0026) when merging
+`main` into this branch on 2026-08-18: main had independently taken 0025
+(`0025_better_auth_tables.py`) and 0026 (`0026_normalize_account_email.py`)
+for the auth/OAuth work. Same situation as above - this migration had not
+been stamped anywhere, so only the revision ids move, no data impact.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0025"
-down_revision = "0024"
+revision = "0027"
+down_revision = "0026"
 branch_labels = None
 depends_on = None
 

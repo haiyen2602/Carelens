@@ -1,27 +1,44 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field
+
+from backend.services.email_identity import normalize_email
+
+# SUA 2026-08-17 (yeu cau PM: "Google va dang nhap thu cong cung 1 email thi
+# phai la CUNG 1 tai khoan"): chuan hoa email NGAY O BIEN thay vi o tung route.
+# Truoc day "MCK@gmail.com" (dang ky thu cong) va "mck@gmail.com" (Google luon
+# tra ve dang chuan) la 2 tai khoan khac nhau, vi `account.email` co UNIQUE
+# nhung Postgres so sanh chuoi phan biet chu hoa/thuong.
+#
+# Dat o day (pydantic BeforeValidator) de dung duoc cho CA duong doc va duong
+# ghi trong cung 1 dinh nghia: request nao khai bao `NormalizedEmail` thi email
+# vao route DA la dang chuan, khong route nao phai tu nho goi .lower().
+# `BeforeValidator` chay TRUOC EmailStr nen " MCK@Gmail.com " vua duoc lam sach
+# vua van bi kiem tra dinh dang email.
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(normalize_email)]
 
 
 class LoginRequest(BaseModel):
     """POST /api/v1/auth/login (api-contracts.md §1)."""
 
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=1)
 
 
 class RegisterRequest(BaseModel):
     """POST /api/v1/auth/register (api-contracts.md §1).
 
-    Tu dang ky chi cho 2 role: `patient` (benh nhan/nguoi than dung chung) va
-    `doctor`. `caregiver`/`admin` chi tao duoc qua account-api (§1b) boi admin.
+    SUA 2026-08-17 (yeu cau PM): tu dang ky CHI cho role `patient` (benh
+    nhan/nguoi than dung chung). `doctor`/`caregiver`/`admin` chi tao duoc qua
+    account-api (§1b) boi admin - truoc day `doctor` mo cho tu dang ky nen ai
+    cung tao duoc tai khoan bac si va thay du lieu benh nhan.
     """
 
     full_name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=8, max_length=128)
-    role: Literal["doctor", "patient"] = "patient"
+    role: Literal["patient"] = "patient"
 
 
 class VerifyEmailRequest(BaseModel):
@@ -33,13 +50,13 @@ class VerifyEmailRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     """POST /api/v1/auth/resend-verification."""
 
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class ForgotPasswordRequest(BaseModel):
     """POST /api/v1/auth/forgot-password."""
 
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class ResetPasswordRequest(BaseModel):
@@ -53,6 +70,20 @@ class ChangePasswordRequest(BaseModel):
     """POST /api/v1/auth/change-password."""
 
     current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class SetPasswordRequest(BaseModel):
+    """POST /api/v1/auth/set-password (them 2026-08-17, api-contracts.md §1c).
+
+    KHONG co `current_password` - day la diem khac biet duy nhat so voi
+    ChangePasswordRequest, va la ly do endpoint nay phai ton tai rieng: tai
+    khoan tao qua Google chua he co mat khau nguoi dung nao de nhap vao do.
+    Bu lai, endpoint CHI nhan tai khoan `auth_provider="google"` - tai khoan
+    da co mat khau van buoc phai di duong /auth/change-password (co xac minh
+    mat khau cu), neu khong thi 1 access_token bi lo se doi duoc mat khau ma
+    khong can biet mat khau cu."""
+
     new_password: str = Field(..., min_length=8, max_length=128)
 
 
@@ -77,6 +108,32 @@ class LoginResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
+
+
+class OAuthLoginRequest(BaseModel):
+    """POST /api/v1/auth/oauth/google - "Login with Google" (api-contracts.md §1).
+
+    KHONG co `password`, KHONG co `role`: nguoi goi la Route Handler cua chinh
+    frontend (server-to-server, chan bang header X-Internal-Secret), gui sang
+    danh tinh Google DA duoc Better Auth xac thuc xong. Tai khoan tao qua duong
+    nay luon la `patient` - giong rang buoc cua RegisterRequest (chi admin tao
+    duoc doctor/caregiver/admin, xem §1b), khong the nang quyen bang cach tu go
+    role vao body.
+
+    `provider_account_id` la `sub` cua Google (dinh danh on dinh, KHONG doi khi
+    nguoi dung doi email hien thi) - luu de doi chieu/ho tro dieu tra sau nay.
+    Viec GHEP voi tai khoan cu van dua tren `email`: bang `account` chi co UNIQUE
+    tren email, va Google da xac thuc chinh email do (email_verified).
+    """
+
+    email: NormalizedEmail
+    full_name: str = Field(..., min_length=1, max_length=100)
+    provider_account_id: str = Field(..., min_length=1)
+    # Google tra `email_verified=false` cho mot so tai khoan Workspace cau hinh
+    # dac biet. Fail-closed: backend TU CHOI (400) neu chua xac thuc, vi neu
+    # khong, ai co email chua xac thuc trung voi 1 tai khoan mat khau san co se
+    # chiem duoc tai khoan do.
+    email_verified: bool = True
 
 
 class ChangePasswordResponse(LoginResponse):
@@ -106,6 +163,11 @@ class MeResponse(BaseModel):
     # khong). None cho role khac patient - CHUA co onboarding tuong tu cho
     # doctor/caregiver/admin.
     profile_completed: bool | None = None
+    # THEM (migration 0025, Login with Google) - frontend dung de biet tai
+    # khoan nay co mat khau hay khong: "google" => chua co, phai hien "Đặt mật
+    # khẩu" (POST /auth/set-password) thay vi "Đổi mật khẩu" (doi mat khau cu
+    # ma nguoi dung khong the co). Xem components/account-settings.tsx.
+    auth_provider: str = "password"
 
 
 
@@ -119,7 +181,7 @@ class AccountCreateRequest(BaseModel):
     (text tu do, admin go tay khop du lieu demo co san vd 'demo-patient-01')
     - CHUA co UI chon tu danh sach, ngoai pham vi (xem tasks/TASK-010-auth-api.md)."""
 
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=1)
     role: AccountRole

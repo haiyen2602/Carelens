@@ -1,7 +1,7 @@
 """Add DB-4D normalized scheduling schema.
 
-Revision ID: 0026
-Revises: 0025
+Revision ID: 0028
+Revises: 0027
 Create Date: 2026-08-17
 
 DB-4D is additive schema only. It keeps ``schedule_rule.times_of_day`` for
@@ -12,8 +12,8 @@ foreign-key/check/legacy-data hardening until operational validation.
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0026"
-down_revision = "0025"
+revision = "0028"
+down_revision = "0027"
 branch_labels = None
 depends_on = None
 

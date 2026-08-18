@@ -884,6 +884,22 @@ class Account(Base):
 
     __tablename__ = "account"
 
+    # UNIQUE tren BIEU THUC `lower(btrim(email))` (migration 0026): "1 email =
+    # 1 tai khoan" khong phan biet chu hoa/thuong. UNIQUE tren cot `email` o
+    # duoi KHONG du - Postgres so sanh chuoi co phan biet chu hoa/thuong, nen
+    # "MCK@gmail.com" va "mck@gmail.com" la 2 dong hop le, tao ra 2 tai khoan
+    # cho cung 1 nguoi (bug that 2026-08-17: dang ky tay bang chu hoa roi bam
+    # "Login with Google" - Google tra ve email chuan hoa).
+    #
+    # Khai bao o day de model KHOP voi DB that, va de bieu thuc chi ton tai o
+    # 3 cho PHAI trung nhau tung chu: index nay, migration 0026, va
+    # backend/services/email_identity.py::account_email_key() (bieu thuc dung
+    # khi tra cuu - lech mot ky tu la Postgres bo qua index, moi lan dang nhap
+    # thanh 1 lan quet ca bang).
+    __table_args__ = (
+        Index("ux_account_email_normalized", text("lower(btrim(email))"), unique=True),
+    )
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
@@ -914,7 +930,15 @@ class Account(Base):
     # token_revoked_by_password_change). NULL = chua tung doi mat khau ->
     # khong thu hoi gi (tai khoan tao truoc migration 0018).
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
+    # THEM sau (migration 0025, "Login with Google") - "password" | "google".
+    # Tai khoan sinh ra tu Google KHONG co mat khau nguoi dung nao ca:
+    # `password_hash` cua no la bcrypt cua 1 chuoi ngau nhien khong ai biet
+    # (xem auth_routes.py::_oauth_upsert_account) - co y, de POST /auth/login
+    # bang mat khau khong bao gio dang nhap duoc vao tai khoan Google, thay vi
+    # de password_hash rong/NULL (verify_password se nem loi thay vi tra False).
+    # Cot nay la cach DUY NHAT phan biet "chua tung dat mat khau" - thieu no
+    # thi luong doi mat khau se doi "mat khau hien tai" cua thu khong ton tai.
+    auth_provider: Mapped[str] = mapped_column(String, nullable=False, default="password")
 
 
 class PendingDrugConfirmation(Base):

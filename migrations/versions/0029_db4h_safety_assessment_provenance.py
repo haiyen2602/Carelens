@@ -1,7 +1,7 @@
 """Add provenance snapshots to DB-4H safety assessments.
 
-Revision ID: 0027
-Revises: 0026
+Revision ID: 0029
+Revises: 0028
 Create Date: 2026-08-17
 
 The policy relationship alone is insufficient for an immutable assessment:
@@ -12,8 +12,8 @@ old assessments auditable without hardening legacy or backfilled rows.
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0027"
-down_revision = "0026"
+revision = "0029"
+down_revision = "0028"
 branch_labels = None
 depends_on = None
 
