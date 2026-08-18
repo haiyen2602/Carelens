@@ -150,7 +150,7 @@ _LUAT: tuple[_Luat, ...] = (
 _KHONG_RO = DosageForm(
     count_key=None,
     mode=MatchMode.SKIP,
-    ly_do="cháu chưa nhận biết được dạng thuốc này",
+    ly_do="tôi chưa nhận biết được dạng thuốc này",
     co_luat=False,
 )
 
