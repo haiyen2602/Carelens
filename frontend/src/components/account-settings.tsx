@@ -59,12 +59,15 @@ export function AccountSettings() {
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
           <Bell className="h-4 w-4" /> Thông báo
         </h2>
+        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+          Các tuỳ chọn dưới đây hiện chỉ đổi trên màn hình này, chưa được lưu vào hệ thống.
+        </p>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium">Nhắc uống thuốc</p>
             <p className="text-xs text-muted-foreground">Nhắc theo đúng khung giờ trong phác đồ</p>
           </div>
-          <Switch checked={reminders} onCheckedChange={setReminders} />
+          <Switch aria-label="Nhắc uống thuốc" checked={reminders} onCheckedChange={setReminders} />
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -73,14 +76,22 @@ export function AccountSettings() {
               Báo ngay khi phát hiện dấu hiệu nguy hiểm
             </p>
           </div>
-          <Switch checked={emergencyAlerts} onCheckedChange={setEmergencyAlerts} />
+          <Switch
+            aria-label="Cảnh báo khẩn cấp"
+            checked={emergencyAlerts}
+            onCheckedChange={setEmergencyAlerts}
+          />
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium">Tổng kết tuần</p>
             <p className="text-xs text-muted-foreground">Gửi báo cáo tuân thủ hằng tuần</p>
           </div>
-          <Switch checked={weeklySummary} onCheckedChange={setWeeklySummary} />
+          <Switch
+            aria-label="Tổng kết tuần"
+            checked={weeklySummary}
+            onCheckedChange={setWeeklySummary}
+          />
         </div>
       </section>
 

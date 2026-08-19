@@ -233,6 +233,42 @@ class DrugSearchResponse(BaseModel):
     items: list[DrugSummary]
 
 
+class DrugCatalogResponse(BaseModel):
+    """GET /api/v1/drugs/catalog - trang tra cuu cua bac si (duyet + loc + phan trang).
+
+    `total` la tong so thuoc KHOP BO LOC (khong phai so item trang nay) - can
+    de tinh so trang.
+    """
+
+    total: int
+    items: list[DrugSummary]
+
+
+class DrugFiltersResponse(BaseModel):
+    """Cac gia tri co that trong danh muc, de do vao dropdown loc."""
+
+    dang_thuoc: list[str]
+    duong_dung: list[str]
+
+
+class DrugDetail(DrugSummary):
+    """GET /api/v1/drugs/{drug_id} - trang tra cuu thuoc cua bac si (chi doc).
+
+    Khac DrugSummary o cho co them phan van ban mo ta lay tu `drug_chunks`.
+    Chi tai khi bac si bam mo mot thuoc cu the, khong phai moi lan go phim -
+    nen ly do "khong tra tac_dung_phu" cua DrugSummary khong ap dung o day.
+
+    4 truong van ban co the None: moi 226/3562 thuoc da duoc embed. None =
+    "chua co du lieu", KHONG phai loi.
+    """
+
+    danh_muc: str | None = None
+    cong_dung: str | None = None
+    tac_dung_phu: str | None = None
+    cach_dung: str | None = None
+    bao_quan: str | None = None
+
+
 class PatientSummary(BaseModel):
     """GET /api/v1/patients — chua trong api-contracts.md, xem drug_routes.py."""
 

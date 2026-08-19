@@ -136,10 +136,11 @@ export default function HealthPage() {
             <Textarea
               rows={3}
               placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
+              aria-label="Mô tả vấn đề sức khỏe"
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <div className="grid grid-cols-3 gap-2">
+            <div role="radiogroup" aria-label="Mức độ nghiêm trọng" className="grid grid-cols-3 gap-2">
               {(
                 [
                   ["low", "Nhẹ"],
@@ -149,6 +150,8 @@ export default function HealthPage() {
               ).map(([v, label]) => (
                 <button
                   key={v}
+                  role="radio"
+                  aria-checked={level === v}
                   onClick={() => setLevel(v)}
                   className={`rounded-lg border p-2 text-sm font-semibold transition-colors ${
                     level === v

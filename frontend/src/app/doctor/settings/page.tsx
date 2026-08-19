@@ -15,15 +15,16 @@ export default function SettingsPage() {
   const [state, setState] = useState<boolean[]>(options.map((o) => o[1]));
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Cài đặt</h1>
-        <p className="text-sm text-muted-foreground">Khung an toàn liều mặc định: ±30 phút.</p>
-      </header>
+      <p className="rounded-lg bg-muted/60 px-4 py-2.5 text-xs text-muted-foreground">
+        Các tuỳ chọn dưới đây hiện chỉ đổi trên màn hình này, chưa được lưu vào hệ thống — sẽ hoạt
+        động thật khi có API tương ứng.
+      </p>
       <div className="surface-card divide-y divide-border">
         {options.map(([label], i) => (
           <div key={label} className="flex items-center justify-between gap-4 p-5">
             <p className="min-w-0 text-sm font-medium">{label}</p>
             <Switch
+              aria-label={label}
               checked={state[i] ?? false}
               onCheckedChange={(v) => setState((s) => s.map((x, j) => (j === i ? v : x)))}
             />

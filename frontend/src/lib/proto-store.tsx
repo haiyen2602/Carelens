@@ -78,7 +78,10 @@ export type SysAlert = {
   title: string;
   detail: string;
   at: string;
-  status: "new" | "processing" | "acknowledged" | "resolved";
+  // "dismissed" = bac si xem va danh gia khong can xu ly (khac "resolved" la
+  // da xu ly that). Chi song trong state cuc bo nhu cac trang thai con lai -
+  // setAlertStatus() chua day nguoc len backend.
+  status: "new" | "processing" | "acknowledged" | "resolved" | "dismissed";
   doseId?: string;
 };
 

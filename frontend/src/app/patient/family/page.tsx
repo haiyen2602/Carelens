@@ -166,6 +166,7 @@ export default function PatientFamilyPage() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  aria-label="Từ chối lời mời"
                   className="text-destructive"
                   disabled={dangXuLy === invite.id}
                   onClick={() => tuChoi(invite)}

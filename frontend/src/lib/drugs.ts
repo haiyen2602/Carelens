@@ -48,16 +48,100 @@ function toDrug(item: DrugApiItem): Drug {
  * `signal` de huy request cu khi nguoi dung go tiep - khong co no thi ket qua
  * ve khong dung thu tu se ghi de len nhau, o goi y nhay lung tung.
  */
-export async function searchDrugs(query: string, signal?: AbortSignal): Promise<Drug[]> {
+export async function searchDrugs(query: string, signal?: AbortSignal, limit = 8): Promise<Drug[]> {
   if (!query.trim()) return [];
 
-  const response = await fetch(`/api/drugs?q=${encodeURIComponent(query)}&limit=8`, { signal });
+  const response = await fetch(`/api/drugs?q=${encodeURIComponent(query)}&limit=${limit}`, {
+    signal,
+  });
   if (!response.ok) {
     throw new Error(`Tra cứu thuốc thất bại (${response.status})`);
   }
 
   const data: { items: DrugApiItem[] } = await response.json();
   return (data.items ?? []).map(toDrug);
+}
+
+// Duyet danh muc cho trang tra cuu (doctor/drugs): tu khoa RONG tra ve trang
+// dau cua ca danh muc, khac searchDrugs() o tren.
+export async function browseDrugs(
+  params: {
+    q?: string;
+    dangThuoc?: string;
+    duongDung?: string;
+    limit?: number;
+    offset?: number;
+  },
+  signal?: AbortSignal,
+): Promise<{ total: number; items: Drug[] }> {
+  const query = new URLSearchParams();
+  query.set("q", params.q ?? "");
+  query.set("limit", String(params.limit ?? 20));
+  query.set("offset", String(params.offset ?? 0));
+  if (params.dangThuoc) query.set("dang_thuoc", params.dangThuoc);
+  if (params.duongDung) query.set("duong_dung", params.duongDung);
+
+  const response = await fetch(`/api/drugs/catalog?${query.toString()}`, { signal });
+  if (!response.ok) {
+    throw new Error(`Tra cứu thuốc thất bại (${response.status})`);
+  }
+
+  const data: { total: number; items: DrugApiItem[] } = await response.json();
+  return { total: data.total ?? 0, items: (data.items ?? []).map(toDrug) };
+}
+
+/** Gia tri co that cua dang_thuoc/duong_dung, do vao dropdown loc. */
+export async function getDrugFilters(
+  signal?: AbortSignal,
+): Promise<{ dangThuoc: string[]; duongDung: string[] }> {
+  const response = await fetch("/api/drugs/filters", { signal });
+  if (!response.ok) {
+    throw new Error(`Không tải được bộ lọc (${response.status})`);
+  }
+
+  const data: { dang_thuoc: string[]; duong_dung: string[] } = await response.json();
+  return { dangThuoc: data.dang_thuoc ?? [], duongDung: data.duong_dung ?? [] };
+}
+
+// Chi tiet mot thuoc, cho trang tra cuu cua bac si (doctor/drugs). Them phan
+// van ban mo ta so voi `Drug` - 4 truong nay lay tu drug_chunks va co the
+// null vi moi 226/3562 thuoc da duoc embed.
+export type DrugDetail = Drug & {
+  danhMuc: string | null;
+  congDung: string | null;
+  tacDungPhu: string | null;
+  cachDung: string | null;
+  baoQuan: string | null;
+};
+
+type DrugDetailApiItem = DrugApiItem & {
+  danh_muc: string | null;
+  cong_dung: string | null;
+  tac_dung_phu: string | null;
+  cach_dung: string | null;
+  bao_quan: string | null;
+};
+
+/** Lay chi tiet 1 thuoc theo id. `null` neu khong co trong danh muc. */
+export async function getDrugDetail(
+  drugId: string,
+  signal?: AbortSignal,
+): Promise<DrugDetail | null> {
+  const response = await fetch(`/api/drugs/${encodeURIComponent(drugId)}`, { signal });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Không tải được chi tiết thuốc (${response.status})`);
+  }
+
+  const item: DrugDetailApiItem = await response.json();
+  return {
+    ...toDrug(item),
+    danhMuc: item.danh_muc,
+    congDung: item.cong_dung,
+    tacDungPhu: item.tac_dung_phu,
+    cachDung: item.cach_dung,
+    baoQuan: item.bao_quan,
+  };
 }
 
 /** Dong mo ta duoi ten thuoc trong o goi y: "Viên nén · 500mg". */

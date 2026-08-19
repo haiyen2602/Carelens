@@ -169,13 +169,19 @@ export default function AssistantPage() {
         <Textarea
           rows={1}
           placeholder="Nhập câu hỏi..."
+          aria-label="Nhập câu hỏi cho trợ lý AI"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isPending}
           className="resize-none"
         />
-        <Button size="icon" disabled={isPending || !input.trim()} onClick={() => submit(input)}>
+        <Button
+          size="icon"
+          aria-label="Gửi câu hỏi"
+          disabled={isPending || !input.trim()}
+          onClick={() => submit(input)}
+        >
           <Send className="h-4 w-4" />
         </Button>
       </div>

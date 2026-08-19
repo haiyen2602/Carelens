@@ -16,7 +16,14 @@ from backend.config import get_settings
 from backend.services.drug_knowledge.resolver import (
     GIOI_HAN_TOI_DA,
     NGUONG_GAN_GIONG,
+    ChiTietThuoc,
     ThuocTimDuoc,
+    # Trang tra cuu thuoc cua bac si (doctor/drugs) - di THANG qua resolver V1,
+    # khong qua lop V2 ben duoi: lop do chi bao `tim_thuoc`/`lay_thuoc` (danh
+    # muc cho form ke don), chua co doi ung V2 cho duyet/loc/chi tiet.
+    lay_bo_loc,
+    lay_chi_tiet_thuoc,
+    liet_ke_thuoc,
 )
 from backend.services.drug_knowledge.resolver import (
     lay_thuoc as _legacy_lay_thuoc,
@@ -58,4 +65,14 @@ def lay_thuoc(db: Session, drug_id: str) -> DrugCatalogItem | ThuocTimDuoc | Non
         return v1_result
     return v2_result
 
-__all__ = ["GIOI_HAN_TOI_DA", "NGUONG_GAN_GIONG", "ThuocTimDuoc", "lay_thuoc", "tim_thuoc"]
+__all__ = [
+    "GIOI_HAN_TOI_DA",
+    "NGUONG_GAN_GIONG",
+    "ChiTietThuoc",
+    "ThuocTimDuoc",
+    "lay_bo_loc",
+    "lay_chi_tiet_thuoc",
+    "lay_thuoc",
+    "liet_ke_thuoc",
+    "tim_thuoc",
+]

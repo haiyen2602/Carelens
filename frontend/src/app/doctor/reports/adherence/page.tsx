@@ -90,13 +90,6 @@ export default function ReportAdherence() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Tổng quan thông tin</h1>
-        <p className="text-sm text-muted-foreground">
-          Tóm tắt nhanh tình hình tuân thủ, cảnh báo và các nhóm bệnh nhân cần ưu tiên theo dõi.
-        </p>
-      </header>
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => {
           const Icon = s.icon;
@@ -158,7 +151,9 @@ export default function ReportAdherence() {
                 Tỷ lệ dùng đúng, trễ và bỏ lỡ theo ngày.
               </p>
             </div>
-            <Activity className="h-5 w-5 text-primary" />
+            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+              <Activity className="h-3.5 w-3.5" /> Mock
+            </span>
           </div>
           <div className="mt-5 space-y-4">
             {weeklyDoses.map((d) => (
@@ -182,8 +177,15 @@ export default function ReportAdherence() {
 
       <section className="grid gap-5 xl:grid-cols-3">
         <div className="surface-card p-6">
-          <h2 className="text-lg font-bold">Cảnh báo theo loại</h2>
-          <p className="text-sm text-muted-foreground">Ước lượng số cảnh báo trong tuần.</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Cảnh báo theo loại</h2>
+              <p className="text-sm text-muted-foreground">Ước lượng số cảnh báo trong tuần.</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+              Mock
+            </span>
+          </div>
           <div className="mt-5 space-y-4">
             {alertTypes.map((a) => (
               <div key={a.label}>
@@ -203,8 +205,17 @@ export default function ReportAdherence() {
         </div>
 
         <div className="surface-card p-6">
-          <h2 className="text-lg font-bold">Khung giờ hay bỏ lỡ</h2>
-          <p className="text-sm text-muted-foreground">Giúp bác sĩ điều chỉnh nhắc nhở khi cần.</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Khung giờ hay bỏ lỡ</h2>
+              <p className="text-sm text-muted-foreground">
+                Giúp bác sĩ điều chỉnh nhắc nhở khi cần.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+              Mock
+            </span>
+          </div>
           <div className="mt-5 flex h-48 items-end gap-4">
             {missedWindows.map((w) => (
               <div key={w.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
@@ -234,7 +245,9 @@ export default function ReportAdherence() {
                 <div key={p.id} className="rounded-lg border border-border p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold">{p.name}</p>
+                      <p className="truncate text-sm font-bold" title={p.name}>
+                        {p.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {p.condition || "Chưa có ghi chú"}
                       </p>

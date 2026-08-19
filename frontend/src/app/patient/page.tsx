@@ -271,7 +271,7 @@ export default function PatientToday() {
             <div key={d.id} className="surface-card p-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold">
+                  <p className="truncate font-semibold" title={`${gioHienThi(d.scheduledAt)} · ${moTaThuoc(d)}`}>
                     {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
                   </p>
                 </div>

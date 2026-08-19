@@ -280,17 +280,22 @@ export default function AccountsPage() {
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm theo tên hoặc email..."
+            aria-label="Tìm theo tên hoặc email"
             className="pl-9"
           />
         </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as "all" | AccountStatus)}
+          aria-label="Lọc theo trạng thái"
           className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
         >
           <option value="all">Trạng thái: Tất cả</option>
@@ -362,7 +367,9 @@ export default function AccountsPage() {
                       {a.fullName.charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate font-semibold">{a.fullName}</p>
+                      <p className="truncate font-semibold" title={a.fullName}>
+                        {a.fullName}
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">{a.id}</p>
                     </div>
                   </div>

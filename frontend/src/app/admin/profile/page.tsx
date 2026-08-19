@@ -43,13 +43,6 @@ export default function AdminProfilePage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Hồ sơ cá nhân</h1>
-        <p className="text-sm text-muted-foreground">
-          Thông tin tài khoản quản trị viên đang đăng nhập.
-        </p>
-      </header>
-
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <section className="surface-card p-6">
           <div className="flex items-center gap-4">
@@ -71,10 +64,11 @@ export default function AdminProfilePage() {
             ))}
           </dl>
 
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-success/40 bg-success/10 p-4">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" />
-            <p className="text-sm text-success">
-              Tài khoản đang hoạt động bình thường, chưa ghi nhận truy cập bất thường.
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-muted/60 p-4">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Hệ thống chưa có cơ chế phát hiện truy cập bất thường — mục này sẽ hiển thị cảnh báo
+              thật khi tính năng đó được xây dựng.
             </p>
           </div>
         </section>

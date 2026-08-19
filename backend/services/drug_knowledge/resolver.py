@@ -65,6 +65,26 @@ class ThuocTimDuoc:
         }
 
 
+@dataclass(frozen=True)
+class ChiTietThuoc:
+    """Một thuốc kèm phần văn bản mô tả — cho trang tra cứu của bác sĩ.
+
+    KHÁC `ThuocTimDuoc`: bản đó cố ý không mang `cong_dung`/`tac_dung_phu` vì
+    ô gợi ý gọi nó mỗi lần gõ phím. Ở đây chỉ MỘT thuốc, lấy khi bác sĩ bấm mở
+    chi tiết, nên tải kèm văn bản là hợp lý.
+
+    4 trường văn bản lấy từ `drug_chunks` (field_group), và chỉ 226/3562 thuốc
+    đã được embed — thuốc chưa có chunk trả về `None`, KHÔNG phải lỗi.
+    """
+
+    thuoc: ThuocTimDuoc
+    danh_muc: str | None
+    cong_dung: str | None
+    tac_dung_phu: str | None
+    cach_dung: str | None
+    bao_quan: str | None
+
+
 _CHON = (
     "SELECT id, ten_thuoc, dang_thuoc, duong_dung, ham_luong, tong_so_luong, muc_nghiem_trong"
     " FROM drug"
@@ -87,6 +107,19 @@ _TIM = text(
 )
 
 _THEO_ID = text(f"{_CHON} WHERE id = :drug_id")
+
+# Ban day du cho trang tra cuu - them `danh_muc` so voi _CHON.
+_CHI_TIET_THEO_ID = text(
+    "SELECT id, ten_thuoc, dang_thuoc, duong_dung, ham_luong, tong_so_luong,"
+    "       muc_nghiem_trong, danh_muc"
+    " FROM drug WHERE id = :drug_id"
+)
+
+# 4 chunk/thuoc (cong_dung|tac_dung_phu|cach_dung|bao_quan). Chi lay 2 cot can
+# hien thi - KHONG lay `embedding` (1536 so thuc, khong dung de doc).
+_CHUNK_THEO_ID = text(
+    "SELECT field_group, noi_dung FROM drug_chunks WHERE drug_id = :drug_id"
+)
 
 
 def _to_thuoc(row) -> ThuocTimDuoc:
@@ -128,4 +161,100 @@ def lay_thuoc(db: Session, drug_id: str) -> ThuocTimDuoc | None:
     return _to_thuoc(row) if row else None
 
 
-__all__ = ["GIOI_HAN_TOI_DA", "NGUONG_GAN_GIONG", "ThuocTimDuoc", "lay_thuoc", "tim_thuoc"]
+def liet_ke_thuoc(
+    db: Session,
+    *,
+    tu_khoa: str = "",
+    dang_thuoc: str | None = None,
+    duong_dung: str | None = None,
+    gioi_han: int = 20,
+    bo_qua: int = 0,
+) -> tuple[list[ThuocTimDuoc], int]:
+    """Duyệt danh mục cho trang tra cứu: lọc + phân trang, trả kèm tổng số.
+
+    KHÁC `tim_thuoc()`: hàm đó phục vụ ô gợi ý gõ-từng-phím nên từ khoá rỗng
+    trả rỗng. Ở đây từ khoá rỗng nghĩa là "xem cả danh mục" — bác sĩ mở trang
+    tra cứu là muốn thấy danh sách ngay, chưa gõ gì.
+
+    Xếp theo tên (không theo độ giống) khi không có từ khoá: phân trang chỉ ổn
+    định khi thứ tự ổn định.
+    """
+    dieu_kien = []
+    tham_so: dict = {}
+
+    tu_khoa = (tu_khoa or "").strip()
+    if tu_khoa:
+        dieu_kien.append("ten_thuoc_unaccent ILIKE '%' || unaccent(:q) || '%'")
+        tham_so["q"] = tu_khoa
+    if dang_thuoc:
+        dieu_kien.append("dang_thuoc = :dang_thuoc")
+        tham_so["dang_thuoc"] = dang_thuoc
+    if duong_dung:
+        dieu_kien.append("duong_dung = :duong_dung")
+        tham_so["duong_dung"] = duong_dung
+
+    where = f" WHERE {' AND '.join(dieu_kien)}" if dieu_kien else ""
+
+    tong = db.execute(text(f"SELECT count(*) FROM drug{where}"), tham_so).scalar_one()
+    rows = db.execute(
+        text(f"{_CHON}{where} ORDER BY ten_thuoc LIMIT :gioi_han OFFSET :bo_qua"),
+        {
+            **tham_so,
+            "gioi_han": min(max(gioi_han, 1), GIOI_HAN_TOI_DA),
+            "bo_qua": max(bo_qua, 0),
+        },
+    ).all()
+    return [_to_thuoc(r) for r in rows], tong
+
+
+def lay_bo_loc(db: Session) -> tuple[list[str], list[str]]:
+    """Các giá trị `dang_thuoc` / `duong_dung` có thật trong danh mục.
+
+    Đọc từ DB chứ không viết cứng: danh mục nạp từ file JSON ngoài, viết cứng
+    thì thêm thuốc dạng mới là bộ lọc lặng lẽ bỏ sót.
+    """
+    dang = db.execute(
+        text("SELECT DISTINCT dang_thuoc FROM drug WHERE dang_thuoc <> '' ORDER BY dang_thuoc")
+    ).scalars().all()
+    duong = db.execute(
+        text("SELECT DISTINCT duong_dung FROM drug WHERE duong_dung <> '' ORDER BY duong_dung")
+    ).scalars().all()
+    return list(dang), list(duong)
+
+
+def lay_chi_tiet_thuoc(db: Session, drug_id: str) -> ChiTietThuoc | None:
+    """Một thuốc kèm phần mô tả, cho trang tra cứu. `None` nếu không có thuốc.
+
+    Thuốc CÓ trong danh mục nhưng CHƯA embed vẫn trả về bình thường, 4 trường
+    văn bản để `None` — đây là trường hợp thường gặp (226/3562 thuốc có chunk),
+    không phải lỗi.
+    """
+    row = db.execute(_CHI_TIET_THEO_ID, {"drug_id": drug_id}).first()
+    if row is None:
+        return None
+
+    doan = {
+        r.field_group: r.noi_dung
+        for r in db.execute(_CHUNK_THEO_ID, {"drug_id": drug_id}).all()
+    }
+    return ChiTietThuoc(
+        thuoc=_to_thuoc(row),
+        danh_muc=row.danh_muc,
+        cong_dung=doan.get("cong_dung"),
+        tac_dung_phu=doan.get("tac_dung_phu"),
+        cach_dung=doan.get("cach_dung"),
+        bao_quan=doan.get("bao_quan"),
+    )
+
+
+__all__ = [
+    "GIOI_HAN_TOI_DA",
+    "NGUONG_GAN_GIONG",
+    "ChiTietThuoc",
+    "ThuocTimDuoc",
+    "lay_bo_loc",
+    "lay_chi_tiet_thuoc",
+    "lay_thuoc",
+    "liet_ke_thuoc",
+    "tim_thuoc",
+]
