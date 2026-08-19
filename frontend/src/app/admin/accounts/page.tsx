@@ -54,10 +54,12 @@ const emptyForm = {
   doctorId: "",
 };
 
+type AccountGroup = "patients" | "doctors" | "admins";
+
 export default function AccountsPage() {
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
-  const [role, setRole] = useState<"all" | AccountRole>("all");
+  const [activeGroup, setActiveGroup] = useState<AccountGroup>("patients");
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -97,17 +99,30 @@ export default function AccountsPage() {
 
   const accounts = accountsQuery.data ?? [];
 
-  const list = useMemo(
+  const groupAccounts = useMemo(
     () =>
       accounts.filter((a) => {
+        const matchesGroup =
+          activeGroup === "patients"
+            ? a.role === "patient" || a.role === "caregiver"
+            : activeGroup === "doctors"
+              ? a.role === "doctor"
+              : a.role === "admin";
+        return matchesGroup;
+      }),
+    [accounts, activeGroup],
+  );
+
+  const list = useMemo(
+    () =>
+      groupAccounts.filter((a) => {
         const matchQ =
           a.fullName.toLowerCase().includes(q.toLowerCase()) ||
           a.email.toLowerCase().includes(q.toLowerCase());
-        const matchRole = role === "all" || a.role === role;
         const matchStatus = status === "all" || a.status === status;
-        return matchQ && matchRole && matchStatus;
+        return matchQ && matchStatus;
       }),
-    [accounts, q, role, status],
+    [groupAccounts, q, status],
   );
 
   const submitCreate = (e: FormEvent) => {
@@ -130,7 +145,7 @@ export default function AccountsPage() {
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-extrabold tracking-tight">Quản lý tài khoản</h1>
           <p className="text-sm text-muted-foreground">
-            {accounts.length} tài khoản · bác sĩ, bệnh nhân, người thân và quản trị viên.
+            {groupAccounts.length} tài khoản trong nhóm · bác sĩ, bệnh nhân và quản trị viên.
           </p>
         </div>
         <Dialog
@@ -240,6 +255,35 @@ export default function AccountsPage() {
         </Dialog>
       </header>
 
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm tài khoản">
+        {([
+          ["patients", "Bệnh nhân"],
+          ["doctors", "Bác sĩ"],
+          ["admins", "Admin"],
+        ] as const).map(([group, label]) => (
+          <button
+            key={group}
+            type="button"
+            role="tab"
+            aria-selected={activeGroup === group}
+            onClick={() => setActiveGroup(group)}
+            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
+              activeGroup === group
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input bg-card text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {label} ({group === activeGroup ? groupAccounts.length : accounts.filter((a) =>
+              group === "patients"
+                ? a.role === "patient" || a.role === "caregiver"
+                : group === "doctors"
+                  ? a.role === "doctor"
+                  : a.role === "admin",
+            ).length})
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -250,17 +294,6 @@ export default function AccountsPage() {
             className="pl-9"
           />
         </div>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "all" | AccountRole)}
-          className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
-        >
-          <option value="all">Vai trò: Tất cả</option>
-          <option value="doctor">Bác sĩ</option>
-          <option value="patient">Bệnh nhân</option>
-          <option value="caregiver">Người thân</option>
-          <option value="admin">Quản trị</option>
-        </select>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as "all" | AccountStatus)}
