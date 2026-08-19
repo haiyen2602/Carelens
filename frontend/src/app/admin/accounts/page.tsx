@@ -63,6 +63,11 @@ export default function AccountsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [statusError, setStatusError] = useState("");
+  const [lastStatusAction, setLastStatusAction] = useState<{
+    id: string;
+    next: AccountStatus;
+  } | null>(null);
 
   const accountsQuery = useQuery({
     queryKey: ["accounts"],
@@ -91,7 +96,14 @@ export default function AccountsPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, next }: { id: string; next: AccountStatus }) =>
       updateAccountStatus(id, next),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: () => {
+      setStatusError("");
+      setLastStatusAction(null);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+    onError: (err: unknown) => {
+      setStatusError(err instanceof Error ? err.message : "Cập nhật trạng thái thất bại.");
+    },
   });
 
   const accounts = accountsQuery.data ?? [];
@@ -283,6 +295,34 @@ export default function AccountsPage() {
         </select>
       </div>
 
+      {statusError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <span>{statusError}</span>
+          <div className="flex items-center gap-2">
+            {lastStatusAction && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={statusMutation.isPending}
+                onClick={() => {
+                  setStatusError("");
+                  statusMutation.mutate(lastStatusAction);
+                }}
+              >
+                Thử lại
+              </Button>
+            )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setStatusError("")}>
+              Đóng
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="surface-card overflow-x-auto">
         <table className="w-full min-w-[800px] border-collapse text-sm">
           <thead>
@@ -349,12 +389,15 @@ export default function AccountsPage() {
                       variant="outline"
                       size="sm"
                       disabled={statusMutation.isPending}
-                      onClick={() =>
-                        statusMutation.mutate({
+                      onClick={() => {
+                        setStatusError("");
+                        const action = {
                           id: a.id,
                           next: a.status === "locked" ? "active" : "locked",
-                        })
-                      }
+                        };
+                        setLastStatusAction(action);
+                        statusMutation.mutate(action);
+                      }}
                     >
                       {a.status === "locked" ? (
                         <>
@@ -370,7 +413,7 @@ export default function AccountsPage() {
                 </td>
               </tr>
             ))}
-            {!accountsQuery.isLoading && list.length === 0 && (
+            {!accountsQuery.isLoading && !accountsQuery.isError && list.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   Không tìm thấy tài khoản phù hợp.
