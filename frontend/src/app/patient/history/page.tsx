@@ -138,17 +138,17 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-2xl font-extrabold">Lịch sử</h1>
+      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] text-primary">
+        Lịch sử
+      </h1>
 
       <div className="flex gap-2">
         {KHOANG_NGAY.map((k) => (
           <button
             key={k.key}
             onClick={() => setKhoang(k.key)}
-            className={`rounded-full px-3.5 py-2 text-[13px] font-semibold ${
-              khoang === k.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-muted-foreground"
+            className={`rounded-full px-[15px] py-[9px] text-[13px] font-semibold ${
+              khoang === k.key ? "bg-primary text-primary-foreground" : "bg-card text-[#5B6A85]"
             }`}
           >
             {k.label}
@@ -159,12 +159,14 @@ export default function HistoryPage() {
       {!dangTai && tongKet.tong > 0 && (
         <section className="rounded-[28px] p-5" style={{ backgroundColor: "var(--capy-sky)" }}>
           {tongKet.phanTram !== null && (
-            <p className="font-display text-4xl font-extrabold text-primary">{tongKet.phanTram}%</p>
+            <p className="font-display text-[40px] font-extrabold leading-none text-primary">
+              {tongKet.phanTram}%
+            </p>
           )}
-          <p className="mt-1 text-sm font-semibold text-primary/80">
+          <p className="mt-1 text-[14px] font-semibold text-[#2F5488]">
             {tongKet.daUong} / {tongKet.tong} liều đã hoàn thành
           </p>
-          <p className="font-mono mt-1 text-xs text-primary/70">
+          <p className="mt-1 text-[13px] text-[#3D5D8C]">
             {tongKet.muon} lần xác nhận muộn · {tongKet.boQua} liều bỏ qua
           </p>
 
@@ -189,6 +191,12 @@ export default function HistoryPage() {
         </div>
       )}
 
+      {!dangTai && (
+        <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
+          Nhật ký liều thuốc
+        </h2>
+      )}
+
       {!dangTai && daSapXep.length === 0 && (
         <p className="surface-card p-6 text-center text-sm text-muted-foreground">
           Chưa có liều thuốc nào trong khoảng này.
@@ -196,7 +204,7 @@ export default function HistoryPage() {
       )}
 
       {!dangTai && daSapXep.length > 0 && (
-        <section className="surface-card divide-y divide-border">
+        <section className="divide-y divide-border overflow-hidden rounded-[24px] bg-card shadow-[var(--shadow-card)]">
           {daSapXep.map((d) => (
             <button
               key={d.id}

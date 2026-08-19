@@ -81,15 +81,24 @@ export default function HealthPage() {
 
   return (
     <div className="space-y-4">
+      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] text-primary">
+        Sức khỏe
+      </h1>
+
       {user && (
-        <section className="rounded-[28px] p-5" style={{ backgroundColor: "var(--capy-cream)" }}>
-          <div className="flex items-center gap-3">
+        <section
+          className="rounded-[28px] p-[18px]"
+          style={{ backgroundColor: "var(--capy-cream)" }}
+        >
+          <div className="flex items-center gap-[14px]">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-lg font-bold text-accent-foreground">
               {user.full_name.charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-display truncate text-lg font-bold">{user.full_name}</p>
-              <p className="truncate text-sm text-foreground/70">
+              <p className="font-display truncate text-[19px] font-bold text-[#6B4E0E]">
+                {user.full_name}
+              </p>
+              <p className="truncate text-sm text-[#7A5A10]/80">
                 {[
                   hoSo?.yearOfBirth ? `${new Date().getFullYear() - hoSo.yearOfBirth} tuổi` : null,
                   hoSo?.note,
@@ -100,7 +109,7 @@ export default function HealthPage() {
             </div>
           </div>
           {doses.length > 0 && (
-            <p className="font-mono mt-3 text-[11px] text-foreground/70">
+            <p className="mt-3 text-[13px] font-semibold text-[#7A5A10]">
               Hôm nay {takenCount}/{doses.length} liều
             </p>
           )}
@@ -109,8 +118,8 @@ export default function HealthPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
-            <Pill className="h-4 w-4" /> Đơn thuốc hiện tại
+          <h2 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
+            <Pill className="h-4 w-4" /> Thuốc đang dùng
           </h2>
           <Button
             size="sm"
@@ -122,9 +131,9 @@ export default function HealthPage() {
         </div>
         <div className="space-y-2.5">
           {myPrescriptions.map((p) => (
-            <div key={p.id} className="surface-card p-4">
+            <div key={p.id} className="rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)]">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-display font-bold">{p.med}</p>
+                <p className="font-display text-[17px] font-bold text-primary">{p.med}</p>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
                     CHIP_STATUS[p.status] ?? "bg-secondary text-secondary-foreground"
@@ -133,7 +142,7 @@ export default function HealthPage() {
                   {LABEL_STATUS[p.status] ?? "Bản nháp"}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[13px] text-[#5B6A85]">
                 {p.dose} · {p.perDay} lần/ngày · {p.meal}
               </p>
             </div>
@@ -146,7 +155,7 @@ export default function HealthPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+          <h2 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
             <HeartPulse className="h-4 w-4" /> Nhật ký sức khỏe
           </h2>
           {!reporting && (
@@ -216,12 +225,12 @@ export default function HealthPage() {
             {healthLog.map((h) => (
               <div
                 key={h.id}
-                className="surface-card grid grid-cols-[auto_minmax(0,1fr)] gap-3 p-4"
+                className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)]"
               >
-                <span className="text-xl leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
+                <span className="text-[22px] leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold">{h.text}</p>
-                  <p className="font-mono mt-0.5 text-xs text-muted-foreground">{h.at}</p>
+                  <p className="text-[14px] font-semibold">{h.text}</p>
+                  <p className="font-mono mt-0.5 text-xs text-[#62708A]">{h.at}</p>
                 </div>
               </div>
             ))}

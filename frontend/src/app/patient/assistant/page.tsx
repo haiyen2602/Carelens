@@ -140,8 +140,10 @@ export default function AssistantPage() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="mb-4 flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-extrabold">Capy AI</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-display text-[26px] font-extrabold leading-none text-primary">
+            Capy AI
+          </h1>
+          <p className="mt-1 text-[12px] text-[#62708A]">
             Hỏi về triệu chứng, thuốc đang dùng hoặc cách chăm sóc.
           </p>
         </div>
@@ -165,7 +167,7 @@ export default function AssistantPage() {
                 <button
                   key={p}
                   onClick={() => submit(p)}
-                  className="rounded-full border border-border bg-card px-3.5 py-2.5 text-[13px] font-medium text-foreground"
+                  className="rounded-full border border-[#E3E8F1] bg-card px-[14px] py-[10px] text-[13px] font-medium text-[#1B2A44]"
                 >
                   {p}
                 </button>
@@ -194,18 +196,18 @@ export default function AssistantPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isPending}
-            className="resize-none rounded-[20px]"
+            className="min-h-[52px] resize-none rounded-[20px] border-[#E3E8F1] focus-visible:border-primary"
           />
           <Button
             size="icon"
-            className="rounded-2xl"
+            className="h-[52px] w-[52px] shrink-0 rounded-[18px]"
             disabled={isPending || !input.trim()}
             onClick={() => submit(input)}
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="font-mono text-center text-[11px] leading-relaxed text-muted-foreground">
+        <p className="font-mono text-center text-[12px] leading-relaxed text-[#4E6285]">
           Capy không kê thuốc hay đổi liều — hỏi bác sĩ hoặc dược sĩ cho quyết định điều trị.
         </p>
       </div>

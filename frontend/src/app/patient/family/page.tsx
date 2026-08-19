@@ -141,8 +141,12 @@ export default function PatientFamilyPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-display text-2xl font-extrabold">Người thân</h1>
-        <p className="text-sm text-muted-foreground">Cùng chăm sóc những người bạn thương.</p>
+        <h1 className="font-display text-[30px] font-extrabold leading-[1.05] text-primary">
+          Người thân
+        </h1>
+        <p className="text-[14px] leading-[1.45] text-[#5B6A85]">
+          Cùng chăm sóc những người bạn thương.
+        </p>
       </header>
 
       {pending.length > 0 && (
@@ -198,7 +202,7 @@ export default function PatientFamilyPage() {
           </p>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {relatives.map((r) => {
             const badge = badgeByPatientId[r.patientId] ?? 0;
             const canChu = badge > 0 || r.openEscalations.length > 0;
@@ -207,11 +211,11 @@ export default function PatientFamilyPage() {
               <Link
                 key={r.linkId}
                 href={`/patient/family/${r.patientId}`}
-                className="surface-card block p-4"
+                className="block rounded-[24px] bg-card p-4 shadow-[var(--shadow-card)]"
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-display font-bold"
+                    className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-2xl font-display text-[15px] font-bold"
                     style={{
                       backgroundColor: canChu
                         ? "var(--capy-peach)"
@@ -224,10 +228,14 @@ export default function PatientFamilyPage() {
                     {r.fullName.charAt(0)}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-display truncate font-bold">{r.fullName}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="font-display truncate text-[16px] font-bold text-primary">
+                      {r.fullName}
+                    </p>
+                    <p className="truncate text-[12.5px] text-[#5B6A85]">
                       {r.relationship}
                       {r.note ? ` · ${r.note}` : ""}
+                      {r.doseTotalToday > 0 &&
+                        ` · ${r.doseTakenToday} / ${r.doseTotalToday} liều hôm nay`}
                     </p>
                   </div>
                   {(canChu || xong) && (
@@ -238,23 +246,25 @@ export default function PatientFamilyPage() {
                           : "bg-success/15 text-success"
                       }`}
                     >
-                      {canChu ? `Còn ${badge || r.openEscalations.length} liều` : "✓ Xong"}
+                      {canChu ? `! Còn ${badge || r.openEscalations.length} liều` : "✓ Xong"}
                     </span>
                   )}
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </div>
 
                 {r.adherencePct !== null && (
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EDF0F6]">
                     <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${r.adherencePct}%` }}
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${r.adherencePct}%`,
+                        backgroundColor: canChu ? "#E39A16" : "#2E9E6B",
+                      }}
                     />
                   </div>
                 )}
-                <p className="font-mono mt-1.5 text-[11px] text-muted-foreground">
-                  Đã uống {r.doseTakenToday}/{r.doseTotalToday} liều hôm nay
-                  {r.openEscalations.length > 0 && ` · ${r.openEscalations.length} cảnh báo`}
+                <p className="font-mono mt-2 text-[11px] leading-[1.5] text-[#62708A]">
+                  chia sẻ: mức tuân thủ + cảnh báo bỏ liều · không xem nhật ký
                 </p>
               </Link>
             );

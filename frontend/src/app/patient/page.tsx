@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   Loader2,
+  PartyPopper,
   Smile,
   ThumbsUp,
   Users,
@@ -45,6 +46,67 @@ function laHomNay(iso: string): boolean {
   );
 }
 
+function loiChao(ten: string): string {
+  const h = new Date().getHours();
+  const first = ten.trim().split(/\s+/).pop() ?? ten;
+  if (h < 11) return `Chào buổi sáng, ${first} ☀️`;
+  if (h < 13) return `Chào buổi trưa, ${first} 🌤️`;
+  if (h < 18) return `Chào buổi chiều, ${first}`;
+  return `Chào buổi tối, ${first} 🌙`;
+}
+
+type TrangThaiHero = "upcoming" | "due" | "waiting" | "overdue";
+
+const HERO_META: Record<
+  TrangThaiHero,
+  {
+    heroBg: string;
+    chipBg: string;
+    chipFg: string;
+    chipLabel: string;
+    headline: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  }
+> = {
+  upcoming: {
+    heroBg: "#F4F7FC",
+    chipBg: "#EDF0F6",
+    chipFg: "#5B6A85",
+    chipLabel: "◦ Sắp tới",
+    headline: "Liều tiếp theo",
+    primaryLabel: "Chụp & xác nhận",
+    secondaryLabel: "Chưa uống",
+  },
+  due: {
+    heroBg: "#CFE6FF",
+    chipBg: "#16386E",
+    chipFg: "#FFFFFF",
+    chipLabel: "● Đến giờ",
+    headline: "Đến giờ uống thuốc",
+    primaryLabel: "Chụp & xác nhận",
+    secondaryLabel: "Chưa uống",
+  },
+  waiting: {
+    heroBg: "#FDEBC9",
+    chipBg: "#FDEBC9",
+    chipFg: "#8A6516",
+    chipLabel: "◑ Chờ xác nhận",
+    headline: "Capy đang chờ xác nhận",
+    primaryLabel: "Tôi đã uống",
+    secondaryLabel: "Nhắc lại sau",
+  },
+  overdue: {
+    heroBg: "#FFD5C2",
+    chipBg: "#F6E1DD",
+    chipFg: "#B4432C",
+    chipLabel: "! Quá giờ",
+    headline: "Capy chưa thấy bạn xác nhận",
+    primaryLabel: "Tôi đã uống",
+    secondaryLabel: "Nhắc tôi sau",
+  },
+};
+
 export default function PatientToday() {
   const router = useRouter();
   const { reportHealth, requestSymptomCheck } = useProto();
@@ -62,6 +124,10 @@ export default function PatientToday() {
   const [dangGui, setDangGui] = useState(false);
   const [loiGui, setLoiGui] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  // "Chua uong" chi hoan giao dien (nhac lai sau) - KHONG doi trang thai
+  // lieu that trong DB, dung y nguyen tac ADR-0011: chi bam nut moi tinh la
+  // bo qua. Reset khi doi sang lieu khac (id lieu thay doi).
+  const [daHoan, setDaHoan] = useState<string | null>(null);
 
   const taiLaiDoses = async () => {
     if (!patientId) return;
@@ -82,6 +148,33 @@ export default function PatientToday() {
 
   const dosesHomNay = doses.filter((d) => laHomNay(d.scheduledAt));
   const next = dosesHomNay.find((d) => d.status === "PENDING");
+  const daXongCount = dosesHomNay.filter((d) => d.status !== "PENDING").length;
+  const tatCaXong = dosesHomNay.length > 0 && !next;
+  const lieuTiepTheo = doses
+    .filter((d) => d.status === "PENDING" && !laHomNay(d.scheduledAt))
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
+
+  const trangThaiHero: TrangThaiHero = (() => {
+    if (!next) return "due";
+    if (daHoan === next.id) return "waiting";
+    const now = Date.now();
+    const start = new Date(next.windowStart).getTime();
+    const end = new Date(next.windowEnd).getTime();
+    if (now < start) return "upcoming";
+    if (now > end) return "overdue";
+    return "due";
+  })();
+  const meta = HERO_META[trangThaiHero];
+
+  const cuaSoText = (() => {
+    if (!next) return "";
+    if (trangThaiHero === "waiting") return "đã hoãn • Capy vẫn đang chờ bạn xác nhận";
+    if (trangThaiHero === "overdue") {
+      const phutQua = Math.round((Date.now() - new Date(next.windowEnd).getTime()) / 60000);
+      return `quá giờ hẹn ${phutQua} phút • giờ xác nhận thật sẽ được ghi`;
+    }
+    return `khung xác nhận: ${gioHienThi(next.windowStart)} – ${gioHienThi(next.windowEnd)} • cần ảnh`;
+  })();
 
   const moCamera = () => setCameraOpen(true);
   const chonAnh = () => fileInputRef.current?.click();
@@ -114,18 +207,57 @@ export default function PatientToday() {
 
   return (
     <div className="space-y-4">
+      {user && !dangTaiDoses && (next || tatCaXong) && (
+        <p className="text-[13px] font-medium text-[#5B6A85]">{loiChao(user.full_name)}</p>
+      )}
+
+      {dosesHomNay.length > 0 && (
+        <button
+          onClick={() => router.push("/patient/history")}
+          className="w-full rounded-[22px] bg-card p-[14px_16px] text-left shadow-[var(--shadow-card)]"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[13px] font-semibold text-foreground">
+              {daXongCount} / {dosesHomNay.length} liều đã hoàn thành
+            </p>
+            <span className="font-mono text-[11px] text-[#62708A]">xem tiến độ ›</span>
+          </div>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#EDF0F6]">
+            <div
+              className="h-full rounded-full bg-[#2E9E6B]"
+              style={{ width: `${(daXongCount / dosesHomNay.length) * 100}%` }}
+            />
+          </div>
+        </button>
+      )}
+
       {dangTaiDoses ? (
         <section className="surface-card flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch uống thuốc…
         </section>
       ) : next ? (
-        <section className="surface-card overflow-hidden">
-          <div className="brand-gradient p-5 text-primary-foreground">
-            <p className="text-sm opacity-85">Đến giờ uống thuốc</p>
-            <p className="font-display text-4xl font-extrabold">{gioHienThi(next.scheduledAt)}</p>
-            <p className="font-display mt-1 text-sm opacity-90">{moTaThuoc(next)}</p>
+        <section className="overflow-hidden rounded-[30px] bg-card shadow-[0_10px_30px_rgba(22,56,110,.07)]">
+          <div className="p-[20px_20px_18px]" style={{ backgroundColor: meta.heroBg }}>
+            <span
+              className="inline-block rounded-full px-3 py-1.5 text-[12px] font-bold"
+              style={{ backgroundColor: meta.chipBg, color: meta.chipFg }}
+            >
+              {meta.chipLabel}
+            </span>
+            <p className="font-display mt-2 text-[30px] font-extrabold leading-[1.1] text-[#16386E]">
+              {meta.headline}
+            </p>
+            <p className="font-display mt-1 text-[46px] font-extrabold leading-none text-[#16386E]">
+              {gioHienThi(next.scheduledAt)}
+            </p>
+            <p className="mt-1 text-[20px] font-bold leading-[1.25] text-[#16386E]">
+              {moTaThuoc(next)}
+            </p>
+            {cuaSoText && (
+              <p className="font-mono mt-1.5 text-[11px] text-[#5B7098]">{cuaSoText}</p>
+            )}
           </div>
-          <div className="space-y-4 p-5">
+          <div className="space-y-3 p-4">
             {!xacMinh && !dangGui && (
               <p className="rounded-lg bg-accent p-3 text-sm text-accent-foreground">
                 Hãy bày thuốc ra và chụp một ảnh để xác nhận đã uống. Khung an toàn còn ±30 phút
@@ -138,7 +270,7 @@ export default function PatientToday() {
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                 <span>
                   {xacMinh?.message ??
-                    "Đang phân tích ảnh, việc này có thể mất vài phút — bác cứ để yên máy."}
+                    "Đang phân tích ảnh, việc này có thể mất vài phút — bạn cứ để yên máy."}
                   {xacMinh && xacMinh.attempt > 0 && (
                     <span className="block text-xs opacity-75">
                       Lần {xacMinh.attempt}/{xacMinh.maxAttempts}
@@ -192,13 +324,18 @@ export default function PatientToday() {
             />
 
             {(!xacMinh || xacMinh.nextAction === "RETAKE" || xacMinh.status === "loi_he_thong") && (
-              <Button size="lg" className="w-full" disabled={dangGui} onClick={moCamera}>
+              <Button
+                size="lg"
+                className="h-14 w-full rounded-[20px] text-[17px]"
+                disabled={dangGui}
+                onClick={moCamera}
+              >
                 {dangGui ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                 ) : (
                   <Camera className="mr-1 h-4 w-4" />
                 )}
-                {xacMinh?.nextAction === "RETAKE" ? "Chụp lại" : "Chụp ảnh xác nhận đã uống"}
+                {xacMinh?.nextAction === "RETAKE" ? "Chụp lại" : meta.primaryLabel}
               </Button>
             )}
 
@@ -212,15 +349,43 @@ export default function PatientToday() {
               onFallbackToFile={chonAnh}
             />
 
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={dangGui}
-              onClick={() => toast("Xác nhận bằng nút bấm chưa nối API — sắp có")}
-            >
-              <Clock className="mr-1 h-4 w-4" /> Chưa uống
-            </Button>
+            {daHoan !== next.id && (
+              <Button
+                variant="outline"
+                className="h-12 w-full rounded-[18px] bg-[#EDF0F6]"
+                disabled={dangGui}
+                onClick={() => {
+                  setDaHoan(next.id);
+                  toast("Đã hoãn nhắc — liều này vẫn chưa bị tính là bỏ qua");
+                }}
+              >
+                <Clock className="mr-1 h-4 w-4" /> {meta.secondaryLabel}
+              </Button>
+            )}
           </div>
+        </section>
+      ) : tatCaXong ? (
+        <section
+          className="rounded-[30px] p-[22px_20px] text-center"
+          style={{ backgroundColor: "var(--capy-mint)" }}
+        >
+          <PartyPopper className="mx-auto h-9 w-9" style={{ color: "#14563F" }} />
+          <p className="font-display mt-2 text-[26px] font-extrabold leading-[1.15] text-[#14563F]">
+            Xong hết rồi! 🎉
+          </p>
+          <p className="mt-2 text-[14px] leading-[1.5] text-[#1F6A50]">
+            Bạn đã hoàn thành tất cả {dosesHomNay.length} liều hôm nay.
+            {lieuTiepTheo &&
+              ` Liều tiếp theo: ${gioHienThi(lieuTiepTheo.scheduledAt)} ${
+                laHomNay(lieuTiepTheo.scheduledAt) ? "hôm nay" : "ngày mai"
+              }.`}
+          </p>
+          <Button
+            className="mt-4 h-[52px] w-full rounded-[20px]"
+            onClick={() => router.push("/patient/history")}
+          >
+            Xem tiến độ
+          </Button>
         </section>
       ) : checkinDone ? (
         <section className="surface-card p-6 text-center">
@@ -264,31 +429,41 @@ export default function PatientToday() {
 
       {dosesHomNay.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
             Thời khóa biểu hôm nay
           </h2>
           {dosesHomNay.map((d) => (
-            <div key={d.id} className="surface-card p-4">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    <span className="font-mono">{gioHienThi(d.scheduledAt)}</span> · {moTaThuoc(d)}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                    d.status === "TAKEN" || d.status === "DELAYED"
-                      ? "bg-success/15 text-success"
-                      : d.status === "MISSED"
-                        ? "bg-destructive/15 text-destructive"
-                        : d.status === "AWAITING_CAREGIVER"
-                          ? "bg-warning/25 text-warning-foreground"
-                          : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {NHAN_TRANG_THAI_LIEU[d.status] ?? d.status}
-                </span>
+            <div
+              key={d.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)]"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-semibold">
+                  <span className="font-mono">{gioHienThi(d.scheduledAt)}</span> · {moTaThuoc(d)}
+                </p>
               </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  d.status === "TAKEN" || d.status === "DELAYED"
+                    ? "bg-success/15 text-success"
+                    : d.status === "MISSED"
+                      ? "bg-destructive/15 text-destructive"
+                      : d.status === "AWAITING_CAREGIVER"
+                        ? "bg-warning/25 text-warning-foreground"
+                        : d.id === next?.id
+                          ? "font-bold"
+                          : "bg-secondary text-secondary-foreground"
+                }`}
+                style={
+                  d.id === next?.id && d.status === "PENDING"
+                    ? { backgroundColor: meta.chipBg, color: meta.chipFg }
+                    : undefined
+                }
+              >
+                {d.id === next?.id && d.status === "PENDING"
+                  ? meta.chipLabel.replace(/^[●◦◑!]\s*/, "")
+                  : (NHAN_TRANG_THAI_LIEU[d.status] ?? d.status)}
+              </span>
             </div>
           ))}
         </section>
