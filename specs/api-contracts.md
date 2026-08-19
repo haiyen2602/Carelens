@@ -18,6 +18,7 @@
 |---|---|---|---|---|---|
 | `auth-api` | REST | `auth` | Tất cả frontend | Draft | §1 |
 | `account-api` | REST | `auth` | FE admin | Draft | §1b |
+| `admin-drug-api` | REST | `drug-knowledge` | FE admin RAG | Draft | §1d |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
@@ -408,6 +409,36 @@ Mọi lỗi trả về cùng một hình dạng:
 | 422 | Vi phạm ràng buộc nghiệp vụ (VD: sinh lịch từ phác đồ chưa duyệt) |
 | 500 | Lỗi hệ thống — **không bao giờ lộ chi tiết nội bộ cho FE** |
 
+## 1d. `admin-drug-api`
+
+API chỉ đọc cho màn hình Admin RAG. Dữ liệu được tổng hợp từ các bảng canonical
+`drug_product`, `drug_product_ingredient`, `ingredient` và `drug_id_map`; không có
+endpoint tạo/sửa/xóa hoặc reindex.
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| GET | `/api/v1/admin/drugs` | `admin` | Danh sách thuốc canonical, tìm kiếm/lọc/phân trang |
+| GET | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Chi tiết thuốc, hoạt chất và toàn bộ mapping |
+
+`GET /api/v1/admin/drugs` nhận các query parameter tùy chọn:
+
+| Parameter | Kiểu | Mặc định | Ràng buộc |
+|---|---|---:|---|
+| `q` | string | `null` | Tìm theo `display_name` hoặc `legacy_drug_id` |
+| `mapping_status` | enum | `null` | `ACTIVE` \| `AMBIGUOUS` \| `RETIRED` \| `UNMAPPED` |
+| `page` | integer | `1` | >= 1, đánh số từ 1 |
+| `page_size` | integer | `20` | 1..100 |
+
+Response list 200 chứa `items`, `page`, `page_size`, `total`, `total_pages`.
+Mỗi item có `id`, `legacy_drug_id`, `display_name`, `dosage_form`, `route`,
+`strength_text`, `category_id`, `ingredients`, `mapping_status` và `mappings`.
+`mapping_status` là trạng thái tóm tắt, có thể `null` khi sản phẩm chưa có
+mapping; `mappings` luôn là mảng đầy đủ các bản ghi mapping của sản phẩm.
+Các trường canonical chưa có dữ liệu trả `null`, không suy đoán hoặc thay bằng
+chuỗi rỗng. Detail trả cùng shape của một item với toàn bộ collections.
+Sản phẩm không tồn tại trả `404`; caller không có role `admin` nhận response
+phân quyền chuẩn của repository.
+
 ## Lịch sử thay đổi quan trọng (breaking changes)
 
 | Ngày | Contract | Thay đổi | Người duyệt |
@@ -418,6 +449,7 @@ Mọi lỗi trả về cùng một hình dạng:
 | 2026-08-17 | `auth-api` (§1, §1c mới) | Thêm `POST /auth/oauth/google` (internal, `X-Internal-Secret`) cho nút "Đăng nhập bằng Google" — Better Auth chỉ làm môi giới OAuth, JWT vẫn do backend phát. Kèm cột mới `account.auth_provider` (migration 0025). Không breaking: mọi endpoint cũ giữ nguyên request/response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c-2 mới) | Thêm `POST /auth/set-password` (Bearer, chỉ tài khoản `auth_provider="google"`, không hỏi mật khẩu cũ) cho phép tài khoản Google đặt mật khẩu lần đầu và đăng nhập được cả hai đường; `GET /auth/me` trả thêm `auth_provider`. Không breaking: thêm endpoint + thêm field response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |
+| 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.
