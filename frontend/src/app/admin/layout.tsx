@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   ChevronLeft,
@@ -16,10 +16,13 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  UserCheck,
+  UserCog,
+  Users,
   UserCircle,
   Users2,
 } from "lucide-react";
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useState, Suspense, type ComponentType, type ReactNode } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,20 +33,32 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 
+type SubNavItem = {
+  to: string;
+  label: string;
+  groupParam?: string;
+  icon?: ComponentType<{ className?: string }>;
+};
+
 type NavItem = {
   to: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
   exact?: boolean;
   badge?: number;
+  children?: SubNavItem[];
 };
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+function AdminLayoutContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isLoginRoute = pathname === "/admin/login";
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
+    "/admin/accounts": true,
+  });
   const { user, loading, logout } = useAuth();
   const authChecked = !loading && !!user && user.role === "admin";
   // Kiem tra that qua GET /health cua backend (khong can auth) - thay cho
@@ -82,7 +97,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       title: "Quản trị hệ thống",
       items: [
         { to: "/admin", label: "Trang chủ", icon: Home, exact: true },
-        { to: "/admin/accounts", label: "Quản lý tài khoản", icon: Users2 },
+        {
+          to: "/admin/accounts",
+          label: "Quản lý tài khoản",
+          icon: Users2,
+          children: [
+            { to: "/admin/accounts?group=patients", label: "Bệnh nhân", groupParam: "patients", icon: Users },
+            { to: "/admin/accounts?group=doctors", label: "Bác sĩ", groupParam: "doctors", icon: UserCheck },
+            { to: "/admin/accounts?group=admins", label: "Admin", groupParam: "admins", icon: UserCog },
+          ],
+        },
         { to: "/admin/links", label: "Liên kết bệnh nhân · bác sĩ · người thân", icon: Link2 },
         { to: "/admin/medicines", label: "Dữ liệu thuốc (RAG)", icon: PillBottle },
         { to: "/admin/audit", label: "Log hệ thống", icon: FileClock },
@@ -94,8 +118,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     },
   ];
 
+  const currentGroupParam = searchParams.get("group") ?? (pathname === "/admin/accounts" ? "patients" : "");
+
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.to : pathname.startsWith(item.to);
+
+  const isSubActive = (sub: SubNavItem) => {
+    if (pathname !== "/admin/accounts") return false;
+    return sub.groupParam === currentGroupParam;
+  };
+
+  const toggleSubmenu = (to: string) => {
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [to]: !prev[to],
+    }));
+  };
 
   const titleMap: Record<string, string> = {
     "/admin": "Trang chủ",
@@ -155,32 +193,95 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               {g.items.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item);
+                const hasChildren = !!item.children && item.children.length > 0;
+                const isSubOpen = openSubmenus[item.to] ?? active;
+
                 return (
-                  <Link
-                    key={item.to}
-                    href={item.to}
-                    onClick={() => setMenuOpen(false)}
-                    title={item.label}
-                    className={`relative flex items-center gap-3 border-l-[3px] py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 ${
-                      collapsed ? "justify-center px-2" : "px-6"
-                    } ${
-                      active
-                        ? "border-l-primary bg-primary/10 font-semibold text-primary hover:bg-primary/10"
-                        : "border-transparent text-sidebar-foreground/85"
-                    }`}
-                  >
-                    <Icon className="h-[18px] w-[18px] shrink-0" />
-                    {!collapsed && (
-                      <>
-                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                        {!!item.badge && item.badge > 0 && (
-                          <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-warning px-1.5 text-[11px] font-bold text-warning-foreground">
-                            {item.badge}
-                          </span>
+                  <div key={item.to} className="space-y-0.5">
+                    {hasChildren && !collapsed ? (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleSubmenu(item.to)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            toggleSubmenu(item.to);
+                          }
+                        }}
+                        title={item.label}
+                        className={`relative flex cursor-pointer items-center justify-between border-l-[3px] py-2.5 pl-6 pr-4 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 select-none ${
+                          active
+                            ? "border-l-primary bg-primary/5 font-semibold text-primary"
+                            : "border-transparent text-sidebar-foreground/85"
+                        }`}
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <Icon className="h-[18px] w-[18px] shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                            isSubOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.to}
+                        onClick={() => setMenuOpen(false)}
+                        title={item.label}
+                        className={`relative flex items-center gap-3 border-l-[3px] py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 ${
+                          collapsed ? "justify-center px-2" : "px-6"
+                        } ${
+                          active
+                            ? "border-l-primary bg-primary/10 font-semibold text-primary hover:bg-primary/10"
+                            : "border-transparent text-sidebar-foreground/85"
+                        }`}
+                      >
+                        <Icon className="h-[18px] w-[18px] shrink-0" />
+                        {!collapsed && (
+                          <>
+                            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                            {!!item.badge && item.badge > 0 && (
+                              <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-warning px-1.5 text-[11px] font-bold text-warning-foreground">
+                                {item.badge}
+                              </span>
+                            )}
+                          </>
                         )}
-                      </>
+                      </Link>
                     )}
-                  </Link>
+
+                    {hasChildren && !collapsed && isSubOpen && (
+                      <div className="relative my-0.5 space-y-0.5 pl-8 pr-3">
+                        <div className="absolute left-[29px] top-1 bottom-1 w-[1px] bg-sidebar-border" />
+                        {item.children?.map((sub) => {
+                          const subActive = isSubActive(sub);
+                          const SubIcon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.to}
+                              href={sub.to}
+                              onClick={() => setMenuOpen(false)}
+                              className={`relative flex items-center gap-2.5 rounded-lg py-2 pl-3.5 pr-2.5 text-xs font-medium transition-colors ${
+                                subActive
+                                  ? "bg-primary/15 font-bold text-primary shadow-xs"
+                                  : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                                  subActive ? "bg-primary scale-125" : "bg-muted-foreground/40"
+                                }`}
+                              />
+                              {SubIcon && <SubIcon className="h-3.5 w-3.5 shrink-0" />}
+                              <span className="truncate">{sub.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -319,5 +420,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center bg-background">
+          <p className="text-sm text-muted-foreground">Đang tải trang quản trị...</p>
+        </div>
+      }
+    >
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
   );
 }

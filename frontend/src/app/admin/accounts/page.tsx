@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Lock, Plus, Search, Unlock } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,11 +57,24 @@ const emptyForm = {
 
 type AccountGroup = "patients" | "doctors" | "admins";
 
-export default function AccountsPage() {
+function AccountsContent() {
   const queryClient = useQueryClient();
   const { accessToken } = useAuth();
+  const searchParams = useSearchParams();
+  const groupParam = searchParams.get("group");
+  const initialGroup: AccountGroup =
+    groupParam === "doctors" || groupParam === "admins" || groupParam === "patients"
+      ? groupParam
+      : "patients";
+
   const [q, setQ] = useState("");
-  const [activeGroup, setActiveGroup] = useState<AccountGroup>("patients");
+  const [activeGroup, setActiveGroup] = useState<AccountGroup>(initialGroup);
+
+  useEffect(() => {
+    if (groupParam === "doctors" || groupParam === "admins" || groupParam === "patients") {
+      setActiveGroup(groupParam);
+    }
+  }, [groupParam]);
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -434,5 +448,20 @@ export default function AccountsPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+export default function AccountsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+          <div className="h-64 w-full animate-pulse rounded-xl bg-muted/40" />
+        </div>
+      }
+    >
+      <AccountsContent />
+    </Suspense>
   );
 }
