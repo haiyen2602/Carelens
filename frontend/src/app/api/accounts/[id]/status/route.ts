@@ -1,22 +1,16 @@
+import { forwardAuthorization } from "../../authorization";
+
 // Server-side proxy cho PATCH /api/v1/accounts/{id}/status (admin).
-// Cung ly do ton tai voi app/api/chat/route.ts.
+// Backend xac thuc bang JWT admin; proxy forward nguyen Authorization.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!INTERNAL_SECRET) {
-    return Response.json(
-      { detail: "Server misconfigured: INTERNAL_AUTH_SECRET chua duoc set cho VMEC-04/FE." },
-      { status: 500 },
-    );
-  }
-
   const { id } = await params;
   const body = await request.text();
   const upstream = await fetch(`${BACKEND_URL}/api/v1/accounts/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", "X-Internal-Secret": INTERNAL_SECRET },
+    headers: { "Content-Type": "application/json", ...forwardAuthorization(request) },
     body,
   });
 

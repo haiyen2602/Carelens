@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { roleLabel, statusLabel } from "@/lib/admin-mock";
+import { useAuth } from "@/lib/auth";
 import {
   createAccount,
   listAccounts,
@@ -57,6 +58,7 @@ type AccountGroup = "patients" | "doctors" | "admins";
 
 export default function AccountsPage() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuth();
   const [q, setQ] = useState("");
   const [activeGroup, setActiveGroup] = useState<AccountGroup>("patients");
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
@@ -71,7 +73,8 @@ export default function AccountsPage() {
 
   const accountsQuery = useQuery({
     queryKey: ["accounts"],
-    queryFn: listAccounts,
+    queryFn: () => listAccounts(accessToken),
+    enabled: Boolean(accessToken),
   });
 
   const createMutation = useMutation({
@@ -81,6 +84,7 @@ export default function AccountsPage() {
         password: form.password,
         fullName: form.fullName,
         role: form.role,
+        accessToken,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
@@ -95,7 +99,7 @@ export default function AccountsPage() {
 
   const statusMutation = useMutation({
     mutationFn: ({ id, next }: { id: string; next: AccountStatus }) =>
-      updateAccountStatus(id, next),
+      updateAccountStatus(id, next, accessToken),
     onSuccess: () => {
       setStatusError("");
       setLastStatusAction(null);
