@@ -258,10 +258,6 @@ export default function AssistantPage() {
             ↑
           </button>
         </div>
-
-        <p className="font-mono m-0 text-center text-[12px] leading-[1.55] text-[#4E6285]">
-          Capy không kê thuốc hay đổi liều — hỏi bác sĩ hoặc dược sĩ cho quyết định điều trị.
-        </p>
       </div>
 
       {historyOpen && (
