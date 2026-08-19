@@ -35,6 +35,7 @@ các mapping theo trạng thái.
 - PASS: `frontend\\npm run test:admin-drugs` — `admin-drugs frontend contract checks passed`.
 - PASS: `frontend\\npx eslint src/app/admin/medicines/page.tsx src/lib/admin-drugs.ts` — no errors.
 - PASS: `frontend\\npm run build` — Next.js production build completed successfully.
+- PASS: stale search/filter/page requests are aborted during effect cleanup; regression check added in `frontend/tests/admin-drugs.test.mjs`.
 - PASS: `rg -n "Dữ liệu minh hoạ|Index lại|simulateImport|reindex|MEDICINES" frontend/src/app/admin/medicines frontend/src/lib/admin-drugs.ts` — no matches.
 - PASS: `git diff --check` — no whitespace errors.
 - BLOCKED: `.venv\\Scripts\\python.exe -m pytest -q` — collection fails because environment lacks `cv2` and `numpy` for unrelated VLM tests.
