@@ -280,7 +280,6 @@ export default function AccountsPage() {
           <option value="all">Trạng thái: Tất cả</option>
           <option value="active">Hoạt động</option>
           <option value="locked">Đã khoá</option>
-          <option value="pending">Chờ kích hoạt</option>
         </select>
       </div>
 
