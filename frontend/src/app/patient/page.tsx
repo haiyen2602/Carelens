@@ -201,21 +201,32 @@ export default function PatientToday() {
       setXacMinh(daGui);
       const ketQua = await pollPhotoVerification(daGui.id, setXacMinh);
       setXacMinh(ketQua);
-      if (ketQua.matched) {
-        setThanhCong({
-          at: gioHienThi(ketQua.createdAt),
-          line: lieu
-            ? `${tenThuoc(lieu)} · ${lieuLuong(lieu)} • hẹn ${gioHienThi(lieu.scheduledAt)}`
-            : "",
-        });
-      } else if (ketQua.nextAction === "CAREGIVER_REVIEW") {
-        toast.error("Đã hết lượt chụp lại — chuyển người thân xem giúp");
-      } else if (ketQua.status === "loi_he_thong") {
-        toast.error("Hệ thống đang bận, bạn thử gửi lại giúp tôi nhé");
-      } else {
-        toast(ketQua.message);
+
+      // Soan san noi dung man hinh thanh cong, nhung CHI hien sau khi da
+      // tai lai danh sach lieu: dong dem "X / Y lieu hom nay" trong do doc
+      // tu `doses`, ma luc nay lieu vua xac nhan van con PENDING - hien
+      // ngay se ra so cu (vd "1 / 2" thay vi "2 / 2") trong vai tram ms.
+      const xong = ketQua.matched
+        ? {
+            at: gioHienThi(ketQua.createdAt),
+            line: lieu
+              ? `${tenThuoc(lieu)} · ${lieuLuong(lieu)} • hẹn ${gioHienThi(lieu.scheduledAt)}`
+              : "",
+          }
+        : null;
+
+      if (!ketQua.matched) {
+        if (ketQua.nextAction === "CAREGIVER_REVIEW") {
+          toast.error("Đã hết lượt chụp lại — chuyển người thân xem giúp");
+        } else if (ketQua.status === "loi_he_thong") {
+          toast.error("Hệ thống đang bận, bạn thử gửi lại giúp tôi nhé");
+        } else {
+          toast(ketQua.message);
+        }
       }
+
       await taiLaiDoses();
+      if (xong) setThanhCong(xong);
     } catch (err) {
       setLoiGui(err instanceof Error ? err.message : "Không gửi được ảnh");
     } finally {
