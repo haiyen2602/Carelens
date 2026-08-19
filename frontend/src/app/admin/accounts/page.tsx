@@ -391,7 +391,7 @@ export default function AccountsPage() {
                       disabled={statusMutation.isPending}
                       onClick={() => {
                         setStatusError("");
-                        const action = {
+                        const action: { id: string; next: AccountStatus } = {
                           id: a.id,
                           next: a.status === "locked" ? "active" : "locked",
                         };
