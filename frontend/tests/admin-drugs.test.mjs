@@ -23,6 +23,17 @@ assert.match(page, /role="alert"/);
 assert.match(page, /Không tìm thấy dữ liệu thuốc phù hợp/);
 assert.match(page, /setPage\(\(current\) => current \+ 1\)/);
 assert.match(page, /setTimeout\(\(\) =>/);
+const controllerPosition = page.indexOf("const controller = new AbortController()");
+const timeoutPosition = page.indexOf("window.setTimeout");
+const cleanupPosition = page.indexOf("return () => {");
+assert.ok(controllerPosition > -1 && controllerPosition < timeoutPosition);
+assert.ok(cleanupPosition > timeoutPosition);
+assert.match(page.slice(cleanupPosition), /window\.clearTimeout\(debounce\)/);
+assert.match(page.slice(cleanupPosition), /controller\.abort\(\)/);
+assert.doesNotMatch(
+  page.slice(timeoutPosition, cleanupPosition),
+  /return \(\) => controller\.abort/,
+);
 assert.doesNotMatch(
   page,
   /Dữ liệu minh hoạ|Nạp dữ liệu mới|Index lại|simulateImport|reindex|MEDICINES/,

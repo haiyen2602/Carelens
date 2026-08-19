@@ -26,8 +26,8 @@ export default function MedicinesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const debounce = window.setTimeout(() => {
-      const controller = new AbortController();
       setLoading(true);
       setError(null);
       listAdminDrugs({
@@ -49,9 +49,11 @@ export default function MedicinesPage() {
         .finally(() => {
           if (!controller.signal.aborted) setLoading(false);
         });
-      return () => controller.abort();
     }, 300);
-    return () => window.clearTimeout(debounce);
+    return () => {
+      window.clearTimeout(debounce);
+      controller.abort();
+    };
   }, [accessToken, page, query, status]);
 
   const changeQuery = (value: string) => {
