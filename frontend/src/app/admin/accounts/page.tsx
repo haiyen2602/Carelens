@@ -28,6 +28,7 @@ import {
   listAccounts,
   updateAccountStatus,
   type AccountRecord,
+  type AccountCreationRole,
   type AccountRole,
   type AccountStatus,
 } from "@/lib/accounts";
@@ -49,9 +50,7 @@ const emptyForm = {
   email: "",
   password: "",
   fullName: "",
-  role: "patient" as AccountRole,
-  patientId: "",
-  doctorId: "",
+  role: "doctor" as AccountCreationRole,
 };
 
 type AccountGroup = "patients" | "doctors" | "admins";
@@ -77,8 +76,6 @@ export default function AccountsPage() {
         password: form.password,
         fullName: form.fullName,
         role: form.role,
-        patientId: form.role === "patient" ? form.patientId || undefined : undefined,
-        doctorId: form.role === "patient" ? form.doctorId || undefined : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
@@ -148,119 +145,96 @@ export default function AccountsPage() {
             {groupAccounts.length} tài khoản trong nhóm · bác sĩ, bệnh nhân và quản trị viên.
           </p>
         </div>
-        <Dialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) {
-              setForm(emptyForm);
-              setFormError("");
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-1 h-4 w-4" /> Tạo tài khoản
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tạo tài khoản mới</DialogTitle>
-              <DialogDescription>
-                Không có đăng ký công khai — chỉ quản trị viên tạo được tài khoản.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={submitCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Họ tên</Label>
-                <Input
-                  id="full_name"
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Vai trò</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(v) => setForm((f) => ({ ...f, role: v as AccountRole }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(roleLabel) as AccountRole[]).map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {roleLabel[r]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.role === "patient" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="patient_id">
-                      Patient ID{" "}
-                      <span className="text-muted-foreground">
-                        (tuỳ chọn, để khớp dữ liệu demo có sẵn)
-                      </span>
-                    </Label>
-                    <Input
-                      id="patient_id"
-                      placeholder="vd demo-patient-01"
-                      value={form.patientId}
-                      onChange={(e) => setForm((f) => ({ ...f, patientId: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="doctor_id">
-                      Doctor ID{" "}
-                      <span className="text-muted-foreground">(tuỳ chọn — bác sĩ phụ trách)</span>
-                    </Label>
-                    <Input
-                      id="doctor_id"
-                      value={form.doctorId}
-                      onChange={(e) => setForm((f) => ({ ...f, doctorId: e.target.value }))}
-                    />
-                  </div>
-                </>
-              )}
-              {formError && <p className="text-sm font-medium text-destructive">{formError}</p>}
-              <DialogFooter>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Đang tạo..." : "Tạo tài khoản"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {activeGroup !== "patients" && (
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setForm(emptyForm);
+                setFormError("");
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-1 h-4 w-4" /> Tạo tài khoản
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tạo tài khoản mới</DialogTitle>
+                <DialogDescription>
+                  Không có đăng ký công khai — chỉ quản trị viên tạo được tài khoản.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={submitCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Họ tên</Label>
+                  <Input
+                    id="full_name"
+                    value={form.fullName}
+                    onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vai trò</Label>
+                  <Select
+                    value={form.role}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, role: v as AccountCreationRole }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["doctor", "admin"] as const).map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {roleLabel[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formError && <p className="text-sm font-medium text-destructive">{formError}</p>}
+                <DialogFooter>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Đang tạo..." : "Tạo tài khoản"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </header>
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm tài khoản">
-        {([
-          ["patients", "Bệnh nhân"],
-          ["doctors", "Bác sĩ"],
-          ["admins", "Admin"],
-        ] as const).map(([group, label]) => (
+        {(
+          [
+            ["patients", "Bệnh nhân"],
+            ["doctors", "Bác sĩ"],
+            ["admins", "Admin"],
+          ] as const
+        ).map(([group, label]) => (
           <button
             key={group}
             type="button"
@@ -273,13 +247,17 @@ export default function AccountsPage() {
                 : "border-input bg-card text-muted-foreground hover:bg-muted"
             }`}
           >
-            {label} ({group === activeGroup ? groupAccounts.length : accounts.filter((a) =>
-              group === "patients"
-                ? a.role === "patient" || a.role === "caregiver"
-                : group === "doctors"
-                  ? a.role === "doctor"
-                  : a.role === "admin",
-            ).length})
+            {label} (
+            {group === activeGroup
+              ? groupAccounts.length
+              : accounts.filter((a) =>
+                  group === "patients"
+                    ? a.role === "patient" || a.role === "caregiver"
+                    : group === "doctors"
+                      ? a.role === "doctor"
+                      : a.role === "admin",
+                ).length}
+            )
           </button>
         ))}
       </div>

@@ -3,6 +3,7 @@
 // lib/prescriptions.ts).
 
 export type AccountRole = "doctor" | "patient" | "caregiver" | "admin";
+export type AccountCreationRole = Extract<AccountRole, "doctor" | "admin">;
 export type AccountStatus = "active" | "locked" | "pending";
 
 export type AccountRecord = {
@@ -61,9 +62,7 @@ export async function createAccount(input: {
   fullName: string;
   email: string;
   password: string;
-  role: AccountRole;
-  patientId?: string;
-  doctorId?: string;
+  role: AccountCreationRole;
 }): Promise<AccountRecord> {
   const response = await fetch("/api/accounts", {
     method: "POST",
@@ -73,8 +72,6 @@ export async function createAccount(input: {
       email: input.email,
       password: input.password,
       role: input.role,
-      patient_id: input.patientId || undefined,
-      doctor_id: input.doctorId || undefined,
     }),
   });
   if (!response.ok) return loi(response);
