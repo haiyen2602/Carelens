@@ -10,6 +10,7 @@
 // man hinh camera gia cua ban mau.
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -75,7 +76,14 @@ type TrangThaiHero = "upcoming" | "due" | "waiting" | "overdue";
 // thai. Rieng `headline` dung ban "minimal" (khong co tranh Capy).
 const HERO: Record<
   TrangThaiHero,
-  { bg: string; chip: ChipStyle; headline: string; primary: string; secondary: string }
+  {
+    bg: string;
+    chip: ChipStyle;
+    headline: string;
+    primary: string;
+    secondary: string;
+    capyLine: string;
+  }
 > = {
   upcoming: {
     bg: "#F4F7FC",
@@ -83,6 +91,7 @@ const HERO: Record<
     headline: "Liều tiếp theo",
     primary: "Chụp & xác nhận",
     secondary: "Chưa uống",
+    capyLine: "Chưa tới giờ đâu, cứ thoải mái nha.",
   },
   due: {
     bg: "#CFE6FF",
@@ -90,6 +99,7 @@ const HERO: Record<
     headline: "Đến giờ uống thuốc",
     primary: "Chụp & xác nhận",
     secondary: "Chưa uống",
+    capyLine: "Capy đang giữ đồng hồ giúp bạn.",
   },
   waiting: {
     bg: "#FDEBC9",
@@ -97,6 +107,7 @@ const HERO: Record<
     headline: "Capy đang chờ xác nhận",
     primary: "Tôi đã uống",
     secondary: "Nhắc lại sau",
+    capyLine: "Bạn xong thì cho mình biết nha.",
   },
   overdue: {
     bg: "#FFD5C2",
@@ -104,8 +115,12 @@ const HERO: Record<
     headline: "Capy chưa thấy bạn xác nhận",
     primary: "Tôi đã uống",
     secondary: "Nhắc tôi sau",
+    capyLine: "Không sao đâu — mình ghi đúng giờ bạn uống thật.",
   },
 };
+
+// Loi thoai khi da uong het lieu trong ngay (heroMap.done cua ban goc).
+const CAPY_LINE_XONG = "Capy đi ngủ trước nha.";
 
 export default function PatientToday() {
   const router = useRouter();
@@ -265,6 +280,29 @@ export default function PatientToday() {
           <h1 className="font-display m-0 mt-0.5 text-[30px] font-extrabold leading-[1.1] text-[#16386E]">
             {next ? hero.headline : tatCaXong ? "Hết liều cho hôm nay" : "Hôm nay"}
           </h1>
+        </div>
+      )}
+
+      {/* Khoi Capy (ban "capyFull" cua thiet ke goc) - loi thoai doi theo
+          trang thai lieu hien tai. */}
+      {!dangTai && (
+        <div className="flex items-center gap-3.5 rounded-[28px] bg-[#CFE6FF] p-4">
+          <Image
+            src="/capy_ngau.png"
+            alt="Capy"
+            width={110}
+            height={110}
+            className="h-[110px] w-[110px] shrink-0 rounded-[24px] object-contain"
+            priority
+          />
+          <div className="min-w-0">
+            <p className="font-display m-0 text-[15px] font-bold leading-[1.35] text-[#16386E]">
+              {tatCaXong ? CAPY_LINE_XONG : hero.capyLine}
+            </p>
+            <p className="m-0 mt-1.5 text-[12px] leading-[1.45] text-[#3D5D8C]">
+              Capy đi cùng bạn hôm nay.
+            </p>
+          </div>
         </div>
       )}
 
