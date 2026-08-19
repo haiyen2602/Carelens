@@ -249,6 +249,61 @@ async def test_list_monitored_patients_for_caregiver(client, admin_token):
 
 
 @pytest.mark.asyncio
+async def test_photo_mismatch_escalations_are_excluded(client, admin_token):
+    """SUA 2026-08-20 - escalation trigger=photo_mismatch (ADR-0011) da hien
+    rieng qua lieu AWAITING_CAREGIVER o tab "Duyet uong thuoc", KHONG duoc
+    lap lai o "Canh bao" (1 su viec hien 2 noi + bi dem trung trong badge
+    "X viec can xem"). Cac trigger khac van phai hien binh thuong."""
+    patient_id = _seed_patient()
+    caregiver_account_id = f"test-cg-photo-{uuid.uuid4().hex[:8]}"
+
+    db = SessionLocal()
+    try:
+        db.add(
+            Escalation(
+                patient_id=patient_id,
+                severity="MEDIUM",
+                trigger="photo_mismatch",
+                reason="Anh xac nhan khong khop don thuoc",
+                status="OPEN",
+            )
+        )
+        db.add(
+            Escalation(
+                patient_id=patient_id,
+                severity="HIGH",
+                trigger="safety_redflag",
+                reason="Dau hieu nguy hiem tu chat",
+                status="OPEN",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    try:
+        await client.post(
+            "/api/v1/caregiver-links",
+            json={
+                "caregiver_account_id": caregiver_account_id,
+                "patient_id": patient_id,
+                "relationship": "Con gái",
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+
+        response = await client.get(
+            "/api/v1/caregiver-links", params={"caregiver_account_id": caregiver_account_id}
+        )
+        assert response.status_code == 200
+        escalations = response.json()[0]["open_escalations"]
+        assert len(escalations) == 1, "chi con escalation KHONG phai photo_mismatch"
+        assert "Anh xac nhan" not in escalations[0]["title"]
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
 async def test_list_for_unknown_caregiver_returns_empty(client):
     response = await client.get(
         "/api/v1/caregiver-links", params={"caregiver_account_id": "nobody-has-this-id"}

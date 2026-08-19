@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { listMonitoredPatients, type MonitoredPatient } from "@/lib/caregivers";
+import { ackEscalation } from "@/lib/escalations";
 import {
   gioHienThi,
   listDoses,
@@ -126,11 +127,12 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
 
 export default function MonitoredRelativeDetailPage() {
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const [relative, setRelative] = useState<MonitoredPatient | null>(null);
   const [dosesCanDuyet, setDosesCanDuyet] = useState<Dose[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [tab, setTab] = useState<"canh_bao" | "duyet">("canh_bao");
+  const [dangXuLyCanhBao, setDangXuLyCanhBao] = useState<string | null>(null);
 
   const taiLai = async () => {
     if (!user?.id) return;
@@ -151,6 +153,20 @@ export default function MonitoredRelativeDetailPage() {
     taiLai();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, params.id]);
+
+  const xuLyCanhBao = async (escalationId: string) => {
+    if (!accessToken) return;
+    setDangXuLyCanhBao(escalationId);
+    try {
+      await ackEscalation(accessToken, escalationId);
+      toast.success("Đã đánh dấu đã xem xét");
+      await taiLai();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không xử lý được cảnh báo");
+    } finally {
+      setDangXuLyCanhBao(null);
+    }
+  };
 
   if (dangTai) {
     return (
@@ -233,17 +249,32 @@ export default function MonitoredRelativeDetailPage() {
             </p>
           )}
           {relative.openEscalations.map((a) => (
-            <div key={a.id} className="surface-card flex items-center gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{a.title}</p>
+            <div key={a.id} className="surface-card space-y-3 p-4">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{a.title}</p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    toneTheoMuc[a.level] ?? "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {nhanTheoMuc[a.level] ?? a.level} · <NgayGio iso={a.createdAt} />
+                </span>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  toneTheoMuc[a.level] ?? "bg-secondary text-secondary-foreground"
-                }`}
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={dangXuLyCanhBao === a.id}
+                onClick={() => xuLyCanhBao(a.id)}
               >
-                {nhanTheoMuc[a.level] ?? a.level} · <NgayGio iso={a.createdAt} />
-              </span>
+                {dangXuLyCanhBao === a.id ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-1 h-4 w-4" />
+                )}
+                Đã xem xét
+              </Button>
             </div>
           ))}
         </section>

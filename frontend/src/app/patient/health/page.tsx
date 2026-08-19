@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
 import { listPrescriptions } from "@/lib/prescriptions";
+import { reportHealthIssue } from "@/lib/escalations";
 import {
   flattenPrescriptions,
   useProto,
@@ -103,11 +104,21 @@ export default function HealthPage() {
   })();
 
   const guiBaoVanDe = () => {
+    // Nhat ky rieng cua benh nhan (state cuc bo, de tu xem lai) - giu nguyen,
+    // KHONG doi. reportHealthIssue() ben duoi la kenh RIENG tao Escalation
+    // that cho nguoi than/bac si thay (backend/api/health_log_routes.py) -
+    // 2 viec doc lap, loi mang o 1 ben khong duoc chan ben kia.
     reportHealth(text || "Không mô tả chi tiết", muc);
     if (muc === "high") {
       setEmergency(true);
     } else {
       toast(muc === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h");
+    }
+    if (muc !== "low" && accessToken) {
+      // .catch nuot loi co y - nhat ky cuc bo da ghi xong o tren, khong lam
+      // gian doan trai nghiem chi vi 1 loi mang phu.
+      const noiDung = text || "Không mô tả chi tiết";
+      reportHealthIssue(accessToken, { text: noiDung, level: muc }).catch(() => {});
     }
     setDangBao(false);
     setText("");
@@ -149,16 +160,11 @@ export default function HealthPage() {
         </div>
       )}
 
-      {/* Thuoc dang dung */}
+      {/* Thuoc dang dung - benh nhan chi xem, khong co quyen tu them/sua don
+          thuoc (do bac si ke). */}
       <div>
-        <div className="mb-2.5 flex items-baseline justify-between gap-2">
+        <div className="mb-2.5">
           <SectionLabel>Thuốc đang dùng</SectionLabel>
-          <button
-            onClick={() => toast("Thêm thuốc chưa nối API — sắp có")}
-            className="font-display rounded-full bg-[#EDF0F6] px-3.5 py-[7px] text-[12px] font-bold text-[#1B2A44] transition-colors hover:bg-[#E3E8F1]"
-          >
-            + Thêm thuốc
-          </button>
         </div>
         <div className="flex flex-col gap-2.5">
           {donThuoc.map((p) => (

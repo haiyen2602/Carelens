@@ -12,11 +12,25 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { CapySheet } from "@/components/capy/capy-ui";
+import { NudgeBanner } from "@/components/capy/nudge-banner";
 import { useAuth } from "@/lib/auth";
+import { type Nudge, pollUnseenNudges } from "@/lib/nudges";
+import {
+  getNotificationPermission,
+  playNudgeSound,
+  requestNotificationPermission,
+  showBrowserNotification,
+  type NotificationPermissionState,
+} from "@/lib/notifications";
 import { useProto } from "@/lib/proto-store";
+
+// Khoang cach giua 2 lan poll GET /nudges/unseen (backend/api/nudge_routes.py)
+// - repo chua co ha tang realtime (WebSocket/SSE), 8s la do tre chap nhan
+// duoc cho 1 loi nhac nhe (khong phai canh bao cap cuu).
+const NUDGE_POLL_MS = 8000;
 
 const TABS = [
   { to: "/patient", label: "Hôm nay", icon: "💊", exact: true },
@@ -29,9 +43,58 @@ const TABS = [
 export function CapyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout: authLogout } = useAuth();
+  const { user, accessToken, logout: authLogout } = useAuth();
   const { logout: protoLogout, emergency, setEmergency } = useProto();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [nudgeQueue, setNudgeQueue] = useState<Nudge[]>([]);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermissionState>("default");
+  const activeNudge = nudgeQueue[0] ?? null;
+
+  useEffect(() => {
+    const current = getNotificationPermission();
+    setNotifPerm(current);
+    // SUA 2026-08-20: BO tu dong xin quyen luc mount (thu truoc do) - Chrome/
+    // Edge coi request KHONG xuat phat truc tiep tu 1 cu click cua nguoi
+    // dung la dau hieu spam, am tham chuyen sang "quiet UI" (chi hien 1 icon
+    // chuong gach cheo nho o thanh dia chi, KHONG co popup nao) thay vi hoi
+    // that - de nguoi dung tuong app khong xin quyen gi ca. Phai giu request
+    // gan lien voi 1 click that (nut "Bat thong bao" trong sheet tai khoan
+    // ben duoi) thi Chromium moi hien popup day du.
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const items = await pollUnseenNudges(accessToken);
+        if (!cancelled && items.length > 0) setNudgeQueue((q) => [...q, ...items]);
+      } catch {
+        // Bo qua loi 1 vong poll rieng le (vd mat mang thoang qua) - thu lai
+        // vong sau, khong lam phien nguoi dung bang toast loi moi 8s.
+      }
+    };
+    poll();
+    const timer = setInterval(poll, NUDGE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!activeNudge) return;
+    // Neu da co quyen Notification that, chi can no la du (co the tu keo
+    // theo tieng cua chinh he dieu hanh) - phat THEM tieng notice.wav se
+    // thanh bao 2 lan cho 1 lan nhac. Chi phat tieng trong app khi CHUA co
+    // quyen (patient chua bat/tu choi) - do la kenh am thanh duy nhat ho co.
+    if (getNotificationPermission() === "granted") {
+      showBrowserNotification("CapyMedi", `${activeNudge.caregiverName}: ${activeNudge.message}`);
+    } else {
+      playNudgeSound();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNudge?.id]);
 
   const doLogout = async () => {
     setSheetOpen(false);
@@ -130,13 +193,26 @@ export function CapyShell({ children }: { children: ReactNode }) {
                 <span className="font-mono ml-auto text-[12px] text-[#62708A]">›</span>
               </Link>
               <button
-                onClick={() => toast("Cài đặt nhắc nhở chưa nối API — sắp có")}
+                onClick={async () => {
+                  if (notifPerm === "denied") {
+                    toast("Bạn đã từ chối nhận thông báo — mở cài đặt trình duyệt để bật lại");
+                    return;
+                  }
+                  const result = await requestNotificationPermission();
+                  setNotifPerm(result);
+                  if (result === "granted") toast.success("Đã bật thông báo");
+                  else if (result === "denied") toast("Bạn đã từ chối nhận thông báo");
+                }}
                 className="flex min-h-[54px] items-center gap-3 rounded-[18px] bg-[#F4F7FC] px-4 text-[14.5px] font-semibold text-[#1B2A44] transition-colors hover:bg-[#EDF0F6]"
               >
                 <span aria-hidden="true" className="text-[18px]">
                   🔔
                 </span>
-                Cài đặt nhắc nhở
+                {notifPerm === "granted"
+                  ? "Đã bật thông báo"
+                  : notifPerm === "denied"
+                    ? "Thông báo: đã từ chối"
+                    : "Bật thông báo"}
                 <span className="font-mono ml-auto text-[12px] text-[#62708A]">›</span>
               </button>
               <Link
@@ -185,6 +261,15 @@ export function CapyShell({ children }: { children: ReactNode }) {
               Đóng overlay
             </button>
           </div>
+        )}
+
+        {activeNudge && (
+          <NudgeBanner
+            key={activeNudge.id}
+            callerName={activeNudge.caregiverName}
+            message={activeNudge.message}
+            onDismiss={() => setNudgeQueue((q) => q.slice(1))}
+          />
         )}
       </div>
     </div>
