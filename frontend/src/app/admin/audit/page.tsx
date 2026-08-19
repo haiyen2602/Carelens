@@ -31,35 +31,40 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Log hệ thống</h1>
-        <p className="text-sm text-muted-foreground">
-          {SYSTEM_AUDIT.length} bản ghi audit — bao gồm hành động của bác sĩ, agent và quản trị
-          viên. Không ai được phép sửa/xoá bản ghi audit log.
+      <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+        <p className="text-sm text-destructive">
+          <span className="font-bold">Dữ liệu minh hoạ (mock)</span> — toàn bộ bản ghi bên dưới là
+          dữ liệu mẫu cố định, chưa nối với audit log thật của hệ thống. Không dùng trang này làm
+          bằng chứng tuân thủ/audit thật cho tới khi có API thật.
         </p>
-      </header>
-
+      </div>
       <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
         <Lock className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
         <p className="text-sm text-warning-foreground">
-          Audit log chỉ đọc (read-only), kể cả với quản trị viên — đây là ràng buộc an toàn của sản
-          phẩm.
+          Khi nối dữ liệu thật: audit log sẽ chỉ đọc (read-only), kể cả với quản trị viên — đây là
+          ràng buộc an toàn của sản phẩm.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm theo người thực hiện, hành động..."
+            aria-label="Tìm theo người thực hiện hoặc hành động"
             className="pl-9"
           />
         </div>
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as "all" | AccountRole | "Hệ thống")}
+          aria-label="Lọc theo vai trò"
           className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
         >
           <option value="all">Vai trò: Tất cả</option>
