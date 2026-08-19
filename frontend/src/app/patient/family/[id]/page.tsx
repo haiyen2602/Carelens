@@ -75,7 +75,11 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
           <NgayGio iso={dose.scheduledAt} /> · {moTaThuoc(dose)}
         </p>
         <p className="text-xs text-muted-foreground">
-          Đã chụp {lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.
+          {dangTai
+            ? "Đang kiểm tra ảnh xác nhận…"
+            : lanCuoi
+              ? `Đã chụp ${lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.`
+              : "Bệnh nhân báo đã uống nhưng chưa gửi ảnh xác nhận — bạn xem giúp nhé."}
         </p>
       </div>
 
