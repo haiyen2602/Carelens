@@ -11,9 +11,23 @@ Cụ thể: `prescription` cần `dang_thuoc` để ghi vào đơn thuốc thì 
 from backend.services.drug_knowledge.resolver import (
     GIOI_HAN_TOI_DA,
     NGUONG_GAN_GIONG,
+    ChiTietThuoc,
     ThuocTimDuoc,
+    lay_bo_loc,
+    lay_chi_tiet_thuoc,
     lay_thuoc,
+    liet_ke_thuoc,
     tim_thuoc,
 )
 
-__all__ = ["GIOI_HAN_TOI_DA", "NGUONG_GAN_GIONG", "ThuocTimDuoc", "lay_thuoc", "tim_thuoc"]
+__all__ = [
+    "GIOI_HAN_TOI_DA",
+    "NGUONG_GAN_GIONG",
+    "ChiTietThuoc",
+    "ThuocTimDuoc",
+    "lay_bo_loc",
+    "lay_chi_tiet_thuoc",
+    "lay_thuoc",
+    "liet_ke_thuoc",
+    "tim_thuoc",
+]

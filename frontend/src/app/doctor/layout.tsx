@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   Bell,
+  BookText,
   ChevronLeft,
   FileClock,
   HelpCircle,
@@ -32,6 +33,13 @@ type NavItem = {
   badge?: "alerts";
 };
 
+// Trang khong nam trong nav chinh (vao qua account menu) nhung van can tieu
+// de rieng tren top bar thay vi mac dinh "Trang chu".
+const EXTRA_TITLES: Record<string, string> = {
+  "/doctor/profile": "Hồ sơ cá nhân",
+  "/doctor/settings": "Cài đặt",
+};
+
 const groups: { title: string; items: NavItem[] }[] = [
   {
     title: "Bác sĩ",
@@ -39,6 +47,7 @@ const groups: { title: string; items: NavItem[] }[] = [
       { to: "/doctor", label: "Trang chủ", icon: Home, exact: true },
       { to: "/doctor/patients", label: "Quản lý bệnh nhân", icon: Users2 },
       { to: "/doctor/prescribe", label: "Kê đơn thuốc", icon: Pill },
+      { to: "/doctor/drugs", label: "Tra cứu thuốc", icon: BookText },
       { to: "/doctor/alerts", label: "Hộp cảnh báo", icon: Bell, badge: "alerts" },
       { to: "/doctor/family", label: "Danh sách người thân", icon: Users },
       { to: "/doctor/audit", label: "Lịch sử", icon: FileClock },
@@ -98,6 +107,9 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.to : pathname.startsWith(item.to);
+
+  const pageTitle =
+    groups.flatMap((g) => g.items).find(isActive)?.label ?? EXTRA_TITLES[pathname] ?? "Trang chủ";
 
   if (!authChecked) {
     return (
@@ -209,12 +221,13 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-[70px] shrink-0 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
           <button
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted lg:hidden"
             onClick={() => setMenuOpen(true)}
+            aria-label="Mở menu điều hướng"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">Trang chủ</h2>
+          <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">{pageTitle}</h2>
 
           <Popover onOpenChange={(open) => open && markAllActivityRead()}>
             <PopoverTrigger asChild>
@@ -299,10 +312,12 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                 onClick={() => setAccountMenuOpen((v) => !v)}
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
-                  H
+                  {(user?.full_name ?? "?").charAt(0)}
                 </span>
                 <div className="hidden min-w-0 text-left sm:block">
-                  <p className="truncate text-sm font-semibold leading-tight">BS. Phạm Quốc Huy</p>
+                  <p className="truncate text-sm font-semibold leading-tight">
+                    {user?.full_name ?? "Đang tải…"}
+                  </p>
                   <p className="text-xs text-muted-foreground">Bác sĩ</p>
                 </div>
               </button>
