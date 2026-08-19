@@ -268,27 +268,6 @@ export default function PatientToday() {
         </div>
       )}
 
-      {/* Tien do */}
-      {dosesHomNay.length > 0 && (
-        <button
-          onClick={() => router.push("/patient/history")}
-          className="rounded-[22px] bg-white px-4 py-3.5 text-left"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <p className="m-0 text-[13px] font-semibold text-[#1B2A44]">
-              {daXong} / {dosesHomNay.length} liều đã hoàn thành
-            </p>
-            <span className="font-mono text-[11px] text-[#62708A]">xem tiến độ ›</span>
-          </div>
-          <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-[#EDF0F6]">
-            <div
-              className="h-full rounded-full bg-[#2E9E6B]"
-              style={{ width: `${(daXong / dosesHomNay.length) * 100}%` }}
-            />
-          </div>
-        </button>
-      )}
-
       {dangTai && (
         <div className="flex items-center justify-center gap-2 rounded-[22px] bg-white p-6 text-sm text-[#5B6A85]">
           <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch uống thuốc…
