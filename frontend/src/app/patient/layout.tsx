@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Heart, History, Home, MessageCircle, Users } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { PhoneShell } from "@/components/phone-shell";
+import { CapyShell } from "@/components/capy/capy-shell";
 import { useAuth } from "@/lib/auth";
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
@@ -36,19 +35,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="capymedi-theme font-sans">
-      <PhoneShell
-        title={user?.full_name ?? ""}
-        subtitle={`Bệnh nhân · ${user?.patient_id ?? ""}`}
-        tabs={[
-          { to: "/patient", label: "Hôm nay", icon: <Home className="h-5 w-5" />, exact: true },
-          { to: "/patient/health", label: "Sức khỏe", icon: <Heart className="h-5 w-5" /> },
-          { to: "/patient/assistant", label: "Capy AI", icon: <MessageCircle className="h-5 w-5" /> },
-          { to: "/patient/family", label: "Người thân", icon: <Users className="h-5 w-5" /> },
-          { to: "/patient/history", label: "Lịch sử", icon: <History className="h-5 w-5" /> },
-        ]}
-      >
-        {children}
-      </PhoneShell>
+      <CapyShell>{children}</CapyShell>
     </div>
   );
 }

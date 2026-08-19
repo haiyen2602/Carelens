@@ -1,66 +1,60 @@
 "use client";
 
+// Tab "Lịch sử" - port tu capyphone.js::renderHistory(), noi voi lich su
+// lieu thuoc THAT.
+//
+// Ban mau hard-code "92%", "23/25 lieu", "🔥 7 ngay lien tiep" va 7 o mau
+// co dinh. O day moi con so deu tinh tu `doses` that; bo phan "chuoi ngay
+// lien tiep" vi chua co gi tinh duoc no. Dai pill "7 ngay/Hom nay/30 ngay"
+// la bo loc that chu khong phai trang tri.
+
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
-import {
-  gioHienThi,
-  listDoses,
-  listPhotoVerifications,
-  moTaThuoc,
-  ngayHienThi,
-  NHAN_TRANG_THAI_LIEU,
-  type Dose,
-} from "@/lib/doses";
 import { DoseHistoryDialog } from "@/components/dose-history-dialog";
+import { CHIP, CHIP_THEO_TRANG_THAI, PillChip, SectionLabel } from "@/components/capy/capy-ui";
+import { useAuth } from "@/lib/auth";
+import { gioHienThi, listDoses, listPhotoVerifications, ngayHienThi, type Dose } from "@/lib/doses";
 
-const MAU_THEO_TRANG_THAI: Record<string, string> = {
-  TAKEN: "bg-success/15 text-success",
-  DELAYED: "bg-success/15 text-success",
-  MISSED: "bg-destructive/15 text-destructive",
-  AWAITING_CAREGIVER: "bg-warning/25 text-warning-foreground",
-  CANCELLED: "bg-muted text-muted-foreground",
-  PENDING: "bg-secondary text-secondary-foreground",
-};
-
-const KHOANG_NGAY = [
-  { key: "today", label: "Hôm nay", days: 1 },
+const KHOANG = [
   { key: "week", label: "7 ngày", days: 7 },
+  { key: "today", label: "Hôm nay", days: 1 },
   { key: "month", label: "30 ngày", days: 30 },
 ] as const;
-type KhoangKey = (typeof KHOANG_NGAY)[number]["key"];
+type KhoangKey = (typeof KHOANG)[number]["key"];
 
 const TEN_THU = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
-function ngayCucBo(iso: string): string {
+function khoaNgay(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-// So sanh theo NGAY-THANG cuc bo (khong phai epoch ms so voi "now") - giong
-// cach laHomNay() o patient/page.tsx dang lam. Bat buoc phai vay: mot lieu
-// "hom nay 08:00 gio VN" luu UTC co the la mot moc UTC con o TUONG LAI so
-// voi "now" ngay khi vua qua nua dem VN (VN = UTC+7), du no da duoc ghi
-// TAKEN that trong ngay hom nay - so sanh epoch se loai nham lieu do khoi
-// khoang "hom nay/7 ngay/30 ngay".
+// So sanh theo NGAY-THANG cuc bo (khong phai epoch ms so voi "now"): mot
+// lieu "hom nay 08:00 gio VN" luu UTC co the la moc UTC con o TUONG LAI so
+// voi "now" ngay sau nua dem VN (UTC+7) du da duoc ghi TAKEN that trong
+// ngay - so sanh epoch se loai nham lieu do khoi khoang.
 function trongKhoang(iso: string, days: number): boolean {
   const d = new Date(iso);
   const nay = new Date();
   const dNgay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const nayNgay = new Date(nay.getFullYear(), nay.getMonth(), nay.getDate()).getTime();
-  const soNgayCach = Math.round((nayNgay - dNgay) / (24 * 60 * 60 * 1000));
-  return soNgayCach >= 0 && soNgayCach < days;
+  const cach = Math.round((nayNgay - dNgay) / 86400000);
+  return cach >= 0 && cach < days;
+}
+
+function tenThuoc(d: Dose): string {
+  return d.expectedItems.map((i) => i.tenThuoc).join(", ") || "Thuốc";
 }
 
 export default function HistoryPage() {
   const { user } = useAuth();
   const patientId = user?.patient_id ?? "";
-  // allDoses: TOAN BO lich (ke ca chua chup anh/bo lo) - dung cho thong ke +
-  // bieu do 7 ngay, khong the dung `doses` (da loc chi con lieu co anh) vi
-  // lieu MISSED khong co anh se bien mat khoi bieu do thay vi hien do.
+  // allDoses: TOAN BO lich - dung cho thong ke + bieu do 7 ngay. Khong the
+  // dung `coAnh` (da loc chi con lieu co anh) vi lieu MISSED khong co anh
+  // se bien mat khoi bieu do thay vi hien do.
   const [allDoses, setAllDoses] = useState<Dose[]>([]);
-  const [doses, setDoses] = useState<Dose[]>([]);
+  const [coAnh, setCoAnh] = useState<Set<string>>(new Set());
   const [dangTai, setDangTai] = useState(true);
   const [dangXem, setDangXem] = useState<Dose | null>(null);
   const [khoang, setKhoang] = useState<KhoangKey>("week");
@@ -71,163 +65,168 @@ export default function HistoryPage() {
     listDoses(patientId)
       .then(async (all) => {
         setAllDoses(all);
-        // Chi giu lieu THAT SU da co anh chup - "Cho xac nhan" (PENDING, chua
-        // chup) hoac bi huy/bo lo ma khong chup lan nao deu khong thuoc
-        // "lich su" theo yeu cau, du trang thai co the khac nhau.
-        const coAnh = await Promise.all(
+        const ketQua = await Promise.all(
           all.map(async (d) => {
             try {
               const lanChup = await listPhotoVerifications(d.id);
-              return lanChup.some((v) => v.hasImage) ? d : null;
+              return lanChup.some((v) => v.hasImage) ? d.id : null;
             } catch {
               return null;
             }
           }),
         );
-        setDoses(coAnh.filter((d): d is Dose => d !== null));
+        setCoAnh(new Set(ketQua.filter((id): id is string => id !== null)));
       })
       .catch((err) => toast.error(err instanceof Error ? err.message : "Không tải được lịch sử"))
       .finally(() => setDangTai(false));
   }, [patientId]);
 
-  const soNgay = KHOANG_NGAY.find((k) => k.key === khoang)!.days;
-  const daSapXep = [...doses]
-    .filter((d) => trongKhoang(d.scheduledAt, soNgay))
+  const soNgay = KHOANG.find((k) => k.key === khoang)!.days;
+
+  // Danh sach hien thi: cac lieu DA CHOT trong khoang (uong/tre/bo/huy) -
+  // lieu PENDING chua toi gio khong thuoc "lich su".
+  const danhSach = allDoses
+    .filter(
+      (d) =>
+        trongKhoang(d.scheduledAt, soNgay) &&
+        ["TAKEN", "DELAYED", "MISSED", "CANCELLED", "AWAITING_CAREGIVER"].includes(d.status),
+    )
     .sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt));
 
   const tongKet = useMemo(() => {
     const trongKy = allDoses.filter((d) => trongKhoang(d.scheduledAt, soNgay));
-    const daUong = trongKy.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
-    const muon = trongKy.filter((d) => d.status === "DELAYED").length;
-    const boQua = trongKy.filter((d) => d.status === "MISSED").length;
-    const daXongHan = trongKy.filter((d) =>
-      ["TAKEN", "DELAYED", "MISSED"].includes(d.status),
-    ).length;
-    const phanTram = daXongHan > 0 ? Math.round((daUong / daXongHan) * 100) : null;
-    return { tong: trongKy.length, daUong, muon, boQua, phanTram };
+    const daChot = trongKy.filter((d) => ["TAKEN", "DELAYED", "MISSED"].includes(d.status));
+    const uong = daChot.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
+    const muon = daChot.filter((d) => d.status === "DELAYED").length;
+    const bo = daChot.filter((d) => d.status === "MISSED").length;
+    return {
+      coDuLieu: daChot.length > 0,
+      pct: daChot.length > 0 ? Math.round((uong / daChot.length) * 100) : 0,
+      uong,
+      tong: daChot.length,
+      muon,
+      bo,
+    };
   }, [allDoses, soNgay]);
 
-  // Bieu do 7 ngay gan nhat (thu-day chip, mau theo trang thai gop cua ngay
-  // do - khong phai bar cao thap, dung cach cua ban thiet ke: 1 mau/1 o).
-  const bieuDo7Ngay = useMemo(() => {
+  // 7 o = 7 ngay gan nhat, mau theo trang thai GOP cua ngay (khong phai cot
+  // cao thap - dung dung cach cua ban thiet ke: 1 mau / 1 o).
+  const bieuDo = useMemo(() => {
     const homNay = new Date();
-    const oNgay: { key: string; thu: string; mau: string; chuToi: boolean }[] = [];
+    const o: { key: string; thu: string; mau: string; fg: string }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(homNay);
       d.setDate(d.getDate() - i);
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      const lieuTrongNgay = allDoses.filter((dose) => ngayCucBo(dose.scheduledAt) === key);
-      let mau = "bg-secondary"; // chua co du lieu / tuong lai
-      let chuToi = false;
-      if (lieuTrongNgay.length > 0) {
-        if (lieuTrongNgay.some((dd) => dd.status === "MISSED")) {
-          mau = "bg-destructive";
-          chuToi = true;
-        } else if (lieuTrongNgay.some((dd) => dd.status === "DELAYED")) {
-          mau = "bg-warning";
-          chuToi = true;
-        } else if (lieuTrongNgay.every((dd) => dd.status === "TAKEN")) {
-          mau = "bg-success";
-          chuToi = true;
-        }
+      const lieu = allDoses.filter((x) => khoaNgay(x.scheduledAt) === key);
+      let mau = "#B7CBE8";
+      let fg = "#2F5488";
+      if (lieu.some((x) => x.status === "MISSED")) {
+        mau = "#B4432C";
+        fg = "#fff";
+      } else if (lieu.some((x) => x.status === "DELAYED")) {
+        mau = "#E39A16";
+        fg = "#fff";
+      } else if (lieu.length > 0 && lieu.every((x) => x.status === "TAKEN")) {
+        mau = "#2E9E6B";
+        fg = "#fff";
       }
-      oNgay.push({ key, thu: TEN_THU[d.getDay()], mau, chuToi });
+      o.push({ key, thu: TEN_THU[d.getDay()], mau, fg });
     }
-    return oNgay;
+    return o;
   }, [allDoses]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] text-primary">
+    <div className="flex flex-col gap-4">
+      <h1 className="font-display m-0 mt-1 text-[30px] font-extrabold leading-[1.1] text-[#16386E]">
         Lịch sử
       </h1>
 
       <div className="flex gap-2">
-        {KHOANG_NGAY.map((k) => (
+        {KHOANG.map((k) => (
           <button
             key={k.key}
             onClick={() => setKhoang(k.key)}
-            className={`rounded-full px-[15px] py-[9px] text-[13px] font-semibold ${
-              khoang === k.key ? "bg-primary text-primary-foreground" : "bg-card text-[#5B6A85]"
-            }`}
+            className="rounded-full px-[15px] py-[9px] text-[13px] font-semibold transition-colors"
+            style={
+              khoang === k.key
+                ? { background: "#16386E", color: "#fff" }
+                : { background: "#fff", color: "#5B6A85" }
+            }
           >
             {k.label}
           </button>
         ))}
       </div>
 
-      {!dangTai && tongKet.tong > 0 && (
-        <section className="rounded-[28px] p-5" style={{ backgroundColor: "var(--capy-sky)" }}>
-          {tongKet.phanTram !== null && (
-            <p className="font-display text-[40px] font-extrabold leading-none text-primary">
-              {tongKet.phanTram}%
-            </p>
-          )}
-          <p className="mt-1 text-[14px] font-semibold text-[#2F5488]">
-            {tongKet.daUong} / {tongKet.tong} liều đã hoàn thành
+      {/* The tong ket */}
+      {!dangTai && tongKet.coDuLieu && (
+        <div className="rounded-[28px] bg-[#CFE6FF] p-5">
+          <p className="font-display m-0 text-[40px] font-extrabold leading-none text-[#16386E]">
+            {tongKet.pct}%
           </p>
-          <p className="mt-1 text-[13px] text-[#3D5D8C]">
-            {tongKet.muon} lần xác nhận muộn · {tongKet.boQua} liều bỏ qua
+          <p className="m-0 mt-1.5 text-[14px] font-semibold text-[#2F5488]">
+            {tongKet.uong} / {tongKet.tong} liều đã hoàn thành
           </p>
-
+          <p className="m-0 mt-0.5 text-[13px] text-[#3D5D8C]">
+            {tongKet.muon} lần xác nhận muộn • {tongKet.bo} liều bỏ qua
+          </p>
           <div className="mt-4 grid grid-cols-7 gap-1.5">
-            {bieuDo7Ngay.map((o) => (
-              <div
+            {bieuDo.map((o) => (
+              <span
                 key={o.key}
-                className={`grid h-[52px] items-end justify-center rounded-xl pb-1 ${o.mau} ${
-                  o.chuToi ? "text-white" : "text-primary/70"
-                }`}
+                className="font-mono grid h-[52px] items-end justify-center rounded-[12px] pb-1 text-[9px] font-medium"
+                style={{ background: o.mau, color: o.fg }}
               >
-                <span className="font-mono text-[9px] font-medium">{o.thu}</span>
-              </div>
+                {o.thu}
+              </span>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {dangTai && (
-        <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 rounded-[24px] bg-white p-6 text-[13px] text-[#5B6A85]">
           <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch sử…
         </div>
       )}
 
+      {/* Danh sach lieu */}
       {!dangTai && (
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
-          Nhật ký liều thuốc
-        </h2>
-      )}
-
-      {!dangTai && daSapXep.length === 0 && (
-        <p className="surface-card p-6 text-center text-sm text-muted-foreground">
-          Chưa có liều thuốc nào trong khoảng này.
-        </p>
-      )}
-
-      {!dangTai && daSapXep.length > 0 && (
-        <section className="divide-y divide-border overflow-hidden rounded-[24px] bg-card shadow-[var(--shadow-card)]">
-          {daSapXep.map((d) => (
-            <button
-              key={d.id}
-              onClick={() => setDangXem(d)}
-              className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 p-4 text-left hover:bg-muted/50"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-semibold">
-                  {ngayHienThi(d.scheduledAt)} ·{" "}
-                  <span className="font-mono">{gioHienThi(d.scheduledAt)}</span> · {moTaThuoc(d)}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  MAU_THEO_TRANG_THAI[d.status] ?? "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {NHAN_TRANG_THAI_LIEU[d.status] ?? d.status}
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-        </section>
+        <div>
+          <div className="mb-2.5">
+            <SectionLabel>Nhật ký liều thuốc</SectionLabel>
+          </div>
+          {danhSach.length === 0 ? (
+            <div className="rounded-[24px] bg-white p-6 text-center text-[13px] text-[#5B6A85]">
+              Chưa có liều nào trong khoảng này.
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-[24px] bg-white">
+              {danhSach.map((d, i) => (
+                <button
+                  key={d.id}
+                  onClick={() => setDangXem(d)}
+                  className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 px-4 py-[15px] text-left transition-colors hover:bg-[#FAFBFE]"
+                  style={{
+                    borderBottom: i === danhSach.length - 1 ? "none" : "1px solid #EDF0F6",
+                  }}
+                >
+                  <span className="block min-w-0">
+                    <span className="block truncate text-[14px] font-semibold">
+                      {gioHienThi(d.scheduledAt)} — {tenThuoc(d)}
+                    </span>
+                    <span className="font-mono block text-[11px] text-[#62708A]">
+                      {ngayHienThi(d.scheduledAt)}
+                      {coAnh.has(d.id) ? " · xác nhận bằng ảnh" : " · không có ảnh"}
+                    </span>
+                  </span>
+                  <PillChip chip={CHIP_THEO_TRANG_THAI[d.status] ?? CHIP.upcoming} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <DoseHistoryDialog

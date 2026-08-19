@@ -1,10 +1,23 @@
 "use client";
 
+// Tab "Sức khoẻ" - port tu capyphone.js::renderHealth(), noi voi ho so /
+// don thuoc / nhat ky THAT.
+//
+// Ban mau hard-code "🔥 7 ngay lien tiep" va "tuan thu 7 ngay: 92%".
+// O day: so lieu hom nay va ty le tuan thu 7 ngay deu tinh tu `doses` that;
+// bo hoan toan phan "chuoi ngay lien tiep" vi chua co gi tinh duoc no.
+
 import { useEffect, useState } from "react";
-import { AlertTriangle, HeartPulse, Pill } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  CHIP,
+  CapyPrimaryButton,
+  CapySecondaryButton,
+  SectionLabel,
+  PillChip,
+  type ChipStyle,
+} from "@/components/capy/capy-ui";
 import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
@@ -17,11 +30,30 @@ import {
 } from "@/lib/proto-store";
 
 const MOOD_EMOJI: Record<AlertLevel, string> = { low: "🙂", mid: "😐", high: "😣" };
-const CHIP_STATUS: Record<string, string> = {
-  approved: "bg-success/15 text-success",
-  pending: "bg-warning/25 text-warning-foreground",
+
+const CHIP_DON: Record<string, ChipStyle> = {
+  approved: { label: "Đang dùng", icon: "●", bg: "#DFF3E9", fg: "#1F6A50" },
+  pending: { label: "Chờ duyệt", icon: "‖", bg: "#FDEBC9", fg: "#8A6516" },
 };
-const LABEL_STATUS: Record<string, string> = { approved: "Đang dùng", pending: "Chờ duyệt" };
+
+function trong7Ngay(iso: string): boolean {
+  const d = new Date(iso);
+  const nay = new Date();
+  const dNgay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const nayNgay = new Date(nay.getFullYear(), nay.getMonth(), nay.getDate()).getTime();
+  const cach = Math.round((nayNgay - dNgay) / 86400000);
+  return cach >= 0 && cach < 7;
+}
+
+function laHomNay(iso: string): boolean {
+  const d = new Date(iso);
+  const nay = new Date();
+  return (
+    d.getFullYear() === nay.getFullYear() &&
+    d.getMonth() === nay.getMonth() &&
+    d.getDate() === nay.getDate()
+  );
+}
 
 export default function HealthPage() {
   const { healthLog, reportHealth, setEmergency } = useProto();
@@ -33,21 +65,14 @@ export default function HealthPage() {
   // refreshPrescriptions() cua store do goi keo listPatients() (chi
   // doctor/admin, 403 voi role=patient) qua Promise.all, nen voi tai khoan
   // benh nhan promise do LUON reject va prescriptions o store KHONG BAO GIO
-  // duoc set (rong vinh vien du DB co don active that - bug that, xac nhan
-  // qua DB production: BN-0000 co 4 don active nhung UI hien "chua co don
-  // thuoc nao"). Trang nay tu goi listPrescriptions({patientId}) rieng - da
-  // loc dung 1 benh nhan o tang backend, khong can tra ten qua listPatients().
-  const [myPrescriptions, setMyPrescriptions] = useState<Prescription[]>([]);
-  const [reporting, setReporting] = useState(false);
+  // duoc set. Trang nay tu goi listPrescriptions({patientId}) rieng.
+  const [donThuoc, setDonThuoc] = useState<Prescription[]>([]);
+  const [dangBao, setDangBao] = useState(false);
   const [text, setText] = useState("");
-  const [level, setLevel] = useState<AlertLevel>("low");
+  const [muc, setMuc] = useState<AlertLevel>("low");
 
   useEffect(() => {
     if (!patientId) return;
-    // Cung ly do voi prescriptions o tren: listPatients() 403 voi
-    // role=patient - dung getMyPatientProfile() (GET /api/patients/me,
-    // backend tu doc patient_id qua JWT) thay vi tim trong toan bo danh
-    // sach chi doctor/admin xem duoc.
     getMyPatientProfile(accessToken)
       .then(setHoSo)
       .catch(() => undefined);
@@ -56,136 +81,127 @@ export default function HealthPage() {
       .catch(() => undefined);
     listPrescriptions({ patientId })
       .then((records) =>
-        setMyPrescriptions(
-          flattenPrescriptions(records, {}).filter((p) => p.status !== "rejected"),
-        ),
+        setDonThuoc(flattenPrescriptions(records, {}).filter((p) => p.status !== "rejected")),
       )
       .catch(() => undefined);
   }, [patientId, accessToken]);
 
-  const takenCount = doses.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
+  const dosesHomNay = doses.filter((d) => laHomNay(d.scheduledAt));
+  const daUongHomNay = dosesHomNay.filter(
+    (d) => d.status === "TAKEN" || d.status === "DELAYED",
+  ).length;
 
-  const submit = () => {
-    reportHealth(text || "Không mô tả chi tiết", level);
-    if (level === "high") {
+  // Ty le tuan thu 7 ngay: chi tinh cac lieu DA CHOT (uong/tre/bo), khong
+  // tinh lieu con PENDING cua tuong lai - neu khong ty le se luon bi thap gia.
+  const tuanThu = (() => {
+    const daChot = doses.filter(
+      (d) => trong7Ngay(d.scheduledAt) && ["TAKEN", "DELAYED", "MISSED"].includes(d.status),
+    );
+    if (daChot.length === 0) return null;
+    const uong = daChot.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
+    return Math.round((uong / daChot.length) * 100);
+  })();
+
+  const guiBaoVanDe = () => {
+    reportHealth(text || "Không mô tả chi tiết", muc);
+    if (muc === "high") {
       setEmergency(true);
     } else {
-      toast(
-        level === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h",
-      );
+      toast(muc === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h");
     }
-    setReporting(false);
+    setDangBao(false);
     setText("");
-    setLevel("low");
+    setMuc("low");
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] text-primary">
-        Sức khỏe
+    <div className="flex flex-col gap-4">
+      <h1 className="font-display m-0 mt-1 text-[30px] font-extrabold leading-[1.1] text-[#16386E]">
+        Sức khoẻ
       </h1>
 
+      {/* Banner tong quan */}
       {user && (
-        <section
-          className="rounded-[28px] p-[18px]"
-          style={{ backgroundColor: "var(--capy-cream)" }}
-        >
-          <div className="flex items-center gap-[14px]">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-lg font-bold text-accent-foreground">
-              {user.full_name.charAt(0)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-display truncate text-[19px] font-bold text-[#6B4E0E]">
-                {user.full_name}
-              </p>
-              <p className="truncate text-sm text-[#7A5A10]/80">
-                {[
-                  hoSo?.yearOfBirth ? `${new Date().getFullYear() - hoSo.yearOfBirth} tuổi` : null,
-                  hoSo?.note,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            </div>
-          </div>
-          {doses.length > 0 && (
-            <p className="mt-3 text-[13px] font-semibold text-[#7A5A10]">
-              Hôm nay {takenCount}/{doses.length} liều
+        <div className="flex items-center gap-3.5 rounded-[28px] bg-[#FFF0D6] p-[18px]">
+          <span className="font-display grid h-[72px] w-[72px] shrink-0 place-items-center rounded-[22px] bg-white/70 text-[26px] font-bold text-[#8A6516]">
+            {user.full_name.charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="font-display m-0 truncate text-[19px] font-bold text-[#6B4E0E]">
+              {user.full_name}
             </p>
-          )}
-        </section>
+            <p className="m-0 mt-0.5 text-[13px] font-semibold text-[#7A5A10]">
+              {dosesHomNay.length > 0
+                ? `Hôm nay ${daUongHomNay}/${dosesHomNay.length} liều`
+                : "Hôm nay chưa có liều nào"}
+            </p>
+            {tuanThu !== null && (
+              <p className="font-mono m-0 mt-1.5 text-[11px] text-[#A07E2E]">
+                tuân thủ 7 ngày: {tuanThu}%
+              </p>
+            )}
+            {hoSo?.yearOfBirth && (
+              <p className="font-mono m-0 mt-0.5 text-[11px] text-[#A07E2E]">
+                {new Date().getFullYear() - hoSo.yearOfBirth} tuổi
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
-            <Pill className="h-4 w-4" /> Thuốc đang dùng
-          </h2>
-          <Button
-            size="sm"
-            className="rounded-full"
+      {/* Thuoc dang dung */}
+      <div>
+        <div className="mb-2.5 flex items-baseline justify-between gap-2">
+          <SectionLabel>Thuốc đang dùng</SectionLabel>
+          <button
             onClick={() => toast("Thêm thuốc chưa nối API — sắp có")}
+            className="font-display rounded-full bg-[#EDF0F6] px-3.5 py-[7px] text-[12px] font-bold text-[#1B2A44] transition-colors hover:bg-[#E3E8F1]"
           >
             + Thêm thuốc
-          </Button>
+          </button>
         </div>
-        <div className="space-y-2.5">
-          {myPrescriptions.map((p) => (
-            <div key={p.id} className="rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-display text-[17px] font-bold text-primary">{p.med}</p>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                    CHIP_STATUS[p.status] ?? "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {LABEL_STATUS[p.status] ?? "Bản nháp"}
-                </span>
+        <div className="flex flex-col gap-2.5">
+          {donThuoc.map((p) => (
+            <div key={p.id} className="rounded-[22px] bg-white p-4">
+              <div className="flex items-baseline justify-between gap-2.5">
+                <p className="font-display m-0 text-[17px] font-bold text-[#16386E]">{p.med}</p>
+                <PillChip chip={CHIP_DON[p.status] ?? CHIP.upcoming} />
               </div>
-              <p className="text-[13px] text-[#5B6A85]">
-                {p.dose} · {p.perDay} lần/ngày · {p.meal}
+              <p className="m-0 mt-1 text-[13px] text-[#5B6A85]">
+                {p.dose} • {p.perDay} lần/ngày • {p.meal}
               </p>
             </div>
           ))}
-          {myPrescriptions.length === 0 && (
-            <p className="surface-card p-4 text-sm text-muted-foreground">Chưa có đơn thuốc nào.</p>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#62708A]">
-            <HeartPulse className="h-4 w-4" /> Nhật ký sức khỏe
-          </h2>
-          {!reporting && (
-            <div className="flex shrink-0 gap-2">
-              <Button
-                size="sm"
-                className="rounded-full"
-                onClick={() => toast("Ghi nhật ký nhanh chưa nối API — sắp có")}
-              >
-                + Ghi nhật ký
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() => setReporting(true)}
-              >
-                <AlertTriangle className="mr-1 h-4 w-4" /> Báo vấn đề
-              </Button>
+          {donThuoc.length === 0 && (
+            <div className="rounded-[22px] bg-white p-4 text-[13px] text-[#5B6A85]">
+              Chưa có đơn thuốc nào.
             </div>
           )}
         </div>
+      </div>
 
-        {reporting && (
-          <div className="space-y-3 rounded-xl border border-border p-4">
+      {/* Nhat ky suc khoe */}
+      <div>
+        <div className="mb-2.5 flex items-baseline justify-between gap-2">
+          <SectionLabel>Nhật ký sức khoẻ</SectionLabel>
+          {!dangBao && (
+            <button
+              onClick={() => setDangBao(true)}
+              className="font-display rounded-full bg-[#EDF0F6] px-3.5 py-[7px] text-[12px] font-bold text-[#1B2A44] transition-colors hover:bg-[#E3E8F1]"
+            >
+              + Ghi nhật ký
+            </button>
+          )}
+        </div>
+
+        {dangBao && (
+          <div className="mb-2.5 flex flex-col gap-3 rounded-[22px] bg-white p-4">
             <Textarea
               rows={3}
               placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
               value={text}
               onChange={(e) => setText(e.target.value)}
+              className="rounded-2xl border-[#E3E8F1]"
             />
             <div className="grid grid-cols-3 gap-2">
               {(
@@ -197,46 +213,47 @@ export default function HealthPage() {
               ).map(([v, label]) => (
                 <button
                   key={v}
-                  onClick={() => setLevel(v)}
-                  className={`rounded-lg border p-2 text-sm font-semibold transition-colors ${
-                    level === v
-                      ? "border-primary bg-accent text-accent-foreground"
-                      : "border-border"
-                  }`}
+                  onClick={() => setMuc(v)}
+                  className="rounded-2xl border py-2.5 text-[13px] font-semibold transition-colors"
+                  style={
+                    muc === v
+                      ? { borderColor: "#16386E", background: "#CFE6FF", color: "#16386E" }
+                      : { borderColor: "#E3E8F1", color: "#5B6A85" }
+                  }
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={() => setReporting(false)}>
-                Hủy
-              </Button>
-              <Button onClick={submit}>Gửi</Button>
+            <div className="flex gap-2.5">
+              <CapySecondaryButton onClick={() => setDangBao(false)}>Huỷ</CapySecondaryButton>
+              <CapyPrimaryButton className="min-h-[48px] flex-1 text-[15px]" onClick={guiBaoVanDe}>
+                Gửi
+              </CapyPrimaryButton>
             </div>
           </div>
         )}
 
-        {healthLog.length === 0 && !reporting && (
-          <p className="surface-card p-4 text-sm text-muted-foreground">Chưa có nhật ký nào.</p>
-        )}
-        {healthLog.length > 0 && (
-          <div className="space-y-2.5">
-            {healthLog.map((h) => (
-              <div
-                key={h.id}
-                className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)]"
-              >
-                <span className="text-[22px] leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
-                <div className="min-w-0">
-                  <p className="text-[14px] font-semibold">{h.text}</p>
-                  <p className="font-mono mt-0.5 text-xs text-[#62708A]">{h.at}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        <div className="flex flex-col gap-2.5">
+          {healthLog.map((h) => (
+            <div
+              key={h.id}
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-[22px] bg-white px-4 py-3.5"
+            >
+              <span className="text-[22px] leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
+              <span className="block min-w-0">
+                <span className="block text-[14px] font-semibold">{h.text}</span>
+                <span className="block text-[12px] leading-[1.45] text-[#5B6A85]">{h.at}</span>
+              </span>
+            </div>
+          ))}
+          {healthLog.length === 0 && !dangBao && (
+            <div className="rounded-[22px] bg-white p-4 text-[13px] text-[#5B6A85]">
+              Chưa có nhật ký nào.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
