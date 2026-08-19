@@ -156,7 +156,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="full_name">Họ và tên</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <User aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="full_name"
                   placeholder="Nguyễn Văn A"
@@ -171,7 +171,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -203,7 +203,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="password">Mật khẩu</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -219,7 +219,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="confirm_password">Xác nhận mật khẩu</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirm_password"
                   type="password"

@@ -181,17 +181,22 @@ export default function DoctorDashboard() {
 
           <div className="mt-4 flex shrink-0 flex-wrap gap-2">
             <div className="relative min-w-[200px] flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                aria-hidden="true"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Tìm kiếm bệnh nhân..."
+                aria-label="Tìm kiếm bệnh nhân"
                 className="h-10 w-full rounded-xl border border-input bg-card pl-9 pr-3 text-sm outline-none focus:border-primary"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              aria-label="Lọc theo trạng thái theo dõi"
               className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
             >
               <option value="all">Trạng thái: Tất cả</option>
@@ -200,6 +205,7 @@ export default function DoctorDashboard() {
             <select
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value as RiskFilter)}
+              aria-label="Lọc theo mức độ nguy cơ"
               className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
             >
               <option value="all">Mức độ nguy cơ: Tất cả</option>
@@ -231,7 +237,9 @@ export default function DoctorDashboard() {
                             {p.name.charAt(0)}
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-primary">{p.name}</p>
+                            <p className="truncate font-semibold text-primary" title={p.name}>
+                              {p.name}
+                            </p>
                             <p className="text-xs text-muted-foreground">ID: {p.id}</p>
                           </div>
                         </div>
@@ -360,7 +368,9 @@ export default function DoctorDashboard() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="min-w-0 truncate font-semibold">{alert.title}</p>
+                          <p className="min-w-0 truncate font-semibold" title={alert.title}>
+                            {alert.title}
+                          </p>
                           <span
                             className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${t.chip}`}
                           >

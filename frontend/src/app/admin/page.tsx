@@ -50,30 +50,37 @@ export default function AdminDashboard() {
   const indexed = MEDICINES.filter((m) => m.status === "indexed").length;
   const needsAttention = MEDICINES.filter((m) => m.status !== "indexed").length;
 
+  const roleCounts = {
+    patient: accounts.filter((a) => a.role === "patient").length,
+    doctor: accounts.filter((a) => a.role === "doctor").length,
+    caregiver: accounts.filter((a) => a.role === "caregiver").length,
+    admin: accounts.filter((a) => a.role === "admin").length,
+  };
+  const pctOf = (n: number) => (total > 0 ? (n / total) * 100 : 0);
   const donut = [
     {
       label: "Bệnh nhân",
-      sub: `${accounts.filter((a) => a.role === "patient").length} tài khoản`,
+      sub: `${roleCounts.patient} tài khoản`,
       color: "var(--primary)",
-      pct: 45,
+      pct: pctOf(roleCounts.patient),
     },
     {
       label: "Bác sĩ",
-      sub: `${accounts.filter((a) => a.role === "doctor").length} tài khoản`,
+      sub: `${roleCounts.doctor} tài khoản`,
       color: "var(--success)",
-      pct: 25,
+      pct: pctOf(roleCounts.doctor),
     },
     {
       label: "Người thân",
-      sub: `${accounts.filter((a) => a.role === "caregiver").length} tài khoản`,
+      sub: `${roleCounts.caregiver} tài khoản`,
       color: "var(--warning)",
-      pct: 25,
+      pct: pctOf(roleCounts.caregiver),
     },
     {
       label: "Quản trị",
-      sub: `${accounts.filter((a) => a.role === "admin").length} tài khoản`,
+      sub: `${roleCounts.admin} tài khoản`,
       color: "var(--muted-foreground)",
-      pct: 5,
+      pct: pctOf(roleCounts.admin),
     },
   ];
 
@@ -104,15 +111,17 @@ export default function AdminDashboard() {
       icon: PillBottle,
       tone: "bg-warning/25 text-warning-foreground",
       link: { to: "/admin/medicines", label: "Quản lý dữ liệu thuốc" },
+      mock: true,
     },
     {
-      label: "Sự kiện hệ thống hôm nay",
-      value: SYSTEM_AUDIT.filter((a) => a.date === "10/08/2026").length,
+      label: "Sự kiện hệ thống gần đây",
+      value: SYSTEM_AUDIT.length,
       note: "Xem toàn bộ audit log",
       noteTone: "text-muted-foreground",
       icon: FileClock,
       tone: "bg-accent text-accent-foreground",
       link: { to: "/admin/audit", label: "Xem log hệ thống" },
+      mock: true,
     },
   ];
 
@@ -136,7 +145,14 @@ export default function AdminDashboard() {
                 <Icon className="h-6 w-6" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-muted-foreground">{s.label}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+                  {s.label}
+                  {"mock" in s && s.mock && (
+                    <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
+                      Mock
+                    </span>
+                  )}
+                </p>
                 <p className="mt-1 text-3xl font-extrabold leading-none">{s.value}</p>
                 <p className={`mt-2 truncate text-xs font-semibold ${s.noteTone}`}>{s.note}</p>
                 <Link
@@ -194,7 +210,12 @@ export default function AdminDashboard() {
 
         <section className="surface-card p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Hoạt động hệ thống gần đây</h2>
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              Hoạt động hệ thống gần đây
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Mock
+              </span>
+            </h2>
             <Link href="/admin/audit" className="text-xs font-semibold text-primary">
               Xem tất cả
             </Link>
@@ -206,7 +227,9 @@ export default function AdminDashboard() {
                   {a.at}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{a.actor}</p>
+                  <p className="truncate text-sm font-semibold" title={a.actor}>
+                    {a.actor}
+                  </p>
                   <p className="text-sm text-muted-foreground">{a.action}</p>
                 </div>
                 <span
@@ -245,6 +268,9 @@ export default function AdminDashboard() {
             <p className="flex items-center gap-2 text-sm font-semibold">
               <PillBottle className="h-4 w-4 text-warning-foreground" /> {needsAttention} dữ liệu
               thuốc chưa index xong
+              <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Mock
+              </span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Agent RAG có thể trả lời thiếu chính xác nếu chưa xử lý.

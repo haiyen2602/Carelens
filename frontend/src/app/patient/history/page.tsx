@@ -80,7 +80,10 @@ export default function HistoryPage() {
               className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 p-4 text-left hover:bg-muted/50"
             >
               <div className="min-w-0">
-                <p className="truncate font-semibold">
+                <p
+                  className="truncate font-semibold"
+                  title={`${ngayHienThi(d.scheduledAt)} · ${gioHienThi(d.scheduledAt)} · ${moTaThuoc(d)}`}
+                >
                   {ngayHienThi(d.scheduledAt)} · {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
                 </p>
               </div>
