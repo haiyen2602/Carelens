@@ -23,11 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { roleLabel, statusLabel } from "@/lib/admin-mock";
+import { useAuth } from "@/lib/auth";
 import {
   createAccount,
   listAccounts,
   updateAccountStatus,
   type AccountRecord,
+  type AccountCreationRole,
   type AccountRole,
   type AccountStatus,
 } from "@/lib/accounts";
@@ -49,23 +51,30 @@ const emptyForm = {
   email: "",
   password: "",
   fullName: "",
-  role: "patient" as AccountRole,
-  patientId: "",
-  doctorId: "",
+  role: "doctor" as AccountCreationRole,
 };
+
+type AccountGroup = "patients" | "doctors" | "admins";
 
 export default function AccountsPage() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuth();
   const [q, setQ] = useState("");
-  const [role, setRole] = useState<"all" | AccountRole>("all");
+  const [activeGroup, setActiveGroup] = useState<AccountGroup>("patients");
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [statusError, setStatusError] = useState("");
+  const [lastStatusAction, setLastStatusAction] = useState<{
+    id: string;
+    next: AccountStatus;
+  } | null>(null);
 
   const accountsQuery = useQuery({
     queryKey: ["accounts"],
-    queryFn: listAccounts,
+    queryFn: () => listAccounts(accessToken),
+    enabled: Boolean(accessToken),
   });
 
   const createMutation = useMutation({
@@ -75,8 +84,7 @@ export default function AccountsPage() {
         password: form.password,
         fullName: form.fullName,
         role: form.role,
-        patientId: form.role === "patient" ? form.patientId || undefined : undefined,
-        doctorId: form.role === "patient" ? form.doctorId || undefined : undefined,
+        accessToken,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
@@ -91,23 +99,43 @@ export default function AccountsPage() {
 
   const statusMutation = useMutation({
     mutationFn: ({ id, next }: { id: string; next: AccountStatus }) =>
-      updateAccountStatus(id, next),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+      updateAccountStatus(id, next, accessToken),
+    onSuccess: () => {
+      setStatusError("");
+      setLastStatusAction(null);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+    onError: (err: unknown) => {
+      setStatusError(err instanceof Error ? err.message : "Cập nhật trạng thái thất bại.");
+    },
   });
 
   const accounts = accountsQuery.data ?? [];
 
-  const list = useMemo(
+  const groupAccounts = useMemo(
     () =>
       accounts.filter((a) => {
+        const matchesGroup =
+          activeGroup === "patients"
+            ? a.role === "patient" || a.role === "caregiver"
+            : activeGroup === "doctors"
+              ? a.role === "doctor"
+              : a.role === "admin";
+        return matchesGroup;
+      }),
+    [accounts, activeGroup],
+  );
+
+  const list = useMemo(
+    () =>
+      groupAccounts.filter((a) => {
         const matchQ =
           a.fullName.toLowerCase().includes(q.toLowerCase()) ||
           a.email.toLowerCase().includes(q.toLowerCase());
-        const matchRole = role === "all" || a.role === role;
         const matchStatus = status === "all" || a.status === status;
-        return matchQ && matchRole && matchStatus;
+        return matchQ && matchStatus;
       }),
-    [accounts, q, role, status],
+    [groupAccounts, q, status],
   );
 
   const submitCreate = (e: FormEvent) => {
@@ -127,115 +155,128 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
-        <p className="min-w-0 truncate text-sm text-muted-foreground">
-          {accounts.length} tài khoản · bác sĩ, bệnh nhân, người thân và quản trị viên.
-        </p>
-        <Dialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) {
-              setForm(emptyForm);
-              setFormError("");
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-1 h-4 w-4" /> Tạo tài khoản
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tạo tài khoản mới</DialogTitle>
-              <DialogDescription>
-                Không có đăng ký công khai — chỉ quản trị viên tạo được tài khoản.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={submitCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Họ tên</Label>
-                <Input
-                  id="full_name"
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Vai trò</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(v) => setForm((f) => ({ ...f, role: v as AccountRole }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(roleLabel) as AccountRole[]).map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {roleLabel[r]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.role === "patient" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="patient_id">
-                      Mã bệnh nhân (patient_id){" "}
-                      <span className="text-muted-foreground">
-                        (tuỳ chọn, để khớp dữ liệu demo có sẵn)
-                      </span>
-                    </Label>
-                    <Input
-                      id="patient_id"
-                      placeholder="vd demo-patient-01"
-                      value={form.patientId}
-                      onChange={(e) => setForm((f) => ({ ...f, patientId: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="doctor_id">
-                      Mã bác sĩ (doctor_id){" "}
-                      <span className="text-muted-foreground">(tuỳ chọn — bác sĩ phụ trách)</span>
-                    </Label>
-                    <Input
-                      id="doctor_id"
-                      value={form.doctorId}
-                      onChange={(e) => setForm((f) => ({ ...f, doctorId: e.target.value }))}
-                    />
-                  </div>
-                </>
-              )}
-              {formError && <p className="text-sm font-medium text-destructive">{formError}</p>}
-              <DialogFooter>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Đang tạo..." : "Tạo tài khoản"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">Quản lý tài khoản</h1>
+          <p className="text-sm text-muted-foreground">
+            {groupAccounts.length} tài khoản trong nhóm · bác sĩ, bệnh nhân và quản trị viên.
+          </p>
+        </div>
+        {activeGroup !== "patients" && (
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setForm(emptyForm);
+                setFormError("");
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-1 h-4 w-4" /> Tạo tài khoản
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tạo tài khoản mới</DialogTitle>
+                <DialogDescription>
+                  Không có đăng ký công khai — chỉ quản trị viên tạo được tài khoản.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={submitCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Họ tên</Label>
+                  <Input
+                    id="full_name"
+                    value={form.fullName}
+                    onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vai trò</Label>
+                  <Select
+                    value={form.role}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, role: v as AccountCreationRole }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["doctor", "admin"] as const).map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {roleLabel[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formError && <p className="text-sm font-medium text-destructive">{formError}</p>}
+                <DialogFooter>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Đang tạo..." : "Tạo tài khoản"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </header>
+
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm tài khoản">
+        {(
+          [
+            ["patients", "Bệnh nhân"],
+            ["doctors", "Bác sĩ"],
+            ["admins", "Admin"],
+          ] as const
+        ).map(([group, label]) => (
+          <button
+            key={group}
+            type="button"
+            role="tab"
+            aria-selected={activeGroup === group}
+            onClick={() => setActiveGroup(group)}
+            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
+              activeGroup === group
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input bg-card text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {label} (
+            {group === activeGroup
+              ? groupAccounts.length
+              : accounts.filter((a) =>
+                  group === "patients"
+                    ? a.role === "patient" || a.role === "caregiver"
+                    : group === "doctors"
+                      ? a.role === "doctor"
+                      : a.role === "admin",
+                ).length}
+            )
+          </button>
+        ))}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
@@ -252,18 +293,6 @@ export default function AccountsPage() {
           />
         </div>
         <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "all" | AccountRole)}
-          aria-label="Lọc theo vai trò"
-          className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-muted-foreground outline-none"
-        >
-          <option value="all">Vai trò: Tất cả</option>
-          <option value="doctor">Bác sĩ</option>
-          <option value="patient">Bệnh nhân</option>
-          <option value="caregiver">Người thân</option>
-          <option value="admin">Quản trị</option>
-        </select>
-        <select
           value={status}
           onChange={(e) => setStatus(e.target.value as "all" | AccountStatus)}
           aria-label="Lọc theo trạng thái"
@@ -272,9 +301,36 @@ export default function AccountsPage() {
           <option value="all">Trạng thái: Tất cả</option>
           <option value="active">Hoạt động</option>
           <option value="locked">Đã khoá</option>
-          <option value="pending">Chờ kích hoạt</option>
         </select>
       </div>
+
+      {statusError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <span>{statusError}</span>
+          <div className="flex items-center gap-2">
+            {lastStatusAction && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={statusMutation.isPending}
+                onClick={() => {
+                  setStatusError("");
+                  statusMutation.mutate(lastStatusAction);
+                }}
+              >
+                Thử lại
+              </Button>
+            )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setStatusError("")}>
+              Đóng
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="surface-card overflow-x-auto">
         <table className="w-full min-w-[800px] border-collapse text-sm">
@@ -344,12 +400,15 @@ export default function AccountsPage() {
                       variant="outline"
                       size="sm"
                       disabled={statusMutation.isPending}
-                      onClick={() =>
-                        statusMutation.mutate({
+                      onClick={() => {
+                        setStatusError("");
+                        const action: { id: string; next: AccountStatus } = {
                           id: a.id,
                           next: a.status === "locked" ? "active" : "locked",
-                        })
-                      }
+                        };
+                        setLastStatusAction(action);
+                        statusMutation.mutate(action);
+                      }}
                     >
                       {a.status === "locked" ? (
                         <>
@@ -365,7 +424,7 @@ export default function AccountsPage() {
                 </td>
               </tr>
             ))}
-            {!accountsQuery.isLoading && list.length === 0 && (
+            {!accountsQuery.isLoading && !accountsQuery.isError && list.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   Không tìm thấy tài khoản phù hợp.
