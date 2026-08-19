@@ -26,29 +26,32 @@ export default function MedicinesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-    listAdminDrugs({
-      q: query,
-      mappingStatus: status || undefined,
-      page,
-      accessToken,
-      signal: controller.signal,
-    })
-      .then((result) => {
-        setItems(result.items);
-        setTotal(result.total);
-        setTotalPages(result.total_pages);
+    const debounce = window.setTimeout(() => {
+      const controller = new AbortController();
+      setLoading(true);
+      setError(null);
+      listAdminDrugs({
+        q: query,
+        mappingStatus: status || undefined,
+        page,
+        accessToken,
+        signal: controller.signal,
       })
-      .catch((reason: unknown) => {
-        if (!controller.signal.aborted)
-          setError(reason instanceof Error ? reason.message : "Không thể tải dữ liệu thuốc");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
+        .then((result) => {
+          setItems(result.items);
+          setTotal(result.total);
+          setTotalPages(result.total_pages);
+        })
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted)
+            setError(reason instanceof Error ? reason.message : "Không thể tải dữ liệu thuốc");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+      return () => controller.abort();
+    }, 300);
+    return () => window.clearTimeout(debounce);
   }, [accessToken, page, query, status]);
 
   const changeQuery = (value: string) => {

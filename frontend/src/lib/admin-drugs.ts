@@ -29,6 +29,23 @@ export type AdminDrugListResponse = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export function buildAdminDrugsUrl(
+  options: {
+    q?: string;
+    mappingStatus?: MappingStatus;
+    page?: number;
+    pageSize?: number;
+  } = {},
+) {
+  const params = new URLSearchParams({
+    page: String(options.page ?? 1),
+    page_size: String(options.pageSize ?? 20),
+  });
+  if (options.q?.trim()) params.set("q", options.q.trim());
+  if (options.mappingStatus) params.set("mapping_status", options.mappingStatus);
+  return `${API_BASE}/api/v1/admin/drugs?${params}`;
+}
+
 export async function listAdminDrugs(
   options: {
     q?: string;
@@ -39,14 +56,7 @@ export async function listAdminDrugs(
     signal?: AbortSignal;
   } = {},
 ): Promise<AdminDrugListResponse> {
-  const params = new URLSearchParams({
-    page: String(options.page ?? 1),
-    page_size: String(options.pageSize ?? 10),
-  });
-  if (options.q?.trim()) params.set("q", options.q.trim());
-  if (options.mappingStatus) params.set("mapping_status", options.mappingStatus);
-
-  const response = await fetch(`${API_BASE}/api/v1/admin/drugs?${params}`, {
+  const response = await fetch(buildAdminDrugsUrl(options), {
     signal: options.signal,
     headers: options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : undefined,
   });
