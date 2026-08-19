@@ -3,7 +3,7 @@
 **Domain:** `drug-knowledge` + `reporting` (Admin UI)
 **Owner:** Nguyễn Minh Đạt + AI
 **Sprint:** Chưa phân Sprint
-**Status:** To Do
+**Status:** In Review
 **Ưu tiên:** P0
 
 ## Mục tiêu (Goal)
@@ -14,20 +14,33 @@ các mapping theo trạng thái.
 
 ## Acceptance Criteria (AC)
 
-- [ ] `GET /api/v1/admin/drugs` trả dữ liệu từ `drug_product`,
+- [x] `GET /api/v1/admin/drugs` trả dữ liệu từ `drug_product`,
       `drug_product_ingredient`, `ingredient`, `drug_id_map`, không dùng mock.
-- [ ] `GET /api/v1/admin/drugs/{drug_product_id}` trả chi tiết thuốc, hoạt chất
+- [x] `GET /api/v1/admin/drugs/{drug_product_id}` trả chi tiết thuốc, hoạt chất
       và toàn bộ mapping.
-- [ ] API hỗ trợ tìm kiếm, lọc `ACTIVE`/`AMBIGUOUS`/`RETIRED`/`UNMAPPED`, phân
+- [x] API hỗ trợ tìm kiếm, lọc `ACTIVE`/`AMBIGUOUS`/`RETIRED`/`UNMAPPED`, phân
       trang và sắp xếp ổn định.
-- [ ] API kiểm tra quyền admin theo convention hiện có.
-- [ ] Frontend Admin RAG hiển thị dữ liệu API với loading/error/empty states,
+- [x] API kiểm tra quyền admin theo convention hiện có.
+- [x] Frontend Admin RAG hiển thị dữ liệu API với loading/error/empty states,
       tìm kiếm/lọc/phân trang và không còn `admin-mock` cho dữ liệu thuốc.
-- [ ] Không còn cảnh báo “Dữ liệu minh hoạ (mock)” hoặc nút/cột “Index lại”.
-- [ ] Không có endpoint reindex, thay đổi dữ liệu, migration ngoài phạm vi hoặc
+- [x] Không còn cảnh báo “Dữ liệu minh hoạ (mock)” hoặc nút/cột “Index lại”.
+- [x] Không có endpoint reindex, thay đổi dữ liệu, migration ngoài phạm vi hoặc
       thay đổi `DRUG_KNOWLEDGE_BACKEND`/runtime RAG.
 - [ ] Backend và frontend tests cover các AC chính; lint/build liên quan pass.
-- [ ] API contract được cập nhật và ghi lịch sử thay đổi.
+- [x] API contract được cập nhật và ghi lịch sử thay đổi.
+
+## Verification (2026-08-19)
+
+- PASS: `.venv\\Scripts\\python.exe -m pytest -q tests/test_admin_drug_schemas.py tests/test_admin_drugs_service.py tests/test_admin_drug_routes.py` — `27 passed`.
+- PASS: `frontend\\npm run test:admin-drugs` — `admin-drugs frontend contract checks passed`.
+- PASS: `frontend\\npx eslint src/app/admin/medicines/page.tsx src/lib/admin-drugs.ts` — no errors.
+- PASS: `frontend\\npm run build` — Next.js production build completed successfully.
+- PASS: `rg -n "Dữ liệu minh hoạ|Index lại|simulateImport|reindex|MEDICINES" frontend/src/app/admin/medicines frontend/src/lib/admin-drugs.ts` — no matches.
+- PASS: `git diff --check` — no whitespace errors.
+- BLOCKED: `.venv\\Scripts\\python.exe -m pytest -q` — collection fails because environment lacks `cv2` and `numpy` for unrelated VLM tests.
+- BLOCKED: `frontend\\npm run lint` — existing repository-wide CRLF/Prettier errors across unrelated files; scoped TASK-019 files pass ESLint.
+
+The final AC remains unchecked until the environment-wide backend suite and frontend lint gate are green.
 
 ## Context bắt buộc phải đọc trước khi làm
 
