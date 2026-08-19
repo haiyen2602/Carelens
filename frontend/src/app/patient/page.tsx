@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -24,11 +24,26 @@ import {
   NHAN_TRANG_THAI_LIEU,
   pollPhotoVerification,
   submitDosePhoto,
+  updateDoseStatus,
   type Dose,
   type PhotoVerification,
 } from "@/lib/doses";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
+
+// Sheet day len tu day man hinh - dung chung cho "hoan nhac" va "xac nhan
+// khong anh", giong pattern overlay()/sheetHandle() cua ban thiet ke goc.
+function BottomSheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-[rgba(15,26,45,.42)]" onClick={onClose} />
+      <div className="relative w-full max-w-[430px] rounded-t-[32px] bg-card p-[22px_20px_30px]">
+        <span className="mx-auto mb-4 block h-[5px] w-11 rounded-full bg-[#E3E8F1]" />
+        {children}
+      </div>
+    </div>
+  );
+}
 
 // GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
 // mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
@@ -110,7 +125,7 @@ const HERO_META: Record<
 export default function PatientToday() {
   const router = useRouter();
   const { reportHealth, requestSymptomCheck } = useProto();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const patientId = user?.patient_id ?? "";
   const [checkinDone, setCheckinDone] = useState(false);
 
@@ -128,6 +143,8 @@ export default function PatientToday() {
   // lieu that trong DB, dung y nguyen tac ADR-0011: chi bam nut moi tinh la
   // bo qua. Reset khi doi sang lieu khac (id lieu thay doi).
   const [daHoan, setDaHoan] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<"snooze" | "confirm" | null>(null);
+  const [dangXuLyKhongAnh, setDangXuLyKhongAnh] = useState(false);
 
   const taiLaiDoses = async () => {
     if (!patientId) return;
@@ -205,6 +222,48 @@ export default function PatientToday() {
     }
   };
 
+  // Tu bao "da uong" KHONG kem anh - dung khi qua giop/da hoan va benh nhan
+  // khong the/khong muon chup lai. KHONG ghi thang TAKEN - chuyen sang
+  // AWAITING_CAREGIVER (dung endpoint PATCH /api/doses/{id} da co san quyen
+  // cho patient tu doi trang thai lieu cua chinh minh) de nguoi than duyet
+  // that qua man "Duyet uong thuoc" (frontend/src/app/patient/family/[id]/
+  // page.tsx) - giu nguyen tac "khong tu dong tin", chi la doi ai xac minh
+  // (AI qua anh, hay nguoi than qua mat) chu khong bo qua xac minh.
+  const xacNhanKhongAnh = async () => {
+    if (!next) return;
+    setDangXuLyKhongAnh(true);
+    try {
+      await updateDoseStatus(next.id, "AWAITING_CAREGIVER", accessToken);
+      toast.success("Đã gửi cho người thân xác nhận giúp bạn");
+      setSheet(null);
+      await taiLaiDoses();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không gửi được yêu cầu xác nhận");
+    } finally {
+      setDangXuLyKhongAnh(false);
+    }
+  };
+
+  const boQuaLieu = async () => {
+    if (!next) return;
+    setDangXuLyKhongAnh(true);
+    try {
+      await updateDoseStatus(next.id, "MISSED", accessToken);
+      toast("Đã ghi nhận bỏ qua liều này");
+      setSheet(null);
+      await taiLaiDoses();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không ghi được");
+    } finally {
+      setDangXuLyKhongAnh(false);
+    }
+  };
+
+  const gioSau = (phut: number) => {
+    const t = new Date(Date.now() + phut * 60000);
+    return t.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <div className="space-y-4">
       {user && !dangTaiDoses && (next || tatCaXong) && (
@@ -260,8 +319,8 @@ export default function PatientToday() {
           <div className="space-y-3 p-4">
             {!xacMinh && !dangGui && (
               <p className="rounded-lg bg-accent p-3 text-sm text-accent-foreground">
-                Hãy bày thuốc ra và chụp một ảnh để xác nhận đã uống. Khung an toàn còn ±30 phút
-                quanh giờ hẹn.
+                Bày thuốc ra và chụp một tấm ảnh để xác nhận đã uống nhé — bạn có thể chụp trong
+                khoảng ±30 phút quanh giờ hẹn.
               </p>
             )}
 
@@ -328,7 +387,12 @@ export default function PatientToday() {
                 size="lg"
                 className="h-14 w-full rounded-[20px] text-[17px]"
                 disabled={dangGui}
-                onClick={moCamera}
+                onClick={
+                  xacMinh?.nextAction !== "RETAKE" &&
+                  (trangThaiHero === "overdue" || trangThaiHero === "waiting")
+                    ? () => setSheet("confirm")
+                    : moCamera
+                }
               >
                 {dangGui ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -354,10 +418,7 @@ export default function PatientToday() {
                 variant="outline"
                 className="h-12 w-full rounded-[18px] bg-[#EDF0F6]"
                 disabled={dangGui}
-                onClick={() => {
-                  setDaHoan(next.id);
-                  toast("Đã hoãn nhắc — liều này vẫn chưa bị tính là bỏ qua");
-                }}
+                onClick={() => setSheet("snooze")}
               >
                 <Clock className="mr-1 h-4 w-4" /> {meta.secondaryLabel}
               </Button>
@@ -467,6 +528,92 @@ export default function PatientToday() {
             </div>
           ))}
         </section>
+      )}
+
+      {sheet === "snooze" && next && (
+        <BottomSheet onClose={() => setSheet(null)}>
+          <p className="font-display text-[22px] font-extrabold leading-[1.2] text-[#16386E]">
+            Chưa uống được lúc này?
+          </p>
+          <p className="mt-1.5 text-[13.5px] leading-[1.5] text-[#5B6A85]">
+            Liều này vẫn chưa bị tính là bỏ qua.
+          </p>
+          <div className="mt-[18px] flex flex-col gap-2.5">
+            <button
+              className="flex min-h-[54px] items-center justify-between rounded-[18px] bg-[#EDF0F6] px-[18px] text-[15px] font-semibold text-[#1B2A44]"
+              onClick={() => {
+                setDaHoan(next.id);
+                setSheet(null);
+                toast("Đã hoãn nhắc — liều này vẫn chưa bị tính là bỏ qua");
+              }}
+            >
+              Nhắc lại sau 10 phút
+              <span className="font-mono text-[12px] text-[#62708A]">{gioSau(10)}</span>
+            </button>
+            <button
+              className="flex min-h-[54px] items-center justify-between rounded-[18px] bg-[#EDF0F6] px-[18px] text-[15px] font-semibold text-[#1B2A44]"
+              onClick={() => {
+                setDaHoan(next.id);
+                setSheet(null);
+                toast("Đã hoãn nhắc — liều này vẫn chưa bị tính là bỏ qua");
+              }}
+            >
+              Nhắc lại sau 30 phút
+              <span className="font-mono text-[12px] text-[#62708A]">{gioSau(30)}</span>
+            </button>
+            <button
+              className="flex min-h-[54px] items-center justify-center rounded-[18px] bg-[#EDF0F6] px-[18px] text-[15px] font-semibold text-[#1B2A44]"
+              onClick={() => setSheet(null)}
+            >
+              Chọn thời gian khác
+            </button>
+            <button
+              className="flex min-h-[48px] items-center justify-center rounded-2xl text-[14px] font-semibold text-destructive disabled:opacity-50"
+              disabled={dangXuLyKhongAnh}
+              onClick={boQuaLieu}
+            >
+              Bỏ qua liều này
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+
+      {sheet === "confirm" && next && (
+        <BottomSheet onClose={() => setSheet(null)}>
+          <p className="font-display text-[24px] font-extrabold leading-[1.2] text-[#16386E]">
+            Bạn đã uống liều này chưa?
+          </p>
+          <div className="mt-3.5 rounded-[20px] bg-[#F4F7FC] p-4">
+            <p className="font-display text-[17px] font-bold text-[#16386E]">{moTaThuoc(next)}</p>
+            <p className="mt-1 text-[12.5px] text-[#5B6A85]">
+              Hẹn {gioHienThi(next.scheduledAt)} • chưa có ảnh xác nhận
+            </p>
+          </div>
+          <div className="mt-[18px] flex flex-col gap-2.5">
+            <Button
+              className="h-[58px] rounded-[20px] text-[17px]"
+              disabled={dangXuLyKhongAnh}
+              onClick={xacNhanKhongAnh}
+            >
+              {dangXuLyKhongAnh ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                "Tôi đã uống ✓"
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-[50px] rounded-[18px] bg-[#EDF0F6]"
+              disabled={dangXuLyKhongAnh}
+              onClick={() => setSheet(null)}
+            >
+              Chưa uống
+            </Button>
+          </div>
+          <p className="font-mono mt-3.5 text-center text-[11px] leading-[1.5] text-[#5B6A85]">
+            Không có ảnh, người thân của bạn sẽ xác nhận giúp trước khi tính là đã uống.
+          </p>
+        </BottomSheet>
       )}
     </div>
   );
