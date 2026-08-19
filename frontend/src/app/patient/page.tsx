@@ -36,6 +36,7 @@ import {
   type PhotoVerification,
 } from "@/lib/doses";
 import { useAuth } from "@/lib/auth";
+import { randomCapyQuote, type CapyQuote } from "@/lib/capy-quotes";
 
 // GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
 // mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
@@ -76,14 +77,7 @@ type TrangThaiHero = "upcoming" | "due" | "waiting" | "overdue";
 // thai. Rieng `headline` dung ban "minimal" (khong co tranh Capy).
 const HERO: Record<
   TrangThaiHero,
-  {
-    bg: string;
-    chip: ChipStyle;
-    headline: string;
-    primary: string;
-    secondary: string;
-    capyLine: string;
-  }
+  { bg: string; chip: ChipStyle; headline: string; primary: string; secondary: string }
 > = {
   upcoming: {
     bg: "#F4F7FC",
@@ -91,7 +85,6 @@ const HERO: Record<
     headline: "Liều tiếp theo",
     primary: "Chụp & xác nhận",
     secondary: "Chưa uống",
-    capyLine: "Chưa tới giờ đâu, cứ thoải mái nha.",
   },
   due: {
     bg: "#CFE6FF",
@@ -99,7 +92,6 @@ const HERO: Record<
     headline: "Đến giờ uống thuốc",
     primary: "Chụp & xác nhận",
     secondary: "Chưa uống",
-    capyLine: "Capy đang giữ đồng hồ giúp bạn.",
   },
   waiting: {
     bg: "#FDEBC9",
@@ -107,7 +99,6 @@ const HERO: Record<
     headline: "Capy đang chờ xác nhận",
     primary: "Tôi đã uống",
     secondary: "Nhắc lại sau",
-    capyLine: "Bạn xong thì cho mình biết nha.",
   },
   overdue: {
     bg: "#FFD5C2",
@@ -115,12 +106,8 @@ const HERO: Record<
     headline: "Capy chưa thấy bạn xác nhận",
     primary: "Tôi đã uống",
     secondary: "Nhắc tôi sau",
-    capyLine: "Không sao đâu — mình ghi đúng giờ bạn uống thật.",
   },
 };
-
-// Loi thoai khi da uong het lieu trong ngay (heroMap.done cua ban goc).
-const CAPY_LINE_XONG = "Capy đi ngủ trước nha.";
 
 export default function PatientToday() {
   const router = useRouter();
@@ -144,6 +131,13 @@ export default function PatientToday() {
   // ten thuoc cua lieu VUA xac nhan, vi sau khi tai lai `next` da nhay sang
   // lieu ke tiep (dung bug ma ban goc da ghi chu trong markNext()).
   const [thanhCong, setThanhCong] = useState<{ at: string; line: string } | null>(null);
+  // Anh + quote Capy doi ngau nhien moi lan vao lai tab nay. Chon trong
+  // useEffect chu khong phai luc render - xem ghi chu o randomCapyQuote().
+  const [capy, setCapy] = useState<CapyQuote | null>(null);
+
+  useEffect(() => {
+    setCapy(randomCapyQuote());
+  }, []);
 
   const taiLaiDoses = async () => {
     if (!patientId) return;
@@ -283,13 +277,13 @@ export default function PatientToday() {
         </div>
       )}
 
-      {/* Khoi Capy (ban "capyFull" cua thiet ke goc) - loi thoai doi theo
-          trang thai lieu hien tai. */}
-      {!dangTai && (
+      {/* Khoi Capy (ban "capyFull" cua thiet ke goc) - anh + quote ngau
+          nhien, doi moi lan vao lai tab nay. */}
+      {capy && (
         <div className="flex items-center gap-3.5 rounded-[28px] bg-[#CFE6FF] p-4">
           <Image
-            src="/capy_ngau.png"
-            alt="Capy"
+            src={capy.src}
+            alt={capy.alt}
             width={110}
             height={110}
             className="h-[110px] w-[110px] shrink-0 rounded-[24px] object-contain"
@@ -297,11 +291,9 @@ export default function PatientToday() {
           />
           <div className="min-w-0">
             <p className="font-display m-0 text-[15px] font-bold leading-[1.35] text-[#16386E]">
-              {tatCaXong ? CAPY_LINE_XONG : hero.capyLine}
+              {capy.line}
             </p>
-            <p className="m-0 mt-1.5 text-[12px] leading-[1.45] text-[#3D5D8C]">
-              Capy đi cùng bạn hôm nay.
-            </p>
+            <p className="m-0 mt-1.5 text-[12px] leading-[1.45] text-[#3D5D8C]">{capy.sub}</p>
           </div>
         </div>
       )}
