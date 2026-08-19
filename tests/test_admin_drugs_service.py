@@ -95,6 +95,21 @@ def test_list_searches_display_name_and_mapping_legacy_id(db: Session):
     assert [item.id for item in by_mapping.items] == ["prod-a"]
 
 
+@pytest.mark.parametrize(
+    "query, product_id", [("100%", "prod-percent"), ("dose_1", "prod-underscore"), ("C:\\temp", "prod-backslash")]
+)
+def test_list_search_treats_like_metacharacters_as_literals(db: Session, query: str, product_id: str):
+    _product(db, "prod-percent", "Dose 100%", "legacy-percent")
+    _product(db, "prod-underscore", "Dose dose_1", "legacy-underscore")
+    _product(db, "prod-backslash", r"Path C:\temp", "legacy-backslash")
+    _product(db, "prod-other", "Dose 100X", "legacy-other")
+    db.commit()
+
+    result = list_admin_drugs(db, q=query, page=1, page_size=20)
+
+    assert [item.id for item in result.items] == [product_id]
+
+
 @pytest.mark.parametrize("status", list(MappingStatus))
 def test_list_filters_products_having_requested_mapping_status(db: Session, status: MappingStatus):
     _product(db, f"prod-{status.value}", status.value.title())
@@ -156,4 +171,3 @@ def test_detail_returns_complete_product_and_ignores_orphans(db: Session):
     assert result.ingredients == ["Amlodipine besylate"]
     assert [mapping.id for mapping in result.mappings] == ["map-a"]
     assert get_admin_drug(db, "missing-product") is None
-

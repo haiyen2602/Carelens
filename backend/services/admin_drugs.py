@@ -23,6 +23,14 @@ _STATUS_PRIORITY = {
     MappingStatus.RETIRED: 2,
     MappingStatus.ACTIVE: 3,
 }
+_LIKE_ESCAPE = "\\"
+
+
+def _escape_like(value: str) -> str:
+    """Escape SQL LIKE metacharacters so admin search remains literal."""
+    return (
+        value.replace(_LIKE_ESCAPE, _LIKE_ESCAPE * 2).replace("%", _LIKE_ESCAPE + "%").replace("_", _LIKE_ESCAPE + "_")
+    )
 
 
 def list_admin_drugs(
@@ -36,19 +44,19 @@ def list_admin_drugs(
     query = select(DrugProduct)
     normalized_q = q.strip() if q else ""
     if normalized_q:
-        pattern = f"%{normalized_q}%"
+        pattern = f"%{_escape_like(normalized_q)}%"
         mapping_match = (
             select(DrugIdMap.id)
             .where(
                 DrugIdMap.drug_product_id == DrugProduct.id,
-                DrugIdMap.legacy_drug_id.ilike(pattern),
+                DrugIdMap.legacy_drug_id.ilike(pattern, escape=_LIKE_ESCAPE),
             )
             .exists()
         )
         query = query.where(
             or_(
-                DrugProduct.display_name.ilike(pattern),
-                DrugProduct.legacy_drug_id.ilike(pattern),
+                DrugProduct.display_name.ilike(pattern, escape=_LIKE_ESCAPE),
+                DrugProduct.legacy_drug_id.ilike(pattern, escape=_LIKE_ESCAPE),
                 mapping_match,
             )
         )
@@ -74,10 +82,7 @@ def list_admin_drugs(
         )
     )
     ingredients, mappings = _load_collections(session, [product.id for product in products])
-    items = [
-        _build_item(product, ingredients[product.id], mappings[product.id])
-        for product in products
-    ]
+    items = [_build_item(product, ingredients[product.id], mappings[product.id]) for product in products]
     return AdminDrugListResponse(
         items=items,
         page=page,
@@ -93,9 +98,7 @@ def get_admin_drug(session: Session, drug_product_id: str) -> AdminDrugDetailRes
     if product is None:
         return None
     ingredients, mappings = _load_collections(session, [product.id])
-    return AdminDrugDetailResponse(
-        **_build_item(product, ingredients[product.id], mappings[product.id]).model_dump()
-    )
+    return AdminDrugDetailResponse(**_build_item(product, ingredients[product.id], mappings[product.id]).model_dump())
 
 
 def _load_collections(
@@ -115,9 +118,7 @@ def _load_collections(
     for product_id, name in ingredient_rows:
         ingredients[product_id].append(name)
 
-    mapping_rows = session.scalars(
-        select(DrugIdMap).where(DrugIdMap.drug_product_id.in_(product_ids))
-    )
+    mapping_rows = session.scalars(select(DrugIdMap).where(DrugIdMap.drug_product_id.in_(product_ids)))
     for row in mapping_rows:
         mappings[row.drug_product_id].append(
             AdminDrugMapping(
