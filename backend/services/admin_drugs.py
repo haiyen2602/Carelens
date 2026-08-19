@@ -17,7 +17,6 @@ from backend.models.admin_drug_schemas import (
     MappingStatus,
 )
 
-
 _STATUS_PRIORITY = {
     MappingStatus.AMBIGUOUS: 0,
     MappingStatus.UNMAPPED: 1,

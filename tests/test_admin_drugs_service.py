@@ -8,7 +8,6 @@ from backend.db.models import DrugIdMap, DrugProduct, DrugProductIngredient, Ing
 from backend.models.admin_drug_schemas import MappingStatus
 from backend.services.admin_drugs import get_admin_drug, list_admin_drugs
 
-
 TABLES = (
     DrugProduct.__table__,
     DrugIdMap.__table__,
