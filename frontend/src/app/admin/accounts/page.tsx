@@ -166,13 +166,21 @@ function AccountsContent() {
     createMutation.mutate();
   };
 
+  const groupNames: Record<AccountGroup, string> = {
+    patients: "Bệnh nhân",
+    doctors: "Bác sĩ",
+    admins: "Admin",
+  };
+
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Quản lý tài khoản</h1>
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">
+            Tài khoản: {groupNames[activeGroup]}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            {groupAccounts.length} tài khoản trong nhóm · bác sĩ, bệnh nhân và quản trị viên.
+            {groupAccounts.length} tài khoản trong nhóm {groupNames[activeGroup].toLowerCase()}.
           </p>
         </div>
         {activeGroup !== "patients" && (
@@ -256,40 +264,6 @@ function AccountsContent() {
           </Dialog>
         )}
       </header>
-
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm tài khoản">
-        {(
-          [
-            ["patients", "Bệnh nhân"],
-            ["doctors", "Bác sĩ"],
-            ["admins", "Admin"],
-          ] as const
-        ).map(([group, label]) => (
-          <button
-            key={group}
-            type="button"
-            role="tab"
-            aria-selected={activeGroup === group}
-            onClick={() => setActiveGroup(group)}
-            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${activeGroup === group
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-input bg-card text-muted-foreground hover:bg-muted"
-              }`}
-          >
-            {label} (
-            {group === activeGroup
-              ? groupAccounts.length
-              : accounts.filter((a) =>
-                group === "patients"
-                  ? a.role === "patient" || a.role === "caregiver"
-                  : group === "doctors"
-                    ? a.role === "doctor"
-                    : a.role === "admin",
-              ).length}
-            )
-          </button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
