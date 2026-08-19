@@ -1,7 +1,7 @@
 """
 State machine ADR-0011: nhận một ảnh, đối chiếu, quyết định bước tiếp theo, lưu.
 
-Luồng chia hai nửa vì một lần gọi mô hình đo được **26 đến 265 giây** (xem
+Luồng chia hai nửa vì một lần gọi mô hình mất khá nhiều thời gian (xem
 `vlm_bridge.py`) — quá lâu để giữ trong một request HTTP đồng bộ:
 
     1. `khoi_tao_xac_minh()` — chạy NGAY trong request, tạo dòng
@@ -57,7 +57,7 @@ NEXT_ACTION_CAREGIVER_REVIEW = "CAREGIVER_REVIEW"
 TRANG_THAI_DANG_XU_LY = "dang_xu_ly"
 TRANG_THAI_LOI_HE_THONG = "loi_he_thong"
 
-_DANG_TAO_LIEU = "Đang phân tích ảnh, việc này có thể mất vài phút — bác cứ để yên máy, cháu sẽ báo ngay khi xong."
+_DANG_TAO_LIEU = "Đang phân tích ảnh, việc này có thể mất vài phút — bạn cứ để yên máy, tôi sẽ báo ngay khi xong."
 
 
 class HanMucVuotQuaError(RuntimeError):
@@ -108,7 +108,7 @@ def khoi_tao_xac_minh(db: Session, dose_event: DoseEvent, image_path: str) -> Xa
     yeu_cau = tinh_yeu_cau(dose_event.expected_items)
     if not yeu_cau.xac_minh_duoc_bang_anh:
         raise KhongXacMinhDuocError(
-            "Liều này không có thuốc nào kiểm tra bằng ảnh được — bác bấm nút xác nhận giúp cháu nhé."
+            "Liều này không có thuốc nào kiểm tra bằng ảnh được — bạn bấm nút xác nhận giúp tôi nhé."
         )
 
     so_da_dung = dem_luot_da_dung(db, dose_event.id)
@@ -182,7 +182,7 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
             anh = tep.read()
     except OSError as exc:
         row.ket_qua = TRANG_THAI_LOI_HE_THONG
-        row.thong_bao = "Không đọc lại được ảnh vừa lưu — bác thử chụp lại giúp cháu nhé."
+        row.thong_bao = "Không đọc lại được ảnh vừa lưu — bạn thử chụp lại giúp tôi nhé."
         logger.error("Không đọc được ảnh %s: %s", row.image_path, exc)
         db.commit()
         return
@@ -191,7 +191,7 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
     if not ket_qua_vlm.ok:
         # Lỗi hạ tầng, KHÔNG tính vào hạn mức — xem docstring module.
         row.ket_qua = TRANG_THAI_LOI_HE_THONG
-        row.thong_bao = "Hệ thống đang bận, chưa phân tích được ảnh. Bác thử gửi lại giúp cháu nhé."
+        row.thong_bao = "Hệ thống đang bận, chưa phân tích được ảnh. Bạn thử gửi lại giúp tôi nhé."
         row.ghi_chu = ket_qua_vlm.error
         db.commit()
         logger.warning("Gọi VLM thất bại cho %s: %s", verification_id, ket_qua_vlm.error)
@@ -261,7 +261,7 @@ def _luu_loi_du_phong(db: Session, verification_id: str) -> None:
         row = db.get(PhotoVerification, verification_id)
         if row is not None:
             row.ket_qua = TRANG_THAI_LOI_HE_THONG
-            row.thong_bao = "Có lỗi hệ thống khi xử lý ảnh. Bác thử gửi lại giúp cháu nhé."
+            row.thong_bao = "Có lỗi hệ thống khi xử lý ảnh. Bạn thử gửi lại giúp tôi nhé."
             db.commit()
     except Exception:
         logger.exception("Không ghi lại được lỗi dự phòng cho %s.", verification_id)

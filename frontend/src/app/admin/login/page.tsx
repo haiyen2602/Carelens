@@ -122,6 +122,7 @@ export default function AdminLoginPage() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="flex shrink-0 items-center px-3 text-muted-foreground"
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

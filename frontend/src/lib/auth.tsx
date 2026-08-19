@@ -25,6 +25,9 @@ export type AuthUser = {
   // THEM (migration 0022) - chi co y nghia khi role="patient" (frontend
   // dung de bat buoc redirect sang /onboarding/profile). null cho role khac.
   profile_completed: boolean | null;
+  // Lay tu /auth/me (MeResponse co field nay, /auth/login UserOut thi
+  // khong) - optional vi chi co sau khi layLienKet() chay xong.
+  email?: string;
   // THEM (migration 0025) - "google" = tai khoan tao qua Login with Google,
   // CHUA co mat khau nguoi dung nao. UI dung de hien "Đặt mật khẩu"
   // (/api/auth/set-password) thay vi "Đổi mật khẩu" - hoi mat khau hien tai
@@ -40,14 +43,18 @@ export type AuthUser = {
 // cookie nen khong can qua Route Handler).
 async function layLienKet(
   accessToken: string,
-): Promise<Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "auth_provider">> {
+): Promise<
+  Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "email" | "auth_provider">
+> {
   const me = await request<{
+    email: string;
     patient_id: string | null;
     doctor_id: string | null;
     profile_completed: boolean | null;
     auth_provider: string;
   }>("/api/v1/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } });
   return {
+    email: me.email,
     patient_id: me.patient_id,
     doctor_id: me.doctor_id,
     profile_completed: me.profile_completed,

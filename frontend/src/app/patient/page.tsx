@@ -537,26 +537,36 @@ export default function PatientToday() {
         </CapySheet>
       )}
 
-      {/* Màn hình thành công sau khi ảnh khớp */}
-      {thanhCong && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#BFEBDC] p-8 text-center">
-          <p className="font-display m-0 text-[30px] font-extrabold leading-[1.15] text-[#14563F]">
-            Xong rồi!
-          </p>
-          <p className="m-0 mt-2 text-[15px] font-medium leading-[1.5] text-[#1F6A50]">
-            Capy ghi nhận lúc <strong>{thanhCong.at}</strong> ✨
-          </p>
-          <p className="m-0 mt-1.5 text-[12.5px] text-[#2F6A54]">{thanhCong.line}</p>
-          <p className="font-mono m-0 mt-1 text-[12px] text-[#2F6A54]">
-            {daXong} / {dosesHomNay.length} liều hôm nay
-          </p>
-          <button
-            onClick={() => setThanhCong(null)}
-            className="font-display mt-[26px] flex min-h-[56px] min-w-[200px] items-center justify-center rounded-[20px] bg-[#16386E] text-[17px] font-bold text-white transition-colors hover:bg-[#0E2749]"
-          >
-            Về Hôm nay
-          </button>
-        </div>
+      {dosesHomNay.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">
+            Thời khóa biểu hôm nay
+          </h2>
+          {dosesHomNay.map((d) => (
+            <div key={d.id} className="surface-card p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold" title={`${gioHienThi(d.scheduledAt)} · ${moTaThuoc(d)}`}>
+                    {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    d.status === "TAKEN" || d.status === "DELAYED"
+                      ? "bg-success/15 text-success"
+                      : d.status === "MISSED"
+                        ? "bg-destructive/15 text-destructive"
+                        : d.status === "AWAITING_CAREGIVER"
+                          ? "bg-warning/25 text-warning-foreground"
+                          : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {NHAN_TRANG_THAI_LIEU[d.status] ?? d.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </section>
       )}
     </div>
   );

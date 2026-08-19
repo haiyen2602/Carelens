@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2, Search, Upload } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Search, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,13 +57,10 @@ export default function MedicinesPage() {
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Dữ liệu thuốc (RAG)</h1>
-          <p className="text-sm text-muted-foreground">
-            {indexed}/{items.length} bản ghi đã index · nguồn tri thức cho agent trả lời câu hỏi về
-            thuốc.
-          </p>
-        </div>
+        <p className="min-w-0 text-sm text-muted-foreground">
+          {indexed}/{items.length} bản ghi đã index · nguồn tri thức cho agent trả lời câu hỏi về
+          thuốc.
+        </p>
         <Button onClick={simulateImport} disabled={importing}>
           {importing ? (
             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -74,12 +71,25 @@ export default function MedicinesPage() {
         </Button>
       </header>
 
+      <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+        <p className="text-sm text-destructive">
+          <span className="font-bold">Dữ liệu minh hoạ (mock)</span> — danh sách và trạng thái bên
+          dưới là dữ liệu mẫu cố định. "Index lại"/"Nạp dữ liệu mới" chỉ giả lập bằng hẹn giờ, chưa
+          gọi API thật — chưa thay đổi nguồn tri thức thật mà agent dùng để trả lời.
+        </p>
+      </div>
+
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden="true"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Tìm theo tên thuốc, hoạt chất..."
+          aria-label="Tìm theo tên thuốc hoặc hoạt chất"
           className="pl-9"
         />
       </div>

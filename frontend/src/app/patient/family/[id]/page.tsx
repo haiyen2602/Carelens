@@ -26,6 +26,12 @@ const toneTheoMuc: Record<string, string> = {
   HIGH: "bg-destructive/15 text-destructive",
 };
 
+const nhanTheoMuc: Record<string, string> = {
+  LOW: "Nhẹ",
+  MEDIUM: "Trung bình",
+  HIGH: "Nghiêm trọng",
+};
+
 function NgayGio({ iso }: { iso: string }) {
   return (
     <span>
@@ -198,8 +204,10 @@ export default function MonitoredRelativeDetailPage() {
         </p>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+      <div role="tablist" className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
         <button
+          role="tab"
+          aria-selected={tab === "canh_bao"}
           onClick={() => setTab("canh_bao")}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
             tab === "canh_bao" ? "bg-card shadow-sm" : "text-muted-foreground"
@@ -208,6 +216,8 @@ export default function MonitoredRelativeDetailPage() {
           Cảnh báo {relative.openEscalations.length > 0 && `(${relative.openEscalations.length})`}
         </button>
         <button
+          role="tab"
+          aria-selected={tab === "duyet"}
           onClick={() => setTab("duyet")}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
             tab === "duyet" ? "bg-card shadow-sm" : "text-muted-foreground"
@@ -234,7 +244,7 @@ export default function MonitoredRelativeDetailPage() {
                   toneTheoMuc[a.level] ?? "bg-secondary text-secondary-foreground"
                 }`}
               >
-                <NgayGio iso={a.createdAt} />
+                {nhanTheoMuc[a.level] ?? a.level} · <NgayGio iso={a.createdAt} />
               </span>
             </div>
           ))}

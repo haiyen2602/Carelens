@@ -199,11 +199,12 @@ export default function HealthPage() {
             <Textarea
               rows={3}
               placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
+              aria-label="Mô tả vấn đề sức khỏe"
               value={text}
               onChange={(e) => setText(e.target.value)}
               className="rounded-2xl border-[#E3E8F1]"
             />
-            <div className="grid grid-cols-3 gap-2">
+            <div role="radiogroup" aria-label="Mức độ nghiêm trọng" className="grid grid-cols-3 gap-2">
               {(
                 [
                   ["low", "Nhẹ"],
@@ -213,13 +214,14 @@ export default function HealthPage() {
               ).map(([v, label]) => (
                 <button
                   key={v}
-                  onClick={() => setMuc(v)}
-                  className="rounded-2xl border py-2.5 text-[13px] font-semibold transition-colors"
-                  style={
-                    muc === v
-                      ? { borderColor: "#16386E", background: "#CFE6FF", color: "#16386E" }
-                      : { borderColor: "#E3E8F1", color: "#5B6A85" }
-                  }
+                  role="radio"
+                  aria-checked={level === v}
+                  onClick={() => setLevel(v)}
+                  className={`rounded-lg border p-2 text-sm font-semibold transition-colors ${
+                    level === v
+                      ? "border-primary bg-accent text-accent-foreground"
+                      : "border-border"
+                  }`}
                 >
                   {label}
                 </button>

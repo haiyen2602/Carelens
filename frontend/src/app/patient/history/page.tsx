@@ -191,42 +191,33 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Danh sach lieu */}
-      {!dangTai && (
-        <div>
-          <div className="mb-2.5">
-            <SectionLabel>Nhật ký liều thuốc</SectionLabel>
-          </div>
-          {danhSach.length === 0 ? (
-            <div className="rounded-[24px] bg-white p-6 text-center text-[13px] text-[#5B6A85]">
-              Chưa có liều nào trong khoảng này.
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-[24px] bg-white">
-              {danhSach.map((d, i) => (
-                <button
-                  key={d.id}
-                  onClick={() => setDangXem(d)}
-                  className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 px-4 py-[15px] text-left transition-colors hover:bg-[#FAFBFE]"
-                  style={{
-                    borderBottom: i === danhSach.length - 1 ? "none" : "1px solid #EDF0F6",
-                  }}
+      {!dangTai && daSapXep.length > 0 && (
+        <section className="surface-card divide-y divide-border">
+          {daSapXep.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => setDangXem(d)}
+              className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 p-4 text-left hover:bg-muted/50"
+            >
+              <div className="min-w-0">
+                <p
+                  className="truncate font-semibold"
+                  title={`${ngayHienThi(d.scheduledAt)} · ${gioHienThi(d.scheduledAt)} · ${moTaThuoc(d)}`}
                 >
-                  <span className="block min-w-0">
-                    <span className="block truncate text-[14px] font-semibold">
-                      {gioHienThi(d.scheduledAt)} — {tenThuoc(d)}
-                    </span>
-                    <span className="font-mono block text-[11px] text-[#62708A]">
-                      {ngayHienThi(d.scheduledAt)}
-                      {coAnh.has(d.id) ? " · xác nhận bằng ảnh" : " · không có ảnh"}
-                    </span>
-                  </span>
-                  <PillChip chip={CHIP_THEO_TRANG_THAI[d.status] ?? CHIP.upcoming} />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                  {ngayHienThi(d.scheduledAt)} · {gioHienThi(d.scheduledAt)} · {moTaThuoc(d)}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  MAU_THEO_TRANG_THAI[d.status] ?? "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                {NHAN_TRANG_THAI_LIEU[d.status] ?? d.status}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
+        </section>
       )}
 
       <DoseHistoryDialog

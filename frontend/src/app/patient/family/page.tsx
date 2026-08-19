@@ -235,9 +235,13 @@ export default function PatientFamilyPage() {
                   onClick={() => chapNhan(invite)}
                   className="font-display rounded-full bg-[#16386E] px-3.5 py-2 text-[12px] font-bold text-white disabled:opacity-50"
                 >
-                  Đồng ý
-                </button>
-                <button
+                  <Check className="mr-1 h-3.5 w-3.5" /> Đồng ý
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Từ chối lời mời"
+                  className="text-destructive"
                   disabled={dangXuLy === invite.id}
                   onClick={() => tuChoi(invite)}
                   className="rounded-full bg-[#F6E9E7] px-3 py-2 text-[12px] font-semibold text-[#B4432C] disabled:opacity-50"

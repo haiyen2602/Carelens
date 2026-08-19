@@ -1,22 +1,13 @@
+import { forwardAuthorization } from "./authorization";
+
 // Server-side proxy cho GET/POST /api/v1/accounts cua backend that (admin).
-// Cung ly do ton tai voi app/api/chat/route.ts: backend doi header
-// X-Internal-Secret, khong gan duoc o trinh duyet.
+// Backend xac thuc bang JWT admin; proxy forward nguyen Authorization.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
-function thieuSecret() {
-  return Response.json(
-    { detail: "Server misconfigured: INTERNAL_AUTH_SECRET chua duoc set cho VMEC-04/FE." },
-    { status: 500 },
-  );
-}
-
-export async function GET() {
-  if (!INTERNAL_SECRET) return thieuSecret();
-
+export async function GET(request: Request) {
   const upstream = await fetch(`${BACKEND_URL}/api/v1/accounts`, {
-    headers: { "X-Internal-Secret": INTERNAL_SECRET },
+    headers: forwardAuthorization(request),
   });
 
   const data = await upstream.text();
@@ -27,12 +18,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!INTERNAL_SECRET) return thieuSecret();
-
   const body = await request.text();
   const upstream = await fetch(`${BACKEND_URL}/api/v1/accounts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Internal-Secret": INTERNAL_SECRET },
+    headers: { "Content-Type": "application/json", ...forwardAuthorization(request) },
     body,
   });
 

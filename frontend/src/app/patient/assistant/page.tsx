@@ -190,74 +190,25 @@ export default function AssistantPage() {
         )}
       </div>
 
-      {/* Khoi day: goi y + o nhap + dong luu y */}
-      <div className="mt-auto flex shrink-0 flex-col gap-3">
-        {messages.length === 0 && (
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTED_PROMPTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => submit(p)}
-                className="rounded-full border border-[#E3E8F1] bg-white px-3.5 py-2.5 text-[13px] font-medium text-[#1B2A44] transition-colors hover:bg-[#F4F7FC]"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="relative flex items-end gap-2.5">
-          {plusOpen && (
-            <div className="absolute bottom-[60px] left-0 flex gap-2 rounded-[20px] bg-white p-2 shadow-[0_10px_30px_rgba(22,56,110,.14)]">
-              {[
-                { icon: "📷", label: "Chụp ảnh" },
-                { icon: "🖼️", label: "Tải ảnh lên" },
-                { icon: "🎙️", label: "Nói với Capy" },
-              ].map((b) => (
-                <button
-                  key={b.label}
-                  aria-label={b.label}
-                  onClick={() => {
-                    setPlusOpen(false);
-                    toast(`${b.label} chưa nối API — sắp có`);
-                  }}
-                  className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6]"
-                >
-                  {b.icon}
-                </button>
-              ))}
-            </div>
-          )}
-          <button
-            aria-label="Thêm"
-            onClick={() => setPlusOpen((v) => !v)}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[20px] font-bold transition-colors"
-            style={
-              plusOpen
-                ? { background: "#16386E", color: "#FFFFFF" }
-                : { background: "#EDF0F6", color: "#1B2A44" }
-            }
-          >
-            +
-          </button>
-          <input
-            value={input}
-            placeholder="Hỏi Capy..."
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isPending}
-            className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
-          />
-          <button
-            aria-label="Gửi"
-            disabled={isPending || !input.trim()}
-            onClick={() => submit(input)}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
-            style={{ background: input.trim() ? "#16386E" : "#B7C2D6" }}
-          >
-            ↑
-          </button>
-        </div>
+      <div className="mt-3 flex shrink-0 gap-2 border-t border-border pt-3">
+        <Textarea
+          rows={1}
+          placeholder="Nhập câu hỏi..."
+          aria-label="Nhập câu hỏi cho trợ lý AI"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isPending}
+          className="resize-none"
+        />
+        <Button
+          size="icon"
+          aria-label="Gửi câu hỏi"
+          disabled={isPending || !input.trim()}
+          onClick={() => submit(input)}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
 
       {historyOpen && (
