@@ -75,11 +75,7 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
           <NgayGio iso={dose.scheduledAt} /> · {moTaThuoc(dose)}
         </p>
         <p className="text-xs text-muted-foreground">
-          {dangTai
-            ? "Đang kiểm tra ảnh xác nhận…"
-            : lanCuoi
-              ? `Đã chụp ${lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.`
-              : "Bệnh nhân báo đã uống nhưng chưa gửi ảnh xác nhận — bạn xem giúp nhé."}
+          Đã chụp {lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.
         </p>
       </div>
 
@@ -188,9 +184,7 @@ export default function MonitoredRelativeDetailPage() {
             <p className="truncate font-bold">{relative.fullName}</p>
             <p className="truncate text-sm text-muted-foreground">
               {relative.relationship}
-              {relative.yearOfBirth
-                ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi`
-                : ""}
+              {relative.yearOfBirth ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi` : ""}
             </p>
           </div>
           {relative.adherencePct !== null && (
