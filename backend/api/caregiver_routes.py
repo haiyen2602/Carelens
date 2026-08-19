@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi import status as http_status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -217,7 +217,12 @@ def accept_caregiver_invite(
     )
 
 
-@caregiver_router.delete("/caregiver-links/{link_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@caregiver_router.delete(
+    "/caregiver-links/{link_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    response_model=None,
+    response_class=Response,
+)
 def delete_caregiver_link(
     link_id: str,
     db: Session = Depends(get_db),

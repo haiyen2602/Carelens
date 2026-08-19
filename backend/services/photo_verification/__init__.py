@@ -19,6 +19,7 @@ from backend.services.photo_verification.dosage_form import (
     classify,
     count_keys_hop_le,
 )
+from backend.services.photo_verification.image_processing import AnhKhongHopLeError, nen_anh
 from backend.services.photo_verification.matcher import (
     KetQua,
     KetQuaDoiChieu,
@@ -57,6 +58,7 @@ __all__ = [
     "NEXT_ACTION_RETAKE",
     "TRANG_THAI_DANG_XU_LY",
     "TRANG_THAI_LOI_HE_THONG",
+    "AnhKhongHopLeError",
     "DosageForm",
     "HanMucVuotQuaError",
     "KetQua",
@@ -75,6 +77,7 @@ __all__ = [
     "doi_chieu_don_thuoc",
     "hoan_tat_xac_minh",
     "khoi_tao_xac_minh",
+    "nen_anh",
     "tinh_yeu_cau",
     "xac_dinh_next_action",
 ]

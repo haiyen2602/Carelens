@@ -19,6 +19,20 @@ eval/
 # frontend/node_modules va frontend/.next, khien buoc "transferring context"
 # cham hang chuc phut moi lan build local.
 frontend/
+data pharmacy/*
+!data pharmacy/v2/
+data pharmacy/v2/*
+!data pharmacy/v2/final_canonical/
+data pharmacy/v2/final_canonical/*
+!data pharmacy/v2/final_canonical/manifest.json
+!data pharmacy/v2/final_canonical/drug_product.jsonl
+!data pharmacy/v2/final_canonical/drug_id_map.jsonl
+!data pharmacy/v2/final_canonical/drug_product_ingredient.jsonl
+!data pharmacy/v2/final_canonical/drug_knowledge.jsonl
+!data pharmacy/v2/final_canonical/rag/
+data pharmacy/v2/final_canonical/rag/*
+!data pharmacy/v2/final_canonical/rag/v2_chunks.jsonl
+!data pharmacy/v2/final_canonical/rag/v2_embedding_index.jsonl
 *.md
 !requirements.txt
 .dockerignore

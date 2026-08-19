@@ -19,22 +19,25 @@
 
 ```
 main                 # code ổn định, luôn chạy được — chỉ nhận merge qua PR đã review
-└── feature/xxx      # 1 branch cho mỗi task/tính năng
-└── fix/xxx          # branch sửa bug
+├── feature/xxx      # 1 branch cho mỗi task/tính năng (ưu tiên gắn Task ID)
+├── fix/xxx          # branch sửa bug thông thường
+├── hotfix/xxx       # branch sửa lỗi khẩn cấp
+└── chore/xxx        # branch phụ trợ (docs, cấu hình, CI/CD)
 ```
 
 - `main` được CI (`.github/workflows/ci.yml`) tự chạy lint (`ruff`) + test (`pytest`) trên mọi push và PR.
-- Không cần giữ `main` "xanh" tuyệt đối 100% thời gian, nhưng PR merge vào `main` phải pass CI.
+- Không cần giữ `main` "xanh" tuyệt đối 100% thời gian, nhưng PR merge vào `main` phải pass CI và đạt Definition of Done (xem [ADR-0005](adrs/0005-definition-of-done.md)).
 
-### Đặt tên branch
+### Đặt tên branch (Thống nhất theo AGENTS.md)
 
-Format: `<loại>/<mô-tả-ngắn>` — dùng gạch ngang, không dấu, viết thường.
+Format chuẩn: `<loại>/<TASK-ID>-<mô-tả-ngắn>` hoặc `<loại>/<mô-tả-ngắn>` — dùng gạch ngang `-`, không dấu, viết thường.
 
-| Loại | Dùng khi | Ví dụ |
+| Loại | Dùng khi | Ví dụ chuẩn |
 |---|---|---|
-| `feature/` | Thêm tính năng mới | `feature/langgraph-agent`, `feature/chat-ui` |
-| `fix/` | Sửa bug | `fix/api-cors-error` |
-| `chore/` | Việc phụ trợ (docs, config, refactor nhỏ) | `chore/update-readme` |
+| `feature/` | Thêm tính năng mới theo task (bắt buộc gắn Task ID nếu có) | `feature/TASK-010-auth-api`, `feature/TASK-003-dose-event` |
+| `fix/` | Sửa bug trong quá trình phát triển / sprint | `fix/TASK-010-cors-error`, `fix/login-session` |
+| `hotfix/` | Sửa lỗi nghiêm trọng/khẩn cấp trên môi trường chạy | `hotfix/jwt-expiration`, `hotfix/db-connection` |
+| `chore/` | Công việc phụ trợ (docs, dependencies, workflow, config) | `chore/update-readme`, `chore/setup-git-hooks` |
 
 ---
 
@@ -44,28 +47,30 @@ Format: `<loại>/<mô-tả-ngắn>` — dùng gạch ngang, không dấu, viế
 ```bash
 git checkout main
 git pull origin main        # luôn kéo mới nhất trước khi tạo branch
-git checkout -b feature/ten-task-cua-ban
+git checkout -b feature/TASK-XXX-ten-task
 ```
 
 ### 2. Trong lúc code
-- Commit nhỏ, thường xuyên, message rõ ràng (vd. `feat: add PDF parser tool`, `fix: handle empty query in agent`).
+- Commit nhỏ, thường xuyên, message tuân thủ [CONVENTIONAL-COMMITS-CHEATSHEET.md](CONVENTIONAL-COMMITS-CHEATSHEET.md):
+  `<TASK-ID>: <mô tả ngắn gọn, dạng động từ>` (hoặc `<type>(scope): <description>`).
+  Ví dụ: `TASK-010: them endpoint xac thuc otp qua email` hoặc `fix(auth): handle token expiry error`.
 - Nếu task kéo dài nhiều ngày, thỉnh thoảng merge `main` mới nhất vào branch của mình để tránh conflict dồn cục:
   ```bash
   git checkout main && git pull origin main
-  git checkout feature/ten-task-cua-ban
+  git checkout feature/TASK-XXX-ten-task
   git merge main
   ```
 
 ### 3. Trước khi push — kiểm tra local
 ```bash
-ruff check src/ tests/
+ruff check backend/ tests/
 pytest tests/ -v
 ```
 Chạy pass trước khi push, đỡ để CI báo đỏ.
 
 ### 4. Push branch
 ```bash
-git push -u origin feature/ten-task-cua-ban
+git push -u origin feature/TASK-XXX-ten-task
 ```
 Push này cũng kích hoạt hook nộp AI log (xem hướng dẫn AI logging đã trao đổi trước đó).
 

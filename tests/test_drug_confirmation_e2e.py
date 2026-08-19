@@ -122,7 +122,15 @@ async def test_in_prescription_abbreviation_then_confirm_answers_correct_drug(cl
     assert turn2.status_code == 200
     body2 = turn2.json()
     assert all(s["drug_id"] == "cefixim-200mg-vidipha-1x10" for s in body2["sources"])
-    assert len(body2["sources"]) == 4, "filter mode phai tra du 4 chunk (khong phai top-5 hybrid)"
+    # Canonical V2 tach knowledge theo tung knowledge_type rieng (CONTRAINDICATION/
+    # INTERACTION/PREGNANCY_LACTATION/PRECAUTION... khong con gop chung mot chunk
+    # "tac_dung_phu" nhu V1 - dung y dinh cua Data Rebuild V2, xem
+    # data pharmacy/data_rebuild_v2_agent_plan.md muc 2.2). Voi cau hoi goc du
+    # tu khoa ("cefixim dung sao"), _search() lay top TOP_K=5 chunk diem cosine
+    # cao nhat cho drug nay - da xac nhan deterministic (chay lai nhieu lan ra
+    # cung 5 ket qua). So 4 cu la gia dinh rieng cua V1 (dung 1 chunk/field-group),
+    # khong con dung voi V2.
+    assert len(body2["sources"]) == 5, "V2 tra top-5 knowledge chunk theo cosine score cho drug nay"
 
     db = SessionLocal()
     assert get_pending_confirmation(db, patient_id) is None, "pending phai duoc xoa sau khi resolve xong"
@@ -234,7 +242,11 @@ async def test_out_of_prescription_confirm_top1_answers_correct_drug(client, see
 
     turn2 = await client.post("/api/v1/chat", json={"patient_id": patient_id, "message": "đúng rồi"})
     body2 = turn2.json()
-    assert len(body2["sources"]) == 4
+    # Xem giai thich chi tiet o test_in_prescription_abbreviation_then_confirm_
+    # answers_correct_drug o tren - V2 tra top-5 chunk rieng biet theo
+    # knowledge_type cho cau hoi co ten thuoc cu the, khong con gop 1
+    # "tac_dung_phu" duy nhat nhu gia dinh V1 cu.
+    assert len(body2["sources"]) == 5
     assert all(s["drug_id"] == "daflavon-450mg-pymepharco-4x15" for s in body2["sources"])
 
 

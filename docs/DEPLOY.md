@@ -177,6 +177,30 @@ Triệu chứng: deploy FAILED, log có `ValidationError ... internal_auth_secre
 mỗi lần deploy backend. Volume **không** được mount lúc build và lúc pre-deploy, chỉ lúc
 container chạy.
 
+**Volume cho ảnh xác nhận liều (`photo_storage_dir`, mặc định `./data/photo_verifications`).**
+Service `VMEC-04/BE` hiện KHÔNG có Volume nào gắn — mỗi lần redeploy, đĩa container cũ bị huỷ
+và toàn bộ ảnh đã lưu biến mất (dòng DB `PhotoVerification.image_path` vẫn còn, chỉ file thật
+mất — endpoint `GET /photo-verifications/{id}/image` trả `410 Gone` khi rơi vào ca này). Cách
+gắn Volume:
+
+1. Railway dashboard → service `VMEC-04/BE` → tab **Volumes** → **New Volume**.
+2. Mount path đặt là **`/app/data/photo_verifications`** — **KHÔNG** mount cả `/app/data`
+   (xem cảnh báo ngay dưới đây, đã có 1 lần deploy fail vì việc này).
+3. Deploy sẽ tự restart service để gắn Volume — bình thường, không phải lỗi.
+4. Xác nhận đã ăn: gửi 1 ảnh qua app → redeploy backend → gọi lại
+   `GET /photo-verifications/{id}/image` — trước đây ra `410 Gone`, sau khi gắn Volume phải ra `200`.
+
+**CẢNH BÁO: đừng mount Volume vào `/app/data`.** `Dockerfile` COPY sẵn dữ liệu
+`data-knowledge-v2` (Data V2 rebuild) vào `/app/data/drug-knowledge-v2/` NGAY LÚC BUILD image
+(`Dockerfile:38-39`, biến `DRUG_KNOWLEDGE_V2_DIR=/app/data/drug-knowledge-v2` ở dòng 28). Volume
+mount ở RUNTIME sẽ đè/che mất toàn bộ thư mục đó nếu mount path là `/app/data` (Volume trống
+"phủ" lên dữ liệu đã build sẵn) — `warm_v2_agent_knowledge_service()` lúc khởi động
+(`backend/main.py:41`) không đọc được dữ liệu, app treo, `/health` không bao giờ trả lời được,
+Railway báo "1/1 replicas never became healthy" sau 5 phút rồi đánh dấu deploy **Failed**. Đã
+xảy ra thật (2026-08-17) khi làm theo đúng bước cũ (mount `/app/data`) — sửa bằng cách đổi mount
+path về đúng `/app/data/photo_verifications`, chỉ trùm đúng thư mục ảnh, không đụng tới
+`drug-knowledge-v2/`.
+
 ---
 
 ## Smoke test

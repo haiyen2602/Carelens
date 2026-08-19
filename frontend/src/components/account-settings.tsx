@@ -5,13 +5,26 @@ import { Bell, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-rea
 import { toast } from "sonner";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
 export function AccountSettings() {
   const { phone, role } = useProto();
+  const { user } = useAuth();
   const [reminders, setReminders] = useState(true);
   const [emergencyAlerts, setEmergencyAlerts] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(false);
+
+  // THEM 2026-08-17: tai khoan tao qua Login with Google chua co mat khau -
+  // nhan phai la "Đặt mật khẩu", biet TRUOC khi mo dialog (neu vao trong roi
+  // moi biet thi nguoi dung da nhap xong 3 o mat khau).
+  //
+  // GHI CHU 2026-08-17: nhan nay phu thuoc DU LIEU cua tung tai khoan
+  // (`auth_provider`), khong phai moi truong - cung 1 email co the thay
+  // "Đặt mật khẩu" o may nay va "Đổi mật khẩu" o may khac neu 2 DB co 2 trang
+  // thai khac nhau (tai khoan sinh ra tu Google vs tai khoan cu moi lien ket
+  // Google sau). Copy ben duoi noi ro dieu do de khong bi hieu la loi hien thi.
+  const chuaCoMatKhau = user?.auth_provider === "google";
 
   const soon = () => toast("Tính năng đang được phát triển");
 
@@ -89,9 +102,13 @@ export function AccountSettings() {
             <button className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left">
               <KeyRound className="h-5 w-5 shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1">
-                <span className="block font-medium">Đổi mật khẩu</span>
+                <span className="block font-medium">
+                  {chuaCoMatKhau ? "Đặt mật khẩu" : "Đổi mật khẩu"}
+                </span>
                 <span className="block text-xs text-muted-foreground">
-                  Mật khẩu đăng nhập tài khoản CapyMedi
+                  {chuaCoMatKhau
+                    ? "Tài khoản tạo qua Google chưa có mật khẩu — đặt mật khẩu để đăng nhập được cả hai cách"
+                    : "Tài khoản này đã có mật khẩu riêng — đổi sang mật khẩu mới"}
                 </span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

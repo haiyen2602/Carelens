@@ -14,8 +14,8 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from backend.config import get_settings
+from backend.services.drug_knowledge.v2_agent import DrugInfoResult
 from backend.services.llm import get_llm
-from backend.services.retrieval import DrugInfoResult
 
 
 class _IntentResult(BaseModel):

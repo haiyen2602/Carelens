@@ -38,7 +38,7 @@ def _state() -> dict:
 
 def _patch_out_of_prescription_dependencies(monkeypatch, candidates: list[CandidateChunk], saved: dict) -> None:
     monkeypatch.setattr(nodes, "list_active_prescription_drug_items", lambda _db, _patient_id: [])
-    monkeypatch.setattr(nodes, "fuzzy_name_search", lambda _db, _query, top_k: candidates[:top_k])
+    monkeypatch.setattr(nodes, "search_v2_name_candidates", lambda _query, top_k: candidates[:top_k])
     monkeypatch.setattr(
         nodes,
         "set_pending_confirmation",

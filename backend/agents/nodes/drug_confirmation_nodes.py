@@ -80,7 +80,11 @@ from backend.agents.state import ConversationState
 from backend.agents.tools.drug_confirmation_store import clear_pending_confirmation, set_pending_confirmation
 from backend.agents.tools.personal_tools import list_active_prescription_drug_items
 from backend.config import get_settings
-from backend.services.retrieval import fuse_rrf, fuzzy_name_search, get_chunks_by_drug_id, lexical_search, vector_search
+from backend.services.drug_knowledge.v2_agent import (
+    DrugIdentityCandidate,
+    get_confirmed_drug_knowledge,
+    get_v2_agent_knowledge_service,
+)
 
 # Vong 4, muc 2.2 - LLM gate hep pham vi, chay TRUOC _fuzzy_best_match()/
 # _search_distinct_drug_candidates() o 2 nhanh reply-parsing (STAGE_IN_RX_
@@ -105,6 +109,12 @@ def _default_fuzzy_candidate_select(_utterance: str, candidates: list[dict]) -> 
     benh nhan khong thay the duoc viec tranh tao candidate vo nghia.
     """
     return None
+
+
+def search_v2_name_candidates(query: str, top_k: int = 5) -> list[DrugIdentityCandidate]:
+    """Resolve candidates from Canonical V2 without querying V1 chunk retrieval."""
+
+    return get_v2_agent_knowledge_service().search_identity_candidates(query, top_k)
 
 # ---------------------------------------------------------------------------
 # Stage constants (luu trong PendingDrugConfirmation.stage)
@@ -353,16 +363,18 @@ def _dedupe_distinct_drugs(results: list, n: int) -> list[dict]:
 
 
 def _search_distinct_drug_candidates(db: Session, query: str, embedding: list[float], n: int = 4) -> list[dict]:
-    """Hybrid search (muc 4.2-4.3) nhung lay POOL LON hon (top_k=50 truoc khi
-    cat) roi dedup theo drug_id - "ung vien" o muc 11.2 la THUOC, khong phai
-    CHUNK. Can pool lon vi #14 da xac nhan: nhieu chunk cua CUNG 1 thuoc hay
-    dung gan nhau trong top-k mac dinh (5), neu chi lay top-5 chunk roi dedup
-    co the con LAI IT HON n thuoc phan biet."""
-    settings = get_settings()
-    vec = vector_search(db, embedding, settings.nguong_vector)
-    lex = lexical_search(db, query, settings.nguong_lexical)
-    outcome = fuse_rrf(vec, lex, k=settings.rrf_k, top_k=50)
-    return _dedupe_distinct_drugs(outcome.results, n)
+    """Find distinct products through the Canonical V2 resolver.
+
+    ``db`` and ``embedding`` remain in the state-machine signature for
+    compatibility, but V2 resolution is deterministic and needs neither V1
+    chunks nor an embedding request.
+    """
+
+    del db, embedding
+    return [
+        {"drug_id": candidate.drug_id, "ten_thuoc": candidate.ten_thuoc}
+        for candidate in search_v2_name_candidates(query, top_k=n)
+    ]
 
 
 def _log_rejection(patient_id: str, original_query: str, rejected_drug_id: str) -> None:
@@ -429,7 +441,7 @@ def build_drug_identity_resolution_node(
         # Vong 4, muc 3.1-3.3: ngoai don dung fuzzy name search top-5 lam
         # duong chinh, khong goi embedding. Hybrid chi con la fallback sau
         # khi benh nhan tu choi va mo ta lai o STAGE_OUT_RX_AWAITING_REDESCRIBE.
-        fuzzy_top5 = fuzzy_name_search(db, utterance, top_k=5)
+        fuzzy_top5 = search_v2_name_candidates(utterance, top_k=5)
         if not fuzzy_top5:
             duration_ms = (time.monotonic() - t0) * 1000
             entry = {
@@ -588,7 +600,8 @@ def build_drug_confirmation_reply_node(
 
         if result.resolved_drug_id is not None:
             clear_pending_confirmation(db, patient_id)
-            rag_results = get_chunks_by_drug_id(db, result.resolved_drug_id)
+            knowledge_lookup = get_confirmed_drug_knowledge(db, result.resolved_drug_id, original_query)
+            trace_with_backend = _append_trace(state, knowledge_lookup.trace)
             entry = {
                 "step": "drug_confirmation_reply",
                 "stage": stage,
@@ -597,9 +610,9 @@ def build_drug_confirmation_reply_node(
                 "duration_ms": duration_ms,
             }
             return {
-                "rag_results": rag_results,
+                "rag_results": knowledge_lookup.results,
                 "utterance": original_query,  # tra loi dung cau hoi GOC, khong phai "co"/"khong"
-                "trace": _append_trace(state, entry),
+                "trace": [*trace_with_backend, entry],
             }
 
         if result.stop:

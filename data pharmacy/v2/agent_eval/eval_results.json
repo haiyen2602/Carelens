@@ -1,0 +1,247 @@
+{
+  "ambiguous_nonexistent_leaks": [],
+  "cases": 13,
+  "generated_at": "2026-08-16T09:57:34.264604+00:00",
+  "metrics": {
+    "fail_closed_safety_rate": 1.0,
+    "latency_ms": {
+      "max": 0.12240000069141388,
+      "p50": 0.019400000383029692,
+      "p95": 0.08410000009462237
+    },
+    "rag_v2_open_query_rate": 1.0,
+    "structured_without_rag_rate": 1.0,
+    "wrong_drug_rate": 0.0,
+    "wrong_type_rate": 0.0
+  },
+  "open_cases": 2,
+  "open_issues": [
+    "Run SHADOW/live HTTP route in staging before cutover; Phase 7 keeps V1 as default rollback path"
+  ],
+  "resolved_cases": 10,
+  "results": [
+    {
+      "actual_drug_ids": [
+        "berocca-bayer-10v"
+      ],
+      "actual_types": [
+        "INDICATION"
+      ],
+      "case_id": "known_indication",
+      "confirmed_drug_id": "berocca-bayer-10v",
+      "expected_route": "structured_lookup",
+      "expected_type": "INDICATION",
+      "latency_ms": 0.08410000009462237,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "ketoconazol-2-medipharco-10g"
+      ],
+      "actual_types": [
+        "ADVERSE_EFFECT"
+      ],
+      "case_id": "known_adr",
+      "confirmed_drug_id": "ketoconazol-2-medipharco-10g",
+      "expected_route": "structured_lookup",
+      "expected_type": "ADVERSE_EFFECT",
+      "latency_ms": 0.022300000637187622,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "agiclovir-5-agimexpharm"
+      ],
+      "actual_types": [
+        "CONTRAINDICATION"
+      ],
+      "case_id": "known_contraindication",
+      "confirmed_drug_id": "agiclovir-5-agimexpharm",
+      "expected_route": "structured_lookup",
+      "expected_type": "CONTRAINDICATION",
+      "latency_ms": 0.0166000008903211,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "procare-diamond-216mg-catalent-30v"
+      ],
+      "actual_types": [
+        "INTERACTION"
+      ],
+      "case_id": "known_interaction",
+      "confirmed_drug_id": "procare-diamond-216mg-catalent-30v",
+      "expected_route": "structured_lookup",
+      "expected_type": "INTERACTION",
+      "latency_ms": 0.019400000383029692,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "magne-b6-corbiere-sanofi-5x10"
+      ],
+      "actual_types": [
+        "GENERAL_DOSAGE"
+      ],
+      "case_id": "known_dosage_typo_no_diacritic",
+      "confirmed_drug_id": "magne-b6-corbiere-sanofi-5x10",
+      "expected_route": "structured_lookup",
+      "expected_type": "GENERAL_DOSAGE",
+      "latency_ms": 0.017899999875226058,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "tothema-2x10-ong-10ml"
+      ],
+      "actual_types": [
+        "STORAGE"
+      ],
+      "case_id": "known_storage",
+      "confirmed_drug_id": "tothema-2x10-ong-10ml",
+      "expected_route": "structured_lookup",
+      "expected_type": "STORAGE",
+      "latency_ms": 0.01809999957913533,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "tardyferon-b9-3x10"
+      ],
+      "actual_types": [
+        "PREGNANCY_LACTATION",
+        "PREGNANCY_LACTATION"
+      ],
+      "case_id": "safety_pregnancy",
+      "confirmed_drug_id": "tardyferon-b9-3x10",
+      "expected_route": "structured_lookup",
+      "expected_type": "PREGNANCY_LACTATION",
+      "latency_ms": 0.019799999790848233,
+      "result_count": 2,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "3b-agi-neurin-agimexpharm-10x10"
+      ],
+      "actual_types": [
+        "DRIVING_WARNING"
+      ],
+      "case_id": "safety_driving",
+      "confirmed_drug_id": "3b-agi-neurin-agimexpharm-10x10",
+      "expected_route": "structured_lookup",
+      "expected_type": "DRIVING_WARNING",
+      "latency_ms": 0.0228000008064555,
+      "result_count": 1,
+      "route": "structured_lookup",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "ketoconazol-2-medipharco-10g"
+      ],
+      "actual_types": [
+        "INDICATION",
+        "ADMINISTRATION",
+        "GENERAL_DOSAGE",
+        "CONTRAINDICATION",
+        "PRECAUTION"
+      ],
+      "case_id": "semantic_open",
+      "confirmed_drug_id": "ketoconazol-2-medipharco-10g",
+      "expected_route": "rag_v2",
+      "expected_type": null,
+      "latency_ms": 0.12240000069141388,
+      "result_count": 5,
+      "route": "rag_v2",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "actual_drug_ids": [
+        "tardyferon-b9-3x10"
+      ],
+      "actual_types": [
+        "CONTRAINDICATION",
+        "PREGNANCY_LACTATION",
+        "INDICATION",
+        "PREGNANCY_LACTATION",
+        "INTERACTION"
+      ],
+      "case_id": "semantic_open_no_diacritic",
+      "confirmed_drug_id": "tardyferon-b9-3x10",
+      "expected_route": "rag_v2",
+      "expected_type": null,
+      "latency_ms": 0.07469999945897143,
+      "result_count": 5,
+      "route": "rag_v2",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "case_id": "ambiguous_alias",
+      "latency_ms": 0.00019999970390927047,
+      "result_count": 0,
+      "route": "fail_closed_before_knowledge",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "case_id": "multiple_drugs",
+      "latency_ms": 0.000100000761449337,
+      "result_count": 0,
+      "route": "fail_closed_before_knowledge",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "case_id": "nonexistent",
+      "latency_ms": 0.000100000761449337,
+      "result_count": 0,
+      "route": "fail_closed_before_knowledge",
+      "structured_without_rag": true,
+      "wrong_drug": false,
+      "wrong_type": false
+    }
+  ],
+  "safety_cases": 3,
+  "settings_default_backend": "v1",
+  "status": "PASS WITH ISSUES",
+  "structured_cases": 8,
+  "unnecessary_rag_cases": [],
+  "wrong_drug_cases": [],
+  "wrong_type_cases": []
+}

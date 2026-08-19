@@ -11,8 +11,9 @@ from backend.agents.nodes.side_effect_audit_nodes import (
     build_side_effect_audit_node,
 )
 from backend.agents.orchestrator import run_conversation
+from backend.services.drug_knowledge.v2_agent import SideEffectMatchResult
 from backend.services.escalation import SYMPTOM_OVERLAY_MESSAGE
-from backend.services.retrieval import SideEffectMatchResult, search_active_side_effect_chunks
+from backend.services.retrieval import search_active_side_effect_chunks
 from backend.services.safety import SafetyFlag
 
 
@@ -51,7 +52,7 @@ async def test_side_effect_audit_logs_all_llm_confirmed_active_drugs_without_res
             {"drug_id": "drug-a", "ten_thuoc": "Thuốc A"},
             {"drug_id": "drug-b", "ten_thuoc": "Thuốc B"},
         ],
-        search_fn=lambda _db, _embedding, drug_ids: _candidates() if drug_ids == ["drug-a", "drug-b"] else [],
+        search_fn=lambda _db, _utterance, drug_ids, _embed: _candidates() if drug_ids == ["drug-a", "drug-b"] else [],
     )
 
     result = await node(_state())
@@ -72,7 +73,7 @@ async def test_side_effect_audit_logs_no_clear_relation_when_llm_rejects_all_can
         embed_query=lambda _: [0.0],
         match_fn=lambda _utterance, _content: False,
         list_active_items_fn=lambda _db, _patient_id: [{"drug_id": "drug-a", "ten_thuoc": "Thuốc A"}],
-        search_fn=lambda _db, _embedding, _drug_ids: _candidates()[:1],
+        search_fn=lambda _db, _utterance, _drug_ids, _embed: _candidates()[:1],
     )
 
     result = await node(_state())
@@ -90,7 +91,7 @@ async def test_side_effect_audit_does_not_call_llm_for_candidates_below_cosine_f
         embed_query=lambda _: [0.0],
         match_fn=lambda _utterance, content: matcher_calls.append(content) or True,
         list_active_items_fn=lambda _db, _patient_id: [{"drug_id": "drug-a", "ten_thuoc": "Thuốc A"}],
-        search_fn=lambda _db, _embedding, _drug_ids: [
+        search_fn=lambda _db, _utterance, _drug_ids, _embed: [
             SideEffectMatchResult("drug-a", "Thuốc A", "Không liên quan.", 0.19)
         ],
     )
@@ -120,7 +121,7 @@ async def test_clinical_redflag_keeps_audit_trace_but_only_returns_safety_overla
         embed_query=lambda _: [0.0],
         match_fn=lambda _utterance, _content: True,
         list_active_items_fn=lambda _db, _patient_id: [{"drug_id": "drug-a", "ten_thuoc": "Thuốc A"}],
-        search_fn=lambda _db, _embedding, _drug_ids: _candidates()[:1],
+        search_fn=lambda _db, _utterance, _drug_ids, _embed: _candidates()[:1],
     )
 
     async def clinical_redflag(_utterance: str) -> SafetyFlag:

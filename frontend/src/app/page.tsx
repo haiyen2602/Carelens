@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { MobileLogin } from "@/components/auth/mobile-login";
 import { CapyMascot } from "@/components/mascot/capy-mascot";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +46,10 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
+  // Luong Google that bai SAU khi da roi khoi trang (nguoi dung bam Huy o
+  // Google, sai cau hinh OAuth...) -> Better Auth dua ve day kem ?error=google
+  // (errorCallbackURL trong lib/better-auth-client.ts).
+  const googleFailed = searchParams.get("error") === "google";
   const redirectedRef = useRef(false);
 
   useEffect(() => {
@@ -272,10 +277,26 @@ function LoginPageContent() {
 
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
+              {googleFailed && !error && (
+                <p className="text-sm font-medium text-destructive">
+                  Đăng nhập bằng Google không hoàn tất. Vui lòng thử lại hoặc dùng email và mật
+                  khẩu.
+                </p>
+              )}
+
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
             </form>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground">hoặc</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <GoogleSignInButton />
+            </div>
 
             <div className="flex items-start gap-3 rounded-lg bg-muted p-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

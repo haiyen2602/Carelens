@@ -1,0 +1,821 @@
+{
+  "generated_at": "2026-08-16T10:05:18.345871+00:00",
+  "metrics": {
+    "cases": 27,
+    "errors": 0,
+    "latency_ms": {
+      "max": 8010.047499999928,
+      "p50": 18.89349999873957,
+      "p95": 134.3918999991729
+    },
+    "shadow_cases": 9,
+    "structured_extra_rag": 0,
+    "v1_cases": 9,
+    "v2_cases": 9,
+    "wrong_drug": 0,
+    "wrong_type": 0
+  },
+  "open_issues": [
+    "First V2/SHADOW request has cold-start index load latency; warm cache before cutover"
+  ],
+  "ready_for_v2_default": true,
+  "results": [
+    {
+      "backend_trace": {
+        "duration_ms": 7953.000000001339,
+        "field_match": false,
+        "legacy_drug_id": "berocca-bayer-10v",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "cong_dung"
+        ],
+        "v2_knowledge_type": "INDICATION",
+        "v2_path": "structured_lookup",
+        "v2_result_count": 1
+      },
+      "case_id": "known_indication",
+      "error": null,
+      "latency_ms": 8010.047499999928,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "field_match": false,
+        "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "cach_dung"
+        ],
+        "v2_knowledge_type": "GENERAL_DOSAGE",
+        "v2_path": "structured_lookup",
+        "v2_result_count": 1
+      },
+      "case_id": "typo_no_diacritic",
+      "error": null,
+      "latency_ms": 21.3592999989487,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "field_match": false,
+        "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v2_knowledge_type": null,
+        "v2_path": "rag_v2",
+        "v2_result_count": 5
+      },
+      "case_id": "semantic_open",
+      "error": null,
+      "latency_ms": 18.89349999873957,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "field_match": false,
+        "legacy_drug_id": "tardyferon-b9-3x10",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "tac_dung_phu"
+        ],
+        "v2_knowledge_type": "PREGNANCY_LACTATION",
+        "v2_path": "structured_lookup",
+        "v2_result_count": 2
+      },
+      "case_id": "pregnancy_safety",
+      "error": null,
+      "latency_ms": 17.871599999125465,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 15.000000001236913,
+        "field_match": false,
+        "legacy_drug_id": "agiclovir-5-agimexpharm",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "tac_dung_phu"
+        ],
+        "v2_knowledge_type": "CONTRAINDICATION",
+        "v2_path": "structured_lookup",
+        "v2_result_count": 1
+      },
+      "case_id": "contraindication_safety",
+      "error": null,
+      "latency_ms": 17.703900000924477,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "field_match": false,
+        "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+        "mode": "shadow",
+        "response_backend": "v1",
+        "step": "drug_knowledge_backend",
+        "v1_fields": [
+          "bao_quan",
+          "cach_dung",
+          "cong_dung",
+          "tac_dung_phu"
+        ],
+        "v1_result_count": 4,
+        "v2_fields": [
+          "tac_dung_phu"
+        ],
+        "v2_knowledge_type": "INTERACTION",
+        "v2_path": "structured_lookup",
+        "v2_result_count": 1
+      },
+      "case_id": "interaction_safety",
+      "error": null,
+      "latency_ms": 18.055500000627944,
+      "mode": "shadow",
+      "sources": [
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "ambiguous_drug",
+      "error": null,
+      "latency_ms": 124.17659999846364,
+      "mode": "shadow",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "nonexistent_drug",
+      "error": null,
+      "latency_ms": 132.63649999862537,
+      "mode": "shadow",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "multiple_drugs",
+      "error": null,
+      "latency_ms": 134.3918999991729,
+      "mode": "shadow",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "8e019655-918e-5839-936d-a32cab5a129f",
+        "duration_ms": 0.0,
+        "knowledge_type": "INDICATION",
+        "legacy_drug_id": "berocca-bayer-10v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "known_indication",
+      "error": null,
+      "latency_ms": 20.608100001481944,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cong_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "189c9cdd-2259-5fbd-84e2-ee5f5aca52a6",
+        "duration_ms": 0.0,
+        "knowledge_type": "GENERAL_DOSAGE",
+        "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "typo_no_diacritic",
+      "error": null,
+      "latency_ms": 17.963099999178667,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "cach_dung"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "3b50f031-4b00-5318-973b-93ede64d7e8f",
+        "duration_ms": 0.0,
+        "knowledge_type": null,
+        "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+        "mode": "v2",
+        "path": "rag_v2",
+        "result_count": 5,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open",
+      "error": null,
+      "latency_ms": 17.69140000033076,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "9ec0e084-8395-524d-ba34-82d58479b6fa",
+        "duration_ms": 0.0,
+        "knowledge_type": "PREGNANCY_LACTATION",
+        "legacy_drug_id": "tardyferon-b9-3x10",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 2,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_safety",
+      "error": null,
+      "latency_ms": 17.56089999980759,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "4a0a9cca-1cd4-550c-8e90-cff6a18fd108",
+        "duration_ms": 0.0,
+        "knowledge_type": "CONTRAINDICATION",
+        "legacy_drug_id": "agiclovir-5-agimexpharm",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_safety",
+      "error": null,
+      "latency_ms": 17.867300000943942,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "drug_product_id": "fe973093-dcfc-541e-b3d2-a36ba24f135e",
+        "duration_ms": 0.0,
+        "knowledge_type": "INTERACTION",
+        "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+        "mode": "v2",
+        "path": "structured_lookup",
+        "result_count": 1,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_safety",
+      "error": null,
+      "latency_ms": 17.37400000092748,
+      "mode": "v2",
+      "sources": [
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "ambiguous_drug",
+      "error": null,
+      "latency_ms": 117.88440000054834,
+      "mode": "v2",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "nonexistent_drug",
+      "error": null,
+      "latency_ms": 126.68819999998959,
+      "mode": "v2",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "multiple_drugs",
+      "error": null,
+      "latency_ms": 133.2590000001801,
+      "mode": "v2",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "berocca-bayer-10v",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "known_indication",
+      "error": null,
+      "latency_ms": 20.648599998821737,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "berocca-bayer-10v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "typo_no_diacritic",
+      "error": null,
+      "latency_ms": 16.922700000577606,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "magne-b6-corbiere-sanofi-5x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "ketoconazol-2-medipharco-10g",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "semantic_open",
+      "error": null,
+      "latency_ms": 17.244999999093125,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "ketoconazol-2-medipharco-10g",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "tardyferon-b9-3x10",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "pregnancy_safety",
+      "error": null,
+      "latency_ms": 17.307900001469534,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "tardyferon-b9-3x10",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 14.999999999417923,
+        "legacy_drug_id": "agiclovir-5-agimexpharm",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "contraindication_safety",
+      "error": null,
+      "latency_ms": 17.361299998810864,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "agiclovir-5-agimexpharm",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {
+        "duration_ms": 0.0,
+        "legacy_drug_id": "procare-diamond-216mg-catalent-30v",
+        "mode": "v1",
+        "path": "v1_get_chunks_by_drug_id",
+        "result_count": 4,
+        "step": "drug_knowledge_backend"
+      },
+      "case_id": "interaction_safety",
+      "error": null,
+      "latency_ms": 17.534600001454237,
+      "mode": "v1",
+      "sources": [
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "bao_quan"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cach_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "cong_dung"
+        },
+        {
+          "drug_id": "procare-diamond-216mg-catalent-30v",
+          "field": "tac_dung_phu"
+        }
+      ],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "ambiguous_drug",
+      "error": null,
+      "latency_ms": 117.13260000033188,
+      "mode": "v1",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "nonexistent_drug",
+      "error": null,
+      "latency_ms": 127.70869999985734,
+      "mode": "v1",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    },
+    {
+      "backend_trace": {},
+      "case_id": "multiple_drugs",
+      "error": null,
+      "latency_ms": 132.27959999858285,
+      "mode": "v1",
+      "sources": [],
+      "status_code": 200,
+      "structured_extra_rag": false,
+      "wrong_drug": false,
+      "wrong_type": false
+    }
+  ],
+  "status": "PASS WITH ISSUES"
+}

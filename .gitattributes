@@ -1,0 +1,4 @@
+# Final Canonical V2 artifacts are integrity-checked byte streams.
+# Keep LF in every checkout so SHA-256 values in manifest.json are portable.
+"data pharmacy/v2/final_canonical/*.jsonl" text eol=lf
+"data pharmacy/v2/final_canonical/manifest.json" text eol=lf

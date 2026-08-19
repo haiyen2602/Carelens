@@ -103,6 +103,7 @@ async def test_admin_creates_and_deletes_link(client, admin_token):
             f"/api/v1/caregiver-links/{link_id}", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert delete_resp.status_code == 204
+        assert delete_resp.content == b""
 
         db = SessionLocal()
         assert db.get(CaregiverLink, link_id) is None

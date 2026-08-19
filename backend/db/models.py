@@ -18,10 +18,24 @@ migrations/versions/, chi duoc INSERT.
 """
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, Index, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -180,6 +194,16 @@ class Patient(Base):
     # suy tu cac cot khac co NULL hay khong (benh nhan co the chu y bo trong
     # 1 truong nao do sau khi da "hoan tat").
     profile_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # DB Architecture V2 additive columns (DB-4A, WIP - xem
+    # docs/data/database_architecture_v2_plan.md). Nullable until backfill and
+    # validation gates pass; legacy fields above remain source-compatible.
+    # `date_of_birth` da co san o tren (migration 0023 patient_profile_fields),
+    # khong khai bao lai o day.
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    display_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    sex: Mapped[str | None] = mapped_column(String, nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Prescription(Base):
@@ -207,6 +231,497 @@ class Prescription(Base):
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     approved_by: Mapped[str | None] = mapped_column(String, nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    prescribed_by: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    prescribed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_type: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class DrugProduct(Base):
+    """DB Architecture V2 operational reference to Canonical Drug V2 identity.
+
+    DB-4A creates the empty table only. Drug V2 import/backfill happens later.
+    """
+
+    __tablename__ = "drug_product"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    display_name: Mapped[str] = mapped_column(String, nullable=False)
+    dosage_form: Mapped[str | None] = mapped_column(String, nullable=True)
+    route: Mapped[str | None] = mapped_column(String, nullable=True)
+    strength_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    category_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_drug_product_legacy_drug_id", "legacy_drug_id", unique=True),
+        Index("ix_drug_product_display_name", "display_name"),
+    )
+
+
+class DrugIdMap(Base):
+    """Legacy public drug_id -> Canonical Drug V2 product ID map."""
+
+    __tablename__ = "drug_id_map"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    legacy_drug_id: Mapped[str] = mapped_column(String, nullable=False)
+    drug_product_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    mapping_status: Mapped[str] = mapped_column(String, nullable=False)
+    source_manifest_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index(
+            "uq_drug_id_map_active_legacy",
+            "legacy_drug_id",
+            unique=True,
+            postgresql_where=text("mapping_status = 'ACTIVE'"),
+        ),
+        Index("ix_drug_id_map_mapping_status", "mapping_status"),
+    )
+
+
+class Ingredient(Base):
+    """Canonical ingredient identity imported from Drug Knowledge V2 later."""
+
+    __tablename__ = "ingredient"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class DrugProductIngredient(Base):
+    """Many-to-many link between V2 drug products and ingredients."""
+
+    __tablename__ = "drug_product_ingredient"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    drug_product_id: Mapped[str] = mapped_column(String, nullable=False)
+    ingredient_id: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("drug_product_id", "ingredient_id", name="uq_drug_product_ingredient_pair"),
+        Index("ix_drug_product_ingredient_drug_product_id", "drug_product_id"),
+        Index("ix_drug_product_ingredient_ingredient_id", "ingredient_id"),
+    )
+
+
+class PrescriptionItem(Base):
+    """DB Architecture V2: one medication line inside a prescription."""
+
+    __tablename__ = "prescription_item"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    prescription_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    drug_display_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    dose_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dose_value: Mapped[float | None] = mapped_column(Numeric, nullable=True)
+    dose_unit: Mapped[str | None] = mapped_column(String, nullable=True)
+    route: Mapped[str | None] = mapped_column(String, nullable=True)
+    frequency_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # When set, ``end_date`` is an inclusive local clinical calendar date.
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    doses_per_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meal_instruction_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    meal_instruction_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    migration_source: Mapped[str | None] = mapped_column(String, nullable=True)
+    migration_source_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    migration_item_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_prescription_item_patient_status", "patient_id", "status"),
+        Index("uq_prescription_item_migration_source", "migration_source", "migration_source_id", "migration_item_index", unique=True),
+    )
+
+
+class MedicationPlan(Base):
+    """DB Architecture V2: actionable plan for one prescribed medication."""
+
+    __tablename__ = "medication_plan"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    prescription_item_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String, nullable=True)
+    start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (Index("ix_medication_plan_patient_status", "patient_id", "status"),)
+
+
+class ScheduleRule(Base):
+    """DB Architecture V2: rule used to generate per-drug dose occurrences."""
+
+    __tablename__ = "schedule_rule"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    medication_plan_id: Mapped[str] = mapped_column(String, nullable=False)
+    rule_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    frequency: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    interval_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    interval_unit: Mapped[str | None] = mapped_column(String, nullable=True)
+    times_of_day: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    days_of_week: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    day_of_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_schedule_rule_medication_plan_status", "medication_plan_id", "status"),
+        Index("ix_schedule_rule_status_window", "status", "start_at", "end_at"),
+    )
+
+
+class ScheduleRuleTime(Base):
+    """One normalized local wall-clock time within a DB-4D schedule rule.
+
+    ``schedule_rule_id`` intentionally has no FK until operational validation
+    is complete. The unique pair prevents duplicate per-rule daily times.
+    """
+
+    __tablename__ = "schedule_rule_time"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    schedule_rule_id: Mapped[str] = mapped_column(String, nullable=False)
+    local_time: Mapped[time] = mapped_column(Time, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (UniqueConstraint("schedule_rule_id", "local_time", name="uq_schedule_rule_time_local_time"),)
+
+
+class ScheduleRuleCycle(Base):
+    """Optional repeating on/off cycle attached one-to-one to a schedule rule.
+
+    Checks and the parent FK are intentionally delayed until DB-4D operational
+    validation; no scheduler consumes this table in the current task.
+    """
+
+    __tablename__ = "schedule_rule_cycle"
+
+    schedule_rule_id: Mapped[str] = mapped_column(String, primary_key=True)
+    anchor_date: Mapped[date] = mapped_column(Date, nullable=False)
+    on_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    off_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class DoseOccurrence(Base):
+    """DB Architecture V2: one medicine / one scheduled dose."""
+
+    __tablename__ = "dose_occurrence"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    medication_plan_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    prescription_item_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    schedule_rule_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    scheduled_local_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    scheduled_local_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    grace_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    status_reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    generation_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    legacy_dose_event_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_dose_occurrence_medication_plan_scheduled", "medication_plan_id", "scheduled_at"),
+        Index("ix_dose_occurrence_patient_scheduled", "patient_id", "scheduled_at"),
+        Index("ix_dose_occurrence_status_scheduled", "status", "scheduled_at"),
+        Index("ix_dose_occurrence_patient_status_scheduled", "patient_id", "status", "scheduled_at"),
+        Index("ix_dose_occurrence_legacy_drug_scheduled", "legacy_drug_id", "scheduled_at"),
+        Index(
+            "ix_dose_occurrence_patient_local_schedule",
+            "patient_id",
+            "scheduled_local_date",
+            "scheduled_local_time",
+        ),
+    )
+
+
+class DoseEventLog(Base):
+    """DB Architecture V2 immutable dose event log.
+
+    Physical name is intentionally `dose_event_log` to avoid redefining legacy
+    `dose_event` before cutover/stabilization.
+    """
+
+    __tablename__ = "dose_event_log"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    dose_occurrence_id: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    medication_plan_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    event_type: Mapped[str] = mapped_column(String, nullable=False)
+    event_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source: Mapped[str] = mapped_column(String, nullable=False)
+    actor_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_dose_event_log_idempotency_key", "idempotency_key", unique=True),
+        Index("ix_dose_event_log_occurrence_created", "dose_occurrence_id", "created_at"),
+        Index("ix_dose_event_log_patient_event_at", "patient_id", "event_at"),
+        Index("ix_dose_event_log_event_type_event_at", "event_type", "event_at"),
+        Index("ix_dose_event_log_plan_event_at", "medication_plan_id", "event_at"),
+    )
+
+
+class NotificationJob(Base):
+    """DB Architecture V2 notification queue/state, not dose status source."""
+
+    __tablename__ = "notification_job"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    dose_occurrence_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    notification_type: Mapped[str] = mapped_column(String, nullable=False)
+    recipient_type: Mapped[str] = mapped_column(String, nullable=False)
+    recipient_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    provider: Mapped[str | None] = mapped_column(String, nullable=True)
+    provider_message_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    idempotency_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_notification_job_status_scheduled", "status", "scheduled_at"),
+        Index("ix_notification_job_patient_scheduled", "patient_id", "scheduled_at"),
+        Index("ix_notification_job_recipient_status", "recipient_type", "recipient_id", "status"),
+        Index("ix_notification_job_provider_message", "provider", "provider_message_id"),
+    )
+
+
+class MedicationSafetyPolicy(Base):
+    """DB Architecture V2 auditable medication safety policy."""
+
+    __tablename__ = "medication_safety_policy"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    scope_type: Mapped[str] = mapped_column(String, nullable=False)
+    scope_id: Mapped[str] = mapped_column(String, nullable=False)
+    risk_type: Mapped[str] = mapped_column(String, nullable=False)
+    risk_level: Mapped[str] = mapped_column(String, nullable=False)
+    action_policy: Mapped[str] = mapped_column(String, nullable=False)
+    source_type: Mapped[str] = mapped_column(String, nullable=False)
+    source_reference: Mapped[str | None] = mapped_column(String, nullable=True)
+    review_status: Mapped[str] = mapped_column(String, nullable=False)
+    policy_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    reviewed_by: Mapped[str | None] = mapped_column(String, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("scope_type", "scope_id", "risk_type", "policy_version", name="uq_medication_safety_policy_version"),
+        Index("ix_medication_safety_policy_scope_risk", "scope_type", "scope_id", "risk_type"),
+        Index("ix_medication_safety_policy_risk_review", "risk_type", "review_status"),
+        Index("ix_medication_safety_policy_valid_window", "valid_from", "valid_to"),
+        Index(
+            "ix_medication_safety_policy_reviewed_scope",
+            "scope_type",
+            "scope_id",
+            "risk_type",
+            postgresql_where=text("review_status = 'REVIEWED'"),
+        ),
+        Index(
+            "ix_medication_safety_policy_legacy_scope",
+            "scope_type",
+            "scope_id",
+            "risk_type",
+            postgresql_where=text("source_type = 'LEGACY_CATEGORY_RULE'"),
+        ),
+    )
+
+
+class MissedDoseAssessment(Base):
+    """DB Architecture V2 durable missed/delayed dose safety assessment."""
+
+    __tablename__ = "missed_dose_assessment"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    dose_occurrence_id: Mapped[str] = mapped_column(String, nullable=False)
+    medication_plan_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    risk_type: Mapped[str] = mapped_column(String, nullable=False)
+    risk_level: Mapped[str] = mapped_column(String, nullable=False)
+    recommended_action: Mapped[str] = mapped_column(String, nullable=False)
+    policy_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Immutable policy-provenance snapshots added by DB-4H.  The referenced
+    # policy can later be superseded, but the historical assessment must still
+    # show whether its decision came from reviewed, legacy, or default logic.
+    policy_source_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    policy_review_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    reason_code: Mapped[str] = mapped_column(String, nullable=False)
+    assessment_version: Mapped[str] = mapped_column(String, nullable=False)
+    evaluator: Mapped[str] = mapped_column(String, nullable=False)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_missed_dose_assessment_idempotency_key", "idempotency_key", unique=True),
+        Index("ix_missed_dose_assessment_occurrence_evaluated", "dose_occurrence_id", "evaluated_at"),
+        Index("ix_missed_dose_assessment_patient_evaluated", "patient_id", "evaluated_at"),
+        Index("ix_missed_dose_assessment_policy_id", "policy_id"),
+        Index("ix_missed_dose_assessment_risk_level_time", "risk_type", "risk_level", "evaluated_at"),
+    )
+
+
+class SafetyEvent(Base):
+    """DB Architecture V2 append-only safety event/audit record."""
+
+    __tablename__ = "safety_event"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    conversation_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    dose_occurrence_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    missed_dose_assessment_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    event_type: Mapped[str] = mapped_column(String, nullable=False)
+    severity: Mapped[str] = mapped_column(String, nullable=False)
+    decision: Mapped[str] = mapped_column(String, nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_safety_event_idempotency_key", "idempotency_key", unique=True),
+        Index("ix_safety_event_patient_created", "patient_id", "created_at"),
+        Index("ix_safety_event_type_created", "event_type", "created_at"),
+        Index("ix_safety_event_severity_created", "severity", "created_at"),
+        Index("ix_safety_event_dose_occurrence_id", "dose_occurrence_id"),
+        Index("ix_safety_event_assessment_id", "missed_dose_assessment_id"),
+    )
+
+
+class Conversation(Base):
+    """DB Architecture V2 conversation session."""
+
+    __tablename__ = "conversation"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_conversation_patient_started", "patient_id", "started_at"),
+        Index("ix_conversation_status_last_message", "status", "last_message_at"),
+    )
+
+
+class Message(Base):
+    """DB Architecture V2 message keyed by conversation."""
+
+    __tablename__ = "message"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (Index("ix_message_conversation_created", "conversation_id", "created_at"),)
+
+
+class AgentRun(Base):
+    """DB Architecture V2 agent run audit without chain-of-thought."""
+
+    __tablename__ = "agent_run"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    conversation_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    patient_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    intent: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
+        Index("ix_agent_run_patient_started", "patient_id", "started_at"),
+    )
+
+
+class AgentToolEvent(Base):
+    """DB Architecture V2 sanitized tool-call audit event."""
+
+    __tablename__ = "agent_tool_event"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    tool_name: Mapped[str] = mapped_column(String, nullable=False)
+    input_reference: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    output_reference: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_agent_tool_event_run_created", "agent_run_id", "created_at"),
+        Index("ix_agent_tool_event_tool_created", "tool_name", "created_at"),
+    )
 
 
 class DoseEvent(Base):
@@ -369,6 +884,22 @@ class Account(Base):
 
     __tablename__ = "account"
 
+    # UNIQUE tren BIEU THUC `lower(btrim(email))` (migration 0026): "1 email =
+    # 1 tai khoan" khong phan biet chu hoa/thuong. UNIQUE tren cot `email` o
+    # duoi KHONG du - Postgres so sanh chuoi co phan biet chu hoa/thuong, nen
+    # "MCK@gmail.com" va "mck@gmail.com" la 2 dong hop le, tao ra 2 tai khoan
+    # cho cung 1 nguoi (bug that 2026-08-17: dang ky tay bang chu hoa roi bam
+    # "Login with Google" - Google tra ve email chuan hoa).
+    #
+    # Khai bao o day de model KHOP voi DB that, va de bieu thuc chi ton tai o
+    # 3 cho PHAI trung nhau tung chu: index nay, migration 0026, va
+    # backend/services/email_identity.py::account_email_key() (bieu thuc dung
+    # khi tra cuu - lech mot ky tu la Postgres bo qua index, moi lan dang nhap
+    # thanh 1 lan quet ca bang).
+    __table_args__ = (
+        Index("ux_account_email_normalized", text("lower(btrim(email))"), unique=True),
+    )
+
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
@@ -399,7 +930,15 @@ class Account(Base):
     # token_revoked_by_password_change). NULL = chua tung doi mat khau ->
     # khong thu hoi gi (tai khoan tao truoc migration 0018).
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
+    # THEM sau (migration 0025, "Login with Google") - "password" | "google".
+    # Tai khoan sinh ra tu Google KHONG co mat khau nguoi dung nao ca:
+    # `password_hash` cua no la bcrypt cua 1 chuoi ngau nhien khong ai biet
+    # (xem auth_routes.py::_oauth_upsert_account) - co y, de POST /auth/login
+    # bang mat khau khong bao gio dang nhap duoc vao tai khoan Google, thay vi
+    # de password_hash rong/NULL (verify_password se nem loi thay vi tra False).
+    # Cot nay la cach DUY NHAT phan biet "chua tung dat mat khau" - thieu no
+    # thi luong doi mat khau se doi "mat khau hien tai" cua thu khong ton tai.
+    auth_provider: Mapped[str] = mapped_column(String, nullable=False, default="password")
 
 
 class PendingDrugConfirmation(Base):

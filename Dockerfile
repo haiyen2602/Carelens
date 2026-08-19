@@ -24,13 +24,19 @@ ENV PATH=/opt/venv/bin:$PATH
 # Khong ghi .pyc va khong buffer stdout/stderr -> log hien ngay trong
 # `railway logs` thay vi bi giu trong buffer khi crash.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    DRUG_KNOWLEDGE_V2_DIR=/app/data/drug-knowledge-v2
 
 # Security: run as non-root user
 RUN useradd -m appuser
 
 # Copy application code
 COPY . .
+
+# Runtime V2 data is copied from the promoted Final Canonical artifact. The
+# image deliberately excludes Legacy V1, raw snapshots, and review history.
+COPY ["data pharmacy/v2/final_canonical/manifest.json", "data pharmacy/v2/final_canonical/drug_product.jsonl", "data pharmacy/v2/final_canonical/drug_id_map.jsonl", "data pharmacy/v2/final_canonical/drug_product_ingredient.jsonl", "data pharmacy/v2/final_canonical/drug_knowledge.jsonl", "/app/data/drug-knowledge-v2/"]
+COPY ["data pharmacy/v2/final_canonical/rag/v2_chunks.jsonl", "data pharmacy/v2/final_canonical/rag/v2_embedding_index.jsonl", "/app/data/drug-knowledge-v2/rag/"]
 
 # Create data directory with correct ownership
 RUN mkdir -p /app/data && chown -R appuser:appuser /app

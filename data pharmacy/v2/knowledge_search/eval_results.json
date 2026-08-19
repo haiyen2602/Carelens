@@ -1,0 +1,284 @@
+{
+  "eval": {
+    "cases": 12,
+    "drug_resolution_accuracy": 1.0,
+    "knowledge_type_accuracy": 1.0,
+    "latency_ms": {
+      "max": 70.25269999940065,
+      "p50": 0.2518999990570592,
+      "p95": 45.70400000011432
+    },
+    "no_result_rate": 0.25,
+    "results": [
+      {
+        "actual_drug_id": "agiclovir-5-agimexpharm",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "CONTRAINDICATION",
+        "case_id": "known_topic_contraindication",
+        "drug_match": true,
+        "expected_drug_id": "agiclovir-5-agimexpharm",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "CONTRAINDICATION",
+        "latency_ms": 0.29410000024654437,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Agiclovir 5% Agimexpharm có chống chỉ định gì?"
+      },
+      {
+        "actual_drug_id": "ketoconazol-2-medipharco-10g",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "ADVERSE_EFFECT",
+        "case_id": "known_topic_side_effect",
+        "drug_match": true,
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "ADVERSE_EFFECT",
+        "latency_ms": 0.22360000002663583,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Ketoconazol 2% Medipharco 10g có tác dụng phụ gì?"
+      },
+      {
+        "actual_drug_id": "berocca-bayer-10v",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "INDICATION",
+        "case_id": "diacriticless_topic",
+        "drug_match": true,
+        "expected_drug_id": "berocca-bayer-10v",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INDICATION",
+        "latency_ms": 0.18519999866839498,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Berocca Bayer 10v co cong dung gi"
+      },
+      {
+        "actual_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "GENERAL_DOSAGE",
+        "case_id": "typo_name",
+        "drug_match": true,
+        "expected_drug_id": "magne-b6-corbiere-sanofi-5x10",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "latency_ms": 0.2089000008709263,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Magne b6 Corbiere Sanofi 5x10 lieu dung the nao?"
+      },
+      {
+        "actual_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "GENERAL_DOSAGE",
+        "case_id": "similar_name_exact",
+        "drug_match": true,
+        "expected_drug_id": "cefixim-200mg-cuu-long-2x10",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "GENERAL_DOSAGE",
+        "latency_ms": 0.1934000010805903,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Cefixim 200mg CỬU LONG 2x10 liều dùng?"
+      },
+      {
+        "actual_drug_id": null,
+        "actual_path": "fail_closed",
+        "actual_resolution": "AMBIGUOUS",
+        "actual_type": "GENERAL_DOSAGE",
+        "case_id": "ambiguous_alias",
+        "drug_match": true,
+        "expected_drug_id": null,
+        "expected_path": "fail_closed",
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "latency_ms": 45.70400000011432,
+        "result_count": 0,
+        "type_match": true,
+        "utterance": "Cefixim liều dùng?"
+      },
+      {
+        "actual_drug_id": null,
+        "actual_path": "fail_closed",
+        "actual_resolution": "NOT_FOUND",
+        "actual_type": "ADVERSE_EFFECT",
+        "case_id": "nonexistent_drug",
+        "drug_match": true,
+        "expected_drug_id": null,
+        "expected_path": "fail_closed",
+        "expected_resolution": "NOT_FOUND",
+        "expected_type": null,
+        "latency_ms": 70.25269999940065,
+        "result_count": 0,
+        "type_match": true,
+        "utterance": "Thuốc Không Tồn Tại ABCXYZ có tác dụng phụ gì?"
+      },
+      {
+        "actual_drug_id": null,
+        "actual_path": "fail_closed",
+        "actual_resolution": "AMBIGUOUS",
+        "actual_type": "INDICATION",
+        "case_id": "multiple_drugs",
+        "drug_match": true,
+        "expected_drug_id": null,
+        "expected_path": "fail_closed",
+        "expected_resolution": "AMBIGUOUS",
+        "expected_type": null,
+        "latency_ms": 0.281300001006457,
+        "result_count": 0,
+        "type_match": true,
+        "utterance": "Berocca Bayer 10v và Upsa-c 10v thuốc nào có công dụng gì?"
+      },
+      {
+        "actual_drug_id": "ketoconazol-2-medipharco-10g",
+        "actual_path": "semantic_fallback",
+        "actual_resolution": "RESOLVED",
+        "actual_type": null,
+        "case_id": "semantic_open_ended",
+        "drug_match": true,
+        "expected_drug_id": "ketoconazol-2-medipharco-10g",
+        "expected_path": "semantic_fallback",
+        "expected_resolution": "RESOLVED",
+        "expected_type": null,
+        "latency_ms": 4.1572000009182375,
+        "result_count": 5,
+        "type_match": true,
+        "utterance": "Ketoconazol 2% Medipharco 10g dùng khi bị nấm ngoài da không?"
+      },
+      {
+        "actual_drug_id": "tothema-2x10-ong-10ml",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "STORAGE",
+        "case_id": "storage_structured",
+        "drug_match": true,
+        "expected_drug_id": "tothema-2x10-ong-10ml",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "STORAGE",
+        "latency_ms": 0.2518999990570592,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Tothema 2x10 ỐNG 10ml bảo quản thế nào?"
+      },
+      {
+        "actual_drug_id": "tardyferon-b9-3x10",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "PREGNANCY_LACTATION",
+        "case_id": "pregnancy_structured",
+        "drug_match": true,
+        "expected_drug_id": "tardyferon-b9-3x10",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "PREGNANCY_LACTATION",
+        "latency_ms": 0.22390000049199443,
+        "result_count": 2,
+        "type_match": true,
+        "utterance": "Tardyferon b9 3x10 phụ nữ mang thai dùng được không?"
+      },
+      {
+        "actual_drug_id": "procare-diamond-216mg-catalent-30v",
+        "actual_path": "structured",
+        "actual_resolution": "RESOLVED",
+        "actual_type": "INTERACTION",
+        "case_id": "interaction_structured",
+        "drug_match": true,
+        "expected_drug_id": "procare-diamond-216mg-catalent-30v",
+        "expected_path": "structured",
+        "expected_resolution": "RESOLVED",
+        "expected_type": "INTERACTION",
+        "latency_ms": 0.22879999960423447,
+        "result_count": 1,
+        "type_match": true,
+        "utterance": "Procare Diamond 216mg Catalent 30v có tương tác thuốc không?"
+      }
+    ],
+    "semantic_fallback_rate": 0.08333333333333333,
+    "structured_lookup_coverage": 0.6666666666666666,
+    "wrong_drug_cases": [],
+    "wrong_drug_rate": 0.0
+  },
+  "generated_at": "2026-08-16T09:33:42.708245+00:00",
+  "new_products_review_queue": [
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Fucagi 500mg Agimexpharm 1v",
+      "fresh_legacy_drug_id": "fucagi-500mg-agimexpharm-1v"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Fugacar 500mg Lusomedicamenta 1v",
+      "fresh_legacy_drug_id": "fugacar-500mg-lusomedicamenta-1v"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Mebendazole 500mg Mekophar 1v",
+      "fresh_legacy_drug_id": "mebendazole-500mg-mekophar-1v"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "NYST 25000iu OPC 10 GÓI",
+      "fresh_legacy_drug_id": "nyst-25000iu-opc-10-goi"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Fugacar 500mg OLIC 1v",
+      "fresh_legacy_drug_id": "fugacar-500mg-olic-1v"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Alzental 400mg Shinpoong 1x1 - Thuốc TRỊ GIUN",
+      "fresh_legacy_drug_id": "alzental-400mg-shinpoong-1x1-thuoc-tri-giun"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Fubenzon 500mg DHG 1x1",
+      "fresh_legacy_drug_id": "fubenzon-500mg-dhg-1x1"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Mebendazol 500mg NAM Hà 1v - GIUN NÚI",
+      "fresh_legacy_drug_id": "mebendazol-500mg-nam-ha-1v-giun-nui"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Azoltel 400mg Stella 1x1",
+      "fresh_legacy_drug_id": "azoltel-400mg-stella-1x1"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Timbov Farmaprim 1x3",
+      "fresh_legacy_drug_id": "timbov-farmaprim-1x3"
+    },
+    {
+      "candidate_legacy_drug_ids": [],
+      "classification": "NEW_PRODUCT",
+      "display_name": "Shampoo Clobetasol VCP 100ml",
+      "fresh_legacy_drug_id": "shampoo-clobetasol-vcp-100ml"
+    }
+  ],
+  "open_issues": [
+    "11 NEW_PRODUCT rows remain in review queue; not auto-added to production corpus"
+  ],
+  "status": "PASS WITH ISSUES"
+}
