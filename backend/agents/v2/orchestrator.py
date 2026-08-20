@@ -255,7 +255,22 @@ _DELAYED_DOSE_KEYWORDS = (
     "delayed dose", "uống muộn", "uong muon",
 )
 _DOSE_STATUS_KEYWORDS = ("trạng thái liều", "trang thai lieu", "dose status", "trạng thái thuốc")
-_TODAY_KEYWORDS = ("hôm nay", "hom nay", "today")
+# BUILD-24G (router remediation, golden query_id 26/28/31): "hôm nay"/"today"
+# alone missed every bare time-of-day phrasing ("buổi sáng tôi cần uống
+# thuốc gì", "buổi tối nay uống gì", "buổi trưa uống thuốc gì") -- none of
+# these say "hôm nay" explicitly, but in ordinary usage a bare "buổi
+# sáng/trưa/chiều/tối [uống gì]" question is asking about *today's* schedule
+# (a different day would normally be named explicitly, e.g. "ngày mai" --
+# see BUILD-24D report 36 query_id 33, already correctly routed to
+# UPCOMING_DOSES). Each time-of-day phrase is added both bare and with the
+# "nay" (this) suffix for paraphrase coverage.
+_TODAY_KEYWORDS = (
+    "hôm nay", "hom nay", "today",
+    "buổi sáng", "buoi sang", "sáng nay", "sang nay",
+    "buổi trưa", "buoi trua", "trưa nay", "trua nay",
+    "buổi chiều", "buoi chieu", "chiều nay", "chieu nay",
+    "buổi tối", "buoi toi", "tối nay", "toi nay",
+)
 _UPCOMING_KEYWORDS = ("sắp tới", "sap toi", "lịch uống", "lich uong", "upcoming", "sắp đến", "sap den")
 _PRESCRIPTION_KEYWORDS = ("đơn thuốc", "don thuoc", "toa thuốc", "toa thuoc", "prescription", "phác đồ", "phac do")
 _VINMEC_KEYWORDS = ("vinmec", "trang web", "website", "tìm trên mạng", "tim tren mang", "tra cứu web", "tra cuu web")
@@ -263,7 +278,16 @@ _GENERAL_MEDICAL_KEYWORDS = (
     "là gì", "la gi", "giải thích", "giai thich", "nguyên nhân", "nguyen nhan",
     "triệu chứng", "trieu chung", "tại sao", "tai sao",
 )
-_GREETING_KEYWORDS = ("xin chào", "xin chao", "hello", "hi", "chào bạn", "chao ban", "cảm ơn", "cam on")
+_GREETING_PHRASES = ("xin chào", "xin chao", "chào bạn", "chao ban", "cảm ơn", "cam on")
+# BUILD-24G (golden query_id 2/54): the bare 2-letter "hi" collided as a
+# plain substring with ordinary Vietnamese words -- "bao nhieu" (how many),
+# "sau khi" (after) -- silently misrouting a real drug-dose question and a
+# real side-effect report to GENERAL_CONVERSATION. "hi"/"hello" are the only
+# keywords in this entire router short/generic enough to hit this; matched
+# as whole words only, everything else here stays plain substring matching
+# (already specific enough in practice, e.g. "xin chào" cannot appear inside
+# an unrelated Vietnamese word).
+_GREETING_WORD_RE = re.compile(r"\b(hi|hello)\b", re.IGNORECASE)
 
 
 def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecision:
@@ -273,6 +297,9 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
 
     def _matches(keywords: tuple[str, ...]) -> bool:
         return any(keyword in lowered for keyword in keywords)
+
+    def _matches_greeting() -> bool:
+        return _matches(_GREETING_PHRASES) or bool(_GREETING_WORD_RE.search(lowered))
 
     if _detect_acute_danger(message):
         intent = OrchestrationIntent.ACUTE_DANGER_ESCALATION
@@ -294,7 +321,7 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
         intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
     elif _matches(_GENERAL_MEDICAL_KEYWORDS):
         intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
-    elif _matches(_GREETING_KEYWORDS) and len(message.strip()) <= 40:
+    elif _matches_greeting() and len(message.strip()) <= 40:
         intent = OrchestrationIntent.GENERAL_CONVERSATION
     else:
         intent = OrchestrationIntent.DRUG_INFORMATION
