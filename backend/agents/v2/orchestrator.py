@@ -465,6 +465,63 @@ def _enforce_vinmec_provenance(result: RunResult, citations: tuple["Citation", .
     return RunResult(result.status, corrected, result.tool_results, result.metrics)
 
 
+# BUILD-24F (V2 Release Candidate hardening, local phase 1 item 2): medical-
+# grounding enforcement. Found in BUILD-24C's golden set (report 35, section
+# 4, query_id 21: "does omeprazole get taken before or after food" answered
+# confidently from the model's own general knowledge -- tools: [], no
+# search_drug call, never checked against the corpus at all, and nothing
+# disclosed that). A grounding-required intent whose Main Model turn ends
+# with zero tool calls AND zero retrieval/Vinmec citations has, by
+# definition, no verified evidence behind it -- the reply is replaced with
+# an honest decline rather than left to whatever the model's training data
+# happened to contain. This mirrors _enforce_vinmec_provenance's own
+# philosophy (a structured, orchestrator-known fact -- here "was any real
+# evidence gathered at all" -- is a more reliable signal than trusting free
+# text), deliberately blunt (full replacement, not a partial edit) because
+# there is no "false word" to surgically correct here, unlike the Vinmec
+# case. VINMEC_WEB_INFORMATION is excluded: it already has its own dedicated
+# backstop and its own explicit no-result signal. GENERAL_CONVERSATION,
+# DOCTOR_REVIEW, and ACUTE_DANGER_ESCALATION are excluded because they
+# either never reach the Main Model or never assert a medical fact at all.
+_GROUNDING_REQUIRED_INTENTS = frozenset(
+    {
+        OrchestrationIntent.DRUG_INFORMATION,
+        OrchestrationIntent.PRESCRIPTION_INFORMATION,
+        OrchestrationIntent.TODAY_DOSES,
+        OrchestrationIntent.UPCOMING_DOSES,
+        OrchestrationIntent.DOSE_STATUS,
+        OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
+        OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+    }
+)
+
+_UNGROUNDED_ANSWER_DECLINE_REPLY = (
+    "Minh chua co du lieu da xac minh (tu he thong noi bo hoac tra cuu) de tra loi "
+    "chac chan cho cau hoi nay. Ban co the cho minh biet ro hon (vi du ten thuoc cu "
+    "the) de minh tra cuu, hoac hoi truc tiep bac si/duoc si de duoc tu van chinh xac."
+)
+
+
+def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent, citations: tuple["Citation", ...]) -> RunResult:
+    """Deterministic backstop: a grounding-required intent (see
+    ``_GROUNDING_REQUIRED_INTENTS``) whose reply has zero tool evidence and
+    zero retrieval/Vinmec citations is, by definition, not backed by
+    anything verified for this run -- replace it outright with an honest
+    decline rather than let unverified model knowledge (BUILD-24C
+    query_id 21) reach the user unlabeled. A no-op for every non-COMPLETED
+    status (SAFETY_BLOCKED/HANDOFF_REQUIRED/HANDOFF_CREATED/etc. already
+    have their own fixed, safe text) and for every intent outside the
+    grounding-required set.
+    """
+    if result.status is not RunStatus.COMPLETED:
+        return result
+    if intent not in _GROUNDING_REQUIRED_INTENTS:
+        return result
+    if result.tool_results or citations:
+        return result  # a real tool call or retrieval/Vinmec citation backs this -- nothing to correct
+    return RunResult(result.status, _UNGROUNDED_ANSWER_DECLINE_REPLY, result.tool_results, result.metrics)
+
+
 def _approx_tokens(text: str) -> int:
     return max(1, ceil(len(text) / 4))
 
@@ -680,6 +737,11 @@ class AgentOrchestrator:
         # Vinmec (decision.use_vinmec_web); otherwise a false claim is
         # corrected in place so a valid internal/RAG answer is preserved.
         result = _enforce_vinmec_provenance(result, tuple(citations), vinmec_required=decision.use_vinmec_web)
+        # BUILD-24F: second deterministic backstop, applied after the Vinmec
+        # correction above -- a no-op for every status but COMPLETED and
+        # every intent outside _GROUNDING_REQUIRED_INTENTS, so this changes
+        # nothing about Safety/Handoff/Vinmec/Auth behavior.
+        result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
 
         if checkpoint_db is not None and result.status not in (RunStatus.SAFETY_BLOCKED, RunStatus.HANDOFF_CREATED):
             if lease_token is None:
