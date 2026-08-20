@@ -1,6 +1,7 @@
 """Bounded, fail-closed execution for the isolated read-only Agent V2 path."""
 
 import json
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -22,6 +23,13 @@ from backend.agents.v2.tools import ToolGateway, ToolResult
 # This is a display/encoding cleanup, not a safety mechanism -- it runs on
 # the final synthesized reply only, never on tool/retrieval evidence or
 # anything Safety Domain-authored.
+#
+# BUILD-24I (V2 RC hardening, Phase 1 item 5) added "к"/"в" (BUILD-24C golden
+# query_id 46/101: "thuốc đang aкtiвe"/"aкtiв" -- lowercase Cyrillic к/в for
+# Latin k/v -- the table had uppercase К/В but not their lowercase forms).
+# Kept deliberately narrow and evidence-based, same as every entry above: add
+# only what has actually been observed live, not a theoretical full
+# Cyrillic-Latin confusable table.
 _CYRILLIC_HOMOGLYPHS: dict[str, str] = {
     # Live-observed defect (BUILD-19): "тип" for "tip" -- т/и/п -> t/i/p.
     "т": "t", "и": "i", "п": "p",
@@ -29,12 +37,95 @@ _CYRILLIC_HOMOGLYPHS: dict[str, str] = {
     "і": "i", "ѕ": "s", "ј": "j", "ԁ": "d", "ѡ": "w",
     "А": "A", "В": "B", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O",
     "Р": "P", "С": "C", "Т": "T", "Х": "X", "Ѕ": "S", "І": "I", "Ј": "J",
+    # BUILD-24I: lowercase forms live-observed but missing before this build.
+    "к": "k", "в": "v",
 }
 _CYRILLIC_HOMOGLYPH_TABLE = str.maketrans(_CYRILLIC_HOMOGLYPHS)
 
 
 def _normalize_confusable_cyrillic(text: str) -> str:
     return text.translate(_CYRILLIC_HOMOGLYPH_TABLE)
+
+
+# BUILD-24I: unlike a Cyrillic homoglyph (a single character that visually
+# substitutes for a Latin lookalike, fixed by direct character replacement
+# above), the Main Model has also been observed inserting an entire foreign-
+# script *word* mid-sentence with no Latin equivalent to substitute -- BUILD-
+# 24C golden query_id 76: "do OpenAI உருவ/ tạo ra" (Tamil, meaning roughly
+# "form/create"); query_id 92: "toa thuốc đang सक्रिय" (Devanagari, meaning
+# "active") *and*, in the same reply, "đọc dữ liệu בלבד" (Hebrew, meaning
+# "only") -- confirmed by decoding the raw golden-set JSON code point by code
+# point, not just the report's own narrative summary. This app's output is
+# always Vietnamese/English in Latin script; none of these scripts has ever
+# been genuine, expected content here, so the only sound fix is to remove
+# the foreign-script run outright (there is no single correct Latin word to
+# substitute for a whole leaked foreign word) and tidy up the
+# whitespace/punctuation left behind.
+_DISALLOWED_SCRIPT_RANGES: tuple[tuple[int, int], ...] = (
+    (0x0590, 0x05FF),  # Hebrew (query_id 92)
+    (0x0900, 0x097F),  # Devanagari (query_id 92)
+    (0x0B80, 0x0BFF),  # Tamil (query_id 76)
+)
+
+
+def _is_disallowed_script_char(ch: str) -> bool:
+    code_point = ord(ch)
+    return any(lo <= code_point <= hi for lo, hi in _DISALLOWED_SCRIPT_RANGES)
+
+
+def _strip_disallowed_scripts(text: str) -> str:
+    if not any(_is_disallowed_script_char(ch) for ch in text):
+        return text
+    cleaned = "".join(ch for ch in text if not _is_disallowed_script_char(ch))
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)  # collapse a run of spaces the removal left behind
+    cleaned = re.sub(r"[ \t]+([.,;:!?)\]])", r"\1", cleaned)  # "word ." -> "word."
+    cleaned = re.sub(r"([/(\[])[ \t]+", r"\1", cleaned)  # "( word" -> "(word"
+    return cleaned.strip()
+
+
+# BUILD-24I (golden query_id 46; also observed in 57/58, now moot -- both are
+# ACUTE_DANGER_ESCALATION messages since BUILD-24E and never reach the Main
+# Model any more): the Main Model occasionally regenerates its own answer a
+# second time within the same completion, back-to-back, often with no
+# separator at all -- the reply's own first sentence reappears verbatim
+# later in the text, sometimes run directly into the prior sentence's
+# closing period with no space ("...thay đổi.Tôi không thể..."). BUILD-24C's
+# own analysis: this happens *inside* a single model completion, not from
+# any orchestration-level concatenation (`plan.response` is never
+# concatenated with `synthesis.response`) -- a generation-quality issue this
+# codebase cannot prevent at the source, only detect and clean up after the
+# fact. Detected by finding the reply's own first sentence again later in
+# the text; when found, the reply is truncated to its first occurrence, since
+# the second occurrence is by definition already contained in what preceded
+# it.
+_FIRST_SENTENCE_RE = re.compile(r"^(.{8,200}?[.!?])(?:\s|$)")
+
+
+def _dedupe_self_repeated_reply(text: str) -> str:
+    match = _FIRST_SENTENCE_RE.match(text)
+    if match is None:
+        return text
+    first_sentence = match.group(1)
+    repeat_at = text.find(first_sentence, match.end())
+    if repeat_at == -1:
+        return text
+    return text[:repeat_at].rstrip()
+
+
+def _clean_final_reply_text(text: str) -> str:
+    """The single BUILD-16..24I output-quality cleanup pipeline, applied to
+    every terminal reply text (see ``ReadOnlyAgentRuntime._result``) --
+    self-repetition dedup, then confusable-Cyrillic normalization, then
+    disallowed-foreign-script stripping. Purely a display/generation-quality
+    cleanup, never a safety mechanism: never runs on tool/retrieval evidence
+    or anything Safety Domain-authored, and every step here is a no-op on
+    ordinary text that doesn't exhibit the specific live-observed defect it
+    targets.
+    """
+    text = _dedupe_self_repeated_reply(text)
+    text = _normalize_confusable_cyrillic(text)
+    text = _strip_disallowed_scripts(text)
+    return text
 
 
 class RunStatus(StrEnum):
@@ -614,5 +705,5 @@ class ReadOnlyAgentRuntime:
     ) -> RunResult:
         elapsed_ms = max(0.0, (self._clock() - started) * 1000)
         return RunResult(
-            status, _normalize_confusable_cyrillic(response), tuple(results), self._with(metrics, elapsed_ms=elapsed_ms)
+            status, _clean_final_reply_text(response), tuple(results), self._with(metrics, elapsed_ms=elapsed_ms)
         )
