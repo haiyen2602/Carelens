@@ -15,11 +15,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { CapySheet } from "@/components/capy/capy-ui";
+import { DoseCallOverlay } from "@/components/capy/dose-call-overlay";
 import { NudgeBanner } from "@/components/capy/nudge-banner";
 import { useAuth } from "@/lib/auth";
-import { type Nudge, pollUnseenNudges } from "@/lib/nudges";
+import { daNhac, danhDauDaNhac } from "@/lib/dose-reminder-log";
+import { gioHienThi, listDoses } from "@/lib/doses";
+import { reportHealthIssue } from "@/lib/escalations";
+import { pollUnseenNudges } from "@/lib/nudges";
 import {
   getNotificationPermission,
+  playDoseAlarmShort,
   playNudgeSound,
   requestNotificationPermission,
   showBrowserNotification,
@@ -31,6 +36,33 @@ import { useProto } from "@/lib/proto-store";
 // - repo chua co ha tang realtime (WebSocket/SSE), 8s la do tre chap nhan
 // duoc cho 1 loi nhac nhe (khong phai canh bao cap cuu).
 const NUDGE_POLL_MS = 8000;
+
+// Nhac gio uong thuoc: poll GET /doses roi tu so gio o client (du lieu
+// scheduled_at da co san, khong can backend day gi). 15s du min cho 3 moc
+// cach nhau 15 phut.
+const DOSE_POLL_MS = 15000;
+
+// 3 moc nhac leo thang (phut ke tu gio hen). Moc 30 trung dung luc
+// window_end sap dong (NUA_CUA_SO=30p, backend/services/scheduling/generator.py).
+const MOC_NHAC_LAN_2 = 15;
+const MOC_GOI = 30;
+
+// Qua moc nay thi THOI HAN nhac (SUA 2026-08-20: truoc de 24 gio - qua rong,
+// bug that: benh nhan Le Van Tam con 1 lieu PENDING tu dem hom truoc (tre
+// ~22 tieng, don da het han nhung khong ai doi status thanh MISSED) nen vua
+// dang nhap la bung ngay cuoc goi gia lap). Khung xac nhan cua backend chi
+// +-30 phut (NUA_CUA_SO, backend/services/scheduling/generator.py) - qua 60
+// phut thi lieu do coi nhu da lo, nhac nua khong con y nghia.
+const HET_HAN_NHAC_PHUT = 60;
+
+type Banner = {
+  id: string;
+  callerName: string;
+  message: string;
+  source: "nudge" | "dose";
+};
+
+type CuocGoi = { doseId: string; tenThuoc: string; gioHen: string };
 
 const TABS = [
   { to: "/patient", label: "Hôm nay", icon: "💊", exact: true },
@@ -46,9 +78,10 @@ export function CapyShell({ children }: { children: ReactNode }) {
   const { user, accessToken, logout: authLogout } = useAuth();
   const { logout: protoLogout, emergency, setEmergency } = useProto();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [nudgeQueue, setNudgeQueue] = useState<Nudge[]>([]);
+  const [bannerQueue, setBannerQueue] = useState<Banner[]>([]);
+  const [cuocGoi, setCuocGoi] = useState<CuocGoi | null>(null);
   const [notifPerm, setNotifPerm] = useState<NotificationPermissionState>("default");
-  const activeNudge = nudgeQueue[0] ?? null;
+  const activeBanner = bannerQueue[0] ?? null;
 
   useEffect(() => {
     const current = getNotificationPermission();
@@ -68,7 +101,16 @@ export function CapyShell({ children }: { children: ReactNode }) {
     const poll = async () => {
       try {
         const items = await pollUnseenNudges(accessToken);
-        if (!cancelled && items.length > 0) setNudgeQueue((q) => [...q, ...items]);
+        if (cancelled || items.length === 0) return;
+        setBannerQueue((q) => [
+          ...q,
+          ...items.map((n) => ({
+            id: n.id,
+            callerName: n.caregiverName,
+            message: n.message,
+            source: "nudge" as const,
+          })),
+        ]);
       } catch {
         // Bo qua loi 1 vong poll rieng le (vd mat mang thoang qua) - thu lai
         // vong sau, khong lam phien nguoi dung bang toast loi moi 8s.
@@ -82,19 +124,103 @@ export function CapyShell({ children }: { children: ReactNode }) {
     };
   }, [accessToken]);
 
+  // Nhac gio uong thuoc, leo thang 3 moc: banner (+0) -> banner (+15) ->
+  // cuoc goi gia lap (+30, kem bao nguoi than). Tinh hoan toan o client tu
+  // `scheduledAt` da co san - backend khong can day gi.
+  const patientId = user?.patient_id;
   useEffect(() => {
-    if (!activeNudge) return;
+    if (!patientId) return;
+    let cancelled = false;
+
+    const kiemTra = async () => {
+      let doses;
+      try {
+        doses = await listDoses(patientId);
+      } catch {
+        return; // cung ly do voi vong poll nudge o tren
+      }
+      if (cancelled) return;
+
+      const bay_gio = Date.now();
+
+      // GOP theo KHUNG GIO, khong nhac tung lieu mot (SUA 2026-08-20): 2
+      // thuoc cua 2 don khac nhau nhung cung hen 21:00 la 2 dong DoseEvent
+      // rieng - nhac rieng se thanh 2 chuong lien tiep cho cung 1 lan uong.
+      const theoKhungGio = new Map<string, typeof doses>();
+      for (const d of doses) {
+        if (d.status !== "PENDING") continue;
+        const phutQua = (bay_gio - new Date(d.scheduledAt).getTime()) / 60000;
+        if (phutQua < 0 || phutQua > HET_HAN_NHAC_PHUT) continue;
+        const khung = new Date(d.scheduledAt).toISOString();
+        theoKhungGio.set(khung, [...(theoKhungGio.get(khung) ?? []), d]);
+      }
+
+      for (const [khung, nhomLieu] of theoKhungGio) {
+        const phutQua = (bay_gio - new Date(khung).getTime()) / 60000;
+        const moc = phutQua >= MOC_GOI ? MOC_GOI : phutQua >= MOC_NHAC_LAN_2 ? MOC_NHAC_LAN_2 : 0;
+        const khoa = `${khung}:${moc}`;
+        // Da nhac o lan mo app truoc thi thoi - localStorage, khong phai bo
+        // nho tam: reload/F5 KHONG duoc lam benh nhan bi nhac lai tu dau.
+        if (daNhac(khoa)) continue;
+        danhDauDaNhac(khoa);
+
+        const tenThuoc = nhomLieu
+          .map((d) => d.expectedItems[0]?.tenThuoc ?? "thuốc")
+          .join(" và ");
+        const gioHen = gioHienThi(khung);
+
+        if (moc === MOC_GOI) {
+          setCuocGoi({ doseId: khung, tenThuoc, gioHen });
+          if (accessToken) {
+            // Bao nguoi than qua dung he thong Escalation da co (POST
+            // /health-log, level "mid" -> severity MEDIUM) - khong doi het
+            // khung 60 phut moi bao. .catch nuot loi: cuoc goi gia lap van
+            // phai hien du API loi.
+            reportHealthIssue(accessToken, {
+              text: `Chưa xác nhận uống ${tenThuoc} (hẹn ${gioHen}) sau 3 lần nhắc`,
+              level: "mid",
+            }).catch(() => {});
+          }
+        } else {
+          setBannerQueue((q) => [
+            ...q,
+            {
+              id: khoa,
+              callerName: "Nhắc uống thuốc",
+              message:
+                moc === 0
+                  ? `Đến giờ uống ${tenThuoc} rồi nhé`
+                  : `Vẫn chưa thấy bạn xác nhận uống ${tenThuoc}`,
+              source: "dose",
+            },
+          ]);
+        }
+      }
+    };
+
+    kiemTra();
+    const timer = setInterval(kiemTra, DOSE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [patientId, accessToken]);
+
+  useEffect(() => {
+    if (!activeBanner) return;
     // Neu da co quyen Notification that, chi can no la du (co the tu keo
-    // theo tieng cua chinh he dieu hanh) - phat THEM tieng notice.wav se
+    // theo tieng cua chinh he dieu hanh) - phat THEM tieng trong app se
     // thanh bao 2 lan cho 1 lan nhac. Chi phat tieng trong app khi CHUA co
     // quyen (patient chua bat/tu choi) - do la kenh am thanh duy nhat ho co.
     if (getNotificationPermission() === "granted") {
-      showBrowserNotification("CapyMedi", `${activeNudge.caregiverName}: ${activeNudge.message}`);
+      showBrowserNotification("CapyMedi", `${activeBanner.callerName}: ${activeBanner.message}`);
+    } else if (activeBanner.source === "dose") {
+      playDoseAlarmShort();
     } else {
       playNudgeSound();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeNudge?.id]);
+  }, [activeBanner?.id]);
 
   const doLogout = async () => {
     setSheetOpen(false);
@@ -263,12 +389,21 @@ export function CapyShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        {activeNudge && (
+        {activeBanner && (
           <NudgeBanner
-            key={activeNudge.id}
-            callerName={activeNudge.caregiverName}
-            message={activeNudge.message}
-            onDismiss={() => setNudgeQueue((q) => q.slice(1))}
+            key={activeBanner.id}
+            callerName={activeBanner.callerName}
+            message={activeBanner.message}
+            onDismiss={() => setBannerQueue((q) => q.slice(1))}
+          />
+        )}
+
+        {cuocGoi && (
+          <DoseCallOverlay
+            key={cuocGoi.doseId}
+            tenThuoc={cuocGoi.tenThuoc}
+            gioHen={cuocGoi.gioHen}
+            onClose={() => setCuocGoi(null)}
           />
         )}
       </div>

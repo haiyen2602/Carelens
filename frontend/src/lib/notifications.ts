@@ -47,3 +47,22 @@ export function playNudgeSound(): void {
     // Nuot loi co y - am thanh la phu, khong lam hong trai nghiem banner.
   }
 }
+
+let cachedDoseAlarm: HTMLAudioElement | null = null;
+
+/** Phat tieng "alarm-short.wav" (~4s) cho banner nhac gio uong thuoc (moc
+ * +0/+15 phut) - tach rieng khoi playNudgeSound() de benh nhan phan biet
+ * duoc "nhac uong thuoc" voi "nguoi than nhan tin", du cung hien qua
+ * NudgeBanner. Moc +30 phut (cuoc goi gia lap) dung file rieng
+ * "alarm-call.wav" lap lai lien tuc - xem components/capy/dose-call-overlay.tsx,
+ * KHONG qua ham nay (ham nay chi phat 1 lan, khong lap). */
+export function playDoseAlarmShort(): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!cachedDoseAlarm) cachedDoseAlarm = new Audio("/sounds/alarm-short.wav");
+    cachedDoseAlarm.currentTime = 0;
+    void cachedDoseAlarm.play().catch(() => {});
+  } catch {
+    // Nuot loi co y - cung ly do voi playNudgeSound().
+  }
+}
