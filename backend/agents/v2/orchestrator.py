@@ -512,7 +512,20 @@ _NO_VINMEC_EVIDENCE_REPLY = (
 
 # BUILD-24D: word-level correction for a false "Vinmec" claim on a request
 # that never required Vinmec (see _strip_false_vinmec_claim below).
-_NEUTRAL_SOURCE_PHRASE = "du lieu noi bo da xac minh"
+#
+# BUILD-24K (found in Phase 2's local golden retest, report 43): unlike the
+# other fixed strings in this module -- which are entire, self-contained
+# ASCII-only replies (a deliberate, consistent project convention) -- this
+# phrase gets substituted *mid-sentence* into text the Main Model already
+# generated with full Vietnamese diacritics. Real retest runs (13/101
+# queries, e.g. query_id 7: "khong tim thay nguon du lieu noi bo da xac
+# minh" / "thong tin tu du lieu noi bo da xac minh") showed the ASCII-only
+# version reads as a jarring, mixed-script insert in the middle of otherwise
+# properly-accented text -- confusing even though never factually wrong.
+# Using the phrase's own correct Vietnamese diacritics here (matching the
+# style of whatever it's dropped into) fixes that without changing the
+# guarantee: it is still exactly one fixed, deterministic substitution.
+_NEUTRAL_SOURCE_PHRASE = "dữ liệu nội bộ đã xác minh"
 
 
 def _strip_false_vinmec_claim(text: str) -> str:

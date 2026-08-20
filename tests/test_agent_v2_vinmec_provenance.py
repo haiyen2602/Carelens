@@ -171,10 +171,15 @@ def test_not_required_rag_evidence_answer_is_preserved():
 
 
 def test_strip_false_vinmec_claim_preserves_surrounding_text_and_capitalizes_sentence_starts():
-    assert _strip_false_vinmec_claim("Vinmec cho biet day la thuoc giam dau.").startswith("Du lieu noi bo da xac minh")
+    # BUILD-24K: the neutral phrase now carries its own correct Vietnamese
+    # diacritics (found jarring/mixed-script otherwise in Phase 2's real
+    # golden retest, report 43) -- "Dữ liệu nội bộ đã xác minh", not the
+    # bare-ASCII "Du lieu noi bo da xac minh" BUILD-24D originally shipped.
+    assert _strip_false_vinmec_claim("Vinmec cho biet day la thuoc giam dau.").startswith("Dữ liệu nội bộ đã xác minh")
     mid = _strip_false_vinmec_claim("Thuoc nay, theo Vinmec, dung de ha sot.")
     assert "vinmec" not in mid.lower()
     assert "Thuoc nay, theo" in mid and "dung de ha sot." in mid
+    assert "dữ liệu nội bộ đã xác minh" in mid
 
 
 # ---------------------------------------------------------------------------
