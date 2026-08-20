@@ -108,6 +108,7 @@ class OrchestrationIntent(StrEnum):
     VINMEC_WEB_INFORMATION = "VINMEC_WEB_INFORMATION"
     DOCTOR_REVIEW = "DOCTOR_REVIEW"
     ACUTE_DANGER_ESCALATION = "ACUTE_DANGER_ESCALATION"
+    OUT_OF_SCOPE_REQUEST = "OUT_OF_SCOPE_REQUEST"
     UNKNOWN_OR_AMBIGUOUS = "UNKNOWN_OR_AMBIGUOUS"
 
 
@@ -142,6 +143,12 @@ _INTENT_CONFIG: dict[OrchestrationIntent, tuple[SafetyTrigger | None, bool, bool
     # ACUTE_DANGER_DETECTED in the router below and in runtime.py's fixed
     # messages).
     OrchestrationIntent.ACUTE_DANGER_ESCALATION: (None, False, True, False, False),
+    # BUILD-24H: never reaches Safety/Handoff/retrieval/Vinmec/the Main Model
+    # at all -- AgentOrchestrator.run() short-circuits on this intent with a
+    # fixed reply (see _out_of_scope_reply below) before any of that runs.
+    # This tuple is present only so classify_intent's shared lookup never
+    # KeyErrors; every field here is inert for this intent.
+    OrchestrationIntent.OUT_OF_SCOPE_REQUEST: (None, False, False, False, False),
     OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS: (None, False, False, False, False),
 }
 
@@ -278,6 +285,85 @@ _GENERAL_MEDICAL_KEYWORDS = (
     "là gì", "la gi", "giải thích", "giai thich", "nguyên nhân", "nguyen nhan",
     "triệu chứng", "trieu chung", "tại sao", "tai sao",
 )
+# BUILD-24H (persona/capability/domain guard, golden query_id 75/76/78/79):
+# identity questions ("bạn tên gì, ai tạo ra bạn"), capability questions the
+# system structurally cannot fulfil (no booking tool exists at all -- "bạn
+# có thể giúp tôi đặt lịch khám bác sĩ không"), and generic off-topic
+# small talk (a joke, arithmetic) were all falling through to the ordinary
+# DRUG_INFORMATION path and the Main Model answered them directly -- a
+# vendor/persona leak ("Mình là ChatGPT... do OpenAI tạo ra"), a false
+# capability claim (implying it can help plan/book an appointment), and two
+# answered-anyway out-of-scope requests. Detected here and handled with a
+# fixed, honest reply *before* the Main Model is ever called (see
+# AgentOrchestrator.run()) -- the same "guarantee the outcome deterministically
+# rather than trust the model's free text" principle as acute-danger/
+# doctor-review, chosen because a false capability claim or a vendor leak
+# needs to never happen, not just be corrected after the fact when caught.
+_IDENTITY_QUESTION_KEYWORDS = (
+    "bạn tên gì", "ban ten gi", "bạn là ai", "ban la ai", "bạn tên là gì", "ban ten la gi",
+    "ai tạo ra bạn", "ai tao ra ban", "ai đã tạo ra bạn", "ai da tao ra ban",
+    "who are you", "what's your name", "what is your name", "who made you", "who created you",
+)
+_CAPABILITY_BOOKING_KEYWORDS = (
+    "đặt lịch khám", "dat lich kham", "đặt lịch bác sĩ", "dat lich bac si",
+    "đặt lịch hẹn", "dat lich hen", "đặt hẹn", "dat hen", "đặt lịch giúp", "dat lich giup",
+    "book an appointment", "book a doctor",
+)
+_GENERAL_OFF_TOPIC_KEYWORDS = (
+    "kể chuyện cười", "ke chuyen cuoi", "câu chuyện cười", "cau chuyen cuoi",
+    "kể một câu chuyện", "ke mot cau chuyen", "đố vui", "do vui", "tell me a joke",
+)
+_ARITHMETIC_QUESTION_RE = re.compile(
+    r"^\s*\d+(\.\d+)?\s*[\+\-\*x×/]\s*\d+(\.\d+)?\s*(bằng|bang|=|thì ra|thi ra)?\s*(mấy|may|bao nhiêu|bao nhieu)?\s*\??\s*$",
+    re.IGNORECASE,
+)
+
+
+def _detect_out_of_scope_category(message: str) -> str | None:
+    """Returns 'IDENTITY', 'CAPABILITY_BOOKING', or 'GENERAL_OFF_TOPIC' for a
+    high-confidence out-of-scope request, else None. Deliberately narrow,
+    keyword/regex-based (same reasoning as ``_detect_acute_danger``): this
+    only needs to catch the specific, well-defined categories this product
+    structurally cannot/should not serve, not classify every conceivable
+    off-topic message.
+    """
+
+    lowered = message.casefold()
+    if any(keyword in lowered for keyword in _IDENTITY_QUESTION_KEYWORDS):
+        return "IDENTITY"
+    if any(keyword in lowered for keyword in _CAPABILITY_BOOKING_KEYWORDS):
+        return "CAPABILITY_BOOKING"
+    if any(keyword in lowered for keyword in _GENERAL_OFF_TOPIC_KEYWORDS):
+        return "GENERAL_OFF_TOPIC"
+    if _ARITHMETIC_QUESTION_RE.match(message.strip()):
+        return "GENERAL_OFF_TOPIC"
+    return None
+
+
+# BUILD-24H: one fixed, honest reply per category -- chosen deterministically
+# by the router (never by the model), so the answer to "who are you"/"can you
+# book me an appointment"/"tell me a joke" is always the same, correct one,
+# not whatever the model happened to improvise that day.
+_OUT_OF_SCOPE_REPLIES: dict[str, str] = {
+    "IDENTITY": (
+        "Minh la tro ly AI ho tro tra cuu thong tin thuoc va lich uong thuoc cua ban "
+        "trong ung dung nay. Minh khong chia se chi tiet ky thuat hay nha cung cap mo "
+        "hinh dung sau minh, nhung minh luon san sang giup ban voi cau hoi ve thuoc va "
+        "lich dung thuoc."
+    ),
+    "CAPABILITY_BOOKING": (
+        "Minh khong the dat lich kham hay dat hen truc tiep voi bac si. Minh chi co the "
+        "giup ban tra cuu thong tin thuoc, don thuoc, va lich uong thuoc trong ung dung "
+        "nay. Vui long lien he truc tiep co so y te de dat lich kham."
+    ),
+    "GENERAL_OFF_TOPIC": (
+        "Minh duoc thiet ke de ho tro thong tin thuoc va lich uong thuoc, nen minh xin "
+        "phep khong tra loi cau hoi ngoai pham vi nay. Neu ban co cau hoi ve thuoc dang "
+        "dung, lieu dung, hay lich uong thuoc, minh rat san long giup."
+    ),
+}
+
+
 _GREETING_PHRASES = ("xin chào", "xin chao", "chào bạn", "chao ban", "cảm ơn", "cam on")
 # BUILD-24G (golden query_id 2/54): the bare 2-letter "hi" collided as a
 # plain substring with ordinary Vietnamese words -- "bao nhieu" (how many),
@@ -323,6 +409,8 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
         intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
     elif _matches_greeting() and len(message.strip()) <= 40:
         intent = OrchestrationIntent.GENERAL_CONVERSATION
+    elif _detect_out_of_scope_category(message) is not None:
+        intent = OrchestrationIntent.OUT_OF_SCOPE_REQUEST
     else:
         intent = OrchestrationIntent.DRUG_INFORMATION
 
@@ -492,6 +580,26 @@ def _enforce_vinmec_provenance(result: RunResult, citations: tuple["Citation", .
     return RunResult(result.status, corrected, result.tool_results, result.metrics)
 
 
+# BUILD-24H: defense-in-depth vendor/persona-leak backstop. The pre-model
+# OUT_OF_SCOPE_REQUEST bypass (see AgentOrchestrator.run()) is the primary
+# guarantee for a clean "who are you" question (golden query_id 76), but a
+# vendor disclosure could in principle slip into a reply triggered by some
+# other, differently-worded message the keyword detector doesn't catch --
+# this catches that case the same way _enforce_vinmec_provenance catches an
+# unverified Vinmec claim: a full-text substitution is applied only when the
+# specific leak marker is actually present, so it is a no-op for every
+# ordinary reply.
+_VENDOR_LEAK_RE = re.compile(r"\b(chatgpt|openai|gpt-?\d|gpt)\b", re.IGNORECASE)
+
+
+def _enforce_no_vendor_disclosure(result: RunResult) -> RunResult:
+    if result.status is not RunStatus.COMPLETED:
+        return result
+    if not _VENDOR_LEAK_RE.search(result.response):
+        return result
+    return RunResult(result.status, _OUT_OF_SCOPE_REPLIES["IDENTITY"], result.tool_results, result.metrics)
+
+
 # BUILD-24F (V2 Release Candidate hardening, local phase 1 item 2): medical-
 # grounding enforcement. Found in BUILD-24C's golden set (report 35, section
 # 4, query_id 21: "does omeprazole get taken before or after food" answered
@@ -644,6 +752,18 @@ class AgentOrchestrator:
             )
             lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
 
+        # BUILD-24H: persona/capability/domain guard -- an identity question,
+        # a request for a capability this system structurally does not have
+        # (no booking tool exists at all), or generic off-topic small talk
+        # gets a fixed, honest reply here, before memory recall, Safety, tool
+        # gathering, or the Main Model are ever reached. This guarantees the
+        # outcome (no vendor/persona leak, no false capability claim, no
+        # answered-anyway off-topic content) rather than relying on the model
+        # to consistently decline correctly, or on a post-hoc text correction
+        # to catch every phrasing of a false claim.
+        if decision.intent is OrchestrationIntent.OUT_OF_SCOPE_REQUEST:
+            return self._out_of_scope_reply(request, decision, trace, agent_run_id, checkpoint_db, lease_token)
+
         memory_items, session_key = self._recall_memory(request, agent_run_id)
 
         # -- Safety (server-bound trigger + occurrence only) -----------------
@@ -764,6 +884,10 @@ class AgentOrchestrator:
         # Vinmec (decision.use_vinmec_web); otherwise a false claim is
         # corrected in place so a valid internal/RAG answer is preserved.
         result = _enforce_vinmec_provenance(result, tuple(citations), vinmec_required=decision.use_vinmec_web)
+        # BUILD-24H: defense-in-depth vendor-leak backstop (primary guarantee
+        # is the pre-model OUT_OF_SCOPE_REQUEST bypass above) -- a no-op
+        # unless the reply text actually names the underlying vendor.
+        result = _enforce_no_vendor_disclosure(result)
         # BUILD-24F: second deterministic backstop, applied after the Vinmec
         # correction above -- a no-op for every status but COMPLETED and
         # every intent outside _GROUNDING_REQUIRED_INTENTS, so this changes
@@ -923,6 +1047,30 @@ class AgentOrchestrator:
         return f"{message}\n\n{_EVIDENCE_PREAMBLE}\n{evidence_text}"
 
     # -- terminal helpers -------------------------------------------------------
+
+    def _out_of_scope_reply(self, request, decision, trace, agent_run_id, checkpoint_db, lease_token) -> OrchestrationResult:
+        """BUILD-24H: a fixed, honest COMPLETED reply for OUT_OF_SCOPE_REQUEST
+        -- the Main Model, Safety Domain, Doctor Handoff, retrieval, and
+        Vinmec Web are never reached for this intent (see the early return in
+        ``run()``). No short-term memory recall/write happens for this
+        exchange either -- an identity/booking/off-topic message needs no
+        medical context and does not need to be recalled as context for a
+        later medical question.
+        """
+        category = _detect_out_of_scope_category(request.message) or "GENERAL_OFF_TOPIC"
+        reply = _OUT_OF_SCOPE_REPLIES[category]
+        if self._telemetry is not None:
+            self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.out_of_scope", category=category)
+        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics())
+        if checkpoint_db is not None:
+            if lease_token is None:
+                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+            )
+        return OrchestrationResult(
+            trace.trace_id, agent_run_id, decision.intent, result.status, result.response, (), (), None, None, result.metrics
+        )
 
     def _fail_closed(self, trace, agent_run_id, intent, reason_code, checkpoint_db, lease_token) -> OrchestrationResult:
         if self._telemetry is not None:
