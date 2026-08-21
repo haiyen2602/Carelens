@@ -27,12 +27,21 @@ from backend.services.escalation_scheduler import start_escalation_scheduler, st
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    print(f"Starting {settings.app_name} in {settings.app_env} mode")
-    # TEMP AUTH GATE (chatbot-rag-design.md muc 10 #10) - retire khi auth-api
-    # that co. `get_settings()` o tren DA raise (fail-closed that, xem
-    # backend/config.py::_internal_auth_secret_must_be_configured) neu
-    # INTERNAL_AUTH_SECRET chua duoc cau hinh - toi duoc dong nay nghia la
-    # da co gia tri that, khong can kiem tra lai o day.
+    # Kiem tra & cap nhat schema DB (supabase_uid, alembic version) ngay luc startup
+    try:
+        from sqlalchemy import text
+        from backend.db.base import engine
+        with engine.begin() as conn:
+            cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='account'")).fetchall()]
+            if "supabase_uid" not in cols:
+                print("[STARTUP-DB] Them cot supabase_uid vao bang account...")
+                conn.execute(text("ALTER TABLE account ADD COLUMN IF NOT EXISTS supabase_uid VARCHAR"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_account_supabase_uid ON account (supabase_uid)"))
+                print("[STARTUP-DB] Da them cot supabase_uid thanh cong.")
+            for tbl in ["ba_verification", "ba_account", "ba_session", "ba_user"]:
+                conn.execute(text(f"DROP TABLE IF EXISTS {tbl} CASCADE"))
+    except Exception as e:
+        print(f"[STARTUP-DB WARNING] Auto schema patch: {e}")
     #
     # KHONG dung dau tieng Viet/emoji trong cac dong print() o day (phat
     # hien 2026-08-08: print() unicode ra console Windows mac dinh code
