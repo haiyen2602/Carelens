@@ -1010,6 +1010,32 @@ class CaregiverLink(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, default="accepted")
 
 
+class Nudge(Base):
+    """1 lời nhắc nhẹ nguoi than gui cho benh nhan dang theo doi (THEM
+    2026-08-20, migration 0030) - qua sheet "Nhac nhe" o /patient/family
+    (frontend/src/app/patient/family/page.tsx). Benh nhan poll GET
+    /nudges/unseen (backend/api/nudge_routes.py) de hien banner trong app -
+    repo chua co ha tang realtime (WebSocket/SSE) nen dung short polling,
+    xem ADR chon huong trong plan tinh nang nay.
+
+    `seen_at` duoc set NGAY trong chinh request GET /nudges/unseen tra ve
+    dong do (kieu "pop khoi hang doi") - khong co endpoint ack rieng, cung
+    trang thai don gian hoa nhu Escalation.ack (POST /escalations/{id}/ack):
+    hanh dong vo hai, khong can xu ly race condition rieng.
+
+    `caregiver_account_id`/`patient_id` la string tu do, KHONG dat FK that -
+    cung ly do da giai thich o CaregiverLink/Patient o tren."""
+
+    __tablename__ = "nudge"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    caregiver_account_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class DoctorWatch(Base):
     """1 bac si dang "theo doi" 1 benh nhan (THEM 2026-08-14, migration 0023,
     thay `Patient.watch` cu - xem ghi chu tren class Patient). Khac

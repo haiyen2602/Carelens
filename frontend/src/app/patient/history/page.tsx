@@ -17,8 +17,8 @@ import { useAuth } from "@/lib/auth";
 import { gioHienThi, listDoses, listPhotoVerifications, ngayHienThi, type Dose } from "@/lib/doses";
 
 const KHOANG = [
-  { key: "week", label: "7 ngày", days: 7 },
   { key: "today", label: "Hôm nay", days: 1 },
+  { key: "week", label: "7 ngày", days: 7 },
   { key: "month", label: "30 ngày", days: 30 },
 ] as const;
 type KhoangKey = (typeof KHOANG)[number]["key"];
@@ -57,7 +57,7 @@ export default function HistoryPage() {
   const [coAnh, setCoAnh] = useState<Set<string>>(new Set());
   const [dangTai, setDangTai] = useState(true);
   const [dangXem, setDangXem] = useState<Dose | null>(null);
-  const [khoang, setKhoang] = useState<KhoangKey>("week");
+  const [khoang, setKhoang] = useState<KhoangKey>("today");
 
   useEffect(() => {
     if (!patientId) return;

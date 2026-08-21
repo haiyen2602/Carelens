@@ -11,6 +11,8 @@ from backend.api.chat_routes import chat_router
 from backend.api.dose_routes import dose_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
+from backend.api.health_log_routes import health_log_router
+from backend.api.nudge_routes import nudge_router
 from backend.api.patient_routes import patient_router
 from backend.api.photo_routes import photo_router
 from backend.api.prescription_routes import prescription_router
@@ -87,6 +89,8 @@ app.include_router(dose_router, prefix="/api/v1")
 app.include_router(reporting_router, prefix="/api/v1")
 app.include_router(caregiver_router, prefix="/api/v1")
 app.include_router(rag_monitoring_router, prefix="/api/v1")
+app.include_router(nudge_router, prefix="/api/v1")
+app.include_router(health_log_router, prefix="/api/v1")
 
 
 @app.get("/health")

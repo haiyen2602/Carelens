@@ -125,7 +125,7 @@ export default function PatientToday() {
   // "Chua uong" chi hoan giao dien - KHONG doi trang thai lieu that trong
   // DB (ADR-0011: chi bam nut moi tinh la bo qua).
   const [daHoan, setDaHoan] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<"notyet" | "confirm" | null>(null);
+  const [sheet, setSheet] = useState<"notyet" | "confirm" | "huongdan" | null>(null);
   const [dangXuLy, setDangXuLy] = useState(false);
   // Man hinh "Xong rồi!" sau khi anh khop - giu lai gio ghi nhan THAT va
   // ten thuoc cua lieu VUA xac nhan, vi sau khi tai lai `next` da nhay sang
@@ -399,10 +399,7 @@ export default function PatientToday() {
               <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("notyet")}>
                 {hero.secondary}
               </CapySecondaryButton>
-              <CapySecondaryButton
-                disabled={dangGui}
-                onClick={() => router.push("/patient/assistant")}
-              >
+              <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("huongdan")}>
                 Xem hướng dẫn
               </CapySecondaryButton>
             </div>
@@ -537,6 +534,68 @@ export default function PatientToday() {
           <p className="font-mono m-0 mt-3.5 text-center text-[11px] leading-[1.5] text-[#5B6A85]">
             Không có ảnh, người thân sẽ xác nhận giúp trước khi tính là đã uống.
           </p>
+        </CapySheet>
+      )}
+
+      {/* Sheet huong dan chup anh - THAY vi nhay sang /patient/assistant nhu
+          truoc (bug bao cao 2026-08-20: bam "Xem huong dan" tu dung sang
+          chatbot, khong lien quan). Noi dung tinh, khong goi API nao. */}
+      {sheet === "huongdan" && (
+        <CapySheet onClose={() => setSheet(null)}>
+          <p className="font-display m-0 text-[22px] font-extrabold leading-[1.2] text-[#16386E]">
+            Chụp sao cho Capy nhìn rõ nhé
+          </p>
+          <p className="m-0 mt-1.5 text-[13.5px] leading-[1.5] text-[#5B6A85]">
+            Vài mẹo nhỏ để ảnh rõ nét, khỏi phải chụp lại cho mệt.
+          </p>
+          <div className="mt-[18px] flex flex-col gap-2.5">
+            {[
+              {
+                icon: "💡",
+                title: "Chụp nơi đủ sáng",
+                desc: "Bật đèn phòng hoặc ra chỗ sáng, tránh chụp ngược sáng cửa sổ.",
+              },
+              {
+                icon: "🍽️",
+                title: "Đặt thuốc trên nền trơn",
+                desc: "Một cái đĩa hay tờ giấy trắng là đủ, đừng để lẫn vào đồ khác trên bàn.",
+              },
+              {
+                icon: "🔍",
+                title: "Lại gần một chút",
+                desc: "Để thuốc chiếm phần lớn khung hình, sao cho đếm được rõ từng viên.",
+              },
+              {
+                icon: "🤲",
+                title: "Đừng che mất thuốc",
+                desc: "Bỏ tay, hộp thuốc hay vật khác ra khỏi khung hình trước khi chụp.",
+              },
+            ].map((m) => (
+              <div key={m.title} className="flex items-start gap-3 rounded-[18px] bg-[#F4F7FC] p-3.5">
+                <span className="text-[22px] leading-none">{m.icon}</span>
+                <span className="min-w-0">
+                  <span className="font-display block text-[14px] font-bold text-[#16386E]">
+                    {m.title}
+                  </span>
+                  <span className="mt-0.5 block text-[12.5px] leading-[1.45] text-[#5B6A85]">
+                    {m.desc}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-[18px] flex flex-col gap-2.5">
+            <CapyPrimaryButton
+              className="min-h-[54px]"
+              onClick={() => {
+                setSheet(null);
+                setCameraOpen(true);
+              }}
+            >
+              Đã rõ, chụp ảnh thôi
+            </CapyPrimaryButton>
+            <CapySecondaryButton onClick={() => setSheet(null)}>Đóng</CapySecondaryButton>
+          </div>
         </CapySheet>
       )}
 
