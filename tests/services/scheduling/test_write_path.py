@@ -169,6 +169,10 @@ def test_caller_transaction_rolls_back_all_v2_rows(db: Session) -> None:
 def test_legacy_request_remains_valid_without_db4e_fields() -> None:
     item = PrescriptionItemIn.model_validate(
         {
+            # `drug_id` bat buoc tu 2026-08-20 (FB-14) - khong lien quan den
+            # muc dich cua test nay (client cu duoc phep bo qua truong DB-4E),
+            # chi la dieu kien de payload qua duoc validation.
+            "drug_id": "legacy-compatible-medicine",
             "ten_thuoc": "Legacy-compatible medicine",
             "lieu_dung": "1 tablet",
             "gio_nhac": ["08:00"],

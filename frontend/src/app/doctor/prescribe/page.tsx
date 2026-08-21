@@ -62,9 +62,11 @@ const defaultTimes = DEFAULT_TIMES;
 type MedRow = {
   id: string;
   med: string;
-  // Danh tinh that trong danh muc thuoc. Rong khi bac si tu go mot ten khong
-  // co trong danh muc — van ke don duoc, nhung lieu do se khong xac minh duoc
-  // bang anh (khong biet dang bao che), phai xac nhan bang nut bam.
+  // Danh tinh that trong danh muc thuoc. Rong = CHUA chon tu goi y, va don se
+  // khong gui duoc (FB-14: danh muc la allowlist dong, backend tu choi item
+  // khong co drug_id — xem services/prescription/service.py::_chuan_hoa_item).
+  // Go tay vao o ten PHAI xoa drugId, neu khong thi chon Paracetamol roi sua
+  // chu thanh ten khac se gui len drugId cu kem ten moi.
   drugId: string;
   dangThuoc: string;
   dose: string;
@@ -202,7 +204,12 @@ export default function PrescribePage() {
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
+  // FB-14: khong con du "co go chu la duoc". Moi dong PHAI co drugId, tuc la
+  // bac si da chon tu goi y danh muc chu khong phai tu go.
+  const canSubmit =
+    Boolean(patientId) &&
+    meds.every((m) => m.med.trim().length > 0 && Boolean(m.drugId)) &&
+    !dangGui;
 
   const activeMeds = meds.filter((m) => m.med.trim().length > 0);
   const timeline = [
@@ -229,10 +236,12 @@ export default function PrescribePage() {
         patientId,
         note,
         items: meds.map((m) => ({
-          drugId: m.drugId || null,
+          drugId: m.drugId,
           tenThuoc: m.med,
           dangThuoc: m.dangThuoc || null,
-          duongDung: null, // backend tu tra lai tu drugId neu co, xem service.py::_chuan_hoa_item
+          // Backend doc lai ca 4 truong dinh danh tu danh muc theo drugId va bo
+          // qua gia tri gui len - xem service.py::_chuan_hoa_item (FB-14).
+          duongDung: null,
           hamLuong: null,
           lieuDung: m.dose,
           thoiDiemDung: m.meal,
@@ -365,7 +374,11 @@ export default function PrescribePage() {
                     <MedicineCombobox
                       id={`med-${m.id}`}
                       value={m.med}
-                      onChange={(v) => updateMed(m.id, { med: v })}
+                      onChange={(v) =>
+                        // Go tay = huy lua chon cu. Khong xoa drugId o day thi
+                        // ten hien thi va thuoc that su duoc ke se lech nhau.
+                        updateMed(m.id, { med: v, drugId: "", dangThuoc: "" })
+                      }
                       onSelectDrug={(d) =>
                         updateMed(m.id, {
                           med: d.tenThuoc,
@@ -375,7 +388,11 @@ export default function PrescribePage() {
                         })
                       }
                       placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
+                      invalid={m.med.trim().length > 0 && !m.drugId}
                     />
+                    {m.med.trim().length > 0 && !m.drugId && (
+                      <p className="text-sm text-destructive">Chọn thuốc từ danh sách gợi ý.</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`dose-${m.id}`}>Liều dùng</Label>

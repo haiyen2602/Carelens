@@ -97,31 +97,41 @@ def _log_v2_shadow(db: Session, operation: str, prescription: Prescription) -> N
 def _chuan_hoa_item(db: Session, item: dict) -> dict:
     """Một dòng thuốc trong đơn, đã đối chiếu lại với danh mục.
 
-    `drug_id` rỗng (bác sĩ tự gõ một tên không có trong danh mục) vẫn kê được:
-    đơn thuốc vẫn hợp lệ, chỉ là liều đó không xác minh được bằng ảnh vì không
-    biết dạng bào chế — sẽ rơi về nút bấm xác nhận. Chặn hẳn ở đây thì bác sĩ
-    không kê nổi thuốc mới chưa kịp vào danh mục.
+    ĐỔI 2026-08-20 (FB-14): `drug_id` giờ BẮT BUỘC. Trước đây `drug_id` rỗng
+    vẫn kê được để bác sĩ không bị kẹt với thuốc chưa kịp vào danh mục — nhưng
+    ô nhập tên thuốc là text tự do, nên cùng đường đó gõ được cả tên chất gây
+    nghiện vào đơn. Danh mục giờ là allowlist đóng: không có trong `drug` thì
+    không kê được.
+
+    Đường thoát cho thuốc thật sự chưa có trong danh mục KHÔNG nằm ở đây nữa:
+    bác sĩ gửi yêu cầu thêm thuốc cho admin duyệt, duyệt xong mới kê.
+
+    Mọi thuộc tính định danh thuốc (tên, dạng bào chế, đường dùng, hàm lượng)
+    đều đọc từ danh mục, KHÔNG lấy giá trị trình duyệt gửi lên. Trước đây
+    `ten_thuoc` lấy chữ bác sĩ gõ và chỉ rơi về tên danh mục khi bỏ trống, nên
+    chọn một thuốc hợp lệ rồi sửa lại ô tên vẫn ghi được tên bất kỳ xuống đơn
+    — chính là tên mà bệnh nhân nhìn thấy.
     """
     drug_id = str(item.get("drug_id") or "").strip()
-    dang_thuoc = str(item.get("dang_thuoc") or "").strip()
-    duong_dung = str(item.get("duong_dung") or "").strip()
 
-    if drug_id:
-        thuoc = lay_thuoc(db, drug_id)
-        if thuoc is None:
-            raise ViPhamNghiepVuError(f"Không tìm thấy thuốc {drug_id!r} trong danh mục.", drug_id=drug_id)
-        # Danh mục thắng, luôn luôn.
-        dang_thuoc, duong_dung = thuoc.dang_thuoc, thuoc.duong_dung
-        item = {**item, "ten_thuoc": item.get("ten_thuoc") or thuoc.ten_thuoc}
-    elif dang_thuoc:
-        logger.info("Thuốc %r kê tay, không có trong danh mục.", item.get("ten_thuoc", "?"))
+    if not drug_id:
+        raise ViPhamNghiepVuError(
+            f"Thuốc {item.get('ten_thuoc') or '(chưa có tên)'!r} chưa được chọn từ danh mục. "
+            "Vui lòng chọn thuốc từ danh sách gợi ý; nếu thuốc chưa có, hãy gửi yêu cầu bổ sung cho quản trị viên.",
+            ten_thuoc=item.get("ten_thuoc"),
+        )
+
+    thuoc = lay_thuoc(db, drug_id)
+    if thuoc is None:
+        raise ViPhamNghiepVuError(f"Không tìm thấy thuốc {drug_id!r} trong danh mục.", drug_id=drug_id)
 
     return {
         "drug_id": drug_id,
-        "ten_thuoc": str(item.get("ten_thuoc") or "").strip(),
-        "dang_thuoc": dang_thuoc,
-        "duong_dung": duong_dung,
-        "ham_luong": str(item.get("ham_luong") or "").strip() or None,
+        # Danh mục thắng, mọi trường, không có ngoại lệ.
+        "ten_thuoc": thuoc.ten_thuoc,
+        "dang_thuoc": thuoc.dang_thuoc,
+        "duong_dung": thuoc.duong_dung,
+        "ham_luong": thuoc.ham_luong,
         "lieu_dung": str(item.get("lieu_dung") or "").strip(),
         "thoi_diem_dung": str(item.get("thoi_diem_dung") or "").strip(),
         "so_vien_moi_lan": item.get("so_vien_moi_lan"),
