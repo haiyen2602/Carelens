@@ -54,7 +54,8 @@ eval/
 
 # Test + tooling local
 tests/
-scripts/
+scripts/*
+!scripts/safe_migrate.py
 docker-compose.yml
 Makefile
 ruff.toml

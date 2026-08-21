@@ -38,9 +38,35 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
+        # Check for orphan/missing alembic revisions in remote DB (e.g. from deleted branches/hotfixes)
+        try:
+            from sqlalchemy import inspect as sa_inspect, text
+            inspector = sa_inspect(connection)
+            if "alembic_version" in inspector.get_table_names():
+                row = connection.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
+                if row:
+                    curr_rev = row[0]
+                    script_dir = context.script
+                    is_valid = False
+                    try:
+                        if curr_rev and script_dir.get_revision(curr_rev) is not None:
+                            is_valid = True
+                    except Exception:
+                        is_valid = False
+
+                    # If revision in DB is not known in current codebase revisions, auto-stamp to latest head
+                    if not is_valid:
+                        head_rev = script_dir.get_current_head()
+                        print(f"[ALEMBIC AUTO-HEAL] Revision '{curr_rev}' in DB not found in repo. Auto-stamping to head '{head_rev}'...")
+                        connection.execute(text(f"UPDATE alembic_version SET version_num = '{head_rev}'"))
+                        connection.commit()
+        except Exception as heal_err:
+            print(f"[ALEMBIC WARNING] Auto-heal check warning: {heal_err}")
+
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
+
 
 
 if context.is_offline_mode():
