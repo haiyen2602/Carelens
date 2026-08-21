@@ -61,7 +61,22 @@ Luồng vào đúng theo hiện trạng code (xem `backend/api/caregiver_routes.
 2. Người thân tự đăng ký — hiện đăng ký chỉ mở cho role `patient`, chưa có luồng đăng ký riêng cho `caregiver`.
 3. Liên kết "người thân" được tạo bằng **lời mời giữa hai tài khoản người bệnh** (`POST /caregiver-links/invites`), và khi chấp nhận thì tự động tạo cả chiều ngược lại — quan hệ hai chiều, khác với quan hệ bác sĩ↔bệnh nhân vốn một chiều. Admin cũng tạo link được qua `/admin/links`.
 
-Vì vậy thông điệp landing phải trung thực về vai trò của bác sĩ trong luồng, thay vì giấu đi để câu chuyện nghe gọn hơn. `[CẦN CHỐT: CTA chính của landing là gì — "nhận lời mời từ người thân", "mời bác sĩ đang điều trị", hay dẫn thẳng sang đăng ký tài khoản người bệnh?]`
+Vì vậy thông điệp landing phải trung thực về vai trò của bác sĩ trong luồng, thay vì giấu đi để câu chuyện nghe gọn hơn.
+
+**Đã chốt 2026-08-21 — CTA chính là "Đăng ký tài khoản".** Người thân tự đăng ký (hiện là tài khoản
+`patient`), sau đó được liên kết qua lời mời. Kèm hai ràng buộc bắt buộc, không phải tuỳ chọn:
+
+1. **Phải có màn hình rỗng được thiết kế tử tế.** Đăng ký xong mà thấy trang trắng là mất người dùng
+   ngay tại đó — đúng vấn đề FB-20 nêu. Màn hình này cần nói rõ *đang thiếu gì* (chưa có phác đồ từ
+   bác sĩ) và *làm gì tiếp* (mời người thân đã có tài khoản liên kết với mình, hoặc liên hệ bác sĩ
+   đang điều trị).
+2. **Landing phải nói rõ vai trò của bác sĩ** trong phần "cách hoạt động". Giấu đi thì câu chuyện gọn
+   hơn nhưng người dùng vỡ mộng ngay sau khi đăng ký, và đó là kiểu mất niềm tin khó lấy lại — đặc
+   biệt với sản phẩm y tế.
+
+Đã cân nhắc và loại: CTA "mời bác sĩ của gia đình bạn" giải đúng gốc cold-start nhưng luồng đó chưa
+tồn tại trong code, không kịp xây trước 2026-08-29. Nếu sản phẩm đi tiếp sau Demo Day thì đây là
+hướng nên quay lại.
 
 ## 3. Mục tiêu sản phẩm
 
