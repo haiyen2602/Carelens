@@ -100,4 +100,4 @@ app.include_router(health_log_router, prefix="/api/v1")
 async def health():
     return {"status": "ok", "env": settings.app_env}
 
-# Trigger hot reload for new router additions
+# Trigger hot reload for new router additions (reset-password-sync, verify-email-sync)

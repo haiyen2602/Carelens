@@ -112,14 +112,14 @@
 
 ## 1c. "Login with Google" — `POST /api/v1/auth/oauth/google`
 
-**Thêm sau `auth-api` §1 (2026-08-17)** — phát sinh khi làm nút "Đăng nhập bằng Google". Better Auth (chạy trong Next.js, `frontend/src/lib/better-auth.ts`) **chỉ** làm môi giới OAuth; nguồn sự thật về danh tính vẫn là bảng `account` + JWT của backend, nhờ vậy ~40 route còn lại không phải đổi gì. Đề xuất bởi AI, cần Architect/PM review.
+**Cập nhật theo ADR-0013 (2026-08-21)** — Supabase Auth (chạy trong Next.js qua `@supabase/ssr` / `@supabase/supabase-js`) làm môi giới OAuth; nguồn sự thật về danh tính vẫn là bảng `account` + JWT của backend, nhờ vậy ~40 route còn lại không phải đổi gì.
 
 ```json
 // POST /api/v1/auth/oauth/google — request (server-to-server)
 {
   "email": "patient@gmail.com",
   "full_name": "Nguyễn Văn A",
-  "provider_account_id": "1090234...",
+  "provider_account_id": "supabase-user-uuid-or-google-sub",
   "email_verified": true
 }
 ```
@@ -150,6 +150,39 @@ Response: **giống hệt** `POST /auth/change-password` (`ChangePasswordRespons
 - Chỉ nhận tài khoản `auth_provider == "google"`; tài khoản đã có mật khẩu → `400` và **không** ghi gì. Không có ràng buộc này thì một `access_token` bị lộ đổi được mật khẩu mà không cần biết mật khẩu cũ.
 - Điều kiện trên là **cổng chỉ mở được một lần**: thành công sẽ đổi `auth_provider` thành `"password"`, nên lần gọi thứ hai trả `400`, mọi lần đổi sau bắt buộc qua `/auth/change-password`.
 - Google vẫn đăng nhập được sau đó — `/auth/oauth/google` giữ nguyên `auth_provider` của tài khoản đã tồn tại.
+
+### 1c-3. `POST /api/v1/auth/reset-password-sync` (ADR-0013 Supabase Reset Password)
+
+Đồng bộ mật khẩu mới từ Supabase Auth Reset Password flow sang database của hệ thống:
+
+```json
+// POST /api/v1/auth/reset-password-sync — request (server-to-server)
+{
+  "email": "patient@gmail.com",
+  "new_password": "mat-khau-moi-toi-thieu-8-ky-tu",
+  "provider_account_id": "supabase-user-uuid"
+}
+```
+
+Response: **giống hệt** `LoginResponse` (§1).
+- Chặn bằng `X-Internal-Secret`.
+- Cập nhật `password_hash`, `password_changed_at` (thu hồi token cũ) và chuyển `auth_provider` thành `"password"`.
+
+### 1c-4. `POST /api/v1/auth/verify-email-sync` (ADR-0013 Supabase Email Verification)
+
+Xác minh email thành công từ Supabase Auth và kích hoạt tài khoản `is_email_verified = true`:
+
+```json
+// POST /api/v1/auth/verify-email-sync — request (server-to-server)
+{
+  "email": "patient@gmail.com",
+  "provider_account_id": "supabase-user-uuid"
+}
+```
+
+Response: **giống hệt** `LoginResponse` (§1).
+- Chặn bằng `X-Internal-Secret`.
+- Cập nhật `is_email_verified = true` và `supabase_uid`.
 
 ## 2. `prescription-api`
 

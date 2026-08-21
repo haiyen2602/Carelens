@@ -164,9 +164,7 @@ export function CapyShell({ children }: { children: ReactNode }) {
         if (daNhac(khoa)) continue;
         danhDauDaNhac(khoa);
 
-        const tenThuoc = nhomLieu
-          .map((d) => d.expectedItems[0]?.tenThuoc ?? "thuốc")
-          .join(" và ");
+        const tenThuoc = nhomLieu.map((d) => d.expectedItems[0]?.tenThuoc ?? "thuốc").join(" và ");
         const gioHen = gioHienThi(khung);
 
         if (moc === MOC_GOI) {

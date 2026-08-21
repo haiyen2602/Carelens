@@ -995,6 +995,8 @@ class Account(Base):
     # Cot nay la cach DUY NHAT phan biet "chua tung dat mat khau" - thieu no
     # thi luong doi mat khau se doi "mat khau hien tai" cua thu khong ton tai.
     auth_provider: Mapped[str] = mapped_column(String, nullable=False, default="password")
+    # THEM sau (migration 0031, ADR-0013 Supabase Auth migration) - Supabase User UUID (neu co)
+    supabase_uid: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
 
 
 class PendingDrugConfirmation(Base):

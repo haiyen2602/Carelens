@@ -85,12 +85,24 @@ class RegisterRequest(BaseModel):
     email: NormalizedEmail
     password: str = Field(..., min_length=8, max_length=128)
     role: Literal["patient"] = "patient"
+    provider_account_id: str | None = None
 
 
 class VerifyEmailRequest(BaseModel):
     """POST /api/v1/auth/verify-email."""
 
     token: str = Field(..., min_length=1)
+
+
+class VerifyEmailSyncRequest(BaseModel):
+    """POST /api/v1/auth/verify-email-sync (Supabase Auth Email Verification Sync)."""
+
+    email: NormalizedEmail
+    provider_account_id: str | None = None
+    # Cho phep upsert: neu Account chua ton tai (backend register loi/race
+    # condition) thi backend tu tao Account moi voi is_email_verified=True.
+    # Lay tu Supabase user metadata (full_name).
+    full_name: str | None = None
 
 
 class ResendVerificationRequest(BaseModel):
@@ -110,6 +122,14 @@ class ResetPasswordRequest(BaseModel):
 
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class ResetPasswordSyncRequest(BaseModel):
+    """POST /api/v1/auth/reset-password-sync (Supabase Auth Reset Sync)."""
+
+    email: NormalizedEmail
+    new_password: str = Field(..., min_length=8, max_length=128)
+    provider_account_id: str | None = None
 
 
 class ChangePasswordRequest(BaseModel):

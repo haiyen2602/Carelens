@@ -137,7 +137,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="date_of_birth">Ngày sinh</Label>
             <div className="relative">
-              <Cake aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Cake
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Input
                 id="date_of_birth"
                 type="date"
@@ -153,7 +156,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="phone">Số điện thoại</Label>
             <div className="relative">
-              <Phone aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Phone
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Input
                 id="phone"
                 type="tel"
@@ -169,7 +175,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="address">Địa chỉ</Label>
             <div className="relative">
-              <MapPin aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <MapPin
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Textarea
                 id="address"
                 placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
@@ -200,7 +209,10 @@ export default function OnboardingProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="height_cm">Chiều cao (cm)</Label>
               <div className="relative">
-                <Ruler aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Ruler
+                  aria-hidden="true"
+                  className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   id="height_cm"
                   type="number"
@@ -221,7 +233,10 @@ export default function OnboardingProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="weight_kg">Cân nặng (kg)</Label>
               <div className="relative">
-                <Weight aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Weight
+                  aria-hidden="true"
+                  className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   id="weight_kg"
                   type="number"

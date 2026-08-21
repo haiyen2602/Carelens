@@ -47,8 +47,7 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
   // Luong Google that bai SAU khi da roi khoi trang (nguoi dung bam Huy o
-  // Google, sai cau hinh OAuth...) -> Better Auth dua ve day kem ?error=google
-  // (errorCallbackURL trong lib/better-auth-client.ts).
+  // Google, sai cau hinh OAuth...) -> tra ve kem ?error=google
   const googleFailed = searchParams.get("error") === "google";
   const redirectedRef = useRef(false);
 
@@ -258,7 +257,15 @@ function LoginPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <a
+                    href="/auth/forgot-password"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Quên mật khẩu?
+                  </a>
+                </div>
                 <Input
                   id="password"
                   type="password"

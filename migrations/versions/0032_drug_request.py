@@ -8,8 +8,8 @@ Xem ghi chu day du trong backend/db/models.py::DrugRequest (vi sao khong ghi
 thang vao bang `drug`, vi sao `dang_thuoc` NOT NULL, quy uoc `req-` cua
 `approved_drug_id`).
 
-Revision ID: 0031
-Revises: 0030
+Revision ID: 0032
+Revises: 0031
 Create Date: 2026-08-21
 
 """
@@ -17,8 +17,11 @@ Create Date: 2026-08-21
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0031"
-down_revision = "0030"
+# DOI SO 2026-08-21: ban dau la 0031, nhung main da lay so do cho
+# 0031_remove_better_auth_and_add_supabase_uid. Hai file cung revision se
+# lam alembic bao "multiple heads" va khong chay duoc migration nao.
+revision = "0032"
+down_revision = "0031"
 branch_labels = None
 depends_on = None
 
