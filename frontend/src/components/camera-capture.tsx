@@ -94,7 +94,9 @@ export function CameraCapture({
         setSoLuongCamera(danhSachCameraRef.current.length);
       }
       const danhSach = danhSachCameraRef.current;
-      const deviceId = danhSach.length ? danhSach[viTriCamera % danhSach.length]?.deviceId : undefined;
+      const deviceId = danhSach.length
+        ? danhSach[viTriCamera % danhSach.length]?.deviceId
+        : undefined;
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" },

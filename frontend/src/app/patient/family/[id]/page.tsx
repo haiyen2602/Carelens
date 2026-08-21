@@ -204,7 +204,9 @@ export default function MonitoredRelativeDetailPage() {
             <p className="truncate font-bold">{relative.fullName}</p>
             <p className="truncate text-sm text-muted-foreground">
               {relative.relationship}
-              {relative.yearOfBirth ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi` : ""}
+              {relative.yearOfBirth
+                ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi`
+                : ""}
             </p>
           </div>
           {relative.adherencePct !== null && (

@@ -25,8 +25,10 @@ from backend.models.schemas import (
     OAuthLoginRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordSyncRequest,
     SetPasswordRequest,
     UserOut,
+    VerifyEmailSyncRequest,
 )
 from backend.services.auth import (
     TokenError,
@@ -104,8 +106,9 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> LoginRespo
         password_hash=hash_password(body.password),
         role=body.role,
         status="active",
-        is_email_verified=True,
+        is_email_verified=False,
         auth_provider="password",
+        supabase_uid=body.provider_account_id,
     )
 
     if body.role == "patient":
@@ -181,6 +184,7 @@ def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> Logi
             # bat nguoi dung xac thuc lai email lan hai.
             is_email_verified=True,
             auth_provider="google",
+            supabase_uid=body.provider_account_id,
         )
         _provision_patient(db, account, body.full_name)
         db.add(account)
@@ -197,6 +201,10 @@ def oauth_google(body: OAuthLoginRequest, db: Session = Depends(get_db)) -> Logi
         # Cung 403 + cung thong bao nhu /auth/login - nut "khoa tai khoan" cua
         # admin phai chan CA duong Google, neu khong no chi la UI gia.
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản đã bị khoá")
+
+    if not account.supabase_uid and body.provider_account_id:
+        account.supabase_uid = body.provider_account_id
+        thay_doi = True
 
     # Tai khoan cu (truoc migration 0021, khi chua co luong xac thuc email)
     # hoac tao boi admin: Google vua chung minh chu email nay - danh dau da
@@ -340,6 +348,125 @@ def set_password(
     )
 
 
+@auth_router.post(
+    "/auth/reset-password-sync",
+    response_model=LoginResponse,
+    dependencies=[Depends(require_internal_secret)],
+)
+def reset_password_sync(
+    body: ResetPasswordSyncRequest, db: Session = Depends(get_db)
+) -> LoginResponse:
+    """Dong bo mat khau moi tu Supabase Auth Reset Password flow vao Account.
+
+    Server-to-server endpoint (chặn bằng X-Internal-Secret):
+    - Tra cuu Account theo email (chuan hoa).
+    - Cap nhat password_hash bang mat khau moi.
+    - Dat password_changed_at = now (thu hoi moi token JWT cu truoc do).
+    - Cap nhat auth_provider = 'password' (tai khoan co the dang nhap mat khau).
+    - Cap nhat supabase_uid neu duoc cung cap.
+    """
+    account = find_account_by_email(db, body.email)
+    if account is None:
+        # Neu user da xac thuc qua Supabase Auth Reset Link nhung chua co trong DB local,
+        # tu dong khoi tao account role patient de dong bo hoan toan.
+        full_name = body.email.split("@")[0]
+        account = Account(
+            id=str(uuid.uuid4()),
+            email=body.email.strip().lower(),
+            full_name=full_name,
+            role="patient",
+            status="active",
+            is_email_verified=True,
+            auth_provider="password",
+            supabase_uid=body.provider_account_id,
+            password_hash=hash_password(body.new_password),
+            password_changed_at=datetime.now(UTC),
+        )
+        _provision_patient(db, account, full_name)
+        db.add(account)
+    else:
+        if account.status != "active":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tài khoản đã bị khoá",
+            )
+        account.password_hash = hash_password(body.new_password)
+        account.password_changed_at = datetime.now(UTC)
+        account.auth_provider = "password"
+        account.is_email_verified = True
+        if body.provider_account_id and not account.supabase_uid:
+            account.supabase_uid = body.provider_account_id
+
+    db.commit()
+    db.refresh(account)
+
+    return _login_response(account)
+
+
+@auth_router.post(
+    "/auth/verify-email-sync",
+    response_model=LoginResponse,
+    dependencies=[Depends(require_internal_secret)],
+)
+def verify_email_sync(
+    body: VerifyEmailSyncRequest, db: Session = Depends(get_db)
+) -> LoginResponse:
+    """Xac minh email thanh cong tu Supabase Auth va kich hoat tai khoan.
+
+    Server-to-server endpoint (chặn bằng X-Internal-Secret):
+    - Tra cuu Account theo email.
+    - Neu Account chua ton tai (vi backend register bi loi/race condition
+      truoc do), tu dong upsert Account moi voi is_email_verified=True de
+      khong mat dang ky cua nguoi dung.
+    - Dat is_email_verified = True.
+    - Cap nhat supabase_uid neu duoc cung cap.
+    - Cap phat token dang nhap hop le.
+    """
+    account = find_account_by_email(db, body.email)
+
+    # Upsert: neu Account chua ton tai do backend register bi loi truoc do,
+    # tao moi Account voi is_email_verified=True thay vi bao 404.
+    if account is None:
+        # Dung full_name tu Supabase metadata neu co, fallback ve phan truoc @
+        display_name = body.full_name or body.email.split("@")[0]
+        account_id = str(uuid.uuid4())
+        # password_hash KHONG duoc de rong - verify_password se crash voi bcrypt.
+        # Dung hash cua chuoi ngau nhien (cung pattern voi oauth_google) de:
+        # - POST /auth/login bang mat khau KHONG the dang nhap vao tai khoan nay.
+        # - verify_password tra False thay vi nem exception.
+        account = Account(
+            id=account_id,
+            full_name=display_name,
+            email=body.email,
+            password_hash=hash_password(secrets.token_hex(32)),
+            role="patient",
+            status="active",
+            is_email_verified=True,
+            auth_provider="password",
+            supabase_uid=body.provider_account_id,
+        )
+        _provision_patient(db, account, display_name)
+        db.add(account)
+        db.commit()
+        db.refresh(account)
+        return _login_response(account)
+
+    if account.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tài khoản đã bị khoá",
+        )
+
+    account.is_email_verified = True
+    if body.provider_account_id and not account.supabase_uid:
+        account.supabase_uid = body.provider_account_id
+
+    db.commit()
+    db.refresh(account)
+
+    return _login_response(account)
+
+
 @auth_router.post("/auth/login", response_model=LoginResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
     # Khong phan biet chu hoa/thuong (SUA 2026-08-17): nguoi dung go
@@ -357,6 +484,11 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
     # khong ro ri gi them vi nguoi goi da chung minh biet dung credential.
     if account.status != "active":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản đã bị khoá")
+    if not getattr(account, "is_email_verified", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tài khoản chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn.",
+        )
     return _login_response(account)
 
 

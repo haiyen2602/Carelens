@@ -3,15 +3,11 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/better-auth-client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 
-// Nut "Đăng nhập bằng Google" - dung tren trang dang nhap (app/page.tsx) va
-// trang dang ky (app/register/page.tsx). CUNG 1 nut cho ca hai: Google khong
-// phan biet "dang nhap" voi "dang ky" - backend tu tao tai khoan `patient` moi
-// neu email chua ton tai (xem backend/api/auth_routes.py::oauth_google).
-//
-// `signInWithGoogle()` chuyen ca trang sang Google, nen `loading` chi de tranh
-// bam hai lan trong khoang tre truoc khi trinh duyet roi khoi trang nay.
+// Nut "Đăng nhập bằng Google" (Supabase Auth - ADR-0013).
+// Su dung supabase.auth.signInWithOAuth de chuyen huong sang Google.
+// Callback tro ve /auth/google/callback tren client / route handler.
 export function GoogleSignInButton({ label = "Đăng nhập bằng Google" }: { label?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,12 +15,38 @@ export function GoogleSignInButton({ label = "Đăng nhập bằng Google" }: { 
   const click = async () => {
     setError("");
     setLoading(true);
+
+    if (!isSupabaseConfigured) {
+      setError(
+        "Chưa cấu hình Supabase Auth (NEXT_PUBLIC_SUPABASE_URL & NEXT_PUBLIC_SUPABASE_ANON_KEY).",
+      );
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    if (!supabase) {
+      setError("Không khởi tạo được Supabase Client.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await signInWithGoogle();
+      const redirectTo = `${window.location.origin}/auth/google/callback`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (oauthError) {
+        throw oauthError;
+      }
     } catch (err) {
-      // Chi den duoc day khi CHUA roi khoi trang (vd server chua cau hinh
-      // GOOGLE_CLIENT_ID -> Better Auth tra loi ngay). Loi phat sinh SAU khi da
-      // sang Google se ve /?error=google (errorCallbackURL).
       setError(err instanceof Error ? err.message : "Không mở được đăng nhập Google.");
       setLoading(false);
     }

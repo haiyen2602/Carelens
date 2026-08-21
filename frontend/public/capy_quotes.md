@@ -1,6 +1,7 @@
 # Bộ quote CapyMedi
 
 Mỗi mục gồm:
+
 - **Ảnh tương ứng**: mô tả sticker capy
 - **Dòng to**: câu chính để hiển thị nổi bật
 - **Dòng bé**: câu phụ bên dưới

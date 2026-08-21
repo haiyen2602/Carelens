@@ -571,7 +571,10 @@ export default function PatientToday() {
                 desc: "Bỏ tay, hộp thuốc hay vật khác ra khỏi khung hình trước khi chụp.",
               },
             ].map((m) => (
-              <div key={m.title} className="flex items-start gap-3 rounded-[18px] bg-[#F4F7FC] p-3.5">
+              <div
+                key={m.title}
+                className="flex items-start gap-3 rounded-[18px] bg-[#F4F7FC] p-3.5"
+              >
                 <span className="text-[22px] leading-none">{m.icon}</span>
                 <span className="min-w-0">
                   <span className="font-display block text-[14px] font-bold text-[#16386E]">
