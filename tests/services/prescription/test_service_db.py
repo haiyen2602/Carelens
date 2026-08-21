@@ -240,10 +240,10 @@ def test_shadow_mode_writes_resolved_v2_sidecar_and_stops_intent(db, benh_nhan, 
 # nen mot drug_id da qua duoc cua allowlist thi cung luon resolve duoc sang
 # drug_product. Trang thai do gio chi con y nghia voi du lieu cu/backfill.
 #
-# CHUA CO TEST THAY THE. Cho dung cho no la unit test cua
-# services/scheduling/write_path.py::sync_prescription_schedule - goi thang voi
-# mot item khong resolve duoc, khong di qua cua allowlist cua phac do.
-# TODO(FB-14): bo sung test do.
+# TEST THAY THE da co: tests/services/scheduling/test_write_path.py::
+# test_thuoc_khong_phan_giai_duoc_thi_review_required_du_lich_hop_le - goi
+# thang sync_prescription_schedule voi mot item khong resolve duoc, khong di
+# qua cua allowlist cua phac do.
 
 
 
