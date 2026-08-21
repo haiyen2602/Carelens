@@ -266,6 +266,51 @@ async def chat(
     total_duration_ms = (time.monotonic() - t0) * 1000
     _persist_audit_log(db, patient_id, request, final_state, total_duration_ms)
 
+    # Telemetry & Evaluator Recording (docs/langfuse_rag_admin_monitoring_spec.md §1.4, §3, §10, §14)
+    try:
+        from backend.services.evaluators import LLMJudgeEvaluator, SafetyEvaluator
+        from backend.services.telemetry import get_telemetry_service
+
+        telemetry = get_telemetry_service()
+        trace_record = telemetry.create_trace(
+            trace_id=f"trace_{int(time.time()*1000)}_{patient_id[:6]}",
+            name="rag.chat",
+            session_id=f"session_{patient_id}",
+            user_id=patient_id,
+            input_data={"message": request.message, "dose_id": request.dose_id},
+            metadata={"total_duration_ms": total_duration_ms, "intent": final_state.get("intent")},
+        )
+
+        # Map steps to observation hierarchy
+        for step in final_state.get("trace", []):
+            step_name = step.get("step", "unknown_step")
+            obs_type = "generation" if "generation" in step_name else ("retriever" if "retrieval" in step_name or "resolution" in step_name else "span")
+            step_dur = float(step.get("duration_ms") or 0.0)
+            obs = telemetry.start_observation(trace_record, name=f"step.{step_name}", obs_type=obs_type, input_data=step)
+            if step_dur > 0:
+                obs.end_time = obs.start_time + (step_dur / 1000.0)
+            telemetry.end_observation(obs, output_data=step, level="ERROR" if step.get("error") or step.get("redacted") else "DEFAULT")
+
+        # Evaluate safety & quality
+        bot_resp = final_state.get("response", "")
+        dosage_eval = SafetyEvaluator.evaluate_dosage_consistency(request.message, bot_resp)
+        telemetry.record_score(trace_record, dosage_eval.score_name, dosage_eval.value)
+
+        abstention_eval = SafetyEvaluator.evaluate_abstention(bot_resp, no_source_found=bool(final_state.get("no_source_found")))
+        telemetry.record_score(trace_record, abstention_eval.score_name, abstention_eval.value)
+
+        retrieved_texts = [s.get("noi_dung", "") for s in final_state.get("sources", [])]
+        faithfulness = LLMJudgeEvaluator.evaluate_faithfulness(retrieved_texts, bot_resp)
+        telemetry.record_score(trace_record, faithfulness.score_name, faithfulness.value)
+
+        relevance = LLMJudgeEvaluator.evaluate_answer_relevance(request.message, bot_resp)
+        telemetry.record_score(trace_record, relevance.score_name, relevance.value)
+
+        telemetry.finalize_trace(trace_record, output_data={"response": bot_resp}, status="error" if final_state.get("safety_flag") else "success")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Telemetry logging failed: {e}")
+
     # Vong 3, muc 7.1 - luu CA HAI tin nhan (patient + assistant) vao
     # chat_messages CHO LUOT NAY, SAU KHI toan bo run_conversation() (bao
     # gom cua so ngu canh 15 phut, muc 7.2) da chay xong - co y KHONG luu
@@ -279,6 +324,7 @@ async def chat(
     save_chat_message(db, patient_id, "assistant", final_state.get("response", ""))
 
     return _to_response(final_state)
+
 
 
 @chat_router.post("/chat/history", response_model=ChatHistoryResponse)

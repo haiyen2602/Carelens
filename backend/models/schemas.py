@@ -460,17 +460,12 @@ class SourceOut(BaseModel):
     field: str  # field_group (cong_dung|tac_dung_phu|cach_dung|bao_quan)
 
 
-class EscalationAckRequest(BaseModel):
-    """POST /api/v1/escalations/{id}/ack (api-contracts.md §6, vong 2 muc 13).
-    `resolved_by` KHONG co trong contract goc (gia dinh lay tu JWT/role that -
-    api-contracts.md §1) - them tam vao body vi auth-api CHUA duoc xay (cung
-    tinh trang voi `patient_id` trong ConversationChatRequest). TODO: doc tu
-    JWT/session that khi auth-api co."""
-
-    resolved_by: str = Field(..., min_length=1, description="vd 'doctor' hoac 'caregiver' - ai xac nhan da xu ly")
-
-
 class EscalationAckResponse(BaseModel):
+    """POST /api/v1/escalations/{id}/ack (api-contracts.md §6, vong 2 muc
+    13). `resolved_by` truoc day nhan tu request body (TODO tam thoi luc
+    chua co JWT that) - tu 2026-08-20 doc thang tu JWT (current_user) trong
+    backend/api/escalation_routes.py, khong con nhan tu client nua."""
+
     id: str
     status: str
     resolved_at: str
@@ -708,6 +703,46 @@ class PendingInviteOut(BaseModel):
     inviter_name: str
     relationship: str
     created_at: str
+
+
+class NudgeCreateRequest(BaseModel):
+    """POST /api/v1/nudges - nguoi than dang dang nhap gui 1 loi nhac nhe cho
+    `patient_id` ho dang theo doi (accepted). `caregiver_account_id` KHONG
+    nam trong body - lay tu current_user, cung pattern voi
+    CaregiverInviteCreateRequest."""
+
+    patient_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
+
+
+class NudgeOut(BaseModel):
+    """Response cua POST /api/v1/nudges va GET /api/v1/nudges/unseen.
+    `caregiver_name` lay tu Account.full_name qua join, cung ly do voi
+    caregiver_name tren CaregiverLinkForPatientOut."""
+
+    id: str
+    caregiver_account_id: str
+    caregiver_name: str
+    patient_id: str
+    message: str
+    created_at: str
+
+
+class HealthLogCreateRequest(BaseModel):
+    """POST /api/v1/health-log - benh nhan tu ghi nhat ky suc khoe
+    (frontend/src/app/patient/health/page.tsx). `level` khop AlertLevel phia
+    frontend (low|mid|high) - "low" chi luu nhat ky rieng cho benh nhan xem
+    lai (KHONG tao Escalation), "mid"/"high" moi tao Escalation that de
+    nguoi than/bac si thay, xem backend/api/health_log_routes.py."""
+
+    text: str = Field(default="", description="Mo ta trieu chung - co the rong")
+    level: Literal["low", "mid", "high"]
+
+
+class HealthLogCreateResponse(BaseModel):
+    escalation_id: str | None = Field(
+        default=None, description="None neu level=low (khong tao Escalation)"
+    )
 
 
 class OpenEscalationBrief(BaseModel):

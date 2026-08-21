@@ -27,6 +27,7 @@ import {
 } from "@/components/capy/capy-ui";
 import { useAuth } from "@/lib/auth";
 import { listDoses } from "@/lib/doses";
+import { sendNudge } from "@/lib/nudges";
 import { listPatients, type PatientRecord } from "@/lib/patients";
 import {
   acceptCaregiverInvite,
@@ -81,6 +82,7 @@ export default function PatientFamilyPage() {
 
   const [nudgeCho, setNudgeCho] = useState<MonitoredPatient | null>(null);
   const [nudgeChon, setNudgeChon] = useState(0);
+  const [dangGuiNhac, setDangGuiNhac] = useState(false);
 
   const taiLai = async () => {
     if (!user?.id) return;
@@ -146,6 +148,20 @@ export default function PatientFamilyPage() {
       toast.error(err instanceof Error ? err.message : "Không từ chối được lời mời");
     } finally {
       setDangXuLy(null);
+    }
+  };
+
+  const guiNhac = async () => {
+    if (!accessToken || !nudgeCho) return;
+    setDangGuiNhac(true);
+    try {
+      await sendNudge(accessToken, { patientId: nudgeCho.patientId, message: NUDGES[nudgeChon] });
+      toast.success(`Đã gửi lời nhắc tới ${nudgeCho.fullName}`);
+      setNudgeCho(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không gửi được lời nhắc");
+    } finally {
+      setDangGuiNhac(false);
     }
   };
 
@@ -421,12 +437,10 @@ export default function PatientFamilyPage() {
             ))}
             <CapySecondaryButton
               className="min-h-[56px] text-[15px]"
-              onClick={() => {
-                setNudgeCho(null);
-                toast("Gửi lời nhắc chưa nối API — sắp có");
-              }}
+              disabled={dangGuiNhac}
+              onClick={guiNhac}
             >
-              Gửi lời nhắc
+              {dangGuiNhac ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi lời nhắc"}
             </CapySecondaryButton>
           </div>
         </CapySheet>

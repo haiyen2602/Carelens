@@ -14,6 +14,7 @@ import {
   CHIP,
   CapyPrimaryButton,
   CapySecondaryButton,
+  CapySheet,
   SectionLabel,
   PillChip,
   type ChipStyle,
@@ -22,6 +23,7 @@ import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
 import { listPrescriptions } from "@/lib/prescriptions";
+import { reportHealthIssue } from "@/lib/escalations";
 import {
   flattenPrescriptions,
   useProto,
@@ -35,6 +37,13 @@ const CHIP_DON: Record<string, ChipStyle> = {
   approved: { label: "Đang dùng", icon: "●", bg: "#DFF3E9", fg: "#1F6A50" },
   pending: { label: "Chờ duyệt", icon: "‖", bg: "#FDEBC9", fg: "#8A6516" },
 };
+
+// Rieng cho khoi "da hoan thanh" - CHIP_DON tren phan anh trang thai PHE
+// DUYET (bac si duyet/tu choi), khong lien quan con han dung hay khong. 1
+// don da qua het han van co status="approved" (khong tu doi), nen o day
+// PHAI dung 1 chip rieng ghi ro "Da hoan thanh" thay vi tai dung CHIP_DON -
+// tranh hien nham "Dang dung" cho don da het han (bug that 2026-08-20).
+const CHIP_HET_HAN: ChipStyle = { label: "Đã hoàn thành", icon: "✓", bg: "#EDF0F6", fg: "#62708A" };
 
 function trong7Ngay(iso: string): boolean {
   const d = new Date(iso);
@@ -55,6 +64,24 @@ function laHomNay(iso: string): boolean {
   );
 }
 
+// So sanh theo NGAY-THANG cuc bo (khong phai epoch) - cung ly do voi
+// trongKhoang() o history/page.tsx: mot dot thuoc "het han hom qua" khong
+// duoc tinh nham la con han/da het han lech 1 ngay vi gio VN (UTC+7).
+//
+// `endDate` (tinhNgayKetThuc o proto-store.tsx) la moc LOAI TRU (exclusive)
+// - khop dung backend/services/scheduling/generator.py:155
+// (`bat_dau <= ngay < ket_thuc`, KHONG sinh lieu vao dung ngay ket_thuc).
+// Nghia la ngay uong THAT SU cuoi cung la `endDate - 1 ngay`. Dung `<=`
+// (khong phai `<`) - dung "hom nay == endDate" cung phai tinh la da het
+// han, vi lieu that cuoi cung da la hom qua.
+function daHetHan(endDateIso: string): boolean {
+  const d = new Date(`${endDateIso}T00:00:00`);
+  const nay = new Date();
+  const dNgay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const nayNgay = new Date(nay.getFullYear(), nay.getMonth(), nay.getDate()).getTime();
+  return dNgay <= nayNgay;
+}
+
 export default function HealthPage() {
   const { healthLog, reportHealth, setEmergency } = useProto();
   const { user, accessToken } = useAuth();
@@ -70,6 +97,8 @@ export default function HealthPage() {
   const [dangBao, setDangBao] = useState(false);
   const [text, setText] = useState("");
   const [muc, setMuc] = useState<AlertLevel>("low");
+  const [xemDaHoanThanh, setXemDaHoanThanh] = useState(false);
+  const [donDangXem, setDonDangXem] = useState<string | null>(null);
 
   useEffect(() => {
     if (!patientId) return;
@@ -102,12 +131,31 @@ export default function HealthPage() {
     return Math.round((uong / daChot.length) * 100);
   })();
 
+  // Thuoc con han vs da het han (endDate < hom nay) - thuan tinh o frontend,
+  // KHONG dua vao Prescription.status backend (status chi phan anh
+  // draft/approved/rejected - viec duyet, khong lien quan con han hay
+  // khong). Tach de danh sach "dang dung" khong bi don cu don lai theo thoi
+  // gian, day "Nhat ky suc khoe" xuong xa.
+  const dangDung = donThuoc.filter((p) => !daHetHan(p.endDate));
+  const daHoanThanh = donThuoc.filter((p) => daHetHan(p.endDate));
+  const thuocDangXem = donDangXem ? donThuoc.filter((p) => p.orderId === donDangXem) : [];
+
   const guiBaoVanDe = () => {
+    // Nhat ky rieng cua benh nhan (state cuc bo, de tu xem lai) - giu nguyen,
+    // KHONG doi. reportHealthIssue() ben duoi la kenh RIENG tao Escalation
+    // that cho nguoi than/bac si thay (backend/api/health_log_routes.py) -
+    // 2 viec doc lap, loi mang o 1 ben khong duoc chan ben kia.
     reportHealth(text || "Không mô tả chi tiết", muc);
     if (muc === "high") {
       setEmergency(true);
     } else {
       toast(muc === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h");
+    }
+    if (muc !== "low" && accessToken) {
+      // .catch nuot loi co y - nhat ky cuc bo da ghi xong o tren, khong lam
+      // gian doan trai nghiem chi vi 1 loi mang phu.
+      const noiDung = text || "Không mô tả chi tiết";
+      reportHealthIssue(accessToken, { text: noiDung, level: muc }).catch(() => {});
     }
     setDangBao(false);
     setText("");
@@ -149,20 +197,20 @@ export default function HealthPage() {
         </div>
       )}
 
-      {/* Thuoc dang dung */}
+      {/* Thuoc dang dung - benh nhan chi xem, khong co quyen tu them/sua don
+          thuoc (do bac si ke). Bam vao 1 dong de xem chi tiet ca don. */}
       <div>
-        <div className="mb-2.5 flex items-baseline justify-between gap-2">
+        <div className="mb-2.5">
           <SectionLabel>Thuốc đang dùng</SectionLabel>
-          <button
-            onClick={() => toast("Thêm thuốc chưa nối API — sắp có")}
-            className="font-display rounded-full bg-[#EDF0F6] px-3.5 py-[7px] text-[12px] font-bold text-[#1B2A44] transition-colors hover:bg-[#E3E8F1]"
-          >
-            + Thêm thuốc
-          </button>
         </div>
         <div className="flex flex-col gap-2.5">
-          {donThuoc.map((p) => (
-            <div key={p.id} className="rounded-[22px] bg-white p-4">
+          {dangDung.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setDonDangXem(p.orderId)}
+              className="rounded-[22px] bg-white p-4 text-left transition-colors hover:bg-[#F4F7FC]"
+            >
               <div className="flex items-baseline justify-between gap-2.5">
                 <p className="font-display m-0 text-[17px] font-bold text-[#16386E]">{p.med}</p>
                 <PillChip chip={CHIP_DON[p.status] ?? CHIP.upcoming} />
@@ -170,15 +218,84 @@ export default function HealthPage() {
               <p className="m-0 mt-1 text-[13px] text-[#5B6A85]">
                 {p.dose} • {p.perDay} lần/ngày • {p.meal}
               </p>
-            </div>
+            </button>
           ))}
-          {donThuoc.length === 0 && (
+          {dangDung.length === 0 && (
             <div className="rounded-[22px] bg-white p-4 text-[13px] text-[#5B6A85]">
               Chưa có đơn thuốc nào.
             </div>
           )}
         </div>
+
+        {daHoanThanh.length > 0 && (
+          <div className="mt-2.5">
+            <button
+              type="button"
+              onClick={() => setXemDaHoanThanh((v) => !v)}
+              className="font-display flex items-center gap-1.5 text-[12.5px] font-bold text-[#62708A]"
+            >
+              {xemDaHoanThanh ? "Ẩn" : "Xem"} {daHoanThanh.length} đơn đã hoàn thành{" "}
+              <span aria-hidden="true">{xemDaHoanThanh ? "▴" : "▾"}</span>
+            </button>
+            {xemDaHoanThanh && (
+              <div className="mt-2.5 flex flex-col gap-2.5">
+                {daHoanThanh.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setDonDangXem(p.orderId)}
+                    className="rounded-[22px] bg-white p-4 text-left opacity-70 transition-colors hover:bg-[#F4F7FC] hover:opacity-100"
+                  >
+                    <div className="flex items-baseline justify-between gap-2.5">
+                      <p className="font-display m-0 text-[17px] font-bold text-[#16386E]">{p.med}</p>
+                      <PillChip chip={CHIP_HET_HAN} />
+                    </div>
+                    <p className="m-0 mt-1 text-[13px] text-[#5B6A85]">
+                      {p.dose} • {p.perDay} lần/ngày • {p.meal}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {donDangXem && (
+        <CapySheet onClose={() => setDonDangXem(null)}>
+          <p className="font-display m-0 text-[20px] font-extrabold leading-[1.2] text-[#16386E]">
+            Chi tiết đơn thuốc
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <PillChip
+              chip={
+                daHetHan(thuocDangXem[0]?.endDate ?? "")
+                  ? CHIP_HET_HAN
+                  : (CHIP_DON[thuocDangXem[0]?.status ?? ""] ?? CHIP.upcoming)
+              }
+            />
+            <span className="text-[12px] font-semibold text-[#62708A]">
+              {thuocDangXem[0]?.startDate} → {thuocDangXem[0]?.endDate}
+            </span>
+          </div>
+          {thuocDangXem[0]?.note && (
+            <p className="m-0 mt-2 text-[13px] leading-[1.5] text-[#5B6A85]">
+              Ghi chú bác sĩ: {thuocDangXem[0].note}
+            </p>
+          )}
+          <div className="mt-4 flex flex-col gap-2.5">
+            {thuocDangXem.map((p) => (
+              <div key={p.id} className="rounded-[18px] bg-[#F4F7FC] p-3.5">
+                <p className="font-display m-0 text-[15px] font-bold text-[#16386E]">{p.med}</p>
+                <p className="m-0 mt-1 text-[13px] text-[#5B6A85]">{p.dose}</p>
+                <p className="m-0 mt-1 text-[12px] text-[#62708A]">
+                  Giờ nhắc: {p.times.length > 0 ? p.times.join(", ") : "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </CapySheet>
+      )}
 
       {/* Nhat ky suc khoe */}
       <div>

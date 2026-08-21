@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Lock, Plus, Search, Unlock } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,11 +57,24 @@ const emptyForm = {
 
 type AccountGroup = "patients" | "doctors" | "admins";
 
-export default function AccountsPage() {
+function AccountsContent() {
   const queryClient = useQueryClient();
   const { accessToken } = useAuth();
+  const searchParams = useSearchParams();
+  const groupParam = searchParams.get("group");
+  const initialGroup: AccountGroup =
+    groupParam === "doctors" || groupParam === "admins" || groupParam === "patients"
+      ? groupParam
+      : "patients";
+
   const [q, setQ] = useState("");
-  const [activeGroup, setActiveGroup] = useState<AccountGroup>("patients");
+  const [activeGroup, setActiveGroup] = useState<AccountGroup>(initialGroup);
+
+  useEffect(() => {
+    if (groupParam === "doctors" || groupParam === "admins" || groupParam === "patients") {
+      setActiveGroup(groupParam);
+    }
+  }, [groupParam]);
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -152,13 +166,21 @@ export default function AccountsPage() {
     createMutation.mutate();
   };
 
+  const groupNames: Record<AccountGroup, string> = {
+    patients: "Bệnh nhân",
+    doctors: "Bác sĩ",
+    admins: "Admin",
+  };
+
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Quản lý tài khoản</h1>
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">
+            Tài khoản: {groupNames[activeGroup]}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            {groupAccounts.length} tài khoản trong nhóm · bác sĩ, bệnh nhân và quản trị viên.
+            {groupAccounts.length} tài khoản trong nhóm {groupNames[activeGroup].toLowerCase()}.
           </p>
         </div>
         {activeGroup !== "patients" && (
@@ -242,40 +264,6 @@ export default function AccountsPage() {
           </Dialog>
         )}
       </header>
-
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm tài khoản">
-        {(
-          [
-            ["patients", "Bệnh nhân"],
-            ["doctors", "Bác sĩ"],
-            ["admins", "Admin"],
-          ] as const
-        ).map(([group, label]) => (
-          <button
-            key={group}
-            type="button"
-            role="tab"
-            aria-selected={activeGroup === group}
-            onClick={() => setActiveGroup(group)}
-            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${activeGroup === group
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-input bg-card text-muted-foreground hover:bg-muted"
-              }`}
-          >
-            {label} (
-            {group === activeGroup
-              ? groupAccounts.length
-              : accounts.filter((a) =>
-                group === "patients"
-                  ? a.role === "patient" || a.role === "caregiver"
-                  : group === "doctors"
-                    ? a.role === "doctor"
-                    : a.role === "admin",
-              ).length}
-            )
-          </button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[220px] flex-1">
@@ -434,5 +422,20 @@ export default function AccountsPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+export default function AccountsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+          <div className="h-64 w-full animate-pulse rounded-xl bg-muted/40" />
+        </div>
+      }
+    >
+      <AccountsContent />
+    </Suspense>
   );
 }

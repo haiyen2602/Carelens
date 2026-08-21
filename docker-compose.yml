@@ -31,8 +31,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
