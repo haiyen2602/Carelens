@@ -47,6 +47,19 @@ def main():
     print("[PRE-DEPLOY] Running alembic upgrade head...")
     cfg = Config("alembic.ini")
     command.upgrade(cfg, "head")
+    
+    # Extra safety check: ensure column supabase_uid exists on account table
+    try:
+        with engine.begin() as conn:
+            cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='account'")).fetchall()]
+            if "supabase_uid" not in cols:
+                print("[PRE-DEPLOY] Adding missing supabase_uid column to account table...")
+                conn.execute(text("ALTER TABLE account ADD COLUMN IF NOT EXISTS supabase_uid VARCHAR"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_account_supabase_uid ON account (supabase_uid)"))
+                print("[PRE-DEPLOY] supabase_uid column added.")
+    except Exception as e:
+        print(f"[PRE-DEPLOY WARNING] Column safety check: {e}")
+        
     print("[PRE-DEPLOY] Migrations complete successfully.")
 
 
