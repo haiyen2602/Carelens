@@ -20,6 +20,21 @@ class AdminDrugMapping(BaseModel):
     source_manifest_version: str | None = None
 
 
+class DrugSource(StrEnum):
+    """Dong nay den tu dau.
+
+    THEM 2026-08-21 (FB-14). Truoc do man hinh Admin RAG chi co mot nguon nen
+    khong can phan biet. Gio co hai, va tron chung ma khong danh dau thi chu
+    "canonical" mat nghia - nguoi doc khong con biet dong nao thuc su den tu
+    artifact Canonical V2 co provenance (ADR-0012).
+    """
+
+    CANONICAL = "CANONICAL"
+    # Thuoc bac si xin bo sung, admin da duyet (bang `drug_request`). Chua co
+    # trong artifact V2, chua co chunk RAG - xem models.py::DrugRequest.
+    DRUG_REQUEST = "DRUG_REQUEST"
+
+
 class AdminDrugItem(BaseModel):
     id: str
     legacy_drug_id: str | None = None
@@ -31,6 +46,8 @@ class AdminDrugItem(BaseModel):
     ingredients: list[str] = Field(default_factory=list)
     mapping_status: MappingStatus | None = None
     mappings: list[AdminDrugMapping] = Field(default_factory=list)
+    # Mac dinh CANONICAL de client cu (chua doc truong nay) khong doi hanh vi.
+    source: DrugSource = DrugSource.CANONICAL
 
 
 class AdminDrugListResponse(BaseModel):

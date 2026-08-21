@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { DrugRequestDialog } from "@/components/drug-request-dialog";
 import { useAuth } from "@/lib/auth";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
@@ -118,6 +119,9 @@ export default function PrescribePage() {
   // la doi ngay, khong cho toi luc chot phac do.
   const [health, setHealth] = useState({ gender: "", heightCm: "", weightKg: "", note: "" });
   const [dangLuuHealth, setDangLuuHealth] = useState(false);
+  // Ten thuoc dang xin bo sung; null = dialog dong. Giu ten o day thay vi
+  // mot co boolean de dien san chu bac si vua go, khoi phai go lai.
+  const [xinBoSung, setXinBoSung] = useState<string | null>(null);
 
   useEffect(() => {
     listPatients(undefined, accessToken)
@@ -391,7 +395,18 @@ export default function PrescribePage() {
                       invalid={m.med.trim().length > 0 && !m.drugId}
                     />
                     {m.med.trim().length > 0 && !m.drugId && (
-                      <p className="text-sm text-destructive">Chọn thuốc từ danh sách gợi ý.</p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-destructive">Chọn thuốc từ danh sách gợi ý.</p>
+                        {/* Danh muc dong lai (FB-14) nen phai co duong di tiep,
+                            neu khong bac si ket han voi thuoc ngoai danh muc. */}
+                        <button
+                          type="button"
+                          onClick={() => setXinBoSung(m.med.trim())}
+                          className="text-sm font-medium text-primary underline underline-offset-2"
+                        >
+                          Không tìm thấy? Yêu cầu bổ sung thuốc
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -641,6 +656,12 @@ export default function PrescribePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DrugRequestDialog
+        open={xinBoSung !== null}
+        onOpenChange={(open) => setXinBoSung(open ? xinBoSung : null)}
+        tenThuocGoiY={xinBoSung ?? ""}
+      />
     </div>
   );
 }

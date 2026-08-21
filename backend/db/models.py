@@ -128,6 +128,62 @@ class Drug(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
 
+class DrugRequest(Base):
+    """1 yeu cau bo sung thuoc chua co trong danh muc (THEM 2026-08-21,
+    migration 0031). Duong thoat cho FB-14.
+
+    Vi sao can bang nay: tu 2026-08-20 danh muc thuoc la allowlist DONG - bac
+    si khong ke duoc thuoc khong co `drug_id` (xem services/prescription/
+    service.py::_chuan_hoa_item). Khong co duong thoat thi gap thuoc ngoai
+    danh muc la bac si ket han. Day la duong do: bac si gui yeu cau, admin
+    duyet, duyet xong moi ke duoc.
+
+    KHAC bang `drug`: bang do la danh muc goc nap tu artifact Canonical V2.
+    Bang nay la PHAN MO RONG luc chay - them dong vao `drug` khong co tac
+    dung gi vi `lay_thuoc()` mac dinh phan giai qua catalog V2 doc tu file
+    JSONL trong image (v2_agent.py, @lru_cache), khong doc DB.
+
+    `dang_thuoc` NOT NULL du bac si phai go tay: no la dau vao cua
+    photo_verification/dosage_form.py, quyet dinh lieu do co xac minh duoc
+    bang anh hay khong. Cho rong la tao ra mot lop thuoc khong bao gio xac
+    minh duoc - dung thu FB-14 muon dep.
+
+    `approved_drug_id` dang `req-<slug>-<hash6>`, sinh luc duyet. Tien to
+    `req-` de nhin id la biet thuoc den tu duong ngoai le: tien audit, va
+    tien loc ra dung tap can gop nguoc vao artifact V2 sau nay.
+
+    NO KY THUAT CO CHU DICH: nguon su that lau dai van phai la artifact
+    Canonical V2 (ADR-0012). Bang nay la cau tam.
+
+    Thuoc duyet qua day KHONG co trong `drug_chunks` nen chatbot khong tra
+    loi duoc ve no - viec sinh chunk + embedding thuoc mang RAG, tach thanh
+    task rieng, khong chan luong ke don."""
+
+    __tablename__ = "drug_request"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    requested_by_doctor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+
+    ten_thuoc: Mapped[str] = mapped_column(String, nullable=False)
+    dang_thuoc: Mapped[str] = mapped_column(String, nullable=False)
+    duong_dung: Mapped[str] = mapped_column(String, nullable=False)
+    ham_luong: Mapped[str | None] = mapped_column(String, nullable=True)
+    tong_so_luong: Mapped[str | None] = mapped_column(String, nullable=True)
+    ly_do: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # PENDING | APPROVED | REJECTED
+    status: Mapped[str] = mapped_column(String, nullable=False, default="PENDING", index=True)
+    reviewed_by_account_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approved_drug_id: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
+    )
+
+
 class AuditLog(Base):
     """1 dong = 1 AuditLogDTO (1 luot xu ly 1 utterance cua benh nhan).
     APPEND-ONLY (BR-7.5) - khong duoc UPDATE/DELETE tu code ung dung."""
