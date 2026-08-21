@@ -94,10 +94,10 @@ export function MobileLogin({
       </form>
 
       <a
-        href="/register"
+        href="/auth/forgot-password"
         className="mt-7 text-center text-base font-semibold text-primary hover:underline"
       >
-        Quên mật khẩu
+        Quên mật khẩu?
       </a>
 
       <p className="mt-8 text-center text-base text-foreground">

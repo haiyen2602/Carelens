@@ -30,6 +30,7 @@ Ràng buộc đặc thù:
 | FE bác sĩ | **Next.js / React** (web desktop) | Màn hình nhiều dữ liệu, dùng trên máy tính |
 | FE bệnh nhân | **Mobile PWA** | Cài nhanh, không qua app store, đủ cho chụp ảnh + chat |
 | FE người thân | **Mobile** | Duyệt ảnh + xử lý cảnh báo |
+| Auth IdP / OAuth | **Supabase Auth** | Xem [ADR-0013](./0013-supabase-auth-migration.md) (thay thế Better Auth) |
 | Lint / Test | **ruff** + **pytest** | Đã chạy trong CI từ 2026-07-26 |
 | Đóng gói / CI-CD | **Docker** + **GitHub Actions** | CI chạy ruff + pytest mọi push/PR vào `main` |
 

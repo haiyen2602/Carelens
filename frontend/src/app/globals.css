@@ -114,7 +114,6 @@
   --shadow-phone: 0 24px 60px oklch(0.3 0.06 258 / 0.22);
 }
 
-
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);

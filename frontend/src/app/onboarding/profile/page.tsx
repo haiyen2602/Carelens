@@ -6,6 +6,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Cake, MapPin, Phone, Ruler, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  CAN_NANG_KG,
+  CHIEU_CAO_CM,
+  kiemTraCanNang,
+  kiemTraChieuCao,
+} from "@/lib/body-metrics";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -35,6 +41,9 @@ export default function OnboardingProfilePage() {
   const [weightKg, setWeightKg] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Kiem tra tai cho: nguoi dung biet ngay thay vi bam Luu roi moi nhan 422.
+  const chieuCao = kiemTraChieuCao(heightCm);
+  const canNang = kiemTraCanNang(weightKg);
 
   useEffect(() => {
     if (loading) return;
@@ -51,6 +60,12 @@ export default function OnboardingProfilePage() {
     e.preventDefault();
     if (!dateOfBirth || !phone.trim() || !address.trim() || !gender) {
       setError("Vui lòng nhập đầy đủ thông tin bắt buộc.");
+      return;
+    }
+    // Chan o day nua chu khong chi dua vao min/max cua <input>: nguoi dung go
+    // roi bam Enter co the bo qua validation cua trinh duyet o mot so trinh duyet.
+    if (chieuCao.loi || canNang.loi) {
+      setError(chieuCao.loi ?? canNang.loi ?? "");
       return;
     }
 
@@ -122,7 +137,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="date_of_birth">Ngày sinh</Label>
             <div className="relative">
-              <Cake aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Cake
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Input
                 id="date_of_birth"
                 type="date"
@@ -138,7 +156,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="phone">Số điện thoại</Label>
             <div className="relative">
-              <Phone aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Phone
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Input
                 id="phone"
                 type="tel"
@@ -154,7 +175,10 @@ export default function OnboardingProfilePage() {
           <div className="space-y-2">
             <Label htmlFor="address">Địa chỉ</Label>
             <div className="relative">
-              <MapPin aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <MapPin
+                aria-hidden="true"
+                className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+              />
               <Textarea
                 id="address"
                 placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
@@ -185,34 +209,50 @@ export default function OnboardingProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="height_cm">Chiều cao (cm)</Label>
               <div className="relative">
-                <Ruler aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Ruler
+                  aria-hidden="true"
+                  className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   id="height_cm"
                   type="number"
-                  min={0}
-                  max={300}
+                  min={CHIEU_CAO_CM.min}
+                  max={CHIEU_CAO_CM.max}
+                  aria-invalid={chieuCao.loi !== null || undefined}
                   placeholder="170"
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
                   className="pl-9"
                 />
               </div>
+              {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
+              {chieuCao.canhBao && (
+                <p className="text-sm text-muted-foreground">{chieuCao.canhBao}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="weight_kg">Cân nặng (kg)</Label>
               <div className="relative">
-                <Weight aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Weight
+                  aria-hidden="true"
+                  className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   id="weight_kg"
                   type="number"
-                  min={0}
-                  max={500}
+                  min={CAN_NANG_KG.min}
+                  max={CAN_NANG_KG.max}
+                  aria-invalid={canNang.loi !== null || undefined}
                   placeholder="60"
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}
                   className="pl-9"
                 />
               </div>
+              {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}
+              {canNang.canhBao && (
+                <p className="text-sm text-muted-foreground">{canNang.canhBao}</p>
+              )}
             </div>
           </div>
 

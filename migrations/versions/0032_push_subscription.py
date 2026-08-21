@@ -3,8 +3,16 @@ thuoc (THEM 2026-08-20). Xem ghi chu day du trong backend/db/models.py::
 PushSubscription / PushReminderSent (vi sao endpoint UNIQUE, vi sao khoa
 duy nhat cua push_reminder_sent la khung gio chu khong phai dose_event_id).
 
-Revision ID: 0031
-Revises: 0030
+LUU Y ve revision chain (doi so 0031 -> 0032, 2026-08-22): ban dau file nay
+la "0031" vi luc viet head la 0030. Trong luc do main merge
+0031_remove_better_auth_and_add_supabase_uid.py CUNG lay so 0031 -> 2 file
+trung revision id, alembic bao "Revision 0031 is present more than once" va
+gay 2 head, hong ca chuoi migration. File Supabase DA len main (co the da
+chay tren production) nen GIU nguyen so; file NAY doi thanh "0032", xep sau
+no. Cung cach xu ly da lam o 0017_patient_watch.py/0018_caregiver_link.py.
+
+Revision ID: 0032
+Revises: 0031
 Create Date: 2026-08-20
 
 """
@@ -12,8 +20,8 @@ Create Date: 2026-08-20
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0031"
-down_revision = "0030"
+revision = "0032"
+down_revision = "0031"
 branch_labels = None
 depends_on = None
 

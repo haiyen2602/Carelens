@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, BeforeValidator, EmailStr, Field
 
 from backend.services.email_identity import normalize_email
 
@@ -17,6 +17,52 @@ from backend.services.email_identity import normalize_email
 # `BeforeValidator` chay TRUOC EmailStr nen " MCK@Gmail.com " vua duoc lam sach
 # vua van bi kiem tra dinh dang email.
 NormalizedEmail = Annotated[EmailStr, BeforeValidator(normalize_email)]
+
+# THEM 2026-08-21 (FB-08, FB-09): chan gia tri phi thuc te o chi so co the.
+#
+# Truoc day chi co `min`/`max` tren the <input> HTML, ma HTML bo qua duoc bang
+# DevTools hoac curl - reviewer nhap chieu cao 18 cm van luu duoc.
+#
+# Day la chan CUNG: chi tu choi nhung gi KHONG THE la con nguoi. Muc dich la
+# bat LOI NHAP LIEU (nham don vi "1.7" thay vi "170", thieu chu so "170"->"17",
+# nham pound sang kg), khong phai ap dat chinh sach y khoa.
+#
+# Vi sao khong chon khoang hep hon nhu 140-200 (nguoi lon): product-vision.md
+# khong gioi han app cho nguoi lon, chan cung o 140 nghia la khong ai dang ky
+# duoc cho mot dua tre - hong am tham va kho chan doan hon nhieu so voi viec
+# bo lot mot gia tri la. Khoang hep do thuoc tang canh bao mem o frontend.
+#
+#   40 cm  : thap hon moi tre so sinh du thang (45-55 cm) nen khong chan oan
+#            nguoi that, dong thoi bat tron 18 / 17 / 1.7
+#   250 cm : nguoi cao nhat tung ghi nhan la 272 cm, dung mot nguoi trong lich su
+#   2 kg   : bao duoc tre so sinh du thang; tre sinh non duoi 1 kg nam long ap
+#            trong benh vien, khong phai doi tuong cua app nhac uong thuoc
+#   400 kg : cao hon moi benh nhan thuc te
+CHIEU_CAO_CM_MIN, CHIEU_CAO_CM_MAX = 40.0, 250.0
+CAN_NANG_KG_MIN, CAN_NANG_KG_MAX = 2.0, 400.0
+TUOI_TOI_DA = 120
+
+ChieuCaoCm = Annotated[float, Field(ge=CHIEU_CAO_CM_MIN, le=CHIEU_CAO_CM_MAX)]
+CanNangKg = Annotated[float, Field(ge=CAN_NANG_KG_MIN, le=CAN_NANG_KG_MAX)]
+
+
+def _kiem_ngay_sinh(gia_tri: date | None) -> date | None:
+    """Ngay sinh phai o qua khu va trong vong TUOI_TOI_DA nam.
+
+    Dung chung cho moi duong ghi ngay sinh - dat o schema chu khong o route de
+    khong route nao phai tu nho goi lai.
+    """
+    if gia_tri is None:
+        return gia_tri
+    hom_nay = date.today()
+    if gia_tri > hom_nay:
+        raise ValueError("Ngày sinh không thể ở tương lai.")
+    if gia_tri.year < hom_nay.year - TUOI_TOI_DA:
+        raise ValueError(f"Ngày sinh không hợp lệ - vượt quá {TUOI_TOI_DA} tuổi.")
+    return gia_tri
+
+
+NgaySinh = Annotated[date, AfterValidator(_kiem_ngay_sinh)]
 
 
 class LoginRequest(BaseModel):
@@ -39,12 +85,24 @@ class RegisterRequest(BaseModel):
     email: NormalizedEmail
     password: str = Field(..., min_length=8, max_length=128)
     role: Literal["patient"] = "patient"
+    provider_account_id: str | None = None
 
 
 class VerifyEmailRequest(BaseModel):
     """POST /api/v1/auth/verify-email."""
 
     token: str = Field(..., min_length=1)
+
+
+class VerifyEmailSyncRequest(BaseModel):
+    """POST /api/v1/auth/verify-email-sync (Supabase Auth Email Verification Sync)."""
+
+    email: NormalizedEmail
+    provider_account_id: str | None = None
+    # Cho phep upsert: neu Account chua ton tai (backend register loi/race
+    # condition) thi backend tu tao Account moi voi is_email_verified=True.
+    # Lay tu Supabase user metadata (full_name).
+    full_name: str | None = None
 
 
 class ResendVerificationRequest(BaseModel):
@@ -64,6 +122,14 @@ class ResetPasswordRequest(BaseModel):
 
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8, max_length=128)
+
+
+class ResetPasswordSyncRequest(BaseModel):
+    """POST /api/v1/auth/reset-password-sync (Supabase Auth Reset Sync)."""
+
+    email: NormalizedEmail
+    new_password: str = Field(..., min_length=8, max_length=128)
+    provider_account_id: str | None = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -574,8 +640,8 @@ class PatientHealthUpdateRequest(BaseModel):
 
     note: str | None = None
     gender: str | None = None
-    height_cm: float | None = None
-    weight_kg: float | None = None
+    height_cm: ChieuCaoCm | None = None
+    weight_kg: CanNangKg | None = None
 
 
 class PatientProfileUpdateRequest(BaseModel):
@@ -585,12 +651,12 @@ class PatientProfileUpdateRequest(BaseModel):
     frontend yeu cau nhap du date_of_birth/phone/address/gender truoc khi
     goi, de lan goi dau tien la lan danh dau profile_completed=True."""
 
-    date_of_birth: date | None = None
+    date_of_birth: NgaySinh | None = None
     phone: str | None = Field(default=None, max_length=20)
     address: str | None = Field(default=None, max_length=255)
     gender: str | None = None
-    height_cm: float | None = None
-    weight_kg: float | None = None
+    height_cm: ChieuCaoCm | None = None
+    weight_kg: CanNangKg | None = None
 
 
 class PatientProfileOut(BaseModel):
