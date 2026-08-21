@@ -16,6 +16,7 @@ from backend.api.nudge_routes import nudge_router
 from backend.api.patient_routes import patient_router
 from backend.api.photo_routes import photo_router
 from backend.api.prescription_routes import prescription_router
+from backend.api.push_routes import push_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.routes import router
 from backend.config import get_settings
@@ -89,6 +90,7 @@ app.include_router(reporting_router, prefix="/api/v1")
 app.include_router(caregiver_router, prefix="/api/v1")
 app.include_router(nudge_router, prefix="/api/v1")
 app.include_router(health_log_router, prefix="/api/v1")
+app.include_router(push_router, prefix="/api/v1")
 
 
 @app.get("/health")

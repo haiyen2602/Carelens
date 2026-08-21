@@ -1036,6 +1036,57 @@ class Nudge(Base):
     seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class PushSubscription(Base):
+    """1 thiet bi da dong y nhan Web Push cua 1 benh nhan (THEM 2026-08-20,
+    migration 0031). Nho co bang nay, backend gui duoc thong bao toi may benh
+    nhan NGAY CA KHI ho da dong han tab/trinh duyet - dieu ma co che poll o
+    client (frontend/src/components/capy/capy-shell.tsx) khong lam duoc.
+
+    `endpoint` la URL rieng do dich vu day cua chinh trinh duyet cap (FCM cho
+    Chrome, Mozilla autopush cho Firefox, Apple Push cho Safari) - dat UNIQUE
+    vi no chinh la danh tinh cua 1 thiet bi: subscribe lai tu cung may phai
+    UPSERT dong cu, khong de sinh ra 2 dong roi ban trung 2 lan.
+
+    `p256dh`/`auth` la 2 khoa trinh duyet cap de MA HOA payload - khong co
+    chung thi dich vu day chi chuyen duoc goi tin rong.
+
+    `patient_id` la string tu do, KHONG dat FK that - cung ly do da giai
+    thich o CaregiverLink/Nudge o tren."""
+
+    __tablename__ = "push_subscription"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    p256dh: Mapped[str] = mapped_column(String, nullable=False)
+    auth: Mapped[str] = mapped_column(String, nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class PushReminderSent(Base):
+    """Da day push cho (benh nhan, khung gio, moc) nao roi - ban ghi PHIA
+    SERVER tuong duong localStorage cua client (frontend/src/lib/
+    dose-reminder-log.ts), nhung dung chung cho MOI thiet bi cua benh nhan
+    nen khong bi day trung khi ho dang nhap tren 2 may.
+
+    Khoa duy nhat la (patient_id, slot_at, moc) - `slot_at` la KHUNG GIO chu
+    khong phai dose_event_id: nhieu thuoc cung hen 1 gio la nhieu dong
+    DoseEvent rieng nhung chi dang 1 lan nhac (xem dose_push_reminder.py)."""
+
+    __tablename__ = "push_reminder_sent"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    slot_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    moc: Mapped[int] = mapped_column(Integer, nullable=False)  # 0 | 15 | 30 (phut ke tu gio hen)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("patient_id", "slot_at", "moc", name="uq_push_reminder_sent_slot"),
+    )
+
+
 class DoctorWatch(Base):
     """1 bac si dang "theo doi" 1 benh nhan (THEM 2026-08-14, migration 0023,
     thay `Patient.watch` cu - xem ghi chu tren class Patient). Khac

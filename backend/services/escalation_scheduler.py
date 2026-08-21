@@ -22,6 +22,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from backend.config import get_settings
 from backend.db.base import SessionLocal, engine
 from backend.services.classification import summarize_hourly_conversation
+from backend.services.dose_push_reminder import quet_va_day_nhac
 from backend.services.escalation_reminder import check_and_send_reminders
 from backend.services.hourly_conversation_summary import create_completed_hour_summaries
 from backend.services.photo_cleanup import xoa_anh_het_han
@@ -69,6 +70,24 @@ async def _run_photo_cleanup() -> None:
         db.close()
 
 
+async def _run_dose_push_reminder() -> None:
+    """Quet lieu toi gio roi day Web Push (backend/services/dose_push_reminder.py).
+
+    Dat chung _scheduler co san thay vi tao scheduler thu 2 - de thua huong
+    luon SQLAlchemyJobStore: nhieu worker/replica thi APScheduler tu khoa,
+    chi 1 noi thuc su chay job, khong day trung nhieu lan (dung ly do da ghi
+    trong docstring module nay)."""
+    db = SessionLocal()
+    try:
+        da_nhac = quet_va_day_nhac(db)
+        if da_nhac:
+            logger.info("Da day push nhac gio uong thuoc cho %d khung gio", da_nhac)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        logger.exception("Loi khi chay dose push reminder job")
+    finally:
+        db.close()
+
+
 def start_escalation_scheduler() -> AsyncIOScheduler:
     """Goi trong FastAPI lifespan (src/main.py) luc app khoi dong. Idempotent
     - goi nhieu lan chi tao scheduler 1 lan (vd test import lai module)."""
@@ -92,6 +111,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         "cron",
         minute=0,
         id="hourly_conversation_summary",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_dose_push_reminder,
+        "interval",
+        seconds=60,
+        id="dose_push_reminder",
         replace_existing=True,
         max_instances=1,
     )

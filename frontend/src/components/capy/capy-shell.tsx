@@ -31,6 +31,7 @@ import {
   type NotificationPermissionState,
 } from "@/lib/notifications";
 import { useProto } from "@/lib/proto-store";
+import { hasPushSubscription, subscribeToPush } from "@/lib/push";
 
 // Khoang cach giua 2 lan poll GET /nudges/unseen (backend/api/nudge_routes.py)
 // - repo chua co ha tang realtime (WebSocket/SSE), 8s la do tre chap nhan
@@ -81,11 +82,15 @@ export function CapyShell({ children }: { children: ReactNode }) {
   const [bannerQueue, setBannerQueue] = useState<Banner[]>([]);
   const [cuocGoi, setCuocGoi] = useState<CuocGoi | null>(null);
   const [notifPerm, setNotifPerm] = useState<NotificationPermissionState>("default");
+  // Da dang ky Web Push tren may nay chua - quyet dinh CO tu ban
+  // Notification he thong o day hay khong (xem effect ban thong bao ben duoi).
+  const [daDangKyPush, setDaDangKyPush] = useState(false);
   const activeBanner = bannerQueue[0] ?? null;
 
   useEffect(() => {
     const current = getNotificationPermission();
     setNotifPerm(current);
+    hasPushSubscription().then(setDaDangKyPush);
     // SUA 2026-08-20: BO tu dong xin quyen luc mount (thu truoc do) - Chrome/
     // Edge coi request KHONG xuat phat truc tiep tu 1 cu click cua nguoi
     // dung la dau hieu spam, am tham chuyen sang "quiet UI" (chi hien 1 icon
@@ -164,9 +169,7 @@ export function CapyShell({ children }: { children: ReactNode }) {
         if (daNhac(khoa)) continue;
         danhDauDaNhac(khoa);
 
-        const tenThuoc = nhomLieu
-          .map((d) => d.expectedItems[0]?.tenThuoc ?? "thuốc")
-          .join(" và ");
+        const tenThuoc = nhomLieu.map((d) => d.expectedItems[0]?.tenThuoc ?? "thuốc").join(" và ");
         const gioHen = gioHienThi(khung);
 
         if (moc === MOC_GOI) {
@@ -212,7 +215,11 @@ export function CapyShell({ children }: { children: ReactNode }) {
     // theo tieng cua chinh he dieu hanh) - phat THEM tieng trong app se
     // thanh bao 2 lan cho 1 lan nhac. Chi phat tieng trong app khi CHUA co
     // quyen (patient chua bat/tu choi) - do la kenh am thanh duy nhat ho co.
-    if (getNotificationPermission() === "granted") {
+    // Da dang ky Web Push thi SERVER lo phan thong bao he thong (Service
+    // Worker tu hien, ke ca khi tab dong) - tu ban them o day se thanh 2
+    // thong bao cho 1 lieu. Phan vai: push lo thong bao he thong, trang lo
+    // UI trong app (banner + tieng). Xem backend/services/dose_push_reminder.py.
+    if (!daDangKyPush && getNotificationPermission() === "granted") {
       showBrowserNotification("CapyMedi", `${activeBanner.callerName}: ${activeBanner.message}`);
     } else if (activeBanner.source === "dose") {
       playDoseAlarmShort();
@@ -220,7 +227,7 @@ export function CapyShell({ children }: { children: ReactNode }) {
       playNudgeSound();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeBanner?.id]);
+  }, [activeBanner?.id, daDangKyPush]);
 
   const doLogout = async () => {
     setSheetOpen(false);
@@ -326,8 +333,18 @@ export function CapyShell({ children }: { children: ReactNode }) {
                   }
                   const result = await requestNotificationPermission();
                   setNotifPerm(result);
-                  if (result === "granted") toast.success("Đã bật thông báo");
-                  else if (result === "denied") toast("Bạn đã từ chối nhận thông báo");
+                  if (result === "granted") {
+                    // Dang ky luon Web Push trong cung 1 cu bam - de nguoi
+                    // dung nhan duoc nhac uong thuoc ke ca khi da dong app.
+                    // That bai (trinh duyet khong ho tro/server chua cau hinh
+                    // VAPID) thi im lang bo qua: thong bao khi app dang mo
+                    // van chay, khong bao loi ve thu ho khong doi hoi.
+                    const daPush = accessToken ? await subscribeToPush(accessToken) : false;
+                    setDaDangKyPush(daPush);
+                    toast.success(
+                      daPush ? "Đã bật thông báo — kể cả khi bạn đóng app" : "Đã bật thông báo",
+                    );
+                  } else if (result === "denied") toast("Bạn đã từ chối nhận thông báo");
                 }}
                 className="flex min-h-[54px] items-center gap-3 rounded-[18px] bg-[#F4F7FC] px-4 text-[14.5px] font-semibold text-[#1B2A44] transition-colors hover:bg-[#EDF0F6]"
               >

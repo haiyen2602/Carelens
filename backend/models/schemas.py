@@ -742,6 +742,27 @@ class HealthLogCreateResponse(BaseModel):
     )
 
 
+class PushSubscribeKeys(BaseModel):
+    """2 khoa trinh duyet cap de MA HOA payload push - khong co chung thi
+    dich vu day chi chuyen duoc goi tin rong."""
+
+    p256dh: str = Field(..., min_length=1)
+    auth: str = Field(..., min_length=1)
+
+
+class PushSubscribeRequest(BaseModel):
+    """POST /api/v1/push/subscribe - shape khop nguyen ven doi tuong
+    PushSubscription.toJSON() cua trinh duyet, de frontend gui thang khong
+    phai nan lai. `patient_id` KHONG nam trong body - lay tu JWT."""
+
+    endpoint: str = Field(..., min_length=1)
+    keys: PushSubscribeKeys
+
+
+class PushVapidKeyResponse(BaseModel):
+    public_key: str = Field(default="", description="Rong = chua cau hinh VAPID, push tat")
+
+
 class OpenEscalationBrief(BaseModel):
     """1 escalation OPEN rut gon, dung trong CaregiverMonitoredPatientOut ben
     duoi - man hinh caregiver chi can biet co canh bao gi dang mo, khong can

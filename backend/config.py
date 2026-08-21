@@ -233,6 +233,23 @@ class Settings(BaseSettings):
             )
         return v
 
+    # Web Push (VAPID) - nhac gio uong thuoc toi duoc benh nhan ngay CA KHI
+    # da dong han tab/trinh duyet, thu ma co che poll o client khong lam duoc
+    # (xem backend/services/dose_push_reminder.py). Sinh 1 lan bang `vapid --gen`
+    # hoac py_vapid - la chuan mo, KHONG can dang ky dich vu ben thu 3 nao.
+    #
+    # CO Y de default RONG va KHONG fail-closed, khac han internal_auth_secret/
+    # jwt_secret o tren: thieu 2 secret kia la LO HONG BAO MAT (phai chan app
+    # khoi dong), con thieu VAPID chi la KHONG CO TINH NANG push - app van
+    # chay dung, nhac o client van hoat dong. Bat buoc cau hinh se lam vo moi
+    # truong local cua ca nhom chi vi 1 tinh nang phu.
+    vapid_public_key: str = Field(default="", description="Khoa cong khai VAPID (base64url). Rong = tat push.")
+    vapid_private_key: str = Field(default="", description="Khoa rieng VAPID (base64url) - KHONG commit.")
+    vapid_subject: str = Field(
+        default="mailto:capymedi@example.com",
+        description="Lien he chu so huu theo chuan VAPID - mailto: hoac https:",
+    )
+
     # Rate limiter (vong 2, chatbot-rag-design.md muc 12.4) - theo patient_id,
     # KHONG theo IP (nhieu benh nhan co the chung mang nha/benh vien). [CAN
     # CHOT - thuc nghiem] 2 gia tri duoi la PLACEHOLDER dua tren co so chi phi
