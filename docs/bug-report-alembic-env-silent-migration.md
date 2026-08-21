@@ -71,8 +71,28 @@ Em không tự sửa phần này vì nó là đảo một quyết định thiế
 
 Ngoài ra `f"UPDATE alembic_version SET version_num = '{head_rev}'"` đang nội suy chuỗi vào SQL. `head_rev` lấy từ chính repo nên không phải lỗ hổng thực tế, nhưng nên đổi sang tham số ràng buộc.
 
+## Đã xác nhận trên PRODUCTION (2026-08-21)
+
+Chạy qua `railway ssh` trên môi trường production:
+
+```
+alembic_version : 0029
+bang nudge        : None
+bang health_log   : None
+bang drug_request : None
+```
+
+**Production đang ở revision `0029`, trong khi `main` đã ở `0030`.** Migration `0030_nudge` chưa
+bao giờ được áp dụng dù các lần deploy đều báo thành công.
+
+Hệ quả đang xảy ra: tính năng nudge (nhắc nhẹ từ người thân) đã merge vào `main` và đã deploy,
+nhưng **bảng `nudge` không tồn tại trên production** — mọi request tới nó sẽ lỗi. Bảng
+`health_log` cũng không có.
+
+Đây không còn là rủi ro lý thuyết nữa.
+
 ## Việc cần làm trước lần deploy tới
 
 1. Sửa phần transaction (A hoặc B).
-2. Sau khi deploy, **kiểm tra lại `alembic_version` trên production** — có thể đang tụt lại nhiều revision mà không ai biết. Đối chiếu với migration cao nhất trong repo.
+2. Sau khi sửa, **chạy lại migration trên production** để đưa từ `0029` lên head. Kiểm tra `nudge` và `health_log` đã được tạo.
 3. Quyết định về logic auto-heal.
