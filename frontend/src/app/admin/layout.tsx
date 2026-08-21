@@ -104,9 +104,24 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
           label: "Quản lý tài khoản",
           icon: Users2,
           children: [
-            { to: "/admin/accounts?group=patients", label: "Bệnh nhân", groupParam: "patients", icon: Users },
-            { to: "/admin/accounts?group=doctors", label: "Bác sĩ", groupParam: "doctors", icon: UserCheck },
-            { to: "/admin/accounts?group=admins", label: "Admin", groupParam: "admins", icon: UserCog },
+            {
+              to: "/admin/accounts?group=patients",
+              label: "Bệnh nhân",
+              groupParam: "patients",
+              icon: Users,
+            },
+            {
+              to: "/admin/accounts?group=doctors",
+              label: "Bác sĩ",
+              groupParam: "doctors",
+              icon: UserCheck,
+            },
+            {
+              to: "/admin/accounts?group=admins",
+              label: "Admin",
+              groupParam: "admins",
+              icon: UserCog,
+            },
           ],
         },
         { to: "/admin/links", label: "Liên kết bệnh nhân · bác sĩ · người thân", icon: Link2 },
@@ -121,8 +136,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     },
   ];
 
-
-  const currentGroupParam = searchParams.get("group") ?? (pathname === "/admin/accounts" ? "patients" : "");
+  const currentGroupParam =
+    searchParams.get("group") ?? (pathname === "/admin/accounts" ? "patients" : "");
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.to : pathname.startsWith(item.to);

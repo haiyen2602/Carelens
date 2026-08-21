@@ -221,6 +221,11 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=60, description="Khop expires_in=3600 trong api-contracts.md muc 1")
     refresh_token_expire_days: int = 30
 
+    # Supabase Auth (ADR-0013)
+    supabase_url: str = Field(default="", description="Supabase Project URL")
+    supabase_anon_key: str = Field(default="", description="Supabase Anon/Public Key")
+    supabase_service_role_key: str = Field(default="", description="Supabase Service Role Key (Server only)")
+
     @field_validator("jwt_secret")
     @classmethod
     def _jwt_secret_must_be_configured(cls, v: str) -> str:

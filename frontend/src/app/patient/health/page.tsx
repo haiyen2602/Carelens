@@ -247,7 +247,9 @@ export default function HealthPage() {
                     className="rounded-[22px] bg-white p-4 text-left opacity-70 transition-colors hover:bg-[#F4F7FC] hover:opacity-100"
                   >
                     <div className="flex items-baseline justify-between gap-2.5">
-                      <p className="font-display m-0 text-[17px] font-bold text-[#16386E]">{p.med}</p>
+                      <p className="font-display m-0 text-[17px] font-bold text-[#16386E]">
+                        {p.med}
+                      </p>
                       <PillChip chip={CHIP_HET_HAN} />
                     </div>
                     <p className="m-0 mt-1 text-[13px] text-[#5B6A85]">
@@ -321,7 +323,11 @@ export default function HealthPage() {
               onChange={(e) => setText(e.target.value)}
               className="rounded-2xl border-[#E3E8F1]"
             />
-            <div role="radiogroup" aria-label="Mức độ nghiêm trọng" className="grid grid-cols-3 gap-2">
+            <div
+              role="radiogroup"
+              aria-label="Mức độ nghiêm trọng"
+              className="grid grid-cols-3 gap-2"
+            >
               {(
                 [
                   ["low", "Nhẹ"],

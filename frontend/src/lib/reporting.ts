@@ -109,7 +109,11 @@ export async function updatePatientHealth(
     }),
   });
   if (!response.ok) return loi(response);
-  const p: { note: string | null; gender: string | null; height_cm: number | null; weight_kg: number | null } =
-    await response.json();
+  const p: {
+    note: string | null;
+    gender: string | null;
+    height_cm: number | null;
+    weight_kg: number | null;
+  } = await response.json();
   return { note: p.note, gender: p.gender, heightCm: p.height_cm, weightKg: p.weight_kg };
 }
