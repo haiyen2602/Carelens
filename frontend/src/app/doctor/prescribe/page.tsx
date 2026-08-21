@@ -18,6 +18,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
 import { DrugRequestDialog } from "@/components/drug-request-dialog";
+import {
+  CAN_NANG_KG,
+  CHIEU_CAO_CM,
+  kiemTraCanNang,
+  kiemTraChieuCao,
+} from "@/lib/body-metrics";
 import { useAuth } from "@/lib/auth";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
@@ -119,6 +125,8 @@ export default function PrescribePage() {
   // la doi ngay, khong cho toi luc chot phac do.
   const [health, setHealth] = useState({ gender: "", heightCm: "", weightKg: "", note: "" });
   const [dangLuuHealth, setDangLuuHealth] = useState(false);
+  const chieuCao = kiemTraChieuCao(health.heightCm);
+  const canNang = kiemTraCanNang(health.weightKg);
   // Ten thuoc dang xin bo sung; null = dialog dong. Giu ten o day thay vi
   // mot co boolean de dien san chu bac si vua go, khoi phai go lai.
   const [xinBoSung, setXinBoSung] = useState<string | null>(null);
@@ -148,6 +156,11 @@ export default function PrescribePage() {
 
   const luuHealth = async () => {
     if (!patientId) return;
+    // Chan truoc khi goi mang - loi 422 tu backend khong noi ro o nao sai.
+    if (chieuCao.loi || canNang.loi) {
+      toast.error(chieuCao.loi ?? canNang.loi ?? "");
+      return;
+    }
     setDangLuuHealth(true);
     try {
       const patch = await updatePatientHealth(
@@ -322,24 +335,34 @@ export default function PrescribePage() {
                 <Input
                   id="height-cm"
                   type="number"
-                  min={0}
-                  max={300}
+                  min={CHIEU_CAO_CM.min}
+                  max={CHIEU_CAO_CM.max}
+                  aria-invalid={chieuCao.loi !== null || undefined}
                   placeholder="170"
                   value={health.heightCm}
                   onChange={(e) => setHealth((h) => ({ ...h, heightCm: e.target.value }))}
                 />
+                {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
+                {chieuCao.canhBao && (
+                  <p className="text-sm text-muted-foreground">{chieuCao.canhBao}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="weight-kg">Cân nặng (kg)</Label>
                 <Input
                   id="weight-kg"
                   type="number"
-                  min={0}
-                  max={500}
+                  min={CAN_NANG_KG.min}
+                  max={CAN_NANG_KG.max}
+                  aria-invalid={canNang.loi !== null || undefined}
                   placeholder="60"
                   value={health.weightKg}
                   onChange={(e) => setHealth((h) => ({ ...h, weightKg: e.target.value }))}
                 />
+                {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}
+                {canNang.canhBao && (
+                  <p className="text-sm text-muted-foreground">{canNang.canhBao}</p>
+                )}
               </div>
             </div>
 
