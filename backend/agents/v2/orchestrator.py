@@ -312,6 +312,15 @@ _CAPABILITY_BOOKING_KEYWORDS = (
 _GENERAL_OFF_TOPIC_KEYWORDS = (
     "kể chuyện cười", "ke chuyen cuoi", "câu chuyện cười", "cau chuyen cuoi",
     "kể một câu chuyện", "ke mot cau chuyen", "đố vui", "do vui", "tell me a joke",
+    # BUILD-24L (found in Phase 2's real golden retest, report 44, golden
+    # query_id 74): "hôm nay thời tiết thế nào" (what's the weather today)
+    # matched the bare "hôm nay" in _TODAY_KEYWORDS and misrouted to
+    # TODAY_DOSES -- a handful of unambiguous non-medical topics are listed
+    # here explicitly so classify_intent can check for them *before* the
+    # bare time-of-day keywords (see the reordered checks below), the same
+    # narrow, evidence-based approach as every other keyword set in this
+    # router, not an attempt to enumerate every possible off-topic subject.
+    "thời tiết", "thoi tiet", "bóng đá", "bong da", "tin tức", "tin tuc",
 )
 _ARITHMETIC_QUESTION_RE = re.compile(
     r"^\s*\d+(\.\d+)?\s*[\+\-\*x×/]\s*\d+(\.\d+)?\s*(bằng|bang|=|thì ra|thi ra)?\s*(mấy|may|bao nhiêu|bao nhieu)?\s*\??\s*$",
@@ -397,6 +406,15 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
         intent = OrchestrationIntent.DELAYED_DOSE
     elif has_dose_id and _matches(_DOSE_STATUS_KEYWORDS):
         intent = OrchestrationIntent.DOSE_STATUS
+    # BUILD-24L (golden query_id 74): checked here -- after every safety/
+    # action-priority branch above, but *before* _TODAY_KEYWORDS -- so an
+    # unambiguous off-topic subject (weather, etc.) wins over the bare
+    # "hôm nay" substring match a message like "hôm nay thời tiết thế nào"
+    # would otherwise hit first. Still narrow/keyword-based, same as the
+    # rest of this router; genuine medical/schedule messages never contain
+    # these specific off-topic markers.
+    elif _detect_out_of_scope_category(message) is not None:
+        intent = OrchestrationIntent.OUT_OF_SCOPE_REQUEST
     elif _matches(_TODAY_KEYWORDS):
         intent = OrchestrationIntent.TODAY_DOSES
     elif _matches(_UPCOMING_KEYWORDS):
@@ -409,8 +427,6 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
         intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
     elif _matches_greeting() and len(message.strip()) <= 40:
         intent = OrchestrationIntent.GENERAL_CONVERSATION
-    elif _detect_out_of_scope_category(message) is not None:
-        intent = OrchestrationIntent.OUT_OF_SCOPE_REQUEST
     else:
         intent = OrchestrationIntent.DRUG_INFORMATION
 
