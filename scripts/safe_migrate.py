@@ -48,7 +48,7 @@ def main():
     cfg = Config("alembic.ini")
     command.upgrade(cfg, "head")
     
-    # Extra safety check: ensure column supabase_uid exists on account table
+    # Extra safety checks
     try:
         with engine.begin() as conn:
             cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='account'")).fetchall()]
@@ -57,8 +57,25 @@ def main():
                 conn.execute(text("ALTER TABLE account ADD COLUMN IF NOT EXISTS supabase_uid VARCHAR"))
                 conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_account_supabase_uid ON account (supabase_uid)"))
                 print("[PRE-DEPLOY] supabase_uid column added.")
+
+            tables = [r[0] for r in conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")).fetchall()]
+            if "nudge" not in tables:
+                print("[PRE-DEPLOY] Creating missing nudge table...")
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS nudge (
+                        id VARCHAR PRIMARY KEY,
+                        caregiver_account_id VARCHAR NOT NULL,
+                        patient_id VARCHAR NOT NULL,
+                        message TEXT NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                        seen_at TIMESTAMP WITH TIME ZONE
+                    )
+                """))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_nudge_caregiver_account_id ON nudge (caregiver_account_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_nudge_patient_id ON nudge (patient_id)"))
+                print("[PRE-DEPLOY] nudge table created.")
     except Exception as e:
-        print(f"[PRE-DEPLOY WARNING] Column safety check: {e}")
+        print(f"[PRE-DEPLOY WARNING] Schema safety check: {e}")
         
     print("[PRE-DEPLOY] Migrations complete successfully.")
 
