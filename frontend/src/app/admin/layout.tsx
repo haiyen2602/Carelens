@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  Activity,
   ChevronDown,
   ChevronLeft,
   FileClock,
@@ -16,6 +17,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   UserCheck,
   UserCog,
   Users,
@@ -109,6 +111,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
         },
         { to: "/admin/links", label: "Liên kết bệnh nhân · bác sĩ · người thân", icon: Link2 },
         { to: "/admin/medicines", label: "Dữ liệu thuốc (RAG)", icon: PillBottle },
+        { to: "/admin/rag", label: "Giám sát RAG & AI", icon: Activity },
         { to: "/admin/audit", label: "Log hệ thống", icon: FileClock },
       ],
     },
@@ -117,6 +120,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       items: [{ to: "/admin/settings", label: "Cài đặt", icon: Settings }],
     },
   ];
+
 
   const currentGroupParam = searchParams.get("group") ?? (pathname === "/admin/accounts" ? "patients" : "");
 

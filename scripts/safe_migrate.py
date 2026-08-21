@@ -1,0 +1,54 @@
+"""Safe pre-deploy database migration runner with auto-recovery for orphan revisions."""
+import os
+import sys
+from pathlib import Path
+
+# Add project root to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from alembic.config import Config
+from alembic import command, script
+from backend.config import get_settings
+from sqlalchemy import create_engine, inspect, text
+
+
+
+def main():
+    try:
+        settings = get_settings()
+        engine = create_engine(settings.database_url)
+        with engine.connect() as conn:
+            inspector = inspect(conn)
+            if "alembic_version" in inspector.get_table_names():
+                row = conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
+                if row and row[0]:
+                    curr_rev = row[0]
+                    cfg = Config("alembic.ini")
+                    sdir = script.ScriptDirectory.from_config(cfg)
+                    head = sdir.get_current_head()
+                    
+                    is_valid = False
+                    try:
+                        if sdir.get_revision(curr_rev) is not None:
+                            is_valid = True
+                    except Exception:
+                        is_valid = False
+
+                    if not is_valid:
+                        print(f"[PRE-DEPLOY] Found missing revision '{curr_rev}' in remote DB. Stamping to current head '{head}'...")
+                        conn.execute(text(f"UPDATE alembic_version SET version_num = '{head}'"))
+                        conn.commit()
+                        print(f"[PRE-DEPLOY] DB stamped to head '{head}'.")
+                    else:
+                        print(f"[PRE-DEPLOY] Current DB revision '{curr_rev}' is valid.")
+    except Exception as e:
+        print(f"[PRE-DEPLOY WARNING] Failed during pre-check: {e}")
+
+    print("[PRE-DEPLOY] Running alembic upgrade head...")
+    cfg = Config("alembic.ini")
+    command.upgrade(cfg, "head")
+    print("[PRE-DEPLOY] Migrations complete successfully.")
+
+
+if __name__ == "__main__":
+    main()

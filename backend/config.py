@@ -268,6 +268,16 @@ class Settings(BaseSettings):
         default=60.0, description="[CAN CHOT] tan suat quet escalation can nhac lai (giay)"
     )
 
+    # Langfuse Observability & Monitoring (docs/langfuse_rag_admin_monitoring_spec.md)
+    langfuse_public_key: str = Field(default="", description="Langfuse public key (pk-lf-...)")
+    langfuse_secret_key: str = Field(default="", description="Langfuse secret key (sk-lf-...)")
+    langfuse_host: str = Field(default="https://cloud.langfuse.com", description="Langfuse API host URL")
+    langfuse_enabled: bool = Field(default=True, description="Enable or disable active Langfuse tracing")
+    rag_prompt_version: str = Field(default="medication-chat-v1.0", description="RAG answer prompt version")
+    rag_retriever_version: str = Field(default="hybrid-rrf-v2", description="Retriever pipeline version")
+    rag_index_version: str = Field(default="med-kb-2026-08-20", description="Knowledge base index version")
+
+
 
 @lru_cache
 def get_settings() -> Settings:

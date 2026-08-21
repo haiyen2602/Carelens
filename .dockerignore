@@ -35,6 +35,8 @@ data pharmacy/v2/final_canonical/rag/*
 !data pharmacy/v2/final_canonical/rag/v2_embedding_index.jsonl
 *.md
 !requirements.txt
+!scripts/
 .dockerignore
 Dockerfile
 docker-compose.yml
+
