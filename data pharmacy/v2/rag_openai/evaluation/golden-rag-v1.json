@@ -1,0 +1,56 @@
+{
+  "dataset_version": "golden-rag-v1",
+  "purpose": "Deterministic, non-PII RAG retrieval and response regression cases.",
+  "cases": [
+    {
+      "case_id": "exact-agiclovir",
+      "group": "exact_drug",
+      "query": "Agiclovir 5% Agimexpharm",
+      "relevant_drug_ids": ["agiclovir-5-agimexpharm"],
+      "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm."
+    },
+    {
+      "case_id": "natural-paracetamol-finding",
+      "group": "natural_language",
+      "query": "Thuốc Paracetamol Kabi có tác dụng hạ sốt không?",
+      "relevant_drug_ids": ["paracetamol-kabi-1000mg-frensenius-kabi-48-chai-x-100ml"],
+      "expected_generation": "Đã tìm thấy Paracetamol Kabi 1000mg Fresenius Kabi."
+    },
+    {
+      "case_id": "agiclovir-indication",
+      "group": "indication",
+      "query": "Agiclovir 5% Agimexpharm được chỉ định trong trường hợp nào?",
+      "relevant_drug_ids": ["agiclovir-5-agimexpharm"],
+      "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm."
+    },
+    {
+      "case_id": "agiclovir-usage",
+      "group": "usage",
+      "query": "Cách dùng Agiclovir 5% Agimexpharm",
+      "relevant_drug_ids": ["agiclovir-5-agimexpharm"],
+      "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm."
+    },
+    {
+      "case_id": "agiclovir-side-effect",
+      "group": "side_effect",
+      "query": "Agiclovir 5% Agimexpharm có tác dụng phụ gì?",
+      "relevant_drug_ids": ["agiclovir-5-agimexpharm"],
+      "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm."
+    },
+    {
+      "case_id": "difficult-misspelling",
+      "group": "difficult",
+      "query": "Agi clo vir 5 phan tram Agimexpharm",
+      "relevant_drug_ids": ["agiclovir-5-agimexpharm"],
+      "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm."
+    },
+    {
+      "case_id": "no-result-unknown-drug",
+      "group": "no_result",
+      "query": "Thuốc không tồn tại ABCXYZ dùng để làm gì?",
+      "relevant_drug_ids": [],
+      "expect_no_result": true,
+      "expected_generation": "Không tìm thấy nguồn thuốc phù hợp."
+    }
+  ]
+}

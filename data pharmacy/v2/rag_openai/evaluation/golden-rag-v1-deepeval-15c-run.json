@@ -1,0 +1,359 @@
+{
+  "dataset_version": "golden-rag-v1",
+  "deterministic_build14": {
+    "generation": {
+      "bleu_4": 0.784131860347843,
+      "exact_match": 0.7142857142857143,
+      "rouge_l_f1": 0.8021978021978021
+    },
+    "retrieval": {
+      "hit_at_10": 0.6666666666666666,
+      "map_at_10": 0.6666666666666666,
+      "mrr_at_10": 0.6666666666666666,
+      "ndcg_at_10": 0.6666666666666666,
+      "precision_at_k": 0.13333333333333333
+    },
+    "versions": {
+      "chunking_version": "legacy-drug-chunks-v1",
+      "corpus_manifest_hash": "E57B24693AE64F7B1514D820911C5804DCD71CB3AAF4CF45B17A2D87603E0C04",
+      "corpus_version": "legacy-drug-chunks-openai-v1",
+      "embedding_dimensions": 1536,
+      "embedding_model": "text-embedding-3-small",
+      "generation_version": "deterministic-grounded-template-v1",
+      "index_version": "pgvector-hnsw-cosine-v1",
+      "prompt_version": "none-build-14",
+      "retrieval_version": "lexical-pg-trgm-v1"
+    }
+  },
+  "evaluation_version": "deepeval-rag-judge-v1",
+  "judge": {
+    "model": "gpt-4o",
+    "price_basis": "GPT-4o $2.50/M input, $10.00/M output",
+    "temperature": 0
+  },
+  "judge_usage": {
+    "estimated_cost_usd": 0.12123,
+    "input_tokens": 25420,
+    "output_tokens": 5768
+  },
+  "metric_variance": {
+    "answer_relevancy": {
+      "baseline": 0.5,
+      "max": 0.5,
+      "mean": 0.5,
+      "min": 0.5,
+      "rounds_scored": 1,
+      "variance": null
+    },
+    "contextual_relevancy": {
+      "baseline": 0.5298611111111111,
+      "max": 0.5298611111111111,
+      "mean": 0.5298611111111111,
+      "min": 0.5298611111111111,
+      "rounds_scored": 1,
+      "variance": null
+    },
+    "faithfulness": {
+      "baseline": 1.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "rounds_scored": 1,
+      "variance": null
+    }
+  },
+  "missing_or_failed_scores": 0,
+  "pii_phi_safety": {
+    "passed": true,
+    "scope": "versioned public drug corpus + golden queries only"
+  },
+  "release_gate": {
+    "failure_statuses": [],
+    "passed": true
+  },
+  "rounds": [
+    {
+      "cases": [
+        {
+          "answer": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+          "case_id": "exact-agiclovir",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.0026925,
+              "metric": "answer_relevancy",
+              "score": 1.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.00766,
+              "metric": "contextual_relevancy",
+              "score": 0.9166666666666666,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.0068249999999999995,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Agiclovir 5% Agimexpharm",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "e12d08ab-d365-5e30-8cc4-b4fefb95148d",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "bao_quan"
+            },
+            {
+              "chunk_id": "ed1b620c-882f-578b-8b1b-0e9d89065fa5",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "cach_dung"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.0171775,
+            "input_tokens": 3943,
+            "output_tokens": 732
+          }
+        },
+        {
+          "answer": "Đã tìm thấy Paracetamol Kabi 1000mg Fresenius Kabi.",
+          "case_id": "natural-paracetamol-finding",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.002715,
+              "metric": "answer_relevancy",
+              "score": 1.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.00894,
+              "metric": "contextual_relevancy",
+              "score": 0.2,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.0091675,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Thuốc Paracetamol Kabi có tác dụng hạ sốt không?",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "29ec793d-2a64-56e5-8751-2d6fed5ba3f7",
+              "drug_id": "paracetamol-kabi-1000mg-frensenius-kabi-48-chai-x-100ml",
+              "field_group": "tac_dung_phu"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.0208225,
+            "input_tokens": 4057,
+            "output_tokens": 1068
+          }
+        },
+        {
+          "answer": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+          "case_id": "agiclovir-indication",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.00297,
+              "metric": "answer_relevancy",
+              "score": 0.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.007520000000000001,
+              "metric": "contextual_relevancy",
+              "score": 0.5,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.0077350000000000006,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Agiclovir 5% Agimexpharm được chỉ định trong trường hợp nào?",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "c9bc2797-3b8c-5303-a3ee-1bd01d428bc0",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "cong_dung"
+            },
+            {
+              "chunk_id": "4f18e027-fe2f-510e-a5a6-bd0b3e4eee78",
+              "drug_id": "agicetam-1200mg-agimexpharm-10x10",
+              "field_group": "cong_dung"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.018225,
+            "input_tokens": 4090,
+            "output_tokens": 800
+          }
+        },
+        {
+          "answer": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+          "case_id": "agiclovir-usage",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.0028899999999999998,
+              "metric": "answer_relevancy",
+              "score": 0.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.0120175,
+              "metric": "contextual_relevancy",
+              "score": 0.5625,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.0089175,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Cách dùng Agiclovir 5% Agimexpharm",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "c9bc2797-3b8c-5303-a3ee-1bd01d428bc0",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "cong_dung"
+            },
+            {
+              "chunk_id": "27e30821-7dd1-54fd-b0b0-3272812cb388",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "tac_dung_phu"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.023825,
+            "input_tokens": 4690,
+            "output_tokens": 1210
+          }
+        },
+        {
+          "answer": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+          "case_id": "agiclovir-side-effect",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.002955,
+              "metric": "answer_relevancy",
+              "score": 0.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.008645,
+              "metric": "contextual_relevancy",
+              "score": 0.0,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.006775,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Agiclovir 5% Agimexpharm có tác dụng phụ gì?",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "e12d08ab-d365-5e30-8cc4-b4fefb95148d",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "bao_quan"
+            },
+            {
+              "chunk_id": "ed1b620c-882f-578b-8b1b-0e9d89065fa5",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "cach_dung"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.018375,
+            "input_tokens": 3954,
+            "output_tokens": 849
+          }
+        },
+        {
+          "answer": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+          "case_id": "difficult-misspelling",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": 0.0026875,
+              "metric": "answer_relevancy",
+              "score": 1.0,
+              "status": "SCORED"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": 0.0112125,
+              "metric": "contextual_relevancy",
+              "score": 1.0,
+              "status": "SCORED"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": 0.008905,
+              "metric": "faithfulness",
+              "score": 1.0,
+              "status": "SCORED"
+            }
+          },
+          "query": "Agi clo vir 5 phan tram Agimexpharm",
+          "retrieved_context_refs": [
+            {
+              "chunk_id": "c9bc2797-3b8c-5303-a3ee-1bd01d428bc0",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "cong_dung"
+            },
+            {
+              "chunk_id": "27e30821-7dd1-54fd-b0b0-3272812cb388",
+              "drug_id": "agiclovir-5-agimexpharm",
+              "field_group": "tac_dung_phu"
+            }
+          ],
+          "usage": {
+            "estimated_cost_usd": 0.022805,
+            "input_tokens": 4686,
+            "output_tokens": 1109
+          }
+        },
+        {
+          "answer": "Không tìm thấy nguồn thuốc phù hợp.",
+          "case_id": "no-result-unknown-drug",
+          "metrics": {
+            "answer_relevancy": {
+              "evaluation_cost_usd": null,
+              "metric": "answer_relevancy",
+              "score": null,
+              "status": "NOT_APPLICABLE_NO_EVIDENCE"
+            },
+            "contextual_relevancy": {
+              "evaluation_cost_usd": null,
+              "metric": "contextual_relevancy",
+              "score": null,
+              "status": "NOT_APPLICABLE_NO_EVIDENCE"
+            },
+            "faithfulness": {
+              "evaluation_cost_usd": null,
+              "metric": "faithfulness",
+              "score": null,
+              "status": "NOT_APPLICABLE_NO_EVIDENCE"
+            }
+          },
+          "query": "Thuốc không tồn tại ABCXYZ dùng để làm gì?",
+          "retrieved_context_refs": [],
+          "usage": {
+            "estimated_cost_usd": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          }
+        }
+      ],
+      "round": 1
+    }
+  ]
+}

@@ -24,6 +24,9 @@ ALLOWED_EGRESS_MODULES: frozenset[str] = frozenset(
         # OpenAI API that - classify/embed/generate (chatbot-rag-design.md muc 2)
         "backend/services/embeddings.py",
         "backend/services/llm.py",
+        # BUILD-8: constrained public Vinmec search/fetch. The service itself
+        # validates host, scheme and redirects before every request.
+        "backend/services/vinmec_web_search.py",
     }
 )
 
