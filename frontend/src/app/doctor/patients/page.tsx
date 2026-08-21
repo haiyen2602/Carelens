@@ -2,8 +2,15 @@
 
 import { Eye, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import {
+  CAN_NANG_KG,
+  CHIEU_CAO_CM,
+  kiemTraCanNang,
+  kiemTraChieuCao,
+} from "@/lib/body-metrics";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,8 +94,15 @@ function HealthTab({
   const age = tinhTuoi(patient.yearOfBirth);
   const { pushActivity } = useProto();
   const { accessToken } = useAuth();
+  const chieuCao = kiemTraChieuCao(heightCm);
+  const canNang = kiemTraCanNang(weightKg);
 
   const save = async () => {
+    // Chan truoc khi goi mang - loi 422 tu backend khong noi ro o nao sai.
+    if (chieuCao.loi || canNang.loi) {
+      toast.error(chieuCao.loi ?? canNang.loi ?? "");
+      return;
+    }
     setSaving(true);
     try {
       const patch = await updatePatientHealth(
@@ -165,20 +179,28 @@ function HealthTab({
           <Input
             id={`height-${patient.id}`}
             type="number"
-            min={0}
+            min={CHIEU_CAO_CM.min}
+            max={CHIEU_CAO_CM.max}
+            aria-invalid={chieuCao.loi !== null || undefined}
             value={heightCm}
             onChange={(e) => setHeightCm(e.target.value)}
           />
+          {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
+          {chieuCao.canhBao && <p className="text-sm text-muted-foreground">{chieuCao.canhBao}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`weight-${patient.id}`}>Cân nặng (kg)</Label>
           <Input
             id={`weight-${patient.id}`}
             type="number"
-            min={0}
+            min={CAN_NANG_KG.min}
+            max={CAN_NANG_KG.max}
+            aria-invalid={canNang.loi !== null || undefined}
             value={weightKg}
             onChange={(e) => setWeightKg(e.target.value)}
           />
+          {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}
+          {canNang.canhBao && <p className="text-sm text-muted-foreground">{canNang.canhBao}</p>}
         </div>
       </div>
       <div className="space-y-2">
