@@ -77,7 +77,7 @@ class YeuCauDem:
     def tong_vien(self) -> int:
         """Tổng viên nang + viên nén — cùng cách tính `CountResult.total_pills`.
 
-        Dùng làm con số chính trong câu nói với bệnh nhân ("cháu đếm được 3
+        Dùng làm con số chính trong câu nói với bệnh nhân ("tôi đếm được 3
         viên"), vì đó là thứ người ta đếm bằng mắt được.
         """
         return self.so_luong.get("vien_nang", 0) + self.so_luong.get("vien_nen", 0)
@@ -182,7 +182,7 @@ def doi_chieu_don_thuoc(expected_items: Iterable[Mapping], dem_duoc: Mapping[str
 # ---------------------------------------------------------------------------
 # Câu nói với bệnh nhân
 #
-# ADR-0011 quy tắc 7: phải nói RÕ lệch ở đâu ("cháu đếm được 2 viên nhưng đơn
+# ADR-0011 quy tắc 7: phải nói RÕ lệch ở đâu ("tôi đếm được 2 viên nhưng đơn
 # là 1 viên"), không được chỉ báo "thất bại". Mọi câu dưới đây sinh từ hiệu số
 # và từ `COUNT_LABELS_VI`, không viết cứng — thêm một dạng thuốc mới vào
 # `prompts.COUNT_KEYS` là câu tự có, không phải sửa ở đây.
@@ -202,12 +202,12 @@ def _thong_bao_khong_xac_minh(yeu_cau: YeuCauDem) -> str:
         return "Liều này không có thuốc nào để đối chiếu bằng ảnh ạ."
     ly_do = yeu_cau.bo_qua[0].ly_do
     ten = ", ".join(thuoc.ten_thuoc for thuoc in yeu_cau.bo_qua)
-    return f"Liều này ({ten}) không kiểm tra bằng ảnh được — {ly_do}. Bác bấm nút xác nhận giúp cháu nhé."
+    return f"Liều này ({ten}) không kiểm tra bằng ảnh được — {ly_do}. Bạn bấm nút xác nhận giúp tôi nhé."
 
 
 def _thong_bao(ket_qua: KetQua, yeu_cau: YeuCauDem, thieu: Mapping[str, int], thua: Mapping[str, int]) -> str:
     if ket_qua is KetQua.KHOP:
-        cau = f"Cháu đếm được đúng {_mo_ta(yeu_cau.so_luong)} như trong đơn thuốc ạ."
+        cau = f"Tôi đếm được đúng {_mo_ta(yeu_cau.so_luong)} như trong đơn thuốc."
     else:
         chi_tiet = []
         if thieu:
@@ -215,13 +215,13 @@ def _thong_bao(ket_qua: KetQua, yeu_cau: YeuCauDem, thieu: Mapping[str, int], th
         if thua:
             chi_tiet.append(f"thừa {_mo_ta(thua)}")
         cau = (
-            f"Đơn thuốc của bác cần {_mo_ta(yeu_cau.so_luong)}, "
-            f"nhưng trong ảnh {' và '.join(chi_tiet)}. Bác xem lại giúp cháu nhé."
+            f"Đơn thuốc của bạn cần {_mo_ta(yeu_cau.so_luong)}, "
+            f"nhưng trong ảnh {' và '.join(chi_tiet)}. Bạn xem lại giúp tôi nhé."
         )
 
     if yeu_cau.bo_qua:
         ten = ", ".join(thuoc.ten_thuoc for thuoc in yeu_cau.bo_qua)
-        cau += f" (Cháu chưa kiểm tra được {ten} qua ảnh.)"
+        cau += f" (Tôi chưa kiểm tra được {ten} qua ảnh.)"
     return cau
 
 

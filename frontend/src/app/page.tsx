@@ -5,22 +5,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
-  Bell,
   BellRing,
   CheckCircle2,
   ChevronDown,
   Clock,
   Globe,
-  HeartPulse,
+  Monitor,
   Pill,
   PillBottle,
   ShieldCheck,
+  Smartphone,
   Stethoscope,
 } from "lucide-react";
+import { toast } from "sonner";
+import { MobileLogin } from "@/components/auth/mobile-login";
+import { CapyMascot } from "@/components/mascot/capy-mascot";
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
@@ -36,14 +40,14 @@ function LoginPageContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mobileView, setMobileView] = useState(false);
   const { user, loading: authLoading, login: authLogin } = useAuth();
   const { login: protoLogin, pushActivity } = useProto();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
   // Luong Google that bai SAU khi da roi khoi trang (nguoi dung bam Huy o
-  // Google, sai cau hinh OAuth...) -> Better Auth dua ve day kem ?error=google
-  // (errorCallbackURL trong lib/better-auth-client.ts).
+  // Google, sai cau hinh OAuth...) -> tra ve kem ?error=google
   const googleFailed = searchParams.get("error") === "google";
   const redirectedRef = useRef(false);
 
@@ -116,6 +120,33 @@ function LoginPageContent() {
     );
   }
 
+  if (mobileView) {
+    return (
+      <main className="h-dvh bg-secondary/60 px-0 py-0 sm:px-4 sm:py-8">
+        <button
+          onClick={() => setMobileView(false)}
+          className="absolute right-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm"
+        >
+          <Monitor className="h-3.5 w-3.5" /> Xem bản desktop
+        </button>
+
+        <div className="relative mx-auto flex h-full w-full max-w-[430px] flex-col overflow-hidden bg-background sm:h-[min(860px,calc(100dvh-4rem))] sm:rounded-[2.25rem] sm:shadow-[var(--shadow-phone)]">
+          <MobileLogin
+            email={email}
+            password={password}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onSubmit={submit}
+            onClose={() => setMobileView(false)}
+            loading={loading}
+            error={error}
+            justRegistered={justRegistered}
+          />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="grid min-h-screen bg-background lg:grid-cols-2">
       <div className="relative overflow-hidden bg-gradient-to-br from-secondary/70 via-background to-accent/40 px-6 py-12 sm:px-12 lg:py-16">
@@ -144,58 +175,29 @@ function LoginPageContent() {
           </div>
 
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
-            Uống đúng thuốc, đúng giờ,
-            <span className="block text-primary">luôn có bác sĩ đồng hành</span>
+            Uống thuốc an toàn,
+            <span className="block text-primary">người nhà an tâm</span>
           </h1>
           <p className="mt-4 max-w-xl text-muted-foreground">
             CapyMedi nhắc bệnh nhân uống thuốc đúng lịch, ghi nhận xác nhận từng liều và giữ bác sĩ
             trong vòng lặp để duyệt mọi thay đổi phác đồ trước khi áp dụng.
           </p>
 
-          <div className="relative mt-10 flex items-center justify-center gap-4 py-4">
-            <div className="surface-card w-56 shrink-0 space-y-3 p-4">
-              {[
-                { time: "07:00", label: "Sáng", state: "pending" as const },
-                { time: "13:00", label: "Trưa", state: "done" as const },
-                { time: "20:00", label: "Tối", state: "upcoming" as const },
-              ].map((row) => (
-                <div key={row.time} className="flex items-center gap-3 text-sm">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
-                    <Pill className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-mono font-semibold">{row.time}</span>
-                    <span className="text-xs text-muted-foreground">{row.label}</span>
-                  </span>
-                  {row.state === "done" && (
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
-                  )}
-                  {row.state === "upcoming" && (
-                    <Bell className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="relative mt-10 flex items-center justify-center py-6">
+            <div className="pointer-events-none absolute h-52 w-52 rounded-full bg-accent/40 blur-2xl" />
+            <CapyMascot variant="idle" size="lg" className="relative" />
 
-            <div className="surface-card w-36 shrink-0 space-y-2 p-4 text-center">
-              <p className="text-xs font-semibold text-muted-foreground">Xác nhận đã uống</p>
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-success/15 text-success">
-                <CheckCircle2 className="h-7 w-7" />
-              </div>
-              <p className="text-sm font-bold">09:30</p>
-            </div>
-
-            <span className="absolute -bottom-2 left-2 grid h-9 w-9 place-items-center rounded-full bg-primary/15 text-primary shadow-sm">
-              <ShieldCheck className="h-4 w-4" />
+            <span className="absolute bottom-4 left-6 grid h-10 w-10 place-items-center rounded-full bg-primary/15 text-primary shadow-sm">
+              <ShieldCheck className="h-5 w-5" />
             </span>
-            <span className="absolute -top-3 left-10 grid h-9 w-9 -rotate-12 place-items-center rounded-full bg-card text-primary shadow-sm">
-              <Pill className="h-4 w-4" />
+            <span className="absolute left-14 top-2 grid h-10 w-10 -rotate-12 place-items-center rounded-full bg-card text-primary shadow-sm">
+              <Pill className="h-5 w-5" />
             </span>
-            <span className="absolute -right-3 top-6 grid h-9 w-9 place-items-center rounded-full bg-card text-primary shadow-sm">
-              <PillBottle className="h-4 w-4" />
+            <span className="absolute right-14 top-6 grid h-10 w-10 place-items-center rounded-full bg-card text-primary shadow-sm">
+              <PillBottle className="h-5 w-5" />
             </span>
-            <span className="absolute -bottom-3 right-10 grid h-9 w-9 place-items-center rounded-full bg-card text-destructive shadow-sm">
-              <Activity className="h-4 w-4" />
+            <span className="absolute bottom-6 right-8 grid h-10 w-10 place-items-center rounded-full bg-card text-destructive shadow-sm">
+              <Activity className="h-5 w-5" />
             </span>
           </div>
 
@@ -217,9 +219,23 @@ function LoginPageContent() {
       </div>
 
       <div className="relative flex flex-col items-center justify-center gap-8 px-6 py-12 sm:px-12">
-        <button className="absolute right-6 top-6 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
-          <Globe className="h-3.5 w-3.5" /> Tiếng Việt <ChevronDown className="h-3.5 w-3.5" />
-        </button>
+        <div className="absolute right-6 top-6 flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            <Monitor className="h-3.5 w-3.5 text-primary" />
+            <Switch
+              checked={false}
+              onCheckedChange={setMobileView}
+              aria-label="Chuyển sang giao diện mobile"
+            />
+            <Smartphone className="h-3.5 w-3.5" />
+          </label>
+          <button
+            onClick={() => toast("Đa ngôn ngữ đang được phát triển")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground"
+          >
+            <Globe className="h-3.5 w-3.5" /> Tiếng Việt <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
         <section className="surface-card w-full max-w-md p-6 sm:p-8">
           <div className="space-y-5">
@@ -241,7 +257,15 @@ function LoginPageContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <a
+                    href="/auth/forgot-password"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Quên mật khẩu?
+                  </a>
+                </div>
                 <Input
                   id="password"
                   type="password"

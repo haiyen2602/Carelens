@@ -1,14 +1,33 @@
 "use client";
 
+// Tab "Người thân" (Capy Circle) - port tu capyphone.js::renderFamily() +
+// renderSheetNudge(). Giu nguyen logic that: danh sach nguoi than dang
+// theo doi, loi moi den/di, tim benh nhan de moi.
+//
+// Ban mau hard-code 3 nguoi (Me/Bo/Chi Lan) va 1 the canh bao co dinh.
+// O day: the canh bao chi hien khi CO canh bao that, danh sach lay tu API,
+// tien do lay tu so lieu that. Sheet "Nhac nhe" gui loi nhac -> CHUA co
+// API nen la nut bao truoc (toast), khong gia vo la da gui.
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronRight, Loader2, UserPlus, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  CHIP,
+  CapyPrimaryButton,
+  CapySecondaryButton,
+  CapySheet,
+  PillChip,
+  SectionLabel,
+  type ChipStyle,
+} from "@/components/capy/capy-ui";
 import { useAuth } from "@/lib/auth";
 import { listDoses } from "@/lib/doses";
+import { sendNudge } from "@/lib/nudges";
 import { listPatients, type PatientRecord } from "@/lib/patients";
 import {
   acceptCaregiverInvite,
@@ -20,10 +39,23 @@ import {
   type PendingInvite,
 } from "@/lib/caregivers";
 
+const NUDGES = [
+  "Đến giờ uống thuốc rồi nha 💊",
+  "Đừng quên thuốc nhé ❤️",
+  "Capy đang ngó bạn đó 👀",
+];
+
+const AVATAR_MAU = [
+  { bg: "#FFE7D9", fg: "#B4432C" },
+  { bg: "#DFF3E9", fg: "#1F6A50" },
+  { bg: "#CFE6FF", fg: "#16386E" },
+  { bg: "#E4DDFB", fg: "#4B3E86" },
+];
+
 async function demSoCanhBao(relative: MonitoredPatient): Promise<number> {
   // "So can chu y" = canh bao dang mo + so lieu dang cho nguoi than duyet
-  // (AWAITING_CAREGIVER, sau khi chup lai 2 lan van lech - ADR-0011). Goi
-  // rieng listDoses vi MonitoredPatient tu backend chua dem san so nay.
+  // (AWAITING_CAREGIVER). Goi rieng listDoses vi MonitoredPatient tu backend
+  // chua dem san so nay.
   try {
     const doses = await listDoses(relative.patientId);
     const soCanDuyet = doses.filter((d) => d.status === "AWAITING_CAREGIVER").length;
@@ -48,6 +80,10 @@ export default function PatientFamilyPage() {
   const [quanHe, setQuanHe] = useState("");
   const [dangGuiMoi, setDangGuiMoi] = useState(false);
 
+  const [nudgeCho, setNudgeCho] = useState<MonitoredPatient | null>(null);
+  const [nudgeChon, setNudgeChon] = useState(0);
+  const [dangGuiNhac, setDangGuiNhac] = useState(false);
+
   const taiLai = async () => {
     if (!user?.id) return;
     setDangTai(true);
@@ -58,7 +94,9 @@ export default function PatientFamilyPage() {
       ]);
       setRelatives(ds);
       setPending(moi);
-      const badges = await Promise.all(ds.map(async (r) => [r.patientId, await demSoCanhBao(r)] as const));
+      const badges = await Promise.all(
+        ds.map(async (r) => [r.patientId, await demSoCanhBao(r)] as const),
+      );
       setBadgeByPatientId(Object.fromEntries(badges));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không tải được danh sách người thân");
@@ -78,9 +116,6 @@ export default function PatientFamilyPage() {
       return;
     }
     const timer = setTimeout(() => {
-      // SUA 2026-08-14: thieu accessToken khien request luon 401 (chua xac
-      // thuc), khac han bug 403 truoc do (thieu role) - benh nhan van khong
-      // tim duoc ai du backend da mo quyen, loi bi .catch() nuot am tham.
       listPatients(tuKhoa, accessToken)
         .then((ds) => setKetQuaTim(ds.filter((p) => p.id !== user?.patient_id)))
         .catch(() => setKetQuaTim([]));
@@ -116,11 +151,28 @@ export default function PatientFamilyPage() {
     }
   };
 
+  const guiNhac = async () => {
+    if (!accessToken || !nudgeCho) return;
+    setDangGuiNhac(true);
+    try {
+      await sendNudge(accessToken, { patientId: nudgeCho.patientId, message: NUDGES[nudgeChon] });
+      toast.success(`Đã gửi lời nhắc tới ${nudgeCho.fullName}`);
+      setNudgeCho(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không gửi được lời nhắc");
+    } finally {
+      setDangGuiNhac(false);
+    }
+  };
+
   const guiLoiMoi = async () => {
     if (!accessToken || !nguoiDuocChon || !quanHe.trim()) return;
     setDangGuiMoi(true);
     try {
-      await sendCaregiverInvite(accessToken, { patientId: nguoiDuocChon.id, relationship: quanHe.trim() });
+      await sendCaregiverInvite(accessToken, {
+        patientId: nguoiDuocChon.id,
+        relationship: quanHe.trim(),
+      });
       toast.success(`Đã gửi lời mời tới ${nguoiDuocChon.fullName} — chờ họ đồng ý`);
       setDangMoi(false);
       setTuKhoa("");
@@ -133,190 +185,266 @@ export default function PatientFamilyPage() {
     }
   };
 
-  return (
-    <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-extrabold">Người thân</h1>
-        <p className="text-sm text-muted-foreground">
-          Theo dõi mức tuân thủ và cảnh báo của người thân bạn quan tâm.
-        </p>
-      </header>
+  // The canh bao dau trang: chi hien khi co nguoi than DANG co canh bao that.
+  const canChuY = relatives.find((r) => (badgeByPatientId[r.patientId] ?? 0) > 0);
 
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-display m-0 mt-1 text-[30px] font-extrabold leading-[1.05] text-[#16386E]">
+          Capy Circle
+        </h1>
+        <p className="m-0 mt-1 text-[14px] leading-[1.45] text-[#5B6A85]">
+          Cùng chăm sóc những người bạn thương.
+        </p>
+      </div>
+
+      {/* Canh bao */}
+      {canChuY && (
+        <div className="rounded-[26px] bg-[#FFD5C2] p-4">
+          <PillChip chip={{ label: "Cần chú ý", icon: "!", bg: "#FFFFFF", fg: "#B4432C" }} />
+          <p className="font-display m-0 mt-2.5 text-[16px] font-bold leading-[1.35] text-[#8A3521]">
+            {canChuY.fullName} có {badgeByPatientId[canChuY.patientId]} việc cần bạn xem
+          </p>
+          <p className="m-0 mt-1 text-[12.5px] leading-[1.45] text-[#A0492F]">
+            Có liều chờ xác nhận hoặc cảnh báo đang mở. Chưa chắc là bỏ liều.
+          </p>
+          <div className="mt-3.5 flex gap-2.5">
+            <Link
+              href={`/patient/family/${canChuY.patientId}`}
+              className="font-display flex min-h-[46px] flex-1 items-center justify-center rounded-[16px] bg-white text-[14px] font-bold text-[#8A3521] transition-colors hover:bg-[#FFF6F2]"
+            >
+              Xem
+            </Link>
+            <button
+              onClick={() => {
+                setNudgeCho(canChuY);
+                setNudgeChon(0);
+              }}
+              className="font-display flex min-h-[46px] flex-1 items-center justify-center rounded-[16px] bg-[#16386E] text-[14px] font-bold text-white transition-colors hover:bg-[#0E2749]"
+            >
+              Nhắc nhẹ
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loi moi den voi minh */}
       {pending.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-bold uppercase text-muted-foreground">
-            Lời mời đang chờ bạn
-          </h2>
-          <div className="space-y-2">
+        <div>
+          <div className="mb-2.5">
+            <SectionLabel>Lời mời đang chờ bạn</SectionLabel>
+          </div>
+          <div className="flex flex-col gap-2.5">
             {pending.map((invite) => (
-              <div key={invite.id} className="surface-card flex items-center gap-3 p-4">
+              <div key={invite.id} className="flex items-center gap-3 rounded-[24px] bg-white p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{invite.inviterName}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="font-display m-0 truncate text-[15px] font-bold text-[#16386E]">
+                    {invite.inviterName}
+                  </p>
+                  <p className="m-0 text-[12px] text-[#62708A]">
                     Muốn theo dõi bạn · {invite.relationship}
                   </p>
                 </div>
-                <Button
-                  size="sm"
+                <button
                   disabled={dangXuLy === invite.id}
                   onClick={() => chapNhan(invite)}
+                  className="font-display rounded-full bg-[#16386E] px-3.5 py-2 text-[12px] font-bold text-white disabled:opacity-50"
                 >
-                  <Check className="mr-1 h-3.5 w-3.5" /> Đồng ý
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
+                  Đồng ý
+                </button>
+                <button
+                  aria-label="Từ chối lời mời"
                   disabled={dangXuLy === invite.id}
                   onClick={() => tuChoi(invite)}
+                  className="rounded-full bg-[#F6E9E7] px-3 py-2 text-[12px] font-semibold text-[#B4432C] disabled:opacity-50"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
+                  Từ chối
+                </button>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      <section>
-        <h2 className="mb-2 text-sm font-bold uppercase text-muted-foreground">
-          Người thân bạn theo dõi
-        </h2>
+      {/* Nguoi than dang theo doi */}
+      <div>
+        <div className="mb-2.5">
+          <SectionLabel>Bạn đang theo dõi</SectionLabel>
+        </div>
 
         {dangTai && (
-          <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 rounded-[24px] bg-white p-6 text-[13px] text-[#5B6A85]">
             <Loader2 className="h-4 w-4 animate-spin" /> Đang tải…
           </div>
         )}
 
         {!dangTai && relatives.length === 0 && (
-          <p className="surface-card p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-[24px] bg-white p-6 text-center text-[13px] text-[#5B6A85]">
             Bạn chưa theo dõi người thân nào.
-          </p>
+          </div>
         )}
 
-        <div className="space-y-3">
-          {relatives.map((r) => {
+        <div className="flex flex-col gap-2.5">
+          {relatives.map((r, i) => {
             const badge = badgeByPatientId[r.patientId] ?? 0;
+            const xong = r.doseTotalToday > 0 && r.doseTakenToday >= r.doseTotalToday;
+            const mau = AVATAR_MAU[i % AVATAR_MAU.length];
+            const chip: ChipStyle = badge
+              ? { label: `${badge} việc cần xem`, icon: "!", bg: "#FDEBC9", fg: "#8A6516" }
+              : xong
+                ? CHIP.taken
+                : CHIP.upcoming;
+            const pct =
+              r.doseTotalToday > 0
+                ? (r.doseTakenToday / r.doseTotalToday) * 100
+                : (r.adherencePct ?? 0);
             return (
-              <Link key={r.linkId} href={`/patient/family/${r.patientId}`} className="surface-card block p-4">
-                <div className="flex items-center gap-3">
-                  <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-accent-foreground">
-                    {r.fullName.charAt(0)}
-                    {badge > 0 && (
-                      <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                        {badge}
-                      </span>
-                    )}
+              <Link
+                key={r.linkId}
+                href={`/patient/family/${r.patientId}`}
+                className="block rounded-[24px] bg-white p-4"
+              >
+                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                  <span
+                    className="font-display grid h-[46px] w-[46px] place-items-center rounded-[16px] text-[17px] font-bold"
+                    style={{ background: mau.bg, color: mau.fg }}
+                  >
+                    {r.fullName.charAt(0).toUpperCase()}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{r.fullName}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {r.relationship}
-                      {r.note ? ` · ${r.note}` : ""}
-                    </p>
-                  </div>
-                  {r.adherencePct !== null && (
-                    <span className="shrink-0 text-lg font-extrabold text-primary">
-                      {Math.round(r.adherencePct)}%
+                  <span className="block min-w-0">
+                    <span className="font-display block truncate text-[16px] font-bold text-[#16386E]">
+                      {r.fullName}
                     </span>
-                  )}
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="block text-[12.5px] text-[#5B6A85]">
+                      {r.doseTotalToday > 0
+                        ? `${r.doseTakenToday} / ${r.doseTotalToday} liều hôm nay`
+                        : r.relationship}
+                    </span>
+                  </span>
+                  <PillChip chip={chip} />
                 </div>
-
-                {r.adherencePct !== null && (
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${r.adherencePct}%` }}
-                    />
-                  </div>
-                )}
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Đã uống {r.doseTakenToday}/{r.doseTotalToday} liều hôm nay
-                  {r.openEscalations.length > 0 && ` · ${r.openEscalations.length} cảnh báo`}
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EDF0F6]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${pct}%`, background: badge ? "#E39A16" : "#2E9E6B" }}
+                  />
+                </div>
+                <p className="font-mono m-0 mt-2 text-[11px] text-[#62708A]">
+                  chia sẻ: mức tuân thủ + cảnh báo bỏ liều · không xem nhật ký
                 </p>
               </Link>
             );
           })}
         </div>
-      </section>
+      </div>
 
-      <section className="surface-card p-4">
-        {!dangMoi ? (
-          <>
-            <p className="font-semibold">Theo dõi thêm người thân</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gửi lời mời — họ cần đồng ý thì bạn mới xem được tình trạng uống thuốc của họ.
-            </p>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => setDangMoi(true)}>
-              <UserPlus className="mr-1 h-4 w-4" /> Gửi lời mời theo dõi
-            </Button>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="font-semibold">Gửi lời mời theo dõi</p>
-              <button onClick={() => setDangMoi(false)} aria-label="Đóng">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
+      {/* Moi them nguoi than */}
+      {!dangMoi ? (
+        <div className="flex flex-col gap-2">
+          <CapyPrimaryButton onClick={() => setDangMoi(true)}>+ Mời người thân</CapyPrimaryButton>
+          <p className="m-0 text-center text-[11.5px] leading-[1.5] text-[#62708A]">
+            Họ phải đồng ý trước khi bạn xem được thông tin dùng thuốc.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 rounded-[24px] bg-white p-4">
+          <div className="flex items-center justify-between">
+            <p className="font-display m-0 font-bold text-[#16386E]">Gửi lời mời theo dõi</p>
+            <button onClick={() => setDangMoi(false)} aria-label="Đóng">
+              <X className="h-4 w-4 text-[#62708A]" />
+            </button>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tim-nguoi-than">Tìm bệnh nhân theo tên</Label>
-              <Input
-                id="tim-nguoi-than"
-                value={nguoiDuocChon ? nguoiDuocChon.fullName : tuKhoa}
-                onChange={(e) => {
-                  setNguoiDuocChon(null);
-                  setTuKhoa(e.target.value);
-                }}
-                placeholder="Gõ tên bệnh nhân..."
-              />
-              {ketQuaTim.length > 0 && !nguoiDuocChon && (
-                <div className="max-h-48 overflow-auto rounded-lg border border-border">
-                  {ketQuaTim.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setNguoiDuocChon(p);
-                        setTuKhoa("");
-                        setKetQuaTim([]);
-                      }}
-                      className="block w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                    >
-                      {p.fullName}
-                      <span className="ml-1.5 text-xs text-muted-foreground">({p.id})</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {nguoiDuocChon && (
-              <div className="space-y-2">
-                <Label htmlFor="quan-he">Quan hệ với bạn</Label>
-                <Input
-                  id="quan-he"
-                  value={quanHe}
-                  onChange={(e) => setQuanHe(e.target.value)}
-                  placeholder="vd. Con gái, Vợ, Bố..."
-                />
+          <div className="space-y-2">
+            <Label htmlFor="tim-nguoi-than">Tìm bệnh nhân theo tên</Label>
+            <Input
+              id="tim-nguoi-than"
+              value={nguoiDuocChon ? nguoiDuocChon.fullName : tuKhoa}
+              onChange={(e) => {
+                setNguoiDuocChon(null);
+                setTuKhoa(e.target.value);
+              }}
+              placeholder="Gõ tên bệnh nhân..."
+              className="rounded-2xl border-[#E3E8F1]"
+            />
+            {ketQuaTim.length > 0 && !nguoiDuocChon && (
+              <div className="max-h-48 overflow-auto rounded-2xl border border-[#E3E8F1]">
+                {ketQuaTim.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setNguoiDuocChon(p);
+                      setTuKhoa("");
+                      setKetQuaTim([]);
+                    }}
+                    className="block w-full px-3 py-2 text-left text-[13px] hover:bg-[#F4F7FC]"
+                  >
+                    {p.fullName}
+                    <span className="font-mono ml-1.5 text-[11px] text-[#62708A]">({p.id})</span>
+                  </button>
+                ))}
               </div>
             )}
-
-            <Button
-              className="w-full"
-              disabled={!nguoiDuocChon || !quanHe.trim() || dangGuiMoi}
-              onClick={guiLoiMoi}
-            >
-              {dangGuiMoi ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
-              Gửi lời mời
-            </Button>
           </div>
-        )}
-      </section>
+
+          {nguoiDuocChon && (
+            <div className="space-y-2">
+              <Label htmlFor="quan-he">Quan hệ với bạn</Label>
+              <Input
+                id="quan-he"
+                value={quanHe}
+                onChange={(e) => setQuanHe(e.target.value)}
+                placeholder="vd. Con gái, Vợ, Bố..."
+                className="rounded-2xl border-[#E3E8F1]"
+              />
+            </div>
+          )}
+
+          <CapyPrimaryButton
+            disabled={!nguoiDuocChon || !quanHe.trim() || dangGuiMoi}
+            onClick={guiLoiMoi}
+            className="min-h-[50px] text-[15px]"
+          >
+            {dangGuiMoi ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi lời mời"}
+          </CapyPrimaryButton>
+        </div>
+      )}
+
+      {/* Sheet nhac nhe */}
+      {nudgeCho && (
+        <CapySheet onClose={() => setNudgeCho(null)}>
+          <p className="font-display m-0 text-[22px] font-extrabold leading-[1.2] text-[#16386E]">
+            Nhắc nhẹ {nudgeCho.fullName}
+          </p>
+          <p className="m-0 mt-1.5 text-[13.5px] leading-[1.5] text-[#5B6A85]">
+            Chọn một lời nhắc.
+          </p>
+          <div className="mt-[18px] flex flex-col gap-2.5">
+            {NUDGES.map((n, i) => (
+              <button
+                key={n}
+                onClick={() => setNudgeChon(i)}
+                className="flex min-h-[54px] items-center rounded-[18px] px-[18px] text-left text-[14.5px] font-medium text-[#1B2A44] transition-colors"
+                style={{
+                  background: nudgeChon === i ? "#CFE6FF" : "#F4F7FC",
+                  border: `1.5px solid ${nudgeChon === i ? "#16386E" : "transparent"}`,
+                }}
+              >
+                {n}
+              </button>
+            ))}
+            <CapySecondaryButton
+              className="min-h-[56px] text-[15px]"
+              disabled={dangGuiNhac}
+              onClick={guiNhac}
+            >
+              {dangGuiNhac ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi lời nhắc"}
+            </CapySecondaryButton>
+          </div>
+        </CapySheet>
+      )}
     </div>
   );
 }

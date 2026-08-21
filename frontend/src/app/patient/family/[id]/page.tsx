@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { listMonitoredPatients, type MonitoredPatient } from "@/lib/caregivers";
+import { ackEscalation } from "@/lib/escalations";
 import {
   gioHienThi,
   listDoses,
@@ -24,6 +25,12 @@ const toneTheoMuc: Record<string, string> = {
   LOW: "bg-secondary text-secondary-foreground",
   MEDIUM: "bg-warning/25 text-warning-foreground",
   HIGH: "bg-destructive/15 text-destructive",
+};
+
+const nhanTheoMuc: Record<string, string> = {
+  LOW: "Nhẹ",
+  MEDIUM: "Trung bình",
+  HIGH: "Nghiêm trọng",
 };
 
 function NgayGio({ iso }: { iso: string }) {
@@ -69,7 +76,11 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
           <NgayGio iso={dose.scheduledAt} /> · {moTaThuoc(dose)}
         </p>
         <p className="text-xs text-muted-foreground">
-          Đã chụp {lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.
+          {dangTai
+            ? "Đang kiểm tra ảnh xác nhận…"
+            : lanCuoi
+              ? `Đã chụp ${lanChup.length} lần, ảnh vẫn không khớp đơn thuốc — cần bạn xem giúp.`
+              : "Bệnh nhân báo đã uống nhưng chưa gửi ảnh xác nhận — bạn xem giúp nhé."}
         </p>
       </div>
 
@@ -116,11 +127,12 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
 
 export default function MonitoredRelativeDetailPage() {
   const params = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const [relative, setRelative] = useState<MonitoredPatient | null>(null);
   const [dosesCanDuyet, setDosesCanDuyet] = useState<Dose[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [tab, setTab] = useState<"canh_bao" | "duyet">("canh_bao");
+  const [dangXuLyCanhBao, setDangXuLyCanhBao] = useState<string | null>(null);
 
   const taiLai = async () => {
     if (!user?.id) return;
@@ -141,6 +153,20 @@ export default function MonitoredRelativeDetailPage() {
     taiLai();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, params.id]);
+
+  const xuLyCanhBao = async (escalationId: string) => {
+    if (!accessToken) return;
+    setDangXuLyCanhBao(escalationId);
+    try {
+      await ackEscalation(accessToken, escalationId);
+      toast.success("Đã đánh dấu đã xem xét");
+      await taiLai();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không xử lý được cảnh báo");
+    } finally {
+      setDangXuLyCanhBao(null);
+    }
+  };
 
   if (dangTai) {
     return (
@@ -178,7 +204,9 @@ export default function MonitoredRelativeDetailPage() {
             <p className="truncate font-bold">{relative.fullName}</p>
             <p className="truncate text-sm text-muted-foreground">
               {relative.relationship}
-              {relative.yearOfBirth ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi` : ""}
+              {relative.yearOfBirth
+                ? ` · ${new Date().getFullYear() - relative.yearOfBirth} tuổi`
+                : ""}
             </p>
           </div>
           {relative.adherencePct !== null && (
@@ -192,8 +220,10 @@ export default function MonitoredRelativeDetailPage() {
         </p>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+      <div role="tablist" className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
         <button
+          role="tab"
+          aria-selected={tab === "canh_bao"}
           onClick={() => setTab("canh_bao")}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
             tab === "canh_bao" ? "bg-card shadow-sm" : "text-muted-foreground"
@@ -202,6 +232,8 @@ export default function MonitoredRelativeDetailPage() {
           Cảnh báo {relative.openEscalations.length > 0 && `(${relative.openEscalations.length})`}
         </button>
         <button
+          role="tab"
+          aria-selected={tab === "duyet"}
           onClick={() => setTab("duyet")}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
             tab === "duyet" ? "bg-card shadow-sm" : "text-muted-foreground"
@@ -219,17 +251,32 @@ export default function MonitoredRelativeDetailPage() {
             </p>
           )}
           {relative.openEscalations.map((a) => (
-            <div key={a.id} className="surface-card flex items-center gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{a.title}</p>
+            <div key={a.id} className="surface-card space-y-3 p-4">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{a.title}</p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    toneTheoMuc[a.level] ?? "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {nhanTheoMuc[a.level] ?? a.level} · <NgayGio iso={a.createdAt} />
+                </span>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  toneTheoMuc[a.level] ?? "bg-secondary text-secondary-foreground"
-                }`}
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={dangXuLyCanhBao === a.id}
+                onClick={() => xuLyCanhBao(a.id)}
               >
-                <NgayGio iso={a.createdAt} />
-              </span>
+                {dangXuLyCanhBao === a.id ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-1 h-4 w-4" />
+                )}
+                Đã xem xét
+              </Button>
             </div>
           ))}
         </section>

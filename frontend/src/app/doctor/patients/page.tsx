@@ -2,8 +2,15 @@
 
 import { Eye, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import {
+  CAN_NANG_KG,
+  CHIEU_CAO_CM,
+  kiemTraCanNang,
+  kiemTraChieuCao,
+} from "@/lib/body-metrics";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,8 +94,15 @@ function HealthTab({
   const age = tinhTuoi(patient.yearOfBirth);
   const { pushActivity } = useProto();
   const { accessToken } = useAuth();
+  const chieuCao = kiemTraChieuCao(heightCm);
+  const canNang = kiemTraCanNang(weightKg);
 
   const save = async () => {
+    // Chan truoc khi goi mang - loi 422 tu backend khong noi ro o nao sai.
+    if (chieuCao.loi || canNang.loi) {
+      toast.error(chieuCao.loi ?? canNang.loi ?? "");
+      return;
+    }
     setSaving(true);
     try {
       const patch = await updatePatientHealth(
@@ -165,20 +179,28 @@ function HealthTab({
           <Input
             id={`height-${patient.id}`}
             type="number"
-            min={0}
+            min={CHIEU_CAO_CM.min}
+            max={CHIEU_CAO_CM.max}
+            aria-invalid={chieuCao.loi !== null || undefined}
             value={heightCm}
             onChange={(e) => setHeightCm(e.target.value)}
           />
+          {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
+          {chieuCao.canhBao && <p className="text-sm text-muted-foreground">{chieuCao.canhBao}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`weight-${patient.id}`}>Cân nặng (kg)</Label>
           <Input
             id={`weight-${patient.id}`}
             type="number"
-            min={0}
+            min={CAN_NANG_KG.min}
+            max={CAN_NANG_KG.max}
+            aria-invalid={canNang.loi !== null || undefined}
             value={weightKg}
             onChange={(e) => setWeightKg(e.target.value)}
           />
+          {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}
+          {canNang.canhBao && <p className="text-sm text-muted-foreground">{canNang.canhBao}</p>}
         </div>
       </div>
       <div className="space-y-2">
@@ -430,6 +452,7 @@ function EditPrescriptionDialog({
                     <Input
                       key={idx}
                       type="time"
+                      aria-label={`Giờ uống lần ${idx + 1}`}
                       value={t}
                       onChange={(e) => updateTime(m.id, idx, e.target.value)}
                       className="w-32"
@@ -652,10 +675,12 @@ function PatientDetail({
 
   return (
     <div className="mt-5 space-y-4 rounded-lg bg-muted p-4">
-      <div className="flex gap-5 border-b border-border text-sm">
+      <div role="tablist" className="flex gap-5 border-b border-border text-sm">
         {DETAIL_TABS.map((t) => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
             className={`-mb-px border-b-2 pb-2.5 font-medium ${
               tab === t.key
@@ -748,16 +773,11 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Quản lý bệnh nhân</h1>
-          <p className="text-sm text-muted-foreground">
-            Tìm theo tên hoặc ID, mở hồ sơ để xem tình trạng sức khỏe và tuân thủ điều trị.
-          </p>
-        </div>
+      <header className="flex justify-end">
         <div className="flex w-full gap-2 sm:w-auto">
           <Input
             placeholder="Tìm theo tên hoặc ID bệnh nhân…"
+            aria-label="Tìm theo tên hoặc ID bệnh nhân"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-full sm:w-64"
@@ -783,7 +803,10 @@ export default function PatientsPage() {
                     {p.fullName.charAt(0)}
                   </span>
                   <div className="min-w-0">
-                    <p className="flex items-center gap-2 truncate font-semibold">
+                    <p
+                      className="flex items-center gap-2 truncate font-semibold"
+                      title={p.fullName}
+                    >
                       {p.fullName}
                       {p.watch && (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/25 px-1.5 py-0.5 text-[11px] font-semibold text-warning-foreground">

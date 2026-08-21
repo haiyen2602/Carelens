@@ -63,7 +63,11 @@ export default function LinksPage() {
   const addCaregiver = async (patientId: string) => {
     if (!caregiverAccountId) return;
     try {
-      await createCaregiverLink({ caregiverAccountId, patientId, relationship: relationship || "Người thân" });
+      await createCaregiverLink({
+        caregiverAccountId,
+        patientId,
+        relationship: relationship || "Người thân",
+      });
       await reloadPatientLinks(patientId);
       toast.success("Đã thêm liên kết");
     } catch (err) {
@@ -77,17 +81,6 @@ export default function LinksPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Liên kết bệnh nhân · người thân
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Mỗi bệnh nhân có 0..n người thân được liên kết để nhận cảnh báo và xác minh ảnh uống
-          thuốc. Bác sĩ phụ trách chính hiện chưa có nguồn dữ liệu liên kết riêng ở backend (chỉ
-          gắn theo từng đơn thuốc), nên chưa hiển thị ở đây.
-        </p>
-      </header>
-
       {loading && <p className="text-sm text-muted-foreground">Đang tải…</p>}
 
       <div className="space-y-4">
@@ -140,6 +133,7 @@ export default function LinksPage() {
                         onClick={() => removeCaregiver(p.id, c.id)}
                         className="shrink-0 text-muted-foreground hover:text-destructive"
                         title="Gỡ liên kết"
+                        aria-label={`Gỡ liên kết với ${c.caregiverName}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -150,7 +144,7 @@ export default function LinksPage() {
                     <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold">Thêm người thân</p>
-                        <button onClick={() => setAddingTo(null)}>
+                        <button onClick={() => setAddingTo(null)} aria-label="Đóng">
                           <X className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       </div>

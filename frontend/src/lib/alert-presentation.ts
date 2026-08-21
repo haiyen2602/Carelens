@@ -28,6 +28,7 @@ const statusLabel: Record<SysAlert["status"], string> = {
   processing: "Đang xử lý",
   acknowledged: "Đã ghi nhận",
   resolved: "Đã xử lý",
+  dismissed: "Đã từ chối",
 };
 
 function findFirst(source: string, patterns: RegExp[]) {

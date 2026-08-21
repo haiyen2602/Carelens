@@ -328,7 +328,17 @@ def _list_monitored_patients(db: Session, caregiver_account_id: str) -> list[Car
 
         open_escalation_rows = db.execute(
             select(Escalation)
-            .where(Escalation.patient_id == link.patient_id, Escalation.status == "OPEN")
+            .where(
+                Escalation.patient_id == link.patient_id,
+                Escalation.status == "OPEN",
+                # trigger=photo_mismatch (ADR-0011) da hien rieng qua lieu
+                # AWAITING_CAREGIVER o tab "Duyet uong thuoc"
+                # (frontend/src/app/patient/family/[id]/page.tsx) - loai
+                # khoi day de tranh 1 su viec hien 2 noi (vua "Canh bao" vua
+                # "Duyet uong thuoc") va bi dem trung trong badge "X viec can
+                # xem" (demSoCanhBao() o frontend/src/app/patient/family/page.tsx).
+                Escalation.trigger != "photo_mismatch",
+            )
             .order_by(Escalation.created_at.desc())
         ).scalars().all()
 

@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   if (!body?.current_password || !body?.new_password) {
-    return NextResponse.json({ detail: "Thiếu mật khẩu hiện tại hoặc mật khẩu mới" }, { status: 400 });
+    return NextResponse.json(
+      { detail: "Thiếu mật khẩu hiện tại hoặc mật khẩu mới" },
+      { status: 400 },
+    );
   }
 
   const backendResponse = await fetch(`${API_BASE}/api/v1/auth/change-password`, {

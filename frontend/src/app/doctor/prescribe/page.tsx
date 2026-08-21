@@ -17,15 +17,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import {
+  CAN_NANG_KG,
+  CHIEU_CAO_CM,
+  kiemTraCanNang,
+  kiemTraChieuCao,
+} from "@/lib/body-metrics";
 import { useAuth } from "@/lib/auth";
 import { goiYLieu } from "@/lib/drugs";
 import { listPatients, type PatientRecord } from "@/lib/patients";
+import { updatePatientHealth } from "@/lib/reporting";
 import { PatientCombobox } from "@/components/patient-combobox";
 import { DoseMiniCalendar } from "@/components/dose-mini-calendar";
 import { useProto } from "@/lib/proto-store";
 import { DEFAULT_TIMES, appliesOnDate, shiftTime, today } from "@/lib/dose-schedule";
 
 const MEAL_OPTIONS = ["Trước ăn", "Sau ăn", "Không phụ thuộc bữa ăn", "Trước khi ngủ"];
+
+// Khop gia tri luu trong DB (xem onboarding/profile/page.tsx - cung 3 gia tri).
+const GENDER_OPTIONS = [
+  { value: "nam", label: "Nam" },
+  { value: "nu", label: "Nữ" },
+  { value: "khac", label: "Khác" },
+];
 
 // Bac si go so vien bang chu tu do ("2 vien", "1 goi"), nhung phan doi chieu
 // anh (backend/services/photo_verification/matcher.py, che do EXACT) can mot
@@ -103,6 +117,13 @@ export default function PrescribePage() {
   // thuoc trong danh sach mock, khong ton tai trong danh muc that, nen de lai
   // se thanh don thuoc khong tra cuu duoc dang bao che.
   const [meds, setMeds] = useState<MedRow[]>([newMedRow()]);
+  // Tab "Tinh trang suc khoe": form nay ghi THANG vao ban ghi `patient` trong
+  // DB (PATCH /api/patients/{id}), doc lap voi don thuoc dang soan - bam "Luu"
+  // la doi ngay, khong cho toi luc chot phac do.
+  const [health, setHealth] = useState({ gender: "", heightCm: "", weightKg: "", note: "" });
+  const [dangLuuHealth, setDangLuuHealth] = useState(false);
+  const chieuCao = kiemTraChieuCao(health.heightCm);
+  const canNang = kiemTraCanNang(health.weightKg);
 
   useEffect(() => {
     listPatients(undefined, accessToken)
@@ -115,6 +136,47 @@ export default function PrescribePage() {
         toast.error("Không tải được danh sách bệnh nhân");
       });
   }, [accessToken]);
+
+  // Doi benh nhan -> nap lai tinh trang suc khoe cua nguoi do vao form.
+  useEffect(() => {
+    const p = benhNhanThat.find((x) => x.id === patientId);
+    setHealth({
+      gender: p?.gender ?? "",
+      heightCm: p?.heightCm != null ? String(p.heightCm) : "",
+      weightKg: p?.weightKg != null ? String(p.weightKg) : "",
+      note: p?.note ?? "",
+    });
+  }, [patientId, benhNhanThat]);
+
+  const luuHealth = async () => {
+    if (!patientId) return;
+    // Chan truoc khi goi mang - loi 422 tu backend khong noi ro o nao sai.
+    if (chieuCao.loi || canNang.loi) {
+      toast.error(chieuCao.loi ?? canNang.loi ?? "");
+      return;
+    }
+    setDangLuuHealth(true);
+    try {
+      const patch = await updatePatientHealth(
+        patientId,
+        {
+          gender: health.gender || undefined,
+          heightCm: health.heightCm ? Number(health.heightCm) : undefined,
+          weightKg: health.weightKg ? Number(health.weightKg) : undefined,
+          note: health.note || undefined,
+        },
+        accessToken,
+      );
+      // Cap nhat cache cuc bo de doi qua benh nhan khac roi quay lai van thay
+      // so moi (khong phai goi lai listPatients).
+      setBenhNhanThat((prev) => prev.map((p) => (p.id === patientId ? { ...p, ...patch } : p)));
+      toast.success("Đã lưu tình trạng sức khỏe");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không lưu được tình trạng sức khỏe");
+    } finally {
+      setDangLuuHealth(false);
+    }
+  };
 
   const patientOptions = benhNhanThat.map((p, i) => ({
     id: p.id,
@@ -220,13 +282,6 @@ export default function PrescribePage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Kê đơn thuốc</h1>
-        <p className="text-sm text-muted-foreground">
-          Hệ thống sinh thời khóa biểu, bác sĩ xác nhận trước khi thông báo tới bệnh nhân.
-        </p>
-      </header>
-
       <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
         <section className="surface-card space-y-5 p-5">
           <div className="space-y-2">
@@ -238,6 +293,76 @@ export default function PrescribePage() {
               onChange={setPatientId}
               placeholder={benhNhanThat.length === 0 ? "Đang tải…" : undefined}
             />
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-muted-foreground">Tình trạng sức khỏe</p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!patientId || dangLuuHealth}
+                onClick={luuHealth}
+              >
+                {dangLuuHealth ? "Đang lưu…" : "Lưu"}
+              </Button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Giới tính</Label>
+                <HoverSelect
+                  value={health.gender}
+                  onChange={(v) => setHealth((h) => ({ ...h, gender: v }))}
+                  options={GENDER_OPTIONS}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height-cm">Chiều cao (cm)</Label>
+                <Input
+                  id="height-cm"
+                  type="number"
+                  min={CHIEU_CAO_CM.min}
+                  max={CHIEU_CAO_CM.max}
+                  aria-invalid={chieuCao.loi !== null || undefined}
+                  placeholder="170"
+                  value={health.heightCm}
+                  onChange={(e) => setHealth((h) => ({ ...h, heightCm: e.target.value }))}
+                />
+                {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
+                {chieuCao.canhBao && (
+                  <p className="text-sm text-muted-foreground">{chieuCao.canhBao}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight-kg">Cân nặng (kg)</Label>
+                <Input
+                  id="weight-kg"
+                  type="number"
+                  min={CAN_NANG_KG.min}
+                  max={CAN_NANG_KG.max}
+                  aria-invalid={canNang.loi !== null || undefined}
+                  placeholder="60"
+                  value={health.weightKg}
+                  onChange={(e) => setHealth((h) => ({ ...h, weightKg: e.target.value }))}
+                />
+                {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}
+                {canNang.canhBao && (
+                  <p className="text-sm text-muted-foreground">{canNang.canhBao}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="health-note">Ghi chú bệnh lý</Label>
+              <Textarea
+                id="health-note"
+                rows={3}
+                placeholder="Bệnh nền, dị ứng thuốc, lưu ý khi kê đơn…"
+                value={health.note}
+                onChange={(e) => setHealth((h) => ({ ...h, note: e.target.value }))}
+              />
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -314,6 +439,7 @@ export default function PrescribePage() {
                       <Input
                         key={idx}
                         type="time"
+                        aria-label={`Giờ uống lần ${idx + 1}`}
                         value={t}
                         onChange={(e) => updateTime(m.id, idx, e.target.value)}
                         className="w-32"
@@ -363,7 +489,11 @@ export default function PrescribePage() {
                   {m.hasCycle && (
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Uống</span>
+                      <Label htmlFor={`cycle-on-${m.id}`} className="sr-only">
+                        Số ngày uống trong chu kỳ
+                      </Label>
                       <Input
+                        id={`cycle-on-${m.id}`}
                         type="number"
                         min={1}
                         value={m.cycleOnDays}
@@ -373,7 +503,11 @@ export default function PrescribePage() {
                         className="w-20"
                       />
                       <span className="text-muted-foreground">ngày, nghỉ</span>
+                      <Label htmlFor={`cycle-off-${m.id}`} className="sr-only">
+                        Số ngày nghỉ trong chu kỳ
+                      </Label>
                       <Input
+                        id={`cycle-off-${m.id}`}
                         type="number"
                         min={0}
                         value={m.cycleOffDays}
@@ -413,37 +547,44 @@ export default function PrescribePage() {
           >
             <Plus className="mr-1 h-4 w-4" /> Chốt phác đồ & gửi duyệt
           </Button>
+          {!canSubmit && !dangGui && (
+            <p className="text-xs text-muted-foreground">
+              {!patientId
+                ? "Chọn bệnh nhân trước khi chốt phác đồ."
+                : "Điền tên đầy đủ cho mọi thuốc trước khi chốt phác đồ."}
+            </p>
+          )}
         </section>
 
         <section className="surface-card space-y-5 p-5">
-          <div>
-            <h2 className="flex items-center gap-2 font-bold">
-              <Clock className="h-4 w-4 text-primary" /> Preview timeline 1 ngày
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Safeband ±30 phút quanh mỗi mốc giờ. Mỗi khung giờ gộp tất cả thuốc cần uống cùng
-              lúc.
-            </p>
-          </div>
+          <h2 className="flex items-center gap-2 font-bold">
+            <Clock className="h-4 w-4 text-primary" /> Preview timeline 1 ngày
+          </h2>
 
-          <ol className="space-y-3">
+          <ol className="space-y-4">
             {timeline.map(([t, ms]) => (
-              <li key={t} className="flex gap-3">
-                <span className="w-14 shrink-0 font-mono text-sm font-semibold">{t}</span>
+              <li key={t} className="flex gap-4">
+                <div className="w-20 shrink-0">
+                  <p className="font-mono text-2xl font-bold leading-tight">{t}</p>
+                  <p
+                    className="mt-0.5 text-[11px] leading-tight text-muted-foreground"
+                    title="Khung giờ an toàn để xác nhận đã uống"
+                  >
+                    an toàn{" "}
+                    <span className="font-mono">
+                      {shiftTime(t, -30)}–{shiftTime(t, 30)}
+                    </span>
+                  </p>
+                </div>
                 <div className="min-w-0 flex-1 space-y-2">
                   {ms.map((m) => (
                     <div key={m.id} className="rounded-lg border border-border p-3">
-                      <p className="truncate font-semibold">
-                        {m.med || "(chưa đặt tên thuốc)"}
-                      </p>
+                      <p className="break-words font-semibold">{m.med || "(chưa đặt tên thuốc)"}</p>
                       <p className="text-sm text-muted-foreground">
                         {m.dose} · {m.meal}
                       </p>
                     </div>
                   ))}
-                  <p className="text-xs text-primary">
-                    Khung an toàn: {shiftTime(t, -30)} – {shiftTime(t, 30)}
-                  </p>
                 </div>
               </li>
             ))}
@@ -464,11 +605,6 @@ export default function PrescribePage() {
               />
             </div>
           </div>
-
-          <div className="rounded-lg bg-accent p-4 text-sm text-accent-foreground">
-            Sau khi bác sĩ duyệt: ghi audit log → kích hoạt phác đồ → thông báo bệnh nhân và người
-            thân.
-          </div>
         </section>
       </div>
 
@@ -478,8 +614,8 @@ export default function PrescribePage() {
             <DialogTitle>Xác nhận duyệt phác đồ</DialogTitle>
             <DialogDescription>
               Bấm "Duyệt & kích hoạt" để chốt phác đồ này ngay — hệ thống sẽ ghi audit log, kích
-              hoạt lịch nhắc và thông báo tới bệnh nhân/người thân. Thao tác này thay cho bước
-              duyệt riêng ở hàng đợi.
+              hoạt lịch nhắc và thông báo tới bệnh nhân/người thân. Thao tác này thay cho bước duyệt
+              riêng ở hàng đợi.
             </DialogDescription>
           </DialogHeader>
 
@@ -488,13 +624,13 @@ export default function PrescribePage() {
               <span className="text-muted-foreground">Bệnh nhân: </span>
               <span className="font-semibold">{selectedPatientName || "(chưa chọn)"}</span>
             </p>
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {activeMeds.map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 truncate font-medium">{m.med}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                <li key={m.id}>
+                  <p className="break-words font-medium">{m.med}</p>
+                  <p className="text-xs text-muted-foreground">
                     {m.dose} · {m.times.join(", ")}
-                  </span>
+                  </p>
                 </li>
               ))}
             </ul>

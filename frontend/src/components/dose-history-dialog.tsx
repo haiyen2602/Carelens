@@ -63,9 +63,7 @@ function MotLanChup({ v }: { v: PhotoVerification }) {
         </div>
       )}
 
-      {v.confidence && (
-        <p className="text-xs text-muted-foreground">Độ tin cậy: {v.confidence}</p>
-      )}
+      {v.confidence && <p className="text-xs text-muted-foreground">Độ tin cậy: {v.confidence}</p>}
       <p className="text-sm">{v.message}</p>
     </div>
   );

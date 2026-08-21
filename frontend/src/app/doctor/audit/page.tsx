@@ -10,41 +10,10 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
+import { getPageItems } from "@/lib/pagination";
 import { useProto } from "@/lib/proto-store";
 
 const PAGE_SIZE = 10;
-
-function getPageItems(currentPage: number, totalPages: number) {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, "end-ellipsis", totalPages] as const;
-  }
-
-  if (currentPage >= totalPages - 3) {
-    return [
-      1,
-      "start-ellipsis",
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ] as const;
-  }
-
-  return [
-    1,
-    "start-ellipsis",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "end-ellipsis",
-    totalPages,
-  ] as const;
-}
 
 export default function AuditPage() {
   const { audit } = useProto();
@@ -67,13 +36,6 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Audit log</h1>
-        <p className="text-sm text-muted-foreground">
-          {audit.length} bản ghi hội thoại AI — mỗi bản ghi là một lượt hỏi/đáp giữa bệnh nhân và
-          trợ lý AI.
-        </p>
-      </header>
       <div id="audit-log-list" className="surface-card divide-y divide-border">
         {auditOnPage.map((a) => (
           <div key={a.id} className="flex gap-4 p-4">

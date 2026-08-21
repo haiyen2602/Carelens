@@ -3,6 +3,7 @@
 // lib/prescriptions.ts).
 
 export type AccountRole = "doctor" | "patient" | "caregiver" | "admin";
+export type AccountCreationRole = Extract<AccountRole, "doctor" | "admin">;
 export type AccountStatus = "active" | "locked" | "pending";
 
 export type AccountRecord = {
@@ -50,8 +51,10 @@ function toAccount(a: AccountApi): AccountRecord {
   };
 }
 
-export async function listAccounts(): Promise<AccountRecord[]> {
-  const response = await fetch("/api/accounts");
+export async function listAccounts(accessToken?: string | null): Promise<AccountRecord[]> {
+  const response = await fetch("/api/accounts", {
+    headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  });
   if (!response.ok) return loi(response);
   const items: AccountApi[] = await response.json();
   return items.map(toAccount);
@@ -61,20 +64,20 @@ export async function createAccount(input: {
   fullName: string;
   email: string;
   password: string;
-  role: AccountRole;
-  patientId?: string;
-  doctorId?: string;
+  role: AccountCreationRole;
+  accessToken?: string | null;
 }): Promise<AccountRecord> {
   const response = await fetch("/api/accounts", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(input.accessToken ? { Authorization: `Bearer ${input.accessToken}` } : {}),
+    },
     body: JSON.stringify({
       full_name: input.fullName,
       email: input.email,
       password: input.password,
       role: input.role,
-      patient_id: input.patientId || undefined,
-      doctor_id: input.doctorId || undefined,
     }),
   });
   if (!response.ok) return loi(response);
@@ -84,10 +87,14 @@ export async function createAccount(input: {
 export async function updateAccountStatus(
   accountId: string,
   status: AccountStatus,
+  accessToken?: string | null,
 ): Promise<AccountRecord> {
   const response = await fetch(`/api/accounts/${encodeURIComponent(accountId)}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({ status }),
   });
   if (!response.ok) return loi(response);

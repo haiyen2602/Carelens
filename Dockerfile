@@ -60,4 +60,5 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
 #     (stop_escalation_scheduler, backend/main.py) khong bao gio chay khi Railway
 #     redeploy/restart, APScheduler job bi bo lai trong jobstore Postgres.
 # ${PORT:-8000} giu nguyen hanh vi cu khi chay local/docker-compose (khong co PORT).
-CMD ["sh", "-c", "exec uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Tu dong chay migration database truoc khi khoi dong web server
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -1,153 +1,177 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2, Search, Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MEDICINES, type MedicineEntry, type MedicineStatus } from "@/lib/admin-mock";
+import { useAuth } from "@/lib/auth";
+import { listAdminDrugs, type AdminDrugItem, type MappingStatus } from "@/lib/admin-drugs";
 
-const statusMeta: Record<
-  MedicineStatus,
-  { label: string; tone: string; icon: typeof CheckCircle2 }
-> = {
-  indexed: { label: "Đã index", tone: "bg-success/15 text-success", icon: CheckCircle2 },
-  processing: { label: "Đang xử lý", tone: "bg-primary/10 text-primary", icon: Loader2 },
-  error: {
-    label: "Lỗi — cần xem lại",
-    tone: "bg-destructive/12 text-destructive",
-    icon: AlertCircle,
-  },
-};
+const statusOptions: Array<{ value: MappingStatus; label: string }> = [
+  { value: "ACTIVE", label: "Đang hoạt động" },
+  { value: "AMBIGUOUS", label: "Mơ hồ" },
+  { value: "RETIRED", label: "Đã ngừng" },
+  { value: "UNMAPPED", label: "Chưa ánh xạ" },
+];
 
 export default function MedicinesPage() {
-  const [items, setItems] = useState<MedicineEntry[]>(MEDICINES);
-  const [q, setQ] = useState("");
-  const [importing, setImporting] = useState(false);
+  const { accessToken } = useAuth();
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<MappingStatus | "">("");
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<AdminDrugItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const list = useMemo(
-    () =>
-      items.filter(
-        (m) =>
-          m.name.toLowerCase().includes(q.toLowerCase()) ||
-          m.activeIngredient.toLowerCase().includes(q.toLowerCase()),
-      ),
-    [items, q],
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+    const debounce = window.setTimeout(() => {
+      setLoading(true);
+      setError(null);
+      listAdminDrugs({
+        q: query,
+        mappingStatus: status || undefined,
+        page,
+        accessToken,
+        signal: controller.signal,
+      })
+        .then((result) => {
+          setItems(result.items);
+          setTotal(result.total);
+          setTotalPages(result.total_pages);
+        })
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted)
+            setError(reason instanceof Error ? reason.message : "Không thể tải dữ liệu thuốc");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, 300);
+    return () => {
+      window.clearTimeout(debounce);
+      controller.abort();
+    };
+  }, [accessToken, page, query, status]);
 
-  const reindex = (id: string) => {
-    setItems((prev) => prev.map((m) => (m.id === id ? { ...m, status: "processing" } : m)));
-    setTimeout(() => {
-      setItems((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? { ...m, status: "indexed", updatedAt: "Vừa xong", version: bumpVersion(m.version) }
-            : m,
-        ),
-      );
-    }, 1400);
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    setPage(1);
   };
-
-  const simulateImport = () => {
-    setImporting(true);
-    setTimeout(() => setImporting(false), 1600);
+  const changeStatus = (value: string) => {
+    setStatus(value as MappingStatus | "");
+    setPage(1);
   };
-
-  const indexed = items.filter((m) => m.status === "indexed").length;
 
   return (
     <div className="space-y-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Dữ liệu thuốc (RAG)</h1>
-          <p className="text-sm text-muted-foreground">
-            {indexed}/{items.length} bản ghi đã index · nguồn tri thức cho agent trả lời câu hỏi về
-            thuốc.
-          </p>
-        </div>
-        <Button onClick={simulateImport} disabled={importing}>
-          {importing ? (
-            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-1 h-4 w-4" />
-          )}
-          {importing ? "Đang nạp dữ liệu..." : "Nạp dữ liệu mới"}
-        </Button>
+      <header>
+        <p className="text-sm text-muted-foreground">{total} bản ghi thuốc trong cơ sở dữ liệu.</p>
       </header>
-
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Tìm theo tên thuốc, hoạt chất..."
-          className="pl-9"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative max-w-md flex-1">
+          <Search
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            value={query}
+            onChange={(event) => changeQuery(event.target.value)}
+            placeholder="Tìm theo tên thuốc, hoạt chất..."
+            aria-label="Tìm theo tên thuốc hoặc hoạt chất"
+            className="pl-9"
+          />
+        </div>
+        <select
+          aria-label="Lọc trạng thái ánh xạ"
+          value={status}
+          onChange={(event) => changeStatus(event.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">Tất cả trạng thái</option>
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
-
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+        >
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
       <div className="surface-card overflow-x-auto">
-        <table className="w-full min-w-[880px] border-collapse text-sm">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold text-muted-foreground">
               <th className="px-4 py-3">Tên thuốc</th>
               <th className="px-4 py-3">Hoạt chất</th>
-              <th className="px-4 py-3">Nhóm</th>
-              <th className="px-4 py-3">Nguồn</th>
-              <th className="px-4 py-3">Phiên bản</th>
-              <th className="px-4 py-3">Cập nhật</th>
-              <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3">Dạng bào chế</th>
+              <th className="px-4 py-3">Đường dùng</th>
+              <th className="px-4 py-3">Trạng thái ánh xạ</th>
             </tr>
           </thead>
           <tbody>
-            {list.map((m) => {
-              const meta = statusMeta[m.status];
-              const Icon = meta.icon;
-              return (
-                <tr key={m.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-semibold">{m.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{m.activeIngredient}</td>
-                  <td className="px-4 py-3">{m.category}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{m.source}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{m.version}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{m.updatedAt}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${meta.tone}`}
-                    >
-                      <Icon
-                        className={`h-3.5 w-3.5 ${m.status === "processing" ? "animate-spin" : ""}`}
-                      />
-                      {meta.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={m.status === "processing"}
-                      onClick={() => reindex(m.id)}
-                    >
-                      {m.status === "error" ? "Thử lại" : "Index lại"}
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })}
-            {list.length === 0 && (
+            {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <Loader2 className="mx-auto h-5 w-5 animate-spin" aria-label="Đang tải" />
+                </td>
+              </tr>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                   Không tìm thấy dữ liệu thuốc phù hợp.
                 </td>
               </tr>
+            ) : (
+              items.map((drug) => (
+                <tr key={drug.id} className="border-b border-border last:border-0">
+                  <td className="px-4 py-3 font-semibold">{drug.display_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {drug.ingredients.join(", ") || "-"}
+                  </td>
+                  <td className="px-4 py-3">{drug.dosage_form || "-"}</td>
+                  <td className="px-4 py-3">{drug.route || "-"}</td>
+                  <td className="px-4 py-3">{drug.mapping_status || "-"}</td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <nav aria-label="Phân trang" className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Trang trước"
+            disabled={page <= 1}
+            onClick={() => setPage((current) => current - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Trang {page}/{totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Trang sau"
+            disabled={page >= totalPages}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </nav>
+      )}
     </div>
   );
-}
-
-function bumpVersion(v: string) {
-  const n = parseInt(v.replace("v", ""), 10) || 1;
-  return `v${n + 1}`;
 }

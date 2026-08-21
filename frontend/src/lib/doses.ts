@@ -98,7 +98,11 @@ export function gioHienThi(iso: string): string {
 }
 
 export function ngayHienThi(iso: string): string {
-  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 async function loi(response: Response): Promise<never> {

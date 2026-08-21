@@ -131,7 +131,9 @@ export async function listCaregiverLinksForPatient(patientId: string): Promise<C
   return items.map(toCaregiverLink);
 }
 
-export async function listMonitoredPatients(caregiverAccountId: string): Promise<MonitoredPatient[]> {
+export async function listMonitoredPatients(
+  caregiverAccountId: string,
+): Promise<MonitoredPatient[]> {
   const response = await fetch(
     `/api/caregiver-links?caregiver_account_id=${encodeURIComponent(caregiverAccountId)}`,
   );
@@ -144,7 +146,13 @@ export async function createCaregiverLink(input: {
   caregiverAccountId: string;
   patientId: string;
   relationship: string;
-}): Promise<{ id: string; caregiverAccountId: string; patientId: string; relationship: string; createdAt: string }> {
+}): Promise<{
+  id: string;
+  caregiverAccountId: string;
+  patientId: string;
+  relationship: string;
+  createdAt: string;
+}> {
   const response = await fetch("/api/caregiver-links", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -206,11 +214,17 @@ export async function listPendingInvitesForMe(accessToken: string): Promise<Pend
   return items.map(toPendingInvite);
 }
 
-export async function acceptCaregiverInvite(accessToken: string, linkId: string): Promise<CaregiverLink> {
-  const response = await fetch(`${API_BASE}/api/v1/caregiver-links/${encodeURIComponent(linkId)}/accept`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export async function acceptCaregiverInvite(
+  accessToken: string,
+  linkId: string,
+): Promise<CaregiverLink> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/caregiver-links/${encodeURIComponent(linkId)}/accept`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
   if (!response.ok) return loi(response);
   return toCaregiverLink(await response.json());
 }

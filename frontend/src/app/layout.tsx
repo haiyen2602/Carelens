@@ -30,6 +30,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         />
+        {/* CapyMedi patient-portal rebrand fonts — scoped via .capymedi-theme in globals.css */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        />
       </head>
       <body>
         <Providers>{children}</Providers>

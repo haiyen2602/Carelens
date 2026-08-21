@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.account_routes import account_router
+from backend.api.admin_drug_routes import admin_drug_router
 from backend.api.agent_v2_routes import agent_v2_router
 from backend.api.auth_routes import auth_router
 from backend.api.caregiver_routes import caregiver_router
@@ -13,9 +14,12 @@ from backend.api.chat_routes import chat_router
 from backend.api.dose_routes import dose_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
+from backend.api.health_log_routes import health_log_router
+from backend.api.nudge_routes import nudge_router
 from backend.api.patient_routes import patient_router
 from backend.api.photo_routes import photo_router
 from backend.api.prescription_routes import prescription_router
+from backend.api.rag_monitoring_routes import rag_monitoring_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.routes import router
 from backend.config import get_settings
@@ -108,6 +112,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(account_router, prefix="/api/v1")
+app.include_router(admin_drug_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(agent_v2_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
@@ -118,8 +123,13 @@ app.include_router(photo_router, prefix="/api/v1")
 app.include_router(dose_router, prefix="/api/v1")
 app.include_router(reporting_router, prefix="/api/v1")
 app.include_router(caregiver_router, prefix="/api/v1")
+app.include_router(rag_monitoring_router, prefix="/api/v1")
+app.include_router(nudge_router, prefix="/api/v1")
+app.include_router(health_log_router, prefix="/api/v1")
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "env": settings.app_env}
+
+# Trigger hot reload for new router additions (reset-password-sync, verify-email-sync)

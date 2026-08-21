@@ -25,6 +25,9 @@ export type AuthUser = {
   // THEM (migration 0022) - chi co y nghia khi role="patient" (frontend
   // dung de bat buoc redirect sang /onboarding/profile). null cho role khac.
   profile_completed: boolean | null;
+  // Lay tu /auth/me (MeResponse co field nay, /auth/login UserOut thi
+  // khong) - optional vi chi co sau khi layLienKet() chay xong.
+  email?: string;
   // THEM (migration 0025) - "google" = tai khoan tao qua Login with Google,
   // CHUA co mat khau nguoi dung nao. UI dung de hien "Đặt mật khẩu"
   // (/api/auth/set-password) thay vi "Đổi mật khẩu" - hoi mat khau hien tai
@@ -40,14 +43,18 @@ export type AuthUser = {
 // cookie nen khong can qua Route Handler).
 async function layLienKet(
   accessToken: string,
-): Promise<Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "auth_provider">> {
+): Promise<
+  Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "email" | "auth_provider">
+> {
   const me = await request<{
+    email: string;
     patient_id: string | null;
     doctor_id: string | null;
     profile_completed: boolean | null;
     auth_provider: string;
   }>("/api/v1/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } });
   return {
+    email: me.email,
     patient_id: me.patient_id,
     doctor_id: me.doctor_id,
     profile_completed: me.profile_completed,
@@ -69,17 +76,13 @@ type RegisterData = {
   email: string;
   password: string;
   role?: string;
+  provider_account_id?: string;
 };
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<AuthUser>;
-  loginWithGoogle: () => Promise<AuthUser>;
-  register: (data: {
-    full_name: string;
-    email: string;
-    password: string;
-    role?: string;
-  }) => Promise<AuthUser>;
+  loginWithGoogle: (supabaseAccessToken?: string) => Promise<AuthUser>;
+  register: (data: RegisterData) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateSession: (accessToken: string, user: AuthUser) => void;
 };
@@ -148,16 +151,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
-  // "Login with Google" - buoc CUOI cua luong OAuth, khong phai buoc dau.
-  // Buoc dau la signInWithGoogle() (lib/better-auth-client.ts) chuyen trinh
-  // duyet sang Google; sau khi Google tra ve /auth/google/callback, trang do
-  // goi ham nay de doi phien Better Auth thanh JWT that.
-  //
-  // Tu cho nay tro di GIONG HET `login` o tren (cung /auth/me de lay lien ket,
-  // cung setState) - co y dung chung 1 dinh dang phien duy nhat, khong co
-  // "phien Google" rieng biet nao trong app.
-  const loginWithGoogle = useCallback(async () => {
-    const res = await fetch("/api/auth/google-bridge", { method: "POST" });
+  // "Login with Google" (Supabase Auth - ADR-0013)
+  // Buoc cuoi cua luong OAuth sau khi Supabase redirect ve /auth/google/callback.
+  // Trang callback goi ham nay (co the truyen session token cua Supabase) de
+  // doi lay JWT backend thong qua route /api/auth/google-bridge.
+  const loginWithGoogle = useCallback(async (supabaseAccessToken?: string) => {
+    const res = await fetch("/api/auth/google-bridge", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(supabaseAccessToken ? { Authorization: `Bearer ${supabaseAccessToken}` } : {}),
+      },
+      body: JSON.stringify({ access_token: supabaseAccessToken }),
+    });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       throw new Error(data?.detail ?? "Đăng nhập bằng Google thất bại");
@@ -168,22 +174,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
-  const register = useCallback(
-    async (payload: { full_name: string; email: string; password: string; role?: string }) => {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.detail ?? "Đăng ký thất bại");
-      }
-      // Không auto-login sau đăng ký — redirect về trang đăng nhập
-      return data.user as AuthUser;
-    },
-    [],
-  );
+  const register = useCallback(async (payload: RegisterData) => {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.detail ?? "Đăng ký thất bại");
+    }
+    // Không auto-login sau đăng ký — redirect về trang đăng nhập
+    return data.user as AuthUser;
+  }, []);
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
