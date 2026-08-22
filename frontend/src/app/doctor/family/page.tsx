@@ -21,9 +21,9 @@ export default function FamilyListPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
-  const withDisplayId = patients.map((p, i) => ({
+  const withDisplayId = patients.map((p) => ({
     ...p,
-    displayId: `BN${String(i + 1).padStart(4, "0")}`,
+    displayId: p.id,
   }));
   const query = q.trim().toLowerCase();
   const list = withDisplayId.filter(

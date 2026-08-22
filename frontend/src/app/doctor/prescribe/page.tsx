@@ -184,10 +184,10 @@ export default function PrescribePage() {
     }
   };
 
-  const patientOptions = benhNhanThat.map((p, i) => ({
+  const patientOptions = benhNhanThat.map((p) => ({
     id: p.id,
     name: p.fullName,
-    displayId: `BN${String(i + 1).padStart(4, "0")}`,
+    displayId: p.id,
   }));
 
   const updateMed = (id: string, patch: Partial<MedRow>) => {
