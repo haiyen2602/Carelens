@@ -17,10 +17,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager
+from backend.agents.v2.conversation_state import ActiveEntity, SuggestedAction, resolve_state_input, transition_state
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import OpenAIModelGateway
 from backend.agents.v2.observability import AgentTelemetry, ModelPricingCatalog
-from backend.agents.v2.orchestrator import AgentOrchestrator, OrchestrationRequest
+from backend.agents.v2.orchestrator import (
+    AgentOrchestrator,
+    OrchestrationIntent,
+    OrchestrationRequest,
+    normalize_semantic_medical_query,
+)
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime
 from backend.agents.v2.safety import SafetyGateway
@@ -39,11 +45,18 @@ from backend.models.schemas import (
     AgentV2OrchestrateResponse,
     AgentV2ReadOnlyRequest,
     AgentV2ReadOnlyResponse,
+    SuggestedActionOut,
 )
 from backend.services.agent_activity import build_activity_timeline
 from backend.services.agent_authorization import require_agent_patient_access
+from backend.services.agent_conversation_state import AgentConversationStateStore
 from backend.services.agent_doctor_handoff import AuthorizedDoctorHandoffAdapter
-from backend.services.agent_idempotency import IdempotencyBusyError, IdempotencyClaim, claim_or_replay, record_completion
+from backend.services.agent_idempotency import (
+    IdempotencyBusyError,
+    IdempotencyClaim,
+    claim_or_replay,
+    record_completion,
+)
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
@@ -54,6 +67,37 @@ from backend.services.vinmec_web_search import VinmecWebSearchService
 agent_v2_router = APIRouter()
 
 _AGENT_V2_DISABLED_DETAIL = "Agent V2 chua duoc kich hoat"
+
+
+def _validated_selected_action(state, candidate) -> SuggestedAction | None:
+    """Match every client field against the latest state-issued action."""
+    if candidate is None:
+        return None
+    for action in state.offered_actions:
+        if (
+            action.action_id == candidate.action_id
+            and action.type == candidate.type
+            and action.value == candidate.value
+            and action.entity_id == candidate.entity_id
+            and action.topic == candidate.topic
+        ):
+            return action
+    return None
+
+
+def _resolved_drug_entity(tool_results) -> ActiveEntity | None:
+    """Promote only a server-returned canonical drug result into state."""
+    info_ids = [item.data.get("legacy_drug_id") for item in tool_results if item.name == "get_drug_info"]
+    if len(info_ids) != 1 or not info_ids[0]:
+        return None
+    drug_id = str(info_ids[0])
+    for item in tool_results:
+        if item.name != "search_drug":
+            continue
+        for candidate in item.data.get("items", []):
+            if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
+                return ActiveEntity("drug", drug_id, str(candidate["name"]))
+    return ActiveEntity("drug", drug_id, drug_id)
 
 
 def _canary_allowlist(settings: object) -> frozenset[str] | None:
@@ -375,6 +419,17 @@ def run_agent_orchestration(
     settings = get_settings()
     _require_agent_v2_enabled(settings, actor)
     patient_id = require_agent_patient_access(db, actor, request.patient_id)
+    # A missing id is explicitly one-shot.  It must not accidentally reuse
+    # state from a prior request by the same account.
+    conversation_id = request.conversation_id or f"one-shot:{uuid.uuid4()}"
+    state_store = AgentConversationStateStore()
+    conversation_state = state_store.load(
+        db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id
+    )
+    selected_action = _validated_selected_action(conversation_state, request.selected_action)
+    input_resolution = resolve_state_input(
+        conversation_state, message=request.message, selected_action=selected_action
+    )
 
     # BUILD-22: an optional client idempotency key opts into HTTP-level
     # replay -- see backend.services.agent_idempotency. A key bound to a
@@ -441,11 +496,15 @@ def run_agent_orchestration(
                 actor_id=actor.id,
                 actor_role=actor.role,
                 patient_id=patient_id,
-                conversation_id=request.conversation_id or f"one-shot:{actor.id}",
+                conversation_id=conversation_id,
                 session_id=request.session_id or str(uuid.uuid4()),
                 dose_id=request.dose_id,
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
+                resolved_query=input_resolution.query if input_resolution.used else None,
+                active_entity_id=conversation_state.active_entity.id if input_resolution.used and conversation_state.active_entity else None,
+                active_entity_name=conversation_state.active_entity.canonical_name if input_resolution.used and conversation_state.active_entity else None,
+                requested_attribute=selected_action.value if selected_action and selected_action.type == "drug_attribute" else None,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -453,6 +512,25 @@ def run_agent_orchestration(
     except Exception:
         db.rollback()
         raise
+
+    semantic = normalize_semantic_medical_query(input_resolution.query)
+    resolved_entity = _resolved_drug_entity(result.tool_results)
+    topic = semantic.topic if result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION else None
+    next_state = transition_state(
+        conversation_state,
+        intent=result.intent.value,
+        topic=topic,
+        entity=resolved_entity,
+        selected_action=selected_action,
+        safety_event=result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None,
+    )
+    state_store.save(
+        db,
+        agent_run_id=result.agent_run_id,
+        actor_id=actor.id,
+        patient_id=patient_id,
+        state=next_state,
+    )
 
     response = AgentV2OrchestrateResponse(
         status=result.status,
@@ -464,6 +542,7 @@ def run_agent_orchestration(
         handoff_id=result.handoff_result.request_id if result.handoff_result else None,
         trace_id=result.trace_id,
         agent_run_id=result.agent_run_id,
+        suggested_actions=[SuggestedActionOut(**action.as_dict()) for action in next_state.offered_actions],
     )
 
     # BUILD-22: record the replayable result in the SAME transaction as the

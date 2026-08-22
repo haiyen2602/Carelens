@@ -305,6 +305,46 @@ prescription or `dose_event` responses.
 - `safety_flag = true` → FE **bắt buộc** hiện overlay cấp cứu, bỏ qua hội thoại thường.
 - `sources` rỗng → agent **không** được khẳng định thông tin thuốc trong `reply` (FEAT-006).
 
+### Agent V2 conversation action extension (BUILD-29D.1)
+
+`POST /api/v1/agent/v2/orchestrate` accepts the existing `conversation_id`
+and an optional `selected_action`. The client may only echo an action that
+was returned in the latest `suggested_actions` for the same authenticated
+actor, patient, and conversation. `entity_id` and `topic` are never trusted
+as authorization or lookup inputs by themselves.
+
+```json
+{
+  "patient_id": "patient_01",
+  "conversation_id": "conversation_01",
+  "message": "Cong dung",
+  "selected_action": {
+    "action_id": "b18cb31f-3a97-4c62-b57e-9bec9c8475f8",
+    "type": "drug_attribute",
+    "value": "uses",
+    "entity_id": "long-huyet"
+  }
+}
+```
+
+```json
+{
+  "reply": "...",
+  "suggested_actions": [
+    {
+      "action_id": "d940d92d-a016-4236-9b39-b333983f5331",
+      "type": "topic_attribute",
+      "label": "Nguyen nhan",
+      "value": "causes",
+      "topic": "gan nhiem mo"
+    }
+  ]
+}
+```
+
+Invalid or stale actions are treated as ordinary user text. Safety and
+deterministic medication-time routing inspect the raw message first.
+
 ## 5. `photo-api`
 
 | Method | Path | Role | Mô tả |

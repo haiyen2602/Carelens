@@ -20,7 +20,19 @@ export type ChatRequest = {
   // conversation's own stable id (see frontend/src/lib/chat-history.ts),
   // not a new one per message.
   conversation_id?: string;
+  selected_action?: SelectedAction;
 };
+
+export type SuggestedAction = {
+  action_id: string;
+  type: "drug_attribute" | "topic_attribute";
+  label: string;
+  value: string;
+  entity_id?: string;
+  topic?: string;
+};
+
+export type SelectedAction = Omit<SuggestedAction, "label">;
 
 export type ClassificationOut = {
   label: string; // TAKEN | MISSED | DELAYED | SIDE_EFFECT
@@ -64,6 +76,7 @@ export type ChatResponse = {
   trace_id?: string;
   agent_run_id?: string;
   chatbot_version?: "agent-v2" | "legacy";
+  suggested_actions?: SuggestedAction[];
 };
 
 export type AgentStatus = {

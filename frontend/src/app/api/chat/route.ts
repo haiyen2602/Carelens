@@ -23,6 +23,14 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const CHAT_RUNTIME = (process.env.CHAT_RUNTIME ?? "v2").toLowerCase();
 
 type AgentV2Citation = { title: string; source: string; url: string | null };
+type AgentV2SuggestedAction = {
+  action_id: string;
+  type: "drug_attribute" | "topic_attribute";
+  label: string;
+  value: string;
+  entity_id?: string;
+  topic?: string;
+};
 
 type AgentV2OrchestrateResponse = {
   status: string;
@@ -34,6 +42,7 @@ type AgentV2OrchestrateResponse = {
   handoff_id: string | null;
   trace_id: string;
   agent_run_id: string;
+  suggested_actions: AgentV2SuggestedAction[];
 };
 
 // BUILD-26 adapter -- maps Agent V2's real response shape onto the UI's
@@ -65,6 +74,7 @@ function adaptAgentV2Response(v2: AgentV2OrchestrateResponse) {
     trace_id: v2.trace_id,
     agent_run_id: v2.agent_run_id,
     chatbot_version: "agent-v2" as const,
+    suggested_actions: v2.suggested_actions ?? [],
   };
 }
 

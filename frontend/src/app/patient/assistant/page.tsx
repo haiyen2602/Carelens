@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 import {
@@ -78,7 +79,7 @@ export default function AssistantPage() {
     // ngay truoc do (de nut "Báo cáo câu trả lời" khong bao gio phai doc
     // lai tu phan tu lien ke trong mang, tranh sai lech neu lich su sau nay
     // bi chinh sua).
-    meta?: { traceId?: string; agentRunId?: string; userMessage?: string },
+    meta?: { traceId?: string; agentRunId?: string; userMessage?: string; suggestedActions?: SuggestedAction[] },
   ) => {
     const now = new Date().toISOString();
     setConversations((prev) => {
@@ -113,7 +114,7 @@ export default function AssistantPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, isPending]);
 
-  const submit = (content: string) => {
+  const submit = (content: string, selectedAction?: SelectedAction) => {
     if (!content.trim() || isPending || !activeId) return;
     lastQuestion.current = content;
     appendMessage(activeId, "user", content);
@@ -125,7 +126,12 @@ export default function AssistantPage() {
       // sees, instead of every message defaulting to one shared "one-shot"
       // conversation per account (backend/api/agent_v2_routes.py's own
       // fallback when conversation_id is omitted).
-      { patient_id: user?.patient_id ?? "", message: content, conversation_id: activeId },
+      {
+        patient_id: user?.patient_id ?? "",
+        message: content,
+        conversation_id: activeId,
+        ...(selectedAction ? { selected_action: selectedAction } : {}),
+      },
       {
         onSuccess: (data) => {
           // BUILD-29: stash trace_id/agent_run_id (already returned by every
@@ -136,6 +142,7 @@ export default function AssistantPage() {
             traceId: data.trace_id,
             agentRunId: data.agent_run_id,
             userMessage: content,
+            suggestedActions: data.suggested_actions,
           });
         },
       },
@@ -202,6 +209,11 @@ export default function AssistantPage() {
             at={formatMessageTime(m.at)}
             conversationId={activeId ?? undefined}
             accessToken={accessToken}
+            actionsDisabled={isPending}
+            onSelectAction={(action) => {
+              const { label: _label, ...selectedAction } = action;
+              submit(action.label, selectedAction);
+            }}
           />
         ))}
 

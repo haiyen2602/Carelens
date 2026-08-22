@@ -553,6 +553,21 @@ class AgentV2OrchestrateRequest(BaseModel):
     # again. See backend.services.agent_idempotency. Omitted -> unchanged
     # BUILD-16 behavior (a fresh agent_run_id every call, no replay).
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
+    selected_action: "SuggestedActionIn | None" = None
+
+
+class SuggestedActionIn(BaseModel):
+    """Client echo of a server-issued action; authorization stays server-side."""
+
+    action_id: str = Field(..., min_length=1, max_length=100)
+    type: Literal["drug_attribute", "topic_attribute"]
+    value: str = Field(..., min_length=1, max_length=80)
+    entity_id: str | None = Field(default=None, max_length=200)
+    topic: str | None = Field(default=None, max_length=160)
+
+
+class SuggestedActionOut(SuggestedActionIn):
+    label: str = Field(..., min_length=1, max_length=100)
 
 
 class AgentV2CitationOut(BaseModel):
@@ -571,6 +586,7 @@ class AgentV2OrchestrateResponse(BaseModel):
     handoff_id: str | None = None
     trace_id: str
     agent_run_id: str
+    suggested_actions: list[SuggestedActionOut] = Field(default_factory=list)
 
 
 # BUILD-29: user feedback ticket + session/trace issue tracking. See

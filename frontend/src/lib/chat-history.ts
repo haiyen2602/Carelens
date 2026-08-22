@@ -13,6 +13,7 @@ export type StoredChatMessage = {
   traceId?: string;
   agentRunId?: string;
   userMessage?: string;
+  suggestedActions?: import("@/types/chat").SuggestedAction[];
 };
 
 export type Conversation = {
