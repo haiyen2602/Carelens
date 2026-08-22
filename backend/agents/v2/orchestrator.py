@@ -765,6 +765,13 @@ class OrchestrationRequest:
     dose_id: str | None = None
     request_id: str | None = None
     agent_run_id: str | None = None
+    # Resolved exclusively from the latest durable conversation state by the
+    # API boundary.  Raw ``message`` remains the source for safety/time
+    # routing; these fields only guide ordinary conversational resolution.
+    resolved_query: str | None = None
+    active_entity_id: str | None = None
+    active_entity_name: str | None = None
+    requested_attribute: str | None = None
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -1263,6 +1270,15 @@ class AgentOrchestrator:
         if raw_decision.intent in _SCHEDULE_INTENTS:
             return self._schedule_reply(request, raw_decision, tools, trace, agent_run_id, checkpoint_db, lease_token)
 
+        if request.resolved_query and raw_decision.intent in {
+            OrchestrationIntent.GENERAL_CONVERSATION,
+            OrchestrationIntent.DRUG_INFORMATION,
+            OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
+            OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+        }:
+            router_message = request.resolved_query
+            decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+
         memory_items, session_key = self._recall_memory(request, agent_run_id)
         if raw_decision.intent in {
             OrchestrationIntent.GENERAL_CONVERSATION,
@@ -1271,7 +1287,11 @@ class AgentOrchestrator:
             OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
         }:
             previous_memory = [item for item in memory_items if item.id != f"short-term:{agent_run_id}:user"]
-            resolution = resolve_conversation_context(request.message, previous_memory)
+            resolution = (
+                ContextResolution(ContextResolutionStatus.RESOLVED, router_message)
+                if request.resolved_query
+                else resolve_conversation_context(request.message, previous_memory)
+            )
             if resolution.status in {ContextResolutionStatus.AMBIGUOUS, ContextResolutionStatus.NO_CONTEXT}:
                 return self._context_clarification_reply(
                     request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token
@@ -1379,6 +1399,7 @@ class AgentOrchestrator:
         # -- Retrieval / Vinmec Web (only when no fail-closed disposition applies) --
         citations: list[Citation] = []
         evidence_items: list[ContextItem] = []
+        bound_tool_results: list = []
         retrieval_ids: set[str] = set()
         web_ids: set[str] = set()
         if not needs_handoff and not is_safety_blocked:
@@ -1386,6 +1407,20 @@ class AgentOrchestrator:
             if isinstance(gathered, str):
                 return self._fail_closed(trace, agent_run_id, decision.intent, gathered, checkpoint_db, lease_token)
             evidence_items, retrieval_ids, web_ids, citations = gathered
+
+            # A selected drug action is bound to the canonical ID previously
+            # resolved by the server.  Do the exact lookup here rather than
+            # asking the model to search an ambiguous drug name again.
+            if request.active_entity_id and request.requested_attribute and decision.intent is OrchestrationIntent.DRUG_INFORMATION:
+                try:
+                    bound = tools.execute(
+                        ToolName.GET_DRUG_INFO.value,
+                        {"legacy_drug_id": request.active_entity_id, "query": request.requested_attribute},
+                    )
+                except ToolExecutionError:
+                    return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token)
+                bound_tool_results.append(bound)
+                evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{request.active_entity_id}"))
 
         augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids)
         if decision.use_vinmec_web and not web_ids:
@@ -1444,7 +1479,7 @@ class AgentOrchestrator:
             intent=decision.intent,
             status=result.status,
             response=result.response,
-            tool_results=result.tool_results,
+            tool_results=tuple(bound_tool_results) + result.tool_results,
             citations=tuple(citations),
             safety_decision=safety_decision,
             handoff_result=handoff_result,
