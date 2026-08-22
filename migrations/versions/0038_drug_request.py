@@ -8,8 +8,8 @@ Xem ghi chu day du trong backend/db/models.py::DrugRequest (vi sao khong ghi
 thang vao bang `drug`, vi sao `dang_thuoc` NOT NULL, quy uoc `req-` cua
 `approved_drug_id`).
 
-Revision ID: 0032
-Revises: 0031
+Revision ID: 0038
+Revises: 0037
 Create Date: 2026-08-21
 
 """
@@ -18,10 +18,14 @@ import sqlalchemy as sa
 from alembic import op
 
 # DOI SO 2026-08-21: ban dau la 0031, nhung main da lay so do cho
-# 0031_remove_better_auth_and_add_supabase_uid. Hai file cung revision se
-# lam alembic bao "multiple heads" va khong chay duoc migration nao.
-revision = "0032"
-down_revision = "0031"
+# 0031_remove_better_auth_and_add_supabase_uid, doi sang 0032. Sau khi merge
+# main (2026-08-22), nhanh feature/agent-architecture-v2 CUNG da doi 5
+# migration cua ho ve 0032-0036 (chain sau 0031 cua main) truoc khi minh
+# merge - trung tiep voi 0032 nay (hai file khac ten cung claim revision
+# "0032", alembic bao "Revision 0032 is present more than once" + 2 head).
+# Doi lan 2 sang 0038, noi tiep sau 0037 (head that su cua main sau merge).
+revision = "0038"
+down_revision = "0037"
 branch_labels = None
 depends_on = None
 
