@@ -631,6 +631,27 @@ def test_follow_up_resolution_is_not_kidney_stone_hardcoded(topic):
     assert retrieval_domain.calls[-1]["query"] == f"Nguyên nhân của {topic.casefold()} là gì?"
 
 
+def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
+    store = ShortTermMemoryStore(_context_manager())
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, _ = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=store,
+    )
+
+    orchestrator.run(_request("Tôi muốn hỏi về tiểu đường"), tools=_tools())
+    result = orchestrator.run(_request("Triệu chứng của nó?"), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert retrieval_domain.calls[-1]["query"] == "Triệu chứng của tiểu đường là gì?"
+
+
 def test_follow_up_without_context_asks_clarification_and_does_not_retrieve():
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(

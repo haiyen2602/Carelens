@@ -504,6 +504,11 @@ class ContextResolution:
 _TOPIC_PATTERNS = (
     re.compile(r"\b(bệnh\s+[^?!.]{2,80}?)\s+(?:là\s+gì|la\s+gi)\b", re.IGNORECASE),
     re.compile(r"\b(benh\s+[^?!.]{2,80}?)\s+(?:la\s+gi)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:tôi\s+muốn\s+hỏi|toi\s+muon\s+hoi|cho\s+tôi\s+hỏi|cho\s+toi\s+hoi|"
+        r"tôi\s+đang\s+hỏi|toi\s+dang\s+hoi)\s+(?:về|ve)\s+([^?!.]{2,80})",
+        re.IGNORECASE,
+    ),
 )
 _FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "urgent_care": ("đi khám", "di kham", "đi viện", "di vien", "cấp cứu", "cap cuu", "khám ngay", "kham ngay"),
@@ -617,11 +622,7 @@ def _resolved_query_for(topic: str, category: str) -> str:
         return f"Triệu chứng của {topic} là gì?"
     if category == "prevention":
         return f"Cách phòng ngừa {topic} là gì?"
-    return f"{message_with_topic_placeholder(topic)}"
-
-
-def message_with_topic_placeholder(topic: str) -> str:
-    return f"Thông tin về {topic} là gì?"
+    raise ValueError(f"Unsupported follow-up category: {category}")
 
 
 @dataclass(frozen=True)
