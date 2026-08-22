@@ -1,18 +1,27 @@
-"""Tests for the read-only canonical drug query service."""
+"""Tests for the canonical drug query and CRUD service."""
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from backend.db.models import DrugIdMap, DrugProduct, DrugProductIngredient, Ingredient
-from backend.models.admin_drug_schemas import MappingStatus
-from backend.services.admin_drugs import get_admin_drug, list_admin_drugs
+from backend.db.models import Drug, DrugChunk, DrugIdMap, DrugProduct, DrugProductIngredient, Ingredient
+from backend.models.admin_drug_schemas import AdminDrugCreateRequest, AdminDrugUpdateRequest, MappingStatus
+from backend.services.admin_drugs import (
+    create_admin_drug,
+    delete_admin_drug,
+    get_admin_drug,
+    get_admin_drug_filters,
+    list_admin_drugs,
+    update_admin_drug,
+)
 
 TABLES = (
     DrugProduct.__table__,
     DrugIdMap.__table__,
     Ingredient.__table__,
     DrugProductIngredient.__table__,
+    Drug.__table__,
+    DrugChunk.__table__,
 )
 
 
@@ -29,12 +38,14 @@ def db() -> Session:
         engine.dispose()
 
 
-def _product(db: Session, product_id: str, name: str, legacy_id: str | None = None) -> None:
+def _product(db: Session, product_id: str, name: str, legacy_id: str | None = None, dosage_form: str | None = None, route: str | None = None) -> None:
     db.add(
         DrugProduct(
             id=product_id,
             legacy_drug_id=legacy_id,
             display_name=name,
+            dosage_form=dosage_form,
+            route=route,
             status="ACTIVE",
         )
     )
@@ -171,3 +182,48 @@ def test_detail_returns_complete_product_and_ignores_orphans(db: Session):
     assert result.ingredients == ["Amlodipine besylate"]
     assert [mapping.id for mapping in result.mappings] == ["map-a"]
     assert get_admin_drug(db, "missing-product") is None
+
+
+def test_crud_lifecycle_and_filters(db: Session):
+    # Test Create
+    create_req = AdminDrugCreateRequest(
+        display_name="Ciprofloxacin 500mg",
+        dosage_form="Viên nén",
+        route="Uống",
+        strength_text="500mg",
+        packaging="Hộp 2 vỉ x 10 viên",
+        category="Kháng sinh",
+        cong_dung="Điều trị nhiễm khuẩn",
+        cach_dung="Uống 1 viên/lần",
+    )
+    created = create_admin_drug(db, create_req)
+    assert created.display_name == "Ciprofloxacin 500mg"
+    assert created.dosage_form == "Viên nén"
+    assert created.packaging == "Hộp 2 vỉ x 10 viên"
+    assert created.cong_dung == "Điều trị nhiễm khuẩn"
+    assert created.cach_dung == "Uống 1 viên/lần"
+
+    # Test Filters
+    filters = get_admin_drug_filters(db)
+    assert "Viên nén" in filters.dosage_forms
+    assert "Uống" in filters.routes
+
+    # Test Update
+    update_req = AdminDrugUpdateRequest(
+        display_name="Ciprofloxacin 500mg Domesco",
+        tac_dung_phu="Buồn nôn, tiêu chảy",
+    )
+    updated = update_admin_drug(
+        db,
+        created.id,
+        display_name=update_req.display_name,
+        tac_dung_phu=update_req.tac_dung_phu,
+    )
+    assert updated is not None
+    assert updated.display_name == "Ciprofloxacin 500mg Domesco"
+    assert updated.tac_dung_phu == "Buồn nôn, tiêu chảy"
+
+    # Test Delete
+    deleted = delete_admin_drug(db, created.id)
+    assert deleted is True
+    assert get_admin_drug(db, created.id) is None

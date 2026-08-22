@@ -444,33 +444,33 @@ Mọi lỗi trả về cùng một hình dạng:
 
 ## 1d. `admin-drug-api`
 
-API chỉ đọc cho màn hình Admin RAG. Dữ liệu được tổng hợp từ các bảng canonical
-`drug_product`, `drug_product_ingredient`, `ingredient` và `drug_id_map`; không có
-endpoint tạo/sửa/xóa hoặc reindex.
+API quản trị dữ liệu thuốc và cơ sở tri thức RAG cho Admin. Hỗ trợ đầy đủ CRUD và tự động ghi log kiểm toán (`SystemAuditLog`).
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/admin/drugs` | `admin` | Danh sách thuốc canonical, tìm kiếm/lọc/phân trang |
-| GET | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Chi tiết thuốc, hoạt chất và toàn bộ mapping |
+| GET | `/api/v1/admin/drugs/filters` | `admin` | Lấy danh sách các dạng bào chế và đường dùng có trong DB |
+| GET | `/api/v1/admin/drugs` | `admin` | Danh sách thuốc, hỗ trợ tìm kiếm theo từ khóa, lọc theo dạng bào chế, đường dùng, trạng thái ánh xạ và phân trang |
+| POST | `/api/v1/admin/drugs` | `admin` | Thêm thuốc mới vào cơ sở tri thức RAG (ghi audit log) |
+| GET | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Chi tiết thuốc, hoạt chất, toàn bộ mapping và các đoạn văn bản tri thức RAG |
+| PATCH | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Cập nhật thông tin thuốc và các đoạn tri thức RAG (ghi audit log) |
+| DELETE | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Xóa thuốc và các chunk tri thức liên quan khỏi hệ thống (ghi audit log) |
 
 `GET /api/v1/admin/drugs` nhận các query parameter tùy chọn:
 
 | Parameter | Kiểu | Mặc định | Ràng buộc |
 |---|---|---:|---|
 | `q` | string | `null` | Tìm theo `display_name` hoặc `legacy_drug_id` |
+| `dosage_form` | string | `null` | Lọc theo dạng bào chế |
+| `route` | string | `null` | Lọc theo đường dùng |
 | `mapping_status` | enum | `null` | `ACTIVE` \| `AMBIGUOUS` \| `RETIRED` \| `UNMAPPED` |
 | `page` | integer | `1` | >= 1, đánh số từ 1 |
 | `page_size` | integer | `20` | 1..100 |
 
 Response list 200 chứa `items`, `page`, `page_size`, `total`, `total_pages`.
 Mỗi item có `id`, `legacy_drug_id`, `display_name`, `dosage_form`, `route`,
-`strength_text`, `category_id`, `ingredients`, `mapping_status` và `mappings`.
-`mapping_status` là trạng thái tóm tắt, có thể `null` khi sản phẩm chưa có
-mapping; `mappings` luôn là mảng đầy đủ các bản ghi mapping của sản phẩm.
-Các trường canonical chưa có dữ liệu trả `null`, không suy đoán hoặc thay bằng
-chuỗi rỗng. Detail trả cùng shape của một item với toàn bộ collections.
-Sản phẩm không tồn tại trả `404`; caller không có role `admin` nhận response
-phân quyền chuẩn của repository.
+`strength_text`, `packaging`, `category_id`, `category_name`, `severity`, `ingredients`, `mapping_status` và `mappings`.
+Detail trả thêm các trường văn bản RAG: `cong_dung`, `cach_dung`, `tac_dung_phu`, `bao_quan`.
+Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 
 ## Lịch sử thay đổi quan trọng (breaking changes)
 
