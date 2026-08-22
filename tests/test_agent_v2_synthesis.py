@@ -12,7 +12,11 @@ called a tool: the runtime now completes the full loop --
 
 Ten scenarios required by the BUILD-19B report:
   1. drug information + tool -> non-empty reply
-  2. today doses -> non-empty reply
+  2. dose status + tool -> non-empty reply (originally "today doses"; BUILD-28
+     made TODAY_DOSES itself fully deterministic/model-free, so this
+     scenario moved to the closest remaining single-dose, tool-driven,
+     model-reaching intent -- see test_agent_v2_time_aware_schedule.py for
+     TODAY_DOSES's own coverage now)
   3. Safety SAFE -> non-empty reply
   4. prescription -> non-empty reply
   5. multiple tools -> one final synthesized reply
@@ -113,19 +117,25 @@ def test_drug_information_with_tool_call_produces_non_empty_synthesized_reply():
     assert len(gateway.synthesis_calls) == 1
 
 
-def test_today_doses_with_tool_call_produces_non_empty_synthesized_reply():
-    domain_tools = _DomainTools()
-    plan = ModelPlan(tool_calls=(ToolCall("get_today_doses", {}),), response="")
-    synthesis = ModelSynthesis(response="Hom nay ban co 1 lieu thuoc can uong luc 8 gio sang.")
+def test_dose_status_with_tool_call_produces_non_empty_synthesized_reply():
+    # BUILD-28: TODAY_DOSES (this scenario's original subject) now bypasses
+    # the Main Model entirely -- see AgentOrchestrator._schedule_reply and
+    # test_agent_v2_time_aware_schedule.py -- so it can no longer exercise
+    # the tool-calling synthesis loop this file covers. DOSE_STATUS is the
+    # closest remaining single-dose, tool-driven intent that still reaches
+    # the Main Model.
+    domain_tools = _DomainTools(dose_status_by_id={"dose-1": ["occ-1"]})
+    plan = ModelPlan(tool_calls=(ToolCall("get_dose_status", {"dose_id": "dose-1"}),), response="")
+    synthesis = ModelSynthesis(response="Lieu thuoc luc 8 gio sang van dang cho xac nhan.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
-    result = orchestrator.run(_request("Hom nay toi can uong thuoc gi"), tools=_tools(domain_tools))
+    result = orchestrator.run(_request("Trang thai lieu thuoc dose-1 the nao", dose_id="dose-1"), tools=_tools(domain_tools))
 
-    assert result.intent is OrchestrationIntent.TODAY_DOSES
+    assert result.intent is OrchestrationIntent.DOSE_STATUS
     assert result.status is RunStatus.COMPLETED
     assert result.response == synthesis.response
     assert result.response
-    assert [t.name for t in result.tool_results] == ["get_today_doses"]
+    assert [t.name for t in result.tool_results] == ["get_dose_status"]
     assert len(gateway.synthesis_calls) == 1
 
 

@@ -367,19 +367,28 @@ def test_scenario_6_bare_drug_name_query_keeps_canonical_answer_not_the_vinmec_f
 def test_scenario_6b_today_schedule_query_keeps_operational_db_answer():
     # Mirrors golden query_id 30/33/66: a schedule question, TODAY/UPCOMING-
     # style intent, no "vinmec" in the user's own message.
+    #
+    # BUILD-28: TODAY_DOSES now bypasses the Main Model entirely (see
+    # AgentOrchestrator._schedule_reply) -- a false "Theo Vinmec" claim for
+    # this intent is no longer merely scrubbed by this backstop after the
+    # fact, it is structurally impossible (there is no model turn to
+    # fabricate one). The configured plan/synthesis below prove exactly
+    # that: they are never consulted, and the real operational-DB answer
+    # (with no vinmec mention) comes from the deterministic composer instead.
     plan = ModelPlan(
         tool_calls=(ToolCall(name="get_today_doses", arguments={}),),
         response="planning",
     )
     synthesis = ModelSynthesis(response="Theo Vinmec, hom nay ban da uong lieu 8h sang.")
-    orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
+    gateway = _SpyModelGateway(plan, synthesis)
+    orchestrator, _ = _orchestrator(model_gateway=gateway)
 
     result = orchestrator.run(_request("toi da uong thuoc sang nay chua nhi"), tools=_tools())
 
     assert result.status is RunStatus.COMPLETED
     assert result.response != _NO_VINMEC_EVIDENCE_REPLY
     assert "vinmec" not in result.response.lower()
-    assert "8h sang" in result.response
+    assert gateway.calls == [] and gateway.synthesis_calls == []
 
 
 class _EmbeddingStub:

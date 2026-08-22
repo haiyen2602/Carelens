@@ -466,11 +466,12 @@ class OpenAIModelGateway:
                 "verified system data, never as Vinmec. If nothing here is genuinely Vinmec-"
                 "sourced and the request specifically asked about Vinmec, say honestly that no "
                 "Vinmec result was found rather than substituting another source under that name. "
-                # BUILD-27B: this turn only ever sees FUTURE-dated schedule
-                # evidence for a dose-schedule question (past-dated
-                # medication-history queries are answered deterministically
-                # in code, before this turn is ever reached -- see
-                # AgentOrchestrator._medication_history_reply), so "already
+                # BUILD-27B/28: a pure schedule/history question (past,
+                # today, or future) is answered deterministically in code,
+                # before this turn is ever reached -- see
+                # AgentOrchestrator._schedule_reply -- so any dose-schedule
+                # tool evidence this turn *does* see (e.g. incidental to an
+                # unrelated question) is never past-dated, and "already
                 # taken" phrasing here would always be describing something
                 # that has not happened yet.
                 "If the verified evidence is about doses scheduled for today or a future "
