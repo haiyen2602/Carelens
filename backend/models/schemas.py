@@ -828,6 +828,20 @@ class PendingInviteOut(BaseModel):
     created_at: str
 
 
+class SentInviteOut(BaseModel):
+    """1 phan tu trong GET /api/v1/caregiver-links/sent - loi moi CHINH nguoi
+    dang dang nhap da gui (voi tu cach caregiver_account_id qua POST
+    .../invites), con "pending". Chieu NGUOC voi PendingInviteOut o tren (do
+    la loi moi NGUOI KHAC gui toi minh). `patient_name` lay tu
+    Patient.full_name qua join, cung ly do voi caregiver_name/inviter_name."""
+
+    id: str
+    patient_id: str
+    patient_name: str
+    relationship: str
+    created_at: str
+
+
 class NudgeCreateRequest(BaseModel):
     """POST /api/v1/nudges - nguoi than dang dang nhap gui 1 loi nhac nhe cho
     `patient_id` ho dang theo doi (accepted). `caregiver_account_id` KHONG
