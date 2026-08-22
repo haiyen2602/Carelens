@@ -705,6 +705,27 @@ class AgentFeedbackTicketUpdateRequest(BaseModel):
     admin_note: str | None = Field(default=None, max_length=2000)
 
 
+# BUILD-30: user-visible, patient-safe activity timeline. Deliberately a
+# SEPARATE, much narrower contract than AgentFeedbackTraceSummaryOut
+# (BUILD-29's admin-only trace summary) -- see
+# backend.services.agent_activity.build_activity_timeline's own docstring
+# for exactly which fields are allowed and why (never prompts, model
+# reasoning, raw tool arguments/results, DB rows, JWT/patient_id, secrets,
+# or internal policy text).
+class AgentActivityItemOut(BaseModel):
+    type: str
+    label: str
+    status: str
+    duration_ms: float | None = None
+    source_count: int | None = None
+
+
+class AgentActivityOut(BaseModel):
+    trace_id: str
+    available: bool
+    activities: list[AgentActivityItemOut] = Field(default_factory=list)
+
+
 class ClassificationOut(BaseModel):
     label: str  # TAKEN | MISSED | DELAYED | SIDE_EFFECT
     secondary_labels: list[str] = Field(

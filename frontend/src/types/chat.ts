@@ -105,3 +105,20 @@ export type FeedbackReportResponse = {
   status: string;
   priority: string;
 };
+
+// BUILD-30: "Xem hoạt động" - timeline patient-safe, xay tu trace THAT cua
+// dung message do (khong bao gio hardcode). Khop
+// backend/models/schemas.py::AgentActivityItemOut/AgentActivityOut.
+export type ActivityItem = {
+  type: string;
+  label: string;
+  status: string;
+  duration_ms: number | null;
+  source_count?: number | null;
+};
+
+export type ActivityResponse = {
+  trace_id: string;
+  available: boolean;
+  activities: ActivityItem[];
+};

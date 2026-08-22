@@ -1,4 +1,5 @@
 import type {
+  ActivityResponse,
   AgentStatus,
   ChatRequest,
   ChatResponse,
@@ -61,6 +62,28 @@ export async function sendChatMessage(
 
 export function getAgentStatus(): Promise<AgentStatus> {
   return request<AgentStatus>("/api/v1/status");
+}
+
+// BUILD-30: goi qua route noi bo (`app/api/activity/[traceId]/route.ts`),
+// cung mau voi submitFeedbackReport o tren. Khong throw tren 403/khong tim
+// thay - component tu quyet dinh hien thi trang thai gi (unavailable/error)
+// tu chinh response, khong dua vao exception.
+export async function getTraceActivity(
+  traceId: string,
+  accessToken?: string | null,
+): Promise<ActivityResponse> {
+  const response = await fetch(`/api/activity/${encodeURIComponent(traceId)}`, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(body?.detail ?? `API error: ${response.status}`, response.status);
+  }
+
+  return response.json();
 }
 
 // BUILD-29: goi qua route noi bo (`app/api/feedback/route.ts`), cung mau

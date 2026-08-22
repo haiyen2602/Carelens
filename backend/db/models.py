@@ -1049,6 +1049,51 @@ class AgentFeedbackTicket(Base):
     )
 
 
+class AgentActivitySnapshot(Base):
+    """BUILD-30: one durable, sanitized activity timeline per real Agent V2
+    run -- the source of truth for GET /agent/v2/traces/{trace_id}/activity.
+
+    Deliberately NOT sourced from (or dependent on) the telemetry ring
+    buffer (``backend.services.telemetry``, capped at 200 traces process-
+    wide, reset on every deploy -- see BUILD-29's own documented limitation
+    for the admin ticket explorer). This table is written once, best-effort,
+    right after ``AgentOrchestrator.run()`` returns (see
+    ``backend.api.agent_v2_routes._persist_activity_snapshot``), from the
+    real ``OrchestrationResult`` alone -- so it survives redeploys and does
+    not compete for space with unrelated traffic. A run from before this
+    table existed simply has no row (honest "unavailable", not a fabricated
+    empty timeline).
+
+    ``activities_json`` holds ONLY the sanitized DTO shape
+    (type/label/status/duration_ms/source_count) built by
+    ``backend.services.agent_activity.build_activity_timeline`` -- never
+    prompts, model reasoning, raw tool arguments/results, or any other
+    internal detail. ``patient_id`` is stored directly (not a one-way hash)
+    since this table is only ever read back through the patient-safe
+    activity endpoint, which checks it by plain equality against the
+    requesting patient's own JWT-bound patient_id.
+    """
+
+    __tablename__ = "agent_activity_snapshot"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    actor_id: Mapped[str] = mapped_column(String, nullable=False)
+    intent: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    model_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    activities_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_agent_activity_snapshot_agent_run_id", "agent_run_id", unique=True),
+        Index("ix_agent_activity_snapshot_trace_id", "trace_id"),
+        Index("ix_agent_activity_snapshot_patient_created", "patient_id", "created_at"),
+    )
+
+
 class DoseEvent(Base):
     """Khop DoseEventDTO (api-contracts.md §3). `expected_items`: list cac
     {drug_id, ten_thuoc, so_vien} - dung cho tool tra_cuu_lich_uong_ca_nhan

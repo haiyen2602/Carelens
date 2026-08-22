@@ -2,6 +2,7 @@
 // avatar 2 ben, bong bong bam sat le, bo goc lech ve phia nguoi noi.
 // Mau/kich thuoc lay nguyen tu ban thiet ke.
 
+import { ActivityTimeline } from "@/components/activity-timeline";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReportMessageDialog } from "@/components/report-message-dialog";
 import type { StoredChatMessage } from "@/lib/chat-history";
@@ -36,11 +37,14 @@ export function ChatMessage({
       </div>
       {at && <p className="font-mono m-0 mt-1 px-1 text-[10px] text-[#62708A]">{at}</p>}
       {!isUser && conversationId && (
-        <ReportMessageDialog
-          conversationId={conversationId}
-          message={message}
-          accessToken={accessToken}
-        />
+        <>
+          <ActivityTimeline traceId={message.traceId} accessToken={accessToken} />
+          <ReportMessageDialog
+            conversationId={conversationId}
+            message={message}
+            accessToken={accessToken}
+          />
+        </>
       )}
     </div>
   );
