@@ -7,6 +7,9 @@ to Agent V2 is a separate, not-yet-approved rollout decision (see
 """
 
 import hashlib
+import json
+import logging
+import time
 import uuid
 from threading import Lock
 
@@ -40,6 +43,8 @@ from backend.services.agent_idempotency import IdempotencyBusyError, Idempotency
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
+from backend.services.evaluators import LLMJudgeEvaluator
+from backend.services.telemetry import get_telemetry_service
 from backend.services.vinmec_web_search import VinmecWebSearchService
 
 agent_v2_router = APIRouter()
@@ -142,6 +147,107 @@ def _shared_telemetry(settings: object) -> AgentTelemetry:
         return _telemetry
 
 
+# BUILD-25 (production monitoring audit): Agent V2 never fed the existing
+# Langfuse/admin-RAG-monitoring pipeline (backend/services/telemetry.py +
+# backend/api/rag_monitoring_routes.py) at all -- only the legacy chat route
+# (backend/api/chat_routes.py) ever called `get_telemetry_service()`, and only
+# legacy chat ever wrote `AuditLog` (the admin dashboard's DB fallback source).
+# Since Agent V2 is now 100% of production traffic and legacy chat is ~0%,
+# every KPI on the admin dashboard (faithfulness, relevance, latency
+# percentiles, error rate, model/prompt breakdowns, Trace Explorer) was
+# reading an empty in-memory buffer (reset on every deploy, per-process) or a
+# handful of stale historical rows -- not Agent V2's real traffic at all. This
+# is the root cause behind the reported "P95 ~0.7ms" reading: with the trace
+# buffer empty, `/admin/rag/system` fell back to whatever sparse legacy
+# `AuditLog` rows happen to exist, not a measurement of a live LLM call.
+#
+# This function wires a real Agent V2 request into that SAME existing
+# pipeline (no new dashboard, no new backend, per the audit's own
+# instruction) -- purely additive around the HTTP boundary, after
+# `orchestrator.run()` has already returned, so it can never change Agent
+# V2's own routing/safety/model behavior. Every step is best-effort: a
+# telemetry failure is logged and swallowed, never surfaced to the caller
+# and never allowed to affect the actual response already computed.
+#
+# Faithfulness/relevance reuse the exact same generic, deterministic
+# heuristic evaluators legacy chat already uses
+# (`backend.services.evaluators.LLMJudgeEvaluator` -- word-overlap ratios,
+# not an LLM-judge call, so this adds no extra model cost or latency)
+# -- "retrieved_contexts" is built from each tool call's own structured
+# result data (already real information the model was given, not fabricated
+# text). `mask_sensitive_data`/`hash_identifier` (telemetry.py's own existing
+# redaction) still apply to everything recorded, same as for legacy chat.
+def _record_agent_v2_telemetry(
+    *,
+    request: AgentV2OrchestrateRequest,
+    actor: CurrentUser,
+    result,
+    latency_ms: float,
+    error: Exception | None = None,
+) -> None:
+    try:
+        telemetry = get_telemetry_service()
+        trace = telemetry.create_trace(
+            trace_id=getattr(result, "trace_id", None) or f"agent_v2_{int(time.time() * 1000)}_{actor.id[:6]}",
+            name="agent_v2.orchestrate",
+            session_id=request.conversation_id,
+            user_id=actor.id,
+            input_data={"message": request.message},
+            metadata={
+                "agent_run_id": getattr(result, "agent_run_id", None),
+                "intent": getattr(result, "intent", None).value if getattr(result, "intent", None) else None,
+                "actor_role": actor.role,
+            },
+            tags=["agent_v2"],
+        )
+
+        tool_results = list(getattr(result, "tool_results", []) or [])
+        retrieved_contexts: list[str] = []
+        for tool_result in tool_results:
+            obs = telemetry.start_observation(
+                trace, name=f"tool.{tool_result.name}", obs_type="retriever", input_data={"tool": tool_result.name}
+            )
+            telemetry.end_observation(obs, output_data=tool_result.data)
+            try:
+                retrieved_contexts.append(json.dumps(tool_result.data, ensure_ascii=False, default=str))
+            except Exception:  # noqa: BLE001 -- best-effort context text, never block telemetry
+                pass
+
+        safety_decision = getattr(result, "safety_decision", None)
+        if safety_decision is not None:
+            safety_obs = telemetry.start_observation(trace, name="safety.decision", obs_type="span")
+            telemetry.end_observation(
+                safety_obs,
+                output_data={"outcome": safety_decision.outcome.value},
+                level="WARNING" if safety_decision.outcome.value != "SAFE" else "DEFAULT",
+            )
+
+        handoff_result = getattr(result, "handoff_result", None)
+        if handoff_result is not None:
+            handoff_obs = telemetry.start_observation(trace, name="handoff.created", obs_type="span")
+            telemetry.end_observation(handoff_obs, output_data={"request_id": handoff_result.request_id})
+
+        response_text = getattr(result, "response", "") or ""
+        gen_obs = telemetry.start_observation(trace, name="generation.answer", obs_type="generation")
+        telemetry.end_observation(gen_obs, output_data={"response": response_text})
+
+        if response_text:
+            relevance = LLMJudgeEvaluator.evaluate_answer_relevance(request.message, response_text)
+            telemetry.record_score(trace, relevance.score_name, relevance.value)
+            faithfulness = LLMJudgeEvaluator.evaluate_faithfulness(retrieved_contexts, response_text)
+            telemetry.record_score(trace, faithfulness.score_name, faithfulness.value)
+
+        # `create_trace()` stamped `start_time` when this function was called
+        # (i.e. after `orchestrator.run()` already returned) -- overwrite it
+        # with the real wall-clock start so `duration_ms` reflects the actual
+        # request latency, not the near-zero time spent inside this function.
+        trace.start_time = time.time() - (latency_ms / 1000.0)
+        status_value = "error" if error is not None else "success"
+        telemetry.finalize_trace(trace, output_data={"response": response_text}, status=status_value)
+    except Exception as telemetry_err:  # noqa: BLE001 -- observability must never break the real response
+        logging.getLogger(__name__).warning("Agent V2 telemetry recording failed: %s", telemetry_err)
+
+
 @agent_v2_router.post("/agent/v2/read-only", response_model=AgentV2ReadOnlyResponse)
 def run_read_only_agent(
     request: AgentV2ReadOnlyRequest,
@@ -175,6 +281,7 @@ def run_agent_orchestration(
 
     Still gated OFF by ``AGENT_RUNTIME_ENABLED``; not called by legacy chat.
     """
+    _started = time.monotonic()
     settings = get_settings()
     _require_agent_v2_enabled(settings, actor)
     patient_id = require_agent_patient_access(db, actor, request.patient_id)
@@ -295,5 +402,14 @@ def run_agent_orchestration(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Khong the luu ket qua Agent V2, vui long thu lai.",
         ) from exc
+
+    # BUILD-25: best-effort, after the real commit above -- never allowed to
+    # affect the response already built and durably saved.
+    _record_agent_v2_telemetry(
+        request=request,
+        actor=actor,
+        result=result,
+        latency_ms=(time.monotonic() - _started) * 1000.0,
+    )
 
     return response

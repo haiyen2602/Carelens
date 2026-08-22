@@ -233,6 +233,11 @@ async def get_rag_safety(
 ) -> dict[str, Any]:
     """Medication Safety incidents and checks from real Escalation table (§15.4)"""
     escalations = db.query(Escalation).order_by(Escalation.created_at.desc()).all()
+    # BUILD-25 audit: denominator for "rate of unsafe answers among all
+    # answers" -- same total-traffic sources every other endpoint here uses
+    # (in-memory traces, falling back to persisted AuditLog).
+    traces = get_local_traces()
+    total_answers = len(traces) if traces else db.query(AuditLog).count()
 
     incidents = []
     for e in escalations:
@@ -255,7 +260,14 @@ async def get_rag_safety(
         "dosage_consistency_failures": sum(1 for e in escalations if "dosage" in e.trigger.lower() or "liều" in e.reason.lower()),
         "interaction_unsupported_claims": sum(1 for e in escalations if "interaction" in e.trigger.lower() or "tương tác" in e.reason.lower()),
         "contraindication_unsupported_claims": sum(1 for e in escalations if "contraindication" in e.trigger.lower() or "chống chỉ định" in e.reason.lower()),
-        "unsafe_answer_rate": round((len(escalations) / max(len(escalations), 1)) * 100, 2) if escalations else 0.0,
+        # BUILD-25 fix: the previous formula (len(escalations) / max(len(escalations), 1))
+        # is a tautology -- it always evaluates to exactly 100.0 whenever any
+        # escalation exists, or 0.0 when none do, regardless of real traffic
+        # volume, so it never actually measured a "rate" of anything. Real
+        # rate needs a real denominator (total answered requests), which
+        # `total_answers` above provides from the same source every sibling
+        # endpoint in this file already uses.
+        "unsafe_answer_rate": round((critical_count / total_answers) * 100, 2) if total_answers else 0.0,
         "incidents": incidents,
     }
 
@@ -323,7 +335,12 @@ async def get_rag_system(
         "p50_latency_ms": round(p50, 1),
         "p95_latency_ms": round(p95, 1),
         "p99_latency_ms": round(p99, 1),
-        "ttft_ms": round(p50 * 0.3, 1) if p50 > 0 else 0.0,
+        # BUILD-25 fix: this used to be `p50 * 0.3` -- a fabricated guess with
+        # no basis (no streaming path exists anywhere in this app to actually
+        # measure time-to-first-token, for either legacy chat or Agent V2).
+        # 0.0 here means "not measured", not "measured as zero" -- flagged as
+        # a genuine data gap in the audit report, not silently invented.
+        "ttft_ms": 0.0,
         "error_rate": round((sum(1 for t in traces if t.status == "error") / max(len(traces), 1)) * 100, 2) if traces else 0.0,
         "timeout_rate": 0.0,
         "cost_daily": 0.0,
