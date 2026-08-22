@@ -18,17 +18,26 @@
 # mat that su cho dung loai input rui ro nhat).
 set -e
 
-# Doc thang tu Settings thay vi hardcode duong dan o day - doi
-# PHOTO_STORAGE_DIR sau nay khong lam entrypoint tro sai cho.
-# `|| echo ...` co chu dich: get_settings() la fail-closed (thieu JWT_SECRET/
-# INTERNAL_AUTH_SECRET la raise). Neu no hong o day thi van chinh quyen thu
-# muc mac dinh roi de APP tu bao loi that - dung de entrypoint chet truoc,
-# che mat thong bao loi cau hinh von ro rang hon nhieu.
-PHOTO_DIR=$(python -c 'from backend.config import get_settings; print(get_settings().photo_storage_dir)' 2>/dev/null \
-    || echo './data/photo_verifications')
+# Doc THANG bien moi truong thay vi goi python đọc Settings (SUA sau review
+# PR #79): trong container, Settings CHI lay tu bien moi truong - `.env` nam
+# trong .dockerignore nen khong bao gio vao image - va Settings khong dat
+# env_prefix, nen `photo_storage_dir` chinh la $PHOTO_STORAGE_DIR. Hai cach
+# cho ket qua y het, nhung cach nay khong the that bai: goi python o day
+# keo theo ca validator fail-closed cua Settings (thieu JWT_SECRET/
+# INTERNAL_AUTH_SECRET la raise), tuc them 1 duong hong cho 1 viec chi can
+# doc 1 chuoi.
+#
+# Gia tri mac dinh phai KHOP `photo_storage_dir` trong backend/config.py.
+PHOTO_DIR="${PHOTO_STORAGE_DIR:-./data/photo_verifications}"
 
-mkdir -p "$PHOTO_DIR"
-chown -R appuser:appuser "$PHOTO_DIR"
+# KHONG de `set -e` giet container neu 2 lenh nay hong (vd volume gan
+# read-only): hong chowned thi chi rieng chuc nang gui anh loi, con lai van
+# chay duoc - crash-loop ca backend vi the la phan ung qua tay. In canh bao
+# ro rang de con truy duoc trong `railway logs`.
+mkdir -p "$PHOTO_DIR" 2>/dev/null \
+    || echo "[entrypoint] CANH BAO: khong tao duoc thu muc anh $PHOTO_DIR"
+chown -R appuser:appuser "$PHOTO_DIR" 2>/dev/null \
+    || echo "[entrypoint] CANH BAO: khong chown duoc $PHOTO_DIR - gui anh xac nhan lieu co the loi 500"
 
 # `exec` de gosu THAY THE shell nay, va uvicorn (qua CMD) giu nguyen PID 1 -
 # neu khong, SIGTERM luc Railway redeploy khong xuong toi uvicorn, lifespan
