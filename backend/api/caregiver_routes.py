@@ -35,6 +35,7 @@ from backend.models.schemas import (
     DayAdherenceStatus,
     OpenEscalationBrief,
     PendingInviteOut,
+    SentInviteOut,
 )
 from backend.services.escalation import friendly_escalation_title
 from backend.services.reporting.adherence import compute_adherence_pct
@@ -148,6 +149,41 @@ def list_pending_invites(
             id=r.id,
             caregiver_account_id=r.caregiver_account_id,
             inviter_name=name_by_id.get(r.caregiver_account_id, r.caregiver_account_id),
+            relationship=r.relationship,
+            created_at=r.created_at.isoformat(),
+        )
+        for r in rows
+    ]
+
+
+@caregiver_router.get("/caregiver-links/sent", response_model=list[SentInviteOut])
+def list_sent_invites(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> list[SentInviteOut]:
+    """Loi moi CHINH nguoi dang dang nhap da gui (voi tu cach caregiver_
+    account_id qua POST .../invites o tren), con "pending" - de FE hien dong
+    "dang doi duyet" (THEM 2026-08-22, truoc do gui xong chi co toast thoang
+    qua roi mat dau vet). Chieu NGUOC voi GET .../pending (do la loi moi
+    NGUOI KHAC gui toi minh, minh la nguoi SE DUOC theo doi)."""
+    rows = db.execute(
+        select(CaregiverLink).where(
+            CaregiverLink.caregiver_account_id == current_user.id,
+            CaregiverLink.status == "pending",
+        )
+    ).scalars().all()
+    if not rows:
+        return []
+
+    patient_ids = {r.patient_id for r in rows}
+    patients = db.execute(select(Patient).where(Patient.id.in_(patient_ids))).scalars().all()
+    name_by_id = {p.id: p.full_name for p in patients}
+
+    return [
+        SentInviteOut(
+            id=r.id,
+            patient_id=r.patient_id,
+            patient_name=name_by_id.get(r.patient_id, r.patient_id),
             relationship=r.relationship,
             created_at=r.created_at.isoformat(),
         )

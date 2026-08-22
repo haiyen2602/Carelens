@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-touch-icon.png",
   },
+  // Bat buoc de iOS cho phep "Them vao Man hinh chinh" - dieu kien tien
+  // quyet de Web Push chay duoc tren Safari (iOS >= 16.4). Android/desktop
+  // khong can nhung co manifest thi cai duoc PWA cho gon.
+  manifest: "/manifest.json",
   openGraph: { type: "website" },
   twitter: { card: "summary_large_image" },
 };

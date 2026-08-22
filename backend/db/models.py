@@ -981,6 +981,74 @@ class AgentToolEvent(Base):
     )
 
 
+class AgentFeedbackTicket(Base):
+    """BUILD-29: a patient's direct report of a problematic Agent V2 reply,
+    with everything an Admin needs to trace it back to the exact
+    conversation/trace that produced it.
+
+    ``actor_id``/``patient_id`` are ALWAYS bound server-side from the
+    authenticated JWT (see ``backend.services.agent_feedback.create_ticket``)
+    -- never trusted from the request body, so a caller cannot file a report
+    "as" another patient. ``conversation_id``/``trace_id``/``agent_run_id``
+    and the message text itself DO come from the client (the values it
+    already received back from a real ``/agent/v2/orchestrate`` call), since
+    Agent V2 has no durable server-side message log to read them back from
+    (short-term memory is process-local/ephemeral by design -- see
+    ``backend.agents.v2.short_term_memory``); ``trace_id`` ownership is still
+    verified against the telemetry buffer when the trace is still present
+    (``backend.services.agent_feedback.verify_trace_ownership``), so a
+    fabricated trace_id belonging to a different account is rejected rather
+    than silently accepted.
+
+    ``priority``/``p0_review_required`` are always server-assigned
+    (``classify_priority``) -- a reporting patient never sets their own
+    priority.
+    """
+
+    __tablename__ = "agent_feedback_ticket"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    actor_id: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    user_message: Mapped[str] = mapped_column(Text, nullable=False)
+    assistant_message: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(String, nullable=False)
+    user_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    chatbot_version: Mapped[str] = mapped_column(String, nullable=False, default="agent-v2")
+    status: Mapped[str] = mapped_column(String, nullable=False, default="OPEN")
+    priority: Mapped[str] = mapped_column(String, nullable=False)
+    p0_review_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # BUILD-29 §9 idempotency anchor: one (actor, assistant turn, reason)
+        # combination can only ever produce one ticket -- a double-click or
+        # retried submit hits this unique index and the existing row is
+        # returned instead of a duplicate being inserted (see
+        # ``agent_feedback.create_ticket``'s ``IntegrityError`` handling,
+        # mirroring ``backend.services.agent_idempotency``'s savepoint
+        # pattern). A patient reporting the SAME turn for a DIFFERENT reason
+        # is a deliberately distinct ticket, not a duplicate.
+        Index(
+            "uq_agent_feedback_ticket_actor_run_reason",
+            "actor_id",
+            "agent_run_id",
+            "reason",
+            unique=True,
+        ),
+        Index("ix_agent_feedback_ticket_status_created", "status", "created_at"),
+        Index("ix_agent_feedback_ticket_priority_created", "priority", "created_at"),
+        Index("ix_agent_feedback_ticket_conversation", "conversation_id"),
+        Index("ix_agent_feedback_ticket_chatbot_version", "chatbot_version"),
+    )
+
+
 class DoseEvent(Base):
     """Khop DoseEventDTO (api-contracts.md §3). `expected_items`: list cac
     {drug_id, ten_thuoc, so_vien} - dung cho tool tra_cuu_lich_uong_ca_nhan
@@ -1293,6 +1361,57 @@ class Nudge(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
     seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PushSubscription(Base):
+    """1 thiet bi da dong y nhan Web Push cua 1 benh nhan (THEM 2026-08-20,
+    migration 0031). Nho co bang nay, backend gui duoc thong bao toi may benh
+    nhan NGAY CA KHI ho da dong han tab/trinh duyet - dieu ma co che poll o
+    client (frontend/src/components/capy/capy-shell.tsx) khong lam duoc.
+
+    `endpoint` la URL rieng do dich vu day cua chinh trinh duyet cap (FCM cho
+    Chrome, Mozilla autopush cho Firefox, Apple Push cho Safari) - dat UNIQUE
+    vi no chinh la danh tinh cua 1 thiet bi: subscribe lai tu cung may phai
+    UPSERT dong cu, khong de sinh ra 2 dong roi ban trung 2 lan.
+
+    `p256dh`/`auth` la 2 khoa trinh duyet cap de MA HOA payload - khong co
+    chung thi dich vu day chi chuyen duoc goi tin rong.
+
+    `patient_id` la string tu do, KHONG dat FK that - cung ly do da giai
+    thich o CaregiverLink/Nudge o tren."""
+
+    __tablename__ = "push_subscription"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    p256dh: Mapped[str] = mapped_column(String, nullable=False)
+    auth: Mapped[str] = mapped_column(String, nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class PushReminderSent(Base):
+    """Da day push cho (benh nhan, khung gio, moc) nao roi - ban ghi PHIA
+    SERVER tuong duong localStorage cua client (frontend/src/lib/
+    dose-reminder-log.ts), nhung dung chung cho MOI thiet bi cua benh nhan
+    nen khong bi day trung khi ho dang nhap tren 2 may.
+
+    Khoa duy nhat la (patient_id, slot_at, moc) - `slot_at` la KHUNG GIO chu
+    khong phai dose_event_id: nhieu thuoc cung hen 1 gio la nhieu dong
+    DoseEvent rieng nhung chi dang 1 lan nhac (xem dose_push_reminder.py)."""
+
+    __tablename__ = "push_reminder_sent"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    slot_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    moc: Mapped[int] = mapped_column(Integer, nullable=False)  # 0 | 15 | 30 (phut ke tu gio hen)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("patient_id", "slot_at", "moc", name="uq_push_reminder_sent_slot"),
+    )
 
 
 class DoctorWatch(Base):

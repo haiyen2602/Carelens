@@ -1,19 +1,20 @@
 "use client";
 
-// Tab "Sức khoẻ" - port tu capyphone.js::renderHealth(), noi voi ho so /
-// don thuoc / nhat ky THAT.
+// Tab "Sức khoẻ" - port tu capyphone.js::renderHealth(), noi voi ho so / don
+// thuoc THAT.
 //
 // Ban mau hard-code "🔥 7 ngay lien tiep" va "tuan thu 7 ngay: 92%".
 // O day: so lieu hom nay va ty le tuan thu 7 ngay deu tinh tu `doses` that;
 // bo hoan toan phan "chuoi ngay lien tiep" vi chua co gi tinh duoc no.
+//
+// SUA 2026-08-22: bo section "Nhat ky suc khoe" (ghi nhat ky thu cong) - thay
+// bang khao sat "ban co khoe khong" tren tab "Hom nay" sau khi het lieu trong
+// ngay (frontend/src/app/patient/page.tsx), tra loi "Khong on" dieu huong
+// sang Capy AI qua requestSymptomCheck().
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
 import {
   CHIP,
-  CapyPrimaryButton,
-  CapySecondaryButton,
   CapySheet,
   SectionLabel,
   PillChip,
@@ -23,15 +24,7 @@ import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
 import { listPrescriptions } from "@/lib/prescriptions";
-import { reportHealthIssue } from "@/lib/escalations";
-import {
-  flattenPrescriptions,
-  useProto,
-  type AlertLevel,
-  type Prescription,
-} from "@/lib/proto-store";
-
-const MOOD_EMOJI: Record<AlertLevel, string> = { low: "🙂", mid: "😐", high: "😣" };
+import { flattenPrescriptions, type Prescription } from "@/lib/proto-store";
 
 const CHIP_DON: Record<string, ChipStyle> = {
   approved: { label: "Đang dùng", icon: "●", bg: "#DFF3E9", fg: "#1F6A50" },
@@ -83,7 +76,6 @@ function daHetHan(endDateIso: string): boolean {
 }
 
 export default function HealthPage() {
-  const { healthLog, reportHealth, setEmergency } = useProto();
   const { user, accessToken } = useAuth();
   const patientId = user?.patient_id ?? "";
   const [hoSo, setHoSo] = useState<PatientRecord | null>(null);
@@ -94,9 +86,6 @@ export default function HealthPage() {
   // benh nhan promise do LUON reject va prescriptions o store KHONG BAO GIO
   // duoc set. Trang nay tu goi listPrescriptions({patientId}) rieng.
   const [donThuoc, setDonThuoc] = useState<Prescription[]>([]);
-  const [dangBao, setDangBao] = useState(false);
-  const [text, setText] = useState("");
-  const [muc, setMuc] = useState<AlertLevel>("low");
   const [xemDaHoanThanh, setXemDaHoanThanh] = useState(false);
   const [donDangXem, setDonDangXem] = useState<string | null>(null);
 
@@ -134,33 +123,10 @@ export default function HealthPage() {
   // Thuoc con han vs da het han (endDate < hom nay) - thuan tinh o frontend,
   // KHONG dua vao Prescription.status backend (status chi phan anh
   // draft/approved/rejected - viec duyet, khong lien quan con han hay
-  // khong). Tach de danh sach "dang dung" khong bi don cu don lai theo thoi
-  // gian, day "Nhat ky suc khoe" xuong xa.
+  // khong).
   const dangDung = donThuoc.filter((p) => !daHetHan(p.endDate));
   const daHoanThanh = donThuoc.filter((p) => daHetHan(p.endDate));
   const thuocDangXem = donDangXem ? donThuoc.filter((p) => p.orderId === donDangXem) : [];
-
-  const guiBaoVanDe = () => {
-    // Nhat ky rieng cua benh nhan (state cuc bo, de tu xem lai) - giu nguyen,
-    // KHONG doi. reportHealthIssue() ben duoi la kenh RIENG tao Escalation
-    // that cho nguoi than/bac si thay (backend/api/health_log_routes.py) -
-    // 2 viec doc lap, loi mang o 1 ben khong duoc chan ben kia.
-    reportHealth(text || "Không mô tả chi tiết", muc);
-    if (muc === "high") {
-      setEmergency(true);
-    } else {
-      toast(muc === "mid" ? "Đã báo người thân và lưu log vấn đề" : "Đã ghi nhật ký, theo dõi 48h");
-    }
-    if (muc !== "low" && accessToken) {
-      // .catch nuot loi co y - nhat ky cuc bo da ghi xong o tren, khong lam
-      // gian doan trai nghiem chi vi 1 loi mang phu.
-      const noiDung = text || "Không mô tả chi tiết";
-      reportHealthIssue(accessToken, { text: noiDung, level: muc }).catch(() => {});
-    }
-    setDangBao(false);
-    setText("");
-    setMuc("low");
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -299,87 +265,6 @@ export default function HealthPage() {
         </CapySheet>
       )}
 
-      {/* Nhat ky suc khoe */}
-      <div>
-        <div className="mb-2.5 flex items-baseline justify-between gap-2">
-          <SectionLabel>Nhật ký sức khoẻ</SectionLabel>
-          {!dangBao && (
-            <button
-              onClick={() => setDangBao(true)}
-              className="font-display rounded-full bg-[#EDF0F6] px-3.5 py-[7px] text-[12px] font-bold text-[#1B2A44] transition-colors hover:bg-[#E3E8F1]"
-            >
-              + Ghi nhật ký
-            </button>
-          )}
-        </div>
-
-        {dangBao && (
-          <div className="mb-2.5 flex flex-col gap-3 rounded-[22px] bg-white p-4">
-            <Textarea
-              rows={3}
-              placeholder="Ví dụ: chóng mặt, buồn nôn sau khi uống thuốc…"
-              aria-label="Mô tả vấn đề sức khỏe"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="rounded-2xl border-[#E3E8F1]"
-            />
-            <div
-              role="radiogroup"
-              aria-label="Mức độ nghiêm trọng"
-              className="grid grid-cols-3 gap-2"
-            >
-              {(
-                [
-                  ["low", "Nhẹ"],
-                  ["mid", "Trung bình"],
-                  ["high", "Nghiêm trọng"],
-                ] as [AlertLevel, string][]
-              ).map(([v, label]) => (
-                <button
-                  key={v}
-                  role="radio"
-                  aria-checked={muc === v}
-                  onClick={() => setMuc(v)}
-                  className="rounded-2xl border py-2.5 text-[13px] font-semibold transition-colors"
-                  style={
-                    muc === v
-                      ? { borderColor: "#16386E", background: "#CFE6FF", color: "#16386E" }
-                      : { borderColor: "#E3E8F1", color: "#5B6A85" }
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2.5">
-              <CapySecondaryButton onClick={() => setDangBao(false)}>Huỷ</CapySecondaryButton>
-              <CapyPrimaryButton className="min-h-[48px] flex-1 text-[15px]" onClick={guiBaoVanDe}>
-                Gửi
-              </CapyPrimaryButton>
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2.5">
-          {healthLog.map((h) => (
-            <div
-              key={h.id}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-[22px] bg-white px-4 py-3.5"
-            >
-              <span className="text-[22px] leading-none">{MOOD_EMOJI[h.level] ?? "🙂"}</span>
-              <span className="block min-w-0">
-                <span className="block text-[14px] font-semibold">{h.text}</span>
-                <span className="block text-[12px] leading-[1.45] text-[#5B6A85]">{h.at}</span>
-              </span>
-            </div>
-          ))}
-          {healthLog.length === 0 && !dangBao && (
-            <div className="rounded-[22px] bg-white p-4 text-[13px] text-[#5B6A85]">
-              Chưa có nhật ký nào.
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

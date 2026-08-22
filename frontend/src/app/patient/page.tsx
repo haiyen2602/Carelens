@@ -37,6 +37,8 @@ import {
 } from "@/lib/doses";
 import { useAuth } from "@/lib/auth";
 import { randomCapyQuote, type CapyQuote } from "@/lib/capy-quotes";
+import { daNhac, danhDauDaNhac } from "@/lib/dose-reminder-log";
+import { useProto } from "@/lib/proto-store";
 
 // GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
 // mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
@@ -70,6 +72,19 @@ function loiChao(ten: string): string {
   if (h < 18) return `Chào buổi chiều, ${first}`;
   return `Chào buổi tối, ${first} 🌙`;
 }
+
+// Vai manh phao hoa tinh (khong dung thu vien ngoai) - CSS keyframe
+// `capyConfetti` dinh nghia o globals.css, cung mau voi capy-pop/capy-sheet.
+const PHAO_HOA = [
+  { emoji: "🎉", left: "8%", delay: "0s" },
+  { emoji: "🎊", left: "20%", delay: "0.3s" },
+  { emoji: "✨", left: "34%", delay: "0.1s" },
+  { emoji: "🎈", left: "48%", delay: "0.5s" },
+  { emoji: "🎉", left: "60%", delay: "0.2s" },
+  { emoji: "✨", left: "72%", delay: "0.6s" },
+  { emoji: "🎊", left: "84%", delay: "0.4s" },
+  { emoji: "🎈", left: "92%", delay: "0s" },
+];
 
 type TrangThaiHero = "upcoming" | "due" | "waiting" | "overdue";
 
@@ -112,6 +127,7 @@ const HERO: Record<
 export default function PatientToday() {
   const router = useRouter();
   const { user, accessToken } = useAuth();
+  const { requestSymptomCheck } = useProto();
   const patientId = user?.patient_id ?? "";
 
   const [doses, setDoses] = useState<Dose[]>([]);
@@ -134,10 +150,34 @@ export default function PatientToday() {
   // Anh + quote Capy doi ngau nhien moi lan vao lai tab nay. Chon trong
   // useEffect chu khong phai luc render - xem ghi chu o randomCapyQuote().
   const [capy, setCapy] = useState<CapyQuote | null>(null);
+  // Khao sat "ban co khoe khong" sau khi het lieu trong ngay - thay cho luong
+  // ghi nhat ky thu cong cu (bo o health/page.tsx, xem lib/escalations.ts).
+  // Khoa theo NGAY hien tai (localStorage qua lib/dose-reminder-log, tai su
+  // dung dung ham "da nhac" da co san thay vi tu viet lai) - moi ngay hoi lai
+  // 1 lan, tra loi roi thi khong hoi nua du con vao lai trang.
+  const [daTraLoiKhaoSat, setDaTraLoiKhaoSat] = useState(true);
+  const [mungRo, setMungRo] = useState(false);
+  const khoaKhaoSat = `khao-sat-suc-khoe:${new Date().toDateString()}`;
 
   useEffect(() => {
     setCapy(randomCapyQuote());
+    setDaTraLoiKhaoSat(daNhac(khoaKhaoSat));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const traLoiKhaoSat = (on: boolean) => {
+    danhDauDaNhac(khoaKhaoSat);
+    setDaTraLoiKhaoSat(true);
+    if (on) {
+      setMungRo(true);
+    } else {
+      // requestSymptomCheck() bao trang Capy AI tu mo loi hoi trieu chung
+      // ngay khi vao (xem effect trong patient/assistant/page.tsx) - ha tang
+      // nay da co san tu truoc, chi chua noi dau goi nao toi no.
+      requestSymptomCheck();
+      router.push("/patient/assistant");
+    }
+  };
 
   const taiLaiDoses = async () => {
     if (!patientId) return;
@@ -436,6 +476,27 @@ export default function PatientToday() {
         </div>
       )}
 
+      {/* Khao sat suc khoe - chi hien khi da xong het lieu hom nay VA chua
+          tra loi khao sat cua hom nay. */}
+      {!dangTai && tatCaXong && !daTraLoiKhaoSat && (
+        <div className="capy-pop rounded-[30px] bg-white p-5 text-center shadow-[0_10px_30px_rgba(22,56,110,.07)]">
+          <p className="font-display m-0 text-[19px] font-bold text-[#16386E]">
+            Hôm nay bạn cảm thấy thế nào?
+          </p>
+          <p className="m-0 mt-1 text-[13px] leading-[1.5] text-[#5B6A85]">
+            Đã uống hết thuốc rồi, Capy hỏi thăm bạn một chút.
+          </p>
+          <div className="mt-4 flex gap-2.5">
+            <CapySecondaryButton className="flex-1" onClick={() => traLoiKhaoSat(false)}>
+              Không ổn 😕
+            </CapySecondaryButton>
+            <CapyPrimaryButton className="flex-1" onClick={() => traLoiKhaoSat(true)}>
+              Ổn 🙂
+            </CapyPrimaryButton>
+          </div>
+        </div>
+      )}
+
       {!dangTai && dosesHomNay.length === 0 && (
         <div className="rounded-[22px] bg-white p-6 text-center text-sm text-[#5B6A85]">
           Hôm nay bạn không có liều thuốc nào.
@@ -618,6 +679,37 @@ export default function PatientToday() {
           <button
             onClick={() => setThanhCong(null)}
             className="font-display mt-[26px] flex min-h-[56px] min-w-[200px] items-center justify-center rounded-[20px] bg-[#16386E] text-[17px] font-bold text-white transition-colors hover:bg-[#0E2749]"
+          >
+            Về Hôm nay
+          </button>
+        </div>
+      )}
+
+      {/* An mung khi tra loi "On" o khao sat suc khoe - phao hoa tinh bang
+          CSS (keyframe capyConfetti trong globals.css), khong can thu vien
+          ngoai. */}
+      {mungRo && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#BFEBDC] p-8 text-center">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            {PHAO_HOA.map((p, i) => (
+              <span
+                key={i}
+                className="capy-confetti absolute text-[26px]"
+                style={{ left: p.left, animationDelay: p.delay }}
+              >
+                {p.emoji}
+              </span>
+            ))}
+          </div>
+          <p className="font-display m-0 text-[30px] font-extrabold leading-[1.15] text-[#14563F]">
+            Tuyệt vời! 🎉
+          </p>
+          <p className="m-0 mt-2 text-[15px] font-medium leading-[1.5] text-[#1F6A50]">
+            Cảm ơn bạn đã chia sẻ. Chúc bạn một ngày khoẻ mạnh!
+          </p>
+          <button
+            onClick={() => setMungRo(false)}
+            className="font-display relative mt-[26px] flex min-h-[56px] min-w-[200px] items-center justify-center rounded-[20px] bg-[#16386E] text-[17px] font-bold text-white transition-colors hover:bg-[#0E2749]"
           >
             Về Hôm nay
           </button>

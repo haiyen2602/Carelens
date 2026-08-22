@@ -34,9 +34,11 @@ import {
   leaveCaregiverLink,
   listMonitoredPatients,
   listPendingInvitesForMe,
+  listSentInvites,
   sendCaregiverInvite,
   type MonitoredPatient,
   type PendingInvite,
+  type SentInvite,
 } from "@/lib/caregivers";
 
 const NUDGES = [
@@ -70,7 +72,9 @@ export default function PatientFamilyPage() {
   const [relatives, setRelatives] = useState<MonitoredPatient[]>([]);
   const [badgeByPatientId, setBadgeByPatientId] = useState<Record<string, number>>({});
   const [pending, setPending] = useState<PendingInvite[]>([]);
+  const [daGui, setDaGui] = useState<SentInvite[]>([]);
   const [dangTai, setDangTai] = useState(true);
+  const [dangHuy, setDangHuy] = useState<string | null>(null);
   const [dangXuLy, setDangXuLy] = useState<string | null>(null);
 
   const [dangMoi, setDangMoi] = useState(false);
@@ -88,12 +92,14 @@ export default function PatientFamilyPage() {
     if (!user?.id) return;
     setDangTai(true);
     try {
-      const [ds, moi] = await Promise.all([
+      const [ds, moi, gui] = await Promise.all([
         listMonitoredPatients(user.id),
         accessToken ? listPendingInvitesForMe(accessToken) : Promise.resolve([]),
+        accessToken ? listSentInvites(accessToken) : Promise.resolve([]),
       ]);
       setRelatives(ds);
       setPending(moi);
+      setDaGui(gui);
       const badges = await Promise.all(
         ds.map(async (r) => [r.patientId, await demSoCanhBao(r)] as const),
       );
@@ -178,10 +184,25 @@ export default function PatientFamilyPage() {
       setTuKhoa("");
       setNguoiDuocChon(null);
       setQuanHe("");
+      await taiLai();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không gửi được lời mời");
     } finally {
       setDangGuiMoi(false);
+    }
+  };
+
+  const huyLoiMoiDaGui = async (invite: SentInvite) => {
+    if (!accessToken) return;
+    setDangHuy(invite.id);
+    try {
+      await leaveCaregiverLink(accessToken, invite.id);
+      toast("Đã huỷ lời mời");
+      await taiLai();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không huỷ được lời mời");
+    } finally {
+      setDangHuy(null);
     }
   };
 
@@ -260,6 +281,36 @@ export default function PatientFamilyPage() {
                   className="rounded-full bg-[#F6E9E7] px-3 py-2 text-[12px] font-semibold text-[#B4432C] disabled:opacity-50"
                 >
                   Từ chối
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Loi moi minh da gui, con dang cho nguoi kia duyet */}
+      {daGui.length > 0 && (
+        <div>
+          <div className="mb-2.5">
+            <SectionLabel>Lời mời bạn đã gửi</SectionLabel>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {daGui.map((invite) => (
+              <div key={invite.id} className="flex items-center gap-3 rounded-[24px] bg-white p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-display m-0 truncate text-[15px] font-bold text-[#16386E]">
+                    {invite.patientName}
+                  </p>
+                  <p className="m-0 text-[12px] text-[#62708A]">{invite.relationship}</p>
+                </div>
+                <PillChip chip={{ label: "Đang đợi duyệt", icon: "‖", bg: "#FDEBC9", fg: "#8A6516" }} />
+                <button
+                  aria-label="Huỷ lời mời"
+                  disabled={dangHuy === invite.id}
+                  onClick={() => huyLoiMoiDaGui(invite)}
+                  className="rounded-full bg-[#F6E9E7] px-3 py-2 text-[12px] font-semibold text-[#B4432C] disabled:opacity-50"
+                >
+                  Huỷ
                 </button>
               </div>
             ))}

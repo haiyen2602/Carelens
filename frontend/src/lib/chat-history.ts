@@ -3,6 +3,16 @@ export type StoredChatMessage = {
   role: "user" | "assistant";
   content: string;
   at: string;
+  // BUILD-29: chi gan cho tin nhan role="assistant" - trace_id/agent_run_id
+  // la nhung gi response /api/chat THAT SU da tra ve cho dung luot nay (xem
+  // frontend/src/app/api/chat/route.ts's adaptAgentV2Response), luu lai o
+  // day de nut "Báo cáo câu trả lời" khong bao gio phai boi nguoi dung nhap
+  // tay trace/session id. userMessage la cau hoi cua chinh nguoi dung ngay
+  // truoc luot tra loi nay (khong doc tu message lien ke trong mang, tranh
+  // sai lech neu lich su bi chinh sua sau nay).
+  traceId?: string;
+  agentRunId?: string;
+  userMessage?: string;
 };
 
 export type Conversation = {

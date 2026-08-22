@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from backend.api.security import CurrentUser, get_current_user
+from backend.api.security import CurrentUser, require_role
 from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import AuditLog, ChatMessage, DrugChunk, Escalation
@@ -21,9 +21,16 @@ from backend.services.telemetry import get_local_traces
 
 rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitoring"])
 
-
-def _require_admin(current_user: CurrentUser = Depends(get_current_user)):
-    return current_user
+# BUILD-29 security fix (documented gap since BUILD-25's own audit, report
+# 54-build-25-agent-v2-monitoring-audit.md §8: "_require_admin has no actual
+# role check -- any authenticated JWT, any role, can read /admin/rag/*").
+# ``require_role("admin")`` (backend/api/security.py) already existed and is
+# already used this exact way by every other admin-only route in this repo
+# (account_routes.py, admin_drug_routes.py, audit_routes.py) -- this was
+# simply never wired in here. Kept as a module-level name (not inlined at
+# every ``Depends(...)`` call site below) so the fix is one line, not an
+# 11-site rename.
+_require_admin = require_role("admin")
 
 
 # BUILD-25B: real filtering by chatbot system / model / prompt version,

@@ -58,3 +58,6 @@ ruff>=0.8.0
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
 httpx>=0.28.0
+
+# Web Push (VAPID) cho nhac gio uong thuoc khi app da dong - backend/services/push.py
+pywebpush>=2.0.0
