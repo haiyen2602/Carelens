@@ -65,6 +65,7 @@ so they are not individually checkpointed; replaying a read is always safe.
 from __future__ import annotations
 
 import re
+import unicodedata
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -501,6 +502,18 @@ class ContextResolution:
         return self.status is ContextResolutionStatus.RESOLVED
 
 
+@dataclass(frozen=True)
+class SemanticMedicalQuery:
+    raw_query: str
+    normalized_query: str
+    family: str | None = None
+    topic: str | None = None
+
+    @property
+    def changed(self) -> bool:
+        return self.normalized_query != self.raw_query
+
+
 _TOPIC_PATTERNS = (
     re.compile(r"\b(bệnh\s+[^?!.]{2,80}?)\s+(?:là\s+gì|la\s+gi)\b", re.IGNORECASE),
     re.compile(r"\b(benh\s+[^?!.]{2,80}?)\s+(?:la\s+gi)\b", re.IGNORECASE),
@@ -509,6 +522,48 @@ _TOPIC_PATTERNS = (
         r"tôi\s+đang\s+hỏi|toi\s+dang\s+hoi)\s+(?:về|ve)\s+([^?!.]{2,80})",
         re.IGNORECASE,
     ),
+)
+_TRAILING_MEDICAL_QUESTION_FILLER_RE = re.compile(
+    r"\s+(?:là\s+gì|la\s+gi|nghĩa\s+là\s+gì|nghia\s+la\s+gi)\s*$",
+    re.IGNORECASE,
+)
+_SEMANTIC_TOPIC_CLEANUP_RE = re.compile(
+    r"^(?:bệnh|benh)\s+",
+    re.IGNORECASE,
+)
+_CAUSE_PATTERNS = (
+    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^nguyen\s+nhan\s+(?:gay|cua|dan\s+den)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(.+?)\s+do\s+đâu$", re.IGNORECASE),
+    re.compile(r"^(.+?)\s+do\s+dau$", re.IGNORECASE),
+    re.compile(r"^tại\s+sao\s+(?:bị|mắc)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^tai\s+sao\s+(?:bi|mac)\s+(.+)$", re.IGNORECASE),
+)
+_DEFINITION_PATTERNS = (
+    re.compile(r"^(.+?)\s+(?:là\s+gì|la\s+gi|nghĩa\s+là\s+gì|nghia\s+la\s+gi)$", re.IGNORECASE),
+    re.compile(r"^(?:giải\s+thích|giai\s+thich)\s+(.+)$", re.IGNORECASE),
+)
+_SYMPTOM_PATTERNS = (
+    re.compile(r"^(?:triệu\s+chứng|trieu\s+chung)\s+(?:của\s+|cua\s+)?(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:dấu\s+hiệu|dau\s+hieu)\s+(?:của\s+|cua\s+)?(.+)$", re.IGNORECASE),
+    re.compile(r"^(.+?)\s+(?:có\s+biểu\s+hiện\s+gì|co\s+bieu\s+hien\s+gi)$", re.IGNORECASE),
+)
+_DANGER_PATTERNS = (
+    re.compile(r"^(.+?)\s+(?:có\s+nguy\s+hiểm\s+không|co\s+nguy\s+hiem\s+khong)$", re.IGNORECASE),
+    re.compile(r"^(?:khi\s+nào|khi\s+nao)\s+(.+?)\s+nguy\s+hiểm$", re.IGNORECASE),
+    re.compile(r"^(?:khi\s+nao)\s+(.+?)\s+nguy\s+hiem$", re.IGNORECASE),
+)
+_PREVENTION_PATTERNS = (
+    re.compile(r"^(?:cách|cach)\s+(?:phòng\s+ngừa|phòng\s+tránh|phong\s+ngua|phong\s+tranh)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:phòng\s+ngừa|phòng\s+tránh|phong\s+ngua|phong\s+tranh)\s+(.+?)\s+(?:thế\s+nào|the\s+nao)$", re.IGNORECASE),
+    re.compile(r"^(?:làm\s+sao|lam\s+sao)\s+để\s+giảm\s+nguy\s+cơ\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:lam\s+sao)\s+de\s+giam\s+nguy\s+co\s+(.+)$", re.IGNORECASE),
+)
+_URGENCY_PATTERNS = (
+    re.compile(r"^(?:khi\s+nào|khi\s+nao)\s+(.+?)\s+cần\s+(?:đi\s+khám|khám\s+ngay)$", re.IGNORECASE),
+    re.compile(r"^(?:khi\s+nao)\s+(.+?)\s+can\s+(?:di\s+kham|kham\s+ngay)$", re.IGNORECASE),
+    re.compile(r"^(?:dấu\s+hiệu|dau\s+hieu)\s+nào\s+(.+?)\s+cần\s+khám\s+ngay$", re.IGNORECASE),
+    re.compile(r"^(?:dau\s+hieu)\s+nao\s+(.+?)\s+can\s+kham\s+ngay$", re.IGNORECASE),
 )
 _FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "urgent_care": ("đi khám", "di kham", "đi viện", "di vien", "cấp cứu", "cap cuu", "khám ngay", "kham ngay"),
@@ -528,6 +583,80 @@ _AMBIGUOUS_FOLLOW_UP_MARKERS = (
 _CONTEXT_CLARIFICATION_REPLY = (
     "Mình chưa xác định đủ ngữ cảnh cho câu hỏi này. Bạn đang muốn hỏi tiếp về bệnh hoặc chủ đề nào?"
 )
+
+
+def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
+    """Canonicalize bounded medical paraphrases before retrieval.
+
+    This is not an entity linker and never invents a topic. It only rewrites
+    explicit, high-confidence shapes so small wording differences such as
+    punctuation, casing, accents, or trailing "là gì" do not perturb
+    embedding/lexical retrieval.
+    """
+
+    raw_query = " ".join(message.strip().split())
+    if not raw_query:
+        return SemanticMedicalQuery(message, message)
+    candidate = raw_query.strip(" ?!.,;:")
+    candidate = _TRAILING_MEDICAL_QUESTION_FILLER_RE.sub("", candidate).strip()
+
+    cause_topic = _match_semantic_topic(candidate, _CAUSE_PATTERNS)
+    if cause_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"nguyen nhan gay {cause_topic}", "cause", cause_topic)
+
+    urgency_topic = _match_semantic_topic(candidate, _URGENCY_PATTERNS)
+    if urgency_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"khi nao {urgency_topic} can di kham ngay", "urgent_care", urgency_topic)
+
+    symptoms_topic = _match_semantic_topic(candidate, _SYMPTOM_PATTERNS)
+    if symptoms_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"trieu chung cua {symptoms_topic}", "symptoms", symptoms_topic)
+
+    danger_topic = _match_semantic_topic(candidate, _DANGER_PATTERNS)
+    if danger_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"{danger_topic} co nguy hiem khong", "danger", danger_topic)
+
+    prevention_topic = _match_semantic_topic(candidate, _PREVENTION_PATTERNS)
+    if prevention_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"cach phong ngua {prevention_topic}", "prevention", prevention_topic)
+
+    definition_topic = _match_semantic_topic(raw_query.strip(" ?!.,;:"), _DEFINITION_PATTERNS)
+    if definition_topic is not None:
+        return SemanticMedicalQuery(raw_query, f"{definition_topic} la gi", "definition", definition_topic)
+
+    compact = _ascii_fold(raw_query)
+    compact = re.sub(r"\s+", " ", compact).strip(" ?!.,;:")
+    if compact != raw_query:
+        return SemanticMedicalQuery(raw_query, compact, None, None)
+    return SemanticMedicalQuery(raw_query, raw_query)
+
+
+def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -> str | None:
+    candidates = (message, _ascii_fold(message))
+    for candidate in dict.fromkeys(candidates):
+        for pattern in patterns:
+            match = pattern.match(candidate)
+            if match is None:
+                continue
+            topic = _clean_semantic_topic(match.group(1))
+            if topic:
+                return topic
+    return None
+
+
+def _clean_semantic_topic(topic: str) -> str | None:
+    cleaned = _TRAILING_MEDICAL_QUESTION_FILLER_RE.sub("", topic.strip(" ?!.,;:")).strip()
+    cleaned = _ascii_fold(_SEMANTIC_TOPIC_CLEANUP_RE.sub("", cleaned).strip())
+    cleaned = re.sub(r"^(?:benh)\s+", "", cleaned).strip()
+    if len(cleaned) < 2:
+        return None
+    return cleaned[:80]
+
+
+def _ascii_fold(value: str) -> str:
+    decomposed = unicodedata.normalize("NFD", value.casefold())
+    folded = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return folded.replace("đ", "d").replace("Đ", "d")
 
 
 def resolve_conversation_context(message: str, memory_items: list[ContextItem]) -> ContextResolution:
@@ -1155,6 +1284,10 @@ class AgentOrchestrator:
             if resolution.used:
                 router_message = resolution.resolved_query
                 decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+            semantic_query = normalize_semantic_medical_query(router_message)
+            if semantic_query.changed:
+                router_message = semantic_query.normalized_query
+                decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
 
         if self._telemetry is not None:
             self._telemetry.event(
@@ -1578,6 +1711,8 @@ __all__ = [
     "OrchestrationRequest",
     "OrchestrationResult",
     "RouterDecision",
+    "SemanticMedicalQuery",
     "classify_intent",
+    "normalize_semantic_medical_query",
     "resolve_conversation_context",
 ]

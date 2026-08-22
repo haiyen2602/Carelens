@@ -37,6 +37,7 @@ from backend.agents.v2.orchestrator import (
     OrchestrationIntent,
     OrchestrationRequest,
     classify_intent,
+    normalize_semantic_medical_query,
 )
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime, RunStatus
@@ -574,19 +575,19 @@ def test_follow_up_resolution_enriches_router_retrieval_and_prompt_for_same_conv
 
     assert second.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
     assert second.status is RunStatus.COMPLETED
-    assert retrieval_domain.calls[-1]["query"] == "Khi nào bệnh sỏi thận cần đi khám ngay?"
-    assert "Khi nào bệnh sỏi thận cần đi khám ngay?" in gateway.calls[-1]["message"]
+    assert retrieval_domain.calls[-1]["query"] == "khi nao benh soi than can di kham ngay"
+    assert "khi nao benh soi than can di kham ngay" in gateway.calls[-1]["message"]
 
 
 @pytest.mark.parametrize(
     ("follow_up", "expected_query"),
     [
-        ("Bao giờ thì nên đi viện?", "Khi nào bệnh sỏi thận cần đi khám ngay?"),
-        ("Khi nào bệnh này nguy hiểm?", "bệnh sỏi thận có nguy hiểm không?"),
-        ("Nguyên nhân thì sao?", "Nguyên nhân của bệnh sỏi thận là gì?"),
-        ("Bệnh này do đâu?", "Nguyên nhân của bệnh sỏi thận là gì?"),
-        ("Triệu chứng của nó?", "Triệu chứng của bệnh sỏi thận là gì?"),
-        ("Có cách phòng tránh không?", "Cách phòng ngừa bệnh sỏi thận là gì?"),
+        ("Bao giờ thì nên đi viện?", "khi nao benh soi than can di kham ngay"),
+        ("Khi nào bệnh này nguy hiểm?", "soi than co nguy hiem khong"),
+        ("Nguyên nhân thì sao?", "nguyen nhan gay soi than"),
+        ("Bệnh này do đâu?", "nguyen nhan gay soi than"),
+        ("Triệu chứng của nó?", "trieu chung cua soi than"),
+        ("Có cách phòng tránh không?", "cach phong ngua soi than"),
     ],
 )
 def test_follow_up_resolution_supports_semantic_variants(follow_up, expected_query):
@@ -628,7 +629,8 @@ def test_follow_up_resolution_is_not_kidney_stone_hardcoded(topic):
     orchestrator.run(_request(f"{topic} là gì?"), tools=_tools())
     orchestrator.run(_request("Nguyên nhân thì sao?"), tools=_tools())
 
-    assert retrieval_domain.calls[-1]["query"] == f"Nguyên nhân của {topic.casefold()} là gì?"
+    expected_topic = normalize_semantic_medical_query(f"Giải thích {topic}").topic
+    assert retrieval_domain.calls[-1]["query"] == f"nguyen nhan gay {expected_topic}"
 
 
 def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
@@ -649,7 +651,100 @@ def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
     result = orchestrator.run(_request("Triệu chứng của nó?"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
-    assert retrieval_domain.calls[-1]["query"] == "Triệu chứng của tiểu đường là gì?"
+    assert retrieval_domain.calls[-1]["query"] == "trieu chung cua tieu duong"
+
+
+def test_semantic_normalization_reproduces_exact_cause_paraphrase_bug_with_same_retrieval_query():
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="Sỏi thận có nhiều nguyên nhân.")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=ShortTermMemoryStore(_context_manager()),
+    )
+
+    first = orchestrator.run(_request("Nguyên nhân gây sỏi thận là gì"), tools=_tools())
+    second = orchestrator.run(_request("Nguyên nhân gây sỏi thận"), tools=_tools())
+
+    assert first.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert second.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert first.status is RunStatus.COMPLETED
+    assert second.status is RunStatus.COMPLETED
+    assert [call["query"] for call in retrieval_domain.calls[-2:]] == [
+        "nguyen nhan gay soi than",
+        "nguyen nhan gay soi than",
+    ]
+    assert "nguyen nhan gay soi than" in gateway.calls[-2]["message"]
+    assert "nguyen nhan gay soi than" in gateway.calls[-1]["message"]
+
+
+@pytest.mark.parametrize(
+    ("family", "topic", "variants", "expected"),
+    [
+        (
+            "definition",
+            "sỏi thận",
+            ["Sỏi thận là gì?", "Giải thích sỏi thận", "Sỏi thận nghĩa là gì?"],
+            "soi than la gi",
+        ),
+        (
+            "cause",
+            "gan nhiễm mỡ",
+            [
+                "Nguyên nhân gây gan nhiễm mỡ",
+                "Nguyên nhân gây gan nhiễm mỡ là gì?",
+                "Gan nhiễm mỡ do đâu?",
+                "Tại sao bị gan nhiễm mỡ?",
+            ],
+            "nguyen nhan gay gan nhiem mo",
+        ),
+        (
+            "symptoms",
+            "tăng huyết áp",
+            ["Triệu chứng tăng huyết áp", "Dấu hiệu của tăng huyết áp là gì?", "Tăng huyết áp có biểu hiện gì?"],
+            "trieu chung cua tang huyet ap",
+        ),
+        (
+            "prevention",
+            "tiểu đường",
+            ["Phòng ngừa tiểu đường thế nào?", "Làm sao để giảm nguy cơ tiểu đường?"],
+            "cach phong ngua tieu duong",
+        ),
+        (
+            "urgent_care",
+            "sốt xuất huyết",
+            ["Khi nào sốt xuất huyết cần đi khám?", "Dấu hiệu nào sốt xuất huyết cần khám ngay?"],
+            "khi nao sot xuat huyet can di kham ngay",
+        ),
+        (
+            "cause",
+            "sốt xuất huyết",
+            ["NGUYÊN NHÂN GÂY SỐT XUẤT HUYẾT LÀ GÌ??", "nguyen nhan gay sot xuat huyet"],
+            "nguyen nhan gay sot xuat huyet",
+        ),
+    ],
+)
+def test_semantic_medical_query_normalization_is_consistent_across_paraphrase_families(
+    family, topic, variants, expected
+):
+    normalized = [normalize_semantic_medical_query(variant) for variant in variants]
+
+    assert {item.family for item in normalized} == {family}
+    assert {item.topic for item in normalized} == {normalize_semantic_medical_query(f"Giải thích {topic}").topic}
+    assert [item.normalized_query for item in normalized] == [expected] * len(variants)
+    assert {classify_intent(item.normalized_query).intent for item in normalized} == {
+        OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    }
+
+
+def test_semantic_normalization_does_not_rewrite_ambiguous_safety_or_time_queries():
+    assert normalize_semantic_medical_query("còn cái kia?").normalized_query == "con cai kia"
+    assert classify_intent("Tôi đang bị sỏi thận và vừa nôn ra máu").intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION
+    assert classify_intent("Ba hôm trước tôi uống gì", now=NOW).intent is OrchestrationIntent.MEDICATION_HISTORY
 
 
 def test_follow_up_without_context_asks_clarification_and_does_not_retrieve():
