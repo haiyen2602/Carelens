@@ -278,6 +278,26 @@ _READ_ONLY_TOOL_SCHEMAS = (
             "additionalProperties": False,
         },
     },
+    {
+        "type": "function",
+        "name": "get_doses_for_range",
+        # BUILD-27B: no date/range parameters here on purpose -- the server
+        # (not the model) has already resolved the exact date or range this
+        # specific request means (e.g. "hôm qua", "ngày kia", "20/08") from
+        # the message before this tool is ever offered; calling it always
+        # reads that pre-resolved range. Use this instead of
+        # get_today_doses/get_upcoming_doses whenever the request names a
+        # specific past date, a specific future date beyond tomorrow, or a
+        # week ("tuần trước"/"tuần tới") -- those two tools only ever cover
+        # exactly today or a short rolling forward window.
+        "description": (
+            "Read the authorized patient's doses for the specific past or future "
+            "date/date-range the server has already resolved for this request. "
+            "Takes no arguments -- the range is fixed server-side, not chosen here."
+        ),
+        "strict": True,
+        "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+    },
 )
 
 
@@ -368,6 +388,17 @@ class OpenAIModelGateway:
                 "If search_drug returns more than one plausible match for an ambiguous "
                 "drug name, do not pick one automatically -- list the candidates for the "
                 "user and ask which one they mean. "
+                # BUILD-27B: get_doses_for_range answers a specific resolved
+                # past/future date or week; get_today_doses/get_upcoming_doses
+                # only ever cover exactly today or a short rolling forward
+                # window and must not be used for a named date beyond that.
+                "For a question naming a specific past date, a future date beyond "
+                "tomorrow, or a week ('tuần trước'/'tuần tới'), call get_doses_for_range, "
+                "not get_today_doses or get_upcoming_doses -- the server has already fixed "
+                "the exact date/range for this request before you see it. Never state or "
+                "compute your own date/range for that call; it takes no arguments. If the "
+                "request is about a FUTURE date/range, never phrase the reply as though the "
+                "dose has already happened -- say what is scheduled, not what was taken. "
                 "Never propose prescription changes, dose-state writes, or clinical advice. "
                 f"Authorized actor role: {actor_role}. Request: {message}"
             ),
@@ -435,6 +466,16 @@ class OpenAIModelGateway:
                 "verified system data, never as Vinmec. If nothing here is genuinely Vinmec-"
                 "sourced and the request specifically asked about Vinmec, say honestly that no "
                 "Vinmec result was found rather than substituting another source under that name. "
+                # BUILD-27B: this turn only ever sees FUTURE-dated schedule
+                # evidence for a dose-schedule question (past-dated
+                # medication-history queries are answered deterministically
+                # in code, before this turn is ever reached -- see
+                # AgentOrchestrator._medication_history_reply), so "already
+                # taken" phrasing here would always be describing something
+                # that has not happened yet.
+                "If the verified evidence is about doses scheduled for today or a future "
+                "date, describe them as scheduled/upcoming -- never say or imply the patient "
+                "has already taken a dose that has not occurred yet. "
                 "Write the final natural-language reply for the authorized actor in Vietnamese. "
                 f"Authorized actor role: {actor_role}. Original request: {message}. "
                 f"Verified tool evidence (JSON): {serialized_evidence}"

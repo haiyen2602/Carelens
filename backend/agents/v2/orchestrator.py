@@ -66,11 +66,13 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from math import ceil
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 from backend.agents.v2.checkpoint import CheckpointedDoctorHandoffGateway, CheckpointedSafetyGateway, CheckpointedTerminalStateRecorder
 from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextManager
@@ -80,7 +82,7 @@ from backend.agents.v2.retrieval import RetrievalGateway, RetrievalGatewayResult
 from backend.agents.v2.runtime import ReadOnlyAgentRuntime, RunMetrics, RunResult, RunStatus
 from backend.agents.v2.safety import SafetyDecision, SafetyGateway, SafetyOutcome, SafetyRequest, SafetyTrigger
 from backend.agents.v2.short_term_memory import MessageRole, SessionMemoryKey, ShortTermMemoryStore
-from backend.agents.v2.tools import ToolExecutionError, ToolGateway
+from backend.agents.v2.tools import ToolExecutionError, ToolGateway, ToolName
 from backend.agents.v2.vinmec_web import (
     VinmecSearchRequest,
     VinmecWebSearchGateway,
@@ -88,6 +90,14 @@ from backend.agents.v2.vinmec_web import (
     VinmecWebStatus,
 )
 from backend.services.agent_checkpoint import CheckpointCreateCommand, claim_resume, create_or_load_checkpoint
+
+# BUILD-27B: duplicated from backend.services.scheduling.write_path.
+# DEFAULT_TIMEZONE (same value) rather than imported -- this module has
+# never depended on backend.services.scheduling.* before, and that package
+# has a real circular import back through backend.services.prescription
+# that only surfaces depending on import order elsewhere in the app. A
+# plain string constant is not worth risking that fragility for.
+_PATIENT_TIMEZONE = "Asia/Ho_Chi_Minh"
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -101,6 +111,11 @@ class OrchestrationIntent(StrEnum):
     PRESCRIPTION_INFORMATION = "PRESCRIPTION_INFORMATION"
     TODAY_DOSES = "TODAY_DOSES"
     UPCOMING_DOSES = "UPCOMING_DOSES"
+    # BUILD-27B: a past-dated schedule/history question ("hôm qua", "tuần
+    # trước", a specific past calendar date). Answered deterministically,
+    # in code, never via a model call -- see
+    # ``AgentOrchestrator._medication_history_reply``.
+    MEDICATION_HISTORY = "MEDICATION_HISTORY"
     DOSE_STATUS = "DOSE_STATUS"
     MISSED_DOSE = "MISSED_DOSE"
     DELAYED_DOSE = "DELAYED_DOSE"
@@ -120,6 +135,12 @@ class RouterDecision:
     bypass_to_handoff: bool
     use_retrieval: bool
     use_vinmec_web: bool
+    # BUILD-27B: set only when the router deterministically resolved a
+    # specific past/future date or week from the message (see
+    # ``_resolve_time_reference``); ``None`` for every other intent,
+    # including the plain "hôm nay"/generic "sắp tới" cases that already
+    # worked before this build and are left exactly as they were.
+    date_range: tuple[date, date] | None = None
 
 
 # intent -> (safety_trigger, requires_occurrence, bypass_to_handoff, use_retrieval, use_vinmec_web)
@@ -129,6 +150,7 @@ _INTENT_CONFIG: dict[OrchestrationIntent, tuple[SafetyTrigger | None, bool, bool
     OrchestrationIntent.PRESCRIPTION_INFORMATION: (None, False, False, False, False),
     OrchestrationIntent.TODAY_DOSES: (None, False, False, False, False),
     OrchestrationIntent.UPCOMING_DOSES: (None, False, False, False, False),
+    OrchestrationIntent.MEDICATION_HISTORY: (None, False, False, False, False),
     OrchestrationIntent.DOSE_STATUS: (None, False, False, False, False),
     OrchestrationIntent.MISSED_DOSE: (SafetyTrigger.MISSED_DOSE, True, False, False, False),
     OrchestrationIntent.DELAYED_DOSE: (SafetyTrigger.DELAYED_DOSE, True, False, False, False),
@@ -267,10 +289,9 @@ _DOSE_STATUS_KEYWORDS = ("trạng thái liều", "trang thai lieu", "dose status
 # thuốc gì", "buổi tối nay uống gì", "buổi trưa uống thuốc gì") -- none of
 # these say "hôm nay" explicitly, but in ordinary usage a bare "buổi
 # sáng/trưa/chiều/tối [uống gì]" question is asking about *today's* schedule
-# (a different day would normally be named explicitly, e.g. "ngày mai" --
-# see BUILD-24D report 36 query_id 33, already correctly routed to
-# UPCOMING_DOSES). Each time-of-day phrase is added both bare and with the
-# "nay" (this) suffix for paraphrase coverage.
+# (a different day would normally be named explicitly). Each time-of-day
+# phrase is added both bare and with the "nay" (this) suffix for paraphrase
+# coverage.
 _TODAY_KEYWORDS = (
     "hôm nay", "hom nay", "today",
     "buổi sáng", "buoi sang", "sáng nay", "sang nay",
@@ -278,7 +299,131 @@ _TODAY_KEYWORDS = (
     "buổi chiều", "buoi chieu", "chiều nay", "chieu nay",
     "buổi tối", "buoi toi", "tối nay", "toi nay",
 )
-_UPCOMING_KEYWORDS = ("sắp tới", "sap toi", "lịch uống", "lich uong", "upcoming", "sắp đến", "sap den")
+# BUILD-27B: "ngày mai"/"ngay mai" (tomorrow) and "liều tiếp theo"/"lieu tiep
+# theo" (next dose) added here -- a prior comment on this file claimed
+# "ngày mai" was "already correctly routed to UPCOMING_DOSES", but it was
+# never actually in this tuple (found while investigating BUILD-27's
+# BUDGET_EXCEEDED report; filed as TASK-ROUTER-ngay-mai-upcoming-keyword-gap.md,
+# closed by this fix). "Liều tiếp theo" needs no new tool: get_upcoming_doses
+# is already sorted chronologically and its default 1-day window comfortably
+# covers "the next dose" for any real dosing schedule -- see
+# synthesize_read_only's own prompt for the "just the single nearest item"
+# phrasing hint.
+_UPCOMING_KEYWORDS = (
+    "sắp tới", "sap toi", "lịch uống", "lich uong", "upcoming", "sắp đến", "sap den",
+    "ngày mai", "ngay mai",
+    "liều tiếp theo", "lieu tiep theo", "liều kế tiếp", "lieu ke tiep",
+)
+# BUILD-27B: explicit past/future date-phrase recognition -- resolved to a
+# concrete date/range in ``_resolve_time_reference`` below, deterministically
+# (never left to the model to compute), then bound onto ``RouterDecision.
+# date_range`` for the new ``get_doses_for_range`` tool. Standard Vietnamese
+# usage: "hôm qua/kia" (with "hôm") looks backward, "ngày kia" (with "ngày")
+# looks forward -- these are genuinely different words, not typos of each
+# other.
+_YESTERDAY_KEYWORDS = ("hôm qua", "hom qua")
+_DAY_BEFORE_YESTERDAY_KEYWORDS = ("hôm kia", "hom kia")
+_LAST_WEEK_KEYWORDS = ("tuần trước", "tuan truoc")
+_DAY_AFTER_TOMORROW_KEYWORDS = ("ngày kia", "ngay kia")
+_NEXT_WEEK_KEYWORDS = ("tuần tới", "tuan toi", "tuần sau", "tuan sau")
+# "ngày DD/MM" or "ngày DD-MM", optionally with a year. The "ngày"/"hôm"
+# word is deliberately REQUIRED, not optional -- a bare "20/08" collides
+# with plausible dosage phrasing in this app ("uống 1/2 viên" = half a
+# tablet), but "ngày 20/08" or "hôm 20/08" never means a fraction.
+_EXPLICIT_DATE_RE = re.compile(r"(?:ng[aà]y|h[oô]m)\s*(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{4}))?", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class _TimeReference:
+    """One deterministically-resolved calendar date/range from the router.
+
+    ``scope`` is one of "PAST"/"TODAY"/"FUTURE" -- computed here by
+    comparing the resolved date(s) against ``today``, never guessed by the
+    keyword itself (e.g. "ngày DD/MM" can resolve to any of the three)."""
+
+    scope: str
+    start_date: date
+    end_date: date
+    label: str
+
+
+def _iso_week_range(anchor: date) -> tuple[date, date]:
+    """Monday-Sunday range containing ``anchor`` (Vietnamese week convention)."""
+
+    start = anchor - timedelta(days=anchor.weekday())
+    return start, start + timedelta(days=6)
+
+
+def _resolve_explicit_date(message: str, *, today: date) -> date | None:
+    """"ngày 20/08" / "hôm 20/8/2026" -> a real calendar date, or None.
+
+    Assumes the current year when none is given (the overwhelmingly likely
+    reading of a bare "ngày 20/08" in a live chat). An invalid combination
+    (e.g. "ngày 31/02") is treated as no match rather than raising, since a
+    typo here should fall through to the model's own ordinary handling
+    rather than crash the deterministic router.
+    """
+
+    match = _EXPLICIT_DATE_RE.search(message)
+    if match is None:
+        return None
+    day_str, month_str, year_str = match.groups()
+    try:
+        day, month = int(day_str), int(month_str)
+        year = int(year_str) if year_str else today.year
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def _resolve_time_reference(message: str, *, today: date) -> _TimeReference | None:
+    """Deterministically parse a past/today/future date or range from the
+    message (BUILD-27B item 1). Returns ``None`` when nothing recognized
+    here matched -- callers fall through to the pre-existing bare
+    ``_TODAY_KEYWORDS``/``_UPCOMING_KEYWORDS`` checks unchanged, so this
+    never narrows what already worked before this build.
+    """
+
+    lowered = message.casefold()
+
+    def _matches(keywords: tuple[str, ...]) -> bool:
+        return any(keyword in lowered for keyword in keywords)
+
+    if _matches(_YESTERDAY_KEYWORDS):
+        d = today - timedelta(days=1)
+        return _TimeReference("PAST", d, d, "hôm qua")
+    if _matches(_DAY_BEFORE_YESTERDAY_KEYWORDS):
+        d = today - timedelta(days=2)
+        return _TimeReference("PAST", d, d, "hôm kia")
+    if _matches(_LAST_WEEK_KEYWORDS):
+        start, end = _iso_week_range(today - timedelta(days=7))
+        return _TimeReference("PAST", start, end, "tuần trước")
+    if _matches(_DAY_AFTER_TOMORROW_KEYWORDS):
+        d = today + timedelta(days=2)
+        return _TimeReference("FUTURE", d, d, "ngày kia")
+    if _matches(_NEXT_WEEK_KEYWORDS):
+        start, end = _iso_week_range(today + timedelta(days=7))
+        return _TimeReference("FUTURE", start, end, "tuần tới")
+    explicit = _resolve_explicit_date(lowered, today=today)
+    if explicit is not None:
+        if explicit < today:
+            return _TimeReference("PAST", explicit, explicit, explicit.isoformat())
+        if explicit == today:
+            return _TimeReference("TODAY", explicit, explicit, "hôm nay")
+        return _TimeReference("FUTURE", explicit, explicit, explicit.isoformat())
+    return None
+
+
+def _local_today(now: datetime) -> date:
+    """"Today" in the single timezone this app assumes for every patient
+    (see ``write_path.DEFAULT_TIMEZONE``) -- the router has no per-patient
+    timezone to look up (it runs before any DB access), same assumption
+    every scheduling module already makes."""
+
+    as_utc = now if now.tzinfo is not None else now.replace(tzinfo=UTC)
+    return as_utc.astimezone(ZoneInfo(_PATIENT_TIMEZONE)).date()
+
+
 _PRESCRIPTION_KEYWORDS = ("đơn thuốc", "don thuoc", "toa thuốc", "toa thuoc", "prescription", "phác đồ", "phac do")
 _VINMEC_KEYWORDS = ("vinmec", "trang web", "website", "tìm trên mạng", "tim tren mang", "tra cứu web", "tra cuu web")
 _GENERAL_MEDICAL_KEYWORDS = (
@@ -385,8 +530,14 @@ _GREETING_PHRASES = ("xin chào", "xin chao", "chào bạn", "chao ban", "cảm 
 _GREETING_WORD_RE = re.compile(r"\b(hi|hello)\b", re.IGNORECASE)
 
 
-def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecision:
-    """Deterministic, server-side routing. No model call can influence this."""
+def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | None = None) -> RouterDecision:
+    """Deterministic, server-side routing. No model call can influence this.
+
+    ``now`` (BUILD-27B) is only used to resolve relative date phrases
+    ("hôm qua", "ngày kia", ...) into concrete calendar dates -- it defaults
+    to the real current time and every pre-existing caller/test that never
+    passed it keeps working unchanged.
+    """
 
     lowered = message.casefold()
 
@@ -396,10 +547,16 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
     def _matches_greeting() -> bool:
         return _matches(_GREETING_PHRASES) or bool(_GREETING_WORD_RE.search(lowered))
 
+    date_range: tuple[date, date] | None = None
+
     if _detect_acute_danger(message):
         intent = OrchestrationIntent.ACUTE_DANGER_ESCALATION
     elif _matches(_DOCTOR_REVIEW_KEYWORDS):
         intent = OrchestrationIntent.DOCTOR_REVIEW
+    # BUILD-27B: "Safety intent luôn có priority cao hơn time routing" --
+    # missed/delayed-dose Safety triggers are checked here, still before any
+    # time-phrase resolution, so e.g. "hôm qua tôi quên uống thuốc" stays a
+    # Safety-reviewed MISSED_DOSE report, not a plain history lookup.
     elif _matches(_MISSED_DOSE_KEYWORDS):
         intent = OrchestrationIntent.MISSED_DOSE
     elif _matches(_DELAYED_DOSE_KEYWORDS):
@@ -415,23 +572,38 @@ def classify_intent(message: str, *, has_dose_id: bool = False) -> RouterDecisio
     # these specific off-topic markers.
     elif _detect_out_of_scope_category(message) is not None:
         intent = OrchestrationIntent.OUT_OF_SCOPE_REQUEST
-    elif _matches(_TODAY_KEYWORDS):
-        intent = OrchestrationIntent.TODAY_DOSES
-    elif _matches(_UPCOMING_KEYWORDS):
-        intent = OrchestrationIntent.UPCOMING_DOSES
-    elif _matches(_PRESCRIPTION_KEYWORDS):
-        intent = OrchestrationIntent.PRESCRIPTION_INFORMATION
-    elif _matches(_VINMEC_KEYWORDS):
-        intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
-    elif _matches(_GENERAL_MEDICAL_KEYWORDS):
-        intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
-    elif _matches_greeting() and len(message.strip()) <= 40:
-        intent = OrchestrationIntent.GENERAL_CONVERSATION
     else:
-        intent = OrchestrationIntent.DRUG_INFORMATION
+        # BUILD-27B: explicit past/specific-future date phrases resolved
+        # here, before the older bare TODAY/UPCOMING keyword checks -- a
+        # named date always wins over a vague "sắp tới"-style match. Falls
+        # through to the unchanged pre-existing checks when nothing here
+        # matched (e.g. plain "hôm nay", bare "sắp tới").
+        time_ref = _resolve_time_reference(message, today=_local_today(now or datetime.now(UTC)))
+        if time_ref is not None and time_ref.scope == "PAST":
+            intent = OrchestrationIntent.MEDICATION_HISTORY
+            date_range = (time_ref.start_date, time_ref.end_date)
+        elif time_ref is not None and time_ref.scope == "TODAY":
+            intent = OrchestrationIntent.TODAY_DOSES
+        elif time_ref is not None and time_ref.scope == "FUTURE":
+            intent = OrchestrationIntent.UPCOMING_DOSES
+            date_range = (time_ref.start_date, time_ref.end_date)
+        elif _matches(_TODAY_KEYWORDS):
+            intent = OrchestrationIntent.TODAY_DOSES
+        elif _matches(_UPCOMING_KEYWORDS):
+            intent = OrchestrationIntent.UPCOMING_DOSES
+        elif _matches(_PRESCRIPTION_KEYWORDS):
+            intent = OrchestrationIntent.PRESCRIPTION_INFORMATION
+        elif _matches(_VINMEC_KEYWORDS):
+            intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
+        elif _matches(_GENERAL_MEDICAL_KEYWORDS):
+            intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+        elif _matches_greeting() and len(message.strip()) <= 40:
+            intent = OrchestrationIntent.GENERAL_CONVERSATION
+        else:
+            intent = OrchestrationIntent.DRUG_INFORMATION
 
     trigger, requires_occurrence, bypass, use_retrieval, use_web = _INTENT_CONFIG[intent]
-    return RouterDecision(intent, trigger, requires_occurrence, bypass, use_retrieval, use_web)
+    return RouterDecision(intent, trigger, requires_occurrence, bypass, use_retrieval, use_web, date_range)
 
 
 @dataclass(frozen=True)
@@ -653,6 +825,7 @@ _GROUNDING_REQUIRED_INTENTS = frozenset(
         OrchestrationIntent.PRESCRIPTION_INFORMATION,
         OrchestrationIntent.TODAY_DOSES,
         OrchestrationIntent.UPCOMING_DOSES,
+        OrchestrationIntent.MEDICATION_HISTORY,
         OrchestrationIntent.DOSE_STATUS,
         OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
         OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
@@ -684,6 +857,106 @@ def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent
     if result.tool_results or citations:
         return result  # a real tool call or retrieval/Vinmec citation backs this -- nothing to correct
     return RunResult(result.status, _UNGROUNDED_ANSWER_DECLINE_REPLY, result.tool_results, result.metrics)
+
+
+# BUILD-27B: the schedule-reading tools that can legitimately come back with
+# zero items for a perfectly valid, in-scope question ("no dose scheduled
+# that day"). MEDICATION_HISTORY is deliberately absent -- it never reaches
+# this function at all (see ``_medication_history_reply``, which handles its
+# own empty case deterministically before any model call).
+_DATE_SCOPED_DOSE_TOOLS = frozenset({"get_today_doses", "get_upcoming_doses", "get_doses_for_range"})
+_DOSE_SCHEDULE_INTENTS = frozenset({OrchestrationIntent.TODAY_DOSES, OrchestrationIntent.UPCOMING_DOSES})
+_NO_DOSE_DATA_REPLY = (
+    "Minh khong tim thay don thuoc hoac lich uong thuoc nao cua ban trong khoang thoi "
+    "gian duoc hoi."
+)
+
+
+def _enforce_empty_dose_query_reply(result: RunResult, *, intent: OrchestrationIntent) -> RunResult:
+    """Deterministic backstop, same philosophy as ``_enforce_medical_grounding``
+    but for a narrower gap that check cannot see: a dose-schedule tool call
+    that *succeeded* with zero items still counts as "tool evidence exists"
+    for grounding purposes, so a model reply that mishandles or ignores an
+    empty ``items: []`` list (BUILD-27B item 7: "Không có đơn: nói rõ không
+    có đơn/liều trong ngày được hỏi") is not caught by that check alone.
+    A no-op unless every dose-schedule tool actually called this run came
+    back empty -- any real data at all means trust the model's phrasing of it.
+    """
+
+    if result.status is not RunStatus.COMPLETED or intent not in _DOSE_SCHEDULE_INTENTS:
+        return result
+    dose_results = [r for r in result.tool_results if r.name in _DATE_SCOPED_DOSE_TOOLS]
+    if not dose_results:
+        return result
+    if any(isinstance(r.data.get("items"), list) and r.data["items"] for r in dose_results):
+        return result
+    return RunResult(result.status, _NO_DOSE_DATA_REPLY, result.tool_results, result.metrics)
+
+
+# BUILD-27B: real V2 dose-state values (backend/services/scheduling/
+# dose_state.py) bucketed for reporting purposes -- DELAYED groups with
+# TAKEN (the dose-state module's own ``if target_status in {TAKEN, DELAYED}``
+# already treats a late-but-confirmed dose the same way at the persistence
+# layer); MISSED/SKIPPED both mean "not taken", one system-detected and one
+# explicit. PENDING/CANCELLED are neither -- a past PENDING dose (reminder
+# never actioned) is reported by name, not silently folded into either
+# bucket, and CANCELLED never counts against the patient.
+_COMPLETED_STATUSES = frozenset({"TAKEN", "DELAYED"})
+_MISSED_STATUSES = frozenset({"MISSED", "SKIPPED"})
+_HISTORY_STATUS_LABELS_VI = {
+    "TAKEN": "da uong",
+    "DELAYED": "da uong (tre gio)",
+    "MISSED": "da bo lo",
+    "SKIPPED": "da bo qua",
+    "CANCELLED": "da huy",
+    "PENDING": "chua xac nhan",
+}
+
+
+def _format_vn_date(value: date) -> str:
+    return value.strftime("%d/%m/%Y")
+
+
+def _build_medication_history_reply(items: list[dict], *, start_date: date, end_date: date) -> str:
+    """Pure, deterministic reply for a past-dated schedule query -- every
+    fact here (drug names, times, status) comes straight from the real
+    ``get_doses_for_range`` evidence, not from a model call. See BUILD-27B
+    items 3/7 for the exact wording contract this implements.
+    """
+
+    is_single_day = start_date == end_date
+    date_label = f"ngay {_format_vn_date(start_date)}" if is_single_day else f"tu {_format_vn_date(start_date)} den {_format_vn_date(end_date)}"
+
+    if not items:
+        return f"{date_label[0].upper()}{date_label[1:]}, ban chua co don thuoc hoac lich uong thuoc nao."
+
+    tz = ZoneInfo(_PATIENT_TIMEZONE)
+
+    def _line(item: dict) -> str:
+        scheduled = datetime.fromisoformat(str(item.get("scheduled_at"))).astimezone(tz)
+        names = ", ".join(
+            str(x.get("ten_thuoc") or x.get("drug_id") or "thuoc").strip()
+            for x in (item.get("expected_items") or [])
+        ) or "thuoc"
+        status_label = _HISTORY_STATUS_LABELS_VI.get(str(item.get("status", "")), "khong ro trang thai")
+        return f"- {scheduled.strftime('%H:%M')} ngay {scheduled.strftime('%d/%m')}: {names} ({status_label})"
+
+    completed = [item for item in items if item.get("status") in _COMPLETED_STATUSES]
+    missed = [item for item in items if item.get("status") in _MISSED_STATUSES]
+    total = len(items)
+
+    if len(completed) == total:
+        summary = f"Ban da hoan thanh day du cac lieu thuoc {date_label}."
+    elif len(missed) == total:
+        summary = f"Ban da bo lo toan bo cac lieu thuoc {date_label}."
+    else:
+        summary = (
+            f"Ban da hoan thanh {len(completed)}/{total} lieu thuoc {date_label}; "
+            f"con {total - len(completed)} lieu chua hoan thanh."
+        )
+
+    lines = "\n".join(_line(item) for item in items)
+    return f"{summary}\n\n{lines}"
 
 
 def _approx_tokens(text: str) -> int:
@@ -739,6 +1012,7 @@ class AgentOrchestrator:
         short_term_memory: ShortTermMemoryStore | None = None,
         telemetry: AgentTelemetry | None = None,
         checkpoint_max_age: timedelta = timedelta(minutes=5),
+        now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
         self._runtime = runtime
         self._context_manager = context_manager
@@ -749,6 +1023,9 @@ class AgentOrchestrator:
         self._short_term_memory = short_term_memory
         self._telemetry = telemetry
         self._checkpoint_max_age = checkpoint_max_age
+        # BUILD-27B: injectable so tests can freeze "today" deterministically
+        # instead of depending on the wall clock at test-run time.
+        self._now = now
 
     def run(
         self,
@@ -763,7 +1040,7 @@ class AgentOrchestrator:
             if self._telemetry is not None
             else TraceContext(trace_id=str(uuid.uuid4()), agent_run_id=agent_run_id)
         )
-        decision = classify_intent(request.message, has_dose_id=bool(request.dose_id))
+        decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.classified")
 
@@ -792,6 +1069,26 @@ class AgentOrchestrator:
         # to catch every phrasing of a false claim.
         if decision.intent is OrchestrationIntent.OUT_OF_SCOPE_REQUEST:
             return self._out_of_scope_reply(request, decision, trace, agent_run_id, checkpoint_db, lease_token)
+
+        # BUILD-27B: a past-dated schedule/history question is answered
+        # deterministically from the Operational DB, in code, and never
+        # reaches the Main Model at all -- "Không được đoán trạng thái từ
+        # LLM. DoseOccurrence/Operational DB là source of truth" is
+        # satisfied by construction (there is no LLM step to guess wrong),
+        # not by prompting a model and hoping it phrases the real data
+        # correctly. Same early-return shape as OUT_OF_SCOPE_REQUEST above:
+        # no memory recall, no Safety/Handoff, no retrieval/Vinmec, no model.
+        if decision.intent is OrchestrationIntent.MEDICATION_HISTORY:
+            return self._medication_history_reply(request, decision, tools, trace, agent_run_id, checkpoint_db, lease_token)
+
+        # BUILD-27B: a future date/range beyond what get_upcoming_doses's
+        # own default rolling window covers ("ngày kia", "tuần tới", a named
+        # future date) -- the exact bounds are fixed here, server-side,
+        # before the Main Model ever runs; get_doses_for_range then ignores
+        # whatever (if anything) the model passes as arguments (see
+        # ``AuthorizedToolContext.resolved_date_range``).
+        if decision.date_range is not None:
+            tools.set_resolved_date_range(*decision.date_range)
 
         memory_items, session_key = self._recall_memory(request, agent_run_id)
 
@@ -892,6 +1189,19 @@ class AgentOrchestrator:
             # BUILD-24B: make the negative Vinmec result explicit to the
             # model *before* it answers -- see _NO_VINMEC_EVIDENCE_NOTE.
             augmented_message = f"{augmented_message}\n\n{_NO_VINMEC_EVIDENCE_NOTE}"
+        if decision.date_range is not None:
+            # BUILD-27B: reinforces plan_read_only's own static instruction
+            # with the concrete resolved bounds for *this* request -- the
+            # model still has to choose to call get_doses_for_range, but it
+            # never has to compute or state the date itself (the tool takes
+            # no arguments and reads the server-set range regardless).
+            start_date, end_date = decision.date_range
+            range_label = start_date.isoformat() if start_date == end_date else f"{start_date.isoformat()} - {end_date.isoformat()}"
+            augmented_message = (
+                f"{augmented_message}\n\n[He thong: khoang thoi gian duoc hoi da duoc xac dinh "
+                f"truoc la {range_label}. Dung cong cu get_doses_for_range de lay du lieu cho "
+                f"khoang thoi gian nay -- KHONG dung get_today_doses hay get_upcoming_doses.]"
+            )
 
         # -- Main Model (never reached for SAFETY_BLOCKED; HANDOFF_CREATED is
         # short-circuited by ``handoff_result`` before any model call) --------
@@ -922,6 +1232,10 @@ class AgentOrchestrator:
         # every intent outside _GROUNDING_REQUIRED_INTENTS, so this changes
         # nothing about Safety/Handoff/Vinmec/Auth behavior.
         result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
+        # BUILD-27B: applied after grounding, same "no-op unless it actually
+        # applies" shape as the checks above -- see the function's own
+        # docstring for exactly which gap this closes.
+        result = _enforce_empty_dose_query_reply(result, intent=decision.intent)
 
         if checkpoint_db is not None and result.status not in (RunStatus.SAFETY_BLOCKED, RunStatus.HANDOFF_CREATED):
             if lease_token is None:
@@ -1099,6 +1413,41 @@ class AgentOrchestrator:
             )
         return OrchestrationResult(
             trace.trace_id, agent_run_id, decision.intent, result.status, result.response, (), (), None, None, result.metrics
+        )
+
+    def _medication_history_reply(
+        self, request, decision, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token
+    ) -> OrchestrationResult:
+        """BUILD-27B: fixed, deterministic COMPLETED reply for a past-dated
+        schedule/history question -- the Main Model is never reached for
+        this intent (same early-return shape as ``_out_of_scope_reply``).
+
+        This is the direct answer to "Không được đoán trạng thái từ LLM.
+        DoseOccurrence/Operational DB là source of truth" (item 3): there is
+        no LLM step in this path at all to guess wrong. ``get_doses_for_range``
+        is called the same way ``_resolve_occurrence`` calls ``get_dose_status``
+        elsewhere in this file -- a plain, non-checkpointed read with no
+        side effect, always safe to re-run on resume.
+        """
+        assert decision.date_range is not None
+        start_date, end_date = decision.date_range
+        tools.set_resolved_date_range(start_date, end_date)
+        try:
+            tool_result = tools.execute(ToolName.GET_DOSES_FOR_RANGE.value, {})
+        except ToolExecutionError:
+            return self._fail_closed(trace, agent_run_id, decision.intent, "DOSE_HISTORY_UNAVAILABLE", checkpoint_db, lease_token)
+        items = tool_result.data.get("items")
+        reply = _build_medication_history_reply(items if isinstance(items, list) else [], start_date=start_date, end_date=end_date)
+        result = RunResult(RunStatus.COMPLETED, reply, (tool_result,), RunMetrics())
+        if checkpoint_db is not None:
+            if lease_token is None:
+                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+            )
+        return OrchestrationResult(
+            trace.trace_id, agent_run_id, decision.intent, result.status, result.response,
+            (tool_result,), (), None, None, result.metrics,
         )
 
     def _fail_closed(self, trace, agent_run_id, intent, reason_code, checkpoint_db, lease_token) -> OrchestrationResult:

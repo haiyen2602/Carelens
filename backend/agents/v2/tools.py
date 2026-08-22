@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import dataclass, field, replace
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from math import ceil
 from typing import Any, Protocol
@@ -22,6 +22,11 @@ class ToolName(StrEnum):
     GET_TODAY_DOSES = "get_today_doses"
     GET_UPCOMING_DOSES = "get_upcoming_doses"
     GET_DOSE_STATUS = "get_dose_status"
+    # BUILD-27B: bounded past/future date-range dose reads (medication
+    # history, "ngày kia"/"tuần tới"/a specific calendar date). Same
+    # server-owned-scope pattern as patient_id: the model never supplies the
+    # date bounds, see ``AuthorizedToolContext.resolved_date_range`` below.
+    GET_DOSES_FOR_RANGE = "get_doses_for_range"
 
 
 READ_ONLY_TOOLS = frozenset(tool.value for tool in ToolName)
@@ -38,6 +43,13 @@ class AuthorizedToolContext:
     actor_id: str
     actor_role: str
     patient_id: str
+    # BUILD-27B: set by the orchestrator (never by the model) once the
+    # deterministic router has resolved a specific past/future date or
+    # range from the message (e.g. "hôm qua", "ngày kia", "20/08"). Only
+    # ``get_doses_for_range`` reads this; every other tool ignores it. When
+    # ``None``, that tool call fails closed (``DATE_RANGE_NOT_RESOLVED``)
+    # instead of guessing a range.
+    resolved_date_range: tuple[date, date] | None = None
 
     def __post_init__(self) -> None:
         for field_name, value in (
@@ -169,6 +181,8 @@ class ReadOnlyDomainTools(Protocol):
 
     def get_dose_status(self, *, patient_id: str, dose_id: str) -> dict[str, Any]: ...
 
+    def get_doses_for_range(self, *, patient_id: str, start_date: date, end_date: date) -> dict[str, Any]: ...
+
 
 @dataclass(frozen=True)
 class _ToolDefinition:
@@ -222,11 +236,35 @@ _TOOL_DEFINITIONS: dict[str, _ToolDefinition] = {
         "operational-db:dose-occurrence:status",
         lambda domain, context, arguments: domain.get_dose_status(patient_id=context.patient_id, **arguments.model_dump()),
     ),
+    ToolName.GET_DOSES_FOR_RANGE.value: _ToolDefinition(
+        EmptyArguments,
+        DoseListOutput,
+        ContextAuthority.OPERATIONAL_DB,
+        "operational-db:dose-occurrence:range",
+        lambda domain, context, _arguments: domain.get_doses_for_range(
+            patient_id=context.patient_id, **_require_resolved_date_range(context)
+        ),
+    ),
 }
 
 
+def _require_resolved_date_range(context: AuthorizedToolContext) -> dict[str, date]:
+    """Fail closed rather than guess a range the router never resolved.
+
+    Mirrors the existing patient_id-scoping pattern: the model supplies no
+    arguments for this tool at all (``EmptyArguments``) -- only the
+    orchestrator, via ``ToolGateway.set_resolved_date_range``, can make this
+    call succeed.
+    """
+
+    if context.resolved_date_range is None:
+        raise ToolExecutionError("DATE_RANGE_NOT_RESOLVED")
+    start_date, end_date = context.resolved_date_range
+    return {"start_date": start_date, "end_date": end_date}
+
+
 class ToolGateway:
-    """Allow only six typed reads through a server-authorized patient scope."""
+    """Allow only these typed reads through a server-authorized patient scope."""
 
     def __init__(
         self,
@@ -238,6 +276,14 @@ class ToolGateway:
         self._domain_tools = domain_tools
         self._context = context
         self._now = now or (lambda: datetime.now(UTC))
+
+    def set_resolved_date_range(self, start_date: date, end_date: date) -> None:
+        """Server-side only: called by the orchestrator once the router has
+        deterministically resolved a date/range from the message (BUILD-27B).
+        The model never calls this and never supplies these bounds itself --
+        see ``get_doses_for_range``'s ``EmptyArguments`` input model."""
+
+        self._context = replace(self._context, resolved_date_range=(start_date, end_date))
 
     def execute(self, name: str, arguments: dict[str, Any]) -> ToolResult:
         definition = _TOOL_DEFINITIONS.get(name)

@@ -9,8 +9,9 @@ SQL itself.
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -25,6 +26,13 @@ from backend.services.scheduling.runtime_adapter import (
     get_v2_dose_group,
     list_v2_dose_groups,
 )
+from backend.services.scheduling.write_path import DEFAULT_TIMEZONE
+
+# BUILD-27B: hard ceiling regardless of what the router ever resolves --
+# defense in depth against the exact class of bug BUILD-27 fixed (an
+# unbounded/near-unbounded date span serialized wholesale into the model
+# prompt). No feature this build implements asks for more than ~1 week.
+_MAX_RANGE_SPAN_DAYS = 31
 
 
 class AgentReadOnlyDomainTools:
@@ -114,6 +122,36 @@ class AgentReadOnlyDomainTools:
                 self._dose_group(group)
                 for group in self._groups(patient_id)
                 if group.scheduled_at >= now and group.scheduled_at.date() <= horizon_date
+            ]
+        }
+
+    def get_doses_for_range(self, *, patient_id: str, start_date: date, end_date: date) -> dict[str, Any]:
+        """Bounded past/future date-range read for BUILD-27B time-aware queries.
+
+        Only ever reachable with a router-resolved range (see
+        ``AuthorizedToolContext.resolved_date_range`` / ``ToolExecutionError
+        ("DATE_RANGE_NOT_RESOLVED")`` in ``backend/agents/v2/tools.py``) --
+        never an arbitrary model-supplied span.
+
+        Buckets by the patient's LOCAL calendar date, not
+        ``scheduled_at.date()`` (a UTC date) the way get_today_doses/
+        get_upcoming_doses do -- that shortcut mis-buckets any dose between
+        00:00-06:59 Asia/Ho_Chi_Minh time into the *previous* UTC calendar
+        day. Not fixed here for those two (pre-existing, out of this
+        build's scope, filed separately), but a new method has no excuse to
+        repeat it, especially for a feature centered on "đúng calendar
+        date" (BUILD-27B item 4).
+        """
+        if end_date < start_date:
+            raise ValueError("end_date must be on or after start_date")
+        if (end_date - start_date).days + 1 > _MAX_RANGE_SPAN_DAYS:
+            raise ValueError("date range exceeds the maximum allowed span")
+        tz = ZoneInfo(DEFAULT_TIMEZONE)
+        return {
+            "items": [
+                self._dose_group(group)
+                for group in self._groups(patient_id)
+                if start_date <= group.scheduled_at.astimezone(tz).date() <= end_date
             ]
         }
 
