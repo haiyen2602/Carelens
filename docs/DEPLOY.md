@@ -177,6 +177,20 @@ Triệu chứng: deploy FAILED, log có `ValidationError ... internal_auth_secre
 mỗi lần deploy backend. Volume **không** được mount lúc build và lúc pre-deploy, chỉ lúc
 container chạy.
 
+**Volume mount đè mất quyền của `appuser` — đã xử lý bằng entrypoint (2026-08-22).**
+Railway mount Volume vào `/app/data/photo_verifications` **lúc container khởi động**,
+sau khi image đã build xong. Volume đó thuộc `root`, phủ đè lên đúng thư mục mà
+`RUN chown -R appuser:appuser /app` trong Dockerfile đã set quyền lúc build → `appuser`
+mất quyền ghi, mọi lần bệnh nhân gửi ảnh đều `500` với
+`PermissionError: [Errno 13] Permission denied`. Bug chỉ lộ trên Railway, **không**
+lộ khi chạy `uvicorn` trực tiếp trên máy dev (không có container/volume nào).
+
+Cách xử lý: [`docker-entrypoint.sh`](../docker-entrypoint.sh) chạy bằng `root` đúng lúc
+volume đã mount nhưng app chưa khởi động — `chown` lại thư mục ảnh rồi `gosu appuser`
+để hạ quyền trước khi chạy `CMD`. App vẫn chạy non-root như thiết kế ban đầu; chỉ có
+vài chục ms đầu tiên chạy bằng root. Vì vậy Dockerfile **không** còn dòng `USER appuser`
+— đừng thêm lại, nó sẽ chặn bước `chown` này và làm bug tái phát.
+
 **Volume cho ảnh xác nhận liều (`photo_storage_dir`, mặc định `./data/photo_verifications`).**
 Service `VMEC-04/BE` hiện KHÔNG có Volume nào gắn — mỗi lần redeploy, đĩa container cũ bị huỷ
 và toàn bộ ảnh đã lưu biến mất (dòng DB `PhotoVerification.image_path` vẫn còn, chỉ file thật
