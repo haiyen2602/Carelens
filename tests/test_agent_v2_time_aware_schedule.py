@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager, MemoryKind
-from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, HandoffCreateCommand
+from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import EmbeddingResult, ModelPlan, ModelSynthesis, SynthesisEvidence
 from backend.agents.v2.orchestrator import (
     AgentOrchestrator,
@@ -26,7 +26,7 @@ from backend.agents.v2.orchestrator import (
     classify_intent,
 )
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime, RunStatus
-from backend.agents.v2.safety import SafetyDomainDecision, SafetyGateway
+from backend.agents.v2.safety import SafetyGateway
 from backend.agents.v2.tools import AuthorizedToolContext, ToolGateway
 from backend.db.models import DoseOccurrence, Prescription, PrescriptionItem
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
@@ -139,6 +139,23 @@ def test_reply_lists_real_drug_names_and_times_not_guessed():
     assert "Metformin" in reply and "Losartan" in reply
 
 
+def test_past_history_reply_uses_local_time_for_a_utc_midnight_crossing():
+    reply = _build_medication_history_reply(
+        [{
+            "id": "dose-local", "prescription_id": "rx-1",
+            "scheduled_at": "2026-08-21T19:00:00+00:00",
+            "window_start": "2026-08-21T18:30:00+00:00",
+            "window_end": "2026-08-21T19:30:00+00:00",
+            "status": "TAKEN", "expected_items": [{"ten_thuoc": "Panadol"}], "occurrence_ids": ["occ-1"],
+        }],
+        start_date=date(2026, 8, 22),
+        end_date=date(2026, 8, 22),
+    )
+
+    assert "da hoan thanh day du" in reply.lower()
+    assert "02:00 ngay 22/08" in reply
+
+
 # ---------------------------------------------------------------------------
 # 3. AgentReadOnlyDomainTools.get_doses_for_range -- real DB, local-date bound
 # ---------------------------------------------------------------------------
@@ -185,6 +202,7 @@ def test_get_doses_for_range_buckets_by_local_date_not_utc_date(db: Session):
     result_aug21 = tools.get_doses_for_range(patient_id="patient-1", start_date=date(2026, 8, 21), end_date=date(2026, 8, 21))
 
     assert len(result_aug22["items"]) == 1
+    assert result_aug22["items"][0]["scheduled_at"] == "2026-08-22T02:00:00+07:00"
     assert result_aug21["items"] == []
 
 
