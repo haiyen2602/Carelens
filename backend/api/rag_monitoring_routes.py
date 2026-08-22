@@ -26,16 +26,115 @@ def _require_admin(current_user: CurrentUser = Depends(get_current_user)):
     return current_user
 
 
+# BUILD-25B: real filtering by chatbot system / model / prompt version,
+# applied to the SAME in-memory trace list every metric endpoint below
+# already reads -- not a cosmetic frontend-only change. A trace missing a
+# given metadata key never matches a non-"all" filter on that key (fails
+# closed rather than silently including mismatched data).
+def _filter_traces(
+    traces: list,
+    *,
+    chatbot_version: str | None,
+    model: str | None,
+    prompt_version: str | None,
+) -> list:
+    def _keep(t) -> bool:
+        meta = t.metadata or {}
+        if chatbot_version and chatbot_version != "all" and meta.get("chatbot_version") != chatbot_version:
+            return False
+        if model and model != "all" and meta.get("model") != model:
+            return False
+        if prompt_version and prompt_version != "all" and meta.get("prompt_version") != prompt_version:
+            return False
+        return True
+
+    return [t for t in traces if _keep(t)]
+
+
+def _prompt_version_counts(traces: list, settings) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for t in traces:
+        v = t.metadata.get("prompt_version") or settings.rag_prompt_version
+        counts[v] = counts.get(v, 0) + 1
+    if not counts:
+        counts[settings.rag_prompt_version] = 0
+    return counts
+
+
+_FilterParams = tuple[str | None, str | None, str | None]
+
+
+def _filter_query_params(
+    chatbot_version: str | None = Query(default=None, description="agent-v2 | legacy | all"),
+    model: str | None = Query(default=None),
+    prompt_version: str | None = Query(default=None),
+) -> _FilterParams:
+    return chatbot_version, model, prompt_version
+
+
+@rag_monitoring_router.get("/filters")
+async def get_rag_filters(
+    db: Session = Depends(get_db),
+    admin: CurrentUser = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Real, currently-available filter option lists for the admin dashboard
+    -- built from actual trace metadata (this build/session's own live
+    traffic), not a hardcoded option list. When the in-memory trace buffer
+    is empty (e.g. immediately after a deploy, before any request has been
+    served yet), falls back to what is *currently configured* for each
+    known chatbot system (Agent V2's own settings, legacy chat's own
+    settings) -- still real, live config values, not fabricated history."""
+    settings = get_settings()
+    traces = get_local_traces()
+
+    chatbot_versions = sorted({t.metadata.get("chatbot_version") for t in traces if t.metadata.get("chatbot_version")})
+    models = sorted({t.metadata.get("model") for t in traces if t.metadata.get("model")})
+    prompt_versions = sorted({t.metadata.get("prompt_version") for t in traces if t.metadata.get("prompt_version")})
+    environments = sorted({t.metadata.get("environment") for t in traces if t.metadata.get("environment")})
+
+    if not chatbot_versions:
+        chatbot_versions = ["agent-v2", "legacy"]
+    if not models:
+        models = [settings.agent_main_model, settings.model_name]
+    if not prompt_versions:
+        prompt_versions = ["agent-v2-orchestrator", settings.rag_prompt_version]
+    if not environments:
+        environments = [settings.app_env]
+
+    return {
+        "source": "real_trace_metadata" if traces else "current_config_fallback_no_traces_yet",
+        "chatbot_versions": [
+            {"value": "agent-v2", "label": "Agent V2 / Production"} if v == "agent-v2"
+            else {"value": "legacy", "label": "Legacy Chatbot"} if v == "legacy"
+            else {"value": v, "label": v}
+            for v in chatbot_versions
+        ],
+        "models": models,
+        "prompt_versions": prompt_versions,
+        "environments": environments,
+    }
+
+
 @rag_monitoring_router.get("/health")
 async def get_rag_health(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> dict[str, Any]:
     """Overview health metrics & KPI cards computed strictly from real data (§15.1, §23)"""
-    traces = get_local_traces()
-    audit_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(1000).all()
+    chatbot_version, model, prompt_version = filters
+    traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+    # AuditLog rows are always legacy chat's own data (see backend/api/chat_routes.py
+    # -- the only writer) -- excluded entirely once a filter asks for anything
+    # other than "legacy"/unfiltered, instead of silently mixing legacy rows
+    # into an "agent-v2"-filtered view.
+    audit_logs = (
+        db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(1000).all()
+        if chatbot_version in (None, "all", "legacy") and not model and not prompt_version
+        else []
+    )
     escalations = db.query(Escalation).all()
-    
+
     total_samples = len(traces) if traces else len(audit_logs)
 
     # Faithfulness
@@ -130,11 +229,12 @@ async def get_rag_health(
 async def get_rag_retrieval(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> dict[str, Any]:
     """Retrieval quality metrics computed from real traces & drug chunks (§15.2)"""
+    chatbot_version, model, prompt_version = filters
     total_chunks = db.query(DrugChunk).count()
-    traces = get_local_traces()
-    audit_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
+    traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
 
     worst_queries: list[dict[str, Any]] = []
     # Identify queries with low faithfulness or flagged as errors
@@ -186,9 +286,11 @@ async def get_rag_retrieval(
 async def get_rag_generation(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> dict[str, Any]:
     """Generation quality metrics computed from real traces (§15.3)"""
-    traces = get_local_traces()
+    chatbot_version, model, prompt_version = filters
+    traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
     faith_list = [float(t.scores["answer_faithfulness"]) for t in traces if "answer_faithfulness" in t.scores and isinstance(t.scores["answer_faithfulness"], (int, float))]
     rel_list = [float(t.scores["answer_relevance"]) for t in traces if "answer_relevance" in t.scores and isinstance(t.scores["answer_relevance"], (int, float))]
 
@@ -220,8 +322,13 @@ async def get_rag_generation(
             "abstention_accuracy": 1.0 if not any(t.status == "error" for t in traces) else 0.0,
         },
         "breakdown_by_model": breakdown_by_model,
+        # BUILD-25B fix: this used to hardcode legacy chat's own
+        # `settings.rag_prompt_version` regardless of which system's traces
+        # were actually in view -- now grouped by each trace's own real
+        # `prompt_version` metadata, same pattern as breakdown_by_model above.
         "breakdown_by_prompt": [
-            {"version": settings.rag_prompt_version, "faithfulness": round(avg_faith, 2), "hallucination": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith > 0 else 0.0}
+            {"version": v, "requests": count, "faithfulness": round(avg_faith, 2), "hallucination": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith > 0 else 0.0}
+            for v, count in _prompt_version_counts(traces, settings).items()
         ],
     }
 
@@ -230,13 +337,23 @@ async def get_rag_generation(
 async def get_rag_safety(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> dict[str, Any]:
-    """Medication Safety incidents and checks from real Escalation table (§15.4)"""
+    """Medication Safety incidents and checks from real Escalation table (§15.4).
+
+    NOTE (BUILD-25 §8.2, unchanged by BUILD-25B): `incidents` below is still
+    sourced entirely from the legacy `Escalation` table -- Agent V2's own
+    safety/handoff data (`doctor_review_request`, `agent_run_checkpoint`)
+    isn't joined in here yet, so filtering to chatbot_version=agent-v2 does
+    NOT change the incidents list itself, only the `total_answers`
+    denominator below. Documented, not silently glossed over.
+    """
+    chatbot_version, model, prompt_version = filters
     escalations = db.query(Escalation).order_by(Escalation.created_at.desc()).all()
     # BUILD-25 audit: denominator for "rate of unsafe answers among all
     # answers" -- same total-traffic sources every other endpoint here uses
     # (in-memory traces, falling back to persisted AuditLog).
-    traces = get_local_traces()
+    traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
     total_answers = len(traces) if traces else db.query(AuditLog).count()
 
     incidents = []
@@ -296,10 +413,18 @@ async def get_rag_knowledge(
 async def get_rag_system(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> dict[str, Any]:
     """System latency waterfall & breakdowns from real traces and audit logs (§15.6)"""
-    traces = get_local_traces()
-    audit_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
+    chatbot_version, model, prompt_version = filters
+    traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+    # AuditLog rows are always legacy chat's own data -- excluded once a
+    # filter asks for anything other than "legacy"/unfiltered (see /health).
+    audit_logs = (
+        db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
+        if chatbot_version in (None, "all", "legacy") and not model and not prompt_version
+        else []
+    )
 
     latencies = [t.duration_ms for t in traces if t.duration_ms > 0] or [l.total_duration_ms for l in audit_logs if l.total_duration_ms > 0]
 
@@ -354,9 +479,11 @@ async def get_rag_traces(
     db: Session = Depends(get_db),
     admin: CurrentUser = Depends(_require_admin),
     filter_status: str | None = Query(default=None),
+    filters: _FilterParams = Depends(_filter_query_params),
 ) -> list[dict[str, Any]]:
     """Trace Explorer list strictly from real Telemetry & AuditLog (§15.7)"""
-    local_traces = get_local_traces()
+    chatbot_version, model, prompt_version = filters
+    local_traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
     settings = get_settings()
 
     results: list[dict[str, Any]] = []
@@ -373,13 +500,17 @@ async def get_rag_traces(
             "latency_ms": round(t.duration_ms, 1),
             "faithfulness": float(t.scores.get("answer_faithfulness", 0.0)) if isinstance(t.scores.get("answer_faithfulness"), (int, float)) else 0.0,
             "relevance": float(t.scores.get("answer_relevance", 0.0)) if isinstance(t.scores.get("answer_relevance"), (int, float)) else 0.0,
+            "chatbot_version": t.metadata.get("chatbot_version", "legacy"),
             "model": t.metadata.get("model", settings.model_name),
             "prompt_version": t.metadata.get("prompt_version", settings.rag_prompt_version),
             "index_version": t.metadata.get("index_version", settings.rag_index_version),
         })
 
-    # If no live traces yet in memory, fallback to persisted AuditLog rows
-    if not results:
+    # If no live traces yet in memory, fallback to persisted AuditLog rows --
+    # these are always legacy chat's own data, so skip them entirely once a
+    # filter asks for anything other than "legacy"/unfiltered (same rule as
+    # every other endpoint in this file).
+    if not results and chatbot_version in (None, "all", "legacy") and not model and not prompt_version:
         logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(50).all()
         for l in logs:
             results.append({
@@ -392,6 +523,7 @@ async def get_rag_traces(
                 "latency_ms": round(l.total_duration_ms, 1),
                 "faithfulness": 0.0,
                 "relevance": 0.0,
+                "chatbot_version": "legacy",
                 "model": settings.model_name,
                 "prompt_version": settings.rag_prompt_version,
                 "index_version": settings.rag_index_version,

@@ -195,12 +195,20 @@ def _record_agent_v2_telemetry(
             user_id=actor.id,
             input_data={"message": request.message},
             metadata={
-                # `create_trace()`'s own base metadata defaults "model"/
-                # "prompt_version" to the LEGACY chat pipeline's settings
-                # (settings.model_name/rag_prompt_version) -- overridden here
-                # so the dashboard's Model/Prompt Version filters reflect
-                # Agent V2's actual model, not legacy chat's.
+                # BUILD-25B: `create_trace()`'s own base metadata defaults
+                # "model"/"prompt_version" to the LEGACY chat pipeline's
+                # settings (settings.model_name/rag_prompt_version) --
+                # overridden here so the dashboard's Model/Prompt Version
+                # filters reflect Agent V2's actual model, not legacy chat's.
+                # "chatbot_version" is the new, explicit tag both this route
+                # and legacy chat's own create_trace() call now set, so the
+                # admin dashboard can separate the two systems' traces
+                # instead of mixing them under one undifferentiated list.
+                "chatbot_version": "agent-v2",
                 "model": settings.agent_main_model,
+                "router_model": settings.agent_router_model,
+                "fallback_model": settings.agent_fallback_model,
+                "embedding_model": settings.agent_embedding_model,
                 "prompt_version": "agent-v2-orchestrator",
                 "agent_run_id": getattr(result, "agent_run_id", None),
                 "intent": getattr(result, "intent", None).value if getattr(result, "intent", None) else None,
