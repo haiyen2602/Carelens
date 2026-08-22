@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { PipelineSwitcher } from "./_pipeline-switcher";
 
 export default function RagDashboardPage() {
   const { accessToken } = useAuth();
@@ -150,6 +151,7 @@ export default function RagDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <PipelineSwitcher active="chatbot" />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

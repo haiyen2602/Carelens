@@ -15,7 +15,11 @@ from backend.db.base import SessionLocal, engine
 from backend.db.models import PhotoVerification
 from backend.services.photo_cleanup import xoa_anh_het_han
 from backend.services.photo_verification.matcher import KetQua
-from backend.services.photo_verification.verifier import TRANG_THAI_DANG_XU_LY, TRANG_THAI_LOI_HE_THONG
+from backend.services.photo_verification.verifier import (
+    TRANG_THAI_DANG_XU_LY,
+    TRANG_THAI_DO_TIN_CAY_THAP,
+    TRANG_THAI_LOI_HE_THONG,
+)
 
 
 def _db_available() -> bool:
@@ -121,7 +125,9 @@ def test_lech_qua_han_bi_xoa(db, tmp_path):
     assert row.image_path is None
 
 
-@pytest.mark.parametrize("ket_qua", [TRANG_THAI_DANG_XU_LY, TRANG_THAI_LOI_HE_THONG])
+@pytest.mark.parametrize(
+    "ket_qua", [TRANG_THAI_DANG_XU_LY, TRANG_THAI_LOI_HE_THONG, TRANG_THAI_DO_TIN_CAY_THAP]
+)
 def test_ket_qua_ket_qua_han_stuck_qua_han_bi_xoa(db, tmp_path, ket_qua):
     row = _tao_dong(db, tmp_path, ket_qua=ket_qua, tuoi_ngay=4)
 

@@ -199,7 +199,11 @@ export default function PatientToday() {
   const dosesHomNay = doses.filter((d) => laHomNay(d.scheduledAt));
   const next = dosesHomNay.find((d) => d.status === "PENDING");
   const daXong = dosesHomNay.filter((d) => d.status !== "PENDING").length;
-  const tatCaXong = dosesHomNay.length > 0 && !next;
+  // Anh khong khop sau 3 lan chup: dose chuyen AWAITING_CAREGIVER (xem
+  // verifier.py), KHONG phai da uong xong - phai tach rieng khoi tatCaXong
+  // de khong hien nham man hinh "Xong het roi! 🎉".
+  const choDuyet = dosesHomNay.filter((d) => d.status === "AWAITING_CAREGIVER");
+  const tatCaXong = dosesHomNay.length > 0 && !next && choDuyet.length === 0;
   const lieuMai = doses
     .filter((d) => d.status === "PENDING" && !laHomNay(d.scheduledAt))
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
@@ -260,6 +264,13 @@ export default function PatientToday() {
           toast.error("Đã hết lượt chụp lại — chuyển người thân xem giúp");
         } else if (ketQua.status === "loi_he_thong") {
           toast.error("Hệ thống đang bận, bạn thử gửi lại giúp tôi nhé");
+        } else if (ketQua.status === "do_tin_cay_thap") {
+          // Anh chua du ro de Capy chac chan (khong tinh vao han muc chup
+          // lai, xem backend/services/photo_verification/verifier.py) - mo
+          // luon sheet huong dan chup anh da co san thay vi chi toast chung
+          // chung, giup benh nhan sua dung cho lan sau.
+          toast(ketQua.message);
+          setSheet("huongdan");
         } else {
           toast(ketQua.message);
         }

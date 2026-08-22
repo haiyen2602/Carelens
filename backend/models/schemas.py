@@ -490,12 +490,12 @@ class PhotoVerificationOut(BaseModel):
     dose_event_id: str
     attempt: int
     max_attempts: int
-    status: str  # dang_xu_ly|khop|lech|khong_xac_minh_duoc|loi_he_thong
-    matched: bool | None = None  # None khi con dang_xu_ly hoac loi_he_thong
+    status: str  # dang_xu_ly|khop|lech|khong_xac_minh_duoc|loi_he_thong|do_tin_cay_thap
+    matched: bool | None = None  # None khi con dang_xu_ly/loi_he_thong/do_tin_cay_thap
     expected_by_form: dict[str, int]
     detected_by_form: dict[str, int]
     confidence: str | None = None
-    next_action: str | None = None  # None khi con dang_xu_ly hoac loi_he_thong
+    next_action: str | None = None  # None khi con dang_xu_ly/loi_he_thong/do_tin_cay_thap
     message: str
     created_at: str
     has_image: bool
