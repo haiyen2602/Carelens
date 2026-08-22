@@ -7,6 +7,16 @@ range ever resolved (ToolExecutionError("DATE_RANGE_NOT_RESOLVED")) and
 failed closed to "Agent khong the thuc hien yeu cau nay." (see
 backend/agents/v2/runtime.py's ValueError handler). Fixed by extending the
 deterministic router, not by hardcoding this one phrase.
+
+BUILD-28: the underlying parser this file exercises through
+``classify_intent`` moved to ``backend.agents.v2.time_query_engine``
+(``resolve_time_query``), and ``RouterDecision.date_range: tuple[date,
+date] | None`` was replaced by ``RouterDecision.time_range: TimeRange |
+None`` -- every assertion below reads ``decision.time_range.start_date`` /
+``.end_date`` instead of unpacking a raw tuple. The parser-level exhaustive
+matrix (day/week/month x digit/word x boundaries) lives in
+``test_agent_v2_time_query_engine.py``; this file stays focused on
+routing/priority through ``classify_intent`` itself.
 """
 
 from __future__ import annotations
@@ -18,6 +28,10 @@ import pytest
 from backend.agents.v2.orchestrator import OrchestrationIntent, classify_intent
 
 NOW = datetime(2026, 8, 22, 9, 0, tzinfo=UTC)  # 16:00 Asia/Ho_Chi_Minh, Saturday
+
+
+def _range(decision) -> tuple[date, date] | None:
+    return None if decision.time_range is None else (decision.time_range.start_date, decision.time_range.end_date)
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +51,7 @@ NOW = datetime(2026, 8, 22, 9, 0, tzinfo=UTC)  # 16:00 Asia/Ho_Chi_Minh, Saturda
 def test_relative_past_phrases_resolve_to_the_exact_day(message, expected_date):
     decision = classify_intent(message, now=NOW)
     assert decision.intent is OrchestrationIntent.MEDICATION_HISTORY
-    assert decision.date_range == (expected_date, expected_date)
+    assert _range(decision) == (expected_date, expected_date)
 
 
 @pytest.mark.parametrize(
@@ -50,14 +64,14 @@ def test_relative_past_phrases_resolve_to_the_exact_day(message, expected_date):
 def test_relative_future_phrases_resolve_to_the_exact_day(message, expected_date):
     decision = classify_intent(message, now=NOW)
     assert decision.intent is OrchestrationIntent.UPCOMING_DOSES
-    assert decision.date_range == (expected_date, expected_date)
+    assert _range(decision) == (expected_date, expected_date)
 
 
 def test_the_exact_production_bug_phrase_now_resolves():
     """"ba hôm trước tôi đã uống gì" -- the literal reported production bug."""
     decision = classify_intent("ba hôm trước tôi đã uống gì", now=NOW)
     assert decision.intent is OrchestrationIntent.MEDICATION_HISTORY
-    assert decision.date_range == (date(2026, 8, 19), date(2026, 8, 19))
+    assert _range(decision) == (date(2026, 8, 19), date(2026, 8, 19))
 
 
 # ---------------------------------------------------------------------------
@@ -77,7 +91,7 @@ def test_vietnamese_number_words_resolve_correctly(word, expected_n):
     decision = classify_intent(f"{word} ngày trước tôi uống thuốc gì", now=NOW)
     assert decision.intent is OrchestrationIntent.MEDICATION_HISTORY
     expected = date(2026, 8, 22) - timedelta(days=expected_n)
-    assert decision.date_range == (expected, expected)
+    assert _range(decision) == (expected, expected)
 
 
 # ---------------------------------------------------------------------------
@@ -88,25 +102,25 @@ def test_vietnamese_number_words_resolve_correctly(word, expected_n):
 def test_relative_past_crosses_a_month_boundary():
     now = datetime(2026, 9, 2, 7, 0, tzinfo=UTC)  # 14:00 ICT, Sep 2
     decision = classify_intent("5 ngày trước tôi uống thuốc gì", now=now)
-    assert decision.date_range == (date(2026, 8, 28), date(2026, 8, 28))
+    assert _range(decision) == (date(2026, 8, 28), date(2026, 8, 28))
 
 
 def test_relative_past_crosses_a_year_boundary():
     now = datetime(2027, 1, 2, 7, 0, tzinfo=UTC)
     decision = classify_intent("5 ngày trước tôi uống thuốc gì", now=now)
-    assert decision.date_range == (date(2026, 12, 28), date(2026, 12, 28))
+    assert _range(decision) == (date(2026, 12, 28), date(2026, 12, 28))
 
 
 def test_relative_future_crosses_a_month_boundary():
     now = datetime(2026, 8, 29, 7, 0, tzinfo=UTC)
     decision = classify_intent("5 ngày nữa tôi uống thuốc gì", now=now)
-    assert decision.date_range == (date(2026, 9, 3), date(2026, 9, 3))
+    assert _range(decision) == (date(2026, 9, 3), date(2026, 9, 3))
 
 
 def test_relative_future_crosses_a_year_boundary():
     now = datetime(2026, 12, 29, 7, 0, tzinfo=UTC)
     decision = classify_intent("5 ngày nữa tôi uống thuốc gì", now=now)
-    assert decision.date_range == (date(2027, 1, 3), date(2027, 1, 3))
+    assert _range(decision) == (date(2027, 1, 3), date(2027, 1, 3))
 
 
 def test_absurdly_large_offset_does_not_crash_the_router():
@@ -126,8 +140,11 @@ def test_absurdly_large_offset_does_not_crash_the_router():
     [
         ("hôm qua tôi uống thuốc gì", OrchestrationIntent.MEDICATION_HISTORY, (date(2026, 8, 21), date(2026, 8, 21))),
         ("hôm kia tôi uống thuốc gì", OrchestrationIntent.MEDICATION_HISTORY, (date(2026, 8, 20), date(2026, 8, 20))),
-        ("hôm nay tôi uống thuốc gì", OrchestrationIntent.TODAY_DOSES, None),
-        ("ngày mai tôi uống thuốc gì", OrchestrationIntent.UPCOMING_DOSES, None),
+        # BUILD-28: a bare "hôm nay"/"ngày mai" now also resolves to a real
+        # single-day TimeRange (BUILD-27B/D left these as None -- see
+        # RouterDecision.time_range's own docstring for why that changed).
+        ("hôm nay tôi uống thuốc gì", OrchestrationIntent.TODAY_DOSES, (date(2026, 8, 22), date(2026, 8, 22))),
+        ("ngày mai tôi uống thuốc gì", OrchestrationIntent.UPCOMING_DOSES, (date(2026, 8, 23), date(2026, 8, 23))),
         ("ngày kia tôi uống thuốc gì", OrchestrationIntent.UPCOMING_DOSES, (date(2026, 8, 24), date(2026, 8, 24))),
         ("tuần trước tôi uống thuốc gì", OrchestrationIntent.MEDICATION_HISTORY, (date(2026, 8, 10), date(2026, 8, 16))),
         ("tuần tới tôi uống thuốc gì", OrchestrationIntent.UPCOMING_DOSES, (date(2026, 8, 24), date(2026, 8, 30))),
@@ -137,7 +154,7 @@ def test_absurdly_large_offset_does_not_crash_the_router():
 def test_pre_existing_time_phrases_unchanged(message, expected_intent, expected_range):
     decision = classify_intent(message, now=NOW)
     assert decision.intent is expected_intent
-    assert decision.date_range == expected_range
+    assert _range(decision) == expected_range
 
 
 def test_acute_danger_still_outranks_a_relative_date_phrase():
@@ -153,4 +170,4 @@ def test_missed_dose_still_outranks_a_relative_date_phrase():
 def test_ordinary_drug_info_unaffected():
     decision = classify_intent("Panadol Extra dùng sao", now=NOW)
     assert decision.intent is OrchestrationIntent.DRUG_INFORMATION
-    assert decision.date_range is None
+    assert decision.time_range is None

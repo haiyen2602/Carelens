@@ -13,11 +13,17 @@ Fix: ``_enforce_medical_grounding`` in backend/agents/v2/orchestrator.py --
 a deterministic backstop, applied after the Vinmec-provenance backstop,
 that replaces the final reply with a fixed, honest decline whenever a
 grounding-required intent (DRUG_INFORMATION, PRESCRIPTION_INFORMATION,
-TODAY_DOSES, UPCOMING_DOSES, DOSE_STATUS, GENERAL_MEDICAL_INFORMATION,
-UNKNOWN_OR_AMBIGUOUS) produced zero tool calls AND zero retrieval/Vinmec
-citations. Structurally the same philosophy as the Vinmec backstop: a fact
-the orchestrator itself already knows (how much evidence was actually
-gathered) is a more reliable signal than trusting the model's free text.
+DOSE_STATUS, GENERAL_MEDICAL_INFORMATION, UNKNOWN_OR_AMBIGUOUS) produced
+zero tool calls AND zero retrieval/Vinmec citations. Structurally the same
+philosophy as the Vinmec backstop: a fact the orchestrator itself already
+knows (how much evidence was actually gathered) is a more reliable signal
+than trusting the model's free text.
+
+BUILD-28: TODAY_DOSES/UPCOMING_DOSES/MEDICATION_HISTORY are no longer in
+the grounding-required set -- all three now bypass the Main Model entirely
+(see ``AgentOrchestrator._schedule_reply``), so an "ungrounded schedule
+answer from the model" is no longer a possible failure mode for them at
+all, not merely one caught after the fact by this backstop.
 """
 
 from __future__ import annotations
@@ -61,8 +67,6 @@ def _result(response: str, status: RunStatus = RunStatus.COMPLETED, tool_results
     [
         OrchestrationIntent.DRUG_INFORMATION,
         OrchestrationIntent.PRESCRIPTION_INFORMATION,
-        OrchestrationIntent.TODAY_DOSES,
-        OrchestrationIntent.UPCOMING_DOSES,
         OrchestrationIntent.DOSE_STATUS,
         OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
         OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
@@ -84,6 +88,13 @@ def test_grounding_required_intent_with_zero_evidence_is_declined(intent):
         OrchestrationIntent.ACUTE_DANGER_ESCALATION,
         OrchestrationIntent.MISSED_DOSE,
         OrchestrationIntent.DELAYED_DOSE,
+        # BUILD-28: these three never reach this backstop at all any more
+        # (see AgentOrchestrator._schedule_reply) -- kept here as a direct,
+        # permanent check that the unit-level function itself also leaves
+        # them untouched, not just that ``run()`` happens to bypass it.
+        OrchestrationIntent.TODAY_DOSES,
+        OrchestrationIntent.UPCOMING_DOSES,
+        OrchestrationIntent.MEDICATION_HISTORY,
     ],
 )
 def test_non_grounding_required_intent_is_never_touched_even_with_zero_evidence(intent):
@@ -187,18 +198,23 @@ def test_grounded_rag_query_is_unaffected():
     assert len(result.citations) == 1
 
 
-def test_ungrounded_today_doses_answer_without_a_tool_call_is_declined():
-    # A schedule claim with zero tool evidence is just as ungrounded as a
-    # drug-fact claim -- the model must not narrate a dose schedule from
-    # thin air either.
+def test_today_doses_never_reaches_the_model_so_an_ungrounded_narration_is_impossible():
+    # BUILD-28: a schedule claim narrated from thin air (BUILD-24F's original
+    # concern for this intent) is no longer merely caught after the fact --
+    # TODAY_DOSES bypasses the Main Model entirely (see
+    # AgentOrchestrator._schedule_reply), so this configured plan is never
+    # even consulted; the composer's own real tool evidence is what answers.
     plan = ModelPlan(response="Hom nay ban co 2 lieu can uong: 8h sang va 8h toi.")
-    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan))
+    gateway = _SpyModelGateway(plan)
+    orchestrator, _ = _orchestrator(model_gateway=gateway)
 
     result = orchestrator.run(_request("Hom nay toi can uong thuoc gi"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.TODAY_DOSES
     assert result.status is RunStatus.COMPLETED
-    assert result.response == _UNGROUNDED_ANSWER_DECLINE_REPLY
+    assert result.response != _UNGROUNDED_ANSWER_DECLINE_REPLY
+    assert gateway.calls == [] and gateway.synthesis_calls == []
+    assert [t.name for t in result.tool_results] == ["get_doses_for_range"]
 
 
 def test_general_conversation_is_unaffected_by_grounding_enforcement():

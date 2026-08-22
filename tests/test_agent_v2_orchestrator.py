@@ -143,6 +143,13 @@ class _DomainTools:
         self.calls.append(("get_upcoming_doses", patient_id))
         return {"items": [self._dose("dose-upcoming", occurrence_ids=["occ-upcoming"])]}
 
+    def get_doses_for_range(self, *, patient_id: str, start_date, end_date) -> dict:
+        # BUILD-28: the single tool TODAY_DOSES/UPCOMING_DOSES/
+        # MEDICATION_HISTORY now all go through -- see
+        # AgentOrchestrator._schedule_reply.
+        self.calls.append(("get_doses_for_range", patient_id, start_date, end_date))
+        return {"items": [self._dose("dose-range", occurrence_ids=["occ-range"])]}
+
     def get_dose_status(self, *, patient_id: str, dose_id: str) -> dict:
         self.calls.append(("get_dose_status", patient_id, dose_id))
         # ``id`` (the group/card id) is never the same concept as the real,
@@ -304,13 +311,16 @@ def test_prescription_and_dose_queries_route_to_operational_tools():
     assert result.status is RunStatus.COMPLETED
     assert [t.name for t in result.tool_results] == ["get_active_prescriptions"]
 
-    orchestrator2, _ = _orchestrator(
-        model_gateway=_SpyModelGateway(ModelPlan(tool_calls=(ToolCall("get_today_doses", {}),), response="Hom nay ban co 1 lieu can uong."))
-    )
+    # BUILD-28: TODAY_DOSES is answered entirely deterministically, via
+    # get_doses_for_range -- it never reaches the Main Model, so the
+    # configured plan/tool_calls below are never even consulted.
+    gateway2 = _SpyModelGateway(ModelPlan(tool_calls=(ToolCall("get_today_doses", {}),), response="Hom nay ban co 1 lieu can uong."))
+    orchestrator2, _ = _orchestrator(model_gateway=gateway2)
     result2 = orchestrator2.run(_request("Hom nay toi can uong thuoc gi"), tools=_tools())
     assert result2.intent is OrchestrationIntent.TODAY_DOSES
     assert result2.status is RunStatus.COMPLETED
-    assert [t.name for t in result2.tool_results] == ["get_today_doses"]
+    assert [t.name for t in result2.tool_results] == ["get_doses_for_range"]
+    assert gateway2.calls == [] and gateway2.synthesis_calls == []
 
 
 # ---------------------------------------------------------------------------
