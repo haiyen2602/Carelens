@@ -171,6 +171,35 @@ class Settings(BaseSettings):
     # Agent V2 begins isolated and disabled. BUILD-1 has no write actions.
     agent_runtime_enabled: bool = False
     agent_token_budget: int = Field(default=4096, ge=1, le=100_000)
+    # Fix for a production BUDGET_EXCEEDED report on "Ngay mai toi can uong
+    # thuoc gi" (what do I take tomorrow): unlike get_today_doses (bounded to
+    # exactly one calendar day), get_upcoming_doses had NO upper bound at all
+    # -- ``scheduled_at >= now`` returns every future dose group through the
+    # end of the patient's entire prescription. Reproduced locally (real
+    # in-process orchestrator, real OpenAI usage) against an ordinary 60-day,
+    # 2-drug chronic regimen: 179 upcoming groups, 100KB+ serialized into the
+    # synthesis prompt, real usage 47,487 tokens against the 4,096 budget --
+    # an 11x overrun from a routine prescription, not an edge case.
+    #
+    # default=1 (today's remainder + all of tomorrow, calendar-date bound so
+    # it never clips "tomorrow" regardless of what time it is right now) was
+    # chosen empirically, not guessed: real repro runs showed 2- and 3-day
+    # windows still failed intermittently (the model non-deterministically
+    # sometimes calls get_today_doses *and* get_upcoming_doses together,
+    # e.g. 3 days -> 4,829 real tokens on one run, 4,001 on another, both
+    # against the SAME 4,096 budget) -- too thin a margin to call fixed. 1
+    # day landed at 2,448-2,557 real tokens across repeat runs, ~35-40%
+    # headroom under budget even in that worst-case two-tool combination.
+    # This tool's own declared description ("Read the authorized patient's
+    # upcoming doses.") never promised the full remaining prescription, so
+    # bounding this is a behavior-preserving fix for "tomorrow", not a
+    # capability cut. A longer forward window (e.g. for "sap toi"/"this
+    # week" phrasing) is a reasonable future improvement but needs either a
+    # leaner evidence payload or a deliberate, separately-reviewed budget
+    # change, not a guess bundled into this fix -- see report
+    # 57-build-27-budget-exceeded-upcoming-doses.md. Token budget itself left
+    # untouched by design (explicit instruction: do not raise it as this fix).
+    agent_upcoming_doses_window_days: int = Field(default=1, ge=1, le=90)
     # BUILD-20: every tool-calling run now costs (1 planning step) + (1 step
     # per tool call) + (1 synthesis step) -- see runtime.py's
     # Planning -> Tools -> Synthesis loop (BUILD-19B). The pre-synthesis
