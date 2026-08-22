@@ -135,7 +135,7 @@ def test_model_failure_after_retry_budget_is_non_sensitive_terminal_failure():
         gateway, limits=_limits(max_model_calls=2, max_retries=1), sleep=lambda _seconds: None
     ).run(message="x", actor_role="patient", tools=_Gateway())
     assert result.status == RunStatus.FAILED
-    assert result.response == "Agent tam thoi khong san sang."
+    assert result.response == "Agent tạm thời không sẵn sàng."
 
 
 def test_model_retry_backs_off_before_retrying_a_transient_failure():

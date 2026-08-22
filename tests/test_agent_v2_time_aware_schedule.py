@@ -153,7 +153,7 @@ def test_no_prescription_reply_names_the_exact_day():
     tr = _time_range(date(2026, 8, 21), date(2026, 8, 21), relation=TimeRelation.PAST)
     reply = _build_schedule_reply([], time_range=tr, now=_AFTER_ALL_ITEMS)
     assert "21/08/2026" in reply
-    assert "chua co don thuoc" in reply.lower()
+    assert "chưa có đơn thuốc" in reply.lower()
 
 
 def test_no_prescription_reply_names_a_range():
@@ -166,15 +166,15 @@ def test_all_completed_reply_uses_past_tense_completed_wording():
     tr = _time_range(date(2026, 8, 21), date(2026, 8, 21), relation=TimeRelation.PAST)
     items = [_item("TAKEN"), _item("DELAYED", hour=20)]
     reply = _build_schedule_reply(items, time_range=tr, now=_AFTER_ALL_ITEMS)
-    assert "hoan thanh day du" in reply.lower()
-    assert "bo lo" not in reply.lower()
+    assert "hoàn thành đầy đủ" in reply.lower()
+    assert "bỏ lỡ" not in reply.lower()
 
 
 def test_all_missed_reply_uses_past_tense_missed_wording():
     tr = _time_range(date(2026, 8, 21), date(2026, 8, 21), relation=TimeRelation.PAST)
     items = [_item("MISSED"), _item("SKIPPED", hour=20)]
     reply = _build_schedule_reply(items, time_range=tr, now=_AFTER_ALL_ITEMS)
-    assert "bo lo toan bo" in reply.lower()
+    assert "bỏ lỡ toàn bộ" in reply.lower()
 
 
 def test_mixed_reply_reports_real_completed_over_total_count():
@@ -182,7 +182,7 @@ def test_mixed_reply_reports_real_completed_over_total_count():
     items = [_item("TAKEN"), _item("MISSED", hour=20), _item("TAKEN", hour=12)]
     reply = _build_schedule_reply(items, time_range=tr, now=_AFTER_ALL_ITEMS)
     assert "2/3" in reply
-    assert "con 1 lieu chua hoan thanh" in reply.lower()
+    assert "còn 1 liều chưa hoàn thành" in reply.lower()
 
 
 def test_reply_lists_real_drug_names_and_times_not_guessed():
@@ -203,8 +203,8 @@ def test_past_history_reply_uses_local_time_for_a_utc_midnight_crossing():
     }]
     reply = _build_schedule_reply(items, time_range=tr, now=_AFTER_ALL_ITEMS)
 
-    assert "da hoan thanh day du" in reply.lower()
-    assert "02:00 ngay 22/08" in reply
+    assert "đã hoàn thành đầy đủ" in reply.lower()
+    assert "02:00 ngày 22/08" in reply
 
 
 def test_future_range_never_uses_past_tense_or_guesses_status():
@@ -215,9 +215,9 @@ def test_future_range_never_uses_past_tense_or_guesses_status():
     items[0]["scheduled_at"] = "2026-08-24T01:00:00+00:00"  # 08:00 ICT, after NOW
     reply = _build_schedule_reply(items, time_range=tr, now=NOW)
 
-    assert "da hoan thanh" not in reply.lower()
-    assert "bo lo" not in reply.lower()
-    assert "du kien" in reply.lower()
+    assert "đã hoàn thành" not in reply.lower()
+    assert "bỏ lỡ" not in reply.lower()
+    assert "dự kiến" in reply.lower()
 
 
 def test_present_range_reports_already_due_items_and_flags_upcoming_ones_separately():
@@ -231,9 +231,9 @@ def test_present_range_reports_already_due_items_and_flags_upcoming_ones_separat
     ]
     reply = _build_schedule_reply(items, time_range=tr, now=NOW)
 
-    assert "da hoan thanh 1/1" in reply.lower()
-    assert "1 lieu sap toi" in reply.lower()
-    assert "du kien" in reply.lower()  # the not-yet-due item's own line
+    assert "đã hoàn thành 1/1" in reply.lower()
+    assert "1 liều sắp tới" in reply.lower()
+    assert "dự kiến" in reply.lower()  # the not-yet-due item's own line
 
 
 def test_more_than_max_detail_rows_switches_to_day_grouped_counts():
@@ -415,7 +415,7 @@ def test_past_no_data_bypasses_the_model_entirely():
 
     assert result.status is RunStatus.COMPLETED
     assert result.intent is OrchestrationIntent.MEDICATION_HISTORY
-    assert "chua co don thuoc" in result.response.lower()
+    assert "chưa có đơn thuốc" in result.response.lower()
     assert gateway.plan_calls == [] and gateway.synthesis_calls == []
     assert domain.calls == [("get_doses_for_range", "patient-1", date(2026, 8, 21), date(2026, 8, 21))]
 
@@ -430,7 +430,7 @@ def test_past_with_data_bypasses_the_model_and_reports_real_status():
     result = orchestrator.run(_request("Hôm qua tôi đã uống đủ thuốc chưa?"), tools=_tools(domain))
 
     assert result.status is RunStatus.COMPLETED
-    assert "bo lo toan bo" in result.response.lower()
+    assert "bỏ lỡ toàn bộ" in result.response.lower()
     assert "Panadol" in result.response
     assert gateway.plan_calls == [] and gateway.synthesis_calls == []
 
@@ -448,7 +448,7 @@ def test_future_explicit_range_also_bypasses_the_model_entirely():
     assert result.intent is OrchestrationIntent.UPCOMING_DOSES
     assert gateway.plan_calls == [] and gateway.synthesis_calls == []
     assert domain.calls == [("get_doses_for_range", "patient-1", date(2026, 8, 24), date(2026, 8, 24))]
-    assert "du kien" in result.response.lower()
+    assert "dự kiến" in result.response.lower()
 
 
 def test_future_empty_range_gets_the_deterministic_no_data_reply():
@@ -457,7 +457,7 @@ def test_future_empty_range_gets_the_deterministic_no_data_reply():
     result = orchestrator.run(_request("Ngày kia tôi uống thuốc gì?"), tools=_tools(domain))
 
     assert result.status is RunStatus.COMPLETED
-    assert "chua co don thuoc" in result.response.lower()
+    assert "chưa có đơn thuốc" in result.response.lower()
     assert gateway.plan_calls == [] and gateway.synthesis_calls == []
 
 

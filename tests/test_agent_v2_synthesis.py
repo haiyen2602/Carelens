@@ -333,7 +333,7 @@ def test_synthesis_failure_fails_closed_and_never_fabricates_a_reply():
     result = runtime.run(message="tim thuoc", actor_role="patient", tools=tools)
 
     assert result.status is RunStatus.FAILED
-    assert result.response == "Agent tam thoi khong san sang."
+    assert result.response == "Agent tạm thời không sẵn sàng."
     # The already-executed, already-verified tool read is preserved for
     # audit even though synthesis could not turn it into a reply.
     assert [t.name for t in result.tool_results] == ["search_drug"]
