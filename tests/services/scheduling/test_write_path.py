@@ -150,6 +150,35 @@ def test_unresolved_or_invalid_schedule_stays_review_required(db: Session) -> No
     assert db.execute(select(ScheduleRuleTime)).scalars().all() == []
 
 
+def test_thuoc_khong_phan_giai_duoc_thi_review_required_du_lich_hop_le(db: Session) -> None:
+    """CHI thuoc khong phan giai duoc - moi thu khac hop le.
+
+    THEM 2026-08-21 (FB-14). Test o tren tron HAI nguyen nhan (thuoc la +
+    gio nhac trung) nen neu rieng nhanh phan giai thuoc hong thi no van xanh
+    nho nguyen nhan con lai.
+
+    Vi sao phai co test o DAY chu khong phai o tang phac do: tu 2026-08-20
+    `tao_phac_do` tu choi thang moi `drug_id` khong co trong danh muc
+    (ADR-0013), nen khong con cach nao di tu do xuong toi nhanh nay. Trang
+    thai REVIEW_REQUIRED van con y nghia that voi du lieu cu/backfill, va
+    day la cho duy nhat con kiem duoc no.
+    """
+    khong_phan_giai = _valid_item() | {"drug_id": "khong-he-co-trong-danh-muc"}
+    prescription = _prescription([khong_phan_giai])
+    db.add(prescription)
+    db.flush()
+
+    sync_prescription_schedule(db, prescription)
+    db.commit()
+
+    item = db.execute(select(PrescriptionItem)).scalar_one()
+    assert item.status == "REVIEW_REQUIRED"
+    assert item.drug_product_id is None
+    # Khong doan bua mot san pham nao do khi khong phan giai duoc - de trong
+    # va danh dau can nguoi xem lai.
+    assert db.execute(select(MedicationPlan)).scalar_one().status == "REVIEW_REQUIRED"
+
+
 def test_caller_transaction_rolls_back_all_v2_rows(db: Session) -> None:
     prescription = _prescription([_valid_item()])
     db.add(prescription)
@@ -169,6 +198,10 @@ def test_caller_transaction_rolls_back_all_v2_rows(db: Session) -> None:
 def test_legacy_request_remains_valid_without_db4e_fields() -> None:
     item = PrescriptionItemIn.model_validate(
         {
+            # `drug_id` bat buoc tu 2026-08-20 (FB-14) - khong lien quan den
+            # muc dich cua test nay (client cu duoc phep bo qua truong DB-4E),
+            # chi la dieu kien de payload qua duoc validation.
+            "drug_id": "legacy-compatible-medicine",
             "ten_thuoc": "Legacy-compatible medicine",
             "lieu_dung": "1 tablet",
             "gio_nhac": ["08:00"],

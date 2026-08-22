@@ -20,12 +20,13 @@
 | [0010](./0010-human-in-the-loop.md) | Human-in-the-loop — bác sĩ duyệt | Accepted | AI nhắc và thu bằng chứng. Bác sĩ vẫn quyết định điều trị. |
 | [0011](./0011-photo-verification-fallback.md) | Xác nhận ảnh — 2 lần rồi fallback người thân | Accepted | Bằng chứng phân tầng theo độ tin cậy, bác sĩ luôn biết đang xem tầng nào. |
 | [0012](./0012-drug-data-v2-compatibility-and-provenance.md) | Drug Data V2 Compatibility And Provenance | Proposed | Xây V2 bên cạnh V1: slug vẫn là hợp đồng ngoài, UUID là lõi nội bộ, provenance tăng dần và không đoán dữ liệu y tế. |
+| [0013](./0013-danh-muc-thuoc-la-allowlist-dong.md) | Danh mục thuốc là allowlist đóng | Accepted | Bác sĩ chọn thuốc từ danh mục, không gõ thuốc vào danh mục — siết FB-14, kèm đường thoát qua admin duyệt. |
 
 ## Nhóm theo chủ đề
 
 - **Cách team làm việc:** 0001 (test), 0004 (convention), 0005 (DoD)
 - **Cấu trúc hệ thống:** 0002 (domain split), 0003 (contract), 0006 (tech stack)
-- **Quyết định đặc thù VMEC-04:** 0007 (scheduler), 0008 (pgvector/RAG), 0009 (safety), 0010 (HITL), 0011 (xác nhận ảnh)
+- **Quyết định đặc thù VMEC-04:** 0007 (scheduler), 0008 (pgvector/RAG), 0009 (safety), 0010 (HITL), 0011 (xác nhận ảnh), 0013 (allowlist thuốc)
 
 ## An toàn — đọc trước khi làm bất kỳ task nào đụng tới agent
 

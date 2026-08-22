@@ -8,7 +8,13 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 // Nut "Đăng nhập bằng Google" (Supabase Auth - ADR-0013).
 // Su dung supabase.auth.signInWithOAuth de chuyen huong sang Google.
 // Callback tro ve /auth/google/callback tren client / route handler.
-export function GoogleSignInButton({ label = "Đăng nhập bằng Google" }: { label?: string }) {
+export function GoogleSignInButton({
+  label = "Đăng nhập bằng Google",
+  className = "w-full",
+}: {
+  label?: string;
+  className?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -58,7 +64,7 @@ export function GoogleSignInButton({ label = "Đăng nhập bằng Google" }: { 
         type="button"
         variant="outline"
         size="lg"
-        className="w-full"
+        className={className}
         onClick={click}
         disabled={loading}
       >

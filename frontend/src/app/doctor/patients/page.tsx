@@ -338,7 +338,8 @@ function EditPrescriptionDialog({
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSave = meds.every((m) => m.med.trim().length > 0) && !saving;
+  // FB-14: giong trang ke don - moi dong PHAI chon tu danh muc, khong chi co chu.
+  const canSave = meds.every((m) => m.med.trim().length > 0 && Boolean(m.drugId)) && !saving;
 
   const save = async () => {
     setSaving(true);
@@ -346,7 +347,7 @@ function EditPrescriptionDialog({
       const updated = await updatePrescription(prescription.id, {
         note,
         items: meds.map((m) => ({
-          drugId: m.drugId || null,
+          drugId: m.drugId,
           tenThuoc: m.med,
           dangThuoc: m.dangThuoc || null,
           duongDung: null,
@@ -401,7 +402,10 @@ function EditPrescriptionDialog({
                   <MedicineCombobox
                     id={`emed-${m.id}`}
                     value={m.med}
-                    onChange={(v) => updateMed(m.id, { med: v })}
+                    onChange={(v) =>
+                      // Go tay = huy lua chon cu, xem MedRow.drugId o prescribe/page.tsx.
+                      updateMed(m.id, { med: v, drugId: "", dangThuoc: "" })
+                    }
                     onSelectDrug={(d) =>
                       updateMed(m.id, {
                         med: d.tenThuoc,
@@ -411,7 +415,11 @@ function EditPrescriptionDialog({
                       })
                     }
                     placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
+                    invalid={m.med.trim().length > 0 && !m.drugId}
                   />
+                  {m.med.trim().length > 0 && !m.drugId && (
+                    <p className="text-sm text-destructive">Chọn thuốc từ danh sách gợi ý.</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`edose-${m.id}`}>Liều dùng</Label>
