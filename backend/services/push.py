@@ -30,6 +30,16 @@ logger = logging.getLogger("push")
 # go app, hoac trinh duyet tu huy). Giu lai chi ton cong gui moi lan -> xoa.
 _GONE_STATUS = frozenset({404, 410})
 
+# pywebpush mac dinh ttl=0 ("khong luu, chi gui neu thiet bi dang online
+# ngay luc nay"). FCM (Chrome/Firefox) chap nhan gia tri nay, nhung WNS
+# (endpoint notify.windows.com - Edge tren Windows) TU CHOI thang voi 400
+# "Ttl value conflicts with X-WNS-Cache-Policy" - phat hien 2026-08-22 khi
+# nhac gio uong thuoc khong toi duoc thiet bi Edge du subscription/VAPID deu
+# dung. Dat TTL 30 phut: du de dich vu day giu ho neu thiet bi tam thoi mat
+# mang, nhung khong qua dai vi qua moc do lieu thuoc coi nhu da tre
+# (HET_HAN_NHAC_PHUT trong dose_push_reminder.py).
+_PUSH_TTL_SECONDS = 1800
+
 
 def push_is_configured() -> bool:
     settings = get_settings()
@@ -70,6 +80,7 @@ def send_push_to_patient(
                 data=payload,
                 vapid_private_key=settings.vapid_private_key,
                 vapid_claims={"sub": settings.vapid_subject},
+                ttl=_PUSH_TTL_SECONDS,
             )
             da_gui += 1
         except WebPushException as exc:
