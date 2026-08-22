@@ -527,10 +527,6 @@ _TRAILING_MEDICAL_QUESTION_FILLER_RE = re.compile(
     r"\s+(?:là\s+gì|la\s+gi|nghĩa\s+là\s+gì|nghia\s+la\s+gi)\s*$",
     re.IGNORECASE,
 )
-_SEMANTIC_TOPIC_CLEANUP_RE = re.compile(
-    r"^(?:bệnh|benh)\s+",
-    re.IGNORECASE,
-)
 _CAUSE_PATTERNS = (
     re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
     re.compile(r"^nguyen\s+nhan\s+(?:gay|cua|dan\s+den)\s+(.+)$", re.IGNORECASE),
@@ -646,8 +642,7 @@ def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -
 
 def _clean_semantic_topic(topic: str) -> str | None:
     cleaned = _TRAILING_MEDICAL_QUESTION_FILLER_RE.sub("", topic.strip(" ?!.,;:")).strip()
-    cleaned = _ascii_fold(_SEMANTIC_TOPIC_CLEANUP_RE.sub("", cleaned).strip())
-    cleaned = re.sub(r"^(?:benh)\s+", "", cleaned).strip()
+    cleaned = re.sub(r"^benh\s+", "", _ascii_fold(cleaned)).strip()
     if len(cleaned) < 2:
         return None
     return cleaned[:80]
@@ -1287,7 +1282,6 @@ class AgentOrchestrator:
             semantic_query = normalize_semantic_medical_query(router_message)
             if semantic_query.changed:
                 router_message = semantic_query.normalized_query
-                decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
 
         if self._telemetry is not None:
             self._telemetry.event(
