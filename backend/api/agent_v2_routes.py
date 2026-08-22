@@ -30,13 +30,17 @@ from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
 from backend.db.base import get_db
+from backend.db.models import AgentActivitySnapshot
 from backend.models.schemas import (
+    AgentActivityItemOut,
+    AgentActivityOut,
     AgentV2CitationOut,
     AgentV2OrchestrateRequest,
     AgentV2OrchestrateResponse,
     AgentV2ReadOnlyRequest,
     AgentV2ReadOnlyResponse,
 )
+from backend.services.agent_activity import build_activity_timeline
 from backend.services.agent_authorization import require_agent_patient_access
 from backend.services.agent_doctor_handoff import AuthorizedDoctorHandoffAdapter
 from backend.services.agent_idempotency import IdempotencyBusyError, IdempotencyClaim, claim_or_replay, record_completion
@@ -264,6 +268,76 @@ def _record_agent_v2_telemetry(
         logging.getLogger(__name__).warning("Agent V2 telemetry recording failed: %s", telemetry_err)
 
 
+# BUILD-30: durable, sanitized activity timeline for GET /agent/v2/traces/
+# {trace_id}/activity -- deliberately its own table/write path, NOT reusing
+# the telemetry buffer above (see AgentActivitySnapshot's own docstring for
+# why: that buffer is process-local, capped at 200 entries, and reset on
+# every deploy, which BUILD-29's admin ticket explorer already had to accept
+# as a known limitation -- this feature is user-facing and needs to survive
+# both). Same "best-effort, after the real commit, never allowed to affect
+# the actual response" shape as `_record_agent_v2_telemetry`: a bug in
+# activity-building must never take down a real chat reply. Uses its own
+# `db.commit()` (the main response commit already happened by the time this
+# runs) rather than joining an already-closed transaction.
+def _persist_activity_snapshot(db: Session, *, patient_id: str, actor: CurrentUser, result) -> None:
+    try:
+        activities = build_activity_timeline(result)
+        db.add(
+            AgentActivitySnapshot(
+                agent_run_id=result.agent_run_id,
+                trace_id=result.trace_id,
+                patient_id=patient_id,
+                actor_id=actor.id,
+                intent=result.intent.value,
+                status=result.status.value,
+                model_calls=result.metrics.model_calls,
+                activities_json=activities,
+            )
+        )
+        db.commit()
+    except Exception as activity_err:  # noqa: BLE001 -- must never break the real response
+        db.rollback()
+        logging.getLogger(__name__).warning("Agent V2 activity snapshot recording failed: %s", activity_err)
+
+
+@agent_v2_router.get("/agent/v2/traces/{trace_id}/activity", response_model=AgentActivityOut)
+def get_trace_activity(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    actor: CurrentUser = Depends(get_current_user),
+) -> AgentActivityOut:
+    """BUILD-30 §3: a patient-safe read of their OWN message's activity
+    timeline -- deliberately NOT a reuse of the admin Trace Explorer's
+    response shape (BUILD-29's ``AgentFeedbackTraceSummaryOut`` carries far
+    more technical detail than a patient should ever see). Only role
+    "patient" may call this, and only for a trace that resolves to their own
+    ``patient_id`` -- a trace belonging to a different account is a 403, not
+    a silently-empty result (the same "fail closed, not fail quiet"
+    principle as BUILD-29's ``verify_trace_ownership``).
+
+    A trace this app never persisted an activity snapshot for (not found)
+    returns 200 with ``available: false`` rather than 404 -- the frontend
+    treats a genuinely-unknown id and an aged-out/pre-BUILD-30 one
+    identically ("Chi tiết hoạt động hiện không còn khả dụng."), and no
+    caller can distinguish "wrong id" from "real id, snapshot not kept" by
+    HTTP status alone, which is the more private default here.
+    """
+    if actor.role != "patient" or not actor.patient_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chi benh nhan moi xem duoc hoat dong cua chinh minh")
+
+    snapshot = db.query(AgentActivitySnapshot).filter(AgentActivitySnapshot.trace_id == trace_id).first()
+    if snapshot is None:
+        return AgentActivityOut(trace_id=trace_id, available=False, activities=[])
+    if snapshot.patient_id != actor.patient_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Trace nay khong thuoc ve tai khoan cua ban")
+
+    return AgentActivityOut(
+        trace_id=trace_id,
+        available=True,
+        activities=[AgentActivityItemOut.model_validate(item) for item in snapshot.activities_json],
+    )
+
+
 @agent_v2_router.post("/agent/v2/read-only", response_model=AgentV2ReadOnlyResponse)
 def run_read_only_agent(
     request: AgentV2ReadOnlyRequest,
@@ -427,5 +501,10 @@ def run_agent_orchestration(
         result=result,
         latency_ms=(time.monotonic() - _started) * 1000.0,
     )
+    # BUILD-30: same best-effort, post-commit shape as the telemetry call
+    # above -- see _persist_activity_snapshot's own docstring for why this
+    # is a separate, durable table rather than reading the telemetry buffer
+    # back.
+    _persist_activity_snapshot(db, patient_id=patient_id, actor=actor, result=result)
 
     return response
