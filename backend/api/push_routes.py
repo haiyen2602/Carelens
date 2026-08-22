@@ -45,7 +45,9 @@ def get_vapid_public_key() -> PushVapidKeyResponse:
     return PushVapidKeyResponse(public_key=get_settings().vapid_public_key)
 
 
-@push_router.post("/push/subscribe", status_code=http_status.HTTP_204_NO_CONTENT, response_class=Response)
+@push_router.post(
+    "/push/subscribe", status_code=http_status.HTTP_204_NO_CONTENT, response_class=Response, response_model=None
+)
 def subscribe(
     body: PushSubscribeRequest,
     db: Session = Depends(get_db),
@@ -82,7 +84,9 @@ def subscribe(
     db.commit()
 
 
-@push_router.delete("/push/subscribe", status_code=http_status.HTTP_204_NO_CONTENT, response_class=Response)
+@push_router.delete(
+    "/push/subscribe", status_code=http_status.HTTP_204_NO_CONTENT, response_class=Response, response_model=None
+)
 def unsubscribe(
     endpoint: str,
     db: Session = Depends(get_db),
