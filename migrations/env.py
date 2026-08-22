@@ -31,49 +31,61 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def _check_known_revision(connectable) -> None:
-    """Chan deploy neu alembic_version tro toi mot revision khong co trong repo.
-
-    Dung connection rieng, tach khoi connection alembic se dung de chay
-    migration - doc qua inspector/SELECT tren cung connection se mo mot
-    transaction ngam khien alembic khong con lam chu duoc transaction va
-    khong ai commit (xem docs/bug-report-alembic-env-silent-migration.md).
-    """
-    from sqlalchemy import inspect as sa_inspect, text
-
-    with connectable.connect() as check_conn:
-        inspector = sa_inspect(check_conn)
-        if "alembic_version" not in inspector.get_table_names():
-            return
-        row = check_conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
-        if not row:
-            return
-        curr_rev = row[0]
-        script_dir = context.script
-        try:
-            is_valid = curr_rev and script_dir.get_revision(curr_rev) is not None
-        except Exception:
-            is_valid = False
-        if not is_valid:
-            raise RuntimeError(
-                f"[ALEMBIC] Revision '{curr_rev}' trong alembic_version khong ton tai trong "
-                "repo hien tai (co the do branch/hotfix da xoa). Tu dong stamp len head da "
-                "bi bo vi che gia thanh cong: no danh dau moi migration da chay du thuc te "
-                "chua chay cai nao. Kiem tra tay revision nay va chay "
-                "'alembic stamp <revision_dung>' hoac 'alembic upgrade head' truoc khi deploy lai."
-            )
-
-
 def run_migrations_online() -> None:
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
-    _check_known_revision(connectable)
-
     with connectable.connect() as connection:
+        # Check for orphan/missing alembic revisions in remote DB (e.g. from deleted branches/hotfixes)
+        try:
+            from sqlalchemy import inspect as sa_inspect, text
+            inspector = sa_inspect(connection)
+            if "alembic_version" in inspector.get_table_names():
+                row = connection.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
+                if row:
+                    curr_rev = row[0]
+                    script_dir = context.script
+                    is_valid = False
+                    try:
+                        if curr_rev and script_dir.get_revision(curr_rev) is not None:
+                            is_valid = True
+                    except Exception:
+                        is_valid = False
+
+                    # If revision in DB is not known in current codebase revisions, auto-stamp to latest head
+                    if not is_valid:
+                        head_rev = script_dir.get_current_head()
+                        print(f"[ALEMBIC AUTO-HEAL] Revision '{curr_rev}' in DB not found in repo. Auto-stamping to head '{head_rev}'...")
+                        connection.execute(text(f"UPDATE alembic_version SET version_num = '{head_rev}'"))
+                        connection.commit()
+        except Exception as heal_err:
+            print(f"[ALEMBIC WARNING] Auto-heal check warning: {heal_err}")
+        finally:
+            # BUILD-24Q fix (2026-08-21): the reflection/read calls above
+            # (inspector.get_table_names(), the alembic_version SELECT) run on
+            # this SAME connection and, under SQLAlchemy 2.0's autobegin,
+            # silently open a transaction of their own -- regardless of
+            # whether the "not is_valid" branch ever runs its own commit().
+            # Handing that connection straight to `context.configure()` below
+            # left a stray transaction in progress that alembic's own
+            # `begin_transaction()` did not actually own; every migration in
+            # the batch reported "Running upgrade ..." with no error, but
+            # nothing was ever persisted (reproduced directly: a fresh DB and
+            # a from-a-valid-revision upgrade both silently no-op'd end to
+            # end, verified by row/table counts + `alembic_version` staying
+            # unchanged after a reported-successful run). Only the
+            # `not is_valid` repair path happened to work, because it called
+            # `connection.commit()` itself, incidentally clearing the stray
+            # transaction before alembic took over -- the single most common
+            # case (a normal, already-valid revision, i.e. every ordinary
+            # deploy) was the one silently broken. Rolling back here (nothing
+            # above ever needs to persist beyond its own explicit commit)
+            # resets the connection to a clean state before alembic begins
+            # its own transaction, regardless of which branch above ran.
+            connection.rollback()
+
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()

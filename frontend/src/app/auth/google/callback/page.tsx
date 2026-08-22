@@ -48,11 +48,7 @@ export default function GoogleCallbackPage() {
         if (user.role === "doctor" || user.role === "patient") {
           protoLogin(user.role, user.full_name);
           pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${user.full_name}.`);
-          if (user.role === "patient" && user.profile_completed === false) {
-            router.replace("/onboarding/profile");
-          } else {
-            router.replace(user.role === "doctor" ? "/doctor" : "/patient");
-          }
+          router.replace(user.role === "doctor" ? "/doctor" : "/patient");
         } else if (user.role === "admin") {
           router.replace("/admin");
         } else {

@@ -107,7 +107,12 @@ export default function AssistantPage() {
     setInput("");
     reset();
     mutate(
-      { patient_id: user?.patient_id ?? "", message: content },
+      // BUILD-26: conversation_id = this UI thread's own stable id, so
+      // Agent V2's short-term memory scopes to the same thread the user
+      // sees, instead of every message defaulting to one shared "one-shot"
+      // conversation per account (backend/api/agent_v2_routes.py's own
+      // fallback when conversation_id is omitted).
+      { patient_id: user?.patient_id ?? "", message: content, conversation_id: activeId },
       {
         onSuccess: (data) => {
           appendMessage(activeId, "assistant", data.reply);

@@ -100,3 +100,27 @@ export async function updateAccountStatus(
   if (!response.ok) return loi(response);
   return toAccount(await response.json());
 }
+
+export async function updateAccount(
+  accountId: string,
+  input: {
+    fullName?: string;
+    email?: string;
+  },
+  accessToken?: string | null,
+): Promise<AccountRecord> {
+  const response = await fetch(`/api/accounts/${encodeURIComponent(accountId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({
+      full_name: input.fullName,
+      email: input.email,
+    }),
+  });
+  if (!response.ok) return loi(response);
+  return toAccount(await response.json());
+}
+

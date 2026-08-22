@@ -27,6 +27,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DRUG_KNOWLEDGE_V2_DIR=/app/data/drug-knowledge-v2
 
+# gosu: doi user o RUNTIME (entrypoint chay bang root de chinh quyen volume
+# roi ha xuong appuser). Dung gosu thay vi `su`/`sudo` vi no exec THAY THE
+# tien trinh, giu nguyen PID 1 va tin hieu SIGTERM - `su` de lai 1 tien trinh
+# trung gian nuot mat tin hieu.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/*
+
 # Security: run as non-root user
 RUN useradd -m appuser
 
@@ -41,7 +49,14 @@ COPY ["data pharmacy/v2/final_canonical/rag/v2_chunks.jsonl", "data pharmacy/v2/
 # Create data directory with correct ownership
 RUN mkdir -p /app/data && chown -R appuser:appuser /app
 
-USER appuser
+# KHONG dung `USER appuser` o day nua (SUA 2026-08-22): container phai khoi
+# dong bang root de docker-entrypoint.sh kip chinh quyen thu muc anh SAU KHI
+# Railway mount Volume de len - `chown` o dong tren chi co tac dung luc build,
+# bi volume phu mat luc chay. Entrypoint tu ha quyen xuong appuser bang gosu
+# ngay truoc khi chay CMD, nen app VAN chay non-root nhu truoc.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # EXPOSE chi la metadata (khong mo port that) - giu 8000 lam gia tri mac dinh
 # cho local/docker-compose. Luc chay THAT tren Railway, port do bien PORT

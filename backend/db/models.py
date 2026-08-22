@@ -77,6 +77,14 @@ class DrugChunk(Base):
 
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM), nullable=False)
 
+    # BUILD-7C: nullable so frozen legacy rows remain compatible.  New,
+    # reproducible corpora are identified by the logical chunk key rather than
+    # by a random primary key.
+    corpus_version: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    chunk_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String, nullable=True)
+    embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
     __table_args__ = (
@@ -84,6 +92,89 @@ class DrugChunk(Base):
         # khong co API tao HNSW index truc tiep, khai bao index thuong o day de
         # ORM biet cot nao co index, index HNSW that duoc tao trong migration bang raw SQL).
         Index("ix_drug_chunks_drug_id_field_group", "drug_id", "field_group"),
+        Index(
+            "uq_drug_chunks_corpus_chunk_key",
+            "corpus_version",
+            "chunk_key",
+            unique=True,
+            postgresql_where=text("corpus_version IS NOT NULL AND chunk_key IS NOT NULL"),
+        ),
+    )
+
+
+class RagCorpus(Base):
+    """Immutable metadata for one reproducible pgvector corpus."""
+
+    __tablename__ = "rag_corpus"
+
+    corpus_version: Mapped[str] = mapped_column(String, primary_key=True)
+    source_manifest_hash: Mapped[str] = mapped_column(String, nullable=False)
+    chunk_manifest_hash: Mapped[str] = mapped_column(String, nullable=False)
+    embedding_model: Mapped[str] = mapped_column(String, nullable=False)
+    embedding_dimensions: Mapped[int] = mapped_column(Integer, nullable=False)
+    index_version: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    expected_chunks: Mapped[int] = mapped_column(Integer, nullable=False)
+    estimated_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    actual_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    actual_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class RagCorpusCheckpoint(Base):
+    """Per-chunk recovery state; a completed key must never be embedded again."""
+
+    __tablename__ = "rag_corpus_checkpoint"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    corpus_version: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    chunk_key: Mapped[str] = mapped_column(String, nullable=False)
+    drug_chunk_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    token_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    batch_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("corpus_version", "chunk_key", name="uq_rag_corpus_checkpoint_key"),
+        Index("ix_rag_corpus_checkpoint_status", "corpus_version", "status"),
+    )
+
+
+class RagEmbeddingReservation(Base):
+    """Durable, idempotent accounting boundary around one embedding request.
+
+    A reservation is committed before OpenAI is called.  Its response is staged
+    before chunks/checkpoints are applied, so an interrupted process cannot
+    silently re-embed a batch whose billable outcome is unknown.
+    """
+
+    __tablename__ = "rag_embedding_reservation"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    corpus_version: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    batch_key: Mapped[str] = mapped_column(String, nullable=False)
+    chunk_keys: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    planned_token_ceiling: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    provider_request_id: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+    provider_input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Temporary, validated provider vectors. Cleared only after the same
+    # transaction has inserted chunks and completed checkpoints.
+    response_embeddings: Mapped[list[list[float]] | None] = mapped_column(JSON, nullable=True)
+    response_recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    committed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    accounted_in_corpus: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    reconciliation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("corpus_version", "batch_key", name="uq_rag_embedding_reservation_batch"),
+        Index("ix_rag_embedding_reservation_corpus_status", "corpus_version", "status"),
     )
 
 
@@ -705,6 +796,45 @@ class SafetyEvent(Base):
     )
 
 
+class DoctorReviewRequest(Base):
+    """Auditable Doctor Handoff request created only after a safety gate.
+
+    These columns deliberately have no hard FK while the operational identity
+    tables retain legacy string identifiers.  Relationship validation belongs
+    to the domain service and is repeated for every transition.
+    """
+
+    __tablename__ = "doctor_review_request"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    conversation_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    source_message_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    assigned_doctor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_by_actor_id: Mapped[str] = mapped_column(String, nullable=False)
+    reason_code: Mapped[str] = mapped_column(String, nullable=False)
+    risk_disposition: Mapped[str] = mapped_column(String, nullable=False)
+    patient_question: Mapped[str] = mapped_column(Text, nullable=False)
+    agent_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    summary_provenance: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    verified_context_refs: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    answered_by_doctor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    doctor_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("uq_doctor_review_request_idempotency", "idempotency_key", unique=True),
+        Index("ix_doctor_review_request_patient_status", "patient_id", "status"),
+        Index("ix_doctor_review_request_doctor_status", "assigned_doctor_id", "status"),
+        Index("ix_doctor_review_request_created", "created_at"),
+    )
+
+
 class Conversation(Base):
     """DB Architecture V2 conversation session."""
 
@@ -757,6 +887,77 @@ class AgentRun(Base):
     __table_args__ = (
         Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
         Index("ix_agent_run_patient_started", "patient_id", "started_at"),
+    )
+
+
+class AgentRunCheckpoint(Base):
+    """Durable, sanitized execution checkpoint for the disabled Agent V2 path.
+
+    This table intentionally stores references and state-machine values only.
+    It never stores prompts, model reasoning, tool arguments/results, tokens,
+    secrets, or a copy of patient conversation content.
+    """
+
+    __tablename__ = "agent_run_checkpoint"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    step_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    workflow_state: Mapped[str] = mapped_column(String, nullable=False)
+    completed_tools: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    resolved_entities: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    verified_context_refs: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    safety_disposition: Mapped[str | None] = mapped_column(String, nullable=True)
+    pending_action: Mapped[str] = mapped_column(String, nullable=False)
+    terminal_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    lease_token: Mapped[str | None] = mapped_column(String, nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_agent_run_checkpoint_run", "agent_run_id", unique=True),
+        Index("ix_agent_run_checkpoint_pending_updated", "pending_action", "updated_at"),
+        Index("ix_agent_run_checkpoint_terminal_updated", "terminal_status", "updated_at"),
+    )
+
+
+class AgentIdempotencyKey(Base):
+    """BUILD-22: HTTP-level replay record for /agent/v2/orchestrate.
+
+    Distinct from ``AgentRunCheckpoint`` (crash-recovery resume of an
+    in-flight run): this row lets a caller's retried HTTP request for an
+    ALREADY-FINISHED run get back the exact same response without invoking
+    the orchestrator again. The unique constraint on
+    ``(actor_id, patient_id, idempotency_key)`` is the sole concurrency gate
+    -- a genuinely concurrent duplicate blocks on the DB-level unique-index
+    insert until the first request commits, then observes its final
+    ``COMPLETED`` row. Bound to both actor and patient so an identical key
+    string from a different account or for a different patient can never
+    collide with or replay someone else's run.
+    """
+
+    __tablename__ = "agent_idempotency_key"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    actor_id: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String, nullable=False)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    response_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index(
+            "uq_agent_idempotency_key_actor_patient_key",
+            "actor_id",
+            "patient_id",
+            "idempotency_key",
+            unique=True,
+        ),
+        Index("ix_agent_idempotency_key_expires_at", "expires_at"),
     )
 
 
@@ -1119,3 +1320,23 @@ class DoctorWatch(Base):
     __table_args__ = (
         Index("uq_doctor_watch_doctor_patient", "doctor_id", "patient_id", unique=True),
     )
+
+
+class SystemAuditLog(Base):
+    """Luu vet nhat ky he thong (System Audit Log).
+    APPEND-ONLY: Khong duoc UPDATE hoac DELETE tu code ung dung (rang buoc an toan).
+    Ho tro ghi nhat ky hanh dong cua Admin, Bac si, Benh nhan va He thong.
+    """
+
+    __tablename__ = "system_audit_logs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    actor_name: Mapped[str] = mapped_column(String, nullable=False)
+    actor_role: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    action: Mapped[str] = mapped_column(Text, nullable=False)
+    target: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False, index=True
+    )
+

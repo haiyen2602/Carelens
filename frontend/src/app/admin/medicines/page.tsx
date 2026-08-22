@@ -1,11 +1,25 @@
 "use client";
 
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Search } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Pencil, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
-import { listAdminDrugs, type AdminDrugItem, type MappingStatus } from "@/lib/admin-drugs";
+import {
+  listAdminDrugs,
+  updateAdminDrug,
+  type AdminDrugItem,
+  type MappingStatus,
+} from "@/lib/admin-drugs";
 
 const statusOptions: Array<{ value: MappingStatus; label: string }> = [
   { value: "ACTIVE", label: "Đang hoạt động" },
@@ -25,30 +39,54 @@ export default function MedicinesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingDrug, setEditingDrug] = useState<AdminDrugItem | null>(null);
+  const [editForm, setEditForm] = useState<{
+    display_name: string;
+    dosage_form: string;
+    route: string;
+    strength_text: string;
+    mapping_status: MappingStatus;
+  }>({
+    display_name: "",
+    dosage_form: "",
+    route: "",
+    strength_text: "",
+    mapping_status: "ACTIVE",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const fetchData = (signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    listAdminDrugs({
+      q: query,
+      mappingStatus: status || undefined,
+      page,
+      accessToken,
+      signal,
+    })
+      .then((result) => {
+        setItems(result.items);
+        setTotal(result.total);
+        setTotalPages(result.total_pages);
+      })
+      .catch((reason: unknown) => {
+        if (!signal?.aborted) {
+          setError(reason instanceof Error ? reason.message : "Không thể tải dữ liệu thuốc");
+        }
+      })
+      .finally(() => {
+        if (!signal?.aborted) setLoading(false);
+      });
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     const debounce = window.setTimeout(() => {
-      setLoading(true);
-      setError(null);
-      listAdminDrugs({
-        q: query,
-        mappingStatus: status || undefined,
-        page,
-        accessToken,
-        signal: controller.signal,
-      })
-        .then((result) => {
-          setItems(result.items);
-          setTotal(result.total);
-          setTotalPages(result.total_pages);
-        })
-        .catch((reason: unknown) => {
-          if (!controller.signal.aborted)
-            setError(reason instanceof Error ? reason.message : "Không thể tải dữ liệu thuốc");
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
+      fetchData(controller.signal);
     }, 300);
     return () => {
       window.clearTimeout(debounce);
@@ -63,6 +101,51 @@ export default function MedicinesPage() {
   const changeStatus = (value: string) => {
     setStatus(value as MappingStatus | "");
     setPage(1);
+  };
+
+  const openEdit = (drug: AdminDrugItem) => {
+    setEditingDrug(drug);
+    setEditForm({
+      display_name: drug.display_name,
+      dosage_form: drug.dosage_form || "",
+      route: drug.route || "",
+      strength_text: drug.strength_text || "",
+      mapping_status: (drug.mapping_status as MappingStatus) || "ACTIVE",
+    });
+    setEditError("");
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDrug) return;
+    if (!editForm.display_name.trim()) {
+      setEditError("Vui lòng nhập tên thuốc.");
+      return;
+    }
+
+    setEditLoading(true);
+    setEditError("");
+    try {
+      await updateAdminDrug(
+        editingDrug.id,
+        {
+          display_name: editForm.display_name.trim(),
+          dosage_form: editForm.dosage_form.trim() || undefined,
+          route: editForm.route.trim() || undefined,
+          strength_text: editForm.strength_text.trim() || undefined,
+          mapping_status: editForm.mapping_status,
+        },
+        accessToken,
+      );
+      setEditDialogOpen(false);
+      setEditingDrug(null);
+      fetchData();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Không thể lưu cập nhật thuốc.");
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   return (
@@ -117,18 +200,19 @@ export default function MedicinesPage() {
               <th className="px-4 py-3">Đường dùng</th>
               <th className="px-4 py-3">Trạng thái ánh xạ</th>
               <th className="px-4 py-3">Nguồn</th>
+              <th className="px-4 py-3 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" aria-label="Đang tải" />
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   Không tìm thấy dữ liệu thuốc phù hợp.
                 </td>
               </tr>
@@ -152,6 +236,15 @@ export default function MedicinesPage() {
                     ) : (
                       <span className="text-muted-foreground">Canonical V2</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEdit(drug)}
+                    >
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -184,6 +277,83 @@ export default function MedicinesPage() {
           </Button>
         </nav>
       )}
+
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            setEditingDrug(null);
+            setEditError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa dữ liệu thuốc</DialogTitle>
+            <DialogDescription>
+              Cập nhật thông tin thuốc cho cơ sở tri thức RAG.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_display_name">Tên thuốc</Label>
+              <Input
+                id="edit_display_name"
+                value={editForm.display_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, display_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_dosage_form">Dạng bào chế</Label>
+              <Input
+                id="edit_dosage_form"
+                value={editForm.dosage_form}
+                onChange={(e) => setEditForm((f) => ({ ...f, dosage_form: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_route">Đường dùng</Label>
+              <Input
+                id="edit_route"
+                value={editForm.route}
+                onChange={(e) => setEditForm((f) => ({ ...f, route: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_strength_text">Hàm lượng</Label>
+              <Input
+                id="edit_strength_text"
+                value={editForm.strength_text}
+                onChange={(e) => setEditForm((f) => ({ ...f, strength_text: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_mapping_status">Trạng thái ánh xạ</Label>
+              <select
+                id="edit_mapping_status"
+                value={editForm.mapping_status}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, mapping_status: e.target.value as MappingStatus }))
+                }
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {editError && <p className="text-sm font-medium text-destructive">{editError}</p>}
+            <DialogFooter>
+              <Button type="submit" disabled={editLoading}>
+                {editLoading ? "Đang lưu..." : "Lưu thay đổi"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

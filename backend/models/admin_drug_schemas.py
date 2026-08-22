@@ -60,3 +60,12 @@ class AdminDrugListResponse(BaseModel):
 
 class AdminDrugDetailResponse(AdminDrugItem):
     pass
+
+
+class AdminDrugUpdateRequest(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=255)
+    dosage_form: str | None = Field(default=None, max_length=100)
+    route: str | None = Field(default=None, max_length=100)
+    strength_text: str | None = Field(default=None, max_length=100)
+    mapping_status: MappingStatus | None = None
+
