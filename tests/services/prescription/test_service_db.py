@@ -167,15 +167,28 @@ def test_don_rong_bi_tu_choi(db, benh_nhan):
         tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[])
 
 
-def test_bac_si_tu_go_thuoc_khong_co_trong_danh_muc_van_ke_duoc(db, benh_nhan):
-    """drug_id rỗng vẫn hợp lệ — không chặn bác sĩ kê thuốc chưa vào danh mục,
-    chỉ là liều đó sau này sẽ không xác minh được bằng ảnh."""
-    presc = tao_phac_do(
-        db, patient_id=benh_nhan.id, doctor_id="bs1",
-        items=[{"ten_thuoc": "Thuốc lạ chưa có trong danh mục", "lieu_dung": "1v", "gio_nhac": ["08:00"]}],
-    )
+def test_thuoc_go_tay_khong_co_drug_id_bi_tu_choi(db, benh_nhan):
+    """FB-14: danh mục là allowlist đóng. Trước 2026-08-20 `drug_id` rỗng vẫn
+    kê được, nên gõ được tên bất kỳ — kể cả chất gây nghiện — vào đơn thuốc."""
+    with pytest.raises(ViPhamNghiepVuError):
+        tao_phac_do(
+            db, patient_id=benh_nhan.id, doctor_id="bs1",
+            items=[{"ten_thuoc": "Heroin", "lieu_dung": "1v", "gio_nhac": ["08:00"]}],
+        )
 
-    assert presc.items[0]["drug_id"] == ""
+
+def test_ten_thuoc_lay_tu_danh_muc_khong_lay_chu_bac_si_go(db, benh_nhan, thuoc_that):
+    """FB-14, lỗ hổng thứ hai: chọn một thuốc hợp lệ rồi sửa lại ô tên thì
+    `drug_id` vẫn trỏ thuốc cũ nhưng `ten_thuoc` mang chữ vừa gõ — và đó là
+    tên bệnh nhân nhìn thấy. Danh mục phải thắng."""
+    item = _item(thuoc_that)
+    item["ten_thuoc"] = "Heroin"
+
+    presc = tao_phac_do(db, patient_id=benh_nhan.id, doctor_id="bs1", items=[item])
+
+    assert presc.items[0]["ten_thuoc"] == thuoc_that.ten_thuoc
+    assert presc.items[0]["dang_thuoc"] == thuoc_that.dang_thuoc
+    assert presc.items[0]["duong_dung"] == thuoc_that.duong_dung
 
 
 def test_shadow_mode_writes_resolved_v2_sidecar_and_stops_intent(db, benh_nhan, thuoc_that, monkeypatch, caplog):
@@ -217,22 +230,22 @@ def test_shadow_mode_writes_resolved_v2_sidecar_and_stops_intent(db, benh_nhan, 
         _restore_prescription_v2_mode()
 
 
-def test_shadow_mode_keeps_unresolved_drug_in_review_required(db, benh_nhan, monkeypatch):
-    _set_prescription_v2_mode(monkeypatch, "shadow")
-    try:
-        presc = tao_phac_do(
-            db,
-            patient_id=benh_nhan.id,
-            doctor_id="bs1",
-            items=[{"ten_thuoc": "Thuá»‘c kÃª tay", "lieu_dung": "1 viÃªn", "gio_nhac": ["08:00"], "thoi_diem_dung": "Sau \u0103n"}],
-            duration_days=1,
-            start_date=NGAY_MAI,
-        )
-        sidecar = db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == presc.id).one()
-        assert sidecar.drug_product_id is None
-        assert sidecar.status == "REVIEW_REQUIRED"
-    finally:
-        _restore_prescription_v2_mode()
+# GO 2026-08-20 (FB-14): test_shadow_mode_keeps_unresolved_drug_in_review_required
+# da bi xoa khoi day. No ke mot thuoc go tay (`drug_id` rong) roi assert sidecar
+# V2 nam o REVIEW_REQUIRED - duong vao do gio bi chan han, xem
+# test_thuoc_go_tay_khong_co_drug_id_bi_tu_choi o tren.
+#
+# Nhanh REVIEW_REQUIRED VAN CON THAT nhung khong con vao duoc tu tao_phac_do:
+# lay_thuoc() mac dinh phan giai qua catalog V2 (xem drug_knowledge/__init__.py),
+# nen mot drug_id da qua duoc cua allowlist thi cung luon resolve duoc sang
+# drug_product. Trang thai do gio chi con y nghia voi du lieu cu/backfill.
+#
+# TEST THAY THE da co: tests/services/scheduling/test_write_path.py::
+# test_thuoc_khong_phan_giai_duoc_thi_review_required_du_lich_hop_le - goi
+# thang sync_prescription_schedule voi mot item khong resolve duoc, khong di
+# qua cua allowlist cua phac do.
+
+
 
 
 def test_shadow_edit_supersedes_only_future_v2_occurrences(db, benh_nhan, thuoc_that, monkeypatch):

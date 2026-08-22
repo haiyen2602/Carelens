@@ -321,9 +321,9 @@ class ReadOnlyAgentRuntime:
                 )
             safety_context = SafetyContext.RESOLVED
         if handoff_required:
-            return self._result(RunStatus.HANDOFF_REQUIRED, "Can chuyen yeu cau den bac si.", results, metrics, started)
+            return self._result(RunStatus.HANDOFF_REQUIRED, "Cần chuyển yêu cầu đến bác sĩ.", results, metrics, started)
         if self._cancelled(is_cancelled):
-            return self._result(RunStatus.CANCELLED, "Agent run da bi huy.", results, metrics, started)
+            return self._result(RunStatus.CANCELLED, "Agent run đã bị hủy.", results, metrics, started)
 
         model_started = self._clock()
         if self._telemetry is not None and trace is not None:
@@ -377,7 +377,7 @@ class ReadOnlyAgentRuntime:
             return self._guardrail_result("loop", safety_context, results, metrics, started)
         for call in plan.tool_calls:
             if self._cancelled(is_cancelled):
-                return self._result(RunStatus.CANCELLED, "Agent run da bi huy.", results, metrics, started)
+                return self._result(RunStatus.CANCELLED, "Agent run đã bị hủy.", results, metrics, started)
             if self._timed_out(started):
                 self._telemetry_event(trace, TraceComponent.GUARDRAIL, "agent_guardrail.timeout", error_code="RUN_TIMEOUT")
                 return self._timeout_result(safety_context, results, metrics, started)
@@ -395,7 +395,7 @@ class ReadOnlyAgentRuntime:
             except ValueError:
                 return self._result(
                     RunStatus.FAILED,
-                    "Agent khong the thuc hien yeu cau nay.",
+                    "Agent không thể thực hiện yêu cầu này.",
                     results,
                     metrics,
                     started,
@@ -480,7 +480,7 @@ class ReadOnlyAgentRuntime:
         current = metrics
         while True:
             if self._cancelled(is_cancelled):
-                return None, self._result(RunStatus.CANCELLED, "Agent run da bi huy.", (), current, started), current
+                return None, self._result(RunStatus.CANCELLED, "Agent run đã bị hủy.", (), current, started), current
             if self._timed_out(started):
                 self._telemetry_event(trace, TraceComponent.GUARDRAIL, "agent_guardrail.timeout", error_code="RUN_TIMEOUT")
                 return None, self._timeout_result(safety_context, (), current, started), current
@@ -495,7 +495,7 @@ class ReadOnlyAgentRuntime:
                 if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
                     return None, self._timeout_result(safety_context, (), current, started), current
                 if current.retries >= self._limits.max_retries or current.model_calls >= self._limits.max_model_calls:
-                    return None, self._result(RunStatus.FAILED, "Agent tam thoi khong san sang.", (), current, started), current
+                    return None, self._result(RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", (), current, started), current
                 current = self._with(current, retries=current.retries + 1)
                 self._telemetry_event(trace, TraceComponent.MODEL, "agent_model.retry", error_code="MODEL_CALL_RETRY", retries=current.retries)
                 self._backoff(current.retries, started)
@@ -535,7 +535,7 @@ class ReadOnlyAgentRuntime:
         current = metrics
         while True:
             if self._cancelled(is_cancelled):
-                return None, self._result(RunStatus.CANCELLED, "Agent run da bi huy.", tool_results, current, started), current
+                return None, self._result(RunStatus.CANCELLED, "Agent run đã bị hủy.", tool_results, current, started), current
             if self._timed_out(started):
                 self._telemetry_event(trace, TraceComponent.GUARDRAIL, "agent_guardrail.timeout", error_code="RUN_TIMEOUT")
                 return None, self._timeout_result(safety_context, tool_results, current, started), current
@@ -550,7 +550,7 @@ class ReadOnlyAgentRuntime:
                 if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
                     return None, self._timeout_result(safety_context, tool_results, current, started), current
                 if current.retries >= self._limits.max_retries or current.model_calls >= self._limits.max_model_calls:
-                    return None, self._result(RunStatus.FAILED, "Agent tam thoi khong san sang.", tool_results, current, started), current
+                    return None, self._result(RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", tool_results, current, started), current
                 current = self._with(current, retries=current.retries + 1)
                 self._telemetry_event(trace, TraceComponent.MODEL, "agent_model.retry", error_code="SYNTHESIS_CALL_RETRY", retries=current.retries)
                 self._backoff(current.retries, started)
@@ -571,12 +571,12 @@ class ReadOnlyAgentRuntime:
         if safety_context is SafetyContext.UNRESOLVED:
             return self._result(
                 RunStatus.SAFETY_BLOCKED,
-                "Khong the tiep tuc khi danh gia an toan chua duoc giai quyet.",
+                "Không thể tiếp tục khi đánh giá an toàn chưa được giải quyết.",
                 results,
                 metrics,
                 started,
             )
-        return self._result(RunStatus.BUDGET_EXCEEDED, f"Agent run vuot gioi han {kind}.", results, metrics, started)
+        return self._result(RunStatus.BUDGET_EXCEEDED, f"Agent run vượt giới hạn {kind}.", results, metrics, started)
 
     def _timeout_result(
         self,
@@ -588,12 +588,12 @@ class ReadOnlyAgentRuntime:
         if safety_context is SafetyContext.UNRESOLVED:
             return self._result(
                 RunStatus.SAFETY_BLOCKED,
-                "Khong the tiep tuc khi danh gia an toan chua duoc giai quyet.",
+                "Không thể tiếp tục khi đánh giá an toàn chưa được giải quyết.",
                 results,
                 metrics,
                 started,
             )
-        return self._result(RunStatus.TIMEOUT, "Agent run da qua thoi gian cho phep.", results, metrics, started)
+        return self._result(RunStatus.TIMEOUT, "Agent run đã quá thời gian cho phép.", results, metrics, started)
 
     # BUILD-20: BUILD-19's P2 finding -- the fixed SAFETY_BLOCKED message did
     # not distinguish "this dose isn't due/missed yet, so it can't be
@@ -605,8 +605,8 @@ class ReadOnlyAgentRuntime:
     @staticmethod
     def _safety_blocked_message(reason_code: str) -> str:
         if reason_code == "DOSE_NOT_YET_ASSESSABLE":
-            return "Lieu nay chua den han hoac chua qua han nen chua the danh gia an toan luc nay. Vui long thu lai sau khi qua gio uong theo lich hen."
-        return "Khong the tra loi khi danh gia an toan chua duoc xac nhan."
+            return "Liều này chưa đến hạn hoặc chưa quá hạn nên chưa thể đánh giá an toàn lúc này. Vui lòng thử lại sau khi qua giờ uống theo lịch hẹn."
+        return "Không thể trả lời khi đánh giá an toàn chưa được xác nhận."
 
     # BUILD-24E: an acute-danger report (overdose, poisoning, self-harm
     # ideation, severe reaction -- see orchestrator.py's ACUTE_DANGER_
@@ -621,25 +621,25 @@ class ReadOnlyAgentRuntime:
     def _handoff_required_message(reason_code: str) -> str:
         if reason_code == "ACUTE_DANGER_DETECTED":
             return (
-                "He thong nhan thay tin nhan cua ban co dau hieu nguy hiem cap tinh va dang "
-                "chuyen ngay den bac si de duoc uu tien xem xet. NEU day la tinh huong khan "
-                "cap ngay bay gio, hay goi cap cuu 115 (Viet Nam) hoac so khan cap tai noi ban "
-                "dang o -- dung cho phan hoi tu he thong nay. Khong tu y uong them thuoc. Neu "
-                "co the, hay o gan mot nguoi ban tin cay ngay luc nay."
+                "Hệ thống nhận thấy tin nhắn của bạn có dấu hiệu nguy hiểm cấp tính và đang "
+                "chuyển ngay đến bác sĩ để được ưu tiên xem xét. NẾU đây là tình huống khẩn "
+                "cấp ngay bây giờ, hãy gọi cấp cứu 115 (Việt Nam) hoặc số khẩn cấp tại nơi bạn "
+                "đang ở -- đừng chờ phản hồi từ hệ thống này. Không tự ý uống thêm thuốc. Nếu "
+                "có thể, hãy ở gần một người bạn tin cậy ngay lúc này."
             )
-        return "Yeu cau can duoc bac si xem xet."
+        return "Yêu cầu cần được bác sĩ xem xét."
 
     @staticmethod
     def _handoff_created_message(reason_code: str | None) -> str:
         if reason_code == "ACUTE_DANGER_DETECTED":
             return (
-                "He thong da ghi nhan day la tinh huong nguy hiem cap tinh va da chuyen den "
-                "bac si de duoc uu tien xem xet. NEU day la tinh huong khan cap ngay bay gio, "
-                "hay goi cap cuu 115 (Viet Nam) hoac so khan cap tai noi ban dang o -- dung cho "
-                "bac si phan hoi. Khong tu y uong them thuoc. Neu co the, hay o gan mot nguoi "
-                "ban tin cay ngay luc nay."
+                "Hệ thống đã ghi nhận đây là tình huống nguy hiểm cấp tính và đã chuyển đến "
+                "bác sĩ để được ưu tiên xem xét. NẾU đây là tình huống khẩn cấp ngay bây giờ, "
+                "hãy gọi cấp cứu 115 (Việt Nam) hoặc số khẩn cấp tại nơi bạn đang ở -- đừng chờ "
+                "bác sĩ phản hồi. Không tự ý uống thêm thuốc. Nếu có thể, hãy ở gần một người "
+                "bạn tin cậy ngay lúc này."
             )
-        return "Yeu cau da duoc ghi nhan de bac si xem xet."
+        return "Yêu cầu đã được ghi nhận để bác sĩ xem xét."
 
     def _timed_out(self, started: float) -> bool:
         return self._clock() - started > self._limits.run_timeout_seconds

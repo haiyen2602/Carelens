@@ -220,6 +220,35 @@
 }
 
 /*
+ * Nen hero cua trang dang nhap (app/page.tsx): hai vung sang mem chong len
+ * mot lop gradient xanh nhat. Tach ra CSS de co bien the dark mode rieng.
+ */
+.auth-hero {
+  background:
+    radial-gradient(circle at 65% 40%, oklch(0.72 0.13 235 / 0.18), transparent 38%),
+    radial-gradient(circle at 85% 78%, oklch(0.78 0.1 185 / 0.14), transparent 32%),
+    linear-gradient(
+      135deg,
+      oklch(0.985 0.01 240) 0%,
+      oklch(0.965 0.028 225) 55%,
+      oklch(0.965 0.03 190) 100%
+    );
+}
+
+.dark .auth-hero {
+  background:
+    radial-gradient(circle at 65% 40%, oklch(0.55 0.12 245 / 0.22), transparent 40%),
+    radial-gradient(circle at 85% 78%, oklch(0.55 0.09 195 / 0.16), transparent 32%),
+    linear-gradient(
+      135deg,
+      oklch(0.17 0.035 262) 0%,
+      oklch(0.2 0.045 250) 55%,
+      oklch(0.19 0.04 220) 100%
+    );
+}
+
+
+/*
  * Khung dien thoai CapyMedi (components/capy/*) - port tu styles.css cua
  * "CapyMedi App": an thanh cuon + 2 animation cua sheet/celebration.
  */
@@ -262,4 +291,23 @@
 
 .capy-pop {
   animation: capyPop 0.35s ease-out;
+}
+
+@keyframes capyConfetti {
+  0% {
+    transform: translateY(-40px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(480px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.capy-confetti {
+  top: -40px;
+  animation: capyConfetti 2.8s ease-in forwards;
 }

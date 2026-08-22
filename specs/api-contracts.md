@@ -19,6 +19,7 @@
 | `auth-api` | REST | `auth` | Tất cả frontend | Draft | §1 |
 | `account-api` | REST | `auth` | FE admin | Draft | §1b |
 | `admin-drug-api` | REST | `drug-knowledge` | FE admin RAG | Draft | §1d |
+| `drug-request-api` | REST | `drug-requests` | FE bác sĩ, FE admin | Draft | §1e |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
@@ -304,6 +305,46 @@ prescription or `dose_event` responses.
 - `safety_flag = true` → FE **bắt buộc** hiện overlay cấp cứu, bỏ qua hội thoại thường.
 - `sources` rỗng → agent **không** được khẳng định thông tin thuốc trong `reply` (FEAT-006).
 
+### Agent V2 conversation action extension (BUILD-29D.1)
+
+`POST /api/v1/agent/v2/orchestrate` accepts the existing `conversation_id`
+and an optional `selected_action`. The client may only echo an action that
+was returned in the latest `suggested_actions` for the same authenticated
+actor, patient, and conversation. `entity_id` and `topic` are never trusted
+as authorization or lookup inputs by themselves.
+
+```json
+{
+  "patient_id": "patient_01",
+  "conversation_id": "conversation_01",
+  "message": "Cong dung",
+  "selected_action": {
+    "action_id": "b18cb31f-3a97-4c62-b57e-9bec9c8475f8",
+    "type": "drug_attribute",
+    "value": "uses",
+    "entity_id": "long-huyet"
+  }
+}
+```
+
+```json
+{
+  "reply": "...",
+  "suggested_actions": [
+    {
+      "action_id": "d940d92d-a016-4236-9b39-b333983f5331",
+      "type": "topic_attribute",
+      "label": "Nguyen nhan",
+      "value": "causes",
+      "topic": "gan nhiem mo"
+    }
+  ]
+}
+```
+
+Invalid or stale actions are treated as ordinary user text. Safety and
+deterministic medication-time routing inspect the raw message first.
+
 ## 5. `photo-api`
 
 | Method | Path | Role | Mô tả |
@@ -446,6 +487,23 @@ Mọi lỗi trả về cùng một hình dạng:
 
 API quản trị dữ liệu thuốc và cơ sở tri thức RAG cho Admin. Hỗ trợ đầy đủ CRUD và tự động ghi log kiểm toán (`SystemAuditLog`).
 
+**Cập nhật 2026-08-21 (FB-14):** danh sách còn nối thêm các thuốc đã duyệt qua
+`drug_request` (xem §1e) — nếu không, admin duyệt xong rồi mở màn hình này lại
+không thấy dấu vết gì. Mỗi dòng vì thế mang thêm trường `source`:
+
+| `source` | Nghĩa |
+|---|---|
+| `CANONICAL` | Đến từ artifact Canonical V2, có provenance (ADR-0012). **Mặc định** — client cũ chưa đọc trường này không đổi hành vi |
+| `DRUG_REQUEST` | Thuốc bác sĩ xin bổ sung, admin đã duyệt. Chưa có trong artifact V2, chưa có chunk RAG, `ingredients` luôn rỗng |
+
+Dòng `DRUG_REQUEST` mang `mapping_status = UNMAPPED` (chúng chưa hề có bản ghi
+trong `drug_id_map`) và **chỉ xuất hiện** khi không lọc trạng thái ánh xạ hoặc khi
+lọc đúng `UNMAPPED`. Chúng luôn được xếp ở cuối toàn bộ danh sách, không phải cuối
+mỗi trang, để phân trang không lặp dòng.
+
+Thứ tự tra cứu ở `GET /api/v1/admin/drugs/{id}`: canonical trước, không thấy mới
+tra `drug_request` — đường ngoại lệ không bao giờ ghi đè lên dữ liệu có nguồn.
+
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
 | GET | `/api/v1/admin/drugs/filters` | `admin` | Lấy danh sách các dạng bào chế và đường dùng có trong DB |
@@ -467,6 +525,46 @@ API quản trị dữ liệu thuốc và cơ sở tri thức RAG cho Admin. Hỗ
 | `page_size` | integer | `20` | 1..100 |
 
 Response list 200 chứa `items`, `page`, `page_size`, `total`, `total_pages`.
+
+## 1e. `drug-request-api`
+
+Đường thoát cho FB-14. Từ 2026-08-20 danh mục thuốc là **allowlist đóng** — bác sĩ
+không kê được thuốc không có `drug_id` (xem §2). Không có đường thoát thì gặp thuốc
+ngoài danh mục là bác sĩ kẹt hẳn. Đây là đường đó: bác sĩ gửi yêu cầu, admin duyệt,
+duyệt xong mới kê được.
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| POST | `/api/v1/drug-requests` | `doctor` | Gửi yêu cầu bổ sung, luôn tạo ở `PENDING` |
+| GET | `/api/v1/drug-requests` | `doctor` | Yêu cầu **của chính mình** (lọc theo JWT, không nhận `doctor_id` từ query) |
+| GET | `/api/v1/admin/drug-requests` | `admin` | Toàn bộ hàng đợi, lọc theo `status` |
+| POST | `/api/v1/admin/drug-requests/{id}/approve` | `admin` | Sinh `approved_drug_id`, chuyển `APPROVED` |
+| POST | `/api/v1/admin/drug-requests/{id}/reject` | `admin` | `note` **bắt buộc** |
+
+**Chỉ `admin` được duyệt** — khớp ma trận quyền trong `user-roles.md`. Cho bác sĩ tự
+duyệt yêu cầu của chính mình thì lỗ hổng FB-14 quay lại nguyên vẹn.
+
+Trạng thái: `PENDING` → `APPROVED` | `REJECTED`. Xử lý lại một yêu cầu đã xong trả 409.
+
+`approved_drug_id` dạng `req-<slug>-<hash6>` — chính là giá trị FE gửi lên trong
+`PrescriptionItemIn.drug_id` khi kê đơn. Tiền tố `req-` để nhìn id là biết thuốc đến
+từ đường ngoại lệ.
+
+Mã lỗi riêng của contract này (ngoài §10):
+
+| `code` | HTTP | Khi nào |
+|---|---:|---|
+| `CONTROLLED_SUBSTANCE_BLOCKED` | 422 | Tên thuốc chứa hoạt chất bị kiểm soát — chặn ngay lúc **tạo**, không đợi tới bước duyệt |
+| `DRUG_ALREADY_IN_CATALOG` | 409 | Đã có thuốc mang mã đó trong danh mục gốc |
+| `INVALID_DRUG_REQUEST_STATE` | 409 | Duyệt/từ chối một yêu cầu đã xử lý, hoặc từ chối mà không ghi lý do |
+| `DRUG_REQUEST_NOT_FOUND` | 404 | |
+
+**Hai giới hạn phải biết:**
+
+1. Đây là **cổng người, không phải allowlist**. Danh sách chất bị kiểm soát thu hẹp
+   bề mặt chứ không đóng lại được — admin bấm duyệt qua loa là mở lại FB-14.
+2. Thuốc duyệt qua đường này **chatbot không trả lời được** (chưa có dữ liệu trong
+   `drug_chunks`). Việc sinh chunk + embedding thuộc mảng RAG, tách task riêng.
 Mỗi item có `id`, `legacy_drug_id`, `display_name`, `dosage_form`, `route`,
 `strength_text`, `packaging`, `category_id`, `category_name`, `severity`, `ingredients`, `mapping_status` và `mappings`.
 Detail trả thêm các trường văn bản RAG: `cong_dung`, `cach_dung`, `tac_dung_phu`, `bao_quan`.

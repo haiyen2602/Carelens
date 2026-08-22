@@ -1,5 +1,10 @@
 export type MappingStatus = "ACTIVE" | "AMBIGUOUS" | "RETIRED" | "UNMAPPED";
 
+// Dong nay den tu dau (them 2026-08-21, FB-14). CANONICAL = artifact
+// Canonical V2 co provenance. DRUG_REQUEST = thuoc bac si xin bo sung da
+// duoc admin duyet - chua co trong artifact, chua co du lieu RAG.
+export type DrugSource = "CANONICAL" | "DRUG_REQUEST";
+
 export type AdminDrugItem = {
   id: string;
   legacy_drug_id: string | null;
@@ -13,6 +18,7 @@ export type AdminDrugItem = {
   severity: string | null;
   ingredients: string[];
   mapping_status: MappingStatus | null;
+  source: DrugSource;
   mappings: Array<{
     id: string;
     legacy_drug_id: string;

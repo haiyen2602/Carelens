@@ -454,19 +454,21 @@ export default function AdminMedicinesPage() {
               <th className="px-4 py-3">Đường dùng</th>
               <th className="px-4 py-3">Hàm lượng</th>
               <th className="px-4 py-3">Quy cách</th>
+              <th className="px-4 py-3">Trạng thái ánh xạ</th>
+              <th className="px-4 py-3">Nguồn</th>
               <th className="px-4 py-3 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" aria-label="Đang tải" />
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                   Không tìm thấy thuốc nào khớp bộ lọc.
                 </td>
               </tr>
@@ -478,6 +480,18 @@ export default function AdminMedicinesPage() {
                   <td className="px-4 py-3 text-muted-foreground">{d.route || "—"}</td>
                   <td className="px-4 py-3">{d.strength_text ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{d.packaging ?? "—"}</td>
+                  <td className="px-4 py-3">{d.mapping_status || "—"}</td>
+                  <td className="px-4 py-3">
+                    {d.source === "DRUG_REQUEST" ? (
+                      // Danh dau ro: dong nay KHONG den tu artifact Canonical V2,
+                      // chua co provenance va chua co du lieu RAG.
+                      <span className="rounded-md bg-warning/15 px-2 py-1 text-xs font-medium text-warning-foreground">
+                        Bổ sung
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Canonical V2</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <Button

@@ -14,6 +14,8 @@
 3. **Giải pháp hiện có chỉ dừng ở mức thông báo.** App nhắc lịch, hộp chia thuốc thủ công, gọi điện nhắc (Calendar thủ công, app Max, Apple Health, MediSafe, app Vinmec) đều **không tạo được bằng chứng khách quan** rằng liều thuốc đã được uống, và không có vòng khép kín trả dữ liệu về cho bác sĩ.
 
 > **Điểm mấu chốt cần giữ xuyên suốt khi trình bày sản phẩm:** vấn đề cốt lõi không phải "bệnh nhân quên thuốc" mà là **"bác sĩ ra quyết định lâm sàng trên dữ liệu sai"** (bài học Week 1, `JOURNAL.md`).
+>
+> *Bổ sung 2026-08-20:* điều này vẫn đúng khi trình bày **giá trị** của sản phẩm (pitch, demo, tài liệu kỹ thuật). Nhưng khi trình bày để **thu hút người dùng mới** (landing page), điểm vào là nỗi lo của người thân — xem §2.1. Hai cách nói này phải nhất quán, không mâu thuẫn: người thân yên tâm được *chính vì* bác sĩ có dữ liệu thật.
 
 ## 2. Đối tượng người dùng
 
@@ -24,6 +26,57 @@
 | Secondary | **Người thân (Caregiver)** | Con cái/người chăm sóc, cần biết sớm khi có bất thường mà không phải gọi giục liên tục. Dùng mobile. |
 
 Chi tiết quyền hạn từng vai trò: xem [`user-roles.md`](./user-roles.md).
+
+### 2.1 Đối tượng tiếp cận (acquisition) — khác với người dùng chính
+
+> Bổ sung 2026-08-20. Lý do: khi thiết kế landing page cần chốt "nói với ai", và câu trả lời đó **không trùng** với người dùng chính ở bảng trên.
+
+**Người dùng chính (primary user)** — ai dùng sản phẩm hằng ngày — vẫn là **bệnh nhân + bác sĩ**, không đổi.
+
+**Đối tượng tiếp cận (acquisition audience)** — ai là người nghe thông điệp marketing và mang sản phẩm vào gia đình — là **người thân (caregiver)**: người 25–40 tuổi, đi làm bận rộn, có cha/mẹ đang trong liệu trình điều trị dài ngày, không đủ thời gian ở cạnh để trực tiếp chăm sóc.
+
+Lý do tách hai khái niệm này:
+
+- Người dùng hằng ngày (bệnh nhân cao tuổi) thường **không phải** người chủ động đi tìm và cài đặt giải pháp.
+- Bác sĩ là người khởi tạo phác đồ, nhưng thuyết phục bác sĩ đổi quy trình làm việc là bài toán bán hàng khác hẳn, không phù hợp với một landing page.
+- Người thân là người vừa **có động cơ** (lo lắng, áy náy vì không ở cạnh), vừa **có khả năng hành động** (rành công nghệ, chủ động tìm giải pháp).
+
+**Lời hứa dành riêng cho đối tượng tiếp cận** (dùng làm thông điệp chính của landing page): *biết sớm khi người thân có bất thường, mà không phải gọi điện giục liên tục.*
+
+Lưu ý khi viết nội dung cho nhóm này: nói theo hướng **đồng hành**, không phải **giám sát**. Bệnh nhân còn minh mẫn có quyền biết và đồng ý với việc dữ liệu sức khoẻ của mình được người thân theo dõi.
+
+**Ràng buộc đã chốt (2026-08-20): caregiver KHÔNG được tự nhập phác đồ.**
+
+Chỉ bác sĩ mới được tạo và duyệt phác đồ. Ma trận quyền trong [`user-roles.md`](./user-roles.md) giữ nguyên (ô "Tạo phác đồ" của `caregiver` = ❌) — đây là quyết định có chủ đích, không phải thiếu sót.
+
+Lý do: phác đồ là dữ liệu lâm sàng, người không có chuyên môn y khoa nhập vào sẽ phá vỡ nguyên tắc Human-in-the-loop ở §3.4 và mở thêm bề mặt rủi ro cho việc kiểm soát danh mục thuốc (FB-14).
+
+**Hệ quả bắt buộc phải xử lý khi làm landing page:**
+
+Sản phẩm có **cold-start** (trùng feedback FB-20): người thân đăng ký xong sẽ không có gì để xem cho tới khi bác sĩ kê đơn cho người bệnh trong hệ thống. Landing page **không được** hứa một luồng mà sản phẩm không chạy được — cụ thể là không dùng CTA kiểu "Đăng ký để theo dõi bố mẹ ngay".
+
+Luồng vào đúng theo hiện trạng code (xem `backend/api/caregiver_routes.py`):
+
+1. Người bệnh có tài khoản và được bác sĩ kê phác đồ (bác sĩ là điểm khởi đầu bắt buộc).
+2. Người thân tự đăng ký — hiện đăng ký chỉ mở cho role `patient`, chưa có luồng đăng ký riêng cho `caregiver`.
+3. Liên kết "người thân" được tạo bằng **lời mời giữa hai tài khoản người bệnh** (`POST /caregiver-links/invites`), và khi chấp nhận thì tự động tạo cả chiều ngược lại — quan hệ hai chiều, khác với quan hệ bác sĩ↔bệnh nhân vốn một chiều. Admin cũng tạo link được qua `/admin/links`.
+
+Vì vậy thông điệp landing phải trung thực về vai trò của bác sĩ trong luồng, thay vì giấu đi để câu chuyện nghe gọn hơn.
+
+**Đã chốt 2026-08-21 — CTA chính là "Đăng ký tài khoản".** Người thân tự đăng ký (hiện là tài khoản
+`patient`), sau đó được liên kết qua lời mời. Kèm hai ràng buộc bắt buộc, không phải tuỳ chọn:
+
+1. **Phải có màn hình rỗng được thiết kế tử tế.** Đăng ký xong mà thấy trang trắng là mất người dùng
+   ngay tại đó — đúng vấn đề FB-20 nêu. Màn hình này cần nói rõ *đang thiếu gì* (chưa có phác đồ từ
+   bác sĩ) và *làm gì tiếp* (mời người thân đã có tài khoản liên kết với mình, hoặc liên hệ bác sĩ
+   đang điều trị).
+2. **Landing phải nói rõ vai trò của bác sĩ** trong phần "cách hoạt động". Giấu đi thì câu chuyện gọn
+   hơn nhưng người dùng vỡ mộng ngay sau khi đăng ký, và đó là kiểu mất niềm tin khó lấy lại — đặc
+   biệt với sản phẩm y tế.
+
+Đã cân nhắc và loại: CTA "mời bác sĩ của gia đình bạn" giải đúng gốc cold-start nhưng luồng đó chưa
+tồn tại trong code, không kịp xây trước 2026-08-29. Nếu sản phẩm đi tiếp sau Demo Day thì đây là
+hướng nên quay lại.
 
 ## 3. Mục tiêu sản phẩm
 
@@ -79,6 +132,7 @@ Chi tiết quyền hạn từng vai trò: xem [`user-roles.md`](./user-roles.md)
 - Giả định bệnh nhân cao tuổi có thể tự chụp ảnh thuốc bằng điện thoại; nếu không → fallback nút bấm + người thân duyệt.
 - Giả định bác sĩ chấp nhận thao tác duyệt phác đồ/duyệt đề xuất (HITL không bị coi là gánh nặng).
 - Giả định hội thoại tiếng Việt tự do có thể phân loại đủ chính xác bằng LLM mà không cần fine-tune.
+- **Giả định về đối tượng tiếp cận (§2.1), chưa kiểm chứng:** người thân bận rộn đủ lo lắng về việc tuân thủ điều trị của cha/mẹ để chủ động đi tìm và cài đặt một giải pháp — thay vì tiếp tục dùng cách gọi điện hỏi trực tiếp (miễn phí, đã quen). Cách kiểm chứng: 5–7 phỏng vấn 20 phút với người 25–40 tuổi có cha/mẹ dùng thuốc hằng ngày từ 3 tháng trở lên; hỏi về **hành vi đã xảy ra** (lần gần nhất thực sự lo lắng là khi nào, đã làm gì), không hỏi "bạn có dùng app như vậy không". Tính tới 2026-08-20 chưa có kết quả nghiên cứu người dùng nào được lưu trong repo — trùng với feedback FB-25 sau buổi review.
 
 ---
 **Lưu ý cho AI:** Nếu một task được giao có vẻ đi ngược lại tầm nhìn hoặc phạm vi ở trên (đặc biệt các gạch đầu dòng "Out of scope" — ví dụ yêu cầu agent tự đổi liều thuốc), hãy **dừng lại và hỏi lại PM** thay vì tự suy diễn.

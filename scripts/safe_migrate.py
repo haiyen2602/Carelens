@@ -14,35 +14,33 @@ from sqlalchemy import create_engine, inspect, text
 
 
 def main():
-    try:
-        settings = get_settings()
-        engine = create_engine(settings.database_url)
-        with engine.connect() as conn:
-            inspector = inspect(conn)
-            if "alembic_version" in inspector.get_table_names():
-                row = conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
-                if row and row[0]:
-                    curr_rev = row[0]
-                    cfg = Config("alembic.ini")
-                    sdir = script.ScriptDirectory.from_config(cfg)
-                    head = sdir.get_current_head()
-                    
-                    is_valid = False
-                    try:
-                        if sdir.get_revision(curr_rev) is not None:
-                            is_valid = True
-                    except Exception:
-                        is_valid = False
+    settings = get_settings()
+    engine = create_engine(settings.database_url)
+    with engine.connect() as conn:
+        inspector = inspect(conn)
+        if "alembic_version" in inspector.get_table_names():
+            row = conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).fetchone()
+            if row and row[0]:
+                curr_rev = row[0]
+                cfg = Config("alembic.ini")
+                sdir = script.ScriptDirectory.from_config(cfg)
 
-                    if not is_valid:
-                        print(f"[PRE-DEPLOY] Found missing revision '{curr_rev}' in remote DB. Stamping to current head '{head}'...")
-                        conn.execute(text(f"UPDATE alembic_version SET version_num = '{head}'"))
-                        conn.commit()
-                        print(f"[PRE-DEPLOY] DB stamped to head '{head}'.")
-                    else:
-                        print(f"[PRE-DEPLOY] Current DB revision '{curr_rev}' is valid.")
-    except Exception as e:
-        print(f"[PRE-DEPLOY WARNING] Failed during pre-check: {e}")
+                is_valid = False
+                try:
+                    if sdir.get_revision(curr_rev) is not None:
+                        is_valid = True
+                except Exception:
+                    is_valid = False
+
+                if not is_valid:
+                    raise RuntimeError(
+                        f"[PRE-DEPLOY] Revision '{curr_rev}' trong alembic_version khong ton tai "
+                        "trong repo hien tai. Da bo auto-stamp-len-head vi no che gia thanh cong: "
+                        "danh dau moi migration da chay du thuc te chua chay cai nao. "
+                        "Kiem tra tay va chay 'alembic stamp <revision_dung>' hoac "
+                        "'alembic upgrade head' truoc khi deploy lai."
+                    )
+                print(f"[PRE-DEPLOY] Current DB revision '{curr_rev}' is valid.")
 
     print("[PRE-DEPLOY] Running alembic upgrade head...")
     cfg = Config("alembic.ini")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, require_role
@@ -134,12 +134,12 @@ def patch_drug(
     return drug
 
 
-@admin_drug_router.delete("/{drug_product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@admin_drug_router.delete("/{drug_product_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def delete_drug(
     drug_product_id: str,
     db: Session = Depends(get_db),
     _admin: CurrentUser = Depends(require_role("admin")),
-) -> None:
+) -> Response:
     drug = get_admin_drug(db, drug_product_id)
     if drug is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy thuốc")
@@ -160,3 +160,4 @@ def delete_drug(
         target=target_id,
     )
     db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -4,7 +4,7 @@
 **Owner:** Nguyễn Minh Đạt
 **Người bàn giao:** Nguyễn Hải Yến
 **Sprint:** Chưa phân Sprint
-**Status:** Not started
+**Status:** Đã chốt nguồn dữ liệu (2026-08-21) — sẵn sàng code
 **Ưu tiên:** P2 — **không chặn luồng kê đơn**, xem mục "Vì sao không gấp"
 
 ## Bối cảnh
@@ -49,31 +49,22 @@ Lấy danh sách bằng `backend.services.drug_requests.liet_ke_thuoc_da_duyet(d
 - [ ] Khi thiếu dữ liệu cho một `field_group`, **không sinh chunk rỗng** — bỏ qua nhóm đó, đúng quy ước đã ghi trong `scripts/chunk_drugs.py`.
 - [ ] Bot **không bịa** khi không có dữ liệu: nói rõ là chưa có thông tin thay vì suy diễn.
 - [ ] Không đụng vào luồng kê đơn, `_chuan_hoa_item`, hay ma trận quyền của `drug_request`.
+- [ ] Chỉ sinh chunk cho các dòng `drug_request` **đã có đủ nội dung 4 field_group + nguồn (URL/tờ HDSD) do admin nhập lúc duyệt** — dòng chưa có nguồn thì bỏ qua, không chunk tạm bằng dữ liệu thiếu nguồn.
 
-## Nút thắt thật — không phải phần code
+## Nút thắt thật — đã chốt (PM, 2026-08-21)
 
 Phần khó nhất **không phải** sinh embedding, mà là **lấy đâu ra nội dung y khoa** cho 4 nhóm trường đó. Bác sĩ khi gửi yêu cầu chỉ khai tên thuốc, dạng bào chế và đường dùng — không khai công dụng, tác dụng phụ, cách dùng, bảo quản.
 
-Ba hướng, cần chốt trước khi code:
+**Đã chốt: hướng 3 — Admin nhập nội dung lúc duyệt `drug_request`, bắt buộc khai nguồn.**
+Lý do chọn: giữ đúng chuẩn provenance của ADR-0012 mà không tạo ngoại lệ, và vì nhánh `drug_request` là hiếm (so với 3.556 thuốc trong danh mục gốc) nên phần việc thêm cho admin không đáng kể. Không chọn "bác sĩ tự khai" (không có nguồn độc lập để thẩm định) hay "crawl theo tên" (rủi ro gán nhầm dữ liệu sang thuốc khác — đúng loại lỗi FB-24 cảnh báo).
 
-| | Hướng | Đánh giá |
-|---|---|---|
-| 1 | Bổ sung ô nhập nội dung vào form yêu cầu, bác sĩ tự khai | Có dữ liệu ngay, nhưng **không có nguồn** — xem mục dưới |
-| 2 | Crawl theo tên thuốc như pipeline V2 đang làm | Có provenance thật, nhưng tên bác sĩ khai có thể không khớp nguồn nào |
-| 3 | Admin nhập nội dung lúc duyệt, kèm bắt buộc khai nguồn | Chậm nhất, chất lượng cao nhất |
+Việc cần làm thêm ngoài phạm vi RAG của task này: **thêm ô nhập nội dung 4 field_group + ô bắt buộc nguồn (URL/tờ HDSD) vào màn hình admin duyệt `drug_request`** trước khi task này có dữ liệu để chunk. Nếu màn hình duyệt hiện chưa có các ô này, cần task riêng (hoặc mở rộng task này) cho phần UI đó trước.
 
-## Mâu thuẫn với ADR-0012 cần giải quyết
+## Mâu thuẫn với ADR-0012 — đã giải quyết
 
 ADR-0012 đặt nguyên tắc dữ liệu thuốc phải có provenance. `product-vision.md` §6 ghi **rủi ro an toàn số 1** là agent "bịa" thông tin thuốc.
 
-Nội dung do bác sĩ tự gõ thì **không có nguồn**. Nếu đưa thẳng vào `drug_chunks`, chatbot sẽ trả lời bằng dữ liệu không thẩm định mà người dùng không phân biệt được với dữ liệu có nguồn — đúng thứ FB-13 và FB-24 đã chất vấn.
-
-Cần chốt một trong hai:
-
-- **Bắt buộc khai nguồn** khi gửi yêu cầu (URL, tờ hướng dẫn sử dụng), và lưu vào chunk.
-- **Đánh dấu chunk là "chưa thẩm định"** và cho bot nói rõ điều đó khi trả lời từ nguồn này.
-
-Đây là quyết định sản phẩm/an toàn, không phải quyết định kỹ thuật — nên chốt với PM trước khi code.
+**Đã chốt: bắt buộc khai nguồn (URL, tờ hướng dẫn sử dụng) khi admin nhập nội dung lúc duyệt**, lưu nguồn đó vào chunk cùng cách các chunk gốc lưu provenance — không dùng phương án "đánh dấu chưa thẩm định", vì đặt gánh nặng lên bot phải luôn nhắc đúng câu miễn trừ mỗi lần trả lời, dễ sai sót hơn là chặn ngay từ đầu vào.
 
 ## Vì sao không gấp
 

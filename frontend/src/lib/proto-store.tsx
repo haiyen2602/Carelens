@@ -168,7 +168,6 @@ type State = {
   audit: AuditEntry[];
   patients: Patient[];
   familyContacts: FamilyContact[];
-  healthLog: { id: string; at: string; text: string; level: AlertLevel }[];
   emergency: boolean;
   symptomCheckPending: boolean;
 };
@@ -193,7 +192,6 @@ const initial: State = {
   audit: [],
   patients: [],
   familyContacts: [],
-  healthLog: [],
   symptomCheckPending: false,
 };
 
@@ -204,7 +202,6 @@ type Ctx = State & {
   sendPhoto: (id: string) => Promise<void>;
   remindAgain: (id: string) => void;
   markMissed: (id: string) => Promise<void>;
-  reportHealth: (text: string, level: AlertLevel) => void;
   requestSymptomCheck: () => void;
   clearSymptomCheck: () => void;
   setEmergency: (v: boolean) => void;
@@ -579,15 +576,6 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         await updateDoseStatus(id, "MISSED");
         await refreshDoses(user?.patient_id);
         await refreshEscalations();
-      },
-      reportHealth: (text, level) => {
-        setState((s) => ({
-          ...s,
-          healthLog: [
-            { id: uid(), at: gioHienThi(new Date().toISOString()), text, level },
-            ...s.healthLog,
-          ],
-        }));
       },
       requestSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: true })),
       clearSymptomCheck: () => setState((s) => ({ ...s, symptomCheckPending: false })),

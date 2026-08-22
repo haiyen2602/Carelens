@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 import {
@@ -69,12 +70,25 @@ export default function AssistantPage() {
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
 
-  const appendMessage = (convId: string, role: "user" | "assistant", content: string) => {
+  const appendMessage = (
+    convId: string,
+    role: "user" | "assistant",
+    content: string,
+    // BUILD-29: chi assistant message can meta nay - trace_id/agent_run_id
+    // that response da tra ve cho DUNG luot nay, va cau hoi cua nguoi dung
+    // ngay truoc do (de nut "Báo cáo câu trả lời" khong bao gio phai doc
+    // lai tu phan tu lien ke trong mang, tranh sai lech neu lich su sau nay
+    // bi chinh sua).
+    meta?: { traceId?: string; agentRunId?: string; userMessage?: string; suggestedActions?: SuggestedAction[] },
+  ) => {
     const now = new Date().toISOString();
     setConversations((prev) => {
       const next = prev.map((c) => {
         if (c.id !== convId) return c;
-        const newMessages = [...c.messages, { id: crypto.randomUUID(), role, content, at: now }];
+        const newMessages = [
+          ...c.messages,
+          { id: crypto.randomUUID(), role, content, at: now, ...meta },
+        ];
         const title =
           c.title === "Hội thoại mới" && role === "user" ? titleFromMessage(content) : c.title;
         return { ...c, messages: newMessages, updatedAt: now, title };
@@ -100,7 +114,7 @@ export default function AssistantPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, isPending]);
 
-  const submit = (content: string) => {
+  const submit = (content: string, selectedAction?: SelectedAction) => {
     if (!content.trim() || isPending || !activeId) return;
     lastQuestion.current = content;
     appendMessage(activeId, "user", content);
@@ -112,10 +126,24 @@ export default function AssistantPage() {
       // sees, instead of every message defaulting to one shared "one-shot"
       // conversation per account (backend/api/agent_v2_routes.py's own
       // fallback when conversation_id is omitted).
-      { patient_id: user?.patient_id ?? "", message: content, conversation_id: activeId },
+      {
+        patient_id: user?.patient_id ?? "",
+        message: content,
+        conversation_id: activeId,
+        ...(selectedAction ? { selected_action: selectedAction } : {}),
+      },
       {
         onSuccess: (data) => {
-          appendMessage(activeId, "assistant", data.reply);
+          // BUILD-29: stash trace_id/agent_run_id (already returned by every
+          // real Agent V2 response, see frontend/src/types/chat.ts) plus the
+          // question that produced this reply, so "Báo cáo câu trả lời" never
+          // needs the user to type an id by hand.
+          appendMessage(activeId, "assistant", data.reply, {
+            traceId: data.trace_id,
+            agentRunId: data.agent_run_id,
+            userMessage: content,
+            suggestedActions: data.suggested_actions,
+          });
         },
       },
     );
@@ -175,7 +203,18 @@ export default function AssistantPage() {
         className="capy-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
       >
         {messages.map((m) => (
-          <ChatMessage key={m.id} message={m} at={formatMessageTime(m.at)} />
+          <ChatMessage
+            key={m.id}
+            message={m}
+            at={formatMessageTime(m.at)}
+            conversationId={activeId ?? undefined}
+            accessToken={accessToken}
+            actionsDisabled={isPending}
+            onSelectAction={(action) => {
+              const { label: _label, ...selectedAction } = action;
+              submit(action.label, selectedAction);
+            }}
+          />
         ))}
 
         {isPending && (

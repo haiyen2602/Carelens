@@ -41,6 +41,8 @@
 
 Ký hiệu: ✅ được phép · ❌ không được phép · ⚠️ được phép ở mức giới hạn
 
+> **Đã chốt (2026-08-20):** ô "Tạo phác đồ" của `caregiver` là ❌ **có chủ đích** — chỉ bác sĩ mới được tạo và duyệt phác đồ, kể cả khi người thân có toa giấy trong tay. Phác đồ là dữ liệu lâm sàng; để người không có chuyên môn nhập vào sẽ phá vỡ nguyên tắc Human-in-the-loop (ADR-0010) và mở thêm rủi ro kiểm soát danh mục thuốc (FB-14). Hệ quả là sản phẩm có cold-start với người thân — cách xử lý ở phía thông điệp sản phẩm xem [`product-vision.md`](./product-vision.md) §2.1. **Không sửa ô này thành ✅ nếu chưa có quyết định mới của PM.**
+
 ## Điều KHÔNG vai trò nào được làm
 
 Áp dụng cho **mọi** role, kể cả `admin` — đây là ràng buộc an toàn của sản phẩm (xem `product-vision.md` §4 Out of scope):

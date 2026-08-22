@@ -37,6 +37,9 @@ def _item(**overrides):
         "ingredients": [],
         "mapping_status": None,
         "mappings": [],
+        # THEM 2026-08-21 (FB-14) - mac dinh CANONICAL, phan biet voi thuoc
+        # duyet qua drug_request.
+        "source": "CANONICAL",
     }
     data.update(overrides)
     return data

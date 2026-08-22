@@ -4,7 +4,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from backend.db.models import Drug, DrugChunk, DrugIdMap, DrugProduct, DrugProductIngredient, Ingredient
+from backend.db.models import (
+    Drug,
+    DrugChunk,
+    DrugIdMap,
+    DrugProduct,
+    DrugProductIngredient,
+    DrugRequest,
+    Ingredient,
+)
 from backend.models.admin_drug_schemas import AdminDrugCreateRequest, AdminDrugUpdateRequest, MappingStatus
 from backend.services.admin_drugs import (
     create_admin_drug,
@@ -22,6 +30,9 @@ TABLES = (
     DrugProductIngredient.__table__,
     Drug.__table__,
     DrugChunk.__table__,
+    # THEM 2026-08-21 (FB-14): list_admin_drugs/get_admin_drug doc them bang
+    # nay de noi cac thuoc bac si xin bo sung da duoc duyet vao man hinh.
+    DrugRequest.__table__,
 )
 
 

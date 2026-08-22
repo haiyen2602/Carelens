@@ -358,6 +358,23 @@ class Settings(BaseSettings):
             )
         return v
 
+    # Web Push (VAPID) - nhac gio uong thuoc toi duoc benh nhan ngay CA KHI
+    # da dong han tab/trinh duyet, thu ma co che poll o client khong lam duoc
+    # (xem backend/services/dose_push_reminder.py). Sinh 1 lan bang `vapid --gen`
+    # hoac py_vapid - la chuan mo, KHONG can dang ky dich vu ben thu 3 nao.
+    #
+    # CO Y de default RONG va KHONG fail-closed, khac han internal_auth_secret/
+    # jwt_secret o tren: thieu 2 secret kia la LO HONG BAO MAT (phai chan app
+    # khoi dong), con thieu VAPID chi la KHONG CO TINH NANG push - app van
+    # chay dung, nhac o client van hoat dong. Bat buoc cau hinh se lam vo moi
+    # truong local cua ca nhom chi vi 1 tinh nang phu.
+    vapid_public_key: str = Field(default="", description="Khoa cong khai VAPID (base64url). Rong = tat push.")
+    vapid_private_key: str = Field(default="", description="Khoa rieng VAPID (base64url) - KHONG commit.")
+    vapid_subject: str = Field(
+        default="mailto:capymedi@example.com",
+        description="Lien he chu so huu theo chuan VAPID - mailto: hoac https:",
+    )
+
     # Rate limiter (vong 2, chatbot-rag-design.md muc 12.4) - theo patient_id,
     # KHONG theo IP (nhieu benh nhan co the chung mang nha/benh vien). [CAN
     # CHOT - thuc nghiem] 2 gia tri duoi la PLACEHOLDER dua tren co so chi phi
@@ -368,6 +385,21 @@ class Settings(BaseSettings):
         default=20, description="[CAN CHOT] so request toi da/patient_id trong 1 window"
     )
     rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit (giay)")
+
+    # BUILD-29: separate, tighter limiter for POST /agent/v2/feedback (a
+    # patient reporting a bad reply) -- reuses the same SlidingWindowRateLimiter
+    # class as the chat rate limiter above (backend/api/rate_limit.py) but its
+    # own instance/threshold, since "how many chat messages/minute" and "how
+    # many issue reports/minute" are unrelated usage patterns that should not
+    # share one budget. [CHUA CHOT] placeholder values, same caveat as the
+    # chat rate limiter above -- generous enough that a genuine double-click
+    # or a handful of real reports in one session never gets falsely limited.
+    agent_feedback_rate_limit_max_requests: int = Field(
+        default=10, description="[CHUA CHOT] so feedback report toi da/actor trong 1 window"
+    )
+    agent_feedback_rate_limit_window_seconds: float = Field(
+        default=300.0, description="Do dai window rate limit cho feedback report (giay)"
+    )
 
     # TTL cho pending_drug_confirmation (vong 2, chatbot-rag-design.md muc
     # 11.3) - THEM 2026-08-09, phat hien qua review: benh nhan bo do 1 cau
