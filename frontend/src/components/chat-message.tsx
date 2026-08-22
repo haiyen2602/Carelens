@@ -3,9 +3,23 @@
 // Mau/kich thuoc lay nguyen tu ban thiet ke.
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import type { ChatMessage as ChatMessageT } from "@/types/chat";
+import { ReportMessageDialog } from "@/components/report-message-dialog";
+import type { StoredChatMessage } from "@/lib/chat-history";
 
-export function ChatMessage({ message, at }: { message: ChatMessageT; at?: string }) {
+export function ChatMessage({
+  message,
+  at,
+  conversationId,
+  accessToken,
+}: {
+  message: StoredChatMessage;
+  at?: string;
+  // BUILD-29: chi can khi message.role === "assistant" (nut bao cao chi
+  // hien voi assistant) - optional de khong bat buoc moi noi dang dung
+  // component nay phai truyen them 2 prop moi.
+  conversationId?: string;
+  accessToken?: string | null;
+}) {
   const isUser = message.role === "user";
 
   return (
@@ -21,6 +35,13 @@ export function ChatMessage({ message, at }: { message: ChatMessageT; at?: strin
         <MarkdownRenderer content={message.content} />
       </div>
       {at && <p className="font-mono m-0 mt-1 px-1 text-[10px] text-[#62708A]">{at}</p>}
+      {!isUser && conversationId && (
+        <ReportMessageDialog
+          conversationId={conversationId}
+          message={message}
+          accessToken={accessToken}
+        />
+      )}
     </div>
   );
 }
