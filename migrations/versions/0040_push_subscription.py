@@ -23,6 +23,25 @@ dai nhat/moi merge gan day nhat) thay vi doi lai 0038_drug_request.py hay
 0039 - cung nguyen tac da dung moi lan truoc: chuoi nao da co migration khac
 xay len no thi giu nguyen, file con lai doi so.
 
+LAN 4 (2026-08-22, PR #96 "fix/duplicate-migration-0038-push-subscription"):
+mot nhanh khac, duoc tao TU TRUOC khi file nay doi thanh "0040" (van con
+thay ten cu la "0038_push_subscription.py" tren nhanh do), doc lap phat hien
+DUNG mot loi trung "0038" nay va tu doi thanh "0041_push_subscription.py"
+(revises "0039") -- nhung vi nhanh do khong pull main moi truoc khi lam, no
+khong biet file nay DA duoc doi thanh "0040" roi. Khi PR #96 merge vao main
+(sau PR #95/BUILD-30, ma cung vua chiem "0041" cho agent_activity_snapshot.py
+- revises "0040"), git khong nhan ra 2 lan doi ten tu cung 1 file goc la
+trung nhau -- ket qua la CA "0040_push_subscription.py" (file nay) VA mot
+"0041_push_subscription.py" moi (noi dung upgrade()/downgrade() giong het
+file nay) cung ton tai tren main, VA ca hai deu tinh co trung id "0041" voi
+agent_activity_snapshot.py. `alembic heads` bao "Revision 0041 is present
+more than once" va liet ke sai ca "0040" nhu 1 head (DAG bi hong boi ID
+trung). Da xoa han "0041_push_subscription.py" (khong doi so, vi day la ban
+sao 100% cua chinh file nay, khong phai 1 migration that su khac) - file nay
+("0040") tiep tuc la ban duy nhat cua bang push_subscription, va
+"0041_agent_activity_snapshot.py" (revises "0040") tiep tuc giu nguyen "0041"
+nhu thiet ke ban dau cua BUILD-30.
+
 Revision ID: 0040
 Revises: 0039
 Create Date: 2026-08-20
