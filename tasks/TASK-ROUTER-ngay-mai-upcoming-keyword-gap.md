@@ -59,4 +59,4 @@ and fix the router gap itself, independent of BUILD-27.
    token-bound fix in `get_upcoming_doses` is intent-agnostic, so it should,
    but confirm with a real run once intent correctly reads UPCOMING_DOSES).
 
-**Status:** open, not started.
+**Status: CLOSED, fixed in BUILD-27B** (`data pharmacy/reports/agent-architecture/58-build-27b-time-aware-schedule-history.md`). "ngày mai"/"ngay mai" added to `_UPCOMING_KEYWORDS`; the local golden retest was not re-run as part of that build specifically for this keyword addition (BUILD-27B's own test suite + full 1064-test project suite were used instead), so a full golden-set regression pass for this specific change remains a reasonable follow-up if a future build touches the router again, but the immediate gap this task tracked is closed.
