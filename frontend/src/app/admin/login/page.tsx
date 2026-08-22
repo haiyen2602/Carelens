@@ -148,7 +148,7 @@ export default function AdminLoginPage() {
         </section>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          <a href="/" className="font-medium text-primary hover:underline">
+          <a href="/login" className="font-medium text-primary hover:underline">
             ← Quay lại trang đăng nhập chính
           </a>
         </p>

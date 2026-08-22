@@ -74,7 +74,7 @@ export default function GoogleCallbackPage() {
         {error ? (
           <>
             <p className="text-sm font-medium text-destructive">{error}</p>
-            <a href="/" className="text-sm font-semibold text-primary hover:underline">
+            <a href="/login" className="text-sm font-semibold text-primary hover:underline">
               Quay lại trang đăng nhập
             </a>
           </>

@@ -105,7 +105,7 @@ export default function VerifyEmailPage() {
         }
 
         setTimeout(() => {
-          router.push("/");
+          router.push("/login");
         }, 3000);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Xác minh email thất bại.");
@@ -153,7 +153,7 @@ export default function VerifyEmailPage() {
               </div>
               <div className="pt-2">
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   Đăng nhập ngay

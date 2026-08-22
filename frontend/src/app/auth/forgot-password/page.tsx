@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="pt-2">
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-foreground hover:bg-muted"
                 >
                   <ArrowLeft className="h-4 w-4" /> Quay lại Đăng nhập
@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
 
               <div className="text-center pt-2">
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Quay lại đăng nhập

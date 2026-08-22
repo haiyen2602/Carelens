@@ -9,7 +9,7 @@ const BENEFITS = ["Nhắc thuốc đúng giờ", "Theo dõi tuân thủ", "Ngư�
 
 export function HeroPanel() {
   return (
-    <aside className="auth-hero relative hidden items-center justify-center overflow-hidden lg:flex">
+    <aside className="hero-gradient relative hidden items-center justify-center overflow-hidden lg:flex">
       <div className="relative flex w-[min(100%,820px)] -translate-y-10 flex-col items-center px-10 py-10">
         {/* Quang sang mem phia sau mascot - dinh vi theo hero container, khong
             phai theo viewport (tranh vo khi doi tu 1366px sang 1920px). */}

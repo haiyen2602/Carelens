@@ -220,10 +220,11 @@
 }
 
 /*
- * Nen hero cua trang dang nhap (app/page.tsx): hai vung sang mem chong len
- * mot lop gradient xanh nhat. Tach ra CSS de co bien the dark mode rieng.
+ * Nen hero dung chung cho trang dang nhap (app/login/page.tsx) va landing
+ * (components/marketing/hero.tsx): hai vung sang mem chong len mot lop
+ * gradient xanh nhat. Tach ra CSS de co bien the dark mode rieng.
  */
-.auth-hero {
+.hero-gradient {
   background:
     radial-gradient(circle at 65% 40%, oklch(0.72 0.13 235 / 0.18), transparent 38%),
     radial-gradient(circle at 85% 78%, oklch(0.78 0.1 185 / 0.14), transparent 32%),
@@ -235,7 +236,7 @@
     );
 }
 
-.dark .auth-hero {
+.dark .hero-gradient {
   background:
     radial-gradient(circle at 65% 40%, oklch(0.55 0.12 245 / 0.22), transparent 40%),
     radial-gradient(circle at 85% 78%, oklch(0.55 0.09 195 / 0.16), transparent 32%),

@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   FileClock,
-  Link2,
   Loader2,
   PillBottle,
   ShieldAlert,
@@ -14,8 +13,6 @@ import {
 import { useEffect, useState } from "react";
 import { MEDICINES } from "@/lib/admin-mock";
 import { listAccounts, type AccountRecord } from "@/lib/accounts";
-import { listCaregiverLinksForPatient } from "@/lib/caregivers";
-import { listReportingPatients } from "@/lib/reporting";
 import { listSystemAuditLogs, type SystemAuditLogEntry } from "@/lib/audit";
 import { useAuth } from "@/lib/auth";
 
@@ -63,8 +60,6 @@ function formatDateTime(isoString: string) {
 export default function AdminDashboard() {
   const { accessToken } = useAuth();
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
-  const [linkCount, setLinkCount] = useState(0);
-  const [patientCount, setPatientCount] = useState(0);
   const [recentAuditLogs, setRecentAuditLogs] = useState<SystemAuditLogEntry[]>([]);
   const [auditTotalCount, setAuditTotalCount] = useState(0);
   const [auditLoading, setAuditLoading] = useState(true);
@@ -72,15 +67,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     listAccounts()
       .then(setAccounts)
-      .catch(() => undefined);
-    listReportingPatients()
-      .then(async (patients) => {
-        setPatientCount(patients.length);
-        const lists = await Promise.all(
-          patients.map((p) => listCaregiverLinksForPatient(p.id).catch(() => [])),
-        );
-        setLinkCount(lists.reduce((sum, l) => sum + l.length, 0));
-      })
       .catch(() => undefined);
 
     listSystemAuditLogs({ pageSize: 5, accessToken })
@@ -141,15 +127,6 @@ export default function AdminDashboard() {
       icon: Users2,
       tone: "bg-primary/10 text-primary",
       link: { to: "/admin/accounts", label: "Quản lý tài khoản" },
-    },
-    {
-      label: "Liên kết người thân đang hoạt động",
-      value: linkCount,
-      note: "Bệnh nhân ↔ người thân",
-      noteTone: "text-muted-foreground",
-      icon: Link2,
-      tone: "bg-success/15 text-success",
-      link: { to: "/admin/links", label: "Xem liên kết" },
     },
     {
       label: "Dữ liệu thuốc (RAG)",
@@ -358,20 +335,6 @@ export default function AdminDashboard() {
               className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
             >
               Kiểm tra <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Link2 className="h-4 w-4 text-primary" /> {patientCount} bệnh nhân trong hệ thống
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Xem liên kết người thân của từng bệnh nhân.
-            </p>
-            <Link
-              href="/admin/links"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-            >
-              Xem chi tiết <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
         </div>

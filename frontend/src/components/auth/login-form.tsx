@@ -39,7 +39,7 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <section className="w-full max-w-[440px]">
+    <section className="mx-auto w-full max-w-[440px]">
       <Image
         src="/logo-capymedi-v2.png"
         alt="CapyMedi"
