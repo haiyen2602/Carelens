@@ -310,3 +310,54 @@ async def test_list_for_unknown_caregiver_returns_empty(client):
     )
     assert response.status_code == 200
     assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_sent_invites_shows_own_pending_invite_with_patient_name(client):
+    """GET /caregiver-links/sent (THEM 2026-08-22) - chieu nguoc voi GET
+    /caregiver-links/pending: loi moi CHINH nguoi goi da gui (POST
+    .../invites), con "pending", danh cho FE hien "dang doi duyet"
+    (frontend/src/app/patient/family/page.tsx)."""
+    patient_id = _seed_patient()
+    try:
+        invite = await client.post(
+            "/api/v1/caregiver-links/invites",
+            json={"patient_id": patient_id, "relationship": "Con gái"},
+        )
+        assert invite.status_code == 201
+        assert invite.json()["status"] == "pending"
+
+        response = await client.get("/api/v1/caregiver-links/sent")
+        assert response.status_code == 200
+        rows = response.json()
+        assert len(rows) == 1
+        assert rows[0]["patient_id"] == patient_id
+        assert rows[0]["patient_name"] == "Bệnh nhân caregiver test"
+        assert rows[0]["relationship"] == "Con gái"
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_sent_invites_excludes_others_and_accepted_links(client, admin_token):
+    """Chi tra ve loi moi CUA CHINH nguoi goi (khong phai cua account khac)
+    VA con "pending" - link da "accepted" (vd admin tao thang) khong tinh la
+    "dang cho duyet" nua."""
+    patient_id = _seed_patient()
+    try:
+        create = await client.post(
+            "/api/v1/caregiver-links",
+            json={
+                "caregiver_account_id": "someone-else-entirely",
+                "patient_id": patient_id,
+                "relationship": "Vợ",
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert create.status_code == 201
+
+        response = await client.get("/api/v1/caregiver-links/sent")
+        assert response.status_code == 200
+        assert response.json() == []
+    finally:
+        _cleanup(patient_id)

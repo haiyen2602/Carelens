@@ -1,0 +1,15 @@
+{
+  "name": "CapyMedi — Nhắc uống thuốc",
+  "short_name": "CapyMedi",
+  "description": "Nhắc uống thuốc đúng giờ, có bác sĩ và người thân đồng hành.",
+  "start_url": "/patient",
+  "display": "standalone",
+  "background_color": "#F1F1F6",
+  "theme_color": "#16386E",
+  "lang": "vi",
+  "icons": [
+    { "src": "/favicon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/logo-capymedi-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

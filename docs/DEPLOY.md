@@ -96,6 +96,34 @@ Env lưu trên Railway, **không** đọc từ `.env` khi deploy. Xem bằng `ra
 | `DATABASE_URL` | Reference var trỏ sang service `VMEC-04/DB` |
 | `CORS_ORIGINS` | Chỉ còn `https://vmec-04fe-production.up.railway.app`. Phân tách bằng dấu phẩy, **so khớp chính xác** |
 | `APP_ENV` / `APP_HOST` / `LOG_LEVEL` / `EMBEDDING_MODEL` | Cấu hình app |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push (nhắc uống thuốc khi app đã đóng). **Không bắt buộc** — xem mục dưới |
+
+#### Web Push (VAPID)
+
+Nhắc giờ uống thuốc có 2 kênh: banner trong app (chạy ở client, cần tab mở) và
+**Web Push** (backend chủ động đẩy, tới được cả khi bệnh nhân đã đóng hẳn app).
+Kênh thứ 2 cần cặp khoá VAPID.
+
+Bỏ trống 3 biến này thì **push tự tắt, app vẫn chạy bình thường** — cố ý không
+fail-closed như `INTERNAL_AUTH_SECRET`/`JWT_SECRET`, vì thiếu VAPID chỉ là mất
+một tính năng phụ chứ không phải lỗ hổng bảo mật (xem `backend/services/push.py`).
+
+Sinh cặp khoá (1 lần, không cần đăng ký dịch vụ bên thứ 3 — VAPID là chuẩn mở):
+
+```bash
+.venv/Scripts/python -c "from py_vapid import Vapid01; from cryptography.hazmat.primitives import serialization as sz; import base64; v=Vapid01(); v.generate_keys(); b=lambda r: base64.urlsafe_b64encode(r).rstrip(b'=').decode(); print('VAPID_PRIVATE_KEY='+b(v.private_key.private_numbers().private_value.to_bytes(32,'big'))); print('VAPID_PUBLIC_KEY='+b(v.public_key.public_bytes(sz.Encoding.X962, sz.PublicFormat.UncompressedPoint)))"
+```
+
+**Mỗi môi trường 1 cặp khoá riêng** (local và production không dùng chung). Đổi
+khoá thì mọi `push_subscription` cũ thành vô hiệu — bệnh nhân phải bật lại thông
+báo; backend tự dọn dòng chết khi dịch vụ đẩy trả 404/410.
+
+`VAPID_PUBLIC_KEY` phát ra cho frontend qua `GET /api/v1/push/vapid-public-key`,
+**không** phải biến `NEXT_PUBLIC_*` — nên đổi khoá không cần build lại frontend.
+
+**iOS**: bệnh nhân phải "Thêm vào Màn hình chính" (cài như PWA) và dùng iOS
+≥ 16.4 thì Safari mới nhận push; tab Safari thường không nhận. Android/desktop
+không cần bước này.
 
 Hai origin `*.vercel.app` (backend cũ project `capymedi` và frontend cũ `capymedi-web`) đã được
 **xoá hẳn** khỏi `CORS_ORIGINS` ngày 2026-08-13 — dự án không còn deploy trên Vercel. Frontend

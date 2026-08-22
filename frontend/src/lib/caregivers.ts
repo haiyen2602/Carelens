@@ -44,6 +44,22 @@ type PendingInviteApi = {
   created_at: string;
 };
 
+export type SentInvite = {
+  id: string;
+  patientId: string;
+  patientName: string;
+  relationship: string;
+  createdAt: string;
+};
+
+type SentInviteApi = {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  relationship: string;
+  created_at: string;
+};
+
 export type MonitoredPatient = {
   linkId: string;
   patientId: string;
@@ -100,6 +116,16 @@ function toPendingInvite(p: PendingInviteApi): PendingInvite {
     inviterName: p.inviter_name,
     relationship: p.relationship,
     createdAt: p.created_at,
+  };
+}
+
+function toSentInvite(s: SentInviteApi): SentInvite {
+  return {
+    id: s.id,
+    patientId: s.patient_id,
+    patientName: s.patient_name,
+    relationship: s.relationship,
+    createdAt: s.created_at,
   };
 }
 
@@ -212,6 +238,18 @@ export async function listPendingInvitesForMe(accessToken: string): Promise<Pend
   if (!response.ok) return loi(response);
   const items: PendingInviteApi[] = await response.json();
   return items.map(toPendingInvite);
+}
+
+/** Loi moi CHINH nguoi dang dang nhap da gui (voi tu cach nguoi se theo doi),
+ * con dang cho nguoi kia duyet - chieu NGUOC voi listPendingInvitesForMe()
+ * (do la loi moi nguoi khac gui toi minh). */
+export async function listSentInvites(accessToken: string): Promise<SentInvite[]> {
+  const response = await fetch(`${API_BASE}/api/v1/caregiver-links/sent`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) return loi(response);
+  const items: SentInviteApi[] = await response.json();
+  return items.map(toSentInvite);
 }
 
 export async function acceptCaregiverInvite(

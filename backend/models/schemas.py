@@ -831,6 +831,20 @@ class PendingInviteOut(BaseModel):
     created_at: str
 
 
+class SentInviteOut(BaseModel):
+    """1 phan tu trong GET /api/v1/caregiver-links/sent - loi moi CHINH nguoi
+    dang dang nhap da gui (voi tu cach caregiver_account_id qua POST
+    .../invites), con "pending". Chieu NGUOC voi PendingInviteOut o tren (do
+    la loi moi NGUOI KHAC gui toi minh). `patient_name` lay tu
+    Patient.full_name qua join, cung ly do voi caregiver_name/inviter_name."""
+
+    id: str
+    patient_id: str
+    patient_name: str
+    relationship: str
+    created_at: str
+
+
 class NudgeCreateRequest(BaseModel):
     """POST /api/v1/nudges - nguoi than dang dang nhap gui 1 loi nhac nhe cho
     `patient_id` ho dang theo doi (accepted). `caregiver_account_id` KHONG
@@ -869,6 +883,27 @@ class HealthLogCreateResponse(BaseModel):
     escalation_id: str | None = Field(
         default=None, description="None neu level=low (khong tao Escalation)"
     )
+
+
+class PushSubscribeKeys(BaseModel):
+    """2 khoa trinh duyet cap de MA HOA payload push - khong co chung thi
+    dich vu day chi chuyen duoc goi tin rong."""
+
+    p256dh: str = Field(..., min_length=1)
+    auth: str = Field(..., min_length=1)
+
+
+class PushSubscribeRequest(BaseModel):
+    """POST /api/v1/push/subscribe - shape khop nguyen ven doi tuong
+    PushSubscription.toJSON() cua trinh duyet, de frontend gui thang khong
+    phai nan lai. `patient_id` KHONG nam trong body - lay tu JWT."""
+
+    endpoint: str = Field(..., min_length=1)
+    keys: PushSubscribeKeys
+
+
+class PushVapidKeyResponse(BaseModel):
+    public_key: str = Field(default="", description="Rong = chua cau hinh VAPID, push tat")
 
 
 class OpenEscalationBrief(BaseModel):

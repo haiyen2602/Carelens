@@ -17,16 +17,14 @@ khuon du lieu."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, get_current_user
 from backend.db.base import get_db
-from backend.db.models import Escalation
 from backend.models.schemas import HealthLogCreateRequest, HealthLogCreateResponse
+from backend.services.caregiver_escalation import tao_canh_bao_cho_nguoi_than
 
 health_log_router = APIRouter()
 
@@ -51,18 +49,13 @@ def create_health_log(
         # khop toast hien tai o health/page.tsx: "Da ghi nhat ky, theo doi 48h".
         return HealthLogCreateResponse(escalation_id=None)
 
-    row = Escalation(
+    row = tao_canh_bao_cho_nguoi_than(
+        db,
         patient_id=current_user.patient_id,
-        dose_event_id=None,
         severity=severity,
         trigger="patient_reported",
         reason=body.text.strip() or "Không mô tả chi tiết",
-        status="OPEN",
-        notified=["caregiver"],
-        reminder_count=1,
-        last_reminder_at=datetime.now(UTC),
     )
-    db.add(row)
     db.commit()
     db.refresh(row)
 
