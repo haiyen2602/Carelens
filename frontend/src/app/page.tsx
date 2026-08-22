@@ -58,7 +58,7 @@ function LoginPageContent() {
       if (user.role === "doctor") {
         router.replace("/doctor");
       } else if (user.role === "patient") {
-        router.replace(user.profile_completed === false ? "/onboarding/profile" : "/patient");
+        router.replace("/patient");
       } else if (user.role === "admin") {
         router.replace("/admin");
       }
@@ -83,11 +83,7 @@ function LoginPageContent() {
         // useAuth().user (xem lib/auth.tsx).
         protoLogin(u.role, u.full_name);
         pushActivity("Đăng nhập thành công", `Chào mừng trở lại, ${u.full_name}.`);
-        if (u.role === "patient" && u.profile_completed === false) {
-          router.push("/onboarding/profile");
-        } else {
-          router.push(u.role === "doctor" ? "/doctor" : "/patient");
-        }
+        router.push(u.role === "doctor" ? "/doctor" : "/patient");
       } else if (u.role === "admin") {
         router.push("/admin");
       } else {

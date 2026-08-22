@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.account_routes import account_router
 from backend.api.admin_drug_routes import admin_drug_router
 from backend.api.agent_v2_routes import agent_v2_router
+from backend.api.audit_routes import audit_router
 from backend.api.auth_routes import auth_router
 from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
@@ -113,6 +114,7 @@ app.include_router(router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(account_router, prefix="/api/v1")
 app.include_router(admin_drug_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(agent_v2_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
