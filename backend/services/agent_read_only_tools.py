@@ -33,6 +33,7 @@ from backend.services.scheduling.write_path import DEFAULT_TIMEZONE
 # unbounded/near-unbounded date span serialized wholesale into the model
 # prompt). No feature this build implements asks for more than ~1 week.
 _MAX_RANGE_SPAN_DAYS = 31
+_DISPLAY_TIMEZONE = ZoneInfo(DEFAULT_TIMEZONE)
 
 
 class AgentReadOnlyDomainTools:
@@ -96,8 +97,14 @@ class AgentReadOnlyDomainTools:
         }
 
     def get_today_doses(self, *, patient_id: str) -> dict[str, Any]:
-        today = self._as_utc(self._now()).date()
-        return {"items": [self._dose_group(group) for group in self._groups(patient_id) if group.scheduled_at.date() == today]}
+        today = self._as_local(self._now()).date()
+        return {
+            "items": [
+                self._dose_group(group)
+                for group in self._groups(patient_id)
+                if self._as_local(group.scheduled_at).date() == today
+            ]
+        }
 
     def get_upcoming_doses(self, *, patient_id: str) -> dict[str, Any]:
         # BUILD-27: bounded to a forward window (see
@@ -112,16 +119,17 @@ class AgentReadOnlyDomainTools:
         # remaining prescription. See report
         # 57-build-27-budget-exceeded-upcoming-doses.md.
         now = self._as_utc(self._now())
-        # Calendar-date bound (like get_today_doses), not a raw now+N hours
+        # Local-calendar-date bound (like get_today_doses), not a raw now+N hours
         # cutoff -- that would clip "tomorrow" itself whenever "now" is late
         # in the day. This always fully covers today's remainder through
         # window_days calendar days ahead, regardless of what time it is now.
-        horizon_date = now.date() + timedelta(days=self._upcoming_window_days)
+        horizon_date = self._as_local(now).date() + timedelta(days=self._upcoming_window_days)
         return {
             "items": [
                 self._dose_group(group)
                 for group in self._groups(patient_id)
-                if group.scheduled_at >= now and group.scheduled_at.date() <= horizon_date
+                if self._as_utc(group.scheduled_at) >= now
+                and self._as_local(group.scheduled_at).date() <= horizon_date
             ]
         }
 
@@ -133,25 +141,20 @@ class AgentReadOnlyDomainTools:
         ("DATE_RANGE_NOT_RESOLVED")`` in ``backend/agents/v2/tools.py``) --
         never an arbitrary model-supplied span.
 
-        Buckets by the patient's LOCAL calendar date, not
-        ``scheduled_at.date()`` (a UTC date) the way get_today_doses/
-        get_upcoming_doses do -- that shortcut mis-buckets any dose between
-        00:00-06:59 Asia/Ho_Chi_Minh time into the *previous* UTC calendar
-        day. Not fixed here for those two (pre-existing, out of this
-        build's scope, filed separately), but a new method has no excuse to
-        repeat it, especially for a feature centered on "đúng calendar
-        date" (BUILD-27B item 4).
+        Buckets by the patient's LOCAL calendar date. BUILD-27C applies the
+        same rule to ``get_today_doses`` and ``get_upcoming_doses`` so a dose
+        between 00:00-06:59 Asia/Ho_Chi_Minh is never assigned to the prior
+        UTC calendar date in a patient-facing response.
         """
         if end_date < start_date:
             raise ValueError("end_date must be on or after start_date")
         if (end_date - start_date).days + 1 > _MAX_RANGE_SPAN_DAYS:
             raise ValueError("date range exceeds the maximum allowed span")
-        tz = ZoneInfo(DEFAULT_TIMEZONE)
         return {
             "items": [
                 self._dose_group(group)
                 for group in self._groups(patient_id)
-                if start_date <= group.scheduled_at.astimezone(tz).date() <= end_date
+                if start_date <= self._as_local(group.scheduled_at).date() <= end_date
             ]
         }
 
@@ -166,14 +169,17 @@ class AgentReadOnlyDomainTools:
     def _groups(self, patient_id: str):
         return list_v2_dose_groups(self._db, patient_id=patient_id)
 
-    @staticmethod
-    def _dose_group(group: Any) -> dict[str, Any]:
+    @classmethod
+    def _dose_group(cls, group: Any) -> dict[str, Any]:
         return {
             "id": group.id,
             "prescription_id": group.prescription_id,
-            "scheduled_at": group.scheduled_at.isoformat(),
-            "window_start": group.window_start.isoformat(),
-            "window_end": group.window_end.isoformat(),
+            # Dose times are presentation data for Agent V2. Persisted values
+            # remain UTC; this projection is the sole UTC -> local conversion
+            # boundary for every user-facing dose tool response.
+            "scheduled_at": cls._as_local(group.scheduled_at).isoformat(),
+            "window_start": cls._as_local(group.window_start).isoformat(),
+            "window_end": cls._as_local(group.window_end).isoformat(),
             "status": group.status,
             "expected_items": group.expected_items,
             # BUILD-18B defect 2: the real per-item occurrence ids Safety
@@ -184,3 +190,7 @@ class AgentReadOnlyDomainTools:
     @staticmethod
     def _as_utc(value: datetime) -> datetime:
         return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+    @classmethod
+    def _as_local(cls, value: datetime) -> datetime:
+        return cls._as_utc(value).astimezone(_DISPLAY_TIMEZONE)

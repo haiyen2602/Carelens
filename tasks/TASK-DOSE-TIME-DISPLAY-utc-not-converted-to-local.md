@@ -1,5 +1,7 @@
 # TASK: dose reply times shown in raw UTC, not patient-local (VN) time
 
+**Designated as BUILD-27C** (2026-08-22, per explicit instruction during BUILD-27B's production deploy verification: "Không sửa UTC display bug trong build này. Ghi nó thành BUILD-27C follow-up.") — this is the next queued build in the sequence, not fixed as part of BUILD-27B.
+
 **Found during:** BUILD-27B (time-aware medication schedule/history) local
 E2E, real `/api/chat` calls. Pre-existing since at least BUILD-27 (its own
 own report already shows the same artifact -- "Hôm nay bạn có 3 lần dùng
