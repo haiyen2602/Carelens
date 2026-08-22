@@ -101,7 +101,7 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!user || user.role !== "doctor") {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [loading, user, router]);
 
@@ -343,7 +343,7 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                     onClick={async () => {
                       await authLogout();
                       protoLogout();
-                      router.push("/");
+                      router.push("/login");
                     }}
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-destructive hover:bg-accent"
                   >

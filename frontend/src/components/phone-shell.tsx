@@ -30,7 +30,7 @@ export function PhoneShell({
     setMenuOpen(false);
     await authLogout();
     protoLogout();
-    router.push("/");
+    router.push("/login");
   };
 
   return (

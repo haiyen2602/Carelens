@@ -48,7 +48,7 @@ export default function OnboardingProfilePage() {
   useEffect(() => {
     if (loading) return;
     if (!user || user.role !== "patient") {
-      router.replace("/");
+      router.replace("/login");
       return;
     }
     if (user.profile_completed) {

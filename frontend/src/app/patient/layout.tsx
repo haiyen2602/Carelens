@@ -13,7 +13,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!user || user.role !== "patient") {
-      router.replace("/");
+      router.replace("/login");
       return;
     }
   }, [loading, user, router]);

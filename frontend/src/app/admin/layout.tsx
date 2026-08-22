@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Inbox,
   Home,
-  Link2,
   LogOut,
   Menu,
   PillBottle,
@@ -125,7 +124,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
             },
           ],
         },
-        { to: "/admin/links", label: "Liên kết bệnh nhân · bác sĩ · người thân", icon: Link2 },
         { to: "/admin/medicines", label: "Dữ liệu thuốc (RAG)", icon: PillBottle },
         { to: "/admin/drug-requests", label: "Yêu cầu bổ sung thuốc", icon: Inbox },
         { to: "/admin/rag", label: "Giám sát RAG & AI", icon: Activity },
@@ -159,7 +157,6 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const titleMap: Record<string, string> = {
     "/admin": "Trang chủ",
     "/admin/accounts": "Quản lý tài khoản",
-    "/admin/links": "Liên kết bệnh nhân · bác sĩ · người thân",
     "/admin/medicines": "Dữ liệu thuốc (RAG)",
     "/admin/drug-requests": "Yêu cầu bổ sung thuốc",
     "/admin/audit": "Log hệ thống",

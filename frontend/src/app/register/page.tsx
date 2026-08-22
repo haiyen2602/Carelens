@@ -189,7 +189,7 @@ export default function RegisterPage() {
 
               <div className="pt-2">
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   Quay lại trang Đăng nhập
@@ -325,7 +325,7 @@ export default function RegisterPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Đã có tài khoản?{" "}
-                <Link href="/" className="font-semibold text-primary hover:underline">
+                <Link href="/login" className="font-semibold text-primary hover:underline">
                   Đăng nhập ngay
                 </Link>
               </p>

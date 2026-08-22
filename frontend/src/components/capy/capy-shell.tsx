@@ -224,7 +224,7 @@ export function CapyShell({ children }: { children: ReactNode }) {
     setSheetOpen(false);
     await authLogout();
     protoLogout();
-    router.push("/");
+    router.push("/login");
   };
 
   const ten = user?.full_name ?? "";
