@@ -3,20 +3,28 @@ thuoc (THEM 2026-08-20). Xem ghi chu day du trong backend/db/models.py::
 PushSubscription / PushReminderSent (vi sao endpoint UNIQUE, vi sao khoa
 duy nhat cua push_reminder_sent la khung gio chu khong phai dose_event_id).
 
-LUU Y ve revision chain (doi so 0031 -> 0032 -> 0038, 2026-08-22): ban dau
-file nay la "0031" vi luc viet head la 0030. Trong luc do main merge
+LUU Y ve revision chain (doi so 0031 -> 0032 -> 0038 -> 0040, 2026-08-22):
+ban dau file nay la "0031" vi luc viet head la 0030. Trong luc do main merge
 0031_remove_better_auth_and_add_supabase_uid.py CUNG lay so 0031 -> 2 file
 trung revision id, alembic bao "Revision 0031 is present more than once" va
 gay 2 head, hong ca chuoi migration. Doi thanh "0032" (xep sau 0031) de vá lan
 1. Sau do main lai merge THEM 0032_rag_corpus_recovery.py (cung tu "0032" ->
-lap lai dung y het loi cu). Lan nay doi thanng "0038", xep sau CA chuoi
-0032(rag)..0037(system_audit_logs) cua main - khong doi lai so cua main vi
-chuoi do da co nhieu migration khac xay tren no (0033..0037), doi ca chuoi se
-dung cham nhieu file hon la doi 1 file nay. Cung cach xu ly da lam o
-0017_patient_watch.py/0018_caregiver_link.py.
+lap lai dung y het loi cu). Doi thanh "0038" lan 2, xep sau chuoi 0032(rag)..
+0037(system_audit_logs) cua main luc do.
 
-Revision ID: 0038
-Revises: 0037
+LAN 3 (BUILD-30 prep, 2026-08-22, phat hien khi audit migration truoc khi mo
+PR moi): trong luc file nay dang cho merge, CA
+0038_drug_request.py (PR #89) LAN 0039_agent_feedback_ticket.py (PR #90, da
+chain sau 0038_drug_request.py) deu da merge vao main truoc no - "0038" lai
+trung lan nua voi drug_request.py (`alembic heads` bao chinh xac "Revision
+0038 is present more than once", xac nhan bang cach chay that tren
+origin/main). Doi thanh "0040" (xep sau 0039_agent_feedback_ticket.py, chuoi
+dai nhat/moi merge gan day nhat) thay vi doi lai 0038_drug_request.py hay
+0039 - cung nguyen tac da dung moi lan truoc: chuoi nao da co migration khac
+xay len no thi giu nguyen, file con lai doi so.
+
+Revision ID: 0040
+Revises: 0039
 Create Date: 2026-08-20
 
 """
@@ -24,8 +32,8 @@ Create Date: 2026-08-20
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0038"
-down_revision = "0037"
+revision = "0040"
+down_revision = "0039"
 branch_labels = None
 depends_on = None
 
