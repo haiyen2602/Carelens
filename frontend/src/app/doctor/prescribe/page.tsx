@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
+import { DrugRequestDialog } from "@/components/drug-request-dialog";
 import {
   CAN_NANG_KG,
   CHIEU_CAO_CM,
@@ -68,9 +69,11 @@ const defaultTimes = DEFAULT_TIMES;
 type MedRow = {
   id: string;
   med: string;
-  // Danh tinh that trong danh muc thuoc. Rong khi bac si tu go mot ten khong
-  // co trong danh muc — van ke don duoc, nhung lieu do se khong xac minh duoc
-  // bang anh (khong biet dang bao che), phai xac nhan bang nut bam.
+  // Danh tinh that trong danh muc thuoc. Rong = CHUA chon tu goi y, va don se
+  // khong gui duoc (FB-14: danh muc la allowlist dong, backend tu choi item
+  // khong co drug_id — xem services/prescription/service.py::_chuan_hoa_item).
+  // Go tay vao o ten PHAI xoa drugId, neu khong thi chon Paracetamol roi sua
+  // chu thanh ten khac se gui len drugId cu kem ten moi.
   drugId: string;
   dangThuoc: string;
   dose: string;
@@ -124,6 +127,9 @@ export default function PrescribePage() {
   const [dangLuuHealth, setDangLuuHealth] = useState(false);
   const chieuCao = kiemTraChieuCao(health.heightCm);
   const canNang = kiemTraCanNang(health.weightKg);
+  // Ten thuoc dang xin bo sung; null = dialog dong. Giu ten o day thay vi
+  // mot co boolean de dien san chu bac si vua go, khoi phai go lai.
+  const [xinBoSung, setXinBoSung] = useState<string | null>(null);
 
   useEffect(() => {
     listPatients(undefined, accessToken)
@@ -215,7 +221,12 @@ export default function PrescribePage() {
     setMeds((prev) => (prev.length > 1 ? prev.filter((m) => m.id !== id) : prev));
   };
 
-  const canSubmit = Boolean(patientId) && meds.every((m) => m.med.trim().length > 0) && !dangGui;
+  // FB-14: khong con du "co go chu la duoc". Moi dong PHAI co drugId, tuc la
+  // bac si da chon tu goi y danh muc chu khong phai tu go.
+  const canSubmit =
+    Boolean(patientId) &&
+    meds.every((m) => m.med.trim().length > 0 && Boolean(m.drugId)) &&
+    !dangGui;
 
   const activeMeds = meds.filter((m) => m.med.trim().length > 0);
   const timeline = [
@@ -242,10 +253,12 @@ export default function PrescribePage() {
         patientId,
         note,
         items: meds.map((m) => ({
-          drugId: m.drugId || null,
+          drugId: m.drugId,
           tenThuoc: m.med,
           dangThuoc: m.dangThuoc || null,
-          duongDung: null, // backend tu tra lai tu drugId neu co, xem service.py::_chuan_hoa_item
+          // Backend doc lai ca 4 truong dinh danh tu danh muc theo drugId va bo
+          // qua gia tri gui len - xem service.py::_chuan_hoa_item (FB-14).
+          duongDung: null,
           hamLuong: null,
           lieuDung: m.dose,
           thoiDiemDung: m.meal,
@@ -388,7 +401,11 @@ export default function PrescribePage() {
                     <MedicineCombobox
                       id={`med-${m.id}`}
                       value={m.med}
-                      onChange={(v) => updateMed(m.id, { med: v })}
+                      onChange={(v) =>
+                        // Go tay = huy lua chon cu. Khong xoa drugId o day thi
+                        // ten hien thi va thuoc that su duoc ke se lech nhau.
+                        updateMed(m.id, { med: v, drugId: "", dangThuoc: "" })
+                      }
                       onSelectDrug={(d) =>
                         updateMed(m.id, {
                           med: d.tenThuoc,
@@ -398,7 +415,22 @@ export default function PrescribePage() {
                         })
                       }
                       placeholder="Gõ để tìm thuốc, vd. Amlodipine..."
+                      invalid={m.med.trim().length > 0 && !m.drugId}
                     />
+                    {m.med.trim().length > 0 && !m.drugId && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-destructive">Chọn thuốc từ danh sách gợi ý.</p>
+                        {/* Danh muc dong lai (FB-14) nen phai co duong di tiep,
+                            neu khong bac si ket han voi thuoc ngoai danh muc. */}
+                        <button
+                          type="button"
+                          onClick={() => setXinBoSung(m.med.trim())}
+                          className="text-sm font-medium text-primary underline underline-offset-2"
+                        >
+                          Không tìm thấy? Yêu cầu bổ sung thuốc
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`dose-${m.id}`}>Liều dùng</Label>
@@ -647,6 +679,12 @@ export default function PrescribePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DrugRequestDialog
+        open={xinBoSung !== null}
+        onOpenChange={(open) => setXinBoSung(open ? xinBoSung : null)}
+        tenThuocGoiY={xinBoSung ?? ""}
+      />
     </div>
   );
 }

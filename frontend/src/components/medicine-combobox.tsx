@@ -15,12 +15,16 @@ export function MedicineCombobox({
   onChange,
   onSelectDrug,
   placeholder,
+  invalid = false,
 }: {
   id?: string;
   value: string;
   onChange: (value: string) => void;
   onSelectDrug: (drug: Drug) => void;
   placeholder?: string;
+  // Co chu nhung CHUA chon tu danh muc. FB-14: cai nay chan gui don, nen phai
+  // thay ngay o o nhap chu khong doi den luc bam nut moi bao.
+  invalid?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [matches, setMatches] = useState<Drug[]>([]);
@@ -86,7 +90,10 @@ export function MedicineCombobox({
         placeholder={placeholder}
         autoComplete="off"
         aria-busy={dangTai}
-        className={isExactMatch ? "border-success pr-8" : undefined}
+        aria-invalid={invalid || undefined}
+        className={
+          isExactMatch ? "border-success pr-8" : invalid ? "border-destructive" : undefined
+        }
       />
       {isExactMatch && (
         <Check className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />

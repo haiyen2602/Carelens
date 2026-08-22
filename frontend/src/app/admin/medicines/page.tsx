@@ -199,19 +199,20 @@ export default function MedicinesPage() {
               <th className="px-4 py-3">Dạng bào chế</th>
               <th className="px-4 py-3">Đường dùng</th>
               <th className="px-4 py-3">Trạng thái ánh xạ</th>
+              <th className="px-4 py-3">Nguồn</th>
               <th className="px-4 py-3 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" aria-label="Đang tải" />
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                   Không tìm thấy dữ liệu thuốc phù hợp.
                 </td>
               </tr>
@@ -225,6 +226,17 @@ export default function MedicinesPage() {
                   <td className="px-4 py-3">{drug.dosage_form || "-"}</td>
                   <td className="px-4 py-3">{drug.route || "-"}</td>
                   <td className="px-4 py-3">{drug.mapping_status || "-"}</td>
+                  <td className="px-4 py-3">
+                    {drug.source === "DRUG_REQUEST" ? (
+                      // Danh dau ro: dong nay KHONG den tu artifact Canonical V2,
+                      // chua co provenance va chua co du lieu RAG.
+                      <span className="rounded-md bg-warning/15 px-2 py-1 text-xs font-medium text-warning-foreground">
+                        Bổ sung
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Canonical V2</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Button
                       variant="outline"

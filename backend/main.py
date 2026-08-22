@@ -15,6 +15,7 @@ from backend.api.auth_routes import auth_router
 from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
 from backend.api.dose_routes import dose_router
+from backend.api.drug_request_routes import admin_drug_request_router, drug_request_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.health_log_routes import health_log_router
@@ -116,6 +117,8 @@ app.include_router(router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(account_router, prefix="/api/v1")
 app.include_router(admin_drug_router, prefix="/api/v1")
+app.include_router(drug_request_router, prefix="/api/v1")
+app.include_router(admin_drug_request_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(agent_v2_router, prefix="/api/v1")

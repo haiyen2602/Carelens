@@ -3,6 +3,7 @@
 import { CheckCircle2, Eye, EyeOff, Lock, User, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { CapyMascot } from "@/components/mascot/capy-mascot";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export function MobileLogin({
   email,
@@ -92,6 +93,17 @@ export function MobileLogin({
           {loading ? "Đang đăng nhập..." : "Đăng nhập"}
         </button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-sm text-muted-foreground">hoặc</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <GoogleSignInButton
+        label="Tiếp tục với Google"
+        className="w-full rounded-2xl py-4 h-auto text-lg font-semibold"
+      />
 
       <a
         href="/auth/forgot-password"

@@ -354,18 +354,21 @@ class PatientSummary(BaseModel):
 
 
 class PrescriptionItemIn(BaseModel):
-    """Mot dong thuoc trong don. `drug_id` rong van hop le (bac si tu go ten
-    khong co trong danh muc) - se duoc chuan hoa lai o backend/services/
-    prescription/service.py::_chuan_hoa_item, KHONG tin dang_thuoc/duong_dung
-    trinh duyet gui len.
+    """Mot dong thuoc trong don. `drug_id` BAT BUOC (doi 2026-08-20, FB-14):
+    danh muc `drug` la allowlist dong, khong con cho ke thuoc tu go tay.
+
+    `ten_thuoc`/`dang_thuoc`/`duong_dung`/`ham_luong` van nhan de khong lam vo
+    client cu, nhung BI BO QUA hoan toan: backend/services/prescription/
+    service.py::_chuan_hoa_item doc lai ca 4 truong tu danh muc theo `drug_id`.
+    Dung dua vao chung de hien thi - gia tri that nam trong response.
 
     `start_date`/`duration_days` la khoang ngay RIENG cua tung thuoc (vd 2
     thuoc trong cung 1 phac do nhung uong so ngay khac nhau) - None nghia la
     dung chung khoang ngay cua ca phac do (Prescription.start_date/
     duration_days), xem backend/services/scheduling/generator.py."""
 
-    drug_id: str | None = None
-    ten_thuoc: str = Field(..., min_length=1)
+    drug_id: str = Field(..., min_length=1)
+    ten_thuoc: str | None = None
     dang_thuoc: str | None = None
     duong_dung: str | None = None
     ham_luong: str | None = None

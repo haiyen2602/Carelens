@@ -1,19 +1,27 @@
 """Create agent_feedback_ticket table (BUILD-29 user report / issue tracking).
 
-Revision ID: 0038
-Revises: 0037
+Revision ID: 0039
+Revises: 0038
 Create Date: 2026-08-22
 
 The migration is additive and reversible. Does not touch any existing
 chat/Agent V2 data -- this table is written to only by the new
 POST /agent/v2/feedback endpoint.
+
+Originally drafted as revision 0038 (chained after 0037, the head at the
+time this branch started) -- renumbered to 0039 here after merging
+origin/main, which had independently landed its own 0038
+(migrations/versions/0038_drug_request.py) in the meantime. Same collision
+class this project has hit before (BUILD-24Q's 0030/0031, and the original
+0009-0013 renumbering) -- no DDL changed, only the revision id/down_revision
+chain.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0038"
-down_revision = "0037"
+revision = "0039"
+down_revision = "0038"
 branch_labels = None
 depends_on = None
 
