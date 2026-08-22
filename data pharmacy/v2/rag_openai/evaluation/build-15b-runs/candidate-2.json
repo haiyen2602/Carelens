@@ -1,0 +1,151 @@
+{
+  "dataset_version": "golden-rag-v1",
+  "embedding_identity_drift": {
+    "passed": true,
+    "reason_codes": []
+  },
+  "retrieval_mode": "lexical-candidate-branch-only",
+  "summary": {
+    "estimated_cost_usd": 0.0,
+    "generation": {
+      "bleu_4": 1.0,
+      "exact_match": 1.0,
+      "rouge_l_f1": 1.0
+    },
+    "input_tokens": 0,
+    "no_result_accuracy": 1.0,
+    "output_tokens": 0,
+    "p50_latency_ms": 5384.275300020818,
+    "p95_latency_ms": 6268.531800014898,
+    "results": [
+      {
+        "case_id": "exact-agiclovir",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ],
+        "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "generated_text": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "group": "exact_drug",
+        "latency_ms": 4307.986999978311,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "agiclovir-5-agimexpharm",
+          "agiclovir-400mg-agimexpharm-3x10",
+          "agicarvir-0-5-agimexpharm-3x10"
+        ]
+      },
+      {
+        "case_id": "natural-paracetamol-finding",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "paracetamol-kabi-1000mg-frensenius-kabi-48-chai-x-100ml"
+        ],
+        "expected_generation": "Đã tìm thấy Paracetamol Kabi 1000mg Fresenius Kabi.",
+        "generated_text": "Đã tìm thấy Paracetamol Kabi 1000mg Fresenius Kabi.",
+        "group": "natural_language",
+        "latency_ms": 6049.139199953061,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "paracetamol-kabi-1000mg-frensenius-kabi-48-chai-x-100ml"
+        ]
+      },
+      {
+        "case_id": "agiclovir-indication",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ],
+        "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "generated_text": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "group": "indication",
+        "latency_ms": 6268.531800014898,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "agiclovir-5-agimexpharm",
+          "agicetam-1200mg-agimexpharm-10x10",
+          "agicetam-1200mg-agimexpharm-3x10",
+          "agiclovir-400mg-agimexpharm-3x10"
+        ]
+      },
+      {
+        "case_id": "agiclovir-usage",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ],
+        "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "generated_text": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "group": "usage",
+        "latency_ms": 4683.300100034103,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "agiclovir-5-agimexpharm",
+          "agiclovir-400mg-agimexpharm-3x10",
+          "agicarvir-0-5-agimexpharm-3x10"
+        ]
+      },
+      {
+        "case_id": "agiclovir-side-effect",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ],
+        "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "generated_text": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "group": "side_effect",
+        "latency_ms": 5384.275300020818,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "agiclovir-5-agimexpharm",
+          "agiclovir-400mg-agimexpharm-3x10",
+          "agicarvir-0-5-agimexpharm-3x10"
+        ]
+      },
+      {
+        "case_id": "difficult-misspelling",
+        "expect_no_result": false,
+        "expected_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ],
+        "expected_generation": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "generated_text": "Đã tìm thấy Agiclovir 5% Agimexpharm.",
+        "group": "difficult",
+        "latency_ms": 4800.4475000198,
+        "no_result_passed": true,
+        "retrieved_drug_ids": [
+          "agiclovir-5-agimexpharm"
+        ]
+      },
+      {
+        "case_id": "no-result-unknown-drug",
+        "expect_no_result": true,
+        "expected_drug_ids": [],
+        "expected_generation": "Không tìm thấy nguồn thuốc phù hợp.",
+        "generated_text": "Không tìm thấy nguồn thuốc phù hợp.",
+        "group": "no_result",
+        "latency_ms": 5609.318699978758,
+        "no_result_passed": true,
+        "retrieved_drug_ids": []
+      }
+    ],
+    "retrieval": {
+      "hit_at_10": 1.0,
+      "map_at_10": 1.0,
+      "mrr_at_10": 1.0,
+      "ndcg_at_10": 1.0,
+      "precision_at_k": 0.20000000000000004
+    },
+    "versions": {
+      "chunking_version": "legacy-drug-chunks-v1",
+      "corpus_manifest_hash": "E57B24693AE64F7B1514D820911C5804DCD71CB3AAF4CF45B17A2D87603E0C04",
+      "corpus_version": "legacy-drug-chunks-openai-v1",
+      "embedding_dimensions": 1536,
+      "embedding_model": "text-embedding-3-small",
+      "generation_version": "deterministic-grounded-template-v1",
+      "index_version": "pgvector-hnsw-cosine-v1",
+      "prompt_version": "none-build-14",
+      "retrieval_version": "lexical-pg-trgm-v2-name-word-similarity"
+    }
+  }
+}

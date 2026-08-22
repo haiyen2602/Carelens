@@ -96,3 +96,38 @@ def test_lexical_search_finds_exact_drug_name_match():
         assert results[0].score > 0.9
     finally:
         db.close()
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        "Agiclovir 5% Agimexpharm có tác dụng phụ gì?",
+        "Agi clo vir 5 phan tram Agimexpharm",
+    ),
+)
+def test_lexical_search_preserves_name_recall_in_long_question_and_spaced_typo(db_session, query):
+    """BUILD-15B regressions at the production lexical threshold.
+
+    `similarity(name, complete question)` penalizes a legitimate drug name when
+    the question adds an intent phrase or inserts spaces in a typo.  The
+    retrieval query must also consider `word_similarity(name, question)`;
+    this is a generic pg_trgm signal, not a per-drug exception.
+    """
+    from backend.config import get_settings
+
+    results = lexical_search(db_session, query, get_settings().nguong_lexical)
+
+    assert any(row.drug_id == "agiclovir-5-agimexpharm" for row in results)
+
+
+def test_lexical_search_does_not_turn_golden_unknown_drug_into_a_match(db_session):
+    """BUILD-15B guard: the name-word branch must retain the no-result contract."""
+    from backend.config import get_settings
+
+    results = lexical_search(
+        db_session,
+        "Thuốc không tồn tại ABCXYZ dùng để làm gì?",
+        get_settings().nguong_lexical,
+    )
+
+    assert results == []

@@ -62,6 +62,29 @@ def run_migrations_online() -> None:
                         connection.commit()
         except Exception as heal_err:
             print(f"[ALEMBIC WARNING] Auto-heal check warning: {heal_err}")
+        finally:
+            # BUILD-24Q fix (2026-08-21): the reflection/read calls above
+            # (inspector.get_table_names(), the alembic_version SELECT) run on
+            # this SAME connection and, under SQLAlchemy 2.0's autobegin,
+            # silently open a transaction of their own -- regardless of
+            # whether the "not is_valid" branch ever runs its own commit().
+            # Handing that connection straight to `context.configure()` below
+            # left a stray transaction in progress that alembic's own
+            # `begin_transaction()` did not actually own; every migration in
+            # the batch reported "Running upgrade ..." with no error, but
+            # nothing was ever persisted (reproduced directly: a fresh DB and
+            # a from-a-valid-revision upgrade both silently no-op'd end to
+            # end, verified by row/table counts + `alembic_version` staying
+            # unchanged after a reported-successful run). Only the
+            # `not is_valid` repair path happened to work, because it called
+            # `connection.commit()` itself, incidentally clearing the stray
+            # transaction before alembic took over -- the single most common
+            # case (a normal, already-valid revision, i.e. every ordinary
+            # deploy) was the one silently broken. Rolling back here (nothing
+            # above ever needs to persist beyond its own explicit commit)
+            # resets the connection to a clean state before alembic begins
+            # its own transaction, regardless of which branch above ran.
+            connection.rollback()
 
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():

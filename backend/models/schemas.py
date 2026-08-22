@@ -510,6 +510,60 @@ class ConversationChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
 
 
+class AgentV2ReadOnlyRequest(BaseModel):
+    """Temporary BUILD-1 endpoint contract; no write action is representable."""
+
+    patient_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1, max_length=5000)
+
+
+class AgentV2ReadOnlyResponse(BaseModel):
+    status: str
+    reply: str
+    tools: list[str] = Field(default_factory=list)
+
+
+class AgentV2OrchestrateRequest(BaseModel):
+    """BUILD-16 end-to-end orchestration contract; still flag-gated OFF.
+
+    ``conversation_id``/``session_id`` scope short-term memory recall to one
+    conversation session; when omitted they default to one-shot values so a
+    caller that does not track conversations yet still gets a valid, isolated
+    run. ``dose_id`` is optional context only: Safety binds the occurrence
+    from a verified server-side lookup, never from this field directly (see
+    ``backend.agents.v2.orchestrator._resolve_occurrence``)."""
+
+    patient_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1, max_length=5000)
+    conversation_id: str | None = None
+    session_id: str | None = None
+    dose_id: str | None = None
+    # BUILD-22 (optional): opts a caller into HTTP-level replay -- retrying
+    # with the same key/actor/patient returns the identical prior response
+    # instead of running the orchestrator (and creating a Doctor Handoff)
+    # again. See backend.services.agent_idempotency. Omitted -> unchanged
+    # BUILD-16 behavior (a fresh agent_run_id every call, no replay).
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class AgentV2CitationOut(BaseModel):
+    title: str
+    source: str
+    url: str | None = None
+
+
+class AgentV2OrchestrateResponse(BaseModel):
+    status: str
+    reply: str
+    intent: str
+    tools: list[str] = Field(default_factory=list)
+    citations: list[AgentV2CitationOut] = Field(default_factory=list)
+    safety_disposition: str | None = None
+    handoff_id: str | None = None
+    trace_id: str
+    agent_run_id: str
+
+
 class ClassificationOut(BaseModel):
     label: str  # TAKEN | MISSED | DELAYED | SIDE_EFFECT
     secondary_labels: list[str] = Field(

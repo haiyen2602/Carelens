@@ -1,3 +1,5 @@
+import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -5,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.account_routes import account_router
 from backend.api.admin_drug_routes import admin_drug_router
+from backend.api.agent_v2_routes import agent_v2_router
 from backend.api.auth_routes import auth_router
 from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
@@ -59,14 +62,45 @@ async def lifespan(app: FastAPI):
     print("Shutting down...")
 
 
+settings = get_settings()
+
+# BUILD-18B P1 (Agent Architecture V2 BUILD-18 report, observability follow-
+# up): nothing in this app ever configured Python's own `logging` module, so
+# every `logging.getLogger(...).info(...)` call -- including
+# backend/agents/v2/observability.py::StructuredLogSink, BUILD-13's own
+# structured Agent V2 event sink -- was silently dropped everywhere (local
+# dev and Railway alike), not just "not captured by Railway": logging's own
+# handler-of-last-resort only emits WARNING and above. `settings.log_level`
+# already existed as a config field but was never read anywhere until this
+# line. This wires existing app loggers to stdout; it changes no event
+# content, no allowlist, and no redaction rule (BUILD-13 is not redesigned).
+logging.basicConfig(level=settings.log_level, format="%(message)s", stream=sys.stdout)
+
+# BUILD-20 hardening: the line above is an intentional, necessary fix
+# (BUILD-18B) -- but it also unmuzzles every *third-party* logger that had no
+# explicit level of its own, since Python's root-logger level now applies to
+# all of them too. httpx (used by the OpenAI SDK and by Vinmec Web fetches)
+# logs one INFO line per outbound request containing the full request URL --
+# for a GET request that is query-string-and-all, and Vinmec Web's search
+# query is exactly the patient's own message, sanitized into a URL parameter.
+# Confirmed live on staging during this build: "HTTP Request: GET
+# https://www.vinmec.com/vie/tim-kiem/?q=<patient's own message text>" was
+# appearing verbatim in the log stream -- BUILD-13/18B's own redaction
+# allowlist (_sanitize_attributes) only governs this app's OWN
+# telemetry.emit() calls; it was never able to see or filter a third-party
+# library's own independent logging call. Raising httpx/httpcore's own
+# logger level (not the root level, and not backend.agents.v2.telemetry's
+# level) removes the one-line request/response summaries; it changes no
+# event this app itself emits and no redaction rule BUILD-13 defined.
+for _noisy_logger in ("httpx", "httpcore"):
+    logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
+
 app = FastAPI(
     title="AI20K Agent",
     description="AI Agent built with LangGraph",
     version="1.0.0",
     lifespan=lifespan,
 )
-
-settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins.split(","),
@@ -80,6 +114,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(account_router, prefix="/api/v1")
 app.include_router(admin_drug_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
+app.include_router(agent_v2_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")

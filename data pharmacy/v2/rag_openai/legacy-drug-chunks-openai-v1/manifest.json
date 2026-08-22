@@ -1,0 +1,36 @@
+{
+  "active_drugs": 3556,
+  "actual_cost_usd": 0.377997,
+  "actual_tokens": 18899846,
+  "batches": 448,
+  "chunk_manifest_hash": "E57B24693AE64F7B1514D820911C5804DCD71CB3AAF4CF45B17A2D87603E0C04",
+  "chunks": 14423,
+  "corpus_version": "legacy-drug-chunks-openai-v1",
+  "embedding_dimensions": 1536,
+  "embedding_model": "text-embedding-3-small",
+  "estimated_cost_usd": 0.254962,
+  "estimated_tokens": 12748090,
+  "excluded_drugs": 6,
+  "field_group_counts": {
+    "bao_quan": 3508,
+    "cach_dung": 3560,
+    "cong_dung": 3556,
+    "tac_dung_phu": 3799
+  },
+  "generated_at": "2026-08-18T09:22:14.081413+00:00",
+  "source_manifest_hash": "39ABC318DCEF1AD5D4817005DC4621DA328DE3DB26CDE56FED5A412092A2C2C0",
+  "validation": {
+    "checkpoint_complete": 14423,
+    "duplicate_chunk_keys": 0,
+    "field_group_counts": {
+      "bao_quan": 3508,
+      "cach_dung": 3560,
+      "cong_dung": 3556,
+      "tac_dung_phu": 3799
+    },
+    "invalid_dimensions": 0,
+    "missing_drug_ids": [],
+    "rows": 14423,
+    "unexpected_drug_ids": []
+  }
+}

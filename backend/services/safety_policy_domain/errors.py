@@ -33,9 +33,18 @@ class SafetyAssessmentNotFoundError(VmecError):
     http_status = 404
 
 
+class PolicyReviewError(VmecError):
+    """BUILD-22C: the propose/approve clinical review workflow was misused
+    (missing reviewer identity, wrong source state, unknown policy id)."""
+
+    ma_loi = "POLICY_REVIEW_INVALID"
+    http_status = 422
+
+
 __all__ = [
     "DoseSafetyOccurrenceNotFoundError",
     "DoseSafetyStateError",
     "LegacyPolicySeedError",
+    "PolicyReviewError",
     "SafetyAssessmentNotFoundError",
 ]

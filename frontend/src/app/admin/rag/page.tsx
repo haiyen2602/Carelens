@@ -43,9 +43,21 @@ export default function RagDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  // Filters
+  // BUILD-25B: Filters -- these now genuinely filter the data fetched below
+  // (query params sent to the backend, which applies them to the real trace
+  // list before computing any metric -- see backend/api/rag_monitoring_routes.py
+  // `_filter_traces`), not just cosmetic <select> state. Default view is
+  // "agent-v2" (production's real chatbot), not a mix of both systems --
+  // pick "Tất cả" or "Legacy Chatbot" explicitly to see legacy traffic.
+  const [chatbotVersionFilter, setChatbotVersionFilter] = useState("agent-v2");
   const [modelFilter, setModelFilter] = useState("all");
   const [promptFilter, setPromptFilter] = useState("all");
+  const [filterOptions, setFilterOptions] = useState<{
+    chatbot_versions: { value: string; label: string }[];
+    models: string[];
+    prompt_versions: string[];
+    environments: string[];
+  }>({ chatbot_versions: [], models: [], prompt_versions: [], environments: [] });
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -57,27 +69,40 @@ export default function RagDashboardPage() {
     if (!isBackground) setLoading(true);
     try {
       const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+      // Real filter params, applied by the backend to the same trace list
+      // every metric below is computed from -- changing these dropdowns
+      // actually changes what's fetched, not just what's displayed.
+      const qs = new URLSearchParams();
+      if (chatbotVersionFilter !== "all") qs.set("chatbot_version", chatbotVersionFilter);
+      if (modelFilter !== "all") qs.set("model", modelFilter);
+      if (promptFilter !== "all") qs.set("prompt_version", promptFilter);
+      const q = qs.toString() ? `?${qs.toString()}` : "";
 
-      const [healthRes, retrievalRes, generationRes, safetyRes, systemRes, tracesRes] =
+      const [healthRes, retrievalRes, generationRes, safetyRes, systemRes, tracesRes, filtersRes] =
         await Promise.all([
-          fetch(`${apiBase}/api/v1/admin/rag/health`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/health${q}`, { headers })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch(`${apiBase}/api/v1/admin/rag/retrieval`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/retrieval${q}`, { headers })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch(`${apiBase}/api/v1/admin/rag/generation`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/generation${q}`, { headers })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch(`${apiBase}/api/v1/admin/rag/safety`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/safety${q}`, { headers })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch(`${apiBase}/api/v1/admin/rag/system`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/system${q}`, { headers })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch(`${apiBase}/api/v1/admin/rag/traces`, { headers })
+          fetch(`${apiBase}/api/v1/admin/rag/traces${q}`, { headers })
             .then((r) => (r.ok ? r.json() : []))
             .catch(() => []),
+          // Real, currently-available filter option lists -- built from
+          // actual trace metadata, not a hardcoded <option> list.
+          fetch(`${apiBase}/api/v1/admin/rag/filters`, { headers })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
         ]);
 
       if (healthRes) setHealthData(healthRes);
@@ -86,6 +111,7 @@ export default function RagDashboardPage() {
       if (safetyRes) setSafetyData(safetyRes);
       if (systemRes) setSystemData(systemRes);
       if (Array.isArray(tracesRes)) setTraces(tracesRes);
+      if (filtersRes) setFilterOptions(filtersRes);
       setLastUpdated(new Date());
     } catch (e) {
       console.error("Failed to load RAG monitoring data:", e);
@@ -102,7 +128,9 @@ export default function RagDashboardPage() {
       fetchDashboardData(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [accessToken]);
+    // Re-fetch (not just re-render) whenever a filter changes, since the
+    // filter values are sent to the backend as real query params.
+  }, [accessToken, chatbotVersionFilter, modelFilter, promptFilter]);
 
   const kpis = healthData?.kpis || {
     faithfulness: 0,
@@ -135,6 +163,19 @@ export default function RagDashboardPage() {
               Live Real-time (10s)
             </span>
           </div>
+          {/* BUILD-25B: explicit, unambiguous chatbot-identity + environment
+              badge -- which system's data this view is showing, and where it
+              actually came from, right next to the title. */}
+          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700">
+              Chatbot Version: {chatbotVersionFilter === "agent-v2" ? "Agent V2 / Production" : chatbotVersionFilter === "legacy" ? "Legacy Chatbot" : "Tất cả hệ thống"}
+            </span>
+            {filterOptions.environments[0] && (
+              <span className="rounded-full bg-slate-50 border border-slate-200 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                Environment: {filterOptions.environments[0]}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Dữ liệu thật 100% từ Database và Langfuse Telemetry Traces (Tự động đồng bộ liên tục).
           </p>
@@ -159,21 +200,47 @@ export default function RagDashboardPage() {
           <Filter className="h-3.5 w-3.5 text-primary" />
           Bộ lọc:
         </div>
+        {/* BUILD-25B: every option below comes from GET /admin/rag/filters --
+            real trace metadata (or, only when no trace exists yet, the
+            currently-configured model/version for each known system) --
+            never a hardcoded legacy-only list. Changing any of these three
+            actually re-fetches every tab's data filtered by that value (see
+            fetchDashboardData's query string above), not just this label. */}
+        <select
+          value={chatbotVersionFilter}
+          onChange={(e) => setChatbotVersionFilter(e.target.value)}
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium"
+        >
+          <option value="all">Chatbot Version: Tất cả</option>
+          {filterOptions.chatbot_versions.map((v) => (
+            <option key={v.value} value={v.value}>
+              Chatbot Version: {v.label}
+            </option>
+          ))}
+        </select>
         <select
           value={modelFilter}
           onChange={(e) => setModelFilter(e.target.value)}
           className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium"
         >
-          <option value="all">Tất cả Models (gpt-4o-mini...)</option>
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="all">Model: Tất cả</option>
+          {filterOptions.models.map((m) => (
+            <option key={m} value={m}>
+              Model: {m}
+            </option>
+          ))}
         </select>
         <select
           value={promptFilter}
           onChange={(e) => setPromptFilter(e.target.value)}
           className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium"
         >
-          <option value="all">Prompt Version: Tất cả</option>
-          <option value="v1.0">medication-chat-v1.0</option>
+          <option value="all">Prompt/Runtime Version: Tất cả</option>
+          {filterOptions.prompt_versions.map((p) => (
+            <option key={p} value={p}>
+              Prompt/Runtime Version: {p}
+            </option>
+          ))}
         </select>
         <div className="ml-auto flex items-center gap-2 text-xs">
           <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
