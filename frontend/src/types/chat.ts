@@ -78,3 +78,30 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
+
+// BUILD-29: 6 ly do co dinh trong nut "Báo cáo câu trả lời" (khop
+// AgentFeedbackReason o backend/models/schemas.py) - khong phai free-text,
+// de server phan loai priority mot cach xac dinh (khong doan qua NLP).
+export type FeedbackReason =
+  | "WRONG_ANSWER"
+  | "NOT_UNDERSTOOD"
+  | "WRONG_MEDICATION_INFO"
+  | "UNSAFE_OR_INAPPROPRIATE"
+  | "TECHNICAL_ERROR"
+  | "OTHER";
+
+export type FeedbackReportRequest = {
+  conversation_id: string;
+  trace_id: string | null;
+  agent_run_id: string;
+  user_message: string;
+  assistant_message: string;
+  reason: FeedbackReason;
+  user_note?: string | null;
+};
+
+export type FeedbackReportResponse = {
+  id: string;
+  status: string;
+  priority: string;
+};

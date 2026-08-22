@@ -570,6 +570,138 @@ class AgentV2OrchestrateResponse(BaseModel):
     agent_run_id: str
 
 
+# BUILD-29: user feedback ticket + session/trace issue tracking. See
+# backend/services/agent_feedback.py for the authorization/idempotency/
+# auto-classification logic these schemas are the wire contract for.
+AgentFeedbackReason = Literal[
+    "WRONG_ANSWER",  # Trả lời sai
+    "NOT_UNDERSTOOD",  # Không hiểu câu hỏi
+    "WRONG_MEDICATION_INFO",  # Sai thông tin thuốc/lịch thuốc
+    "UNSAFE_OR_INAPPROPRIATE",  # Câu trả lời không phù hợp/an toàn
+    "TECHNICAL_ERROR",  # Phản hồi bị lỗi
+    "OTHER",  # Khác
+]
+AgentFeedbackStatus = Literal["OPEN", "INVESTIGATING", "FIXED", "CLOSED", "WONT_FIX"]
+AgentFeedbackPriority = Literal["P0", "P1", "P2", "P3"]
+
+
+class AgentFeedbackCreateRequest(BaseModel):
+    """POST /agent/v2/feedback -- deliberately carries NO patient_id/actor_id
+    field at all (see ``create_ticket``: both are always bound server-side
+    from the authenticated JWT, never trusted from the client). Every other
+    field here is exactly what the client already received back from the
+    real ``/agent/v2/orchestrate`` call being reported (or, for the message
+    text, what it already rendered) -- the user never types a trace/session
+    id by hand.
+    """
+
+    conversation_id: str = Field(..., min_length=1)
+    trace_id: str | None = Field(default=None, min_length=1)
+    agent_run_id: str = Field(..., min_length=1)
+    user_message: str = Field(..., min_length=1, max_length=5000)
+    assistant_message: str = Field(..., min_length=1, max_length=10000)
+    reason: AgentFeedbackReason
+    user_note: str | None = Field(default=None, max_length=1000)
+
+
+class AgentFeedbackTicketOut(BaseModel):
+    """Admin-facing ticket representation -- returned by the list/detail/
+    update endpoints, all gated behind ``require_role("admin")``."""
+
+    id: str
+    actor_id: str
+    patient_id: str
+    conversation_id: str
+    trace_id: str | None
+    agent_run_id: str
+    user_message: str
+    assistant_message: str
+    reason: AgentFeedbackReason
+    user_note: str | None
+    chatbot_version: str
+    status: AgentFeedbackStatus
+    priority: AgentFeedbackPriority
+    p0_review_required: bool
+    admin_note: str | None
+    created_at: datetime
+    updated_at: datetime
+    resolved_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class AgentFeedbackTicketListOut(BaseModel):
+    items: list[AgentFeedbackTicketOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class AgentFeedbackTraceSummaryOut(BaseModel):
+    """Sanitized trace detail for one ticket -- deliberately the same shape
+    already exposed by GET /admin/rag/traces/{trace_id} (no new Trace
+    Explorer built here, per instruction), never the model's own hidden
+    chain-of-thought (Agent V2 never persists that to telemetry at all --
+    only the final response text and structured tool/safety/handoff
+    observations, see backend/api/agent_v2_routes.py::_record_agent_v2_telemetry).
+    ``None`` when the trace has aged out of the in-memory buffer (BUILD-25's
+    documented limitation: at most the last 200 traces process-wide,
+    reset on every deploy) -- the ticket itself still carries the reported
+    text either way.
+    """
+
+    trace_id: str
+    found: bool
+    intent: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    tool_results: list[dict] = Field(default_factory=list)
+    safety_outcome: str | None = None
+    handoff_created: bool = False
+    model: str | None = None
+    latency_ms: float | None = None
+    scores: dict[str, float | int | str | bool] = Field(default_factory=dict)
+    final_response: str | None = None
+    status: str | None = None
+
+
+class AgentFeedbackSessionMessageOut(BaseModel):
+    """One turn in the ticket's conversation, for the Admin session view
+    (BUILD-29 §6) -- sourced from the same telemetry trace buffer as
+    /admin/rag/traces, filtered by session_id == the ticket's
+    conversation_id, never a new persistence layer."""
+
+    trace_id: str
+    timestamp: datetime
+    query_preview: str
+    final_answer_preview: str
+    status: str
+    is_reported_turn: bool
+
+
+class AgentFeedbackSessionOut(BaseModel):
+    conversation_id: str
+    items: list[AgentFeedbackSessionMessageOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class AgentFeedbackTicketDetailOut(BaseModel):
+    ticket: AgentFeedbackTicketOut
+    trace: AgentFeedbackTraceSummaryOut
+
+
+class AgentFeedbackTicketUpdateRequest(BaseModel):
+    """PATCH /admin/tickets/{id} -- every field optional so an Admin can
+    update just one at a time. ``priority``/``status`` here are the ONLY
+    place either can change after ticket creation (the creating patient
+    never supplies either -- see AgentFeedbackCreateRequest)."""
+
+    status: AgentFeedbackStatus | None = None
+    priority: AgentFeedbackPriority | None = None
+    admin_note: str | None = Field(default=None, max_length=2000)
+
+
 class ClassificationOut(BaseModel):
     label: str  # TAKEN | MISSED | DELAYED | SIDE_EFFECT
     secondary_labels: list[str] = Field(

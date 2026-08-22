@@ -369,6 +369,21 @@ class Settings(BaseSettings):
     )
     rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit (giay)")
 
+    # BUILD-29: separate, tighter limiter for POST /agent/v2/feedback (a
+    # patient reporting a bad reply) -- reuses the same SlidingWindowRateLimiter
+    # class as the chat rate limiter above (backend/api/rate_limit.py) but its
+    # own instance/threshold, since "how many chat messages/minute" and "how
+    # many issue reports/minute" are unrelated usage patterns that should not
+    # share one budget. [CHUA CHOT] placeholder values, same caveat as the
+    # chat rate limiter above -- generous enough that a genuine double-click
+    # or a handful of real reports in one session never gets falsely limited.
+    agent_feedback_rate_limit_max_requests: int = Field(
+        default=10, description="[CHUA CHOT] so feedback report toi da/actor trong 1 window"
+    )
+    agent_feedback_rate_limit_window_seconds: float = Field(
+        default=300.0, description="Do dai window rate limit cho feedback report (giay)"
+    )
+
     # TTL cho pending_drug_confirmation (vong 2, chatbot-rag-design.md muc
     # 11.3) - THEM 2026-08-09, phat hien qua review: benh nhan bo do 1 cau
     # hoi giua chung (khong tra loi xac nhan) se de lai pending state TREO
