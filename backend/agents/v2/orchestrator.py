@@ -332,6 +332,80 @@ _NEXT_WEEK_KEYWORDS = ("tuần tới", "tuan toi", "tuần sau", "tuan sau")
 # tablet), but "ngày 20/08" or "hôm 20/08" never means a fraction.
 _EXPLICIT_DATE_RE = re.compile(r"(?:ng[aà]y|h[oô]m)\s*(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{4}))?", re.IGNORECASE)
 
+# BUILD-27D (production bug: "ba hôm trước tôi đã uống gì" fell through every
+# keyword above -- no exact phrase for it existed -- reached the Main Model,
+# which tried get_doses_for_range with no range ever resolved and failed
+# closed to a generic "Agent khong the thuc hien yeu cau nay."). General
+# "N ngày/hôm/tuần trước/nữa/tới" and "cách đây N ngày/tuần" parsing, so a
+# specific phrase never needs its own hardcoded keyword again. Digits and
+# these common Vietnamese number words only (per the instruction's own
+# minimum scope) -- not a full Vietnamese numeral parser (no "hai mươi ba"
+# compounds); an unsupported phrasing simply falls through to the model's
+# ordinary handling, same fail-open behavior every other unmatched phrase
+# already gets from this router.
+_VN_NUMBER_WORDS: dict[str, int] = {
+    "mười": 10, "muoi": 10,
+    "một": 1, "mot": 1,
+    "hai": 2,
+    "ba": 3,
+    "bốn": 4, "bon": 4, "tư": 4, "tu": 4,
+    "năm": 5, "nam": 5,
+    "sáu": 6, "sau": 6,
+    "bảy": 7, "bay": 7,
+    "tám": 8, "tam": 8,
+    "chín": 9, "chin": 9,
+}
+_NUMBER_WORD_ALTERNATION = "|".join(re.escape(word) for word in sorted(_VN_NUMBER_WORDS, key=len, reverse=True))
+_NUMBER_GROUP = rf"(\d{{1,4}}|{_NUMBER_WORD_ALTERNATION})"
+_RELATIVE_UNIT_GROUP = r"(ngày|ngay|hôm|hom|tuần|tuan)"
+_RELATIVE_WEEK_UNITS = frozenset({"tuần", "tuan"})
+_RELATIVE_PAST_RE = re.compile(rf"{_NUMBER_GROUP}\s*{_RELATIVE_UNIT_GROUP}\s*(?:trước|truoc)", re.IGNORECASE)
+_RELATIVE_FUTURE_RE = re.compile(rf"{_NUMBER_GROUP}\s*{_RELATIVE_UNIT_GROUP}\s*(?:nữa|nua|tới|toi)", re.IGNORECASE)
+_CACH_DAY_RE = re.compile(rf"(?:cách\s*đây|cach\s*day)\s*{_NUMBER_GROUP}\s*{_RELATIVE_UNIT_GROUP}", re.IGNORECASE)
+# Sanity cap only -- large-but-real values (e.g. a chronic patient asking
+# about a dose from a year ago) still resolve correctly; this just stops a
+# pathological input from building a ``date`` outside year 1-9999.
+_MAX_RELATIVE_DAYS = 3650
+
+
+def _parse_relative_number(token: str) -> int | None:
+    lowered = token.casefold()
+    if lowered.isdigit():
+        return int(lowered)
+    return _VN_NUMBER_WORDS.get(lowered)
+
+
+def _resolve_relative_offset(message: str, *, today: date) -> _TimeReference | None:
+    """"N ngày/hôm/tuần trước/nữa/tới" and "cách đây N ngày/tuần" -> a single
+    resolved date, offset from ``today`` by N (or N weeks) days. Always
+    resolves to exactly one day, not a range -- "2 tuần trước" reads
+    naturally as "14 days ago", not "the calendar week from 2 weeks back"
+    (that reading is what the existing bare "tuần trước"/"tuần tới" already
+    covers, unchanged).
+    """
+
+    for pattern, scope, label_suffix in (
+        (_CACH_DAY_RE, "PAST", "cách đây"),
+        (_RELATIVE_PAST_RE, "PAST", "trước"),
+        (_RELATIVE_FUTURE_RE, "FUTURE", "nữa/tới"),
+    ):
+        match = pattern.search(message)
+        if match is None:
+            continue
+        number = _parse_relative_number(match.group(1))
+        if number is None or number <= 0:
+            continue
+        unit = match.group(2).casefold()
+        days = number * 7 if unit in _RELATIVE_WEEK_UNITS else number
+        if days > _MAX_RELATIVE_DAYS:
+            continue
+        try:
+            resolved = today - timedelta(days=days) if scope == "PAST" else today + timedelta(days=days)
+        except OverflowError:
+            continue
+        return _TimeReference(scope, resolved, resolved, f"{number} {unit} {label_suffix}")
+    return None
+
 
 @dataclass(frozen=True)
 class _TimeReference:
@@ -389,6 +463,16 @@ def _resolve_time_reference(message: str, *, today: date) -> _TimeReference | No
     def _matches(keywords: tuple[str, ...]) -> bool:
         return any(keyword in lowered for keyword in keywords)
 
+    # BUILD-27D: general "N ngày/hôm/tuần trước/nữa/tới" / "cách đây N ngày"
+    # checked FIRST, before the bare fixed-phrase checks below -- "2 tuần
+    # trước" (2 weeks ago, a single day) textually *contains* the bare
+    # "tuần trước" substring the very next check matches, and must resolve
+    # to N*7 days back, not the bare phrase's whole-calendar-week reading.
+    # Every bare phrase below has no leading number, so this never steals a
+    # match from them in the other direction.
+    relative = _resolve_relative_offset(message, today=today)
+    if relative is not None:
+        return relative
     if _matches(_YESTERDAY_KEYWORDS):
         d = today - timedelta(days=1)
         return _TimeReference("PAST", d, d, "hôm qua")
