@@ -6,3 +6,15 @@
 # `final_canonical/rag/`; preserve their signed LF bytes too.
 "data pharmacy/v2/final_canonical/**/*.jsonl" text eol=lf
 "data pharmacy/v2/final_canonical/**/*.json" text eol=lf
+
+# 2026-08-22 incident: a Windows checkout with core.autocrlf=true silently
+# converted docker-entrypoint.sh's shebang line to CRLF on disk (the
+# committed blob was always correct LF-only). `railway up` uploads the local
+# working tree as-is, not a git-normalized archive, so that CRLF-corrupted
+# copy got baked into the production image -- the kernel then failed to
+# exec `/bin/sh\r` as the entrypoint ("exec ... No such file or directory"),
+# causing every healthcheck to fail and taking VMEC-04/BE offline for ~9
+# minutes until root-caused and redeployed with the line endings fixed.
+# `eol=lf` here forces LF regardless of any checkout's core.autocrlf, so
+# this exact failure cannot recur for any contributor's local checkout.
+*.sh text eol=lf
