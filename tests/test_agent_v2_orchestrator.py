@@ -222,8 +222,10 @@ class _IdempotentHandoffDomain:
 class _RetrievalDomain:
     def __init__(self, result_or_exc) -> None:
         self.result_or_exc = result_or_exc
+        self.calls: list[dict] = []
 
     def retrieve(self, *, query, embedding, top_k):
+        self.calls.append({"query": query, "embedding": embedding, "top_k": top_k})
         if isinstance(self.result_or_exc, Exception):
             raise self.result_or_exc
         return self.result_or_exc
@@ -249,6 +251,7 @@ def _orchestrator(
     short_term_memory=None,
     limits=None,
     telemetry=None,
+    now=lambda: NOW,
 ) -> tuple[AgentOrchestrator, _SpyModelGateway]:
     gateway = model_gateway or _SpyModelGateway()
     context_manager = _context_manager()
@@ -261,6 +264,7 @@ def _orchestrator(
         vinmec_gateway=vinmec_gateway,
         short_term_memory=short_term_memory,
         telemetry=telemetry,
+        now=now,
     )
     return orchestrator, gateway
 
@@ -546,6 +550,197 @@ def test_short_term_memory_recalls_prior_turns_without_becoming_a_citation():
     second_prompt = gateway.calls[-1]["message"]
     assert "conversation memory - not authoritative" in second_prompt
     assert "paracetamol 500mg" in second_prompt.casefold()  # the earlier turn was actually recalled
+
+
+def test_follow_up_resolution_enriches_router_retrieval_and_prompt_for_same_conversation():
+    store = ShortTermMemoryStore(_context_manager())
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="Sỏi thận cần đi khám ngay khi đau dữ dội.")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=store,
+    )
+    tools = _tools()
+
+    first = orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=tools)
+    assert first.status is RunStatus.COMPLETED
+
+    second = orchestrator.run(_request("Khi nào tôi cần đi khám ngay?"), tools=tools)
+
+    assert second.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert second.status is RunStatus.COMPLETED
+    assert retrieval_domain.calls[-1]["query"] == "Khi nào bệnh sỏi thận cần đi khám ngay?"
+    assert "Khi nào bệnh sỏi thận cần đi khám ngay?" in gateway.calls[-1]["message"]
+
+
+@pytest.mark.parametrize(
+    ("follow_up", "expected_query"),
+    [
+        ("Bao giờ thì nên đi viện?", "Khi nào bệnh sỏi thận cần đi khám ngay?"),
+        ("Khi nào bệnh này nguy hiểm?", "bệnh sỏi thận có nguy hiểm không?"),
+        ("Nguyên nhân thì sao?", "Nguyên nhân của bệnh sỏi thận là gì?"),
+        ("Bệnh này do đâu?", "Nguyên nhân của bệnh sỏi thận là gì?"),
+        ("Triệu chứng của nó?", "Triệu chứng của bệnh sỏi thận là gì?"),
+        ("Có cách phòng tránh không?", "Cách phòng ngừa bệnh sỏi thận là gì?"),
+    ],
+)
+def test_follow_up_resolution_supports_semantic_variants(follow_up, expected_query):
+    store = ShortTermMemoryStore(_context_manager())
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, _ = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=store,
+    )
+
+    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools())
+    result = orchestrator.run(_request(follow_up), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert retrieval_domain.calls[-1]["query"] == expected_query
+
+
+@pytest.mark.parametrize("topic", ["Bệnh sỏi thận", "Bệnh tiểu đường", "Bệnh viêm xoang"])
+def test_follow_up_resolution_is_not_kidney_stone_hardcoded(topic):
+    store = ShortTermMemoryStore(_context_manager())
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, _ = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=store,
+    )
+
+    orchestrator.run(_request(f"{topic} là gì?"), tools=_tools())
+    orchestrator.run(_request("Nguyên nhân thì sao?"), tools=_tools())
+
+    assert retrieval_domain.calls[-1]["query"] == f"Nguyên nhân của {topic.casefold()} là gì?"
+
+
+def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
+    store = ShortTermMemoryStore(_context_manager())
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, _ = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=store,
+    )
+
+    orchestrator.run(_request("Tôi muốn hỏi về tiểu đường"), tools=_tools())
+    result = orchestrator.run(_request("Triệu chứng của nó?"), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert retrieval_domain.calls[-1]["query"] == "Triệu chứng của tiểu đường là gì?"
+
+
+def test_follow_up_without_context_asks_clarification_and_does_not_retrieve():
+    retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
+    retrieval_gateway = RetrievalGateway(
+        _SpyModelGateway(),
+        retrieval_domain,
+        config=RetrievalConfig(embedding_model="text-embedding-3-small", top_k=5, token_budget=2000),
+    )
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
+        retrieval_gateway=retrieval_gateway,
+        short_term_memory=ShortTermMemoryStore(_context_manager()),
+    )
+
+    result = orchestrator.run(_request("Nguyên nhân thì sao?"), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+    assert "chủ đề nào" in result.response
+    assert retrieval_domain.calls == []
+    assert gateway.calls == []
+
+
+def test_ambiguous_follow_up_with_weak_context_asks_clarification():
+    store = ShortTermMemoryStore(_context_manager())
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
+        short_term_memory=store,
+    )
+    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools())
+
+    result = orchestrator.run(_request("Còn cái kia?"), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+    assert "chủ đề nào" in result.response
+    assert gateway.calls[-1]["message"] != "Còn cái kia?"
+
+
+def test_follow_up_context_does_not_leak_across_conversation_session_or_actor():
+    store = ShortTermMemoryStore(_context_manager())
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
+        short_term_memory=store,
+    )
+    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools())
+
+    for overrides in (
+        {"conversation_id": "conversation-2"},
+        {"session_id": "session-2"},
+        {"actor_id": "actor-2"},
+    ):
+        result = orchestrator.run(_request("Nguyên nhân thì sao?", **overrides), tools=_tools())
+        assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+        assert "chủ đề nào" in result.response
+    assert len(gateway.calls) == 1
+
+
+def test_safety_priority_does_not_rewrite_acute_danger_as_follow_up():
+    store = ShortTermMemoryStore(_context_manager())
+    handoff_domain = _IdempotentHandoffDomain()
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="should never be produced")),
+        handoff_domain=handoff_domain,
+        short_term_memory=store,
+    )
+    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools())
+
+    result = orchestrator.run(_request("Tôi vừa nôn ra máu"), tools=_tools())
+
+    assert result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION
+    assert result.status is RunStatus.HANDOFF_CREATED
+    assert len(handoff_domain.commands) == 1
+    assert len(gateway.calls) == 1
+
+
+def test_time_query_follow_up_still_uses_deterministic_engine_before_context_resolution():
+    store = ShortTermMemoryStore(_context_manager())
+    domain = _DomainTools()
+    orchestrator, gateway = _orchestrator(
+        model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
+        short_term_memory=store,
+        now=lambda: NOW,
+    )
+    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools(domain))
+
+    result = orchestrator.run(_request("Còn ngày mai?"), tools=_tools(domain))
+
+    assert result.intent is OrchestrationIntent.UPCOMING_DOSES
+    assert result.status is RunStatus.COMPLETED
+    assert [call[0] for call in domain.calls if call[0] == "get_doses_for_range"]
+    assert len(gateway.calls) == 1
 
 
 # ---------------------------------------------------------------------------

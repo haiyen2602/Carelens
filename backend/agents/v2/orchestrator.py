@@ -68,13 +68,17 @@ import re
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from math import ceil
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
-from backend.agents.v2.checkpoint import CheckpointedDoctorHandoffGateway, CheckpointedSafetyGateway, CheckpointedTerminalStateRecorder
+from backend.agents.v2.checkpoint import (
+    CheckpointedDoctorHandoffGateway,
+    CheckpointedSafetyGateway,
+    CheckpointedTerminalStateRecorder,
+)
 from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextManager
 from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, DoctorHandoffRequest
 from backend.agents.v2.observability import AgentTelemetry, TraceComponent, TraceContext
@@ -209,6 +213,7 @@ _OVERDOSE_POISONING_KEYWORDS = (
 _SEVERE_REACTION_KEYWORDS = (
     "kho tho du doi", "khó thở dữ dội", "kho tho nang", "khó thở nặng",
     "khong tho duoc", "không thở được",
+    "non ra mau", "nôn ra máu",
     "sung phu ca mat", "sưng phù cả mặt", "sung phu mat", "sưng phù mặt",
     "noi me day toan than", "nổi mề đay toàn thân",
     "soc phan ve", "sốc phản vệ",
@@ -300,6 +305,8 @@ _VINMEC_KEYWORDS = ("vinmec", "trang web", "website", "tìm trên mạng", "tim 
 _GENERAL_MEDICAL_KEYWORDS = (
     "là gì", "la gi", "giải thích", "giai thich", "nguyên nhân", "nguyen nhan",
     "triệu chứng", "trieu chung", "tại sao", "tai sao",
+    "đi khám", "di kham", "đi viện", "di vien", "nguy hiểm", "nguy hiem",
+    "phòng ngừa", "phong ngua", "phòng tránh", "phong tranh", "do đâu", "do dau",
 )
 # BUILD-24H (persona/capability/domain guard, golden query_id 75/76/78/79):
 # identity questions ("bạn tên gì, ai tạo ra bạn"), capability questions the
@@ -474,6 +481,150 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
     return RouterDecision(intent, trigger, requires_occurrence, bypass, use_retrieval, use_web, time_range)
 
 
+class ContextResolutionStatus(StrEnum):
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    RESOLVED = "RESOLVED"
+    AMBIGUOUS = "AMBIGUOUS"
+    NO_CONTEXT = "NO_CONTEXT"
+
+
+@dataclass(frozen=True)
+class ContextResolution:
+    status: ContextResolutionStatus
+    resolved_query: str
+    resolved_topic: str | None = None
+    resolution_source_turn: int | None = None
+    category: str | None = None
+
+    @property
+    def used(self) -> bool:
+        return self.status is ContextResolutionStatus.RESOLVED
+
+
+_TOPIC_PATTERNS = (
+    re.compile(r"\b(bệnh\s+[^?!.]{2,80}?)\s+(?:là\s+gì|la\s+gi)\b", re.IGNORECASE),
+    re.compile(r"\b(benh\s+[^?!.]{2,80}?)\s+(?:la\s+gi)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:tôi\s+muốn\s+hỏi|toi\s+muon\s+hoi|cho\s+tôi\s+hỏi|cho\s+toi\s+hoi|"
+        r"tôi\s+đang\s+hỏi|toi\s+dang\s+hoi)\s+(?:về|ve)\s+([^?!.]{2,80})",
+        re.IGNORECASE,
+    ),
+)
+_FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "urgent_care": ("đi khám", "di kham", "đi viện", "di vien", "cấp cứu", "cap cuu", "khám ngay", "kham ngay"),
+    "cause": ("nguyên nhân", "nguyen nhan", "do đâu", "do dau", "tại sao", "tai sao"),
+    "symptoms": ("triệu chứng", "trieu chung", "dấu hiệu", "dau hieu"),
+    "danger": ("nguy hiểm", "nguy hiem", "nặng không", "nang khong"),
+    "prevention": ("phòng ngừa", "phong ngua", "phòng tránh", "phong tranh", "tránh", "tranh"),
+}
+_FOLLOW_UP_MARKERS = (
+    "còn", "con", "thì sao", "thi sao", "bệnh này", "benh nay", "nó", "no",
+    "của nó", "cua no", "thế nào", "the nao", "vậy", "vay",
+)
+_AMBIGUOUS_FOLLOW_UP_MARKERS = (
+    "còn cái kia", "con cai kia", "cái kia", "cai kia", "cái đó", "cai do",
+    "cái này", "cai nay", "vậy thì sao", "vay thi sao",
+)
+_CONTEXT_CLARIFICATION_REPLY = (
+    "Mình chưa xác định đủ ngữ cảnh cho câu hỏi này. Bạn đang muốn hỏi tiếp về bệnh hoặc chủ đề nào?"
+)
+
+
+def resolve_conversation_context(message: str, memory_items: list[ContextItem]) -> ContextResolution:
+    """Resolve ordinary medical follow-ups from same-session memory only.
+
+    The caller has already let safety/action/time routing inspect the raw
+    message first. This layer is intentionally conservative: it only rewrites
+    short follow-up shapes with a recent explicit disease topic in memory.
+    """
+
+    category = _follow_up_category(message)
+    is_ambiguous = _is_ambiguous_follow_up(message)
+    if category is None and not is_ambiguous:
+        return ContextResolution(ContextResolutionStatus.NOT_APPLICABLE, message)
+
+    topic, source_turn = _recent_topic(memory_items)
+    if topic is None:
+        return ContextResolution(ContextResolutionStatus.NO_CONTEXT, message, category=category)
+    if category is None:
+        return ContextResolution(
+            ContextResolutionStatus.AMBIGUOUS,
+            message,
+            resolved_topic=topic,
+            resolution_source_turn=source_turn,
+        )
+    return ContextResolution(
+        ContextResolutionStatus.RESOLVED,
+        _resolved_query_for(topic, category),
+        resolved_topic=topic,
+        resolution_source_turn=source_turn,
+        category=category,
+    )
+
+
+def _follow_up_category(message: str) -> str | None:
+    lowered = message.casefold()
+    marker_present = any(marker in lowered for marker in _FOLLOW_UP_MARKERS) or (
+        len(message.strip()) <= 35 and not _looks_like_explicit_medical_question(lowered)
+    )
+    if not marker_present:
+        return None
+    for category, keywords in _FOLLOW_UP_CATEGORY_KEYWORDS.items():
+        if any(keyword in lowered for keyword in keywords):
+            return category
+    return None
+
+
+def _looks_like_explicit_medical_question(lowered: str) -> bool:
+    return any(marker in lowered for marker in (" gây ", " gay ", "gây ra", "gay ra", " của ", " cua "))
+
+
+def _is_ambiguous_follow_up(message: str) -> bool:
+    lowered = message.casefold()
+    return any(marker in lowered for marker in _AMBIGUOUS_FOLLOW_UP_MARKERS)
+
+
+def _recent_topic(memory_items: list[ContextItem]) -> tuple[str | None, int | None]:
+    user_messages = [
+        item.content
+        for item in memory_items
+        if item.provenance.endswith(":user") and item.content.strip()
+    ]
+    for index_from_end, content in enumerate(reversed(user_messages), start=1):
+        topic = _extract_topic(content)
+        if topic is not None:
+            return topic, len(user_messages) - index_from_end + 1
+    return None, None
+
+
+def _extract_topic(message: str) -> str | None:
+    normalized = " ".join(message.strip().split())
+    for pattern in _TOPIC_PATTERNS:
+        match = pattern.search(normalized)
+        if match is not None:
+            return _clean_topic(match.group(1))
+    return None
+
+
+def _clean_topic(topic: str) -> str:
+    cleaned = topic.strip(" ?!.,;:")
+    return cleaned[:80].casefold()
+
+
+def _resolved_query_for(topic: str, category: str) -> str:
+    if category == "urgent_care":
+        return f"Khi nào {topic} cần đi khám ngay?"
+    if category == "danger":
+        return f"{topic} có nguy hiểm không?"
+    if category == "cause":
+        return f"Nguyên nhân của {topic} là gì?"
+    if category == "symptoms":
+        return f"Triệu chứng của {topic} là gì?"
+    if category == "prevention":
+        return f"Cách phòng ngừa {topic} là gì?"
+    raise ValueError(f"Unsupported follow-up category: {category}")
+
+
 @dataclass(frozen=True)
 class OrchestrationRequest:
     """Server-authorized request envelope; ``patient_id`` must already be
@@ -596,7 +747,7 @@ def _strip_false_vinmec_claim(text: str) -> str:
     do on a model's generated text without a second model call.
     """
 
-    def _replacement(match: "re.Match[str]") -> str:
+    def _replacement(match: re.Match[str]) -> str:
         phrase = _NEUTRAL_SOURCE_PHRASE
         prefix = text[: match.start()].rstrip()
         if not prefix or prefix[-1] in ".!?\n":
@@ -606,7 +757,7 @@ def _strip_false_vinmec_claim(text: str) -> str:
     return _VINMEC_MENTION_RE.sub(_replacement, text)
 
 
-def _enforce_vinmec_provenance(result: RunResult, citations: tuple["Citation", ...], *, vinmec_required: bool) -> RunResult:
+def _enforce_vinmec_provenance(result: RunResult, citations: tuple[Citation, ...], *, vinmec_required: bool) -> RunResult:
     """Deterministic backstop: never rely on the prompt alone for an absolute
     no-fabricated-source guarantee (BUILD-24B). The orchestrator is the only
     place that authoritatively knows whether real Vinmec Web evidence was
@@ -712,7 +863,7 @@ _UNGROUNDED_ANSWER_DECLINE_REPLY = (
 )
 
 
-def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent, citations: tuple["Citation", ...]) -> RunResult:
+def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent, citations: tuple[Citation, ...]) -> RunResult:
     """Deterministic backstop: a grounding-required intent (see
     ``_GROUNDING_REQUIRED_INTENTS``) whose reply has zero tool evidence and
     zero retrieval/Vinmec citations is, by definition, not backed by
@@ -932,7 +1083,7 @@ class AgentOrchestrator:
         request: OrchestrationRequest,
         *,
         tools: ToolGateway,
-        checkpoint_db: "Session | None" = None,
+        checkpoint_db: Session | None = None,
     ) -> OrchestrationResult:
         agent_run_id = request.agent_run_id or str(uuid.uuid4())
         trace = (
@@ -940,7 +1091,10 @@ class AgentOrchestrator:
             if self._telemetry is not None
             else TraceContext(trace_id=str(uuid.uuid4()), agent_run_id=agent_run_id)
         )
-        decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
+        raw_decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
+        decision = raw_decision
+        resolution = ContextResolution(ContextResolutionStatus.NOT_APPLICABLE, request.message)
+        router_message = request.message
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.classified")
 
@@ -953,7 +1107,7 @@ class AgentOrchestrator:
                     patient_id=request.patient_id,
                     conversation_id=request.conversation_id,
                     request_id=request.request_id or request.session_id,
-                    intent=decision.intent.value,
+                    intent=raw_decision.intent.value,
                 ),
             )
             lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
@@ -967,8 +1121,8 @@ class AgentOrchestrator:
         # answered-anyway off-topic content) rather than relying on the model
         # to consistently decline correctly, or on a post-hoc text correction
         # to catch every phrasing of a false claim.
-        if decision.intent is OrchestrationIntent.OUT_OF_SCOPE_REQUEST:
-            return self._out_of_scope_reply(request, decision, trace, agent_run_id, checkpoint_db, lease_token)
+        if raw_decision.intent is OrchestrationIntent.OUT_OF_SCOPE_REQUEST:
+            return self._out_of_scope_reply(request, raw_decision, trace, agent_run_id, checkpoint_db, lease_token)
 
         # BUILD-27B/28: any time-scoped schedule/history question -- past,
         # today, or future -- is answered deterministically from the
@@ -982,10 +1136,37 @@ class AgentOrchestrator:
         # ever built into a model prompt). Same early-return shape as
         # OUT_OF_SCOPE_REQUEST above: no memory recall, no Safety/Handoff, no
         # retrieval/Vinmec, no model.
-        if decision.intent in _SCHEDULE_INTENTS:
-            return self._schedule_reply(request, decision, tools, trace, agent_run_id, checkpoint_db, lease_token)
+        if raw_decision.intent in _SCHEDULE_INTENTS:
+            return self._schedule_reply(request, raw_decision, tools, trace, agent_run_id, checkpoint_db, lease_token)
 
         memory_items, session_key = self._recall_memory(request, agent_run_id)
+        if raw_decision.intent in {
+            OrchestrationIntent.GENERAL_CONVERSATION,
+            OrchestrationIntent.DRUG_INFORMATION,
+            OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
+            OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+        }:
+            previous_memory = [item for item in memory_items if item.id != f"short-term:{agent_run_id}:user"]
+            resolution = resolve_conversation_context(request.message, previous_memory)
+            if resolution.status in {ContextResolutionStatus.AMBIGUOUS, ContextResolutionStatus.NO_CONTEXT}:
+                return self._context_clarification_reply(
+                    request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token
+                )
+            if resolution.used:
+                router_message = resolution.resolved_query
+                decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+
+        if self._telemetry is not None:
+            self._telemetry.event(
+                trace,
+                TraceComponent.ROUTER,
+                "agent_context_resolution.completed",
+                context_resolution_used=resolution.used,
+                resolved_topic=resolution.resolved_topic,
+                resolution_source_turn=resolution.resolution_source_turn,
+                resolution_status=resolution.status.value,
+                final_router_intent=decision.intent.value,
+            )
 
         # -- Safety (server-bound trigger + occurrence only) -----------------
         occurrence_id: str | None = None
@@ -1074,12 +1255,12 @@ class AgentOrchestrator:
         retrieval_ids: set[str] = set()
         web_ids: set[str] = set()
         if not needs_handoff and not is_safety_blocked:
-            gathered = self._gather_evidence(decision, request)
+            gathered = self._gather_evidence(decision, request, query=router_message)
             if isinstance(gathered, str):
                 return self._fail_closed(trace, agent_run_id, decision.intent, gathered, checkpoint_db, lease_token)
             evidence_items, retrieval_ids, web_ids, citations = gathered
 
-        augmented_message = self._compose_message(request.message, memory_items, evidence_items, retrieval_ids, web_ids)
+        augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids)
         if decision.use_vinmec_web and not web_ids:
             # BUILD-24B: make the negative Vinmec result explicit to the
             # model *before* it answers -- see _NO_VINMEC_EVIDENCE_NOTE.
@@ -1228,7 +1409,7 @@ class AgentOrchestrator:
 
     # -- retrieval / web --------------------------------------------------------
 
-    def _gather_evidence(self, decision: RouterDecision, request: OrchestrationRequest):
+    def _gather_evidence(self, decision: RouterDecision, request: OrchestrationRequest, *, query: str):
         """Return either ``(items, retrieval_ids, web_ids, citations)`` or a
         safe reason string when a *required* dependency for this intent is
         unavailable (fail-closed; the Main Model is never reached)."""
@@ -1239,7 +1420,7 @@ class AgentOrchestrator:
         citations: list[Citation] = []
 
         if decision.use_retrieval and self._retrieval_gateway is not None:
-            retrieval_result: RetrievalGatewayResult = self._retrieval_gateway.retrieve(RetrievalRequest(query=request.message))
+            retrieval_result: RetrievalGatewayResult = self._retrieval_gateway.retrieve(RetrievalRequest(query=query))
             if retrieval_result.status not in (RetrievalStatus.READY, RetrievalStatus.NO_RESULTS):
                 return retrieval_result.safe_reason or "RETRIEVAL_UNAVAILABLE"
             if retrieval_result.status is RetrievalStatus.READY:
@@ -1249,7 +1430,7 @@ class AgentOrchestrator:
                 citations.extend(Citation(title=doc.drug_id, source=doc.source, url=None) for doc in retrieval_result.documents)
 
         if decision.use_vinmec_web and self._vinmec_gateway is not None:
-            web_result: VinmecWebSearchResult = self._vinmec_gateway.new_session().search(VinmecSearchRequest(query=request.message))
+            web_result: VinmecWebSearchResult = self._vinmec_gateway.new_session().search(VinmecSearchRequest(query=query))
             if web_result.status not in (VinmecWebStatus.READY, VinmecWebStatus.NO_RESULTS):
                 return web_result.safe_reason or "VINMEC_WEB_UNAVAILABLE"
             if web_result.status is VinmecWebStatus.READY:
@@ -1297,6 +1478,43 @@ class AgentOrchestrator:
             )
         return OrchestrationResult(
             trace.trace_id, agent_run_id, decision.intent, result.status, result.response, (), (), None, None, result.metrics
+        )
+
+    def _context_clarification_reply(
+        self, request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token
+    ) -> OrchestrationResult:
+        """Ask for clarification when a follow-up lacks a strong same-conversation topic."""
+
+        if self._telemetry is not None:
+            self._telemetry.event(
+                trace,
+                TraceComponent.ROUTER,
+                "agent_context_resolution.completed",
+                context_resolution_used=False,
+                resolved_topic=resolution.resolved_topic,
+                resolution_source_turn=resolution.resolution_source_turn,
+                resolution_status=resolution.status.value,
+                final_router_intent=OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS.value,
+            )
+        result = RunResult(RunStatus.COMPLETED, _CONTEXT_CLARIFICATION_REPLY, (), RunMetrics())
+        if checkpoint_db is not None:
+            if lease_token is None:
+                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+            )
+        self._remember_reply(session_key, agent_run_id, result)
+        return OrchestrationResult(
+            trace.trace_id,
+            agent_run_id,
+            OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+            result.status,
+            result.response,
+            (),
+            (),
+            None,
+            None,
+            result.metrics,
         )
 
     def _schedule_reply(
@@ -1354,9 +1572,12 @@ class AgentOrchestrator:
 __all__ = [
     "AgentOrchestrator",
     "Citation",
+    "ContextResolution",
+    "ContextResolutionStatus",
     "OrchestrationIntent",
     "OrchestrationRequest",
     "OrchestrationResult",
     "RouterDecision",
     "classify_intent",
+    "resolve_conversation_context",
 ]
