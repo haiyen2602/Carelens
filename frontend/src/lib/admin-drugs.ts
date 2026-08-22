@@ -70,3 +70,34 @@ export async function listAdminDrugs(
   }
   return response.json() as Promise<AdminDrugListResponse>;
 }
+
+export async function updateAdminDrug(
+  drugId: string,
+  input: {
+    display_name?: string;
+    dosage_form?: string;
+    route?: string;
+    strength_text?: string;
+    mapping_status?: MappingStatus;
+  },
+  accessToken?: string | null,
+): Promise<AdminDrugItem> {
+  const response = await fetch(`${API_BASE}/api/v1/admin/drugs/${encodeURIComponent(drugId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(
+      typeof body?.detail === "string"
+        ? body.detail
+        : `Không thể cập nhật dữ liệu thuốc (${response.status})`,
+    );
+  }
+  return response.json() as Promise<AdminDrugItem>;
+}
+

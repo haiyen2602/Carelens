@@ -6,28 +6,68 @@ import {
   ArrowUpRight,
   FileClock,
   Link2,
+  Loader2,
   PillBottle,
   ShieldAlert,
   Users2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { MEDICINES, SYSTEM_AUDIT, roleLabel } from "@/lib/admin-mock";
+import { MEDICINES } from "@/lib/admin-mock";
 import { listAccounts, type AccountRecord } from "@/lib/accounts";
 import { listCaregiverLinksForPatient } from "@/lib/caregivers";
 import { listReportingPatients } from "@/lib/reporting";
+import { listSystemAuditLogs, type SystemAuditLogEntry } from "@/lib/audit";
+import { useAuth } from "@/lib/auth";
 
 const roleBadgeTone: Record<string, string> = {
   doctor: "bg-success/15 text-success",
   patient: "bg-primary/10 text-primary",
   caregiver: "bg-warning/25 text-warning-foreground",
   admin: "bg-accent text-accent-foreground",
+  system: "bg-muted text-muted-foreground",
   "Hệ thống": "bg-muted text-muted-foreground",
 };
 
+const roleDisplayName: Record<string, string> = {
+  admin: "Quản trị",
+  doctor: "Bác sĩ",
+  patient: "Bệnh nhân",
+  caregiver: "Người thân",
+  system: "Hệ thống",
+  "Hệ thống": "Hệ thống",
+};
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isCleanTarget(target?: string | null): boolean {
+  if (!target) return false;
+  return !UUID_REGEX.test(target.trim());
+}
+
+function formatDateTime(isoString: string) {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return { date: isoString, time: "" };
+    const date = d.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const time = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    return { date, time };
+  } catch {
+    return { date: isoString, time: "" };
+  }
+}
+
 export default function AdminDashboard() {
+  const { accessToken } = useAuth();
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [linkCount, setLinkCount] = useState(0);
   const [patientCount, setPatientCount] = useState(0);
+  const [recentAuditLogs, setRecentAuditLogs] = useState<SystemAuditLogEntry[]>([]);
+  const [auditTotalCount, setAuditTotalCount] = useState(0);
+  const [auditLoading, setAuditLoading] = useState(true);
 
   useEffect(() => {
     listAccounts()
@@ -42,7 +82,15 @@ export default function AdminDashboard() {
         setLinkCount(lists.reduce((sum, l) => sum + l.length, 0));
       })
       .catch(() => undefined);
-  }, []);
+
+    listSystemAuditLogs({ pageSize: 5, accessToken })
+      .then((res) => {
+        setRecentAuditLogs(res.items);
+        setAuditTotalCount(res.total);
+      })
+      .catch(() => undefined)
+      .finally(() => setAuditLoading(false));
+  }, [accessToken]);
 
   const total = accounts.length;
   const pending = accounts.filter((a) => a.status === "pending").length;
@@ -115,13 +163,12 @@ export default function AdminDashboard() {
     },
     {
       label: "Sự kiện hệ thống gần đây",
-      value: SYSTEM_AUDIT.length,
+      value: auditTotalCount,
       note: "Xem toàn bộ audit log",
       noteTone: "text-muted-foreground",
       icon: FileClock,
       tone: "bg-accent text-accent-foreground",
       link: { to: "/admin/audit", label: "Xem log hệ thống" },
-      mock: true,
     },
   ];
 
@@ -140,26 +187,28 @@ export default function AdminDashboard() {
         {stats.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="surface-card flex items-start gap-4 p-5">
-              <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${s.tone}`}>
-                <Icon className="h-6 w-6" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
-                  {s.label}
-                  {"mock" in s && s.mock && (
-                    <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
-                      Mock
-                    </span>
-                  )}
-                </p>
-                <p className="mt-1 text-3xl font-extrabold leading-none">{s.value}</p>
-                <p className={`mt-2 truncate text-xs font-semibold ${s.noteTone}`}>{s.note}</p>
+            <div key={s.label} className="surface-card relative flex flex-col justify-between p-5">
+              {s.mock && (
+                <span className="absolute right-4 top-4 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  Mock
+                </span>
+              )}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>
+                  <p className="mt-2 text-2xl font-extrabold">{s.value}</p>
+                </div>
+                <span className={`grid h-11 w-11 place-items-center rounded-2xl ${s.tone}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
+                <span className={s.noteTone}>{s.note}</span>
                 <Link
                   href={s.link.to}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                  className="inline-flex items-center gap-1 font-semibold text-primary"
                 >
-                  {s.link.label} <ArrowRight className="h-3 w-3" />
+                  {s.link.label} <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -167,16 +216,28 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      <div className="grid gap-5 lg:grid-cols-2">
         <section className="surface-card p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Phân bổ tài khoản theo vai trò</h2>
+            <span className="text-xs text-muted-foreground">{total} tài khoản</span>
           </div>
-          <div className="mt-5 flex flex-wrap items-center gap-6">
-            <div className="relative h-[170px] w-[170px] shrink-0">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-8">
+            <div
+              className="relative h-44 w-44 rounded-full p-4"
+              style={{
+                background: total > 0 ? `conic-gradient(${gradient})` : "var(--muted)",
+              }}
+              aria-hidden
+            >
               <div
-                className="h-full w-full rounded-full"
-                style={{ background: `conic-gradient(${gradient})` }}
+                className="absolute inset-[13px] rounded-full"
+                style={{
+                  background:
+                    total > 0
+                      ? `conic-gradient(${gradient})`
+                      : "color-mix(in srgb, var(--foreground) 6%, transparent)",
+                }}
               />
               <div className="absolute inset-[26px] grid place-items-center rounded-full bg-card">
                 <div className="text-center">
@@ -210,35 +271,52 @@ export default function AdminDashboard() {
 
         <section className="surface-card p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
+            <h2 className="text-lg font-bold">
               Hoạt động hệ thống gần đây
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                Mock
-              </span>
             </h2>
             <Link href="/admin/audit" className="text-xs font-semibold text-primary">
               Xem tất cả
             </Link>
           </div>
           <div className="mt-4 divide-y divide-border">
-            {SYSTEM_AUDIT.slice(0, 5).map((a) => (
-              <div key={a.id} className="flex items-start gap-3 py-3">
-                <span className="w-12 shrink-0 pt-0.5 font-mono text-xs text-muted-foreground">
-                  {a.at}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold" title={a.actor}>
-                    {a.actor}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{a.action}</p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${roleBadgeTone[a.role] ?? "bg-muted text-muted-foreground"}`}
-                >
-                  {a.role === "Hệ thống" ? "Hệ thống" : roleLabel[a.role as keyof typeof roleLabel]}
-                </span>
+            {auditLoading ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+                <p className="mt-2 text-xs">Đang tải hoạt động gần đây...</p>
               </div>
-            ))}
+            ) : recentAuditLogs.length === 0 ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                Chưa có hoạt động nào được ghi nhận.
+              </p>
+            ) : (
+              recentAuditLogs.map((a) => {
+                const { date, time } = formatDateTime(a.created_at);
+                return (
+                  <div key={a.id} className="flex items-start gap-3 py-3">
+                    <div className="w-20 shrink-0 pt-0.5">
+                      <p className="text-xs font-medium text-foreground">{date}</p>
+                      {time && <p className="font-mono text-[11px] text-muted-foreground">{time}</p>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold" title={a.actor_name}>
+                        {a.actor_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{a.action}</p>
+                      {isCleanTarget(a.target) && (
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Đối tượng: {a.target}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${roleBadgeTone[a.actor_role] ?? "bg-muted text-muted-foreground"}`}
+                    >
+                      {roleDisplayName[a.actor_role] ?? a.actor_role}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </section>
       </div>
