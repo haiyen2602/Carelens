@@ -3,16 +3,20 @@ thuoc (THEM 2026-08-20). Xem ghi chu day du trong backend/db/models.py::
 PushSubscription / PushReminderSent (vi sao endpoint UNIQUE, vi sao khoa
 duy nhat cua push_reminder_sent la khung gio chu khong phai dose_event_id).
 
-LUU Y ve revision chain (doi so 0031 -> 0032, 2026-08-22): ban dau file nay
-la "0031" vi luc viet head la 0030. Trong luc do main merge
+LUU Y ve revision chain (doi so 0031 -> 0032 -> 0038, 2026-08-22): ban dau
+file nay la "0031" vi luc viet head la 0030. Trong luc do main merge
 0031_remove_better_auth_and_add_supabase_uid.py CUNG lay so 0031 -> 2 file
 trung revision id, alembic bao "Revision 0031 is present more than once" va
-gay 2 head, hong ca chuoi migration. File Supabase DA len main (co the da
-chay tren production) nen GIU nguyen so; file NAY doi thanh "0032", xep sau
-no. Cung cach xu ly da lam o 0017_patient_watch.py/0018_caregiver_link.py.
+gay 2 head, hong ca chuoi migration. Doi thanh "0032" (xep sau 0031) de vá lan
+1. Sau do main lai merge THEM 0032_rag_corpus_recovery.py (cung tu "0032" ->
+lap lai dung y het loi cu). Lan nay doi thanng "0038", xep sau CA chuoi
+0032(rag)..0037(system_audit_logs) cua main - khong doi lai so cua main vi
+chuoi do da co nhieu migration khac xay tren no (0033..0037), doi ca chuoi se
+dung cham nhieu file hon la doi 1 file nay. Cung cach xu ly da lam o
+0017_patient_watch.py/0018_caregiver_link.py.
 
-Revision ID: 0032
-Revises: 0031
+Revision ID: 0038
+Revises: 0037
 Create Date: 2026-08-20
 
 """
@@ -20,8 +24,8 @@ Create Date: 2026-08-20
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0032"
-down_revision = "0031"
+revision = "0038"
+down_revision = "0037"
 branch_labels = None
 depends_on = None
 
