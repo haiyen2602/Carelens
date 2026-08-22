@@ -7,15 +7,20 @@ import { useRef } from "react";
 
 export type MascotVariant = "idle" | "greet" | "celebrate";
 
-const SIZES = { sm: 72, md: 120, lg: 180 } as const;
+const SIZES = { sm: 72, md: 120, lg: 180, xl: 280 } as const;
 
 export function CapyMascot({
   variant = "idle",
   size = "md",
+  width,
   className,
 }: {
   variant?: MascotVariant;
   size?: keyof typeof SIZES;
+  /** Chieu rong CSS tuy y (vd `clamp(240px, 22vw, 400px)`) - de mascot co gian
+   *  theo viewport desktop. Khi truyen, `size` chi con dung cho `sizes` cua
+   *  next/image va uu tien tai anh. */
+  width?: string;
   className?: string;
 }) {
   const scope = useRef<HTMLDivElement>(null);
@@ -74,14 +79,14 @@ export function CapyMascot({
     <div
       ref={scope}
       className={`pointer-events-none relative inline-block select-none ${className ?? ""}`}
-      style={{ width: px, height: px * 1.07 }}
+      style={width ? { width, aspectRatio: "1 / 1.07" } : { width: px, height: px * 1.07 }}
     >
       <div className="capy-body relative h-full w-full will-change-transform">
         <Image
           src="/mascot/capy-mascot.png"
           alt="CapyMedi mascot"
           fill
-          sizes={`${px}px`}
+          sizes={width ? `min(${width}, 100vw)` : `${px}px`}
           priority={size !== "sm"}
           className="object-contain"
         />
