@@ -21,6 +21,7 @@ from backend.api.security import CurrentUser, get_current_user, require_role
 from backend.db.base import get_db
 from backend.db.models import Account, CaregiverLink, Nudge, Patient
 from backend.models.schemas import NudgeCreateRequest, NudgeOut
+from backend.services.push import send_push_to_patient
 
 nudge_router = APIRouter()
 
@@ -73,6 +74,14 @@ def send_nudge(
     account = db.get(Account, current_user.id)
     if account is not None:
         caregiver_name = account.full_name
+
+    # Day them Web Push (THEM 2026-08-22) - truoc do nudge chi ghi DB, benh
+    # nhan phai dang mo tab va cho poll GET /nudges/unseen (8s/lan, xem
+    # capy-shell.tsx) moi thay. Cung ha tang voi dose_push_reminder.py
+    # (send_push_to_patient tu no neu chua cau hinh VAPID hoac benh nhan chua
+    # dang ky push tren may nao - khong lam gian doan viec gui nudge).
+    send_push_to_patient(db, body.patient_id, "CapyMedi", f"{caregiver_name}: {body.message}")
+    db.commit()
 
     return _to_out(row, caregiver_name)
 
