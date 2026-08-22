@@ -105,9 +105,11 @@ export async function ackEscalation(accessToken: string, escalationId: string): 
   if (!response.ok) return loi(response);
 }
 
-/** Benh nhan tu ghi nhat ky suc khoe (health/page.tsx) - "mid"/"high" tao
- * Escalation that de nguoi than thay (backend/api/health_log_routes.py),
- * "low" chi luu nhat ky rieng, khong tao gi ca. */
+/** Bao van de suc khoe len backend, tao Escalation that de nguoi than thay
+ * (backend/api/health_log_routes.py) khi level la "mid"/"high". Nguon goi
+ * DUY NHAT hien tai: cuoc goi gia lap trong capy-shell.tsx khi tre lieu 30
+ * phut (MOC_GOI) - luong ghi nhat ky thu cong o health/page.tsx da bo
+ * (THEM 2026-08-22), khong con goi ham nay nua. */
 export async function reportHealthIssue(
   accessToken: string,
   input: { text: string; level: "low" | "mid" | "high" },

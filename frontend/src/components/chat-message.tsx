@@ -2,10 +2,30 @@
 // avatar 2 ben, bong bong bam sat le, bo goc lech ve phia nguoi noi.
 // Mau/kich thuoc lay nguyen tu ban thiet ke.
 
+import { ActivityTimeline } from "@/components/activity-timeline";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import type { ChatMessage as ChatMessageT } from "@/types/chat";
+import { ReportMessageDialog } from "@/components/report-message-dialog";
+import type { StoredChatMessage } from "@/lib/chat-history";
+import type { SuggestedAction } from "@/types/chat";
 
-export function ChatMessage({ message, at }: { message: ChatMessageT; at?: string }) {
+export function ChatMessage({
+  message,
+  at,
+  conversationId,
+  accessToken,
+  onSelectAction,
+  actionsDisabled = false,
+}: {
+  message: StoredChatMessage;
+  at?: string;
+  // BUILD-29: chi can khi message.role === "assistant" (nut bao cao chi
+  // hien voi assistant) - optional de khong bat buoc moi noi dang dung
+  // component nay phai truyen them 2 prop moi.
+  conversationId?: string;
+  accessToken?: string | null;
+  onSelectAction?: (action: SuggestedAction) => void;
+  actionsDisabled?: boolean;
+}) {
   const isUser = message.role === "user";
 
   return (
@@ -21,6 +41,31 @@ export function ChatMessage({ message, at }: { message: ChatMessageT; at?: strin
         <MarkdownRenderer content={message.content} />
       </div>
       {at && <p className="font-mono m-0 mt-1 px-1 text-[10px] text-[#62708A]">{at}</p>}
+      {!isUser && conversationId && (
+        <>
+          {message.suggestedActions && message.suggestedActions.length > 0 && (
+            <div className="mt-2 flex max-w-[82%] flex-wrap gap-2" aria-label="Gợi ý câu hỏi tiếp theo">
+              {message.suggestedActions.map((action) => (
+                <button
+                  key={action.action_id}
+                  type="button"
+                  disabled={actionsDisabled}
+                  onClick={() => onSelectAction?.(action)}
+                  className="min-h-10 rounded-lg border border-[#B7C2D6] bg-white px-3 py-2 text-left text-[13px] font-medium text-[#16386E] transition-colors hover:bg-[#F4F7FC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <ActivityTimeline traceId={message.traceId} accessToken={accessToken} />
+          <ReportMessageDialog
+            conversationId={conversationId}
+            message={message}
+            accessToken={accessToken}
+          />
+        </>
+      )}
     </div>
   );
 }

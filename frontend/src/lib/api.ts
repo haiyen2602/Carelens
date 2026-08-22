@@ -1,4 +1,11 @@
-import type { AgentStatus, ChatRequest, ChatResponse } from "@/types/chat";
+import type {
+  ActivityResponse,
+  AgentStatus,
+  ChatRequest,
+  ChatResponse,
+  FeedbackReportRequest,
+  FeedbackReportResponse,
+} from "@/types/chat";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -55,4 +62,51 @@ export async function sendChatMessage(
 
 export function getAgentStatus(): Promise<AgentStatus> {
   return request<AgentStatus>("/api/v1/status");
+}
+
+// BUILD-30: goi qua route noi bo (`app/api/activity/[traceId]/route.ts`),
+// cung mau voi submitFeedbackReport o tren. Khong throw tren 403/khong tim
+// thay - component tu quyet dinh hien thi trang thai gi (unavailable/error)
+// tu chinh response, khong dua vao exception.
+export async function getTraceActivity(
+  traceId: string,
+  accessToken?: string | null,
+): Promise<ActivityResponse> {
+  const response = await fetch(`/api/activity/${encodeURIComponent(traceId)}`, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(body?.detail ?? `API error: ${response.status}`, response.status);
+  }
+
+  return response.json();
+}
+
+// BUILD-29: goi qua route noi bo (`app/api/feedback/route.ts`), cung mau
+// forward Authorization nguyen ven nhu sendChatMessage o tren - route nay
+// khong tu kiem tra role/patient_id, backend that (POST /agent/v2/feedback)
+// tu lam dieu do va tra 403 dung thiet ke neu sai.
+export async function submitFeedbackReport(
+  payload: FeedbackReportRequest,
+  accessToken?: string | null,
+): Promise<FeedbackReportResponse> {
+  const response = await fetch("/api/feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(body?.detail ?? `API error: ${response.status}`, response.status);
+  }
+
+  return response.json();
 }

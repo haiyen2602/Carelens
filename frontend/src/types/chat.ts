@@ -20,7 +20,19 @@ export type ChatRequest = {
   // conversation's own stable id (see frontend/src/lib/chat-history.ts),
   // not a new one per message.
   conversation_id?: string;
+  selected_action?: SelectedAction;
 };
+
+export type SuggestedAction = {
+  action_id: string;
+  type: "drug_attribute" | "topic_attribute";
+  label: string;
+  value: string;
+  entity_id?: string;
+  topic?: string;
+};
+
+export type SelectedAction = Omit<SuggestedAction, "label">;
 
 export type ClassificationOut = {
   label: string; // TAKEN | MISSED | DELAYED | SIDE_EFFECT
@@ -64,6 +76,7 @@ export type ChatResponse = {
   trace_id?: string;
   agent_run_id?: string;
   chatbot_version?: "agent-v2" | "legacy";
+  suggested_actions?: SuggestedAction[];
 };
 
 export type AgentStatus = {
@@ -77,4 +90,48 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+};
+
+// BUILD-29: 6 ly do co dinh trong nut "Báo cáo câu trả lời" (khop
+// AgentFeedbackReason o backend/models/schemas.py) - khong phai free-text,
+// de server phan loai priority mot cach xac dinh (khong doan qua NLP).
+export type FeedbackReason =
+  | "WRONG_ANSWER"
+  | "NOT_UNDERSTOOD"
+  | "WRONG_MEDICATION_INFO"
+  | "UNSAFE_OR_INAPPROPRIATE"
+  | "TECHNICAL_ERROR"
+  | "OTHER";
+
+export type FeedbackReportRequest = {
+  conversation_id: string;
+  trace_id: string | null;
+  agent_run_id: string;
+  user_message: string;
+  assistant_message: string;
+  reason: FeedbackReason;
+  user_note?: string | null;
+};
+
+export type FeedbackReportResponse = {
+  id: string;
+  status: string;
+  priority: string;
+};
+
+// BUILD-30: "Xem hoạt động" - timeline patient-safe, xay tu trace THAT cua
+// dung message do (khong bao gio hardcode). Khop
+// backend/models/schemas.py::AgentActivityItemOut/AgentActivityOut.
+export type ActivityItem = {
+  type: string;
+  label: string;
+  status: string;
+  duration_ms: number | null;
+  source_count?: number | null;
+};
+
+export type ActivityResponse = {
+  trace_id: string;
+  available: boolean;
+  activities: ActivityItem[];
 };

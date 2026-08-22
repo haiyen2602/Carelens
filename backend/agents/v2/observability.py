@@ -436,8 +436,10 @@ _ALLOWED_ATTRIBUTE_KEYS = frozenset(
         "cached_input_tokens",
         "checkpoint_status",
         "component_status",
+        "context_resolution_used",
         "error_code",
         "estimated_cost_usd",
+        "final_router_intent",
         "handoff_outcome",
         "input_tokens",
         "latency_ms",
@@ -449,6 +451,9 @@ _ALLOWED_ATTRIBUTE_KEYS = frozenset(
         "provider_request_id",
         "provenance",
         "retries",
+        "resolution_source_turn",
+        "resolution_status",
+        "resolved_topic",
         "safety_disposition",
         "terminal_status",
         "tool_calls",
@@ -476,6 +481,10 @@ def _sanitize_attributes(values: dict[str, Any]) -> dict[str, str | int | float 
             safe[key] = value
         elif key == "provenance" and isinstance(value, str) and _SAFE_PROVENANCE.fullmatch(value):
             safe[key] = value
+        elif key in {"final_router_intent", "resolution_status"} and isinstance(value, str) and _SAFE_CODE.fullmatch(value):
+            safe[key] = value
+        elif key == "resolved_topic" and isinstance(value, str):
+            safe[key] = value[:80]
         elif key in {"model_role", "operation", "outcome", "tool_name", "checkpoint_status"} and isinstance(value, str) and _SAFE_IDENTIFIER.fullmatch(value):
             safe[key] = value
     return safe

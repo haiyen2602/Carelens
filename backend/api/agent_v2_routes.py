@@ -17,10 +17,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager
+from backend.agents.v2.conversation_state import ActiveEntity, SuggestedAction, resolve_state_input, transition_state
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import OpenAIModelGateway
 from backend.agents.v2.observability import AgentTelemetry, ModelPricingCatalog
-from backend.agents.v2.orchestrator import AgentOrchestrator, OrchestrationRequest
+from backend.agents.v2.orchestrator import (
+    AgentOrchestrator,
+    OrchestrationIntent,
+    OrchestrationRequest,
+    normalize_semantic_medical_query,
+)
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime
 from backend.agents.v2.safety import SafetyGateway
@@ -30,16 +36,27 @@ from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
 from backend.db.base import get_db
+from backend.db.models import AgentActivitySnapshot
 from backend.models.schemas import (
+    AgentActivityItemOut,
+    AgentActivityOut,
     AgentV2CitationOut,
     AgentV2OrchestrateRequest,
     AgentV2OrchestrateResponse,
     AgentV2ReadOnlyRequest,
     AgentV2ReadOnlyResponse,
+    SuggestedActionOut,
 )
+from backend.services.agent_activity import build_activity_timeline
 from backend.services.agent_authorization import require_agent_patient_access
+from backend.services.agent_conversation_state import AgentConversationStateStore
 from backend.services.agent_doctor_handoff import AuthorizedDoctorHandoffAdapter
-from backend.services.agent_idempotency import IdempotencyBusyError, IdempotencyClaim, claim_or_replay, record_completion
+from backend.services.agent_idempotency import (
+    IdempotencyBusyError,
+    IdempotencyClaim,
+    claim_or_replay,
+    record_completion,
+)
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
@@ -50,6 +67,37 @@ from backend.services.vinmec_web_search import VinmecWebSearchService
 agent_v2_router = APIRouter()
 
 _AGENT_V2_DISABLED_DETAIL = "Agent V2 chua duoc kich hoat"
+
+
+def _validated_selected_action(state, candidate) -> SuggestedAction | None:
+    """Match every client field against the latest state-issued action."""
+    if candidate is None:
+        return None
+    for action in state.offered_actions:
+        if (
+            action.action_id == candidate.action_id
+            and action.type == candidate.type
+            and action.value == candidate.value
+            and action.entity_id == candidate.entity_id
+            and action.topic == candidate.topic
+        ):
+            return action
+    return None
+
+
+def _resolved_drug_entity(tool_results) -> ActiveEntity | None:
+    """Promote only a server-returned canonical drug result into state."""
+    info_ids = [item.data.get("legacy_drug_id") for item in tool_results if item.name == "get_drug_info"]
+    if len(info_ids) != 1 or not info_ids[0]:
+        return None
+    drug_id = str(info_ids[0])
+    for item in tool_results:
+        if item.name != "search_drug":
+            continue
+        for candidate in item.data.get("items", []):
+            if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
+                return ActiveEntity("drug", drug_id, str(candidate["name"]))
+    return ActiveEntity("drug", drug_id, drug_id)
 
 
 def _canary_allowlist(settings: object) -> frozenset[str] | None:
@@ -264,6 +312,76 @@ def _record_agent_v2_telemetry(
         logging.getLogger(__name__).warning("Agent V2 telemetry recording failed: %s", telemetry_err)
 
 
+# BUILD-30: durable, sanitized activity timeline for GET /agent/v2/traces/
+# {trace_id}/activity -- deliberately its own table/write path, NOT reusing
+# the telemetry buffer above (see AgentActivitySnapshot's own docstring for
+# why: that buffer is process-local, capped at 200 entries, and reset on
+# every deploy, which BUILD-29's admin ticket explorer already had to accept
+# as a known limitation -- this feature is user-facing and needs to survive
+# both). Same "best-effort, after the real commit, never allowed to affect
+# the actual response" shape as `_record_agent_v2_telemetry`: a bug in
+# activity-building must never take down a real chat reply. Uses its own
+# `db.commit()` (the main response commit already happened by the time this
+# runs) rather than joining an already-closed transaction.
+def _persist_activity_snapshot(db: Session, *, patient_id: str, actor: CurrentUser, result) -> None:
+    try:
+        activities = build_activity_timeline(result)
+        db.add(
+            AgentActivitySnapshot(
+                agent_run_id=result.agent_run_id,
+                trace_id=result.trace_id,
+                patient_id=patient_id,
+                actor_id=actor.id,
+                intent=result.intent.value,
+                status=result.status.value,
+                model_calls=result.metrics.model_calls,
+                activities_json=activities,
+            )
+        )
+        db.commit()
+    except Exception as activity_err:  # noqa: BLE001 -- must never break the real response
+        db.rollback()
+        logging.getLogger(__name__).warning("Agent V2 activity snapshot recording failed: %s", activity_err)
+
+
+@agent_v2_router.get("/agent/v2/traces/{trace_id}/activity", response_model=AgentActivityOut)
+def get_trace_activity(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    actor: CurrentUser = Depends(get_current_user),
+) -> AgentActivityOut:
+    """BUILD-30 §3: a patient-safe read of their OWN message's activity
+    timeline -- deliberately NOT a reuse of the admin Trace Explorer's
+    response shape (BUILD-29's ``AgentFeedbackTraceSummaryOut`` carries far
+    more technical detail than a patient should ever see). Only role
+    "patient" may call this, and only for a trace that resolves to their own
+    ``patient_id`` -- a trace belonging to a different account is a 403, not
+    a silently-empty result (the same "fail closed, not fail quiet"
+    principle as BUILD-29's ``verify_trace_ownership``).
+
+    A trace this app never persisted an activity snapshot for (not found)
+    returns 200 with ``available: false`` rather than 404 -- the frontend
+    treats a genuinely-unknown id and an aged-out/pre-BUILD-30 one
+    identically ("Chi tiết hoạt động hiện không còn khả dụng."), and no
+    caller can distinguish "wrong id" from "real id, snapshot not kept" by
+    HTTP status alone, which is the more private default here.
+    """
+    if actor.role != "patient" or not actor.patient_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chi benh nhan moi xem duoc hoat dong cua chinh minh")
+
+    snapshot = db.query(AgentActivitySnapshot).filter(AgentActivitySnapshot.trace_id == trace_id).first()
+    if snapshot is None:
+        return AgentActivityOut(trace_id=trace_id, available=False, activities=[])
+    if snapshot.patient_id != actor.patient_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Trace nay khong thuoc ve tai khoan cua ban")
+
+    return AgentActivityOut(
+        trace_id=trace_id,
+        available=True,
+        activities=[AgentActivityItemOut.model_validate(item) for item in snapshot.activities_json],
+    )
+
+
 @agent_v2_router.post("/agent/v2/read-only", response_model=AgentV2ReadOnlyResponse)
 def run_read_only_agent(
     request: AgentV2ReadOnlyRequest,
@@ -301,6 +419,17 @@ def run_agent_orchestration(
     settings = get_settings()
     _require_agent_v2_enabled(settings, actor)
     patient_id = require_agent_patient_access(db, actor, request.patient_id)
+    # A missing id is explicitly one-shot.  It must not accidentally reuse
+    # state from a prior request by the same account.
+    conversation_id = request.conversation_id or f"one-shot:{uuid.uuid4()}"
+    state_store = AgentConversationStateStore()
+    conversation_state = state_store.load(
+        db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id
+    )
+    selected_action = _validated_selected_action(conversation_state, request.selected_action)
+    input_resolution = resolve_state_input(
+        conversation_state, message=request.message, selected_action=selected_action
+    )
 
     # BUILD-22: an optional client idempotency key opts into HTTP-level
     # replay -- see backend.services.agent_idempotency. A key bound to a
@@ -367,11 +496,15 @@ def run_agent_orchestration(
                 actor_id=actor.id,
                 actor_role=actor.role,
                 patient_id=patient_id,
-                conversation_id=request.conversation_id or f"one-shot:{actor.id}",
+                conversation_id=conversation_id,
                 session_id=request.session_id or str(uuid.uuid4()),
                 dose_id=request.dose_id,
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
+                resolved_query=input_resolution.query if input_resolution.used else None,
+                active_entity_id=conversation_state.active_entity.id if input_resolution.used and conversation_state.active_entity else None,
+                active_entity_name=conversation_state.active_entity.canonical_name if input_resolution.used and conversation_state.active_entity else None,
+                requested_attribute=selected_action.value if selected_action and selected_action.type == "drug_attribute" else None,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -379,6 +512,25 @@ def run_agent_orchestration(
     except Exception:
         db.rollback()
         raise
+
+    semantic = normalize_semantic_medical_query(input_resolution.query)
+    resolved_entity = _resolved_drug_entity(result.tool_results)
+    topic = semantic.topic if result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION else None
+    next_state = transition_state(
+        conversation_state,
+        intent=result.intent.value,
+        topic=topic,
+        entity=resolved_entity,
+        selected_action=selected_action,
+        safety_event=result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None,
+    )
+    state_store.save(
+        db,
+        agent_run_id=result.agent_run_id,
+        actor_id=actor.id,
+        patient_id=patient_id,
+        state=next_state,
+    )
 
     response = AgentV2OrchestrateResponse(
         status=result.status,
@@ -390,6 +542,7 @@ def run_agent_orchestration(
         handoff_id=result.handoff_result.request_id if result.handoff_result else None,
         trace_id=result.trace_id,
         agent_run_id=result.agent_run_id,
+        suggested_actions=[SuggestedActionOut(**action.as_dict()) for action in next_state.offered_actions],
     )
 
     # BUILD-22: record the replayable result in the SAME transaction as the
@@ -427,5 +580,10 @@ def run_agent_orchestration(
         result=result,
         latency_ms=(time.monotonic() - _started) * 1000.0,
     )
+    # BUILD-30: same best-effort, post-commit shape as the telemetry call
+    # above -- see _persist_activity_snapshot's own docstring for why this
+    # is a separate, durable table rather than reading the telemetry buffer
+    # back.
+    _persist_activity_snapshot(db, patient_id=patient_id, actor=actor, result=result)
 
     return response
