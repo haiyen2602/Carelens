@@ -236,8 +236,8 @@ def test_scenario_2_canonical_only_evidence_never_lets_the_vinmec_claim_through(
     assert result.citations == ()  # no fabricated citation object either
     # The model was told explicitly, before it answered, that there was no
     # real Vinmec evidence -- proves layer 1 (the proactive note) fired.
-    assert "khong tim thay ket qua tra cuu Vinmec Web" in gateway.synthesis_calls[-1]["message"] or any(
-        "khong tim thay ket qua tra cuu Vinmec Web" in c["message"] for c in gateway.calls
+    assert "không tìm thấy kết quả tra cứu Vinmec Web" in gateway.synthesis_calls[-1]["message"] or any(
+        "không tìm thấy kết quả tra cứu Vinmec Web" in c["message"] for c in gateway.calls
     )
 
 
