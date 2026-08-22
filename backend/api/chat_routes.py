@@ -278,7 +278,10 @@ async def chat(
             session_id=f"session_{patient_id}",
             user_id=patient_id,
             input_data={"message": request.message, "dose_id": request.dose_id},
-            metadata={"total_duration_ms": total_duration_ms, "intent": final_state.get("intent")},
+            # BUILD-25B: tag every trace with which chatbot system produced it
+            # (Agent V2 vs this legacy pipeline) so the admin dashboard can
+            # tell them apart instead of mixing both under one "model" list.
+            metadata={"total_duration_ms": total_duration_ms, "intent": final_state.get("intent"), "chatbot_version": "legacy"},
         )
 
         # Map steps to observation hierarchy

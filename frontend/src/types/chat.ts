@@ -1,11 +1,25 @@
-// Mirrors backend/models/schemas.py (ConversationChatRequest / ConversationChatResponse)
-// on the backend — POST /api/v1/chat, xem api-contracts.md §4. Giu dung ten field,
-// KHONG doi tuy tien o day ma khong doi ca 2 phia (se pha contract).
+// BUILD-26: this UI-facing contract now maps onto Agent V2's
+// AgentV2OrchestrateResponse (backend/models/schemas.py) via the adapter in
+// frontend/src/app/api/chat/route.ts, not directly onto the legacy
+// ConversationChatResponse anymore -- see that route's own comment for the
+// exact field-by-field mapping. Kept the original field names/shapes
+// (classification/severity/safety_flag/needs_clarification/sources) so
+// this type change doesn't force a rendering change in any component that
+// only reads `reply` (the only field frontend/src/app/patient/assistant/page.tsx
+// actually consumes today) -- Agent V2 has no direct equivalent for most of
+// these, so the adapter fills them with honest defaults (null/false/[])
+// rather than fabricating a mapping that doesn't really exist. The new
+// fields below carry Agent V2's own real data for anything that wants it.
 
 export type ChatRequest = {
   patient_id: string;
   message: string;
   dose_id?: string;
+  // BUILD-26: threads this message into the same Agent V2 conversation/
+  // short-term-memory scope as the rest of this UI thread -- pass the
+  // conversation's own stable id (see frontend/src/lib/chat-history.ts),
+  // not a new one per message.
+  conversation_id?: string;
 };
 
 export type ClassificationOut = {
@@ -18,13 +32,38 @@ export type SourceOut = {
   field: string; // field_group: cong_dung | tac_dung_phu | cach_dung | bao_quan
 };
 
+export type CitationOut = {
+  title: string;
+  source: string;
+  url: string | null;
+};
+
 export type ChatResponse = {
   reply: string;
+  // BUILD-26: Agent V2 has no direct equivalent (its own `intent` enum is a
+  // different concept, not the TAKEN/MISSED/DELAYED/SIDE_EFFECT dose
+  // classification this field originally meant) -- always null from the
+  // v2 adapter, not a fabricated mapping.
   classification: ClassificationOut | null;
+  // BUILD-26: best-effort derived from Agent V2's real safety_disposition
+  // (see route.ts) rather than a legacy-only concept with no v2 source.
   severity: string | null; // LOW | MEDIUM | HIGH
   safety_flag: boolean;
+  // BUILD-26: no direct v2 signal for this yet -- always false, not guessed.
   needs_clarification: boolean;
+  // BUILD-26: legacy's drug_id/field shape doesn't fit Agent V2's citations
+  // (title/source/url) -- always [] here; use the new `citations` field
+  // below for Agent V2's real citation data instead of forcing a bad fit.
   sources: SourceOut[];
+  // --- New, Agent V2-specific fields (optional: older code that only reads
+  // the fields above keeps working unmodified) ---
+  status?: string; // COMPLETED | HANDOFF_CREATED | SAFETY_BLOCKED | HANDOFF_REQUIRED | FAILED | TIMEOUT | BUDGET_EXCEEDED | CANCELLED
+  citations?: CitationOut[];
+  safety_disposition?: string | null;
+  handoff_id?: string | null;
+  trace_id?: string;
+  agent_run_id?: string;
+  chatbot_version?: "agent-v2" | "legacy";
 };
 
 export type AgentStatus = {

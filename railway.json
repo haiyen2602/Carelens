@@ -9,7 +9,8 @@
       "scripts/**",
       "requirements.txt",
       "alembic.ini",
-      "Dockerfile"
+      "Dockerfile",
+      "docker-entrypoint.sh"
     ]
   },
   "deploy": {

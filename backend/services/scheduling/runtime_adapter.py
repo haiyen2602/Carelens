@@ -151,7 +151,18 @@ def list_v2_dose_groups(db: Session, *, patient_id: str) -> list[DoseRuntimeGrou
 
 
 def get_v2_dose_group(db: Session, *, dose_group_id: str) -> DoseRuntimeGroup:
-    """Resolve an opaque legacy-compatible V2 group ID without exposing occurrence IDs."""
+    """Resolve an opaque legacy-compatible V2 group ID.
+
+    The returned ``DoseRuntimeGroup`` still carries ``occurrence_ids`` (real,
+    per-item ``DoseOccurrence`` ids) on the dataclass; the legacy patient/photo
+    API consumers of this function (``backend/api/dose_routes.py``) never read
+    that field and only ever see the opaque group ``id``. BUILD-18B's Agent V2
+    tool boundary (``backend/services/agent_read_only_tools.py``) is a
+    deliberate, separate, server-authorized exception that does read it, since
+    Safety Domain needs a real occurrence id and must never reinterpret the
+    synthetic group id as one (see ``backend/agents/v2/orchestrator.py::
+    AgentOrchestrator._resolve_occurrence``).
+    """
 
     patient_ids = db.execute(select(DoseOccurrence.patient_id).distinct()).scalars().all()
     for patient_id in patient_ids:

@@ -50,6 +50,8 @@ Pillow>=10.4.0
 # LLM client truc tiep (dung cho batch embedding script, Phase 3 - ngoai LangGraph)
 openai>=1.54.0
 tiktoken>=0.8.0
+# Offline/pre-release RAG judge only; never imported by the Agent runtime path.
+deepeval>=2,<3
 
 # Dev tools
 ruff>=0.8.0

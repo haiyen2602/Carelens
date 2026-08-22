@@ -39,6 +39,25 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
 
+    # Agent V2 model gateway.  Each workload may use a distinct OpenAI project
+    # in production.  When a workload key is empty, the gateway may use the
+    # existing OPENAI_API_KEY only for local/development compatibility; it
+    # never exposes either credential to callers, prompts, or logs.
+    openai_router_api_key: str = ""
+    openai_main_api_key: str = ""
+    openai_fallback_api_key: str = ""
+    openai_embedding_api_key: str = ""
+    openai_judge_api_key: str = ""
+    agent_router_model: str = "gpt-5.4-nano"
+    agent_main_model: str = "gpt-5.4-mini"
+    agent_fallback_model: str = "gpt-5.4"
+    agent_embedding_model: str = "text-embedding-3-small"
+    rag_judge_model: str = "gpt-4o"
+    # BUILD-13: JSON price catalog by exact model name. Prices are deliberately
+    # not hard-coded because provider pricing/version contracts can change.
+    # Example: {"gpt-5.4-mini":{"input_per_million":0.0,"cached_input_per_million":0.0,"output_per_million":0.0}}
+    agent_model_pricing_json: str = "{}"
+
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 
@@ -149,6 +168,107 @@ class Settings(BaseSettings):
         default="legacy",
         description="APP-5 safety mode. Shadow persists audited V2 safety/outbox decisions; legacy disables this runtime path.",
     )
+    # Agent V2 begins isolated and disabled. BUILD-1 has no write actions.
+    agent_runtime_enabled: bool = False
+    agent_token_budget: int = Field(default=4096, ge=1, le=100_000)
+    # Fix for a production BUDGET_EXCEEDED report on "Ngay mai toi can uong
+    # thuoc gi" (what do I take tomorrow): unlike get_today_doses (bounded to
+    # exactly one calendar day), get_upcoming_doses had NO upper bound at all
+    # -- ``scheduled_at >= now`` returns every future dose group through the
+    # end of the patient's entire prescription. Reproduced locally (real
+    # in-process orchestrator, real OpenAI usage) against an ordinary 60-day,
+    # 2-drug chronic regimen: 179 upcoming groups, 100KB+ serialized into the
+    # synthesis prompt, real usage 47,487 tokens against the 4,096 budget --
+    # an 11x overrun from a routine prescription, not an edge case.
+    #
+    # default=1 (today's remainder + all of tomorrow, calendar-date bound so
+    # it never clips "tomorrow" regardless of what time it is right now) was
+    # chosen empirically, not guessed: real repro runs showed 2- and 3-day
+    # windows still failed intermittently (the model non-deterministically
+    # sometimes calls get_today_doses *and* get_upcoming_doses together,
+    # e.g. 3 days -> 4,829 real tokens on one run, 4,001 on another, both
+    # against the SAME 4,096 budget) -- too thin a margin to call fixed. 1
+    # day landed at 2,448-2,557 real tokens across repeat runs, ~35-40%
+    # headroom under budget even in that worst-case two-tool combination.
+    # This tool's own declared description ("Read the authorized patient's
+    # upcoming doses.") never promised the full remaining prescription, so
+    # bounding this is a behavior-preserving fix for "tomorrow", not a
+    # capability cut. A longer forward window (e.g. for "sap toi"/"this
+    # week" phrasing) is a reasonable future improvement but needs either a
+    # leaner evidence payload or a deliberate, separately-reviewed budget
+    # change, not a guess bundled into this fix -- see report
+    # 57-build-27-budget-exceeded-upcoming-doses.md. Token budget itself left
+    # untouched by design (explicit instruction: do not raise it as this fix).
+    agent_upcoming_doses_window_days: int = Field(default=1, ge=1, le=90)
+    # BUILD-20: every tool-calling run now costs (1 planning step) + (1 step
+    # per tool call) + (1 synthesis step) -- see runtime.py's
+    # Planning -> Tools -> Synthesis loop (BUILD-19B). The pre-synthesis
+    # default of 4 was sized for the old single-model-turn design and left no
+    # room for synthesis at all once 3+ tools were called; BUILD-19B's live
+    # staging UAT reproduced this concretely on the prescription-query flow
+    # (get_active_prescriptions + get_today_doses + get_upcoming_doses =
+    # 3 tool calls -> 1+3=4 already exhausted the old default before
+    # synthesis could run, so it failed closed to BUDGET_EXCEEDED instead of
+    # answering). 6 gives exactly enough headroom for up to 4 tool calls plus
+    # planning and synthesis, and was the exact value verified live against
+    # that scenario (see report 24-build-19b, "Staging configuration"). Not
+    # widened further "just to pass" -- 4 tool calls covers every real
+    # multi-tool flow observed in UAT so far with one call of margin.
+    agent_max_steps: int = Field(default=6, ge=1, le=20)
+    # BUILD-21: comma-separated account ids allowed to reach Agent V2 while
+    # ``agent_runtime_enabled`` is true, ON TOP OF that flag (both must hold).
+    # Empty (the default) means "no extra restriction" -- unchanged behavior
+    # for every environment except production during its canary, so staging/
+    # local UAT never needs this set. On production, this is the explicit,
+    # auditable allowlist of test/internal accounts -- always granted access
+    # regardless of ``agent_rollout_percentage`` below, since these accounts
+    # are never meant to depend on a random bucket. An account neither on a
+    # *non-empty* allowlist nor in the rollout percentage's bucket gets
+    # exactly the same 404 as when the flag itself is off -- indistinguishable
+    # from the outside, so a non-canary caller learns nothing about Agent
+    # V2's existence.
+    agent_canary_allowlist: str = ""
+    # BUILD-23: deterministic percentage-of-traffic rollout, additive on top
+    # of (never a replacement for) the allowlist above -- see
+    # backend.api.agent_v2_routes._in_rollout_percentage. 0 (the default)
+    # changes nothing: only allowlisted accounts get in, exactly like every
+    # build through BUILD-22C. This is the mechanism the BUILD-23 cutover
+    # plan's 5% -> 20% -> 50% -> 100% stages actually execute through; BUILD-23
+    # itself never sets this above 0 on production (see report 29-build-23).
+    agent_rollout_percentage: int = Field(default=0, ge=0, le=100)
+    # BUILD-22: how long a client-supplied ``idempotency_key`` on
+    # /agent/v2/orchestrate stays valid for replay (see
+    # backend.services.agent_idempotency). Past this TTL the same key starts
+    # a genuinely new run instead of replaying a stale cached result -- a
+    # deliberately explicit, bounded replay window rather than "forever".
+    agent_idempotency_ttl_seconds: int = Field(default=86400, ge=60, le=604800)
+    agent_max_model_calls: int = Field(default=2, ge=1, le=10)
+    agent_max_tool_calls: int = Field(default=6, ge=0, le=20)
+    agent_max_retries: int = Field(default=1, ge=0, le=5)
+    agent_model_timeout_seconds: float = Field(default=15.0, gt=0, le=120.0)
+    agent_run_timeout_seconds: float = Field(default=30.0, gt=0, le=300.0)
+    # BUILD-9: a late or unavailable Safety Domain result is terminal; this
+    # limit is deliberately independent from model and run timeouts.
+    agent_safety_timeout_seconds: float = Field(default=5.0, gt=0, le=30.0)
+    # BUILD-4 context manager. The input budget is independently capped and
+    # must leave the configured reserve available for a model response.
+    agent_context_token_budget: int = Field(default=3072, ge=1, le=100_000)
+    agent_output_token_reserve: int = Field(default=1024, ge=1, le=100_000)
+    agent_context_short_term_fraction: float = Field(default=0.10, ge=0.0, le=1.0)
+    agent_context_long_term_facts_fraction: float = Field(default=0.04, ge=0.0, le=1.0)
+    agent_context_episodic_fraction: float = Field(default=0.03, ge=0.0, le=1.0)
+    agent_context_semantic_fraction: float = Field(default=0.03, ge=0.0, le=1.0)
+    # BUILD-7 retrieval gateway. These bounds apply before Retrieval Context
+    # reaches the global Context Manager budget.
+    agent_retrieval_top_k: int = Field(default=5, ge=1, le=20)
+    agent_retrieval_token_budget: int = Field(default=700, ge=1, le=20_000)
+    # BUILD-8: public supplementary knowledge only. This does not enable the
+    # Agent runtime and must remain constrained to the explicit Vinmec hosts.
+    agent_vinmec_web_enabled: bool = False
+    agent_vinmec_web_max_calls: int = Field(default=1, ge=0, le=5)
+    agent_vinmec_web_max_results: int = Field(default=3, ge=1, le=10)
+    agent_vinmec_web_timeout_seconds: float = Field(default=5.0, gt=0, le=30.0)
+    agent_vinmec_web_token_budget: int = Field(default=600, ge=1, le=10_000)
     # Vong 4, muc 3.2 - chi dung cho fuzzy name search o nhanh thuoc NGOAI
     # don. Sweep 4 tap eval (full/short GT, OOD, ambiguous) ban dau chot 0.25,
     # nhung 0.25 chi co margin +0.012 tren tran OOD (0.238) - sweep MIN them

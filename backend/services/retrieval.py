@@ -23,6 +23,21 @@ from backend.config import get_settings
 
 CANDIDATE_POOL_SIZE = 50  # so ung vien lay tu MOI nguon (vector, lexical) truoc khi loc nguong
 
+# BUILD-21: migration 0030 gave drug_chunks a nullable corpus_version column
+# so Agent V2's own corpus could be identified/versioned; every legacy row
+# (every row this file's own queries wrote before that migration) has
+# corpus_version IS NULL and always will. When BUILD-21 first restored the
+# real Agent V2 corpus onto PRODUCTION, it lands in this SAME shared table
+# (that is the whole reason the corpus_version column exists at all) -- every
+# query below therefore filters to corpus_version IS NULL explicitly. Without
+# it, live legacy `/api/v1/chat` traffic would silently start drawing
+# candidates from the Agent V2 corpus too (a different chunking/possibly
+# different embedding-model generation), changing real answers for real
+# patients who never opted into anything Agent V2. This is not optional and
+# must be present in every query this file runs against drug_chunks.
+# See each query below: every one adds "corpus_version IS NULL" (a WHERE
+# clause of its own, or an extra AND term).
+
 
 @dataclass
 class CandidateChunk:
@@ -54,6 +69,7 @@ class DrugInfoResult:
     lexical_score: float | None
     rrf_score: float
     rank: int = field(default=0)
+    chunk_id: str | None = None
 
 
 @dataclass
@@ -143,6 +159,7 @@ def fuse_rrf(
                 lexical_score=lexical_score.get(cid),
                 rrf_score=rrf_score,
                 rank=rank,
+                chunk_id=cid,
             )
         )
     return RetrievalResult(results=results, no_source_found=False)
@@ -170,6 +187,7 @@ def vector_search(db: Session, query_embedding: list[float], nguong_vector: floa
             SELECT id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung,
                    1 - (embedding <=> :q) AS cosine_similarity
             FROM drug_chunks
+            WHERE corpus_version IS NULL
             ORDER BY embedding <=> :q
             LIMIT :pool_size
             """
@@ -201,7 +219,10 @@ def lexical_search(db: Session, query: str, nguong_lexical: float) -> list[Candi
     ma khong bao loi gi ca (code chay binh thuong, chi ket qua thieu)."""
     db.execute(text("SET pg_trgm.similarity_threshold = :t"), {"t": nguong_lexical})
     db.execute(text("SET pg_trgm.word_similarity_threshold = :t"), {"t": nguong_lexical})
-    rows = db.execute(
+    # Keep the established indexed name/content branch separate from the
+    # name-in-question fallback below. Combining the three predicates with SQL
+    # `OR` makes PostgreSQL choose a full sequential scan for this corpus.
+    indexed_rows = db.execute(
         text(
             """
             SELECT id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung,
@@ -210,15 +231,38 @@ def lexical_search(db: Session, query: str, nguong_lexical: float) -> list[Candi
                        word_similarity(unaccent(:q), noi_dung_unaccent)
                    ) AS lexical_score
             FROM drug_chunks
-            WHERE ten_thuoc_unaccent % unaccent(:q)
-               OR unaccent(:q) <% noi_dung_unaccent
+            WHERE corpus_version IS NULL
+              AND (ten_thuoc_unaccent % unaccent(:q)
+               OR unaccent(:q) <% noi_dung_unaccent)
             ORDER BY lexical_score DESC
             LIMIT :pool_size
             """
         ),
         {"q": query, "pool_size": CANDIDATE_POOL_SIZE},
     ).fetchall()
-    return [_row_to_candidate(r, r.lexical_score) for r in rows]
+    if indexed_rows:
+        return [_row_to_candidate(row, row.lexical_score) for row in indexed_rows]
+
+    # A whole question makes `similarity(name, question)` artificially low.
+    # When the normal high-threshold lexical branch found no evidence,
+    # `word_similarity(name, question)` is a general pg_trgm fallback for a
+    # name span in a longer question and for a spaced misspelling. It uses the
+    # same configured threshold, not a low-threshold fuzzy fallback.
+    name_word_rows = db.execute(
+        text(
+            """
+            SELECT id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung,
+                   word_similarity(ten_thuoc_unaccent, unaccent(:q)) AS lexical_score
+            FROM drug_chunks
+            WHERE corpus_version IS NULL
+              AND ten_thuoc_unaccent <% unaccent(:q)
+            ORDER BY lexical_score DESC
+            LIMIT :pool_size
+            """
+        ),
+        {"q": query, "pool_size": CANDIDATE_POOL_SIZE},
+    ).fetchall()
+    return [_row_to_candidate(row, row.lexical_score) for row in name_word_rows]
 
 
 def fuzzy_name_search(db: Session, query: str, top_k: int = 5) -> list[CandidateChunk]:
@@ -246,6 +290,7 @@ def fuzzy_name_search(db: Session, query: str, top_k: int = 5) -> list[Candidate
             SELECT DISTINCT ON (drug_id) id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung,
                    similarity(ten_thuoc_unaccent, unaccent(:q)) AS name_sim
             FROM drug_chunks
+            WHERE corpus_version IS NULL
             ORDER BY drug_id, name_sim DESC
             """
         ),
@@ -274,7 +319,8 @@ def search_active_side_effect_chunks(
             SELECT drug_id, ten_thuoc, noi_dung,
                    1 - (embedding <=> :q) AS cosine_similarity
             FROM drug_chunks
-            WHERE field_group = 'tac_dung_phu'
+            WHERE corpus_version IS NULL
+              AND field_group = 'tac_dung_phu'
               AND drug_id = ANY(CAST(:drug_ids AS text[]))
             ORDER BY embedding <=> :q
             """
@@ -292,7 +338,13 @@ def search_active_side_effect_chunks(
     ]
 
 
-def hybrid_search(db: Session, query: str, query_embedding: list[float]) -> RetrievalResult:
+def hybrid_search(
+    db: Session,
+    query: str,
+    query_embedding: list[float],
+    *,
+    top_k: int | None = None,
+) -> RetrievalResult:
     """Entry point day du: loc nguong tho o tung nguon (mucd 4.3 buoc 1-2),
     hop nhat RRF chi tren union (buoc 3-5). Goi bang query_embedding co san
     (da embed cau hoi bang OpenAI truoc do o node retrieval - xem
@@ -300,7 +352,12 @@ def hybrid_search(db: Session, query: str, query_embedding: list[float]) -> Retr
     settings = get_settings()
     vec_candidates = vector_search(db, query_embedding, settings.nguong_vector)
     lex_candidates = lexical_search(db, query, settings.nguong_lexical)
-    return fuse_rrf(vec_candidates, lex_candidates, k=settings.rrf_k, top_k=settings.retrieval_top_k)
+    return fuse_rrf(
+        vec_candidates,
+        lex_candidates,
+        k=settings.rrf_k,
+        top_k=top_k if top_k is not None else settings.retrieval_top_k,
+    )
 
 
 def get_chunks_by_drug_id(db: Session, drug_id: str) -> list[DrugInfoResult]:
@@ -313,7 +370,8 @@ def get_chunks_by_drug_id(db: Session, drug_id: str) -> list[DrugInfoResult]:
             """
             SELECT id, drug_id, ten_thuoc, danh_muc, muc_nghiem_trong, field_group, noi_dung
             FROM drug_chunks
-            WHERE drug_id = :drug_id
+            WHERE corpus_version IS NULL
+              AND drug_id = :drug_id
             ORDER BY field_group
             """
         ),
@@ -332,6 +390,7 @@ def get_chunks_by_drug_id(db: Session, drug_id: str) -> list[DrugInfoResult]:
             lexical_score=None,
             rrf_score=0.0,
             rank=i + 1,
+            chunk_id=r.id,
         )
         for i, r in enumerate(rows)
     ]
