@@ -101,6 +101,51 @@ def get_admin_drug(session: Session, drug_product_id: str) -> AdminDrugDetailRes
     return AdminDrugDetailResponse(**_build_item(product, ingredients[product.id], mappings[product.id]).model_dump())
 
 
+def update_admin_drug(
+    session: Session,
+    drug_product_id: str,
+    *,
+    display_name: str | None = None,
+    dosage_form: str | None = None,
+    route: str | None = None,
+    strength_text: str | None = None,
+    mapping_status: MappingStatus | None = None,
+) -> AdminDrugDetailResponse | None:
+    """Update canonical product attributes and mapping status."""
+    product = session.get(DrugProduct, drug_product_id)
+    if product is None:
+        return None
+
+    if display_name is not None:
+        product.display_name = display_name
+    if dosage_form is not None:
+        product.dosage_form = dosage_form
+    if route is not None:
+        product.route = route
+    if strength_text is not None:
+        product.strength_text = strength_text
+
+    if mapping_status is not None:
+        mapping = session.scalars(
+            select(DrugIdMap).where(DrugIdMap.drug_product_id == product.id)
+        ).first()
+        if mapping:
+            mapping.mapping_status = mapping_status.value
+        elif product.legacy_drug_id:
+            session.add(
+                DrugIdMap(
+                    legacy_drug_id=product.legacy_drug_id,
+                    drug_product_id=product.id,
+                    mapping_status=mapping_status.value,
+                )
+            )
+
+    session.flush()
+    ingredients, mappings = _load_collections(session, [product.id])
+    return AdminDrugDetailResponse(**_build_item(product, ingredients[product.id], mappings[product.id]).model_dump())
+
+
+
 def _load_collections(
     session: Session, product_ids: list[str]
 ) -> tuple[dict[str, list[str]], dict[str, list[AdminDrugMapping]]]:

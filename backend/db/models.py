@@ -1264,3 +1264,23 @@ class DoctorWatch(Base):
     __table_args__ = (
         Index("uq_doctor_watch_doctor_patient", "doctor_id", "patient_id", unique=True),
     )
+
+
+class SystemAuditLog(Base):
+    """Luu vet nhat ky he thong (System Audit Log).
+    APPEND-ONLY: Khong duoc UPDATE hoac DELETE tu code ung dung (rang buoc an toan).
+    Ho tro ghi nhat ky hanh dong cua Admin, Bac si, Benh nhan va He thong.
+    """
+
+    __tablename__ = "system_audit_logs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    actor_name: Mapped[str] = mapped_column(String, nullable=False)
+    actor_role: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    action: Mapped[str] = mapped_column(Text, nullable=False)
+    target: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False, index=True
+    )
+

@@ -55,7 +55,7 @@ RUN mkdir -p /app/data && chown -R appuser:appuser /app
 # bi volume phu mat luc chay. Entrypoint tu ha quyen xuong appuser bang gosu
 # ngay truoc khi chay CMD, nen app VAN chay non-root nhu truoc.
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # EXPOSE chi la metadata (khong mo port that) - giu 8000 lam gia tri mac dinh

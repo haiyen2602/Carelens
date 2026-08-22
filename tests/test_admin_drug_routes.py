@@ -111,5 +111,6 @@ def test_openapi_exposes_only_read_routes_without_reindex():
     paths = app.openapi()["paths"]
 
     assert set(paths["/api/v1/admin/drugs"]) == {"get"}
-    assert set(paths["/api/v1/admin/drugs/{drug_product_id}"]) == {"get"}
+    assert set(paths["/api/v1/admin/drugs/{drug_product_id}"]) == {"get", "patch"}
     assert not any("reindex" in path.casefold() for path in paths)
+

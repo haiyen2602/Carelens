@@ -259,6 +259,12 @@ class AccountStatusUpdateRequest(BaseModel):
     status: AccountStatus
 
 
+class AccountUpdateRequest(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=100)
+    email: NormalizedEmail | None = None
+
+
+
 class AccountOut(BaseModel):
     """KHONG BAO GIO bao gom password_hash - dung cho ca response tao moi,
     list, va update status."""
@@ -908,3 +914,21 @@ class DoseStatusUpdateRequest(BaseModel):
     status: str = Field(
         ..., description="PENDING|TAKEN|MISSED|DELAYED|CANCELLED|AWAITING_CAREGIVER"
     )
+
+
+class SystemAuditLogOut(BaseModel):
+    id: str
+    actor_id: str | None = None
+    actor_name: str
+    actor_role: str
+    action: str
+    target: str | None = None
+    created_at: datetime
+
+
+class SystemAuditLogListResponse(BaseModel):
+    items: list[SystemAuditLogOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus, Search, Unlock } from "lucide-react";
+import { Lock, Pencil, Plus, Search, Unlock } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,14 @@ import { useAuth } from "@/lib/auth";
 import {
   createAccount,
   listAccounts,
+  updateAccount,
   updateAccountStatus,
   type AccountRecord,
   type AccountCreationRole,
   type AccountRole,
   type AccountStatus,
 } from "@/lib/accounts";
+
 
 const roleTone: Record<AccountRole, string> = {
   doctor: "bg-success/15 text-success",
@@ -77,6 +79,10 @@ function AccountsContent() {
   }, [groupParam]);
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<AccountRecord | null>(null);
+  const [editForm, setEditForm] = useState({ fullName: "", email: "" });
+  const [editError, setEditError] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [statusError, setStatusError] = useState("");
@@ -111,6 +117,29 @@ function AccountsContent() {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: () => {
+      if (!editingAccount) throw new Error("Chưa chọn tài khoản");
+      return updateAccount(
+        editingAccount.id,
+        {
+          fullName: editForm.fullName.trim(),
+          email: editForm.email.trim(),
+        },
+        accessToken,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      setEditDialogOpen(false);
+      setEditingAccount(null);
+      setEditError("");
+    },
+    onError: (err: unknown) => {
+      setEditError(err instanceof Error ? err.message : "Cập nhật tài khoản thất bại.");
+    },
+  });
+
   const statusMutation = useMutation({
     mutationFn: ({ id, next }: { id: string; next: AccountStatus }) =>
       updateAccountStatus(id, next, accessToken),
@@ -123,6 +152,7 @@ function AccountsContent() {
       setStatusError(err instanceof Error ? err.message : "Cập nhật trạng thái thất bại.");
     },
   });
+
 
   const accounts = accountsQuery.data ?? [];
 
@@ -386,6 +416,18 @@ function AccountsContent() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => {
+                        setEditingAccount(a);
+                        setEditForm({ fullName: a.fullName, email: a.email });
+                        setEditError("");
+                        setEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       disabled={statusMutation.isPending}
                       onClick={() => {
                         setStatusError("");
@@ -421,6 +463,63 @@ function AccountsContent() {
           </tbody>
         </table>
       </div>
+
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            setEditingAccount(null);
+            setEditError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa thông tin tài khoản</DialogTitle>
+            <DialogDescription>
+              Cập nhật họ tên và email cho tài khoản {editingAccount?.fullName}.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editForm.fullName.trim() || !editForm.email.trim()) {
+                setEditError("Vui lòng nhập đầy đủ họ tên và email.");
+                return;
+              }
+              setEditError("");
+              editMutation.mutate();
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="edit_full_name">Họ tên</Label>
+              <Input
+                id="edit_full_name"
+                value={editForm.fullName}
+                onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            {editError && <p className="text-sm font-medium text-destructive">{editError}</p>}
+            <DialogFooter>
+              <Button type="submit" disabled={editMutation.isPending}>
+                {editMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
