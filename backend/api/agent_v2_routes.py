@@ -186,6 +186,7 @@ def _record_agent_v2_telemetry(
     error: Exception | None = None,
 ) -> None:
     try:
+        settings = get_settings()
         telemetry = get_telemetry_service()
         trace = telemetry.create_trace(
             trace_id=getattr(result, "trace_id", None) or f"agent_v2_{int(time.time() * 1000)}_{actor.id[:6]}",
@@ -194,6 +195,13 @@ def _record_agent_v2_telemetry(
             user_id=actor.id,
             input_data={"message": request.message},
             metadata={
+                # `create_trace()`'s own base metadata defaults "model"/
+                # "prompt_version" to the LEGACY chat pipeline's settings
+                # (settings.model_name/rag_prompt_version) -- overridden here
+                # so the dashboard's Model/Prompt Version filters reflect
+                # Agent V2's actual model, not legacy chat's.
+                "model": settings.agent_main_model,
+                "prompt_version": "agent-v2-orchestrator",
                 "agent_run_id": getattr(result, "agent_run_id", None),
                 "intent": getattr(result, "intent", None).value if getattr(result, "intent", None) else None,
                 "actor_role": actor.role,
