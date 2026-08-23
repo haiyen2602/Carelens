@@ -64,6 +64,15 @@ class MissingModelCredentialError(RuntimeError):
     """Raised before a request when an explicitly named backend env var is absent."""
 
 
+class EmptySynthesisError(ValueError):
+    """BUILD-32: raised in place of a bare ``ValueError`` so the runtime's
+    retry/failure classification (``backend.agents.v2.runtime``) can attach
+    the canonical ``EMPTY_REPLY`` error code precisely, instead of folding
+    this into the generic ``MODEL_ERROR`` bucket. Still a ``ValueError``
+    subclass so any existing ``except ValueError`` handling keeps working
+    unchanged."""
+
+
 def _setting(settings: Any, name: str) -> str:
     return str(getattr(settings, name, "") or "").strip()
 
@@ -486,7 +495,7 @@ class OpenAIModelGateway:
         if not text:
             # Fail closed through the same bounded-retry path as plan_read_only
             # rather than silently returning empty text again.
-            raise ValueError("MODEL_SYNTHESIS_EMPTY")
+            raise EmptySynthesisError("MODEL_SYNTHESIS_EMPTY")
         return ModelSynthesis(response=text, usage=_usage(response), request_id=_request_id(response))
 
     def embed_query(self, *, text: str) -> EmbeddingResult:

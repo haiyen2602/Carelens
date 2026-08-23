@@ -8,11 +8,37 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
+import openai
+
 from backend.agents.v2.handoff import AgentHandoffResult
-from backend.agents.v2.model_gateway import ModelGateway, ModelPlan, ModelRole, ModelSynthesis, SynthesisEvidence
+from backend.agents.v2.model_gateway import (
+    EmptySynthesisError,
+    ModelGateway,
+    ModelPlan,
+    ModelRole,
+    ModelSynthesis,
+    SynthesisEvidence,
+)
 from backend.agents.v2.observability import AgentTelemetry, TraceComponent, TraceContext
 from backend.agents.v2.safety import SafetyDecision, SafetyOutcome
 from backend.agents.v2.tools import ToolGateway, ToolResult
+
+# BUILD-32: canonical run-level error taxonomy (BUILD-32-TO-36-MASTER-PLAN.md
+# §9, plus REQUEST_TIMEOUT per §7's separate timeout sub-taxonomy -- the plan
+# calls its §9 list a floor, "chuẩn hóa tối thiểu"). `None` on a `RunResult`
+# means the run was not an error/timeout state (COMPLETED, CANCELLED,
+# SAFETY_BLOCKED, HANDOFF_REQUIRED, HANDOFF_CREATED -- none of those are
+# failures of the agent itself). `TOOL_TIMEOUT`/`RETRIEVAL_TIMEOUT` are part
+# of the taxonomy but never emitted by this runtime: there is no real
+# per-tool/per-retrieval deadline distinct from the overall run timeout today
+# (see backend.agents.v2.tools.ToolGateway), so inventing that distinction
+# here would be a fabricated metric.
+ERROR_CODE_BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
+ERROR_CODE_MODEL_ERROR = "MODEL_ERROR"
+ERROR_CODE_MODEL_TIMEOUT = "MODEL_TIMEOUT"
+ERROR_CODE_REQUEST_TIMEOUT = "REQUEST_TIMEOUT"
+ERROR_CODE_TOOL_ERROR = "TOOL_ERROR"
+ERROR_CODE_EMPTY_REPLY = "EMPTY_REPLY"
 
 # BUILD-20 (BUILD-19's P2): the Main Model occasionally emits a visually-
 # confusable Cyrillic character where it plainly means the Latin lookalike
@@ -190,6 +216,9 @@ class RunResult:
     response: str
     tool_results: tuple[ToolResult, ...]
     metrics: RunMetrics = RunMetrics()
+    # BUILD-32: canonical error taxonomy code (see the ERROR_CODE_* constants
+    # above), `None` for every non-error terminal status.
+    error_code: str | None = None
 
 
 class ReadOnlyAgentRuntime:
@@ -399,6 +428,7 @@ class ReadOnlyAgentRuntime:
                     results,
                     metrics,
                     started,
+                    error_code=ERROR_CODE_TOOL_ERROR,
                 )
             metrics = self._with(metrics, steps=metrics.steps + 1, tool_calls=metrics.tool_calls + 1)
             if self._timed_out(started):
@@ -490,19 +520,28 @@ class ReadOnlyAgentRuntime:
             before_call = self._clock()
             try:
                 plan = self._model_gateway.plan_read_only(message=message, actor_role=actor_role)
-            except Exception:
+            except Exception as exc:
                 current = self._with(current, model_calls=current.model_calls + 1, steps=current.steps + 1)
                 if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
-                    return None, self._timeout_result(safety_context, (), current, started), current
+                    timeout_code = self._classify_timeout(started, self._clock(), self._limits.run_timeout_seconds)
+                    return None, self._timeout_result(safety_context, (), current, started, error_code=timeout_code), current
                 if current.retries >= self._limits.max_retries or current.model_calls >= self._limits.max_model_calls:
-                    return None, self._result(RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", (), current, started), current
+                    # BUILD-32: same terminal decision as before this build --
+                    # only the error_code label is new, from the caught
+                    # exception's real type, never from re-inferring solely off
+                    # elapsed time.
+                    exhausted_code = ERROR_CODE_MODEL_TIMEOUT if isinstance(exc, openai.APITimeoutError) else ERROR_CODE_MODEL_ERROR
+                    return None, self._result(
+                        RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", (), current, started, error_code=exhausted_code
+                    ), current
                 current = self._with(current, retries=current.retries + 1)
                 self._telemetry_event(trace, TraceComponent.MODEL, "agent_model.retry", error_code="MODEL_CALL_RETRY", retries=current.retries)
                 self._backoff(current.retries, started)
                 continue
             current = self._with(current, model_calls=current.model_calls + 1, steps=current.steps + 1)
             if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
-                return None, self._timeout_result(safety_context, (), current, started), current
+                timeout_code = self._classify_timeout(started, self._clock(), self._limits.run_timeout_seconds)
+                return None, self._timeout_result(safety_context, (), current, started, error_code=timeout_code), current
             return plan, None, current
 
     def _synthesize_with_limits(
@@ -545,19 +584,35 @@ class ReadOnlyAgentRuntime:
             before_call = self._clock()
             try:
                 synthesis = self._model_gateway.synthesize_read_only(message=message, actor_role=actor_role, evidence=evidence)
-            except Exception:
+            except Exception as exc:
                 current = self._with(current, model_calls=current.model_calls + 1, steps=current.steps + 1)
                 if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
-                    return None, self._timeout_result(safety_context, tool_results, current, started), current
+                    timeout_code = self._classify_timeout(started, self._clock(), self._limits.run_timeout_seconds)
+                    return None, self._timeout_result(safety_context, tool_results, current, started, error_code=timeout_code), current
                 if current.retries >= self._limits.max_retries or current.model_calls >= self._limits.max_model_calls:
-                    return None, self._result(RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", tool_results, current, started), current
+                    # BUILD-32: same terminal decision as before this build --
+                    # only the error_code label is new. EmptySynthesisError
+                    # (model returned no usable text) is distinguished from a
+                    # real timeout/other model error so Admin can tell "the
+                    # model answered nothing" apart from "the model call
+                    # itself failed/timed out".
+                    if isinstance(exc, EmptySynthesisError):
+                        exhausted_code = ERROR_CODE_EMPTY_REPLY
+                    elif isinstance(exc, openai.APITimeoutError):
+                        exhausted_code = ERROR_CODE_MODEL_TIMEOUT
+                    else:
+                        exhausted_code = ERROR_CODE_MODEL_ERROR
+                    return None, self._result(
+                        RunStatus.FAILED, "Agent tạm thời không sẵn sàng.", tool_results, current, started, error_code=exhausted_code
+                    ), current
                 current = self._with(current, retries=current.retries + 1)
                 self._telemetry_event(trace, TraceComponent.MODEL, "agent_model.retry", error_code="SYNTHESIS_CALL_RETRY", retries=current.retries)
                 self._backoff(current.retries, started)
                 continue
             current = self._with(current, model_calls=current.model_calls + 1, steps=current.steps + 1)
             if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
-                return None, self._timeout_result(safety_context, tool_results, current, started), current
+                timeout_code = self._classify_timeout(started, self._clock(), self._limits.run_timeout_seconds)
+                return None, self._timeout_result(safety_context, tool_results, current, started, error_code=timeout_code), current
             return synthesis, None, current
 
     def _guardrail_result(
@@ -576,7 +631,14 @@ class ReadOnlyAgentRuntime:
                 metrics,
                 started,
             )
-        return self._result(RunStatus.BUDGET_EXCEEDED, f"Agent run vượt giới hạn {kind}.", results, metrics, started)
+        return self._result(
+            RunStatus.BUDGET_EXCEEDED,
+            f"Agent run vượt giới hạn {kind}.",
+            results,
+            metrics,
+            started,
+            error_code=ERROR_CODE_BUDGET_EXCEEDED,
+        )
 
     def _timeout_result(
         self,
@@ -584,6 +646,8 @@ class ReadOnlyAgentRuntime:
         results: tuple[ToolResult, ...] | list[ToolResult],
         metrics: RunMetrics,
         started: float,
+        *,
+        error_code: str = ERROR_CODE_REQUEST_TIMEOUT,
     ) -> RunResult:
         if safety_context is SafetyContext.UNRESOLVED:
             return self._result(
@@ -593,7 +657,9 @@ class ReadOnlyAgentRuntime:
                 metrics,
                 started,
             )
-        return self._result(RunStatus.TIMEOUT, "Agent run đã quá thời gian cho phép.", results, metrics, started)
+        return self._result(
+            RunStatus.TIMEOUT, "Agent run đã quá thời gian cho phép.", results, metrics, started, error_code=error_code
+        )
 
     # BUILD-20: BUILD-19's P2 finding -- the fixed SAFETY_BLOCKED message did
     # not distinguish "this dose isn't due/missed yet, so it can't be
@@ -714,8 +780,21 @@ class ReadOnlyAgentRuntime:
         results: tuple[ToolResult, ...] | list[ToolResult],
         metrics: RunMetrics,
         started: float,
+        *,
+        error_code: str | None = None,
     ) -> RunResult:
         elapsed_ms = max(0.0, (self._clock() - started) * 1000)
         return RunResult(
-            status, _clean_final_reply_text(response), tuple(results), self._with(metrics, elapsed_ms=elapsed_ms)
+            status,
+            _clean_final_reply_text(response),
+            tuple(results),
+            self._with(metrics, elapsed_ms=elapsed_ms),
+            error_code,
         )
+
+    @staticmethod
+    def _classify_timeout(started: float, clock_now: float, run_timeout_seconds: float) -> str:
+        """BUILD-32: REQUEST_TIMEOUT when the overall run budget is what
+        tripped, MODEL_TIMEOUT when only the per-call model budget did --
+        same elapsed-time evidence the caller already checked, just labeled."""
+        return ERROR_CODE_REQUEST_TIMEOUT if (clock_now - started) > run_timeout_seconds else ERROR_CODE_MODEL_TIMEOUT

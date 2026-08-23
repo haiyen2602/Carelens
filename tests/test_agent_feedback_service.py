@@ -8,6 +8,7 @@ these exercise the actual hashing/lookup logic, not a mocked stand-in.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import create_engine
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session
 
 import backend.services.telemetry as telemetry_module
 from backend.api.security import CurrentUser
-from backend.db.models import AgentFeedbackTicket
+from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunEvaluation, AgentRunSpan
 from backend.models.schemas import AgentFeedbackCreateRequest
 from backend.services.agent_feedback import (
     CrossPatientTraceError,
@@ -30,8 +31,14 @@ from backend.services.telemetry import TelemetryService, hash_identifier
 
 @pytest.fixture
 def db() -> Session:
+    # BUILD-32: verify_trace_ownership/trace_summary_out/session_messages now
+    # query AgentRun/AgentRunSpan first (durable source of truth) -- those
+    # tables need to exist here too, not just AgentFeedbackTicket.
     engine = create_engine("sqlite+pysqlite:///:memory:")
     AgentFeedbackTicket.__table__.create(engine)
+    AgentRun.__table__.create(engine)
+    AgentRunSpan.__table__.create(engine)
+    AgentRunEvaluation.__table__.create(engine)
     session = Session(engine)
     try:
         yield session
@@ -87,32 +94,31 @@ def _payload(**overrides) -> AgentFeedbackCreateRequest:
 # ---------------------------------------------------------------------------
 
 
-def test_ownership_not_found_is_treated_as_owned(clean_trace_buffer):
-    result = verify_trace_ownership("does-not-exist", actor_id="actor-1")
+def test_ownership_not_found_is_treated_as_owned(db, clean_trace_buffer):
+    result = verify_trace_ownership(db, "does-not-exist", actor_id="actor-1")
     assert result.found is False
     assert result.owned is True
-    assert result.trace is None
+    assert result.intent is None
 
 
-def test_ownership_none_trace_id_is_treated_as_owned(clean_trace_buffer):
-    result = verify_trace_ownership(None, actor_id="actor-1")
+def test_ownership_none_trace_id_is_treated_as_owned(db, clean_trace_buffer):
+    result = verify_trace_ownership(db, None, actor_id="actor-1")
     assert result.found is False
     assert result.owned is True
 
 
-def test_ownership_match(clean_trace_buffer):
+def test_ownership_match(db, clean_trace_buffer):
     _seed_trace(trace_id="t-1", user_id="actor-1", session_id="conv-1")
-    result = verify_trace_ownership("t-1", actor_id="actor-1")
+    result = verify_trace_ownership(db, "t-1", actor_id="actor-1")
     assert result.found is True
     assert result.owned is True
-    assert result.trace is not None
 
 
-def test_ownership_mismatch_is_denied(clean_trace_buffer):
+def test_ownership_mismatch_is_denied(db, clean_trace_buffer):
     # Real trace belongs to a DIFFERENT account -- the exact cross-patient
     # attribution attack BUILD-29 §10 requires this module to catch.
     _seed_trace(trace_id="t-2", user_id="actor-victim", session_id="conv-victim")
-    result = verify_trace_ownership("t-2", actor_id="actor-attacker")
+    result = verify_trace_ownership(db, "t-2", actor_id="actor-attacker")
     assert result.found is True
     assert result.owned is False
 
@@ -123,19 +129,17 @@ def test_ownership_mismatch_is_denied(clean_trace_buffer):
 
 
 def test_unsafe_reason_is_always_p0():
-    priority, p0 = classify_priority("UNSAFE_OR_INAPPROPRIATE", trace=None)
+    priority, p0 = classify_priority("UNSAFE_OR_INAPPROPRIATE", intent=None)
     assert (priority, p0) == ("P0", True)
 
 
-def test_acute_danger_trace_intent_forces_p0_regardless_of_reason(clean_trace_buffer):
-    trace = _seed_trace(trace_id="t-3", user_id="a", session_id="c", intent="ACUTE_DANGER_ESCALATION")
-    priority, p0 = classify_priority("WRONG_ANSWER", trace=trace)
+def test_acute_danger_trace_intent_forces_p0_regardless_of_reason():
+    priority, p0 = classify_priority("WRONG_ANSWER", intent="ACUTE_DANGER_ESCALATION")
     assert (priority, p0) == ("P0", True)
 
 
-def test_doctor_review_trace_intent_forces_p0(clean_trace_buffer):
-    trace = _seed_trace(trace_id="t-4", user_id="a", session_id="c", intent="DOCTOR_REVIEW")
-    priority, p0 = classify_priority("OTHER", trace=trace)
+def test_doctor_review_trace_intent_forces_p0():
+    priority, p0 = classify_priority("OTHER", intent="DOCTOR_REVIEW")
     assert (priority, p0) == ("P0", True)
 
 
@@ -150,12 +154,11 @@ def test_doctor_review_trace_intent_forces_p0(clean_trace_buffer):
     ],
 )
 def test_ordinary_reasons_map_to_the_documented_priority(reason, expected):
-    assert classify_priority(reason, trace=None) == expected
+    assert classify_priority(reason, intent=None) == expected
 
 
-def test_ordinary_intent_does_not_escalate_priority(clean_trace_buffer):
-    trace = _seed_trace(trace_id="t-5", user_id="a", session_id="c", intent="TODAY_DOSES")
-    assert classify_priority("WRONG_ANSWER", trace=trace) == ("P2", False)
+def test_ordinary_intent_does_not_escalate_priority():
+    assert classify_priority("WRONG_ANSWER", intent="TODAY_DOSES") == ("P2", False)
 
 
 # ---------------------------------------------------------------------------
@@ -217,20 +220,23 @@ def test_create_ticket_classifies_unsafe_reason_as_p0_review_required(db, clean_
 # ---------------------------------------------------------------------------
 
 
-def test_trace_summary_out_not_found_is_a_clean_negative_result(clean_trace_buffer):
-    summary = trace_summary_out("nonexistent")
+def test_trace_summary_out_not_found_is_a_clean_negative_result(db, clean_trace_buffer):
+    summary = trace_summary_out(db, "nonexistent")
     assert summary.found is False
     assert summary.trace_id == "nonexistent"
 
 
-def test_trace_summary_out_never_exposes_hidden_reasoning_only_final_response(clean_trace_buffer):
+def test_trace_summary_out_never_exposes_hidden_reasoning_only_final_response(db, clean_trace_buffer):
+    # No durable AgentRun row for this trace_id -- falls back to the ring
+    # buffer, same as before BUILD-32 (see verify_trace_ownership's own
+    # docstring for why the fallback exists).
     svc = TelemetryService()
     trace = svc.create_trace(trace_id="t-7", session_id="c", user_id="a", input_data={"message": "hi"}, metadata={"intent": "DRUG_INFORMATION", "model": "gpt-5.4-mini"})
     obs = svc.start_observation(trace, name="tool.search_drug", obs_type="retriever", input_data={"tool": "search_drug"})
     svc.end_observation(obs, output_data={"items": []})
     svc.finalize_trace(trace, output_data={"response": "Paracetamol la thuoc giam dau."}, status="success")
 
-    summary = trace_summary_out("t-7")
+    summary = trace_summary_out(db, "t-7")
     assert summary.found is True
     assert summary.final_response == "Paracetamol la thuoc giam dau."
     assert summary.tools == ["search_drug"]
@@ -238,17 +244,46 @@ def test_trace_summary_out_never_exposes_hidden_reasoning_only_final_response(cl
     assert summary.model == "gpt-5.4-mini"
 
 
-def test_session_messages_filters_by_conversation_and_paginates(clean_trace_buffer):
+def test_trace_summary_out_prefers_the_durable_row_when_one_exists(db, clean_trace_buffer):
+    """BUILD-32: a durable AgentRun row is the source of truth even when the
+    ring buffer still also has the same trace_id."""
+    _seed_trace(trace_id="t-durable", user_id="a", session_id="c", intent="DRUG_INFORMATION")
+    db.add(
+        AgentRun(
+            id="run-durable",
+            trace_id="t-durable",
+            conversation_id="c",
+            actor_id="a",
+            intent="DRUG_INFORMATION",
+            status="COMPLETED",
+            started_at=datetime.now(UTC),
+            model="gpt-5.4-mini",
+            duration_ms=42.0,
+        )
+    )
+    db.commit()
+
+    summary = trace_summary_out(db, "t-durable")
+    assert summary.found is True
+    assert summary.status == "COMPLETED"
+    assert summary.model == "gpt-5.4-mini"
+    assert summary.latency_ms == 42.0
+    # Honest scope limit (BUILD-32 report): message/response text is not part
+    # of the durable schema.
+    assert summary.final_response is None
+
+
+def test_session_messages_filters_by_conversation_and_paginates(db, clean_trace_buffer):
     _seed_trace(trace_id="s-1", user_id="a", session_id="conv-A", message="m1", response="r1")
     _seed_trace(trace_id="s-2", user_id="a", session_id="conv-A", message="m2", response="r2")
     _seed_trace(trace_id="s-3", user_id="a", session_id="conv-B", message="other", response="other")
 
-    items, total = session_messages("conv-A", limit=10, offset=0)
+    items, total = session_messages(db, "conv-A", limit=10, offset=0)
     assert total == 2
     assert {item.trace_id for item in items} == {"s-1", "s-2"}
 
 
-def test_session_messages_marks_the_reported_turn(clean_trace_buffer):
+def test_session_messages_marks_the_reported_turn(db, clean_trace_buffer):
     _seed_trace(trace_id="s-4", user_id="a", session_id="conv-C")
-    items, _ = session_messages("conv-C", limit=10, offset=0, highlight_trace_id="s-4")
+    items, _ = session_messages(db, "conv-C", limit=10, offset=0, highlight_trace_id="s-4")
     assert items[0].is_reported_turn is True

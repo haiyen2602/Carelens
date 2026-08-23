@@ -10,12 +10,13 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, require_role
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import AuditLog, DrugChunk, Escalation
+from backend.db.models import AgentRun, AgentRunSpan, AuditLog, DrugChunk, Escalation
 from backend.services.telemetry import get_local_traces
 
 rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitoring"])
@@ -83,6 +84,25 @@ def _available_metric_scores(traces: list, metric_name: str) -> list[float]:
         if isinstance(metric, dict) and metric.get("status") == "AVAILABLE" and isinstance(value, (int, float)):
             scores.append(float(value))
     return scores
+
+
+# BUILD-32: real cost/token/timeout aggregates over the durable `AgentRun`
+# table -- previously every cost/timeout figure in this file was hardcoded to
+# `0.0` (see the audit report's finding: real token usage/cost were computed
+# correctly by Agent V2 but discarded before reaching this dashboard). Only
+# `chatbot_version in (None, "all", "agent-v2")` participates -- AgentRun is
+# written exclusively by Agent V2, never legacy chat, same convention every
+# other endpoint in this file already applies to AuditLog vs the trace
+# buffer. `prompt_version` has no durable column on AgentRun yet, so a
+# prompt_version filter intentionally excludes the durable rows rather than
+# silently ignoring the filter.
+def _agent_run_query(db: Session, *, chatbot_version: str | None, model: str | None, prompt_version: str | None):
+    if chatbot_version not in (None, "all", "agent-v2") or prompt_version:
+        return []
+    stmt = select(AgentRun)
+    if model:
+        stmt = stmt.where(AgentRun.model == model)
+    return db.execute(stmt).scalars().all()
 
 
 _FilterParams = tuple[str | None, str | None, str | None]
@@ -182,6 +202,14 @@ async def get_rag_health(
 
     safety_failures = sum(1 for e in escalations if e.severity == "HIGH")
 
+    # BUILD-32: real average cost per query, from durable AgentRun rows with
+    # a known price (cost_status="AVAILABLE") -- a run whose model had no
+    # entry in the pricing catalog is honestly excluded, not folded into an
+    # average as a fabricated 0.
+    agent_runs_for_cost = _agent_run_query(db, chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+    priced_runs = [r for r in agent_runs_for_cost if r.cost_status == "AVAILABLE" and r.total_cost_usd is not None]
+    cost_per_query = (sum(r.total_cost_usd for r in priced_runs) / len(priced_runs)) if priced_runs else None
+
     # 7-day trend from real AuditLog
     now = datetime.now(UTC)
     trend = []
@@ -230,7 +258,7 @@ async def get_rag_health(
             "critical_safety_failure_rate": round((safety_failures / max(len(escalations), 1)) * 100, 2) if escalations else 0.0,
             "p95_latency_ms": round(p95_latency, 1),
             "error_rate": round(error_rate, 2),
-            "cost_per_query": 0.0,
+            "cost_per_query": round(cost_per_query, 6) if cost_per_query is not None else None,
             "low_retrieval_confidence_rate": 0.0,
             "faithfulness_sample_count": len(faithfulness_scores),
             "answer_relevance_sample_count": len(relevance_scores),
@@ -238,6 +266,11 @@ async def get_rag_health(
         "metric_provenance": {
             "faithfulness": {"status": "AVAILABLE" if faithfulness_scores else "NOT_AVAILABLE", "source": "heuristic", "reason": None if faithfulness_scores else "no_applicable_evaluation_v2_samples"},
             "answer_relevance": {"status": "AVAILABLE" if relevance_scores else "NOT_AVAILABLE", "source": "heuristic", "reason": None if relevance_scores else "no_applicable_evaluation_v2_samples"},
+            "cost_per_query": {
+                "status": "AVAILABLE" if priced_runs else "NOT_AVAILABLE",
+                "source": "durable_agent_run",
+                "reason": None if priced_runs else "no_priced_agent_run_rows",
+            },
         },
         "trend": trend,
     }
@@ -342,12 +375,34 @@ async def get_rag_generation(
         m = t.metadata.get("model") or settings.model_name
         model_counts[m] = model_counts.get(m, 0) + 1
 
+    # BUILD-32: real per-model cost, summed from durable AgentRun rows with a
+    # known price. A model absent from the pricing catalog contributes 0.0
+    # here (an honest "nothing priced yet found for this model"), matching
+    # this endpoint's existing flat-float shape rather than changing it.
+    agent_runs_for_cost = _agent_run_query(db, chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+    cost_by_model: dict[str, float] = {}
+    for r in agent_runs_for_cost:
+        if r.cost_status == "AVAILABLE" and r.total_cost_usd is not None and r.model:
+            cost_by_model[r.model] = cost_by_model.get(r.model, 0.0) + r.total_cost_usd
+
     breakdown_by_model = [
-        {"model": m, "requests": count, "faithfulness": round(avg_faith, 2) if avg_faith is not None else None, "latency_p95": 0, "cost": 0.0}
+        {
+            "model": m,
+            "requests": count,
+            "faithfulness": round(avg_faith, 2) if avg_faith is not None else None,
+            "latency_p95": 0,
+            "cost": round(cost_by_model.get(m, 0.0), 6),
+        }
         for m, count in model_counts.items()
     ]
     if not breakdown_by_model:
-        breakdown_by_model = [{"model": settings.model_name, "requests": len(traces), "faithfulness": round(avg_faith, 2) if avg_faith is not None else None, "latency_p95": 0, "cost": 0.0}]
+        breakdown_by_model = [{
+            "model": settings.model_name,
+            "requests": len(traces),
+            "faithfulness": round(avg_faith, 2) if avg_faith is not None else None,
+            "latency_p95": 0,
+            "cost": round(cost_by_model.get(settings.model_name, 0.0), 6),
+        }]
 
     return {
         "metrics": {
@@ -496,6 +551,23 @@ async def get_rag_system(
         for name, d_list in step_totals.items()
     ]
 
+    # BUILD-32: real cost/timeout over the last 24h of durable AgentRun rows
+    # -- previously both were hardcoded 0.0 regardless of real traffic.
+    day_ago = datetime.now(UTC) - timedelta(hours=24)
+    agent_runs_24h = [
+        r for r in _agent_run_query(db, chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+        if r.created_at and r.created_at >= day_ago
+    ]
+    priced_24h = [r for r in agent_runs_24h if r.cost_status == "AVAILABLE" and r.total_cost_usd is not None]
+    cost_daily = sum(r.total_cost_usd for r in priced_24h) if priced_24h else 0.0
+    unpriced_24h = [r for r in agent_runs_24h if r.cost_status != "AVAILABLE"]
+    cost_daily_status = "AVAILABLE" if not unpriced_24h else ("PARTIAL" if priced_24h else "NOT_AVAILABLE")
+    timeout_rate = (sum(1 for r in agent_runs_24h if r.timeout) / len(agent_runs_24h) * 100) if agent_runs_24h else 0.0
+    cost_breakdown_by_model: dict[str, float] = {}
+    for r in priced_24h:
+        if r.model:
+            cost_breakdown_by_model[r.model] = cost_breakdown_by_model.get(r.model, 0.0) + r.total_cost_usd
+
     return {
         "volume_24h": len(traces) if traces else len(audit_logs),
         "p50_latency_ms": round(p50, 1),
@@ -508,10 +580,11 @@ async def get_rag_system(
         # a genuine data gap in the audit report, not silently invented.
         "ttft_ms": 0.0,
         "error_rate": round((sum(1 for t in traces if t.status == "error") / max(len(traces), 1)) * 100, 2) if traces else 0.0,
-        "timeout_rate": 0.0,
-        "cost_daily": 0.0,
+        "timeout_rate": round(timeout_rate, 2),
+        "cost_daily": round(cost_daily, 6),
+        "cost_daily_status": cost_daily_status,
         "latency_waterfall": waterfall,
-        "cost_breakdown": [],
+        "cost_breakdown": [{"model": m, "cost": round(c, 6)} for m, c in cost_breakdown_by_model.items()],
     }
 
 
@@ -522,15 +595,47 @@ async def get_rag_traces(
     filter_status: str | None = Query(default=None),
     filters: _FilterParams = Depends(_filter_query_params),
 ) -> list[dict[str, Any]]:
-    """Trace Explorer list strictly from real Telemetry & AuditLog (§15.7)"""
+    """Trace Explorer list (§15.7).
+
+    BUILD-32: this endpoint is the actual "Trace Explorer" the durable trace
+    contract targets. The in-memory ring buffer is still read (unchanged --
+    still the richest source for a very recent request: real query/answer
+    text preview) but is no longer the only source: every listed trace is
+    enriched with its durable ``AgentRun`` cost/token/error data when one
+    exists, and durable Agent V2 runs the ring buffer no longer holds (aged
+    out past 200 entries, or from before a restart) are appended too --
+    honestly, with a placeholder instead of a fabricated text preview, since
+    message/response text is deliberately not part of BUILD-32's durable
+    schema (see backend.services.agent_feedback's module docstring).
+    """
     chatbot_version, model, prompt_version = filters
     local_traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
     settings = get_settings()
 
-    results: list[dict[str, Any]] = []
+    durable_by_trace_id = {
+        r.trace_id: r
+        for r in _agent_run_query(db, chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
+        if r.trace_id
+    }
 
-    # Map local live traces
+    def _durable_fields(run: AgentRun | None) -> dict[str, Any]:
+        if run is None:
+            return {
+                "input_tokens": None, "output_tokens": None, "total_tokens": None,
+                "cost_usd": None, "cost_status": "NOT_AVAILABLE", "error_code": None, "timeout": False,
+            }
+        return {
+            "input_tokens": run.input_tokens, "output_tokens": run.output_tokens, "total_tokens": run.total_tokens,
+            "cost_usd": run.total_cost_usd, "cost_status": run.cost_status, "error_code": run.error_code,
+            "timeout": run.timeout,
+        }
+
+    results: list[dict[str, Any]] = []
+    seen_trace_ids: set[str] = set()
+
+    # Map local live traces, enriched with durable cost/token/error data.
     for t in reversed(local_traces[-100:]):
+        seen_trace_ids.add(t.id)
         results.append({
             "trace_id": t.id,
             "timestamp": datetime.fromtimestamp(t.start_time, tz=UTC).isoformat(),
@@ -545,6 +650,31 @@ async def get_rag_traces(
             "model": t.metadata.get("model", settings.model_name),
             "prompt_version": t.metadata.get("prompt_version", settings.rag_prompt_version),
             "index_version": t.metadata.get("index_version", settings.rag_index_version),
+            **_durable_fields(durable_by_trace_id.get(t.id)),
+        })
+
+    # Durable Agent V2 runs the ring buffer above no longer holds (aged out,
+    # or the process restarted since) -- proof that a trace "survives
+    # restart" per the release gate, not just cost/token enrichment.
+    for trace_id, run in durable_by_trace_id.items():
+        if trace_id in seen_trace_ids or len(results) >= 150:
+            continue
+        seen_trace_ids.add(trace_id)
+        results.append({
+            "trace_id": trace_id,
+            "timestamp": (run.started_at or run.created_at).isoformat(),
+            "session_id": f"conversation_{run.conversation_id}" if run.conversation_id else "unknown",
+            "query_preview": "(nội dung không còn trong bộ nhớ tạm)",
+            "final_answer": "(nội dung không còn trong bộ nhớ tạm)",
+            "status": run.status,
+            "latency_ms": round(run.duration_ms, 1) if run.duration_ms is not None else 0.0,
+            "faithfulness": 0.0,
+            "relevance": 0.0,
+            "chatbot_version": "agent-v2",
+            "model": run.model or settings.agent_main_model,
+            "prompt_version": "agent-v2-orchestrator",
+            "index_version": settings.rag_index_version,
+            **_durable_fields(run),
         })
 
     # If no live traces yet in memory, fallback to persisted AuditLog rows --
@@ -632,6 +762,62 @@ async def get_rag_trace_detail(
             "scores": {},
             "metadata": {},
             "likely_root_cause": "Dữ liệu được nạp từ AuditLog của hệ thống.",
+        }
+
+    # BUILD-32: durable fallback -- proves a trace survives a restart/aging
+    # out of the ring buffer (release gate "TRACE SURVIVES RESTART"). Real
+    # per-span timing from `AgentRunSpan` (captured live, see
+    # `backend.api.agent_v2_routes._persist_durable_trace`); message/response
+    # text is honestly omitted (see backend.services.agent_feedback's module
+    # docstring for why), not fabricated.
+    run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    if run is not None:
+        spans = (
+            db.execute(select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id).order_by(AgentRunSpan.started_at))
+            .scalars()
+            .all()
+        )
+        return {
+            "trace_id": trace_id,
+            "session_id": f"conversation_{run.conversation_id}" if run.conversation_id else "unknown",
+            "user_id": run.actor_id or "unknown",
+            "timestamp": (run.started_at or run.created_at).isoformat(),
+            "query": "(nội dung không còn trong bộ nhớ tạm)",
+            "response": "(nội dung không còn trong bộ nhớ tạm)",
+            "duration_ms": run.duration_ms if run.duration_ms is not None else 0.0,
+            "status": run.status,
+            "timeline": [
+                {
+                    "name": span.span_name,
+                    "type": span.span_type,
+                    "duration_ms": span.duration_ms,
+                    "level": "ERROR" if span.status == "ERROR" else "DEFAULT",
+                    "input": None,
+                    "output": span.metadata_json,
+                }
+                for span in spans
+            ],
+            "scores": {},
+            "metadata": {
+                "intent": run.intent,
+                "model": run.model,
+                "chatbot_version": "agent-v2",
+                "error_code": run.error_code,
+                "timeout": run.timeout,
+                "empty_reply": run.empty_reply,
+                "input_tokens": run.input_tokens,
+                "output_tokens": run.output_tokens,
+                "cost_usd": run.total_cost_usd,
+                "cost_status": run.cost_status,
+                "pricing_version": run.pricing_version,
+                "evaluation_version": run.evaluation_version,
+            },
+            "likely_root_cause": (
+                "Tất cả các chỉ số chất lượng & an toàn đạt chuẩn (Healthy)."
+                if run.status == "COMPLETED"
+                else "Có lỗi hoặc cảnh báo an toàn được kích hoạt."
+            ),
+            "source": "durable",
         }
 
     return {

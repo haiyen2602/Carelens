@@ -869,7 +869,23 @@ class Message(Base):
 
 
 class AgentRun(Base):
-    """DB Architecture V2 agent run audit without chain-of-thought."""
+    """DB Architecture V2 agent run audit without chain-of-thought.
+
+    BUILD-32: the columns below `metadata_json` were added to make Agent V2's
+    real per-run token usage/cost/duration/timeout/error/empty-reply/
+    evaluation-version durable -- previously this data was computed correctly
+    (`backend.agents.v2.model_gateway`, `backend.agents.v2.observability`) but
+    only ever reached an in-memory ring buffer
+    (`backend.services.telemetry`, capped at 200 traces, reset on every
+    restart/deploy) or an unqueryable structured log line. Stamped best-effort,
+    post-response, by `backend.api.agent_v2_routes._persist_durable_trace` --
+    see that function's own docstring for why (some terminal paths never reach
+    the synchronous checkpoint-recording code path this table's earlier
+    columns are written from). `cost_status`/`NOT_AVAILABLE` (not a fabricated
+    `0`) is the honest state when the model isn't in the configured pricing
+    catalog; `evaluation_version` mirrors the one row this run also gets in
+    `AgentRunEvaluation`.
+    """
 
     __tablename__ = "agent_run"
 
@@ -884,9 +900,110 @@ class AgentRun(Base):
     metadata_json: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
+    # BUILD-32 durable observability columns (additive, all nullable/defaulted
+    # so existing rows/readers are unaffected).
+    trace_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Ownership reference distinct from `patient_id` -- the authenticated
+    # caller, who may be a caregiver acting for `patient_id` rather than the
+    # patient themselves. Stamped by
+    # `backend.api.agent_v2_routes._persist_durable_trace` (not at checkpoint
+    # creation time, which has no actor_id today) -- see
+    # `backend.services.agent_feedback.verify_trace_ownership`, the durable
+    # equivalent of the old ring-buffer actor-hash check.
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cached_input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    model_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    model: Mapped[str | None] = mapped_column(String, nullable=True)
+    pricing_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    input_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    output_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # AVAILABLE | NOT_AVAILABLE -- NEVER a fabricated 0 for unknown pricing.
+    cost_status: Mapped[str] = mapped_column(String, nullable=False, default="NOT_AVAILABLE")
+    currency: Mapped[str] = mapped_column(String, nullable=False, default="USD")
+    duration_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    timeout: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Canonical taxonomy -- see backend.agents.v2.runtime's ERROR_CODE_*
+    # constants. NULL for a non-error terminal status.
+    error_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    empty_reply: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    evaluation_version: Mapped[str | None] = mapped_column(String, nullable=True)
+
     __table_args__ = (
         Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
         Index("ix_agent_run_patient_started", "patient_id", "started_at"),
+        Index("ix_agent_run_trace_id", "trace_id"),
+        Index("ix_agent_run_status_created", "status", "created_at"),
+        Index("ix_agent_run_error_code_created", "error_code", "created_at"),
+    )
+
+
+class AgentRunSpan(Base):
+    """BUILD-32: one durable, sanitized real-time span per instrumented step
+    of one Agent V2 run (router/model/tool/retrieval/safety/handoff/
+    checkpoint/guardrail/runtime/time_query/grounding/evaluation -- see
+    `backend.agents.v2.observability.TraceComponent`).
+
+    Deliberately NOT a reuse of `AgentToolEvent` (BUILD-32 audit: that table
+    is tool-call-specific by schema -- `tool_name` is `NOT NULL` -- and has
+    zero writers; forcing a tool name onto e.g. a safety-evaluation span would
+    be a semantic mismatch). `started_at`/`completed_at`/`duration_ms` are the
+    exact real wall-clock values `AgentTelemetry.span()`/`record_model()`
+    measured live during the actual orchestrator/runtime call -- this row is
+    written a few milliseconds later (best-effort, post-response, from
+    `backend.agents.v2.observability.BufferingSink`), not reconstructed after
+    the fact. `metadata_json` holds only the same sanitized attribute
+    allowlist already enforced by `observability._sanitize_attributes` --
+    never prompts, model reasoning, or raw tool payloads.
+    """
+
+    __tablename__ = "agent_run_span"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String, nullable=False)
+    span_name: Mapped[str] = mapped_column(String, nullable=False)
+    span_type: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="OK")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    metadata_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_agent_run_span_run_started", "agent_run_id", "started_at"),
+        Index("ix_agent_run_span_trace_id", "trace_id"),
+        Index("ix_agent_run_span_type_started", "span_type", "started_at"),
+    )
+
+
+class AgentRunEvaluation(Base):
+    """BUILD-32: durable Evaluation V2 result for one Agent V2 run --
+    previously only ever written into `trace.metadata["evaluation_v2"]` on
+    the in-memory ring buffer (`backend.services.telemetry`). `metrics_json`
+    holds the same sanitized `EvaluationResult.as_dict()` shape
+    (`backend.agents.v2.evaluation_v2`) already computed today: per-dimension
+    status (AVAILABLE/NOT_APPLICABLE/NOT_AVAILABLE) and score, never hidden
+    reasoning.
+    """
+
+    __tablename__ = "agent_run_evaluation"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String, nullable=False)
+    evaluation_version: Mapped[str] = mapped_column(String, nullable=False)
+    execution_path: Mapped[str | None] = mapped_column(String, nullable=True)
+    metrics_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("uq_agent_run_evaluation_agent_run_id", "agent_run_id", unique=True),
+        Index("ix_agent_run_evaluation_trace_id", "trace_id"),
     )
 
 

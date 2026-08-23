@@ -65,6 +65,7 @@ so they are not individually checkpointed; replaying a read is always safe.
 from __future__ import annotations
 
 import re
+import time
 import unicodedata
 import uuid
 from collections.abc import Callable
@@ -1011,6 +1012,13 @@ class OrchestrationResult:
     safety_decision: SafetyDecision | None
     handoff_result: AgentHandoffResult | None
     metrics: RunMetrics
+    # BUILD-32: canonical error taxonomy code (see runtime.py's ERROR_CODE_*
+    # constants), `None` for every non-error terminal status. Mirrors the
+    # underlying `RunResult.error_code` where one exists, or is set directly
+    # by an orchestrator-level backstop (handoff creation failure, grounding
+    # enforcement, dependency-unavailable fail-closed) that never goes
+    # through `ReadOnlyAgentRuntime.run()` at all.
+    error_code: str | None = None
 
 
 _EVIDENCE_PREAMBLE = (
@@ -1125,10 +1133,10 @@ def _enforce_vinmec_provenance(result: RunResult, citations: tuple[Citation, ...
         return result  # a real citation backs the claim -- nothing to correct
 
     if vinmec_required:
-        return RunResult(result.status, _NO_VINMEC_EVIDENCE_REPLY, result.tool_results, result.metrics)
+        return RunResult(result.status, _NO_VINMEC_EVIDENCE_REPLY, result.tool_results, result.metrics, result.error_code)
 
     corrected = _strip_false_vinmec_claim(result.response)
-    return RunResult(result.status, corrected, result.tool_results, result.metrics)
+    return RunResult(result.status, corrected, result.tool_results, result.metrics, result.error_code)
 
 
 # BUILD-24H: defense-in-depth vendor/persona-leak backstop. The pre-model
@@ -1148,7 +1156,9 @@ def _enforce_no_vendor_disclosure(result: RunResult) -> RunResult:
         return result
     if not _VENDOR_LEAK_RE.search(result.response):
         return result
-    return RunResult(result.status, _OUT_OF_SCOPE_REPLIES["IDENTITY"], result.tool_results, result.metrics)
+    return RunResult(
+        result.status, _OUT_OF_SCOPE_REPLIES["IDENTITY"], result.tool_results, result.metrics, result.error_code
+    )
 
 
 # BUILD-24F (V2 Release Candidate hardening, local phase 1 item 2): medical-
@@ -1215,7 +1225,12 @@ def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent
         return result
     if result.tool_results or citations:
         return result  # a real tool call or retrieval/Vinmec citation backs this -- nothing to correct
-    return RunResult(result.status, _UNGROUNDED_ANSWER_DECLINE_REPLY, result.tool_results, result.metrics)
+    # BUILD-32: the only place this backstop actually replaces a reply -- tag
+    # it with the canonical GROUNDING_FAILURE error code so it is durably
+    # distinguishable from an ordinary COMPLETED run.
+    return RunResult(
+        result.status, _UNGROUNDED_ANSWER_DECLINE_REPLY, result.tool_results, result.metrics, "GROUNDING_FAILURE"
+    )
 
 
 # BUILD-27B: real V2 dose-state values (backend/services/scheduling/
@@ -1399,6 +1414,7 @@ class AgentOrchestrator:
         telemetry: AgentTelemetry | None = None,
         checkpoint_max_age: timedelta = timedelta(minutes=5),
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._runtime = runtime
         self._context_manager = context_manager
@@ -1412,6 +1428,16 @@ class AgentOrchestrator:
         # BUILD-27B: injectable so tests can freeze "today" deterministically
         # instead of depending on the wall clock at test-run time.
         self._now = now
+        # BUILD-32: real elapsed time for the orchestrator-level deterministic
+        # reply paths below (out-of-scope, clarifications, schedule, fail-
+        # closed, handoff-creation-failure) -- these never reach
+        # `ReadOnlyAgentRuntime._result()` (the only place that previously
+        # computed real `elapsed_ms`), so their `RunMetrics` silently
+        # defaulted to `elapsed_ms=0.0` -- read by BUILD-32's own local E2E as
+        # a real (not measured, not "not applicable") duration, which was
+        # false: real work (DB queries, tool calls, span overhead) still
+        # happens on these paths.
+        self._clock = clock
 
     def run(
         self,
@@ -1420,18 +1446,25 @@ class AgentOrchestrator:
         tools: ToolGateway,
         checkpoint_db: Session | None = None,
     ) -> OrchestrationResult:
+        started = self._clock()
         agent_run_id = request.agent_run_id or str(uuid.uuid4())
         trace = (
             self._telemetry.start_run(agent_run_id=agent_run_id)
             if self._telemetry is not None
             else TraceContext(trace_id=str(uuid.uuid4()), agent_run_id=agent_run_id)
         )
-        raw_decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
+        # BUILD-32: real timing around the actual classification call (was a
+        # bare `event()` with no duration at all) -- pure instrumentation, the
+        # classification result/logic is unchanged.
+        if self._telemetry is not None:
+            with self._telemetry.span(trace, TraceComponent.ROUTER, operation="classify_intent"):
+                raw_decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
+            self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.classified")
+        else:
+            raw_decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
         decision = raw_decision
         resolution = ContextResolution(ContextResolutionStatus.NOT_APPLICABLE, request.message)
         router_message = request.message
-        if self._telemetry is not None:
-            self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.classified")
 
         lease_token: str | None = None
         if checkpoint_db is not None:
@@ -1457,7 +1490,7 @@ class AgentOrchestrator:
         # to consistently decline correctly, or on a post-hoc text correction
         # to catch every phrasing of a false claim.
         if raw_decision.intent is OrchestrationIntent.OUT_OF_SCOPE_REQUEST:
-            return self._out_of_scope_reply(request, raw_decision, trace, agent_run_id, checkpoint_db, lease_token)
+            return self._out_of_scope_reply(request, raw_decision, trace, agent_run_id, checkpoint_db, lease_token, started)
 
         # BUILD-27B/28: any time-scoped schedule/history question -- past,
         # today, or future -- is answered deterministically from the
@@ -1472,7 +1505,7 @@ class AgentOrchestrator:
         # OUT_OF_SCOPE_REQUEST above: no memory recall, no Safety/Handoff, no
         # retrieval/Vinmec, no model.
         if raw_decision.intent in _SCHEDULE_INTENTS:
-            return self._schedule_reply(request, raw_decision, tools, trace, agent_run_id, checkpoint_db, lease_token)
+            return self._schedule_reply(request, raw_decision, tools, trace, agent_run_id, checkpoint_db, lease_token, started)
 
         if request.resolved_query and raw_decision.intent in {
             OrchestrationIntent.GENERAL_CONVERSATION,
@@ -1496,6 +1529,7 @@ class AgentOrchestrator:
                 agent_run_id,
                 checkpoint_db,
                 lease_token,
+                started,
             )
         if raw_decision.intent in {
             OrchestrationIntent.GENERAL_CONVERSATION,
@@ -1511,7 +1545,7 @@ class AgentOrchestrator:
             )
             if resolution.status in {ContextResolutionStatus.AMBIGUOUS, ContextResolutionStatus.NO_CONTEXT}:
                 return self._context_clarification_reply(
-                    request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token
+                    request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
                 )
             if resolution.used:
                 router_message = resolution.resolved_query
@@ -1547,7 +1581,13 @@ class AgentOrchestrator:
                     provenance="agent-orchestrator:dose-unresolved",
                 )
             else:
-                safety_decision = self._safety_gateway.evaluate(SafetyRequest(decision.safety_trigger, occurrence_id))
+                # BUILD-32: real timing around the actual Safety Domain call --
+                # pure instrumentation, the evaluate() call/decision is unchanged.
+                if self._telemetry is not None:
+                    with self._telemetry.span(trace, TraceComponent.SAFETY, operation="evaluate"):
+                        safety_decision = self._safety_gateway.evaluate(SafetyRequest(decision.safety_trigger, occurrence_id))
+                else:
+                    safety_decision = self._safety_gateway.evaluate(SafetyRequest(decision.safety_trigger, occurrence_id))
         elif decision.bypass_to_handoff:
             # BUILD-24E: same bypass mechanism DOCTOR_REVIEW already used
             # (never call the Safety Domain's occurrence-bound assess() --
@@ -1615,7 +1655,9 @@ class AgentOrchestrator:
                 # a later resume retry the same handoff without duplicating it.
                 return OrchestrationResult(
                     trace.trace_id, agent_run_id, decision.intent, RunStatus.FAILED,
-                    "Không thể tạo yêu cầu bác sĩ xem xét lúc này.", (), (), safety_decision, None, RunMetrics(),
+                    "Không thể tạo yêu cầu bác sĩ xem xét lúc này.", (), (), safety_decision, None,
+                    RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)),
+                    "HANDOFF_FAILURE",
                 )
             lease_token = None  # record_handoff_created always terminalizes the checkpoint.
 
@@ -1626,9 +1668,9 @@ class AgentOrchestrator:
         retrieval_ids: set[str] = set()
         web_ids: set[str] = set()
         if not needs_handoff and not is_safety_blocked:
-            gathered = self._gather_evidence(decision, request, query=router_message)
+            gathered = self._gather_evidence(decision, request, query=router_message, trace=trace)
             if isinstance(gathered, str):
-                return self._fail_closed(trace, agent_run_id, decision.intent, gathered, checkpoint_db, lease_token)
+                return self._fail_closed(trace, agent_run_id, decision.intent, gathered, checkpoint_db, lease_token, started)
             evidence_items, retrieval_ids, web_ids, citations = gathered
 
             # A selected drug action is bound to the canonical ID previously
@@ -1641,7 +1683,7 @@ class AgentOrchestrator:
                         {"legacy_drug_id": request.active_entity_id, "query": request.requested_attribute},
                     )
                 except ToolExecutionError:
-                    return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token)
+                    return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token, started)
                 bound_tool_results.append(bound)
                 evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{request.active_entity_id}"))
 
@@ -1685,7 +1727,13 @@ class AgentOrchestrator:
         # correction above -- a no-op for every status but COMPLETED and
         # every intent outside _GROUNDING_REQUIRED_INTENTS, so this changes
         # nothing about Safety/Handoff/Vinmec/Auth behavior.
-        result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
+        # BUILD-32: real timing around this pure backstop call -- the function
+        # itself stays telemetry-free; only this call site is wrapped.
+        if self._telemetry is not None:
+            with self._telemetry.span(trace, TraceComponent.GROUNDING, operation="enforce_medical_grounding"):
+                result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
+        else:
+            result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
 
         if checkpoint_db is not None and result.status not in (RunStatus.SAFETY_BLOCKED, RunStatus.HANDOFF_CREATED):
             if lease_token is None:
@@ -1707,6 +1755,7 @@ class AgentOrchestrator:
             safety_decision=safety_decision,
             handoff_result=handoff_result,
             metrics=result.metrics,
+            error_code=result.error_code,
         )
 
     # -- memory ---------------------------------------------------------------
@@ -1794,7 +1843,9 @@ class AgentOrchestrator:
 
     # -- retrieval / web --------------------------------------------------------
 
-    def _gather_evidence(self, decision: RouterDecision, request: OrchestrationRequest, *, query: str):
+    def _gather_evidence(
+        self, decision: RouterDecision, request: OrchestrationRequest, *, query: str, trace: TraceContext | None = None
+    ):
         """Return either ``(items, retrieval_ids, web_ids, citations)`` or a
         safe reason string when a *required* dependency for this intent is
         unavailable (fail-closed; the Main Model is never reached)."""
@@ -1805,7 +1856,13 @@ class AgentOrchestrator:
         citations: list[Citation] = []
 
         if decision.use_retrieval and self._retrieval_gateway is not None:
-            retrieval_result: RetrievalGatewayResult = self._retrieval_gateway.retrieve(RetrievalRequest(query=query))
+            # BUILD-32: real timing around the actual retrieval call -- pure
+            # instrumentation, the retrieve() call/result is unchanged.
+            if self._telemetry is not None and trace is not None:
+                with self._telemetry.span(trace, TraceComponent.RETRIEVAL, operation="retrieve"):
+                    retrieval_result: RetrievalGatewayResult = self._retrieval_gateway.retrieve(RetrievalRequest(query=query))
+            else:
+                retrieval_result = self._retrieval_gateway.retrieve(RetrievalRequest(query=query))
             if retrieval_result.status not in (RetrievalStatus.READY, RetrievalStatus.NO_RESULTS):
                 return retrieval_result.safe_reason or "RETRIEVAL_UNAVAILABLE"
             if retrieval_result.status is RetrievalStatus.READY:
@@ -1841,7 +1898,7 @@ class AgentOrchestrator:
 
     # -- terminal helpers -------------------------------------------------------
 
-    def _out_of_scope_reply(self, request, decision, trace, agent_run_id, checkpoint_db, lease_token) -> OrchestrationResult:
+    def _out_of_scope_reply(self, request, decision, trace, agent_run_id, checkpoint_db, lease_token, started) -> OrchestrationResult:
         """BUILD-24H: a fixed, honest COMPLETED reply for OUT_OF_SCOPE_REQUEST
         -- the Main Model, Safety Domain, Doctor Handoff, retrieval, and
         Vinmec Web are never reached for this intent (see the early return in
@@ -1854,7 +1911,7 @@ class AgentOrchestrator:
         reply = _OUT_OF_SCOPE_REPLIES[category]
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.ROUTER, "agent_router.out_of_scope", category=category)
-        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics())
+        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)))
         if checkpoint_db is not None:
             if lease_token is None:
                 lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
@@ -1862,11 +1919,12 @@ class AgentOrchestrator:
                 agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
             )
         return OrchestrationResult(
-            trace.trace_id, agent_run_id, decision.intent, result.status, result.response, (), (), None, None, result.metrics
+            trace.trace_id, agent_run_id, decision.intent, result.status, result.response, (), (), None, None,
+            result.metrics, result.error_code,
         )
 
     def _context_clarification_reply(
-        self, request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token
+        self, request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
     ) -> OrchestrationResult:
         """Ask for clarification when a follow-up lacks a strong same-conversation topic."""
 
@@ -1881,7 +1939,9 @@ class AgentOrchestrator:
                 resolution_status=resolution.status.value,
                 final_router_intent=OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS.value,
             )
-        result = RunResult(RunStatus.COMPLETED, _CONTEXT_CLARIFICATION_REPLY, (), RunMetrics())
+        result = RunResult(
+            RunStatus.COMPLETED, _CONTEXT_CLARIFICATION_REPLY, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000))
+        )
         if checkpoint_db is not None:
             if lease_token is None:
                 lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
@@ -1900,10 +1960,11 @@ class AgentOrchestrator:
             None,
             None,
             result.metrics,
+            result.error_code,
         )
 
     def _clinical_clarification_reply(
-        self, request, decision, session_key, trace, agent_run_id, checkpoint_db, lease_token
+        self, request, decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
     ) -> OrchestrationResult:
         """Return a deterministic, non-diagnostic clarification for BUILD-29F.
 
@@ -1925,7 +1986,7 @@ class AgentOrchestrator:
 
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.ROUTER, event_name)
-        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics())
+        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)))
         if checkpoint_db is not None:
             if lease_token is None:
                 lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
@@ -1944,10 +2005,11 @@ class AgentOrchestrator:
             None,
             None,
             result.metrics,
+            result.error_code,
         )
 
     def _schedule_reply(
-        self, request, decision, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token
+        self, request, decision, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token, started
     ) -> OrchestrationResult:
         """BUILD-27B/28: fixed, deterministic COMPLETED reply for any of the
         three time-scoped schedule intents (``_SCHEDULE_INTENTS``) -- the
@@ -1967,13 +2029,24 @@ class AgentOrchestrator:
         assert decision.time_range is not None
         time_range = decision.time_range
         tools.set_resolved_date_range(time_range.start_date, time_range.end_date)
+        # BUILD-32: real timing around the deterministic time-scoped schedule
+        # path (tool read + reply composition) -- pure instrumentation, no
+        # change to the tool call or reply text.
         try:
-            tool_result = tools.execute(ToolName.GET_DOSES_FOR_RANGE.value, {})
+            if self._telemetry is not None:
+                with self._telemetry.span(trace, TraceComponent.TIME_QUERY, operation="schedule_reply"):
+                    tool_result = tools.execute(ToolName.GET_DOSES_FOR_RANGE.value, {})
+                    items = tool_result.data.get("items")
+                    reply = _build_schedule_reply(items if isinstance(items, list) else [], time_range=time_range, now=self._now())
+            else:
+                tool_result = tools.execute(ToolName.GET_DOSES_FOR_RANGE.value, {})
+                items = tool_result.data.get("items")
+                reply = _build_schedule_reply(items if isinstance(items, list) else [], time_range=time_range, now=self._now())
         except ToolExecutionError:
-            return self._fail_closed(trace, agent_run_id, decision.intent, "DOSE_SCHEDULE_UNAVAILABLE", checkpoint_db, lease_token)
-        items = tool_result.data.get("items")
-        reply = _build_schedule_reply(items if isinstance(items, list) else [], time_range=time_range, now=self._now())
-        result = RunResult(RunStatus.COMPLETED, reply, (tool_result,), RunMetrics())
+            return self._fail_closed(trace, agent_run_id, decision.intent, "DOSE_SCHEDULE_UNAVAILABLE", checkpoint_db, lease_token, started)
+        result = RunResult(
+            RunStatus.COMPLETED, reply, (tool_result,), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000))
+        )
         if checkpoint_db is not None:
             if lease_token is None:
                 lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
@@ -1982,20 +2055,42 @@ class AgentOrchestrator:
             )
         return OrchestrationResult(
             trace.trace_id, agent_run_id, decision.intent, result.status, result.response,
-            (tool_result,), (), None, None, result.metrics,
+            (tool_result,), (), None, None, result.metrics, result.error_code,
         )
 
-    def _fail_closed(self, trace, agent_run_id, intent, reason_code, checkpoint_db, lease_token) -> OrchestrationResult:
+    # BUILD-32: a real dependency-unavailable failure (schedule tool, bound
+    # drug-info lookup, retrieval) reaches this one shared fail-closed path
+    # from several call sites with a free-form `reason_code` string -- mapped
+    # here to the canonical taxonomy rather than inventing a distinct code
+    # per call site. "RETRIEVAL" in the reason names a real retrieval-layer
+    # failure (see `_gather_evidence`); every other reason here is a tool
+    # call (schedule/dose or bound drug-info) that raised
+    # `ToolExecutionError`.
+    @staticmethod
+    def _fail_closed_error_code(reason_code: str) -> str:
+        return "RETRIEVAL_ERROR" if "RETRIEVAL" in reason_code.upper() else "TOOL_ERROR"
+
+    def _fail_closed(self, trace, agent_run_id, intent, reason_code, checkpoint_db, lease_token, started) -> OrchestrationResult:
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.GUARDRAIL, "agent_guardrail.dependency_unavailable", error_code=_safe_code(reason_code))
-        result = RunResult(RunStatus.FAILED, "Không thể truy xuất nguồn dữ liệu được yêu cầu lúc này.", (), RunMetrics())
+        error_code = self._fail_closed_error_code(reason_code)
+        result = RunResult(
+            RunStatus.FAILED,
+            "Không thể truy xuất nguồn dữ liệu được yêu cầu lúc này.",
+            (),
+            RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)),
+            error_code,
+        )
         if checkpoint_db is not None:
             if lease_token is None:
                 lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
             CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
                 agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
             )
-        return OrchestrationResult(trace.trace_id, agent_run_id, intent, result.status, result.response, (), (), None, None, result.metrics)
+        return OrchestrationResult(
+            trace.trace_id, agent_run_id, intent, result.status, result.response, (), (), None, None,
+            result.metrics, result.error_code,
+        )
 
 
 __all__ = [

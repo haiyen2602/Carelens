@@ -186,9 +186,21 @@ def test_exception_during_orchestration_rolls_back_everything(db_path, monkeypat
 
     session_b = _new_session(db_path)
     try:
-        assert session_b.execute(select(AgentRun)).scalars().all() == []
+        # The partial checkpoint state THIS failed attempt flushed (real
+        # AgentRun + checkpoint row, per the comment above) is genuinely
+        # rolled back -- no checkpoint/handoff leftovers survive.
         assert session_b.execute(select(AgentRunCheckpoint)).scalars().all() == []
         assert session_b.execute(select(DoctorReviewRequest)).scalars().all() == []
+        # BUILD-32: a *separate*, deliberate best-effort record of the crash
+        # itself is added after that rollback (see the `except Exception:`
+        # block in `run_agent_orchestration` -- previously an orchestrator-
+        # level exception left literally no durable trace of the failed
+        # request at all). Exactly one row, and it is that new INTERNAL_ERROR
+        # record, not a surviving fragment of the rolled-back attempt.
+        runs = session_b.execute(select(AgentRun)).scalars().all()
+        assert len(runs) == 1
+        assert runs[0].status == "FAILED"
+        assert runs[0].error_code == "INTERNAL_ERROR"
     finally:
         session_b.close()
 
