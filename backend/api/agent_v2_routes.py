@@ -108,6 +108,29 @@ def _resolved_drug_entity(tool_results) -> ActiveEntity | None:
     return ActiveEntity("drug", drug_id, drug_id)
 
 
+def _authoritative_topic_for_turn(
+    conversation_state,
+    *,
+    selected_action: SuggestedAction | None,
+    semantic_topic: str | None,
+    is_general_medical_turn: bool,
+    resolved_entity: ActiveEntity | None,
+) -> str | None:
+    """Return only a topic that may replace durable conversation state.
+
+    A selected follow-up has already been validated against the latest
+    server-issued action. Its query is intentionally rewritten for retrieval,
+    so semantic extraction of that ephemeral text must not replace the
+    existing canonical topic. A legacy action with no active topic may seed
+    it from the validated server-issued action only.
+    """
+    if selected_action is not None and selected_action.type == "topic_followup":
+        return selected_action.topic if conversation_state.active_topic is None else None
+    if is_general_medical_turn and resolved_entity is None:
+        return semantic_topic
+    return None
+
+
 def _canary_allowlist(settings: object) -> frozenset[str] | None:
     """``None`` means no explicit allowlist is configured; a frozenset means
     those account ids are always admitted regardless of the rollout
@@ -241,6 +264,10 @@ def _record_agent_v2_telemetry(
     result,
     latency_ms: float,
     error: Exception | None = None,
+    conversation_state_before=None,
+    conversation_state_after=None,
+    followup_resolved: bool = False,
+    topic_changed: bool = False,
 ) -> None:
     try:
         settings = get_settings()
@@ -270,6 +297,23 @@ def _record_agent_v2_telemetry(
                 "agent_run_id": getattr(result, "agent_run_id", None),
                 "intent": getattr(result, "intent", None).value if getattr(result, "intent", None) else None,
                 "actor_role": actor.role,
+                # BUILD-29D.3: server-derived state transition metadata only;
+                # no raw client action, query, credentials, or hidden reasoning.
+                "conversation_state": {
+                    "before_topic": (
+                        conversation_state_before.active_topic.display_name
+                        if getattr(conversation_state_before, "active_topic", None)
+                        else None
+                    ),
+                    "after_topic": (
+                        conversation_state_after.active_topic.display_name
+                        if getattr(conversation_state_after, "active_topic", None)
+                        else None
+                    ),
+                    "requested_aspect": getattr(conversation_state_after, "requested_aspect", None),
+                    "followup_resolved": followup_resolved,
+                    "topic_changed": topic_changed,
+                },
             },
             tags=["agent_v2"],
         )
@@ -449,6 +493,11 @@ def run_agent_orchestration(
     conversation_state = state_store.load(db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id)
     selected_action = _validated_selected_action(conversation_state, request.selected_action)
     input_resolution = resolve_state_input(conversation_state, message=request.message, selected_action=selected_action)
+    # A numeric/typed follow-up is resolved from the same latest,
+    # server-issued state as a button click. Downstream transition, activity,
+    # and telemetry must use that resolved action rather than only the raw
+    # client payload.
+    selected_action = input_resolution.selected_action
 
     # BUILD-22: an optional client idempotency key opts into HTTP-level
     # replay -- see backend.services.agent_idempotency. A key bound to a
@@ -557,10 +606,30 @@ def run_agent_orchestration(
     # (real tool evidence, never client input) is authoritative over the
     # router's own intent label -- only treat this as a general-topic turn
     # when no drug was actually resolved.
-    topic = (
-        semantic.topic
-        if result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION and resolved_entity is None
-        else None
+    #
+    # BUILD-29D.3 fix (found via real local E2E, 2026-08-23): the fallback to
+    # `semantic.topic` below used to reintroduce the exact corruption this
+    # build removes. `semantic.topic` is an ascii-folded, retrieval-only
+    # string built for embedding/lexical search (e.g. "cong dung cua thuoc
+    # long huyet") -- it was never meant to be a display-safe state value.
+    # `semantic.display_topic` is the one field this build added specifically
+    # to be state-write-safe (`_display_topic_from_raw`, orchestrator.py: only
+    # an explicit disease/topic shape, rejected outright for anything that
+    # looks like a drug-attribute question). Falling back to `semantic.topic`
+    # whenever `display_topic` is intentionally None (a drug-attribute
+    # question with no entity resolved yet -- the common case, since
+    # get_drug_info structurally cannot fire on most cold turns; see
+    # BUILD-29D2-REPORT.md Sec 15) defeated that guard and corrupted state
+    # again with the raw/normalized query text. `None` here (no topic write
+    # at all -- the turn's `else` branch in transition_state then correctly
+    # carries the existing state forward unchanged) is the only display-safe
+    # fallback.
+    topic = _authoritative_topic_for_turn(
+        conversation_state,
+        selected_action=selected_action,
+        semantic_topic=semantic.display_topic,
+        is_general_medical_turn=result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
+        resolved_entity=resolved_entity,
     )
     active_topic = topic or (
         conversation_state.active_topic.canonical_name if conversation_state.active_topic else None
@@ -641,6 +710,15 @@ def run_agent_orchestration(
         actor=actor,
         result=result,
         latency_ms=(time.monotonic() - _started) * 1000.0,
+        conversation_state_before=conversation_state,
+        conversation_state_after=next_state,
+        followup_resolved=input_resolution.used and selected_action is not None,
+        topic_changed=bool(
+            conversation_state.active_topic
+            and next_state.active_topic
+            and conversation_state.active_topic.normalized_key != next_state.active_topic.normalized_key
+        )
+        or (conversation_state.active_topic is None) != (next_state.active_topic is None),
     )
     # BUILD-30: same best-effort, post-commit shape as the telemetry call
     # above -- see _persist_activity_snapshot's own docstring for why this
