@@ -362,8 +362,10 @@ mới").
 
 - Branch: `feature/build-29d3-state-corruption-fix`
 - Base: `origin/main` at `7374951` (`Merge pull request #103` — BUILD-29D.2).
-- Commit / push / PR: created after this report update — see repo history
-  for the commit and PR on this branch.
+- Commit: `4753b62` (`fix(agent-v2): BUILD-29D.3 fix conversation-state
+  corruption on follow-ups`).
+- PR: [#104](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/104)
+  — "BUILD-29D.3: Fix conversation-state corruption on suggested follow-ups".
 - Not deployed; deploy requires review/merge per instruction.
 
 ## 17. Release Gate
