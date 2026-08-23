@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Cake, CheckCircle2, MapPin, Phone, Ruler, UserRound, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,12 @@ export function EditPersonalInfoDialog({ trigger }: { trigger?: React.ReactNode 
   const chieuCao = kiemTraChieuCao(heightCm);
   const canNang = kiemTraCanNang(weightKg);
 
+  // Chong stale response: moi lan mo dialog tang phienId len 1. Neu dong-mo
+  // lai nhanh truoc khi lan goi napHoSo() cu kip xong, response cu resolve
+  // tre se thay so voi phienRef.current va TU BO qua, khong ghi de len state
+  // cua lan mo MOI (xem review 2026-08-23).
+  const phienRef = useRef(0);
+
   const resetState = () => {
     setDateOfBirth("");
     setPhone("");
@@ -62,10 +68,16 @@ export function EditPersonalInfoDialog({ trigger }: { trigger?: React.ReactNode 
     setLoadingProfile(false);
   };
 
-  const napHoSo = async () => {
+  const napHoSo = async (phienGoi: number) => {
     setLoadingProfile(true);
     try {
+      if (!accessToken) {
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
       const hoSo = await getMyPatientProfile(accessToken);
+      // Da dong roi mo lai dialog trong luc cho response nay - bo qua, dung
+      // lam sai state cua lan mo MOI (xem phienRef o tren).
+      if (phienGoi !== phienRef.current) return;
       if (hoSo) {
         setDateOfBirth(hoSo.dateOfBirth ?? "");
         setPhone(hoSo.phone ?? "");
@@ -75,9 +87,10 @@ export function EditPersonalInfoDialog({ trigger }: { trigger?: React.ReactNode 
         setWeightKg(hoSo.weightKg != null ? String(hoSo.weightKg) : "");
       }
     } catch (err) {
+      if (phienGoi !== phienRef.current) return;
       setError(err instanceof Error ? err.message : "Không tải được thông tin hiện có.");
     } finally {
-      setLoadingProfile(false);
+      if (phienGoi === phienRef.current) setLoadingProfile(false);
     }
   };
 
@@ -91,6 +104,9 @@ export function EditPersonalInfoDialog({ trigger }: { trigger?: React.ReactNode 
     setError("");
     setLoading(true);
     try {
+      if (!accessToken) {
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
       await updateMyPatientProfile(accessToken, {
         date_of_birth: dateOfBirth || undefined,
         phone: phone.trim() || undefined,
@@ -113,8 +129,13 @@ export function EditPersonalInfoDialog({ trigger }: { trigger?: React.ReactNode 
       onOpenChange={(val) => {
         setOpen(val);
         if (val) {
+          phienRef.current += 1;
           resetState();
-          void napHoSo();
+          void napHoSo(phienRef.current);
+        } else {
+          // Dong dialog cung "huy" moi response con dang cho cua phien nay -
+          // tang phienRef de napHoSo() dang chay biet minh da lac hau khi tra ve.
+          phienRef.current += 1;
         }
       }}
     >
