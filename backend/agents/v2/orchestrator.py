@@ -471,7 +471,12 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
             intent = OrchestrationIntent.PRESCRIPTION_INFORMATION
         elif _matches(_VINMEC_KEYWORDS):
             intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
-        elif _matches(_GENERAL_MEDICAL_KEYWORDS):
+        elif _matches(_GENERAL_MEDICAL_KEYWORDS) or _display_topic_from_raw(message) is not None:
+            # An explicit "<new topic> thì sao?" is a general-medical
+            # topic switch even without a generic question keyword. This
+            # allows the API boundary to replace durable topic state only
+            # for an explicit display-preserving topic, never a follow-up
+            # retrieval query.
             intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
         elif _matches_greeting() and len(message.strip()) <= 40:
             intent = OrchestrationIntent.GENERAL_CONVERSATION
@@ -508,6 +513,9 @@ class SemanticMedicalQuery:
     normalized_query: str
     family: str | None = None
     topic: str | None = None
+    # State transitions must use this preservation-safe display value, never
+    # the ASCII-folded retrieval topic above.
+    display_topic: str | None = None
 
     @property
     def changed(self) -> bool:
@@ -593,38 +601,90 @@ def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     raw_query = " ".join(message.strip().split())
     if not raw_query:
         return SemanticMedicalQuery(message, message)
+    display_topic = _display_topic_from_raw(raw_query)
     candidate = raw_query.strip(" ?!.,;:")
     candidate = _TRAILING_MEDICAL_QUESTION_FILLER_RE.sub("", candidate).strip()
 
     cause_topic = _match_semantic_topic(candidate, _CAUSE_PATTERNS)
     if cause_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"nguyen nhan gay {cause_topic}", "cause", cause_topic)
+        return SemanticMedicalQuery(raw_query, f"nguyen nhan gay {cause_topic}", "cause", cause_topic, display_topic)
 
     urgency_topic = _match_semantic_topic(candidate, _URGENCY_PATTERNS)
     if urgency_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"khi nao {urgency_topic} can di kham ngay", "urgent_care", urgency_topic)
+        return SemanticMedicalQuery(raw_query, f"khi nao {urgency_topic} can di kham ngay", "urgent_care", urgency_topic, display_topic)
 
     symptoms_topic = _match_semantic_topic(candidate, _SYMPTOM_PATTERNS)
     if symptoms_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"trieu chung cua {symptoms_topic}", "symptoms", symptoms_topic)
+        return SemanticMedicalQuery(raw_query, f"trieu chung cua {symptoms_topic}", "symptoms", symptoms_topic, display_topic)
 
     danger_topic = _match_semantic_topic(candidate, _DANGER_PATTERNS)
     if danger_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"{danger_topic} co nguy hiem khong", "danger", danger_topic)
+        return SemanticMedicalQuery(raw_query, f"{danger_topic} co nguy hiem khong", "danger", danger_topic, display_topic)
 
     prevention_topic = _match_semantic_topic(candidate, _PREVENTION_PATTERNS)
     if prevention_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"cach phong ngua {prevention_topic}", "prevention", prevention_topic)
+        return SemanticMedicalQuery(raw_query, f"cach phong ngua {prevention_topic}", "prevention", prevention_topic, display_topic)
 
     definition_topic = _match_semantic_topic(raw_query.strip(" ?!.,;:"), _DEFINITION_PATTERNS)
     if definition_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"{definition_topic} la gi", "definition", definition_topic)
+        return SemanticMedicalQuery(raw_query, f"{definition_topic} la gi", "definition", definition_topic, display_topic)
 
     compact = _ascii_fold(raw_query)
     compact = re.sub(r"\s+", " ", compact).strip(" ?!.,;:")
     if compact != raw_query:
-        return SemanticMedicalQuery(raw_query, compact, None, None)
-    return SemanticMedicalQuery(raw_query, raw_query)
+        return SemanticMedicalQuery(raw_query, compact, None, None, display_topic)
+    return SemanticMedicalQuery(raw_query, raw_query, None, None, display_topic)
+
+
+_DISPLAY_TOPIC_PATTERNS = (
+    re.compile(r"^(?:bệnh\s+)?(.+?)\s+(?:là\s+gì|la\s+gi)$", re.IGNORECASE),
+    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:triệu\s+chứng|dấu\s+hiệu)\s+(?:của\s+)?(.+)$", re.IGNORECASE),
+    re.compile(r"^(.+?)\s+có\s+nguy\s+hiểm\s+không$", re.IGNORECASE),
+    re.compile(r"^(?:cách\s+)?(?:phòng\s+ngừa|phòng\s+tránh)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:còn\s+)?(.+?)\s+(?:thì\s+sao|thi\s+sao)$", re.IGNORECASE),
+)
+
+# BUILD-29D.3 fix (found via real local E2E, 2026-08-23): a bare pattern match
+# above also captures a drug-attribute question with no disease/topic shape at
+# all -- "Cong dung cua thuoc Long Huyet la gi" matches the first pattern and
+# extracts "Cong dung cua thuoc Long Huyet" as if it were a general medical
+# topic name, corrupting active_topic with the same drug-not-a-topic
+# confusion this build exists to eliminate (see fix_bug_01.md section 7 --
+# "Do not turn 'cong dung cua Long Huyet' into a new entity name", which
+# applies equally to state.active_topic). A genuine disease/condition name in
+# this product's own vocabulary (drug knowledge_search topics, symptom/cause
+# patterns above) never contains the word "thuoc" (drug/medication) or one of
+# the fixed drug-attribute labels this backend already asks about elsewhere
+# (backend/agents/v2/suggested_actions.py::_DRUG_LABELS,
+# backend/agents/v2/conversation_state.py::_typed_aliases) -- narrow,
+# deterministic keyword rejection, the same style as _GENERAL_MEDICAL_KEYWORDS
+# and _DISPLAY_TOPIC_PATTERNS themselves, not an attempt to solve entity
+# resolution generally.
+_DRUG_ATTRIBUTE_QUESTION_KEYWORDS = (
+    "thuốc", "thuoc",
+    "công dụng", "cong dung", "chỉ định", "chi dinh",
+    "liều dùng", "lieu dung", "cách dùng", "cach dung",
+    "tác dụng phụ", "tac dung phu", "chống chỉ định", "chong chi dinh",
+    "tương tác", "tuong tac", "thành phần", "thanh phan",
+)
+
+
+def _display_topic_from_raw(message: str) -> str | None:
+    """Extract only an explicit, display-preserving topic for state writes."""
+    candidate = message.strip(" ?!.,;:")
+    for pattern in _DISPLAY_TOPIC_PATTERNS:
+        match = pattern.match(candidate)
+        if match is None:
+            continue
+        topic = match.group(1).strip(" ?!.,;:")
+        if len(topic) < 2:
+            continue
+        lowered = topic.casefold()
+        if any(keyword in lowered for keyword in _DRUG_ATTRIBUTE_QUESTION_KEYWORDS):
+            return None
+        return topic[:80]
+    return None
 
 
 def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -> str | None:
