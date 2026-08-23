@@ -175,7 +175,11 @@ was implemented here.
 ## 18. Branch / Commit / PR
 
 - Branch: `feature/build-31-evaluation-v2`
-- Commit/push/PR: not created while full validation is blocked.
+- Commit: `e94fc85` — `feat(evaluation): add pipeline-aware metrics`
+- Push: completed to `origin/feature/build-31-evaluation-v2`
+- PR: not created from this environment. `gh` is not installed and no
+  `GH_TOKEN`/`GITHUB_TOKEN` is configured. Create it from the pushed branch:
+  `https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/new/feature/build-31-evaluation-v2`.
 
 ## 19. Release Gate
 
