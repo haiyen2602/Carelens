@@ -38,6 +38,52 @@ function toRecord(p: PatientApiItem): PatientRecord {
   };
 }
 
+// Ho so CA NHAN day du cua CHINH benh nhan dang dang nhap - khac PatientRecord
+// (dung cho danh sach/tim kiem, khong co phone/address/date_of_birth vi la
+// thong tin rieng tu, xem _to_summary(full=False) o backend). Khop voi
+// backend/models/schemas.py::PatientProfileOut, tra ve tu ca GET lan PATCH
+// /api/patients/me (backend/api/patient_routes.py).
+export type PatientProfile = {
+  id: string;
+  fullName: string;
+  dateOfBirth: string | null;
+  yearOfBirth: number | null;
+  phone: string | null;
+  address: string | null;
+  gender: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  profileCompleted: boolean;
+};
+
+type PatientProfileApiItem = {
+  id: string;
+  full_name: string;
+  date_of_birth: string | null;
+  year_of_birth: number | null;
+  phone: string | null;
+  address: string | null;
+  gender: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  profile_completed: boolean;
+};
+
+function toProfile(p: PatientProfileApiItem): PatientProfile {
+  return {
+    id: p.id,
+    fullName: p.full_name,
+    dateOfBirth: p.date_of_birth,
+    yearOfBirth: p.year_of_birth,
+    phone: p.phone,
+    address: p.address,
+    gender: p.gender,
+    heightCm: p.height_cm,
+    weightKg: p.weight_kg,
+    profileCompleted: p.profile_completed,
+  };
+}
+
 export async function listPatients(
   search?: string,
   accessToken?: string | null,
@@ -64,7 +110,7 @@ export async function listPatients(
 // nhan tu xem ho so CHINH minh (vd patient/health/page.tsx).
 export async function getMyPatientProfile(
   accessToken?: string | null,
-): Promise<PatientRecord | null> {
+): Promise<PatientProfile | null> {
   const response = await fetch("/api/patients/me", {
     headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
   });
@@ -73,5 +119,36 @@ export async function getMyPatientProfile(
     throw new Error(`Không tải được hồ sơ bệnh nhân (${response.status})`);
   }
 
-  return toRecord(await response.json());
+  return toProfile(await response.json());
+}
+
+// Man hinh "Doi thong tin ca nhan" (components/edit-personal-info-dialog.tsx)
+// - cung endpoint PATCH /api/patients/me ma onboarding/profile/page.tsx dang
+// goi thang qua fetch(), gop lai 1 cho de dung chung thay vi nhan ban logic
+// header/loi. KHONG doi onboarding sang dung ham nay trong lan sua nay (giu
+// nguyen, tranh dong cham code khong lien quan).
+export async function updateMyPatientProfile(
+  accessToken: string | null | undefined,
+  body: {
+    date_of_birth?: string;
+    phone?: string;
+    address?: string;
+    gender?: string;
+    height_cm?: number;
+    weight_kg?: number;
+  },
+): Promise<PatientProfile> {
+  const response = await fetch("/api/patients/me", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.detail ?? "Lưu thông tin thất bại.");
+  }
+  return toProfile(data);
 }

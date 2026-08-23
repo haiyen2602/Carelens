@@ -96,22 +96,28 @@ def list_patients(
 
 @patient_router.get(
     "/patients/me",
-    response_model=PatientSummary,
+    response_model=PatientProfileOut,
 )
 def get_my_patient_profile(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
-) -> PatientSummary:
-    """Benh nhan tu xem ho so CHINH minh (tuoi/ghi chu/gender/height/weight)
-    - phan hoi review 2026-08-14: trang patient/health/page.tsx tung goi
-    list_patients() (chi doctor/admin) de tim ho so chinh minh, luon 403 voi
-    role=patient nen "tuoi · ghi chu" o dau trang luon rong (xac nhan qua DB
-    production, BN-0000). Route rieng nay dung current_user.patient_id tu
-    JWT (khong nhan patient_id tu client) - cung nguyen tac chong IDOR da
-    dung o get_current_patient_id(), khong mo lai duong doc patient_id song
-    song. KHONG dung require_role("doctor","admin") nhu list_patients() -
-    bat ky role nao co patient_id gan voi tai khoan (thuc te chi role=patient)
-    deu xem duoc DUNG ho so cua chinh minh, khong xem duoc nguoi khac."""
+) -> PatientProfileOut:
+    """Benh nhan tu xem ho so CA NHAN day du cua CHINH minh (ten, ngay sinh,
+    sdt, dia chi, gender, height/weight, profile_completed) - phan hoi review
+    2026-08-14: trang patient/health/page.tsx tung goi list_patients() (chi
+    doctor/admin) de tim ho so chinh minh, luon 403 voi role=patient nen
+    "tuoi · ghi chu" o dau trang luon rong (xac nhan qua DB production,
+    BN-0000). Route rieng nay dung current_user.patient_id tu JWT (khong
+    nhan patient_id tu client) - cung nguyen tac chong IDOR da dung o
+    get_current_patient_id(), khong mo lai duong doc patient_id song song.
+    KHONG dung require_role("doctor","admin") nhu list_patients() - bat ky
+    role nao co patient_id gan voi tai khoan (thuc te chi role=patient) deu
+    xem duoc DUNG ho so cua chinh minh, khong xem duoc nguoi khac.
+
+    SUA 2026-08-23: doi tu PatientSummary sang PatientProfileOut (cung shape
+    voi PATCH ben duoi) - man hinh "Doi thong tin ca nhan" (frontend/src/
+    components/edit-personal-info-dialog.tsx) can doc lai sdt/ngay sinh/dia
+    chi hien co de do vao form, PatientSummary khong co may truong nay."""
     if not current_user.patient_id:
         raise HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN, detail="Tài khoản không gắn với hồ sơ bệnh nhân nào"
@@ -119,7 +125,7 @@ def get_my_patient_profile(
     patient = db.get(Patient, current_user.patient_id)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
-    return _to_summary(patient)
+    return _to_profile(patient)
 
 
 @patient_router.patch(
