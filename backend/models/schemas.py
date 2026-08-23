@@ -560,7 +560,7 @@ class SuggestedActionIn(BaseModel):
     """Client echo of a server-issued action; authorization stays server-side."""
 
     action_id: str = Field(..., min_length=1, max_length=100)
-    type: Literal["drug_attribute", "topic_attribute"]
+    type: Literal["topic_followup", "drug_followup", "schedule_followup"]
     value: str = Field(..., min_length=1, max_length=80)
     entity_id: str | None = Field(default=None, max_length=200)
     topic: str | None = Field(default=None, max_length=160)

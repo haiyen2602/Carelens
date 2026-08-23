@@ -9,6 +9,7 @@ for BUILD-30's own production verification.
 
 from __future__ import annotations
 
+from backend.agents.v2.conversation_state import SuggestedAction
 from backend.agents.v2.handoff import AgentHandoffResult
 from backend.agents.v2.orchestrator import Citation, OrchestrationIntent, OrchestrationResult
 from backend.agents.v2.runtime import RunMetrics, RunStatus
@@ -67,6 +68,26 @@ def test_a_drug_info_dedupes_search_drug_and_get_drug_info_into_one_step():
     )
     activities = build_activity_timeline(result)
     assert _labels(activities).count("Đã tra thông tin thuốc") == 1
+
+
+def test_dynamic_action_events_are_user_safe_and_never_expose_ids():
+    action = SuggestedAction(
+        action_id="internal-action-id",
+        type="drug_followup",
+        label="Công dụng của Long Huyết",
+        value="drug_uses",
+        entity_id="internal-drug-id",
+    )
+    activities = build_activity_timeline(
+        _result(intent=OrchestrationIntent.DRUG_INFORMATION),
+        selected_action=action,
+        suggested_actions=(action,),
+    )
+
+    assert 'Bạn chọn "Công dụng của Long Huyết"' in _labels(activities)
+    assert "Đã tạo gợi ý cho câu hỏi tiếp theo" in _labels(activities)
+    assert "internal-action-id" not in str(activities)
+    assert "internal-drug-id" not in str(activities)
 
 
 # ---------------------------------------------------------------------------

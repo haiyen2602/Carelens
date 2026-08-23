@@ -45,6 +45,7 @@ export default function AssistantPage() {
   const [plusOpen, setPlusOpen] = useState(false);
   const [input, setInput] = useState("");
   const lastQuestion = useRef("");
+  const submitInFlight = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, accessToken } = useAuth();
   const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
@@ -79,7 +80,12 @@ export default function AssistantPage() {
     // ngay truoc do (de nut "Báo cáo câu trả lời" khong bao gio phai doc
     // lai tu phan tu lien ke trong mang, tranh sai lech neu lich su sau nay
     // bi chinh sua).
-    meta?: { traceId?: string; agentRunId?: string; userMessage?: string; suggestedActions?: SuggestedAction[] },
+    meta?: {
+      traceId?: string;
+      agentRunId?: string;
+      userMessage?: string;
+      suggestedActions?: SuggestedAction[];
+    },
   ) => {
     const now = new Date().toISOString();
     setConversations((prev) => {
@@ -115,7 +121,8 @@ export default function AssistantPage() {
   }, [messages.length, isPending]);
 
   const submit = (content: string, selectedAction?: SelectedAction) => {
-    if (!content.trim() || isPending || !activeId) return;
+    if (!content.trim() || isPending || submitInFlight.current || !activeId) return;
+    submitInFlight.current = true;
     lastQuestion.current = content;
     appendMessage(activeId, "user", content);
     setInput("");
@@ -144,6 +151,9 @@ export default function AssistantPage() {
             userMessage: content,
             suggestedActions: data.suggested_actions,
           });
+        },
+        onSettled: () => {
+          submitInFlight.current = false;
         },
       },
     );
