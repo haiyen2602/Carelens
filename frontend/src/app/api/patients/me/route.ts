@@ -6,10 +6,13 @@
 // patient_routes.py::get_my_patient_profile). Backend tu doc patient_id tu
 // JWT (current_user.patient_id), khong nhan id tu client.
 //
-// GET tra PatientSummary (ho so suc khoe co ban - patient/health/page.tsx).
-// PATCH tra PatientProfileOut (onboarding "Thong tin ca nhan" - frontend/
-// src/app/onboarding/profile/page.tsx) - 2 response shape khac nhau nhung
-// cung 1 patient_id, khong xung dot vi khac HTTP method.
+// GET va PATCH deu tra PatientProfileOut (SUA 2026-08-23: GET tung tra
+// PatientSummary, thieu phone/address/date_of_birth nen man hinh "Doi thong
+// tin ca nhan" - frontend/src/components/edit-personal-info-dialog.tsx -
+// khong do lai duoc du lieu hien co, xem backend/api/patient_routes.py::
+// get_my_patient_profile). Dung cho ca patient/health/page.tsx (chi doc
+// full_name/year_of_birth) lan onboarding/profile/page.tsx + dialog doi
+// thong tin ca nhan.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 

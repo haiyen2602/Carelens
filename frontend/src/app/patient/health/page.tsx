@@ -22,7 +22,7 @@ import {
 } from "@/components/capy/capy-ui";
 import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
-import { getMyPatientProfile, type PatientRecord } from "@/lib/patients";
+import { getMyPatientProfile, type PatientProfile } from "@/lib/patients";
 import { listPrescriptions } from "@/lib/prescriptions";
 import { flattenPrescriptions, type Prescription } from "@/lib/proto-store";
 
@@ -78,7 +78,7 @@ function daHetHan(endDateIso: string): boolean {
 export default function HealthPage() {
   const { user, accessToken } = useAuth();
   const patientId = user?.patient_id ?? "";
-  const [hoSo, setHoSo] = useState<PatientRecord | null>(null);
+  const [hoSo, setHoSo] = useState<PatientProfile | null>(null);
   const [doses, setDoses] = useState<Dose[]>([]);
   // Vong nay (2026-08-14): KHONG dung `prescriptions` cua useProto() nua -
   // refreshPrescriptions() cua store do goi keo listPatients() (chi

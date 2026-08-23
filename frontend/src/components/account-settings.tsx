@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bell, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
+import { EditPersonalInfoDialog } from "@/components/edit-personal-info-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
@@ -37,22 +38,47 @@ export function AccountSettings() {
 
       <section className="surface-card p-5">
         <h2 className="text-sm font-bold uppercase text-muted-foreground">Tài khoản</h2>
-        <button
-          onClick={soon}
-          className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left"
-        >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
-            <UserRound className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{phone || "Chưa có số điện thoại"}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {role === "patient" ? "Bệnh nhân" : role === "family" ? "Người thân" : "Bác sĩ"} · Bấm
-              để đổi thông tin cá nhân
+        {/* SUA 2026-08-23: hang nay tung chi hien toast "dang phat trien".
+            Chi wire EditPersonalInfoDialog cho role=patient - backend
+            (GET/PATCH /api/v1/patients/me) chi phuc vu tai khoan co
+            patient_id gan voi minh (thuc te chi role=patient), family/doctor
+            goi se 403 nen van giu nut toast cu cho ho. */}
+        {role === "patient" ? (
+          <EditPersonalInfoDialog
+            trigger={
+              <button className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+                  <UserRound className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">
+                    {phone || "Chưa có số điện thoại"}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    Bệnh nhân · Bấm để đổi thông tin cá nhân
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+            }
+          />
+        ) : (
+          <button
+            onClick={soon}
+            className="mt-3 flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+              <UserRound className="h-5 w-5" />
             </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-semibold">{phone || "Chưa có số điện thoại"}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {role === "family" ? "Người thân" : "Bác sĩ"} · Bấm để đổi thông tin cá nhân
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+        )}
       </section>
 
       <section className="surface-card space-y-4 p-5">
