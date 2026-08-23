@@ -14,7 +14,7 @@ chỉ cần sửa một hàm.
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.api.security import require_internal_secret
+from backend.api.security import CurrentUser, get_optional_current_user, require_internal_secret
 from backend.db.base import get_db
 from backend.db.models import Prescription
 from backend.models.schemas import (
@@ -25,6 +25,7 @@ from backend.models.schemas import (
     PrescriptionOut,
     PrescriptionUpdateRequest,
 )
+from backend.services.audit import log_action, patient_label
 from backend.services.prescription import (
     VmecError,
     dem_lieu,
@@ -38,6 +39,26 @@ from backend.services.prescription import (
 )
 
 prescription_router = APIRouter()
+
+
+def _ghi_nhat_ky(
+    db: Session, actor: CurrentUser | None, action: str, presc: Prescription
+) -> None:
+    """Ghi 1 dong nhat ky thao tac cho trang "Lịch sử" cua bac si.
+
+    `actor` doc tu JWT (get_optional_current_user) chu KHONG tu
+    `payload.doctor_id`: cac route trong file nay van gac bang X-Internal-
+    Secret va nhan doctor_id tu body, ma FE hien gui hang so `demo-doctor-01`
+    (frontend/src/lib/prescriptions.ts) - ghi gia tri do vao nhat ky thi moi
+    bac si deu thay thao tac cua nhau. Khong co JWT thi log_action() bo qua,
+    khong ghi dong nao.
+
+    Commit rieng SAU khi service da commit thay doi chinh: neu ke don thanh
+    cong ma ghi nhat ky loi thi don thuoc van con, chi thieu dong nhat ky -
+    khong lam nguoc lai (mat don thuoc vi loi ghi nhat ky).
+    """
+    if log_action(db, actor, action, patient_label(db, presc.patient_id)) is not None:
+        db.commit()
 
 
 def get_current_doctor_id(payload: PrescriptionCreateRequest | PrescriptionDecisionRequest) -> str:
@@ -70,7 +91,9 @@ def _to_out(presc: Prescription) -> PrescriptionOut:
     dependencies=[Depends(require_internal_secret)],
 )
 def create_prescription(
-    payload: PrescriptionCreateRequest, db: Session = Depends(get_db)
+    payload: PrescriptionCreateRequest,
+    db: Session = Depends(get_db),
+    actor: CurrentUser | None = Depends(get_optional_current_user),
 ) -> PrescriptionOut:
     try:
         presc = tao_phac_do(
@@ -84,6 +107,7 @@ def create_prescription(
         )
     except VmecError as exc:
         raise _http(exc) from exc
+    _ghi_nhat_ky(db, actor, f"Tạo phác đồ mới ({len(payload.items)} thuốc)", presc)
     return _to_out(presc)
 
 
@@ -140,12 +164,16 @@ def update_prescription(
     dependencies=[Depends(require_internal_secret)],
 )
 def approve_prescription(
-    prescription_id: str, payload: PrescriptionDecisionRequest, db: Session = Depends(get_db)
+    prescription_id: str,
+    payload: PrescriptionDecisionRequest,
+    db: Session = Depends(get_db),
+    actor: CurrentUser | None = Depends(get_optional_current_user),
 ) -> PrescriptionApproveResponse:
     try:
         presc, so_lieu = duyet_phac_do(db, prescription_id, doctor_id=get_current_doctor_id(payload))
     except VmecError as exc:
         raise _http(exc) from exc
+    _ghi_nhat_ky(db, actor, f"Duyệt phác đồ (tạo {so_lieu} lượt uống)", presc)
     return PrescriptionApproveResponse(
         id=presc.id,
         status=presc.status,
@@ -161,12 +189,16 @@ def approve_prescription(
     dependencies=[Depends(require_internal_secret)],
 )
 def reject_prescription(
-    prescription_id: str, payload: PrescriptionDecisionRequest, db: Session = Depends(get_db)
+    prescription_id: str,
+    payload: PrescriptionDecisionRequest,
+    db: Session = Depends(get_db),
+    actor: CurrentUser | None = Depends(get_optional_current_user),
 ) -> PrescriptionOut:
     try:
         presc = tu_choi_phac_do(db, prescription_id, doctor_id=get_current_doctor_id(payload))
     except VmecError as exc:
         raise _http(exc) from exc
+    _ghi_nhat_ky(db, actor, "Từ chối phác đồ", presc)
     return _to_out(presc)
 
 
@@ -176,12 +208,16 @@ def reject_prescription(
     dependencies=[Depends(require_internal_secret)],
 )
 def stop_prescription(
-    prescription_id: str, payload: PrescriptionDecisionRequest, db: Session = Depends(get_db)
+    prescription_id: str,
+    payload: PrescriptionDecisionRequest,
+    db: Session = Depends(get_db),
+    actor: CurrentUser | None = Depends(get_optional_current_user),
 ) -> PrescriptionOut:
     try:
         presc, _ = dung_phac_do(db, prescription_id, doctor_id=get_current_doctor_id(payload))
     except VmecError as exc:
         raise _http(exc) from exc
+    _ghi_nhat_ky(db, actor, "Dừng phác đồ", presc)
     return _to_out(presc)
 
 

@@ -25,6 +25,7 @@ from backend.models.schemas import (
     PatientProfileUpdateRequest,
     PatientSummary,
 )
+from backend.services.audit import log_action, patient_label
 
 patient_router = APIRouter()
 
@@ -176,10 +177,27 @@ def update_patient_health(
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
 
-    for field in ("note", "gender", "height_cm", "weight_kg"):
+    # Liet ke DUNG nhung truong that su doi - nhat ky "Cập nhật hồ sơ" khong
+    # noi ro doi gi thi khong dung de doi chieu duoc khi can truy lai.
+    da_doi: list[str] = []
+    for field, nhan in (
+        ("note", "bệnh nền"),
+        ("gender", "giới tính"),
+        ("height_cm", "chiều cao"),
+        ("weight_kg", "cân nặng"),
+    ):
         value = getattr(body, field)
-        if value is not None:
+        if value is not None and value != getattr(patient, field):
             setattr(patient, field, value)
+            da_doi.append(nhan)
+
+    if da_doi:
+        log_action(
+            db,
+            current_user,
+            f"Cập nhật hồ sơ sức khoẻ ({', '.join(da_doi)})",
+            patient_label(db, patient_id),
+        )
 
     db.commit()
     db.refresh(patient)

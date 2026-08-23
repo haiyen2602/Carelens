@@ -109,6 +109,31 @@ async def get_current_user(
     )
 
 
+async def get_optional_current_user(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> CurrentUser | None:
+    """Nhu get_current_user nhung tra None thay vi 401 khi thieu/hong JWT.
+
+    CHI dung cho muc dich PHU - cu the la ghi nhat ky thao tac (SystemAuditLog)
+    tren cac route van dang gac bang X-Internal-Secret chu chua chuyen sang JWT
+    (vd prescription_routes.py). Nhung route do khong duoc phep 401 khi khong
+    co token, vi ho dang duoc goi hop le bang internal secret; nhung neu FE co
+    kem theo Bearer thi ta biet DUNG bac si nao dang thao tac thay vi ghi
+    `demo-doctor-01` vao nhat ky.
+
+    KHONG BAO GIO dung ham nay de phan quyen - "khong co token" tra ve None
+    chu khong phai tu choi, nen no khong chan duoc ai ca."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    try:
+        return await get_current_user(authorization=authorization, db=db)
+    except HTTPException:
+        # Token hong/het han/tai khoan bi khoa - coi nhu khong biet nguoi goi.
+        # Route van chay tiep vi quyen that do X-Internal-Secret quyet dinh.
+        return None
+
+
 def require_role(*roles: str):
     """Factory dependency - 403 neu role cua CurrentUser khong nam trong
     `roles`. Dung cho endpoint sau nay can khoa theo ma tran quyen
