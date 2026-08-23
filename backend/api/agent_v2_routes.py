@@ -32,6 +32,7 @@ from backend.agents.v2.orchestrator import (
     AgentOrchestrator,
     OrchestrationIntent,
     OrchestrationRequest,
+    classify_intent,
     normalize_semantic_medical_query,
 )
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
@@ -502,6 +503,17 @@ def run_agent_orchestration(
     # and telemetry must use that resolved action rather than only the raw
     # client payload.
     selected_action = input_resolution.selected_action
+    raw_intent = classify_intent(request.message, has_dose_id=bool(request.dose_id)).intent
+    # BUILD-29F: a free-text dose-safety follow-up may rely on the canonical
+    # medication already stored for this authorized conversation. This is
+    # server-owned state, never a client-provided entity id; Safety routing
+    # still sees the untouched raw message first inside the orchestrator.
+    active_entity_for_request = (
+        conversation_state.active_entity
+        if conversation_state.active_entity
+        and (input_resolution.used or raw_intent is OrchestrationIntent.MEDICATION_DOSE_SAFETY)
+        else None
+    )
 
     # BUILD-22: an optional client idempotency key opts into HTTP-level
     # replay -- see backend.services.agent_idempotency. A key bound to a
@@ -574,12 +586,8 @@ def run_agent_orchestration(
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
                 resolved_query=input_resolution.query if input_resolution.used else None,
-                active_entity_id=conversation_state.active_entity.id
-                if input_resolution.used and conversation_state.active_entity
-                else None,
-                active_entity_name=conversation_state.active_entity.canonical_name
-                if input_resolution.used and conversation_state.active_entity
-                else None,
+                active_entity_id=active_entity_for_request.id if active_entity_for_request else None,
+                active_entity_name=active_entity_for_request.canonical_name if active_entity_for_request else None,
                 # The semantic value stays in state; the bound tool receives
                 # the server-authored human query/label, never a client id.
                 requested_attribute=selected_action.label

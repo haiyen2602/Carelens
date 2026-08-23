@@ -61,6 +61,7 @@ _SAFETY_DETECTION_INTENTS = frozenset(
     {
         OrchestrationIntent.MISSED_DOSE,
         OrchestrationIntent.DELAYED_DOSE,
+        OrchestrationIntent.POSSIBLE_OVERDOSE,
         OrchestrationIntent.ACUTE_DANGER_ESCALATION,
         OrchestrationIntent.DOCTOR_REVIEW,
     }
@@ -102,6 +103,16 @@ def build_activity_timeline(
     # hidden reasoning.
     if selected_action is not None:
         add("suggested_action.selected", f'Bạn chọn "{selected_action.label}"')
+
+    # BUILD-29F deterministic clinical paths. These items correspond to the
+    # fixed clarification handlers, never hidden reasoning or model activity.
+    if result.intent is OrchestrationIntent.PERSONAL_SYMPTOM:
+        add("triage_detected", "Đã nhận diện triệu chứng")
+        add("triage_red_flags", "Đã kiểm tra dấu hiệu cần lưu ý")
+        add("triage_clarification", "Đã chuẩn bị câu hỏi làm rõ")
+    elif result.intent is OrchestrationIntent.MEDICATION_DOSE_SAFETY:
+        add("dose_safety_detected", "Đã nhận diện câu hỏi về liều dùng")
+        add("dose_safety", "Đã kiểm tra an toàn")
 
     # 2. BUILD-28 Time Query Engine -- real only for the 3 schedule intents
     # (MEDICATION_HISTORY/TODAY_DOSES/UPCOMING_DOSES), which structurally

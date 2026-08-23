@@ -627,6 +627,12 @@ class ReadOnlyAgentRuntime:
                 "đang ở -- đừng chờ phản hồi từ hệ thống này. Không tự ý uống thêm thuốc. Nếu "
                 "có thể, hãy ở gần một người bạn tin cậy ngay lúc này."
             )
+        if reason_code == "POSSIBLE_OVERDOSE_REPORTED":
+            return (
+                "Bạn cho biết có thể đã dùng nhiều thuốc hơn dự định. Để bảo đảm an toàn, hệ thống đang "
+                "chuyển yêu cầu đến bác sĩ. Hãy liên hệ ngay cơ sở y tế, Trung tâm Chống độc hoặc gọi 115 "
+                "(Việt Nam) nếu bạn có bất kỳ triệu chứng bất thường nào; không tự uống thêm thuốc để xử lý."
+            )
         return "Yêu cầu cần được bác sĩ xem xét."
 
     @staticmethod
@@ -638,6 +644,12 @@ class ReadOnlyAgentRuntime:
                 "hãy gọi cấp cứu 115 (Việt Nam) hoặc số khẩn cấp tại nơi bạn đang ở -- đừng chờ "
                 "bác sĩ phản hồi. Không tự ý uống thêm thuốc. Nếu có thể, hãy ở gần một người "
                 "bạn tin cậy ngay lúc này."
+            )
+        if reason_code == "POSSIBLE_OVERDOSE_REPORTED":
+            return (
+                "Hệ thống đã chuyển yêu cầu để bác sĩ ưu tiên xem xét vì bạn có thể đã dùng nhiều thuốc "
+                "hơn dự định. Hãy liên hệ ngay cơ sở y tế, Trung tâm Chống độc hoặc gọi 115 (Việt Nam) nếu "
+                "có triệu chứng bất thường; không tự uống thêm thuốc để xử lý."
             )
         return "Yêu cầu đã được ghi nhận để bác sĩ xem xét."
 

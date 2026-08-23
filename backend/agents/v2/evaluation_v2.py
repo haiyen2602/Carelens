@@ -17,6 +17,8 @@ class EvaluationPath(StrEnum):
     DETERMINISTIC_SCHEDULE = "DETERMINISTIC_SCHEDULE"
     DETERMINISTIC_TOOL = "DETERMINISTIC_TOOL"
     DRUG_LOOKUP = "DRUG_LOOKUP"
+    TRIAGE = "TRIAGE"
+    MEDICATION_DOSE_SAFETY = "MEDICATION_DOSE_SAFETY"
     SAFETY = "SAFETY"
     HANDOFF = "HANDOFF"
     GENERAL_MODEL = "GENERAL_MODEL"
@@ -82,7 +84,12 @@ def dispatch_evaluation(*, result: Any) -> EvaluationResult:
     # A safety decision is the controlling execution evidence even when its
     # prescribed outcome created a handoff. A standalone doctor-review
     # handoff (without a safety decision) remains a HANDOFF evaluation.
-    if safety is not None or intent in {"ACUTE_DANGER_ESCALATION", "MISSED_DOSE", "DELAYED_DOSE"}:
+    if safety is not None or intent in {
+        "ACUTE_DANGER_ESCALATION",
+        "POSSIBLE_OVERDOSE",
+        "MISSED_DOSE",
+        "DELAYED_DOSE",
+    }:
         path = EvaluationPath.SAFETY
     elif handoff is not None:
         path = EvaluationPath.HANDOFF
@@ -90,6 +97,10 @@ def dispatch_evaluation(*, result: Any) -> EvaluationResult:
         path = EvaluationPath.DETERMINISTIC_SCHEDULE
     elif intent == "OUT_OF_SCOPE_REQUEST":
         path = EvaluationPath.OUT_OF_SCOPE
+    elif intent == "PERSONAL_SYMPTOM":
+        path = EvaluationPath.TRIAGE
+    elif intent == "MEDICATION_DOSE_SAFETY":
+        path = EvaluationPath.MEDICATION_DOSE_SAFETY
     elif intent == "DRUG_INFORMATION" and tool_names:
         path = EvaluationPath.DRUG_LOOKUP
     elif intent == "GENERAL_MEDICAL_INFORMATION" and citations:
@@ -120,6 +131,10 @@ def dispatch_evaluation(*, result: Any) -> EvaluationResult:
         metrics["tool_correctness"] = MetricDisposition(MetricStatus.AVAILABLE, "operational")
     elif path is EvaluationPath.SAFETY:
         metrics["safety_path_completion"] = MetricDisposition(MetricStatus.AVAILABLE, "operational")
+    elif path is EvaluationPath.TRIAGE:
+        metrics["triage_response_completion"] = MetricDisposition(MetricStatus.AVAILABLE, "operational")
+    elif path is EvaluationPath.MEDICATION_DOSE_SAFETY:
+        metrics["dose_safety_response_completion"] = MetricDisposition(MetricStatus.AVAILABLE, "operational")
     elif path is EvaluationPath.HANDOFF:
         metrics["handoff_created"] = MetricDisposition(MetricStatus.AVAILABLE, "operational")
     elif path is EvaluationPath.FALLBACK:
