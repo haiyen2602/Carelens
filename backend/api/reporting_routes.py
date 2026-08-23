@@ -12,6 +12,8 @@ duoc toan bo benh nhan (khong con RBAC theo doctor_id), tim bang tham so
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
 from sqlalchemy import desc, or_, select
@@ -19,14 +21,18 @@ from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, require_role
 from backend.db.base import get_db
-from backend.db.models import AuditLog, DoctorWatch, Escalation, Patient
+from backend.db.models import AuditLog, DoctorWatch, DoseEvent, Escalation, Patient
 from backend.models.schemas import (
     AuditLogOut,
+    DoseDayOut,
+    DoseSummaryOut,
     EscalationOut,
+    MissedWindowOut,
     PatientWatchOut,
     PatientWatchUpdateRequest,
     ReportingPatientOut,
 )
+from backend.services.audit import log_action, patient_label
 from backend.services.reporting.adherence import compute_adherence_pct
 
 reporting_router = APIRouter()
@@ -36,6 +42,37 @@ reporting_router = APIRouter()
 # request keo ca trieu dong ve FE. Dashboard chi can xem gan day nhat,
 # khong phai toan bo lich su.
 _AUDIT_LOG_LIMIT = 200
+
+# Lech gio Viet Nam so voi UTC. Dung so co dinh thay vi ZoneInfo("Asia/
+# Ho_Chi_Minh") co y: Viet Nam KHONG co gio mua he va khong doi mui gio tu
+# 1975, nen mot phep cong don gian la dung tuyet doi o day - doi lai khong
+# phai keo them goi `tzdata` (bat buoc tren Windows, la moi truong dev cua du
+# an nay) chi de lam mot viec ma so hang lam duoc.
+#
+# CAN mui gio o day chu khong duoc dung thang UTC: DoseEvent.scheduled_at luu
+# UTC, ma mot lieu 20:30 gio Viet Nam la 13:30 UTC CUNG NGAY, con lieu 06:00
+# gio Viet Nam la 23:00 UTC NGAY HOM TRUOC - gom nhom theo ngay UTC se day
+# lieu buoi sang sang cot cua hom truoc, va bieu do "khung gio hay bo lo" se
+# lech han 7 tieng (bo lo buoi toi hien thanh buoi chieu).
+_GIO_VN = timedelta(hours=7)
+
+# Ranh gioi 4 khung gio trong ngay (gio Viet Nam). "Toi" om phan con lai
+# (18h -> 5h sang hom sau) nen khong nam trong bang nay.
+_KHUNG_GIO = (
+    ("morning", "Sáng", 5, 11),
+    ("noon", "Trưa", 11, 14),
+    ("afternoon", "Chiều", 14, 18),
+)
+_KHUNG_TOI = ("evening", "Tối")
+
+# Chi 3 trang thai nay la "da co ket qua". PENDING/AWAITING_CAREGIVER (chua
+# den han hoac dang cho nguoi than xac nhan) va CANCELLED (phac do da dung)
+# deu khong noi len dieu gi ve viec benh nhan co uong thuoc hay khong - cung
+# nguyen tac voi compute_adherence_pct().
+_TRANG_THAI_CO_KET_QUA = ("TAKEN", "DELAYED", "MISSED")
+
+_SO_NGAY_MAC_DINH = 7
+_SO_NGAY_TOI_DA = 90
 
 
 @reporting_router.get(
@@ -77,6 +114,7 @@ def list_reporting_patients(
             gender=p.gender,
             height_cm=p.height_cm,
             weight_kg=p.weight_kg,
+            phone=p.phone,
             watch=p.id in watched_ids,
             adherence_pct=compute_adherence_pct(db, p.id),
         )
@@ -109,14 +147,124 @@ def update_patient_watch(
         )
     ).scalar_one_or_none()
 
+    # Chi ghi nhat ky khi trang thai THUC SU doi - bam lai nut "Theo dõi" khi
+    # da theo doi roi la thao tac rong, ghi vao chi lam loang nhat ky.
     if body.watch and existing is None:
         db.add(DoctorWatch(doctor_id=current_user.doctor_id, patient_id=patient_id))
+        log_action(db, current_user, "Bật theo dõi bệnh nhân", patient_label(db, patient_id))
         db.commit()
     elif not body.watch and existing is not None:
         db.delete(existing)
+        log_action(db, current_user, "Tắt theo dõi bệnh nhân", patient_label(db, patient_id))
         db.commit()
 
     return PatientWatchOut(id=patient.id, watch=body.watch)
+
+
+def _benh_nhan_trong_pham_vi(db: Session, current_user: CurrentUser) -> list[str] | None:
+    """Danh sach patient_id ma bac si dang dang nhap duoc thong ke.
+
+    Tra None nghia la "khong gioi han" (admin xem toan he thong). Tra list
+    rong nghia la bac si chua theo doi ai - KHAC HAN None, nguoi goi phai
+    phan biet hai truong hop nay.
+
+    Cung quy tac pham vi voi GET /escalations o duoi: bac si chi thay du lieu
+    cua benh nhan minh dang "Theo doi" (DoctorWatch), de trang Tong quan va
+    Hop canh bao noi ve cung mot tap benh nhan.
+    """
+    if current_user.role == "doctor" and current_user.doctor_id:
+        return list(
+            db.execute(
+                select(DoctorWatch.patient_id).where(
+                    DoctorWatch.doctor_id == current_user.doctor_id
+                )
+            ).scalars().all()
+        )
+    return None
+
+
+@reporting_router.get("/reporting/dose-summary", response_model=DoseSummaryOut)
+def get_dose_summary(
+    days: int = Query(default=_SO_NGAY_MAC_DINH, ge=1, le=_SO_NGAY_TOI_DA),
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("doctor", "admin")),
+) -> DoseSummaryOut:
+    """Gop du lieu cho 2 bieu do o trang "Tổng quan thông tin" cua bac si:
+    tinh trang lieu theo tung ngay, va so lieu bo lo theo khung gio.
+
+    Gop 1 endpoint vi ca hai deu quet CUNG mot tap DoseEvent - tach ra thanh
+    2 endpoint se doc bang hai lan de ve cung mot man hinh.
+    """
+    patient_ids = _benh_nhan_trong_pham_vi(db, current_user)
+
+    # Moc dau: 00:00 gio Viet Nam cua ngay dau tien trong khoang, doi nguoc
+    # ve UTC de so sanh voi cot scheduled_at.
+    bay_gio_vn = datetime.now(UTC) + _GIO_VN
+    ngay_dau_vn = (bay_gio_vn - timedelta(days=days - 1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    moc_dau_utc = ngay_dau_vn - _GIO_VN
+
+    # Khung ngay LUON du `days` dong ke ca ngay khong co lieu nao - bieu do
+    # thieu ngay se lam nguoi doc tuong hom do khong co du lieu, trong khi that
+    # ra la khong co lieu nao den han.
+    ngay_theo_thu_tu = [
+        (ngay_dau_vn + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)
+    ]
+    dem_theo_ngay = {ngay: {"TAKEN": 0, "DELAYED": 0, "MISSED": 0} for ngay in ngay_theo_thu_tu}
+    dem_theo_khung = {key: 0 for key, _, _, _ in _KHUNG_GIO}
+    dem_theo_khung[_KHUNG_TOI[0]] = 0
+
+    # patient_ids == [] (bac si chua theo doi ai) thi bo qua truy van luon -
+    # `IN ()` rong vua vo nghia vua khien Postgres quet ca bang.
+    if patient_ids is None or patient_ids:
+        query = select(DoseEvent.scheduled_at, DoseEvent.status).where(
+            DoseEvent.scheduled_at >= moc_dau_utc,
+            DoseEvent.status.in_(_TRANG_THAI_CO_KET_QUA),
+        )
+        if patient_ids is not None:
+            query = query.where(DoseEvent.patient_id.in_(patient_ids))
+
+        for scheduled_at, status in db.execute(query).all():
+            # scheduled_at tu Postgres la timezone-aware; ep ve UTC truoc khi
+            # cong lech gio de khong phu thuoc vao mui gio cua may chay app.
+            luc_vn = scheduled_at.astimezone(UTC) + _GIO_VN
+            ngay = luc_vn.strftime("%Y-%m-%d")
+            if ngay in dem_theo_ngay:
+                dem_theo_ngay[ngay][status] += 1
+
+            if status == "MISSED":
+                gio = luc_vn.hour
+                khung = next(
+                    (key for key, _, tu, den in _KHUNG_GIO if tu <= gio < den), _KHUNG_TOI[0]
+                )
+                dem_theo_khung[khung] += 1
+
+    daily = [
+        DoseDayOut(
+            date=ngay,
+            taken=dem_theo_ngay[ngay]["TAKEN"],
+            delayed=dem_theo_ngay[ngay]["DELAYED"],
+            missed=dem_theo_ngay[ngay]["MISSED"],
+            total=sum(dem_theo_ngay[ngay].values()),
+        )
+        for ngay in ngay_theo_thu_tu
+    ]
+    missed_by_window = [
+        MissedWindowOut(key=key, label=label, missed=dem_theo_khung[key])
+        for key, label, _, _ in _KHUNG_GIO
+    ] + [MissedWindowOut(key=_KHUNG_TOI[0], label=_KHUNG_TOI[1], missed=dem_theo_khung[_KHUNG_TOI[0]])]
+
+    patient_count = (
+        db.query(Patient).count() if patient_ids is None else len(patient_ids)
+    )
+
+    return DoseSummaryOut(
+        days=days,
+        patient_count=patient_count,
+        daily=daily,
+        missed_by_window=missed_by_window,
+    )
 
 
 @reporting_router.get(

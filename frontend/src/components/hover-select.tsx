@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
+import { boDau } from "@/lib/text";
 
 // Select danh sach co dinh (khac combobox tim/go) - mo khi ruot chuot vao
 // (cung UX voi menu tai khoan o doctor/layout.tsx), khong dung Radix Select
@@ -11,20 +12,6 @@ export type HoverSelectOption = { value: string; label: string };
 // Tren nguong nay moi hien o loc trong dropdown. Duoi nguong, cuon mat vai
 // dong la thay het - them o go chi lam roi mat.
 const NGUONG_HIEN_O_LOC = 10;
-
-// Bo dau de go khong dau van tim duoc ("bot pha" -> "Bột pha dung dịch uống").
-// Cung tinh than voi unaccent() ben backend (services/drug_knowledge).
-// NFD khong tach duoc "đ" nen phai thay tay.
-const DAU_KET_HOP = /\p{Diacritic}/gu;
-
-function boDau(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(DAU_KET_HOP, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase();
-}
 
 export function HoverSelect({
   id,

@@ -1,10 +1,12 @@
 // Canh bao/escalation THAT (bo lieu, trieu chung nghiem trong...), qua
 // /api/escalations (route noi bo cua chinh FE, giu X-Internal-Secret an toan
-// phia server - cung mau voi lib/prescriptions.ts). Chua co endpoint sua
-// trang thai escalation ben backend (chi co GET) - xem proto-store.tsx.
+// phia server - cung mau voi lib/prescriptions.ts).
 
 export type Severity = "LOW" | "MEDIUM" | "HIGH";
-export type EscalationStatus = "OPEN" | "ACKED" | "RESOLVED";
+// "DISMISSED" (bac si xem va danh gia khong can xu ly) them 2026-08-23 cung
+// voi PATCH /escalations/{id}/status - truoc do trang thai nay chi song trong
+// state React cua Hop canh bao nen mat khi tai lai trang.
+export type EscalationStatus = "OPEN" | "ACKED" | "RESOLVED" | "DISMISSED";
 
 export type Escalation = {
   id: string;
@@ -100,6 +102,26 @@ export async function ackEscalation(accessToken: string, escalationId: string): 
     {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  if (!response.ok) return loi(response);
+}
+
+/** Dat trang thai TUY Y cho 1 canh bao (backend/api/escalation_routes.py::
+ * update_escalation_status). Khac ackEscalation() o tren - ham do chi di mot
+ * chieu toi RESOLVED; ham nay con dua nguoc ve "OPEN" duoc, la thu nut "Hoàn
+ * tác" trong Hop canh bao can. Quyen kiem tra theo JWT giong het /ack. */
+export async function updateEscalationStatus(
+  accessToken: string,
+  escalationId: string,
+  status: EscalationStatus,
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/escalations/${encodeURIComponent(escalationId)}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ status }),
     },
   );
   if (!response.ok) return loi(response);
