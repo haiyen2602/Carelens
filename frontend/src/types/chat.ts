@@ -25,7 +25,7 @@ export type ChatRequest = {
 
 export type SuggestedAction = {
   action_id: string;
-  type: "drug_attribute" | "topic_attribute";
+  type: "topic_followup" | "drug_followup" | "schedule_followup";
   label: string;
   value: string;
   entity_id?: string;

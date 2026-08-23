@@ -1,9 +1,8 @@
-"""Canonical, durable-friendly conversation state for Agent V2.
+"""Validated, durable conversation state for Agent V2.
 
-This module deliberately contains no ORM access.  The state is a small,
-validated contract that can be stored in the existing AgentRun checkpoint
-metadata and resolved before ordinary routing.  It is never an authority for
-patient access, safety, dose data, or drug facts.
+State is intentionally a record of server-issued context, not the place that
+decides which suggestions to show. BUILD-29D.2 keeps action generation in
+``suggested_actions.py`` because it needs the actual answer and evidence.
 """
 
 from __future__ import annotations
@@ -11,9 +10,16 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Literal
-from uuid import uuid4
 
-ActionType = Literal["drug_attribute", "topic_attribute"]
+ActionType = Literal["topic_followup", "drug_followup", "schedule_followup"]
+
+TOPIC_ACTION_VALUES = frozenset(
+    {"definition", "causes", "symptoms", "treatment", "prevention", "danger", "urgent_signs", "diagnosis", "monitoring"}
+)
+DRUG_ACTION_VALUES = frozenset(
+    {"drug_uses", "dosage", "administration", "side_effects", "contraindications", "warnings", "interactions"}
+)
+SCHEDULE_ACTION_VALUES = frozenset({"today_schedule", "next_dose", "upcoming_schedule", "adherence_history"})
 
 
 @dataclass(frozen=True)
@@ -39,17 +45,23 @@ class SuggestedAction:
     topic: str | None = None
 
     def as_dict(self) -> dict[str, str]:
-        value = {
-            "action_id": self.action_id,
-            "type": self.type,
-            "label": self.label,
-            "value": self.value,
-        }
+        value = {"action_id": self.action_id, "type": self.type, "label": self.label, "value": self.value}
         if self.entity_id:
             value["entity_id"] = self.entity_id
         if self.topic:
             value["topic"] = self.topic
         return value
+
+
+def is_allowed_action(action: SuggestedAction) -> bool:
+    """Validate the user-safe action vocabulary independently of client input."""
+    if action.type == "topic_followup":
+        return action.value in TOPIC_ACTION_VALUES and bool(action.topic) and action.entity_id is None
+    if action.type == "drug_followup":
+        return action.value in DRUG_ACTION_VALUES and bool(action.entity_id) and action.topic is None
+    if action.type == "schedule_followup":
+        return action.value in SCHEDULE_ACTION_VALUES and action.entity_id is None and action.topic is None
+    return False
 
 
 @dataclass(frozen=True)
@@ -69,7 +81,7 @@ class ConversationState:
 
     def as_dict(self, *, actor_id: str, patient_id: str) -> dict[str, object]:
         return {
-            "version": 1,
+            "version": 2,
             "actor_id": actor_id,
             "patient_id": patient_id,
             "conversation_id": self.conversation_id,
@@ -91,26 +103,44 @@ class ConversationState:
         }
 
     @classmethod
-    def from_dict(cls, value: object, *, actor_id: str, patient_id: str, conversation_id: str) -> ConversationState | None:
+    def from_dict(
+        cls, value: object, *, actor_id: str, patient_id: str, conversation_id: str
+    ) -> ConversationState | None:
         if not isinstance(value, dict):
             return None
-        if value.get("actor_id") != actor_id or value.get("patient_id") != patient_id or value.get("conversation_id") != conversation_id:
+        if (
+            value.get("actor_id") != actor_id
+            or value.get("patient_id") != patient_id
+            or value.get("conversation_id") != conversation_id
+        ):
             return None
         try:
             topic = value.get("active_topic")
             entity = value.get("active_entity")
             actions = tuple(
-                SuggestedAction(
-                    action_id=str(item["action_id"]), type=item["type"], label=str(item["label"]), value=str(item["value"]),
-                    entity_id=item.get("entity_id"), topic=item.get("topic"),
-                )
+                action
                 for item in value.get("offered_actions", [])
-                if isinstance(item, dict) and item.get("type") in {"drug_attribute", "topic_attribute"}
+                if isinstance(item, dict)
+                for action in (
+                    SuggestedAction(
+                        str(item["action_id"]),
+                        item["type"],
+                        str(item["label"]),
+                        str(item["value"]),
+                        item.get("entity_id"),
+                        item.get("topic"),
+                    ),
+                )
+                if is_allowed_action(action)
             )
             return cls(
                 conversation_id=conversation_id,
-                active_topic=ActiveTopic(str(topic["type"]), str(topic["canonical_name"])) if isinstance(topic, dict) else None,
-                active_entity=ActiveEntity(str(entity["type"]), str(entity["id"]), str(entity["canonical_name"])) if isinstance(entity, dict) else None,
+                active_topic=ActiveTopic(str(topic["type"]), str(topic["canonical_name"]))
+                if isinstance(topic, dict)
+                else None,
+                active_entity=ActiveEntity(str(entity["type"]), str(entity["id"]), str(entity["canonical_name"]))
+                if isinstance(entity, dict)
+                else None,
                 last_intent=str(value["last_intent"]) if value.get("last_intent") else None,
                 requested_attribute=str(value["requested_attribute"]) if value.get("requested_attribute") else None,
                 offered_actions=actions,
@@ -128,34 +158,16 @@ class StateInputResolution:
     used: bool = False
 
 
-_TOPIC_ATTRIBUTES = (
-    ("causes", "Nguyên nhân"),
-    ("symptoms", "Triệu chứng"),
-    ("danger", "Có nguy hiểm không?"),
-    ("prevention", "Phòng ngừa"),
-    ("urgent_care", "Khi nào cần đi khám?"),
-)
-_DRUG_ATTRIBUTES = (
-    ("uses", "Công dụng"),
-    ("dosage", "Cách dùng - liều dùng"),
-    ("side_effects", "Tác dụng phụ"),
-    ("contraindications", "Chống chỉ định"),
-)
-
-
 def resolve_state_input(
-    state: ConversationState,
-    *,
-    message: str,
-    selected_action: SuggestedAction | None,
+    state: ConversationState, *, message: str, selected_action: SuggestedAction | None
 ) -> StateInputResolution:
-    """Resolve a validated UI action, numeric choice, or concise typed label."""
+    """Resolve only a validated current action, numeric choice, or typed alias."""
     action = selected_action or _typed_action(state, message)
     if action is None:
         return StateInputResolution(query=message)
-    if action.type == "topic_attribute" and action.topic:
+    if action.type == "topic_followup" and action.topic:
         return StateInputResolution(query=_topic_query(action.topic, action.value), selected_action=action, used=True)
-    if action.type == "drug_attribute" and state.active_entity and action.entity_id == state.active_entity.id:
+    if action.type == "drug_followup" and state.active_entity and action.entity_id == state.active_entity.id:
         return StateInputResolution(
             query=f"{action.label} của thuốc {state.active_entity.canonical_name}", selected_action=action, used=True
         )
@@ -163,13 +175,10 @@ def resolve_state_input(
 
 
 def validate_selected_action(state: ConversationState, candidate: SuggestedAction | None) -> SuggestedAction | None:
-    """Return only the exact latest server-issued action; client values are hints."""
-    if candidate is None:
+    """Return only an exact, latest, allowlisted action issued by this server."""
+    if candidate is None or not is_allowed_action(candidate):
         return None
-    for action in state.offered_actions:
-        if action == candidate:
-            return action
-    return None
+    return next((action for action in state.offered_actions if action == candidate), None)
 
 
 def transition_state(
@@ -179,32 +188,21 @@ def transition_state(
     topic: str | None = None,
     entity: ActiveEntity | None = None,
     selected_action: SuggestedAction | None = None,
+    offered_actions: tuple[SuggestedAction, ...] = (),
     safety_event: bool = False,
 ) -> ConversationState:
-    """Apply one explicit state transition after an authoritative run result."""
+    """Persist a server-authoritative state transition without fallback templates."""
     if safety_event:
-        return replace(state, last_intent=intent, offered_actions=(), pending_selection=None, updated_at=datetime.now(UTC))
+        return replace(
+            state, last_intent=intent, offered_actions=(), pending_selection=None, updated_at=datetime.now(UTC)
+        )
 
     next_topic = ActiveTopic("medical_topic", topic) if topic else state.active_topic
     next_entity = entity or state.active_entity
     if topic:
-        # A distinct explicit topic is a conversational boundary; old actions
-        # cannot be selected against it.
         next_entity = None
     if entity:
         next_topic = None
-
-    actions: tuple[SuggestedAction, ...] = ()
-    if next_entity is not None:
-        actions = tuple(
-            SuggestedAction(str(uuid4()), "drug_attribute", label, value, entity_id=next_entity.id)
-            for value, label in _DRUG_ATTRIBUTES
-        )
-    elif next_topic is not None:
-        actions = tuple(
-            SuggestedAction(str(uuid4()), "topic_attribute", label, value, topic=next_topic.canonical_name)
-            for value, label in _TOPIC_ATTRIBUTES
-        )
 
     return ConversationState(
         conversation_id=state.conversation_id,
@@ -212,32 +210,68 @@ def transition_state(
         active_entity=next_entity,
         last_intent=intent,
         requested_attribute=selected_action.value if selected_action else None,
-        offered_actions=actions,
+        offered_actions=tuple(action for action in offered_actions if is_allowed_action(action))[:4],
         pending_selection=None,
         updated_at=datetime.now(UTC),
     )
 
 
 def _typed_action(state: ConversationState, message: str) -> SuggestedAction | None:
-    normalized = " ".join(message.casefold().strip(" ?!.,;:").split())
+    normalized = _normalize(message)
     if normalized.isdigit():
         index = int(normalized) - 1
         if 0 <= index < len(state.offered_actions):
             return state.offered_actions[index]
     for action in state.offered_actions:
-        if normalized in {action.label.casefold(), action.value.casefold()}:
+        if normalized in {_normalize(action.label), _normalize(action.value)}:
             return action
-        if normalized.startswith("còn ") and normalized[4:] == action.label.casefold():
+        follow_up = normalized[4:] if normalized.startswith("con ") else normalized
+        if follow_up == _normalize(action.label) or follow_up in _typed_aliases(action):
             return action
     return None
 
 
+def _typed_aliases(action: SuggestedAction) -> frozenset[str]:
+    aliases = {
+        "definition": {"la gi", "dinh nghia"},
+        "causes": {"nguyen nhan", "do dau", "tai sao"},
+        "symptoms": {"trieu chung", "dau hieu"},
+        "treatment": {"co chua duoc khong", "dieu tri"},
+        "prevention": {"phong ngua", "phong tranh"},
+        "danger": {"co nguy hiem khong", "nguy hiem"},
+        "urgent_signs": {"dau hieu can di kham ngay", "khi nao can di kham"},
+        "diagnosis": {"chan doan"},
+        "monitoring": {"theo doi"},
+        "drug_uses": {"cong dung", "chi dinh"},
+        "dosage": {"lieu dung"},
+        "administration": {"cach dung"},
+        "side_effects": {"tac dung phu"},
+        "contraindications": {"chong chi dinh"},
+        "warnings": {"luu y", "canh bao"},
+        "interactions": {"tuong tac"},
+    }
+    return frozenset(aliases.get(action.value, set()))
+
+
+def _normalize(value: str) -> str:
+    import unicodedata
+
+    folded = "".join(
+        char for char in unicodedata.normalize("NFD", value.casefold()) if unicodedata.category(char) != "Mn"
+    )
+    return " ".join(folded.strip(" ?!.,;:").split())
+
+
 def _topic_query(topic: str, value: str) -> str:
     templates = {
-        "causes": f"Nguyên nhân của {topic} là gì?",
+        "definition": f"{topic} là gì?",
+        "causes": f"Nguyên nhân gây {topic} là gì?",
         "symptoms": f"Triệu chứng của {topic} là gì?",
-        "danger": f"{topic} có nguy hiểm không?",
+        "treatment": f"{topic} có chữa được không?",
         "prevention": f"Cách phòng ngừa {topic} là gì?",
-        "urgent_care": f"Khi nào {topic} cần đi khám ngay?",
+        "danger": f"{topic} có nguy hiểm không?",
+        "urgent_signs": f"Dấu hiệu nào của {topic} cần đi khám ngay?",
+        "diagnosis": f"{topic} được chẩn đoán như thế nào?",
+        "monitoring": f"Cần theo dõi gì khi bị {topic}?",
     }
     return templates.get(value, topic)

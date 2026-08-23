@@ -305,7 +305,7 @@ prescription or `dose_event` responses.
 - `safety_flag = true` → FE **bắt buộc** hiện overlay cấp cứu, bỏ qua hội thoại thường.
 - `sources` rỗng → agent **không** được khẳng định thông tin thuốc trong `reply` (FEAT-006).
 
-### Agent V2 conversation action extension (BUILD-29D.1)
+### Agent V2 dynamic suggested actions (BUILD-29D.2)
 
 `POST /api/v1/agent/v2/orchestrate` accepts the existing `conversation_id`
 and an optional `selected_action`. The client may only echo an action that
@@ -320,8 +320,8 @@ as authorization or lookup inputs by themselves.
   "message": "Cong dung",
   "selected_action": {
     "action_id": "b18cb31f-3a97-4c62-b57e-9bec9c8475f8",
-    "type": "drug_attribute",
-    "value": "uses",
+    "type": "drug_followup",
+    "value": "drug_uses",
     "entity_id": "long-huyet"
   }
 }
@@ -333,17 +333,27 @@ as authorization or lookup inputs by themselves.
   "suggested_actions": [
     {
       "action_id": "d940d92d-a016-4236-9b39-b333983f5331",
-      "type": "topic_attribute",
-      "label": "Nguyen nhan",
+      "type": "topic_followup",
+      "label": "Nguyên nhân gây gan nhiễm mỡ",
       "value": "causes",
-      "topic": "gan nhiem mo"
+      "topic": "gan nhiễm mỡ"
     }
   ]
 }
 ```
 
-Invalid or stale actions are treated as ordinary user text. Safety and
-deterministic medication-time routing inspect the raw message first.
+The server issues 0–4 actions only after the real answer has been produced.
+It appends the same user-facing labels to the reply, so the action array and
+answer offer the same follow-up directions. The server allowlists
+`topic_followup` values (`definition`, `causes`, `symptoms`, `treatment`,
+`prevention`, `danger`, `urgent_signs`, `diagnosis`, `monitoring`),
+`drug_followup` values (`drug_uses`, `dosage`, `administration`,
+`side_effects`, `contraindications`, `warnings`, `interactions`), and
+`schedule_followup` values (`today_schedule`, `next_dose`,
+`upcoming_schedule`, `adherence_history`). Unknown values are never stored
+or applied. Invalid or stale actions are treated as ordinary user text.
+Safety and deterministic medication-time routing inspect the raw message
+first; client `entity_id` and `topic` never authorize lookup or access.
 
 ## 5. `photo-api`
 

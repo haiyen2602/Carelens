@@ -17,7 +17,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager
-from backend.agents.v2.conversation_state import ActiveEntity, SuggestedAction, resolve_state_input, transition_state
+from backend.agents.v2.conversation_state import (
+    ActiveEntity,
+    SuggestedAction,
+    is_allowed_action,
+    resolve_state_input,
+    transition_state,
+)
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import OpenAIModelGateway
 from backend.agents.v2.observability import AgentTelemetry, ModelPricingCatalog
@@ -31,6 +37,7 @@ from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime
 from backend.agents.v2.safety import SafetyGateway
 from backend.agents.v2.short_term_memory import ShortTermMemoryStore
+from backend.agents.v2.suggested_actions import build_suggested_actions
 from backend.agents.v2.tools import AuthorizedToolContext, ToolGateway
 from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
 from backend.api.security import CurrentUser, get_current_user
@@ -80,6 +87,7 @@ def _validated_selected_action(state, candidate) -> SuggestedAction | None:
             and action.value == candidate.value
             and action.entity_id == candidate.entity_id
             and action.topic == candidate.topic
+            and is_allowed_action(action)
         ):
             return action
     return None
@@ -158,6 +166,7 @@ def _require_agent_v2_enabled(settings: object, actor: CurrentUser) -> None:
     if _in_rollout_percentage(settings, actor.id):
         return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=_AGENT_V2_DISABLED_DETAIL)
+
 
 # BUILD-5/BUILD-13 short-term memory and telemetry are deliberately
 # process-local (see backend/agents/v2/short_term_memory.py); one instance is
@@ -323,9 +332,19 @@ def _record_agent_v2_telemetry(
 # activity-building must never take down a real chat reply. Uses its own
 # `db.commit()` (the main response commit already happened by the time this
 # runs) rather than joining an already-closed transaction.
-def _persist_activity_snapshot(db: Session, *, patient_id: str, actor: CurrentUser, result) -> None:
+def _persist_activity_snapshot(
+    db: Session,
+    *,
+    patient_id: str,
+    actor: CurrentUser,
+    result,
+    suggested_actions: tuple[SuggestedAction, ...] = (),
+    selected_action: SuggestedAction | None = None,
+) -> None:
     try:
-        activities = build_activity_timeline(result)
+        activities = build_activity_timeline(
+            result, suggested_actions=suggested_actions, selected_action=selected_action
+        )
         db.add(
             AgentActivitySnapshot(
                 agent_run_id=result.agent_run_id,
@@ -367,7 +386,9 @@ def get_trace_activity(
     HTTP status alone, which is the more private default here.
     """
     if actor.role != "patient" or not actor.patient_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chi benh nhan moi xem duoc hoat dong cua chinh minh")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Chi benh nhan moi xem duoc hoat dong cua chinh minh"
+        )
 
     snapshot = db.query(AgentActivitySnapshot).filter(AgentActivitySnapshot.trace_id == trace_id).first()
     if snapshot is None:
@@ -401,7 +422,9 @@ def run_read_only_agent(
         context=AuthorizedToolContext(actor_id=actor.id, actor_role=actor.role, patient_id=patient_id),
     )
     result = runtime.run(message=request.message, actor_role=actor.role, tools=tools)
-    return AgentV2ReadOnlyResponse(status=result.status, reply=result.response, tools=[item.name for item in result.tool_results])
+    return AgentV2ReadOnlyResponse(
+        status=result.status, reply=result.response, tools=[item.name for item in result.tool_results]
+    )
 
 
 @agent_v2_router.post("/agent/v2/orchestrate", response_model=AgentV2OrchestrateResponse)
@@ -423,13 +446,9 @@ def run_agent_orchestration(
     # state from a prior request by the same account.
     conversation_id = request.conversation_id or f"one-shot:{uuid.uuid4()}"
     state_store = AgentConversationStateStore()
-    conversation_state = state_store.load(
-        db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id
-    )
+    conversation_state = state_store.load(db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id)
     selected_action = _validated_selected_action(conversation_state, request.selected_action)
-    input_resolution = resolve_state_input(
-        conversation_state, message=request.message, selected_action=selected_action
-    )
+    input_resolution = resolve_state_input(conversation_state, message=request.message, selected_action=selected_action)
 
     # BUILD-22: an optional client idempotency key opts into HTTP-level
     # replay -- see backend.services.agent_idempotency. A key bound to a
@@ -502,9 +521,17 @@ def run_agent_orchestration(
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
                 resolved_query=input_resolution.query if input_resolution.used else None,
-                active_entity_id=conversation_state.active_entity.id if input_resolution.used and conversation_state.active_entity else None,
-                active_entity_name=conversation_state.active_entity.canonical_name if input_resolution.used and conversation_state.active_entity else None,
-                requested_attribute=selected_action.value if selected_action and selected_action.type == "drug_attribute" else None,
+                active_entity_id=conversation_state.active_entity.id
+                if input_resolution.used and conversation_state.active_entity
+                else None,
+                active_entity_name=conversation_state.active_entity.canonical_name
+                if input_resolution.used and conversation_state.active_entity
+                else None,
+                # The semantic value stays in state; the bound tool receives
+                # the server-authored human query/label, never a client id.
+                requested_attribute=selected_action.label
+                if selected_action and selected_action.type == "drug_followup"
+                else None,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -515,14 +542,49 @@ def run_agent_orchestration(
 
     semantic = normalize_semantic_medical_query(input_resolution.query)
     resolved_entity = _resolved_drug_entity(result.tool_results)
-    topic = semantic.topic if result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION else None
+    safety_event = result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None
+    # BUILD-29D.2 fix (found via real local E2E, 2026-08-23): the keyword
+    # router (classify_intent) can label a message GENERAL_MEDICAL_INFORMATION
+    # purely because it contains a generic phrase like "la gi" even when it
+    # also names a specific drug (e.g. "Cong dung cua thuoc X la gi") -- the
+    # orchestrator still correctly resolves and answers from that drug's real
+    # evidence despite the label. Trusting the label alone here made `topic`
+    # a raw, un-vetted echo of the user's message, which both corrupted the
+    # persisted state (transition_state nulls out topic AND entity when both
+    # are set - see conversation_state.py) and produced nonsense
+    # topic_followup suggestions with no entity binding for an answer that
+    # was actually about one specific drug. A server-resolved drug entity
+    # (real tool evidence, never client input) is authoritative over the
+    # router's own intent label -- only treat this as a general-topic turn
+    # when no drug was actually resolved.
+    topic = (
+        semantic.topic
+        if result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION and resolved_entity is None
+        else None
+    )
+    active_topic = topic or (
+        conversation_state.active_topic.canonical_name if conversation_state.active_topic else None
+    )
+    active_entity = resolved_entity or conversation_state.active_entity
+    suggested = build_suggested_actions(
+        reply=result.response,
+        status=result.status,
+        intent=result.intent,
+        semantic_query=semantic,
+        topic=active_topic,
+        entity=active_entity,
+        selected_action=selected_action,
+        tool_results=result.tool_results,
+        safety_event=safety_event,
+    )
     next_state = transition_state(
         conversation_state,
         intent=result.intent.value,
         topic=topic,
         entity=resolved_entity,
         selected_action=selected_action,
-        safety_event=result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None,
+        offered_actions=suggested.actions,
+        safety_event=safety_event,
     )
     state_store.save(
         db,
@@ -534,7 +596,7 @@ def run_agent_orchestration(
 
     response = AgentV2OrchestrateResponse(
         status=result.status,
-        reply=result.response,
+        reply=suggested.reply,
         intent=result.intent,
         tools=[item.name for item in result.tool_results],
         citations=[AgentV2CitationOut(title=c.title, source=c.source, url=c.url) for c in result.citations],
@@ -584,6 +646,13 @@ def run_agent_orchestration(
     # above -- see _persist_activity_snapshot's own docstring for why this
     # is a separate, durable table rather than reading the telemetry buffer
     # back.
-    _persist_activity_snapshot(db, patient_id=patient_id, actor=actor, result=result)
+    _persist_activity_snapshot(
+        db,
+        patient_id=patient_id,
+        actor=actor,
+        result=result,
+        suggested_actions=suggested.actions,
+        selected_action=selected_action,
+    )
 
     return response
