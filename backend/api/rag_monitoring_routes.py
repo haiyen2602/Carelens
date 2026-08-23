@@ -1,12 +1,11 @@
 """Admin Monitoring & RAG Observability API endpoints.
 Conforms to docs/langfuse_rag_admin_monitoring_spec.md §15, §17, §25, §26.
-100% Real Data Driven: computed strictly from Database (AuditLog, Escalation, DrugChunk, ChatMessage)
+100% Real Data Driven: computed strictly from Database (AuditLog, Escalation, DrugChunk)
 and in-memory/Langfuse Telemetry Traces without synthetic mock data.
 """
 
 from __future__ import annotations
 
-import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Session
 from backend.api.security import CurrentUser, require_role
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import AuditLog, ChatMessage, DrugChunk, Escalation
+from backend.db.models import AuditLog, DrugChunk, Escalation
 from backend.services.telemetry import get_local_traces
 
 rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitoring"])
@@ -66,6 +65,24 @@ def _prompt_version_counts(traces: list, settings) -> dict[str, int]:
     if not counts:
         counts[settings.rag_prompt_version] = 0
     return counts
+
+
+def _available_metric_scores(traces: list, metric_name: str) -> list[float]:
+    """Return only Evaluation V2 scores whose trace declared the metric usable.
+
+    An absent score is not a zero score. This deliberately excludes legacy
+    traces and pre-Evaluation-V2 Agent V2 traces, because their applicability
+    and provenance cannot be reconstructed safely after the fact.
+    """
+    score_name = {"faithfulness": "answer_faithfulness"}.get(metric_name, metric_name)
+    scores: list[float] = []
+    for trace in traces:
+        evaluation = trace.metadata.get("evaluation_v2") if isinstance(trace.metadata, dict) else None
+        metric = evaluation.get("metrics", {}).get(metric_name) if isinstance(evaluation, dict) else None
+        value = trace.scores.get(score_name)
+        if isinstance(metric, dict) and metric.get("status") == "AVAILABLE" and isinstance(value, (int, float)):
+            scores.append(float(value))
+    return scores
 
 
 _FilterParams = tuple[str | None, str | None, str | None]
@@ -145,25 +162,17 @@ async def get_rag_health(
     total_samples = len(traces) if traces else len(audit_logs)
 
     # Faithfulness
-    faithfulness_scores = [
-        float(t.scores["answer_faithfulness"])
-        for t in traces
-        if "answer_faithfulness" in t.scores and isinstance(t.scores["answer_faithfulness"], (int, float))
-    ]
-    avg_faithfulness = (sum(faithfulness_scores) / len(faithfulness_scores)) if faithfulness_scores else 0.0
+    faithfulness_scores = _available_metric_scores(traces, "faithfulness")
+    avg_faithfulness = (sum(faithfulness_scores) / len(faithfulness_scores)) if faithfulness_scores else None
 
     # Relevance
-    relevance_scores = [
-        float(t.scores["answer_relevance"])
-        for t in traces
-        if "answer_relevance" in t.scores and isinstance(t.scores["answer_relevance"], (int, float))
-    ]
-    avg_relevance = (sum(relevance_scores) / len(relevance_scores)) if relevance_scores else 0.0
+    relevance_scores = _available_metric_scores(traces, "answer_relevance")
+    avg_relevance = (sum(relevance_scores) / len(relevance_scores)) if relevance_scores else None
 
     # Latencies
     latencies = [t.duration_ms for t in traces if t.duration_ms > 0]
     if not latencies and audit_logs:
-        latencies = [l.total_duration_ms for l in audit_logs if l.total_duration_ms > 0]
+        latencies = [audit_log.total_duration_ms for audit_log in audit_logs if audit_log.total_duration_ms > 0]
 
     p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0.0
 
@@ -181,28 +190,24 @@ async def get_rag_health(
         day_end = day_start + timedelta(days=1)
         day_str = day_start.strftime("%d/%m")
 
-        day_logs = [l for l in audit_logs if l.created_at and day_start <= l.created_at < day_end]
+        day_logs = [
+            audit_log for audit_log in audit_logs if audit_log.created_at and day_start <= audit_log.created_at < day_end
+        ]
         day_traces = [
             t for t in traces
             if day_start.timestamp() <= t.start_time < day_end.timestamp()
         ]
 
-        day_faith = [
-            float(t.scores["answer_faithfulness"])
-            for t in day_traces
-            if "answer_faithfulness" in t.scores and isinstance(t.scores["answer_faithfulness"], (int, float))
+        day_faith = _available_metric_scores(day_traces, "faithfulness")
+        day_rel = _available_metric_scores(day_traces, "answer_relevance")
+        day_lats = [t.duration_ms for t in day_traces if t.duration_ms > 0] or [
+            audit_log.total_duration_ms for audit_log in day_logs if audit_log.total_duration_ms > 0
         ]
-        day_rel = [
-            float(t.scores["answer_relevance"])
-            for t in day_traces
-            if "answer_relevance" in t.scores and isinstance(t.scores["answer_relevance"], (int, float))
-        ]
-        day_lats = [t.duration_ms for t in day_traces if t.duration_ms > 0] or [l.total_duration_ms for l in day_logs if l.total_duration_ms > 0]
 
         trend.append({
             "date": day_str,
-            "faithfulness": round(sum(day_faith) / len(day_faith), 2) if day_faith else round(avg_faithfulness, 2),
-            "relevance": round(sum(day_rel) / len(day_rel), 2) if day_rel else round(avg_relevance, 2),
+            "faithfulness": round(sum(day_faith) / len(day_faith), 2) if day_faith else None,
+            "relevance": round(sum(day_rel) / len(day_rel), 2) if day_rel else None,
             "latency_p95": round(sorted(day_lats)[int(len(day_lats) * 0.95)], 0) if day_lats else 0.0,
             "requests": len(day_traces) if day_traces else len(day_logs),
         })
@@ -210,23 +215,29 @@ async def get_rag_health(
     status_str = "Healthy"
     if total_samples == 0:
         status_str = "No Data"
-    elif avg_faithfulness < 0.80 or error_rate > 5.0 or safety_failures > 0:
+    elif (avg_faithfulness is not None and avg_faithfulness < 0.80) or error_rate > 5.0 or safety_failures > 0:
         status_str = "Warning"
 
     return {
         "status": status_str,
         "sample_size": total_samples,
         "kpis": {
-            "faithfulness": round(avg_faithfulness, 2),
-            "answer_relevance": round(avg_relevance, 2),
-            "context_precision": round(avg_relevance, 2),
-            "context_recall": round(avg_faithfulness, 2),
-            "hallucination_rate": round(max(0.0, 1.0 - avg_faithfulness), 2) if avg_faithfulness > 0 else 0.0,
+            "faithfulness": round(avg_faithfulness, 2) if avg_faithfulness is not None else None,
+            "answer_relevance": round(avg_relevance, 2) if avg_relevance is not None else None,
+            "context_precision": None,
+            "context_recall": None,
+            "hallucination_rate": round(max(0.0, 1.0 - avg_faithfulness), 2) if avg_faithfulness is not None else None,
             "critical_safety_failure_rate": round((safety_failures / max(len(escalations), 1)) * 100, 2) if escalations else 0.0,
             "p95_latency_ms": round(p95_latency, 1),
             "error_rate": round(error_rate, 2),
             "cost_per_query": 0.0,
             "low_retrieval_confidence_rate": 0.0,
+            "faithfulness_sample_count": len(faithfulness_scores),
+            "answer_relevance_sample_count": len(relevance_scores),
+        },
+        "metric_provenance": {
+            "faithfulness": {"status": "AVAILABLE" if faithfulness_scores else "NOT_AVAILABLE", "source": "heuristic", "reason": None if faithfulness_scores else "no_applicable_evaluation_v2_samples"},
+            "answer_relevance": {"status": "AVAILABLE" if relevance_scores else "NOT_AVAILABLE", "source": "heuristic", "reason": None if relevance_scores else "no_applicable_evaluation_v2_samples"},
         },
         "trend": trend,
     }
@@ -243,9 +254,18 @@ async def get_rag_retrieval(
     total_chunks = db.query(DrugChunk).count()
     traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
 
+    # BUILD-31: only retrieval-backed Agent V2 traces participate in RAG
+    # quality. Schedule/tool/safety traces must not become zero-like samples.
+    rag_traces = [
+        trace
+        for trace in traces
+        if isinstance(trace.metadata.get("evaluation_v2"), dict)
+        and trace.metadata["evaluation_v2"].get("execution_path") == "RAG"
+    ]
+
     worst_queries: list[dict[str, Any]] = []
     # Identify queries with low faithfulness or flagged as errors
-    for t in traces:
+    for t in rag_traces:
         faith = float(t.scores.get("answer_faithfulness", 1.0)) if isinstance(t.scores.get("answer_faithfulness"), (int, float)) else 1.0
         rel = float(t.scores.get("answer_relevance", 1.0)) if isinstance(t.scores.get("answer_relevance"), (int, float)) else 1.0
         query_text = t.input.get("message", "") if isinstance(t.input, dict) else str(t.input)
@@ -269,19 +289,29 @@ async def get_rag_retrieval(
             seen_queries.add(w["query"])
             grouped_worst.append(w)
 
-    hit_count = sum(1 for t in traces if float(t.scores.get("answer_faithfulness", 0.0)) >= 0.7)
-    hit_rate = (hit_count / len(traces)) if traces else (1.0 if total_chunks > 0 else 0.0)
+    # Live traces have retrieved ranks but no server-authoritative relevance
+    # ground truth. IR metrics are therefore unavailable, not heuristic zero
+    # (or aliases of faithfulness). Golden evaluation owns real IR quality.
+    ir_unavailable = {"status": "NOT_AVAILABLE", "source": "golden", "reason": "no_relevance_ground_truth"}
 
     return {
         "metrics": {
-            "hit_rate_10": round(hit_rate, 2),
-            "mrr_10": round(hit_rate, 2),
-            "ndcg_10": round(hit_rate, 2),
-            "context_precision": round(hit_rate, 2),
-            "context_recall": round(hit_rate, 2),
+            "hit_rate_10": None,
+            "mrr_10": None,
+            "ndcg_10": None,
+            "context_precision": None,
+            "context_recall": None,
             "low_confidence_rate": 0.0,
             "no_result_rate": 0.0,
             "total_indexed_chunks": total_chunks,
+            "evaluated_sample_count": len(rag_traces),
+        },
+        "metric_provenance": {
+            "hit_rate_10": ir_unavailable,
+            "mrr_10": ir_unavailable,
+            "ndcg_10": ir_unavailable,
+            "context_precision": ir_unavailable,
+            "context_recall": ir_unavailable,
         },
         "worst_queries": grouped_worst[:10],
         "problem_docs": [],
@@ -298,11 +328,11 @@ async def get_rag_generation(
     """Generation quality metrics computed from real traces (§15.3)"""
     chatbot_version, model, prompt_version = filters
     traces = _filter_traces(get_local_traces(), chatbot_version=chatbot_version, model=model, prompt_version=prompt_version)
-    faith_list = [float(t.scores["answer_faithfulness"]) for t in traces if "answer_faithfulness" in t.scores and isinstance(t.scores["answer_faithfulness"], (int, float))]
-    rel_list = [float(t.scores["answer_relevance"]) for t in traces if "answer_relevance" in t.scores and isinstance(t.scores["answer_relevance"], (int, float))]
+    faith_list = _available_metric_scores(traces, "faithfulness")
+    rel_list = _available_metric_scores(traces, "answer_relevance")
 
-    avg_faith = (sum(faith_list) / len(faith_list)) if faith_list else 0.0
-    avg_rel = (sum(rel_list) / len(rel_list)) if rel_list else 0.0
+    avg_faith = (sum(faith_list) / len(faith_list)) if faith_list else None
+    avg_rel = (sum(rel_list) / len(rel_list)) if rel_list else None
 
     settings = get_settings()
 
@@ -313,20 +343,22 @@ async def get_rag_generation(
         model_counts[m] = model_counts.get(m, 0) + 1
 
     breakdown_by_model = [
-        {"model": m, "requests": count, "faithfulness": round(avg_faith, 2), "latency_p95": 0, "cost": 0.0}
+        {"model": m, "requests": count, "faithfulness": round(avg_faith, 2) if avg_faith is not None else None, "latency_p95": 0, "cost": 0.0}
         for m, count in model_counts.items()
     ]
     if not breakdown_by_model:
-        breakdown_by_model = [{"model": settings.model_name, "requests": len(traces), "faithfulness": round(avg_faith, 2), "latency_p95": 0, "cost": 0.0}]
+        breakdown_by_model = [{"model": settings.model_name, "requests": len(traces), "faithfulness": round(avg_faith, 2) if avg_faith is not None else None, "latency_p95": 0, "cost": 0.0}]
 
     return {
         "metrics": {
-            "faithfulness": round(avg_faith, 2),
-            "answer_relevance": round(avg_rel, 2),
-            "answer_correctness": round(avg_faith, 2),
-            "hallucination_rate": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith > 0 else 0.0,
-            "completeness": round(avg_rel, 2),
-            "abstention_accuracy": 1.0 if not any(t.status == "error" for t in traces) else 0.0,
+            "faithfulness": round(avg_faith, 2) if avg_faith is not None else None,
+            "answer_relevance": round(avg_rel, 2) if avg_rel is not None else None,
+            "answer_correctness": None,
+            "hallucination_rate": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith is not None else None,
+            "completeness": None,
+            "abstention_accuracy": None,
+            "faithfulness_sample_count": len(faith_list),
+            "answer_relevance_sample_count": len(rel_list),
         },
         "breakdown_by_model": breakdown_by_model,
         # BUILD-25B fix: this used to hardcode legacy chat's own
@@ -334,7 +366,7 @@ async def get_rag_generation(
         # were actually in view -- now grouped by each trace's own real
         # `prompt_version` metadata, same pattern as breakdown_by_model above.
         "breakdown_by_prompt": [
-            {"version": v, "requests": count, "faithfulness": round(avg_faith, 2), "hallucination": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith > 0 else 0.0}
+            {"version": v, "requests": count, "faithfulness": round(avg_faith, 2) if avg_faith is not None else None, "hallucination": round(max(0.0, 1.0 - avg_faith), 2) if avg_faith is not None else None}
             for v, count in _prompt_version_counts(traces, settings).items()
         ],
     }
@@ -433,7 +465,9 @@ async def get_rag_system(
         else []
     )
 
-    latencies = [t.duration_ms for t in traces if t.duration_ms > 0] or [l.total_duration_ms for l in audit_logs if l.total_duration_ms > 0]
+    latencies = [t.duration_ms for t in traces if t.duration_ms > 0] or [
+        audit_log.total_duration_ms for audit_log in audit_logs if audit_log.total_duration_ms > 0
+    ]
 
     p50 = sorted(latencies)[int(len(latencies) * 0.50)] if latencies else 0.0
     p95 = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0.0
@@ -448,9 +482,9 @@ async def get_rag_system(
 
     # Fallback to persisted AuditLog steps if in-memory trace buffer is empty/cold
     if not step_totals and audit_logs:
-        for l in audit_logs:
-            if isinstance(l.trace, list):
-                for step in l.trace:
+        for audit_log in audit_logs:
+            if isinstance(audit_log.trace, list):
+                for step in audit_log.trace:
                     if isinstance(step, dict):
                         s_name = f"step.{step.get('step', 'step')}"
                         s_dur = float(step.get("duration_ms") or 0.0)
@@ -519,15 +553,15 @@ async def get_rag_traces(
     # every other endpoint in this file).
     if not results and chatbot_version in (None, "all", "legacy") and not model and not prompt_version:
         logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(50).all()
-        for l in logs:
+        for audit_log in logs:
             results.append({
-                "trace_id": f"db_{l.id[:8]}",
-                "timestamp": l.created_at.isoformat() if l.created_at else datetime.now(UTC).isoformat(),
-                "session_id": f"session_{l.patient_id}",
-                "query_preview": l.utterance,
-                "final_answer": l.final_response,
+                "trace_id": f"db_{audit_log.id[:8]}",
+                "timestamp": audit_log.created_at.isoformat() if audit_log.created_at else datetime.now(UTC).isoformat(),
+                "session_id": f"session_{audit_log.patient_id}",
+                "query_preview": audit_log.utterance,
+                "final_answer": audit_log.final_response,
                 "status": "success",
-                "latency_ms": round(l.total_duration_ms, 1),
+                "latency_ms": round(audit_log.total_duration_ms, 1),
                 "faithfulness": 0.0,
                 "relevance": 0.0,
                 "chatbot_version": "legacy",

@@ -19,6 +19,7 @@
 | `auth-api` | REST | `auth` | Tất cả frontend | Draft | §1 |
 | `account-api` | REST | `auth` | FE admin | Draft | §1b |
 | `admin-drug-api` | REST | `drug-knowledge` | FE admin RAG | Draft | §1d |
+| `admin-rag-monitoring-api` | REST | `observability` | FE admin RAG | Draft | §1f |
 | `drug-request-api` | REST | `drug-requests` | FE bác sĩ, FE admin | Draft | §1e |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
@@ -536,6 +537,23 @@ tra `drug_request` — đường ngoại lệ không bao giờ ghi đè lên d�
 
 Response list 200 chứa `items`, `page`, `page_size`, `total`, `total_pages`.
 
+## 1f. `admin-rag-monitoring-api` (proposed by BUILD-31; review required)
+
+`GET /api/v1/admin/rag/retrieval` remains admin-only. Its `metrics` object
+uses `number | null`: `null` means unavailable, never a zero score. The
+companion `metric_provenance[metric]` declares `status` (`AVAILABLE`,
+`NOT_AVAILABLE`, or `NOT_APPLICABLE`), `source` (`golden`, `heuristic`, or
+`operational`), and a machine-readable `reason` when no score can be
+calculated. `evaluated_sample_count` is the number of retrieval-backed traces
+considered, not all chat traffic.
+
+Live traffic currently has no authoritative relevance IDs. Therefore
+`hit_rate_10`, `mrr_10`, and `ndcg_10` are `null` with
+`reason: "no_relevance_ground_truth"`. Independent numeric IR metrics are
+only returned by a future/versioned golden-evaluation result that supplies
+retrieved IDs and relevant IDs. This is a non-breaking response extension and
+semantic correction, but requires Architect/Frontend review before release.
+
 ## 1e. `drug-request-api`
 
 Đường thoát cho FB-14. Từ 2026-08-20 danh mục thuốc là **allowlist đóng** — bác sĩ
@@ -591,6 +609,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-17 | `auth-api` (§1, §1c-2 mới) | Thêm `POST /auth/set-password` (Bearer, chỉ tài khoản `auth_provider="google"`, không hỏi mật khẩu cũ) cho phép tài khoản Google đặt mật khẩu lần đầu và đăng nhập được cả hai đường; `GET /auth/me` trả thêm `auth_provider`. Không breaking: thêm endpoint + thêm field response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
+| 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.
