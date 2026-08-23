@@ -25,7 +25,7 @@ const CHAT_RUNTIME = (process.env.CHAT_RUNTIME ?? "v2").toLowerCase();
 type AgentV2Citation = { title: string; source: string; url: string | null };
 type AgentV2SuggestedAction = {
   action_id: string;
-  type: "drug_attribute" | "topic_attribute";
+  type: "topic_followup" | "drug_followup" | "schedule_followup";
   label: string;
   value: string;
   entity_id?: string;

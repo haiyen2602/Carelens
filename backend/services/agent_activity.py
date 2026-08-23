@@ -24,7 +24,8 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from backend.agents.v2.orchestrator import OrchestrationIntent, OrchestrationResult, _SCHEDULE_INTENTS
+from backend.agents.v2.conversation_state import SuggestedAction
+from backend.agents.v2.orchestrator import _SCHEDULE_INTENTS, OrchestrationIntent, OrchestrationResult
 from backend.agents.v2.runtime import RunStatus
 
 
@@ -60,13 +61,19 @@ _SAFETY_DETECTION_INTENTS = frozenset(
     {
         OrchestrationIntent.MISSED_DOSE,
         OrchestrationIntent.DELAYED_DOSE,
+        OrchestrationIntent.POSSIBLE_OVERDOSE,
         OrchestrationIntent.ACUTE_DANGER_ESCALATION,
         OrchestrationIntent.DOCTOR_REVIEW,
     }
 )
 
 
-def build_activity_timeline(result: OrchestrationResult) -> list[ActivityItem]:
+def build_activity_timeline(
+    result: OrchestrationResult,
+    *,
+    suggested_actions: tuple[SuggestedAction, ...] = (),
+    selected_action: SuggestedAction | None = None,
+) -> list[ActivityItem]:
     """Build the sanitized, real-events-only timeline for one finished run.
 
     Order mirrors the actual pipeline order in ``AgentOrchestrator.run()``:
@@ -89,6 +96,23 @@ def build_activity_timeline(result: OrchestrationResult) -> list[ActivityItem]:
     # 1. The deterministic router always classifies every message -- real
     # for every single request, regardless of what it resolved to.
     add("intent", "Đã xác định yêu cầu")
+
+    # BUILD-29D.2: the selection was validated against the latest action
+    # state before orchestration, so this is a real user-safe event. It
+    # contains only the label the user saw, never IDs, tool arguments, or
+    # hidden reasoning.
+    if selected_action is not None:
+        add("suggested_action.selected", f'Bạn chọn "{selected_action.label}"')
+
+    # BUILD-29F deterministic clinical paths. These items correspond to the
+    # fixed clarification handlers, never hidden reasoning or model activity.
+    if result.intent is OrchestrationIntent.PERSONAL_SYMPTOM:
+        add("triage_detected", "Đã nhận diện triệu chứng")
+        add("triage_red_flags", "Đã kiểm tra dấu hiệu cần lưu ý")
+        add("triage_clarification", "Đã chuẩn bị câu hỏi làm rõ")
+    elif result.intent is OrchestrationIntent.MEDICATION_DOSE_SAFETY:
+        add("dose_safety_detected", "Đã nhận diện câu hỏi về liều dùng")
+        add("dose_safety", "Đã kiểm tra an toàn")
 
     # 2. BUILD-28 Time Query Engine -- real only for the 3 schedule intents
     # (MEDICATION_HISTORY/TODAY_DOSES/UPCOMING_DOSES), which structurally
@@ -155,6 +179,9 @@ def build_activity_timeline(result: OrchestrationResult) -> list[ActivityItem]:
         add("handoff", "Yêu cầu đang chờ được chuyển đến bác sĩ", status="pending")
     else:  # FAILED, TIMEOUT, BUDGET_EXCEEDED, CANCELLED
         add("error", "Không thể hoàn thành yêu cầu này", status="failed")
+
+    if suggested_actions:
+        add("suggested_actions.created", "Đã tạo gợi ý cho câu hỏi tiếp theo")
 
     return activities
 

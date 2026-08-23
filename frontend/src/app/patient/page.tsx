@@ -199,7 +199,17 @@ export default function PatientToday() {
   const dosesHomNay = doses.filter((d) => laHomNay(d.scheduledAt));
   const next = dosesHomNay.find((d) => d.status === "PENDING");
   const daXong = dosesHomNay.filter((d) => d.status !== "PENDING").length;
-  const tatCaXong = dosesHomNay.length > 0 && !next;
+  // Anh khong khop sau 3 lan chup: dose chuyen AWAITING_CAREGIVER (xem
+  // verifier.py), KHONG phai da uong xong - phai tach rieng khoi tatCaXong
+  // de khong hien nham man hinh "Xong het roi! 🎉".
+  const choDuyet = dosesHomNay.filter((d) => d.status === "AWAITING_CAREGIVER");
+  const tatCaXong = dosesHomNay.length > 0 && !next && choDuyet.length === 0;
+  // `xacMinh` la ket qua cua lan chup GAN NHAT, khong tu xoa khi `next` nhay
+  // sang lieu khac (vd lieu vua chup het 3 lan -> AWAITING_CAREGIVER, hero
+  // card chuyen sang lieu ke tiep) - neu dung thang `xacMinh` o duoi, canh
+  // bao "da chup du 3 lan" cua lieu CU se hien nham len lieu MOI chua he
+  // dung toi. Chi dung ket qua khi no thuoc dung ve lieu dang hien thi.
+  const xacMinhChoLieuNay = xacMinh?.doseEventId === next?.id ? xacMinh : null;
   const lieuMai = doses
     .filter((d) => d.status === "PENDING" && !laHomNay(d.scheduledAt))
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
@@ -260,6 +270,13 @@ export default function PatientToday() {
           toast.error("Đã hết lượt chụp lại — chuyển người thân xem giúp");
         } else if (ketQua.status === "loi_he_thong") {
           toast.error("Hệ thống đang bận, bạn thử gửi lại giúp tôi nhé");
+        } else if (ketQua.status === "do_tin_cay_thap") {
+          // Anh chua du ro de Capy chac chan (khong tinh vao han muc chup
+          // lai, xem backend/services/photo_verification/verifier.py) - mo
+          // luon sheet huong dan chup anh da co san thay vi chi toast chung
+          // chung, giup benh nhan sua dung cho lan sau.
+          toast(ketQua.message);
+          setSheet("huongdan");
         } else {
           toast(ketQua.message);
         }
@@ -375,27 +392,27 @@ export default function PatientToday() {
               <div className="flex items-center gap-3 rounded-[16px] bg-[#CFE6FF] p-3 text-sm text-[#16386E]">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                 <span>
-                  {xacMinh?.message ??
+                  {xacMinhChoLieuNay?.message ??
                     "Đang phân tích ảnh, việc này có thể mất vài phút — bạn cứ để yên máy."}
-                  {xacMinh && xacMinh.attempt > 0 && (
+                  {xacMinhChoLieuNay && xacMinhChoLieuNay.attempt > 0 && (
                     <span className="block text-xs opacity-75">
-                      Lần {xacMinh.attempt}/{xacMinh.maxAttempts}
+                      Lần {xacMinhChoLieuNay.attempt}/{xacMinhChoLieuNay.maxAttempts}
                     </span>
                   )}
                 </span>
               </div>
             )}
 
-            {!dangGui && xacMinh && !xacMinh.matched && xacMinh.status !== "dang_xu_ly" && (
+            {!dangGui && xacMinhChoLieuNay && !xacMinhChoLieuNay.matched && xacMinhChoLieuNay.status !== "dang_xu_ly" && (
               <div
                 className="rounded-[16px] p-3 text-sm"
                 style={
-                  xacMinh.nextAction === "CAREGIVER_REVIEW"
+                  xacMinhChoLieuNay.nextAction === "CAREGIVER_REVIEW"
                     ? { background: "#FDEBC9", color: "#8A6516" }
                     : { background: "#F6E1DD", color: "#B4432C" }
                 }
               >
-                {xacMinh.message}
+                {xacMinhChoLieuNay.message}
               </div>
             )}
 
@@ -420,7 +437,7 @@ export default function PatientToday() {
             <CapyPrimaryButton
               disabled={dangGui}
               onClick={
-                xacMinh?.nextAction === "RETAKE" || !khongCanAnh
+                xacMinhChoLieuNay?.nextAction === "RETAKE" || !khongCanAnh
                   ? () => setCameraOpen(true)
                   : () => setSheet("confirm")
               }
@@ -430,7 +447,7 @@ export default function PatientToday() {
               ) : (
                 <>
                   {!khongCanAnh && <Camera className="h-4 w-4" />}
-                  {xacMinh?.nextAction === "RETAKE" ? "Chụp lại" : hero.primary}
+                  {xacMinhChoLieuNay?.nextAction === "RETAKE" ? "Chụp lại" : hero.primary}
                 </>
               )}
             </CapyPrimaryButton>

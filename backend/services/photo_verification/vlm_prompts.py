@@ -159,6 +159,8 @@ R8. KẸO VÀ THỰC PHẨM KHÔNG PHẢI THUỐC — quy tắc này ƯU TIÊN H
    - kích thước lớn và dày hơn viên nén thông thường, các viên đồng đều tăm tắp;
    - màu tươi kiểu thực phẩm: trắng sữa, xanh bạc hà, hồng, vàng chanh, cam.
    Nếu bao bì đi kèm (lọ nhựa, vỉ, hộp, gói) có chữ "gum", "chewing gum", "xylitol", "candy", "mint", "kẹo", "kẹo cao su", "thực phẩm", "bánh kẹo" → mọi viên thuộc bao bì đó đều là kẹo. TIN VÀO CHỮ TRÊN BAO BÌ, đừng đoán theo hình dáng viên.
+R8b. BAO BÌ (LỌ / HỘP / GÓI) LÀ ĐỒ ĂN VẶT / BÁNH KẸO THẬT SỰ, KHÔNG PHẢI SẢN PHẨM UỐNG THEO ĐƠN: nếu lọ/hộp/gói rõ ràng là kẹo, bánh, kẹo cao su, kẹo ngậm hương liệu, mỹ phẩm — bản thân lọ/hộp/gói đó KHÔNG được tính vào lo_thuoc/hop_thuoc/goi_thuoc, dù hình dáng bên ngoài giống bao bì thuốc. Dấu hiệu: chữ "kẹo"/"candy"/"gum"/"kẹo cao su"/"kẹo ngậm"/"mint"/"mỹ phẩm", công dụng RĂNG MIỆNG/GIẢI TRÍ/LÀM ĐẸP thay vì điều trị hay bổ sung dinh dưỡng, hương vị thực phẩm ("hương bạc hà", "hương cam"...). LƯU Ý: chỉ riêng chữ "thực phẩm bảo vệ sức khỏe" trên nhãn KHÔNG đủ để loại — xem R8c ngay dưới đây.
+R8c. VITAMIN / KHOÁNG CHẤT / TPCN ĐƯỢC KÊ NHƯ THUỐC — VẪN TÍNH BÌNH THƯỜNG, KHÔNG áp dụng R8b: rất nhiều sản phẩm được bác sĩ kê đơn theo dõi trong hệ thống này ghi nhãn "Thực phẩm bảo vệ sức khỏe" (không ghi chữ "Thuốc") — ví dụ vitamin, canxi, sắt, kẽm, DHA, omega-3, men vi sinh, collagen. Những sản phẩm này KHÔNG bị loại — vẫn tính bình thường vào vien_nang/vien_nen/lo_thuoc/hop_thuoc/goi_thuoc như dược phẩm. Chỉ loại theo R8b khi có dấu hiệu ĐỒ ĂN VẶT/BÁNH KẸO/MỸ PHẨM thật sự như đã liệt kê ở trên, KHÔNG loại chỉ vì nhãn không ghi chữ "Thuốc".
 R9. Không chắc chắn giữa viên nén và kẹo: KHÔNG tính vào vien_nen. Cho vào "khong_phai_thuoc" nếu bạn nghiêng về kẹo, hoặc bỏ hẳn nếu không nghiêng về bên nào; cả hai trường hợp đều phải nói rõ trong "ghi_chu" và hạ "do_tin_cay". Đếm thiếu một viên thuốc là sai nhỏ, đếm một viên kẹo thành thuốc là sai nghiêm trọng.
 R10. Bỏ qua vật thể không thuộc 6 loại trên và cũng không phải kẹo: bút, điện thoại, tay người, ly nước, kim tiêm, gạc, khăn, đồ dùng khác. Những thứ này KHÔNG vào "khong_phai_thuoc" — trường đó chỉ dành cho vật thể trông giống thuốc nhưng là kẹo / thực phẩm.
 R11. Không phát hiện loại nào thì gán 0 cho loại đó. Ảnh không có thuốc thì tất cả bằng 0.
@@ -191,11 +193,12 @@ Bối cảnh: ảnh được bệnh nhân tự chụp bằng điện thoại đ�
 
 Trước khi điền "vien_nen", hãy kiểm tra lại từng viên một lần nữa: viên đó có rãnh bẻ, có chữ / logo dập nổi, có lớp bao phim của thuốc không? Nếu nó chỉ là khối trắng nhẵn hình gối, phủ áo đường, không dập chữ — đó là kẹo gum, cho vào "khong_phai_thuoc". Đọc luôn chữ trên bao bì nằm trong ảnh để xác nhận.
 
-Nhắc lại bốn quy tắc dễ sai nhất:
+Nhắc lại năm quy tắc dễ sai nhất:
 - Kẹo cao su / kẹo xylitol / kẹo ngậm KHÔNG phải thuốc — đếm riêng vào "khong_phai_thuoc", không bao giờ vào "vien_nen".
 - Không suy ra số viên bên trong hộp, lọ hoặc gói đóng kín, và không đọc số in trên bao bì.
 - Viên bầu dục mà không có đường ghép hai nửa là vien_nen, không phải vien_nang.
 - Vật thể mơ hồ thì bỏ qua và ghi vào "ghi_chu", không đoán bừa.
+- Lọ/hộp/gói là ĐỒ ĂN VẶT/BÁNH KẸO thật sự thì mới loại khỏi lo_thuoc/hop_thuoc/goi_thuoc — vitamin/khoáng chất/TPCN ghi "Thực phẩm bảo vệ sức khỏe" vẫn tính bình thường, đừng loại chỉ vì không thấy chữ "Thuốc" trên nhãn.
 """
 
 __all__ = ["JSON_FORMAT_BLOCK", "RESULT_SCHEMA", "USER_PROMPT", "build_system_prompt"]

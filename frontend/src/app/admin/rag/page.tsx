@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -30,16 +30,122 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { PipelineSwitcher } from "./_pipeline-switcher";
+
+type ActiveTab = "overview" | "retrieval" | "generation" | "safety" | "system" | "traces";
+type NumericMetric = number | null;
+
+interface MetricBag {
+  [key: string]: NumericMetric | undefined;
+  faithfulness?: NumericMetric;
+  answer_relevance?: NumericMetric;
+  hallucination_rate?: NumericMetric;
+  abstention_accuracy?: NumericMetric;
+  hit_rate_10?: NumericMetric;
+  mrr_10?: NumericMetric;
+  ndcg_10?: NumericMetric;
+  total_indexed_chunks?: number;
+  evaluated_sample_count?: number;
+  p95_latency_ms?: number;
+  critical_safety_failure_rate?: number;
+  faithfulness_sample_count?: number;
+  answer_relevance_sample_count?: number;
+}
+
+interface TrendPoint {
+  date: string;
+  faithfulness: NumericMetric;
+  relevance: NumericMetric;
+  latency_p95: number;
+  requests: number;
+}
+
+interface HealthData {
+  status: string;
+  kpis: MetricBag;
+  trend: TrendPoint[];
+}
+
+interface WorstQuery {
+  query: string;
+  count: number;
+  avg_top1: number;
+  precision: number;
+  recall: number;
+  faithfulness: number;
+  last_seen: string;
+}
+
+interface RetrievalData {
+  metrics: MetricBag;
+  worst_queries: WorstQuery[];
+}
+
+interface GenerationModelBreakdown {
+  model: string;
+  requests: number;
+  faithfulness: NumericMetric;
+}
+
+interface GenerationData {
+  metrics: MetricBag;
+  breakdown_by_model: GenerationModelBreakdown[];
+}
+
+interface SafetyIncident {
+  id: string;
+  severity: string;
+  reason?: string;
+  failure_type?: string;
+  status: string;
+}
+
+interface SafetyData {
+  critical_safety_failures?: number;
+  dosage_consistency_failures?: number;
+  interaction_unsupported_claims?: number;
+  incidents: SafetyIncident[];
+}
+
+interface LatencyStep {
+  component: string;
+  duration_ms: number;
+}
+
+interface SystemData {
+  latency_waterfall: LatencyStep[];
+}
+
+interface TraceSummary {
+  trace_id: string;
+  timestamp: string;
+  query_preview: string;
+  final_answer: string;
+  latency_ms: number;
+  faithfulness: NumericMetric;
+  relevance: NumericMetric;
+  status: string;
+  model: string;
+}
+
+interface FilterOptions {
+  chatbot_versions: { value: string; label: string }[];
+  models: string[];
+  prompt_versions: string[];
+  environments: string[];
+}
+
+async function readJson<T>(response: Response): Promise<T | null> {
+  return response.ok ? (response.json() as Promise<T>) : null;
+}
 
 export default function RagDashboardPage() {
   const { accessToken } = useAuth();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "retrieval" | "generation" | "safety" | "system" | "traces"
-  >("overview");
-  const [healthData, setHealthData] = useState<any>(null);
-  const [retrievalData, setRetrievalData] = useState<any>(null);
-  const [systemData, setSystemData] = useState<any>(null);
-  const [traces, setTraces] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [retrievalData, setRetrievalData] = useState<RetrievalData | null>(null);
+  const [systemData, setSystemData] = useState<SystemData | null>(null);
+  const [traces, setTraces] = useState<TraceSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -52,73 +158,83 @@ export default function RagDashboardPage() {
   const [chatbotVersionFilter, setChatbotVersionFilter] = useState("agent-v2");
   const [modelFilter, setModelFilter] = useState("all");
   const [promptFilter, setPromptFilter] = useState("all");
-  const [filterOptions, setFilterOptions] = useState<{
-    chatbot_versions: { value: string; label: string }[];
-    models: string[];
-    prompt_versions: string[];
-    environments: string[];
-  }>({ chatbot_versions: [], models: [], prompt_versions: [], environments: [] });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    chatbot_versions: [],
+    models: [],
+    prompt_versions: [],
+    environments: [],
+  });
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-  const [generationData, setGenerationData] = useState<any>(null);
-  const [safetyData, setSafetyData] = useState<any>(null);
+  const [generationData, setGenerationData] = useState<GenerationData | null>(null);
+  const [safetyData, setSafetyData] = useState<SafetyData | null>(null);
 
-  const fetchDashboardData = async (isBackground = false) => {
-    if (!accessToken) return;
-    if (!isBackground) setLoading(true);
-    try {
-      const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
-      // Real filter params, applied by the backend to the same trace list
-      // every metric below is computed from -- changing these dropdowns
-      // actually changes what's fetched, not just what's displayed.
-      const qs = new URLSearchParams();
-      if (chatbotVersionFilter !== "all") qs.set("chatbot_version", chatbotVersionFilter);
-      if (modelFilter !== "all") qs.set("model", modelFilter);
-      if (promptFilter !== "all") qs.set("prompt_version", promptFilter);
-      const q = qs.toString() ? `?${qs.toString()}` : "";
+  const fetchDashboardData = useCallback(
+    async (isBackground = false) => {
+      if (!accessToken) return;
+      if (!isBackground) setLoading(true);
+      try {
+        const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+        // Real filter params, applied by the backend to the same trace list
+        // every metric below is computed from -- changing these dropdowns
+        // actually changes what's fetched, not just what's displayed.
+        const qs = new URLSearchParams();
+        if (chatbotVersionFilter !== "all") qs.set("chatbot_version", chatbotVersionFilter);
+        if (modelFilter !== "all") qs.set("model", modelFilter);
+        if (promptFilter !== "all") qs.set("prompt_version", promptFilter);
+        const q = qs.toString() ? `?${qs.toString()}` : "";
 
-      const [healthRes, retrievalRes, generationRes, safetyRes, systemRes, tracesRes, filtersRes] =
-        await Promise.all([
+        const [
+          healthRes,
+          retrievalRes,
+          generationRes,
+          safetyRes,
+          systemRes,
+          tracesRes,
+          filtersRes,
+        ] = await Promise.all([
           fetch(`${apiBase}/api/v1/admin/rag/health${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<HealthData>)
             .catch(() => null),
           fetch(`${apiBase}/api/v1/admin/rag/retrieval${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<RetrievalData>)
             .catch(() => null),
           fetch(`${apiBase}/api/v1/admin/rag/generation${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<GenerationData>)
             .catch(() => null),
           fetch(`${apiBase}/api/v1/admin/rag/safety${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<SafetyData>)
             .catch(() => null),
           fetch(`${apiBase}/api/v1/admin/rag/system${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<SystemData>)
             .catch(() => null),
           fetch(`${apiBase}/api/v1/admin/rag/traces${q}`, { headers })
-            .then((r) => (r.ok ? r.json() : []))
+            .then(async (response) => (await readJson<TraceSummary[]>(response)) ?? [])
             .catch(() => []),
           // Real, currently-available filter option lists -- built from
           // actual trace metadata, not a hardcoded <option> list.
           fetch(`${apiBase}/api/v1/admin/rag/filters`, { headers })
-            .then((r) => (r.ok ? r.json() : null))
+            .then(readJson<FilterOptions>)
             .catch(() => null),
         ]);
 
-      if (healthRes) setHealthData(healthRes);
-      if (retrievalRes) setRetrievalData(retrievalRes);
-      if (generationRes) setGenerationData(generationRes);
-      if (safetyRes) setSafetyData(safetyRes);
-      if (systemRes) setSystemData(systemRes);
-      if (Array.isArray(tracesRes)) setTraces(tracesRes);
-      if (filtersRes) setFilterOptions(filtersRes);
-      setLastUpdated(new Date());
-    } catch (e) {
-      console.error("Failed to load RAG monitoring data:", e);
-    } finally {
-      if (!isBackground) setLoading(false);
-    }
-  };
+        if (healthRes) setHealthData(healthRes);
+        if (retrievalRes) setRetrievalData(retrievalRes);
+        if (generationRes) setGenerationData(generationRes);
+        if (safetyRes) setSafetyData(safetyRes);
+        if (systemRes) setSystemData(systemRes);
+        if (Array.isArray(tracesRes)) setTraces(tracesRes);
+        if (filtersRes) setFilterOptions(filtersRes);
+        setLastUpdated(new Date());
+      } catch (e) {
+        console.error("Failed to load RAG monitoring data:", e);
+      } finally {
+        if (!isBackground) setLoading(false);
+      }
+    },
+    [accessToken, apiBase, chatbotVersionFilter, modelFilter, promptFilter],
+  );
 
   useEffect(() => {
     if (!accessToken) return;
@@ -130,7 +246,7 @@ export default function RagDashboardPage() {
     return () => clearInterval(interval);
     // Re-fetch (not just re-render) whenever a filter changes, since the
     // filter values are sent to the backend as real query params.
-  }, [accessToken, chatbotVersionFilter, modelFilter, promptFilter]);
+  }, [accessToken, fetchDashboardData]);
 
   const kpis = healthData?.kpis || {
     faithfulness: 0,
@@ -139,17 +255,20 @@ export default function RagDashboardPage() {
     critical_safety_failure_rate: 0,
   };
 
-  const safePct = (val: any) => {
+  const safePct = (val: NumericMetric | undefined) => {
     const num = Number(val);
     if (isNaN(num)) return 0;
     return num <= 1.0 ? Math.round(num * 100) : Math.round(num);
   };
+  const metricPct = (val: NumericMetric | undefined) =>
+    typeof val === "number" ? `${safePct(val)}%` : "N/A";
 
   const trend = healthData?.trend || [];
   const worstQueries = retrievalData?.worst_queries || [];
 
   return (
     <div className="space-y-6">
+      <PipelineSwitcher active="chatbot" />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -168,7 +287,12 @@ export default function RagDashboardPage() {
               actually came from, right next to the title. */}
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700">
-              Chatbot Version: {chatbotVersionFilter === "agent-v2" ? "Agent V2 / Production" : chatbotVersionFilter === "legacy" ? "Legacy Chatbot" : "Tất cả hệ thống"}
+              Chatbot Version:{" "}
+              {chatbotVersionFilter === "agent-v2"
+                ? "Agent V2 / Production"
+                : chatbotVersionFilter === "legacy"
+                  ? "Legacy Chatbot"
+                  : "Tất cả hệ thống"}
             </span>
             {filterOptions.environments[0] && (
               <span className="rounded-full bg-slate-50 border border-slate-200 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
@@ -264,7 +388,7 @@ export default function RagDashboardPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as ActiveTab)}
               className={`flex items-center gap-2 px-4 py-2.5 transition border-b-2 font-semibold whitespace-nowrap ${
                 isActive
                   ? "border-primary text-primary"
@@ -293,7 +417,7 @@ export default function RagDashboardPage() {
                 </span>
               </div>
               <p className="mt-3 text-3xl font-extrabold leading-none text-foreground">
-                {safePct(kpis.faithfulness)}%
+                {metricPct(kpis.faithfulness)}
               </p>
               <p className="mt-2 text-xs font-semibold text-muted-foreground">
                 Độ trung thực tính theo trace thật
@@ -310,7 +434,7 @@ export default function RagDashboardPage() {
                 </span>
               </div>
               <p className="mt-3 text-3xl font-extrabold leading-none text-foreground">
-                {safePct(kpis.answer_relevance)}%
+                {metricPct(kpis.answer_relevance)}
               </p>
               <p className="mt-2 text-xs font-semibold text-primary">
                 Khớp ý định & giải quyết câu hỏi
@@ -358,7 +482,7 @@ export default function RagDashboardPage() {
               <Activity className="h-4 w-4 text-primary" />
               Xu hướng Chất lượng RAG (7 ngày qua)
             </h2>
-            {trend.length === 0 || trend.every((t: any) => t.requests === 0) ? (
+            {trend.length === 0 || trend.every((t) => t.requests === 0) ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 Chưa có dữ liệu trace trong 7 ngày qua. Hãy thực hiện trò chuyện để ghi nhận dữ liệu
                 thật.
@@ -423,13 +547,15 @@ export default function RagDashboardPage() {
       {/* Tab: Retrieval */}
       {activeTab === "retrieval" && (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-4">
             <div className="surface-card p-5">
               <span className="text-xs font-semibold text-muted-foreground uppercase">
                 HitRate@10
               </span>
               <p className="mt-2 text-3xl font-extrabold text-primary">
-                {((retrievalData?.metrics?.hit_rate_10 ?? 0) * 100).toFixed(1)}%
+                {typeof retrievalData?.metrics?.hit_rate_10 === "number"
+                  ? `${(retrievalData.metrics.hit_rate_10 * 100).toFixed(1)}%`
+                  : "N/A"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Độ phủ tài liệu liên quan trong top 10
@@ -438,10 +564,24 @@ export default function RagDashboardPage() {
             <div className="surface-card p-5">
               <span className="text-xs font-semibold text-muted-foreground uppercase">MRR@10</span>
               <p className="mt-2 text-3xl font-extrabold text-primary">
-                {(retrievalData?.metrics?.mrr_10 ?? 0).toFixed(2)}
+                {typeof retrievalData?.metrics?.mrr_10 === "number"
+                  ? retrievalData.metrics.mrr_10.toFixed(2)
+                  : "N/A"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Mean Reciprocal Rank của nguồn đúng
+              </p>
+            </div>
+
+            <div className="surface-card p-5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase">NDCG@10</span>
+              <p className="mt-2 text-3xl font-extrabold text-primary">
+                {typeof retrievalData?.metrics?.ndcg_10 === "number"
+                  ? retrievalData.metrics.ndcg_10.toFixed(2)
+                  : "N/A"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Golden evaluation với relevance ground truth
               </p>
             </div>
             <div className="surface-card p-5">
@@ -452,7 +592,8 @@ export default function RagDashboardPage() {
                 {retrievalData?.metrics?.total_indexed_chunks ?? 0}
               </p>
               <p className="mt-1 text-xs font-semibold text-emerald-600">
-                pgvector HNSW (ef_search=100)
+                pgvector HNSW (ef_search=100) · evaluated:{" "}
+                {retrievalData?.metrics?.evaluated_sample_count ?? 0}
               </p>
             </div>
           </div>
@@ -482,7 +623,7 @@ export default function RagDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {worstQueries.map((q: any, idx: number) => (
+                    {worstQueries.map((q, idx) => (
                       <tr key={idx} className="hover:bg-muted/30">
                         <td className="py-2.5 px-3 font-medium text-foreground">{q.query}</td>
                         <td className="py-2.5 px-3 text-muted-foreground">{q.count}</td>
@@ -636,7 +777,7 @@ export default function RagDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {safetyData.incidents.map((inc: any, i: number) => (
+                    {safetyData.incidents.map((inc, i) => (
                       <tr key={i} className="border-b border-border">
                         <td className="py-2 px-3 font-mono text-xs">{inc.id.slice(0, 8)}</td>
                         <td className="py-2 px-3 font-semibold uppercase text-xs">
@@ -665,25 +806,25 @@ export default function RagDashboardPage() {
               <div className="flex justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Faithfulness (Độ trung thực):</span>
                 <span className="font-bold text-emerald-600">
-                  {safePct(generationData?.metrics?.faithfulness)}%
+                  {metricPct(generationData?.metrics?.faithfulness)}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Answer Relevance (Độ phù hợp):</span>
                 <span className="font-bold text-primary">
-                  {safePct(generationData?.metrics?.answer_relevance)}%
+                  {metricPct(generationData?.metrics?.answer_relevance)}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Tỷ lệ Hallucination (Ảo giác):</span>
                 <span className="font-bold text-emerald-600">
-                  {safePct(generationData?.metrics?.hallucination_rate)}%
+                  {metricPct(generationData?.metrics?.hallucination_rate)}
                 </span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-muted-foreground">Độ chính xác từ chối (Abstention):</span>
                 <span className="font-bold text-foreground">
-                  {safePct(generationData?.metrics?.abstention_accuracy)}%
+                  {metricPct(generationData?.metrics?.abstention_accuracy)}
                 </span>
               </div>
             </div>
@@ -692,7 +833,7 @@ export default function RagDashboardPage() {
           <div className="surface-card p-5 space-y-3">
             <h3 className="font-bold text-foreground">Phân bổ theo Prompt & Model</h3>
             <div className="space-y-2 text-sm">
-              {(generationData?.breakdown_by_model || []).map((m: any, idx: number) => (
+              {(generationData?.breakdown_by_model || []).map((m, idx) => (
                 <div key={idx} className="p-3 bg-muted/40 rounded-lg space-y-1">
                   <div className="flex justify-between font-semibold">
                     <span>Model: {m.model}</span>
@@ -724,10 +865,10 @@ export default function RagDashboardPage() {
             <div className="space-y-3">
               {(() => {
                 const maxDuration = Math.max(
-                  ...systemData.latency_waterfall.map((s: any) => s.duration_ms || 0),
+                  ...systemData.latency_waterfall.map((s) => s.duration_ms || 0),
                   1,
                 );
-                return systemData.latency_waterfall.map((step: any, idx: number) => {
+                return systemData.latency_waterfall.map((step, idx) => {
                   const pct = Math.max(2, Math.round((step.duration_ms / maxDuration) * 100));
                   return (
                     <div key={idx} className="space-y-1">

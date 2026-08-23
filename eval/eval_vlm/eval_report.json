@@ -1,0 +1,763 @@
+{
+  "chay_luc": "2026-08-22T18:42:01.312261+00:00",
+  "eval_run_id": "20260822-183258",
+  "vlm_provider": "openai",
+  "vlm_model": "cd/gpt-5.5",
+  "tong_case": 25,
+  "so_dat": 12,
+  "ty_le_dat_pct": 48.0,
+  "theo_do_kho": {
+    "Dễ": {
+      "so_dat": 7,
+      "tong": 8,
+      "ty_le_pct": 87.5
+    },
+    "Trung bình": {
+      "so_dat": 3,
+      "tong": 12,
+      "ty_le_pct": 25.0
+    },
+    "Khó": {
+      "so_dat": 2,
+      "tong": 5,
+      "ty_le_pct": 40.0
+    }
+  },
+  "theo_do_tin_cay": {
+    "trung_binh": {
+      "so_dat": 3,
+      "tong": 5,
+      "ty_le_pct": 60.0
+    },
+    "thap": {
+      "so_dat": 0,
+      "tong": 11,
+      "ty_le_pct": 0.0
+    },
+    "cao": {
+      "so_dat": 9,
+      "tong": 9,
+      "ty_le_pct": 100.0
+    }
+  },
+  "chi_tiet": [
+    {
+      "stt": "1",
+      "case": "anh_1",
+      "don_thuoc": "Đơn thuốc 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 viên nén rõ",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Viên nén=2",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "trung_binh",
+      "ghi_chu_model": "Ảnh hơi thiếu sáng và có ánh vàng, nhưng thấy rõ hai viên nén trắng dạng oblong; một viên có rãnh bẻ, không thấy dấu hiệu là kẹo gum.",
+      "latency_sec": 10.821196000091732,
+      "dat": true
+    },
+    {
+      "stt": "2",
+      "case": "anh_2",
+      "don_thuoc": "Đơn thuốc 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 viên nén mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nén=2",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 2,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh mờ và thiếu sáng; 2 vật thể trắng nhẵn hình gối, không thấy rãnh hay chữ dập nên nghiêng về kẹo gum, không xác nhận là thuốc.",
+      "latency_sec": 11.801397199975327,
+      "dat": false
+    },
+    {
+      "stt": "3",
+      "case": "anh_3",
+      "don_thuoc": "Đơn thuốc 2 viên nang",
+      "mo_ta_anh": "Ảnh 2 viên nang rõ",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Viên nang=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ, thấy 2 viên nang có đường ghép; không có vật thể mơ hồ cần bỏ qua.",
+      "latency_sec": 6.709462699946016,
+      "dat": true
+    },
+    {
+      "stt": "4",
+      "case": "anh_4",
+      "don_thuoc": "Đơn thuốc 2 viên nang",
+      "mo_ta_anh": "Ảnh 2 viên nang mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nang=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và hai viên chạm nhau; không nhìn rõ rãnh, chữ hoặc logo để xác nhận chắc chắn, nhưng quan sát được hai vật thể dạng viên nén.",
+      "latency_sec": 12.222299000015482,
+      "dat": false
+    },
+    {
+      "stt": "5",
+      "case": "anh_5",
+      "don_thuoc": "Đơn thuốc 1 lọ thuốc nước",
+      "mo_ta_anh": "Ảnh 1 lọ thuốc",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Lọ thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ nét, quan sát được một lọ siro thuốc Pharmaton Kiddi; không có vật thể mơ hồ cần bỏ qua.",
+      "latency_sec": 5.949920799932443,
+      "dat": true
+    },
+    {
+      "stt": "6",
+      "case": "anh_6",
+      "don_thuoc": "Đơn thuốc 1 tuýp thuốc",
+      "mo_ta_anh": "Ảnh 1 tuyp thuốc",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Tuýp thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 1,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 1,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ, nhận diện chắc chắn một tuýp gel bôi da; không có vật thể nào bị bỏ qua vì mơ hồ.",
+      "latency_sec": 9.412675299914554,
+      "dat": true
+    },
+    {
+      "stt": "7",
+      "case": "anh_7",
+      "don_thuoc": "Đơn thuốc 2 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 viên thuốc, 2 viên nén rõ tách nhau ra",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Viên nang=2, viên nén=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 2,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh đủ rõ nhưng 2 viên trắng bầu dục nhẵn, không rãnh hay chữ dập nên nghiêng về kẹo/gum; không có bao bì để xác nhận.",
+      "latency_sec": 12.63202649995219,
+      "dat": false
+    },
+    {
+      "stt": "8",
+      "case": "anh_8",
+      "don_thuoc": "Đơn thuốc 2 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 viên nang, 2 viên nén tách nhau ra mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nén=2, viên nang=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ; bỏ qua 2 vật thể xanh dài vì không thấy rõ đường ghép để phân biệt nang hay viên nén.",
+      "latency_sec": 18.926283100037836,
+      "dat": false
+    },
+    {
+      "stt": "9",
+      "case": "anh_9",
+      "don_thuoc": "Đơn thuốc 4 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 4 viên nang, 2 viên nén chồng chéo lên nhau",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nang=4, viên nén=2",
+      "ky_vong": {
+        "vien_nang": 4,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 2,
+        "vien_nen": 3,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 3,
+      "do_tin_cay": "trung_binh",
+      "ghi_chu_model": "Ảnh hơi chồng lấp và thiếu sáng; 3 viên màu be nhẵn, hình gối, không dập chữ được nhận định là kẹo gum.",
+      "latency_sec": 18.507024199934676,
+      "dat": false
+    },
+    {
+      "stt": "10",
+      "case": "anh_10",
+      "don_thuoc": "Đơn thuốc 4 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 4 viên nang, 2 viên nén chồng chéo lên nhau mờ",
+      "do_kho": "Khó",
+      "ky_vong_raw": "Viên nang=4, viên nén=2",
+      "ky_vong": {
+        "vien_nang": 4,
+        "vien_nen": 2,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và các vật thể chồng lấp; bỏ qua 6 vật thể giống viên thuốc vì không thể xác định chắc chắn là thuốc hay kẹo, cũng không thấy chữ hoặc bao bì.",
+      "latency_sec": 17.352273200056516,
+      "dat": false
+    },
+    {
+      "stt": "11",
+      "case": "anh_11",
+      "don_thuoc": "Đơn thuốc 1 lọ thuốc nước, 2 viên nang",
+      "mo_ta_anh": "Ảnh 1 lọ thuốc và 2 viên nang",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Lọ thuốc=1, viên nang=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 2,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ; thấy 1 lọ siro ho và 2 viên nang vàng-trắng có đường ghép, không có vật thể mơ hồ.",
+      "latency_sec": 14.438653099932708,
+      "dat": true
+    },
+    {
+      "stt": "12",
+      "case": "anh_12",
+      "don_thuoc": "Đơn thuốc 5 viên nén",
+      "mo_ta_anh": "Ảnh 5 viên kẹo xylatol",
+      "do_kho": "Khó",
+      "ky_vong_raw": "Không phải thuốc",
+      "ky_vong": "khong_phai_thuoc",
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 5,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ nét; 5 viên kẹo gum màu hồng, dạng gối, bề mặt nhẵn không có rãnh hay chữ dập nổi.",
+      "latency_sec": 6.86208779993467,
+      "dat": true
+    },
+    {
+      "stt": "13",
+      "case": "anh_13",
+      "don_thuoc": "đơn thuốc 4 viên nang 4 viên nén",
+      "mo_ta_anh": "Ảnh 4 viên nang, 6 viên nén chồng chéo lên nhau mờ",
+      "do_kho": "Khó",
+      "ky_vong_raw": "Viên nang=4, viên nén=4",
+      "ky_vong": {
+        "vien_nang": 4,
+        "vien_nen": 4,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 4,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 3,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và thiếu sáng; 3 viên trắng nhẵn hình gối, không thấy dấu dập, nghi là kẹo gum. Các viên còn lại không thấy đường ghép nên tạm tính viên nén.",
+      "latency_sec": 23.478067300049588,
+      "dat": false
+    },
+    {
+      "stt": "14",
+      "case": "anh_14",
+      "don_thuoc": "Đơn thuốc gồm 2 lọ thuốc nước",
+      "mo_ta_anh": "Ảnh 1 lọ kẹo và 1 ảnh lọ thuốc (rõ lọ kẹo)",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Lọ thuốc = 1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ; 1 lọ vitamin C tính là lo_thuoc, lọ xylitol bạc hà là sản phẩm kẹo/gum nên không tính vào thuốc. Không thấy viên rời để đếm.",
+      "latency_sec": 29.71558439999353,
+      "dat": true
+    },
+    {
+      "stt": "15",
+      "case": "anh_15",
+      "don_thuoc": "Đơn thuốc gồm 2 lọ thuốc nước",
+      "mo_ta_anh": "Ảnh 1 lọ kẹo và 1 ảnh lọ thuốc ( không rõ lọ)",
+      "do_kho": "Khó",
+      "ky_vong_raw": "Lọ thuốc = 1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 1,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ nét; một lọ ghi xylitol và hướng dẫn nhai là kẹo gum nên không tính là lọ thuốc, một lọ vitamin D3 là thực phẩm bổ sung và được tính.",
+      "latency_sec": 10.253959099994972,
+      "dat": true
+    },
+    {
+      "stt": "16",
+      "case": "anh_16",
+      "don_thuoc": "Đơn thuốc gồm 4 viên nang, 4 viên nén",
+      "mo_ta_anh": "Ảnh 4 viên nang và 4 viên nén chồng chéo nhau rõ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nang=4, viên nén=4",
+      "ky_vong": {
+        "vien_nang": 4,
+        "vien_nen": 4,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 10,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh hơi tối và các vật thể chồng lấp; các viên đều nhẵn, không thấy rãnh hay chữ dập nổi, nghiêng về kẹo/gum nên không xếp vào thuốc.",
+      "latency_sec": 39.6756329999771,
+      "dat": false
+    },
+    {
+      "stt": "17",
+      "case": "anh_17",
+      "don_thuoc": "Đơn thuốc 1 tuýp thuốc",
+      "mo_ta_anh": "Ảnh tuýp thuốc mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Tuýp thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 1,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 1,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "trung_binh",
+      "ghi_chu_model": "Ảnh hơi mờ và bị lóa sáng nhưng nhận diện rõ một tuýp thuốc; không có vật thể thuốc khác nhìn thấy trực tiếp.",
+      "latency_sec": 6.1040600000415,
+      "dat": true
+    },
+    {
+      "stt": "18",
+      "case": "anh_18",
+      "don_thuoc": "Đơn thuốc 1 lọ thuốc",
+      "mo_ta_anh": "Ảnh lọ thuốc mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Lọ thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 1
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và lóa; xác định được một gói mềm dẹt, nhưng không đọc rõ nhãn và không thấy vật thể thuốc nào khác.",
+      "latency_sec": 9.778848199988715,
+      "dat": false
+    },
+    {
+      "stt": "19",
+      "case": "anh_19",
+      "don_thuoc": "Đơn thuốc 1 gói thuốc",
+      "mo_ta_anh": "Ảnh gói thuốc rõ",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Gói thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 1
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 1
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh rõ, thấy một gói thuốc Smecta dạng mềm dẹt; không suy ra số lượng bột bên trong.",
+      "latency_sec": 4.784212999977171,
+      "dat": true
+    },
+    {
+      "stt": "20",
+      "case": "anh_20",
+      "don_thuoc": "Đơn thuốc 1 gói thuốc",
+      "mo_ta_anh": "Ảnh gói thuốc mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Gói thuốc=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 1
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh bị mờ, lóa và chai bị che một phần; không nhìn thấy viên thuốc bên trong và không đọc rõ được nhãn để xác nhận loại sản phẩm.",
+      "latency_sec": 7.643432499957271,
+      "dat": false
+    },
+    {
+      "stt": "21",
+      "case": "anh_21",
+      "don_thuoc": "Đơn thuốc 1 ông thuốc",
+      "mo_ta_anh": "Ảnh ống thuốc rõ",
+      "do_kho": "Dễ",
+      "ky_vong_raw": "Ống thuốc = 1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "cao",
+      "ghi_chu_model": "Ảnh hơi ngược sáng nhưng vật thể rõ; không bỏ qua vật thể mơ hồ, đây là ống/lọ thuốc dạng ampoule 10ml.",
+      "latency_sec": 23.235265500028618,
+      "dat": true
+    },
+    {
+      "stt": "22",
+      "case": "anh_22",
+      "don_thuoc": "Đơn thuốc 1 ống thuốc",
+      "mo_ta_anh": "Ảnh ông thuốc mờ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Ống thuốc = 1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 0,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và thiếu sáng; bỏ qua 1 vật thể dạng que trong tay vì không xác định chắc chắn là thuốc, kẹo hay bao bì thuộc 6 loại.",
+      "latency_sec": 46.716599600040354,
+      "dat": false
+    },
+    {
+      "stt": "23",
+      "case": "anh_23",
+      "don_thuoc": "Đơn thuốc 2 tuýp thuốc, 1 lọ thuốc, 2 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 tuýp thuốc, 2 lọ thuốc, 2 viên nang, 2 viên nén rõ",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Lọ thuốc=1, tuýp thuốc=2, viên nang=2, viên nén=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 2,
+        "tuyp_thuoc": 2,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 1,
+        "vien_nen": 2,
+        "tuyp_thuoc": 2,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "thap",
+      "ghi_chu_model": "Ảnh rất mờ và thiếu sáng; các viên thuốc bị chồng lấp, khó xác định chắc đường ghép nang và hình dạng từng viên.",
+      "latency_sec": 33.605704799992964,
+      "dat": false
+    },
+    {
+      "stt": "24",
+      "case": "anh_24",
+      "don_thuoc": "Đơn thuốc 2 tuýp thuốc, 1 lọ thuốc, 2 viên nang, 2 viên nén",
+      "mo_ta_anh": "Ảnh 2 tuýp thuốc, 2 lọ thuốc, 2 viên nang, 2 viên nén mờ",
+      "do_kho": "Khó",
+      "ky_vong_raw": "Lọ thuốc=1, tuýp thuốc=2, viên nang=2, viên nén=2",
+      "ky_vong": {
+        "vien_nang": 2,
+        "vien_nen": 2,
+        "tuyp_thuoc": 2,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 4,
+        "vien_nen": 0,
+        "tuyp_thuoc": 2,
+        "lo_thuoc": 1,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 0,
+      "do_tin_cay": "trung_binh",
+      "ghi_chu_model": "Ảnh hơi mờ nhưng các vật thể thuốc trên bàn vẫn tách được; không thấy kẹo hay bao bì gói/hộp nào cần loại trừ.",
+      "latency_sec": 63.99622640002053,
+      "dat": false
+    },
+    {
+      "stt": "25",
+      "case": "anh_25",
+      "don_thuoc": "Đơn thuốc 2 viên nén",
+      "mo_ta_anh": "Ảnh 1 viên kẹo ngậm, 1 viên nén",
+      "do_kho": "Trung bình",
+      "ky_vong_raw": "Viên nén=1",
+      "ky_vong": {
+        "vien_nang": 0,
+        "vien_nen": 1,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "thuc_te": {
+        "vien_nang": 0,
+        "vien_nen": 1,
+        "tuyp_thuoc": 0,
+        "lo_thuoc": 0,
+        "hop_thuoc": 0,
+        "goi_thuoc": 0
+      },
+      "khong_phai_thuoc_dem_duoc": 1,
+      "do_tin_cay": "trung_binh",
+      "ghi_chu_model": "Ảnh khá rõ, không bỏ qua vật thể nào; 1 viên kẹo/gum màu hồng trong suốt, 1 viên nén trắng có rãnh bẻ.",
+      "latency_sec": 21.49089630006347,
+      "dat": true
+    }
+  ]
+}

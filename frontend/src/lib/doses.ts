@@ -25,7 +25,7 @@ export type Dose = {
 // photo_verification/verifier.py). loi_he_thong tuong tu: mo hinh/mang loi,
 // khong phai loi cua benh nhan, khong tinh vao han muc chup lai.
 export type TrangThaiXacMinh =
-  "dang_xu_ly" | "khop" | "lech" | "khong_xac_minh_duoc" | "loi_he_thong";
+  "dang_xu_ly" | "khop" | "lech" | "khong_xac_minh_duoc" | "loi_he_thong" | "do_tin_cay_thap";
 export type NextAction = "NONE" | "RETAKE" | "CAREGIVER_REVIEW" | null;
 
 export type PhotoVerification = {

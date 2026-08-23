@@ -79,6 +79,11 @@ def _cleanup(account_id: str, patient_id: str | None) -> None:
 
 @pytest.mark.asyncio
 async def test_patient_can_read_own_profile(client):
+    """SUA 2026-08-23: GET doi tu PatientSummary sang PatientProfileOut (xem
+    get_my_patient_profile) - endpoint nay khong con tra `note` (chi
+    PatientSummary/update_patient_health moi con dung field do, xem
+    _to_summary), doi lai tra them phone/address/date_of_birth/
+    profile_completed cho man hinh "Doi thong tin ca nhan"."""
     account_id, patient_id = _seed_patient_account()
     token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
 
@@ -89,7 +94,52 @@ async def test_patient_can_read_own_profile(client):
         assert body["id"] == patient_id
         assert body["full_name"] == "Bệnh nhân test route /me"
         assert body["year_of_birth"] == 1990
-        assert body["note"] == "Ghi chú test"
+        assert "note" not in body
+        assert body["phone"] is None
+        assert body["address"] is None
+        assert body["date_of_birth"] is None
+        assert body["profile_completed"] is False
+    finally:
+        _cleanup(account_id, patient_id)
+
+
+@pytest.mark.asyncio
+async def test_patient_update_then_read_own_profile_round_trip(client):
+    """PATCH /patients/me (onboarding + man hinh "Doi thong tin ca nhan") roi
+    GET lai - xac nhan gia tri da luu dung va profile_completed chuyen True."""
+    account_id, patient_id = _seed_patient_account()
+    token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        patch_response = await client.patch(
+            "/api/v1/patients/me",
+            headers=headers,
+            json={
+                "date_of_birth": "1995-06-15",
+                "phone": "0912345678",
+                "address": "123 Đường Test, Quận 1",
+                "gender": "nam",
+                "height_cm": 175,
+                "weight_kg": 68,
+            },
+        )
+        assert patch_response.status_code == 200
+        patch_body = patch_response.json()
+        assert patch_body["phone"] == "0912345678"
+        assert patch_body["profile_completed"] is True
+
+        get_response = await client.get("/api/v1/patients/me", headers=headers)
+        assert get_response.status_code == 200
+        get_body = get_response.json()
+        assert get_body["phone"] == "0912345678"
+        assert get_body["address"] == "123 Đường Test, Quận 1"
+        assert get_body["date_of_birth"] == "1995-06-15"
+        assert get_body["year_of_birth"] == 1995
+        assert get_body["gender"] == "nam"
+        assert get_body["height_cm"] == 175
+        assert get_body["weight_kg"] == 68
+        assert get_body["profile_completed"] is True
     finally:
         _cleanup(account_id, patient_id)
 

@@ -96,6 +96,18 @@ class Settings(BaseSettings):
     # nao trong luc chay test (xem tests/services/photo_verification/test_vlm_bridge.py).
     vlm_retry_delay: float = Field(default=1.5, ge=0)
 
+    # Langfuse Observability RIENG cho pipeline VLM (dem thuoc + doi chieu
+    # don, backend/services/vlm_telemetry.py) - THEM 2026-08-22. Co Y tach
+    # bien voi langfuse_*/LANGFUSE_* o duoi (dung cho RAG chatbot, khac
+    # project/key that): 2 pipeline khac nhau hoan toan (mo hinh khac, nguoi
+    # phu trach khac), dung chung 1 project se lam lan trace cua nhau. Rong
+    # (mac dinh) = tat tracing, giong nguyen tac voi VAPID/langfuse_* o tren -
+    # thieu khong phai loi hong, chi la mat 1 kenh quan sat phu.
+    vlm_langfuse_public_key: str = Field(default="", description="Langfuse public key RIENG cho pipeline VLM")
+    vlm_langfuse_secret_key: str = Field(default="", description="Langfuse secret key RIENG cho pipeline VLM")
+    vlm_langfuse_host: str = Field(default="https://cloud.langfuse.com", description="Langfuse host cho VLM")
+    vlm_langfuse_enabled: bool = Field(default=True, description="Bat/tat active tracing cho VLM")
+
     # Anh xac nhan lieu thuoc la du lieu y te (BR-4.3) - luu ngoai repo, DB chi
     # giu duong dan (backend/db/models.py::PhotoVerification.image_path).
     # Can gan Railway Volume vao mount path chua thu muc nay thi anh moi song

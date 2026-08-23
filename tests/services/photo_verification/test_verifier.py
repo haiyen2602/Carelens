@@ -21,18 +21,22 @@ from backend.services.photo_verification import KetQuaDemVlm
 from backend.services.photo_verification.matcher import KetQua
 from backend.services.photo_verification.verifier import (
     MAX_ATTEMPTS,
+    MAX_LAN_DO_TIN_CAY_THAP,
     NEXT_ACTION_CAREGIVER_REVIEW,
     NEXT_ACTION_NONE,
     NEXT_ACTION_RETAKE,
     TRANG_THAI_DANG_XU_LY,
+    TRANG_THAI_DO_TIN_CAY_THAP,
     TRANG_THAI_LOI_HE_THONG,
     HanMucVuotQuaError,
     KhongXacMinhDuocError,
+    dem_lan_do_tin_cay_thap,
     dem_luot_da_dung,
     hoan_tat_xac_minh,
     khoi_tao_xac_minh,
     xac_dinh_next_action,
 )
+from backend.services.vlm_telemetry import get_vlm_local_traces
 
 
 def _db_available() -> bool:
@@ -107,13 +111,13 @@ def _lieu_khong_xac_minh_duoc(db, patient_id) -> DoseEvent:
     return d
 
 
-def _gia_vlm(monkeypatch, **so_dem) -> None:
+def _gia_vlm(monkeypatch, do_tin_cay="cao", **so_dem) -> None:
     """Thay `dem_thuoc_trong_anh` bằng hàm trả về kết quả lập trình sẵn — patch
     đúng chỗ verifier.py đã `from ... import`, không phải nơi định nghĩa gốc.
     `so_dem` (vd `vien_nen=2`) đổ vào `counts`, không phải field cấp cao nhất."""
     counts = dict.fromkeys(("vien_nang", "vien_nen", "tuyp_thuoc", "lo_thuoc", "hop_thuoc", "goi_thuoc"), 0)
     counts.update(so_dem)
-    ket_qua = KetQuaDemVlm(ok=True, counts=counts, do_tin_cay="cao")
+    ket_qua = KetQuaDemVlm(ok=True, counts=counts, do_tin_cay=do_tin_cay)
     monkeypatch.setattr("backend.services.photo_verification.verifier.dem_thuoc_trong_anh", lambda *_a, **_kw: ket_qua)
 
 
@@ -292,3 +296,88 @@ def test_doc_anh_hong_bao_loi_he_thong_khong_lam_chet_task(db, benh_nhan, monkey
 
 def test_verification_id_khong_ton_tai_khong_lam_chet_task():
     hoan_tat_xac_minh("khong-ton-tai-chac-chan")  # chỉ log, không raise
+
+
+# ---------------------------------------------------------------------------
+# Telemetry VLM (THEM 2026-08-22, backend/services/vlm_telemetry.py) - moi
+# lan goi hoan_tat_xac_minh phai ghi duoc 1 trace vao buffer, KE CA khi VLM
+# loi (try/finally trong _hoan_tat_xac_minh) - test khong can key Langfuse
+# that, buffer in-memory hoat dong doc lap voi client.
+# ---------------------------------------------------------------------------
+def test_hoan_tat_xac_minh_ghi_trace_khi_khop(db, benh_nhan, monkeypatch, tmp_path):
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+    _gia_vlm(monkeypatch, vien_nen=2)
+    xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+
+    hoan_tat_xac_minh(xac_minh.id)
+
+    trace = next((t for t in get_vlm_local_traces() if t.id == xac_minh.id), None)
+    assert trace is not None
+    assert trace.status == "success"
+    assert trace.scores["match_result"] == 1.0
+    assert any(o.name == "vlm.model_call" for o in trace.observations)
+    assert any(o.name == "vlm.compare_prescription" for o in trace.observations)
+
+
+def test_hoan_tat_xac_minh_ghi_trace_loi_khi_vlm_that_bai(db, benh_nhan, monkeypatch, tmp_path):
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+    _gia_vlm_loi(monkeypatch)
+    xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+
+    hoan_tat_xac_minh(xac_minh.id)
+
+    trace = next((t for t in get_vlm_local_traces() if t.id == xac_minh.id), None)
+    assert trace is not None
+    assert trace.status == "error"
+
+
+# ---------------------------------------------------------------------------
+# do_tin_cay="thap" (THEM 2026-08-23, sau khi chay golden set that thay do_tin_cay
+# "thap" chi dung 14% - eval/eval_vlm/): coi nhu loi model chua chac chan, xin
+# chup lai KHONG tru luot that (dem_luot_da_dung chi dem KHOP/LECH) - nhung co
+# gioi han RIENG (MAX_LAN_DO_TIN_CAY_THAP) de khong lap vo han.
+# ---------------------------------------------------------------------------
+def test_do_tin_cay_thap_khong_tru_luot(db, benh_nhan, monkeypatch, tmp_path):
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+    _gia_vlm(monkeypatch, do_tin_cay="thap", vien_nen=2)
+    xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+
+    hoan_tat_xac_minh(xac_minh.id)
+
+    row = db.get(PhotoVerification, xac_minh.id)
+    assert row.ket_qua == TRANG_THAI_DO_TIN_CAY_THAP
+    assert dem_luot_da_dung(db, dose.id) == 0
+    assert dem_lan_do_tin_cay_thap(db, dose.id) == 1
+
+    # Chup lai lan nua - KHONG bi tinh la attempt 2, vi lan truoc khong tru luot that.
+    xac_minh_2 = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+    assert xac_minh_2.attempt == 1
+
+    trace = next((t for t in get_vlm_local_traces() if t.id == xac_minh.id), None)
+    assert trace is not None
+    assert trace.status == "retry_low_confidence"
+
+
+def test_do_tin_cay_thap_qua_gioi_han_thi_chay_that(db, benh_nhan, monkeypatch, tmp_path):
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+
+    # Dung het MAX_LAN_DO_TIN_CAY_THAP luot mien phi.
+    for _ in range(MAX_LAN_DO_TIN_CAY_THAP):
+        _gia_vlm(monkeypatch, do_tin_cay="thap", vien_nen=2)
+        xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+        hoan_tat_xac_minh(xac_minh.id)
+        row = db.get(PhotoVerification, xac_minh.id)
+        assert row.ket_qua == TRANG_THAI_DO_TIN_CAY_THAP
+
+    assert dem_lan_do_tin_cay_thap(db, dose.id) == MAX_LAN_DO_TIN_CAY_THAP
+    assert dem_luot_da_dung(db, dose.id) == 0
+
+    # Lan tiep theo van "thap" nhung HET ve mien phi - phai chay xuong so
+    # sanh THAT (dem sai don -> LECH that, tru luot that).
+    _gia_vlm(monkeypatch, do_tin_cay="thap", vien_nen=999)
+    xac_minh_3 = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
+    hoan_tat_xac_minh(xac_minh_3.id)
+
+    row_3 = db.get(PhotoVerification, xac_minh_3.id)
+    assert row_3.ket_qua == KetQua.LECH.value
+    assert dem_luot_da_dung(db, dose.id) == 1

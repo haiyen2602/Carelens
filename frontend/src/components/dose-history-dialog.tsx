@@ -25,6 +25,7 @@ const NHAN_KET_QUA: Record<PhotoVerification["status"], string> = {
   lech: "Không khớp đơn thuốc",
   khong_xac_minh_duoc: "Không xác minh được bằng ảnh",
   loi_he_thong: "Lỗi hệ thống khi phân tích",
+  do_tin_cay_thap: "Ảnh chưa đủ rõ, đã xin chụp lại",
 };
 
 function BieuTuongKetQua({ status }: { status: PhotoVerification["status"] }) {

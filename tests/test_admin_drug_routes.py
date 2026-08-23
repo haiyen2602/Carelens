@@ -1,4 +1,4 @@
-"""HTTP contract tests for the read-only canonical admin drug routes."""
+"""HTTP contract tests for the canonical admin drug routes."""
 
 from collections.abc import AsyncIterator
 from unittest.mock import Mock
@@ -11,7 +11,12 @@ from backend.api import admin_drug_routes
 from backend.api.security import CurrentUser, get_current_user
 from backend.db.base import get_db
 from backend.main import app
-from backend.models.admin_drug_schemas import AdminDrugDetailResponse, AdminDrugListResponse, MappingStatus
+from backend.models.admin_drug_schemas import (
+    AdminDrugDetailResponse,
+    AdminDrugFiltersResponse,
+    AdminDrugListResponse,
+    MappingStatus,
+)
 
 
 async def _admin() -> CurrentUser:
@@ -57,7 +62,14 @@ async def test_list_forwards_filters_and_returns_response_shape(client: AsyncCli
 
     response = await client.get(
         "/api/v1/admin/drugs",
-        params={"q": "para", "mapping_status": "ACTIVE", "page": 2, "page_size": 10},
+        params={
+            "q": "para",
+            "dosage_form": "Viên nén",
+            "route": "Uống",
+            "mapping_status": "ACTIVE",
+            "page": 2,
+            "page_size": 10,
+        },
     )
 
     assert response.status_code == 200
@@ -65,10 +77,45 @@ async def test_list_forwards_filters_and_returns_response_shape(client: AsyncCli
     service.assert_called_once()
     assert service.call_args.kwargs == {
         "q": "para",
+        "dosage_form": "Viên nén",
+        "route": "Uống",
         "mapping_status": MappingStatus.ACTIVE,
         "page": 2,
         "page_size": 10,
     }
+
+
+@pytest.mark.asyncio
+async def test_filters_endpoint(client: AsyncClient, monkeypatch):
+    expected = AdminDrugFiltersResponse(dosage_forms=["Viên nén"], routes=["Uống"])
+    monkeypatch.setattr(admin_drug_routes, "get_admin_drug_filters", Mock(return_value=expected))
+
+    response = await client.get("/api/v1/admin/drugs/filters")
+
+    assert response.status_code == 200
+    assert response.json() == {"dosage_forms": ["Viên nén"], "routes": ["Uống"]}
+
+
+@pytest.mark.asyncio
+async def test_create_drug_returns_created_and_logs(client: AsyncClient, monkeypatch):
+    expected = AdminDrugDetailResponse(id="new-prod-1", display_name="Amlodipine 5mg")
+    monkeypatch.setattr(admin_drug_routes, "create_admin_drug", Mock(return_value=expected))
+    log_mock = Mock()
+    monkeypatch.setattr(admin_drug_routes, "log_system_event", log_mock)
+
+    response = await client.post(
+        "/api/v1/admin/drugs",
+        json={
+            "display_name": "Amlodipine 5mg",
+            "dosage_form": "Viên nén",
+            "route": "Uống",
+            "strength_text": "5mg",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["id"] == "new-prod-1"
+    log_mock.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -92,6 +139,37 @@ async def test_missing_detail_returns_404(client: AsyncClient, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_patch_drug_updates_and_logs(client: AsyncClient, monkeypatch):
+    expected = AdminDrugDetailResponse(id="prod-1", display_name="Paracetamol 500mg")
+    monkeypatch.setattr(admin_drug_routes, "update_admin_drug", Mock(return_value=expected))
+    log_mock = Mock()
+    monkeypatch.setattr(admin_drug_routes, "log_system_event", log_mock)
+
+    response = await client.patch(
+        "/api/v1/admin/drugs/prod-1",
+        json={"display_name": "Paracetamol 500mg"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["display_name"] == "Paracetamol 500mg"
+    log_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_drug_deletes_and_logs(client: AsyncClient, monkeypatch):
+    drug = AdminDrugDetailResponse(id="prod-1", display_name="Paracetamol")
+    monkeypatch.setattr(admin_drug_routes, "get_admin_drug", Mock(return_value=drug))
+    monkeypatch.setattr(admin_drug_routes, "delete_admin_drug", Mock(return_value=True))
+    log_mock = Mock()
+    monkeypatch.setattr(admin_drug_routes, "log_system_event", log_mock)
+
+    response = await client.delete("/api/v1/admin/drugs/prod-1")
+
+    assert response.status_code == 204
+    log_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "params",
     [
@@ -107,10 +185,10 @@ async def test_invalid_list_query_returns_422(client: AsyncClient, params):
     assert response.status_code == 422
 
 
-def test_openapi_exposes_only_read_routes_without_reindex():
+def test_openapi_exposes_crud_routes():
     paths = app.openapi()["paths"]
 
-    assert set(paths["/api/v1/admin/drugs"]) == {"get"}
-    assert set(paths["/api/v1/admin/drugs/{drug_product_id}"]) == {"get", "patch"}
+    assert set(paths["/api/v1/admin/drugs"]) == {"get", "post"}
+    assert set(paths["/api/v1/admin/drugs/{drug_product_id}"]) == {"get", "patch", "delete"}
+    assert set(paths["/api/v1/admin/drugs/filters"]) == {"get"}
     assert not any("reindex" in path.casefold() for path in paths)
-

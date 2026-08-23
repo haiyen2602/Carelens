@@ -19,6 +19,7 @@
 | `auth-api` | REST | `auth` | Tất cả frontend | Draft | §1 |
 | `account-api` | REST | `auth` | FE admin | Draft | §1b |
 | `admin-drug-api` | REST | `drug-knowledge` | FE admin RAG | Draft | §1d |
+| `admin-rag-monitoring-api` | REST | `observability` | FE admin RAG | Draft | §1f |
 | `drug-request-api` | REST | `drug-requests` | FE bác sĩ, FE admin | Draft | §1e |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
@@ -305,7 +306,7 @@ prescription or `dose_event` responses.
 - `safety_flag = true` → FE **bắt buộc** hiện overlay cấp cứu, bỏ qua hội thoại thường.
 - `sources` rỗng → agent **không** được khẳng định thông tin thuốc trong `reply` (FEAT-006).
 
-### Agent V2 conversation action extension (BUILD-29D.1)
+### Agent V2 dynamic suggested actions (BUILD-29D.2)
 
 `POST /api/v1/agent/v2/orchestrate` accepts the existing `conversation_id`
 and an optional `selected_action`. The client may only echo an action that
@@ -320,8 +321,8 @@ as authorization or lookup inputs by themselves.
   "message": "Cong dung",
   "selected_action": {
     "action_id": "b18cb31f-3a97-4c62-b57e-9bec9c8475f8",
-    "type": "drug_attribute",
-    "value": "uses",
+    "type": "drug_followup",
+    "value": "drug_uses",
     "entity_id": "long-huyet"
   }
 }
@@ -333,17 +334,27 @@ as authorization or lookup inputs by themselves.
   "suggested_actions": [
     {
       "action_id": "d940d92d-a016-4236-9b39-b333983f5331",
-      "type": "topic_attribute",
-      "label": "Nguyen nhan",
+      "type": "topic_followup",
+      "label": "Nguyên nhân gây gan nhiễm mỡ",
       "value": "causes",
-      "topic": "gan nhiem mo"
+      "topic": "gan nhiễm mỡ"
     }
   ]
 }
 ```
 
-Invalid or stale actions are treated as ordinary user text. Safety and
-deterministic medication-time routing inspect the raw message first.
+The server issues 0–4 actions only after the real answer has been produced.
+It appends the same user-facing labels to the reply, so the action array and
+answer offer the same follow-up directions. The server allowlists
+`topic_followup` values (`definition`, `causes`, `symptoms`, `treatment`,
+`prevention`, `danger`, `urgent_signs`, `diagnosis`, `monitoring`),
+`drug_followup` values (`drug_uses`, `dosage`, `administration`,
+`side_effects`, `contraindications`, `warnings`, `interactions`), and
+`schedule_followup` values (`today_schedule`, `next_dose`,
+`upcoming_schedule`, `adherence_history`). Unknown values are never stored
+or applied. Invalid or stale actions are treated as ordinary user text.
+Safety and deterministic medication-time routing inspect the raw message
+first; client `entity_id` and `topic` never authorize lookup or access.
 
 ## 5. `photo-api`
 
@@ -485,9 +496,7 @@ Mọi lỗi trả về cùng một hình dạng:
 
 ## 1d. `admin-drug-api`
 
-API chỉ đọc cho màn hình Admin RAG. Dữ liệu được tổng hợp từ các bảng canonical
-`drug_product`, `drug_product_ingredient`, `ingredient` và `drug_id_map`; không có
-endpoint tạo/sửa/xóa hoặc reindex.
+API quản trị dữ liệu thuốc và cơ sở tri thức RAG cho Admin. Hỗ trợ đầy đủ CRUD và tự động ghi log kiểm toán (`SystemAuditLog`).
 
 **Cập nhật 2026-08-21 (FB-14):** danh sách còn nối thêm các thuốc đã duyệt qua
 `drug_request` (xem §1e) — nếu không, admin duyệt xong rồi mở màn hình này lại
@@ -508,19 +517,42 @@ tra `drug_request` — đường ngoại lệ không bao giờ ghi đè lên d�
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/admin/drugs` | `admin` | Danh sách thuốc canonical, tìm kiếm/lọc/phân trang |
-| GET | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Chi tiết thuốc, hoạt chất và toàn bộ mapping |
+| GET | `/api/v1/admin/drugs/filters` | `admin` | Lấy danh sách các dạng bào chế và đường dùng có trong DB |
+| GET | `/api/v1/admin/drugs` | `admin` | Danh sách thuốc, hỗ trợ tìm kiếm theo từ khóa, lọc theo dạng bào chế, đường dùng, trạng thái ánh xạ và phân trang |
+| POST | `/api/v1/admin/drugs` | `admin` | Thêm thuốc mới vào cơ sở tri thức RAG (ghi audit log) |
+| GET | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Chi tiết thuốc, hoạt chất, toàn bộ mapping và các đoạn văn bản tri thức RAG |
+| PATCH | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Cập nhật thông tin thuốc và các đoạn tri thức RAG (ghi audit log) |
+| DELETE | `/api/v1/admin/drugs/{drug_product_id}` | `admin` | Xóa thuốc và các chunk tri thức liên quan khỏi hệ thống (ghi audit log) |
 
 `GET /api/v1/admin/drugs` nhận các query parameter tùy chọn:
 
 | Parameter | Kiểu | Mặc định | Ràng buộc |
 |---|---|---:|---|
 | `q` | string | `null` | Tìm theo `display_name` hoặc `legacy_drug_id` |
+| `dosage_form` | string | `null` | Lọc theo dạng bào chế |
+| `route` | string | `null` | Lọc theo đường dùng |
 | `mapping_status` | enum | `null` | `ACTIVE` \| `AMBIGUOUS` \| `RETIRED` \| `UNMAPPED` |
 | `page` | integer | `1` | >= 1, đánh số từ 1 |
 | `page_size` | integer | `20` | 1..100 |
 
 Response list 200 chứa `items`, `page`, `page_size`, `total`, `total_pages`.
+
+## 1f. `admin-rag-monitoring-api` (proposed by BUILD-31; review required)
+
+`GET /api/v1/admin/rag/retrieval` remains admin-only. Its `metrics` object
+uses `number | null`: `null` means unavailable, never a zero score. The
+companion `metric_provenance[metric]` declares `status` (`AVAILABLE`,
+`NOT_AVAILABLE`, or `NOT_APPLICABLE`), `source` (`golden`, `heuristic`, or
+`operational`), and a machine-readable `reason` when no score can be
+calculated. `evaluated_sample_count` is the number of retrieval-backed traces
+considered, not all chat traffic.
+
+Live traffic currently has no authoritative relevance IDs. Therefore
+`hit_rate_10`, `mrr_10`, and `ndcg_10` are `null` with
+`reason: "no_relevance_ground_truth"`. Independent numeric IR metrics are
+only returned by a future/versioned golden-evaluation result that supplies
+retrieved IDs and relevant IDs. This is a non-breaking response extension and
+semantic correction, but requires Architect/Frontend review before release.
 
 ## 1e. `drug-request-api`
 
@@ -562,13 +594,9 @@ Mã lỗi riêng của contract này (ngoài §10):
 2. Thuốc duyệt qua đường này **chatbot không trả lời được** (chưa có dữ liệu trong
    `drug_chunks`). Việc sinh chunk + embedding thuộc mảng RAG, tách task riêng.
 Mỗi item có `id`, `legacy_drug_id`, `display_name`, `dosage_form`, `route`,
-`strength_text`, `category_id`, `ingredients`, `mapping_status` và `mappings`.
-`mapping_status` là trạng thái tóm tắt, có thể `null` khi sản phẩm chưa có
-mapping; `mappings` luôn là mảng đầy đủ các bản ghi mapping của sản phẩm.
-Các trường canonical chưa có dữ liệu trả `null`, không suy đoán hoặc thay bằng
-chuỗi rỗng. Detail trả cùng shape của một item với toàn bộ collections.
-Sản phẩm không tồn tại trả `404`; caller không có role `admin` nhận response
-phân quyền chuẩn của repository.
+`strength_text`, `packaging`, `category_id`, `category_name`, `severity`, `ingredients`, `mapping_status` và `mappings`.
+Detail trả thêm các trường văn bản RAG: `cong_dung`, `cach_dung`, `tac_dung_phu`, `bao_quan`.
+Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 
 ## Lịch sử thay đổi quan trọng (breaking changes)
 
@@ -581,6 +609,7 @@ phân quyền chuẩn của repository.
 | 2026-08-17 | `auth-api` (§1, §1c-2 mới) | Thêm `POST /auth/set-password` (Bearer, chỉ tài khoản `auth_provider="google"`, không hỏi mật khẩu cũ) cho phép tài khoản Google đặt mật khẩu lần đầu và đăng nhập được cả hai đường; `GET /auth/me` trả thêm `auth_provider`. Không breaking: thêm endpoint + thêm field response. | `[chờ Architect/PM review]` |
 | 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
+| 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

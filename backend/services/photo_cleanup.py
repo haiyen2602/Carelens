@@ -11,8 +11,10 @@ Hạn giữ chia theo `ket_qua` (xem `backend/config.py::Settings` các trườn
   - `khop`  : ngắn nhất, chỉ để gia đình xem lại gần đây.
   - `lech`  : dài hơn, có thể là bằng chứng khi escalate cho người thân/bác sĩ
               sau `MAX_ATTEMPTS` lần lệch (xem verifier.py::_escalate_photo_mismatch).
-  - `dang_xu_ly`/`loi_he_thong`: ngắn nhất — các dòng này lẽ ra chuyển trạng
-              thái nhanh, còn kẹt lâu là rác, không phải bằng chứng.
+  - `dang_xu_ly`/`loi_he_thong`/`do_tin_cay_thap`: ngắn nhất — các dòng này lẽ
+              ra chuyển trạng thái nhanh (hoặc, với do_tin_cay_thap, chỉ là 1
+              lượt xin chụp lại miễn phí bị bỏ dở), còn kẹt lâu là rác, không
+              phải bằng chứng.
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ from backend.db.models import PhotoVerification
 from backend.services.photo_verification.matcher import KetQua
 from backend.services.photo_verification.verifier import (
     TRANG_THAI_DANG_XU_LY,
+    TRANG_THAI_DO_TIN_CAY_THAP,
     TRANG_THAI_LOI_HE_THONG,
 )
 
@@ -41,7 +44,7 @@ def _tang_han_dung(now: datetime, settings: Settings) -> list[tuple[list[str], d
         ([KetQua.KHOP.value], now - timedelta(days=settings.photo_retention_days_khop)),
         ([KetQua.LECH.value], now - timedelta(days=settings.photo_retention_days_lech)),
         (
-            [TRANG_THAI_DANG_XU_LY, TRANG_THAI_LOI_HE_THONG],
+            [TRANG_THAI_DANG_XU_LY, TRANG_THAI_LOI_HE_THONG, TRANG_THAI_DO_TIN_CAY_THAP],
             now - timedelta(days=settings.photo_retention_days_stuck),
         ),
     ]

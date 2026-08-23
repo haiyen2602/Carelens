@@ -1,4 +1,4 @@
-"""Response DTOs for the read-only admin canonical drug API."""
+"""Response and request DTOs for the admin drug API."""
 
 from enum import StrEnum
 
@@ -42,7 +42,10 @@ class AdminDrugItem(BaseModel):
     dosage_form: str | None = None
     route: str | None = None
     strength_text: str | None = None
+    packaging: str | None = None
     category_id: str | None = None
+    category_name: str | None = None
+    severity: str | None = None
     ingredients: list[str] = Field(default_factory=list)
     mapping_status: MappingStatus | None = None
     mappings: list[AdminDrugMapping] = Field(default_factory=list)
@@ -59,7 +62,30 @@ class AdminDrugListResponse(BaseModel):
 
 
 class AdminDrugDetailResponse(AdminDrugItem):
-    pass
+    cong_dung: str | None = None
+    cach_dung: str | None = None
+    tac_dung_phu: str | None = None
+    bao_quan: str | None = None
+
+
+class AdminDrugFiltersResponse(BaseModel):
+    dosage_forms: list[str] = Field(default_factory=list)
+    routes: list[str] = Field(default_factory=list)
+
+
+class AdminDrugCreateRequest(BaseModel):
+    display_name: str = Field(..., min_length=1, max_length=255)
+    dosage_form: str | None = Field(default=None, max_length=100)
+    route: str | None = Field(default=None, max_length=100)
+    strength_text: str | None = Field(default=None, max_length=100)
+    packaging: str | None = Field(default=None, max_length=100)
+    category: str | None = Field(default=None, max_length=255)
+    severity: str | None = Field(default=None, max_length=50)
+    mapping_status: MappingStatus | None = MappingStatus.ACTIVE
+    cong_dung: str | None = None
+    cach_dung: str | None = None
+    tac_dung_phu: str | None = None
+    bao_quan: str | None = None
 
 
 class AdminDrugUpdateRequest(BaseModel):
@@ -67,5 +93,11 @@ class AdminDrugUpdateRequest(BaseModel):
     dosage_form: str | None = Field(default=None, max_length=100)
     route: str | None = Field(default=None, max_length=100)
     strength_text: str | None = Field(default=None, max_length=100)
+    packaging: str | None = Field(default=None, max_length=100)
+    category: str | None = Field(default=None, max_length=255)
+    severity: str | None = Field(default=None, max_length=50)
     mapping_status: MappingStatus | None = None
-
+    cong_dung: str | None = None
+    cach_dung: str | None = None
+    tac_dung_phu: str | None = None
+    bao_quan: str | None = None

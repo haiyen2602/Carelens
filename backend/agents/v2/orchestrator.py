@@ -125,6 +125,9 @@ class OrchestrationIntent(StrEnum):
     MISSED_DOSE = "MISSED_DOSE"
     DELAYED_DOSE = "DELAYED_DOSE"
     GENERAL_MEDICAL_INFORMATION = "GENERAL_MEDICAL_INFORMATION"
+    PERSONAL_SYMPTOM = "PERSONAL_SYMPTOM"
+    MEDICATION_DOSE_SAFETY = "MEDICATION_DOSE_SAFETY"
+    POSSIBLE_OVERDOSE = "POSSIBLE_OVERDOSE"
     VINMEC_WEB_INFORMATION = "VINMEC_WEB_INFORMATION"
     DOCTOR_REVIEW = "DOCTOR_REVIEW"
     ACUTE_DANGER_ESCALATION = "ACUTE_DANGER_ESCALATION"
@@ -162,6 +165,9 @@ _INTENT_CONFIG: dict[OrchestrationIntent, tuple[SafetyTrigger | None, bool, bool
     OrchestrationIntent.MISSED_DOSE: (SafetyTrigger.MISSED_DOSE, True, False, False, False),
     OrchestrationIntent.DELAYED_DOSE: (SafetyTrigger.DELAYED_DOSE, True, False, False, False),
     OrchestrationIntent.GENERAL_MEDICAL_INFORMATION: (None, False, False, True, False),
+    OrchestrationIntent.PERSONAL_SYMPTOM: (None, False, False, False, False),
+    OrchestrationIntent.MEDICATION_DOSE_SAFETY: (None, False, False, False, False),
+    OrchestrationIntent.POSSIBLE_OVERDOSE: (None, False, True, False, False),
     OrchestrationIntent.VINMEC_WEB_INFORMATION: (None, False, False, False, True),
     OrchestrationIntent.DOCTOR_REVIEW: (None, False, True, False, False),
     # BUILD-24E: same shape as DOCTOR_REVIEW (bypass straight to Doctor
@@ -219,6 +225,26 @@ _SEVERE_REACTION_KEYWORDS = (
     "noi me day toan than", "nổi mề đay toàn thân",
     "soc phan ve", "sốc phản vệ",
 )
+# BUILD-29F red flags used by the deterministic Safety entry point. These
+# are symptom-level escalation cues, not diagnoses and not a replacement for
+# the Safety Domain's authority.
+#
+# "non ra mau" (nôn ra máu / vomiting blood) is deliberately NOT repeated
+# here: _SEVERE_REACTION_KEYWORDS above already matches it and is checked
+# first in _detect_acute_danger(), so a duplicate entry here would be dead
+# code that only invites the two lists to drift apart later. If a future
+# change ever makes this list checked independently of severe-reaction
+# keywords, add it back explicitly rather than relying on check order.
+_TRIAGE_RED_FLAG_MARKERS = (
+    "kho tho",
+    "dau nguc",
+    "mat y thuc",
+    "yeu mot ben nguoi",
+    "liet mot ben",
+    "noi kho",
+    "co giat",
+    "dau dau dot ngot du doi",
+)
 _SAFETY_BYPASS_KEYWORDS = (
     "bo qua canh bao an toan", "bỏ qua cảnh báo an toàn",
     "bo qua moi canh bao", "bỏ qua mọi cảnh báo",
@@ -262,21 +288,118 @@ def _detect_acute_danger(message: str) -> bool:
     lowered = message.casefold()
     if any(marker in lowered for marker in _ACUTE_DANGER_NEGATION_KEYWORDS):
         return False
+    folded = _ascii_fold(message)
+    if _NEGATED_HIGH_RISK_INGESTION_RE.search(folded):
+        return False
     if any(keyword in lowered for keyword in _SELF_HARM_KEYWORDS):
         return True
     if any(keyword in lowered for keyword in _OVERDOSE_POISONING_KEYWORDS):
         return True
     if any(keyword in lowered for keyword in _SEVERE_REACTION_KEYWORDS):
         return True
+    if any(marker in _ascii_fold(message) for marker in _TRIAGE_RED_FLAG_MARKERS):
+        return True
     if any(keyword in lowered for keyword in _SAFETY_BYPASS_KEYWORDS):
         return True
-    if _EXCESSIVE_PILL_INTENT_RE.search(lowered):
+    has_high_risk_context = any(keyword in folded for keyword in _HIGH_RISK_INGESTION_KEYWORDS)
+    if has_high_risk_context and _EXCESSIVE_PILL_INTENT_RE.search(folded):
         return True
-    if _PILL_COUNT_DANGER_QUESTION_RE.search(lowered):
+    if has_high_risk_context and _PILL_COUNT_DANGER_QUESTION_RE.search(folded):
+        return True
+    if has_high_risk_context and _HIGH_RISK_INGESTION_RE.search(folded):
         return True
     if _DANGEROUS_DOSE_JAILBREAK_RE.search(lowered):
         return True
     return False
+
+
+_POSSIBLE_OVERDOSE_RE = re.compile(
+    r"(vua uong|lo uong|da uong).{0,24}(qua nhieu|\d{1,3}\s*vien)", re.IGNORECASE
+)
+_PROPOSED_DOSE_RE = re.compile(
+    r"((co the|co nen|duoc khong|muon uong them|uong them|gap doi).{0,30}(\d{1,3}\s*vien|lieu))"
+    r"|(\d{1,3}\s*vien.{0,30}(co sao khong|duoc khong))",
+    re.IGNORECASE,
+)
+
+# BUILD-29F: a large pill count alone is not evidence of an acute emergency.
+# Keep high-risk ingestion intent deterministic and narrow; all other reported
+# excessive use is routed separately as POSSIBLE_OVERDOSE for safe escalation.
+_HIGH_RISK_INGESTION_KEYWORDS = (
+    "thuoc ngu",
+    "thuoc an than",
+    "thuoc tran an",
+    "benzodiazepine",
+    "paracetamol",
+    "panadol",
+)
+_HIGH_RISK_INGESTION_RE = re.compile(
+    r"(muon uong|vua uong|da uong|uong).{0,64}"
+    r"(\d{1,3}\s*vien|rat nhieu|nhieu vien|uong het)",
+    re.IGNORECASE,
+)
+_NEGATED_HIGH_RISK_INGESTION_RE = re.compile(
+    r"(khong|chua)\s+uong.{0,24}(\d{1,3}\s*vien|rat nhieu|nhieu vien).{0,32}"
+    r"(thuoc ngu|thuoc an than|thuoc tran an|benzodiazepine|paracetamol|panadol)",
+    re.IGNORECASE,
+)
+_PERSONAL_SYMPTOM_MARKERS = (
+    "dau dau",
+    "dau qua",
+    "chong mat",
+    "dau bung",
+    "buon non",
+    "kho chiu trong nguoi",
+)
+_PERSONAL_REFERENCE_MARKERS = ("toi", "minh", "dang", "cam thay", "bi ")
+
+_MEDICATION_PRODUCT_MARKERS = (
+    "vitamin ",
+    "thuoc ngu",
+    "thuoc an than",
+    "thuoc tran an",
+    "vien uong",
+    "si ro",
+)
+_MEDICATION_INFORMATION_MARKERS = ("la gi", "tac dung", "cong dung", "dung de")
+_GENERIC_MEDICATION_CLASS_MARKERS = (
+    "thuoc giam dau",
+    "thuoc ha sot",
+    "thuoc khang sinh",
+    "thuoc huyet ap",
+)
+
+
+def _is_possible_overdose(message: str) -> bool:
+    """Reported excessive ingestion without assigning a clinical dose verdict."""
+
+    return bool(_POSSIBLE_OVERDOSE_RE.search(_ascii_fold(message)))
+
+
+def _is_proposed_dose_question(message: str) -> bool:
+    return bool(_PROPOSED_DOSE_RE.search(_ascii_fold(message)))
+
+
+def _is_personal_symptom(message: str) -> bool:
+    lowered = _ascii_fold(message)
+    return any(symptom in lowered for symptom in _PERSONAL_SYMPTOM_MARKERS) and any(
+        marker in lowered for marker in _PERSONAL_REFERENCE_MARKERS
+    )
+
+
+def _is_medication_information_query(message: str) -> bool:
+    """Recognize a product-information question without relying on entity search."""
+
+    lowered = _ascii_fold(message)
+    if not any(marker in lowered for marker in _MEDICATION_INFORMATION_MARKERS):
+        return False
+    if any(marker in lowered for marker in _MEDICATION_PRODUCT_MARKERS):
+        return True
+    # A named product after “thuốc” is drug information; a generic class
+    # such as “thuốc giảm đau” remains a general clinical/RAG question.
+    return "thuoc " in lowered and not any(
+        marker in lowered for marker in _GENERIC_MEDICATION_CLASS_MARKERS
+    )
 
 
 # Ordered (most specific first) so an unambiguous safety- or handoff-relevant
@@ -430,6 +553,10 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
 
     if _detect_acute_danger(message):
         intent = OrchestrationIntent.ACUTE_DANGER_ESCALATION
+    elif _is_possible_overdose(message):
+        intent = OrchestrationIntent.POSSIBLE_OVERDOSE
+    elif _is_proposed_dose_question(message):
+        intent = OrchestrationIntent.MEDICATION_DOSE_SAFETY
     elif _matches(_DOCTOR_REVIEW_KEYWORDS):
         intent = OrchestrationIntent.DOCTOR_REVIEW
     # BUILD-27B: "Safety intent luôn có priority cao hơn time routing" --
@@ -440,6 +567,8 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
         intent = OrchestrationIntent.MISSED_DOSE
     elif _matches(_DELAYED_DOSE_KEYWORDS):
         intent = OrchestrationIntent.DELAYED_DOSE
+    elif _is_personal_symptom(message):
+        intent = OrchestrationIntent.PERSONAL_SYMPTOM
     elif has_dose_id and _matches(_DOSE_STATUS_KEYWORDS):
         intent = OrchestrationIntent.DOSE_STATUS
     # BUILD-24L (golden query_id 74): checked here -- after every safety/
@@ -471,7 +600,14 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
             intent = OrchestrationIntent.PRESCRIPTION_INFORMATION
         elif _matches(_VINMEC_KEYWORDS):
             intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
-        elif _matches(_GENERAL_MEDICAL_KEYWORDS):
+        elif _is_medication_information_query(message):
+            intent = OrchestrationIntent.DRUG_INFORMATION
+        elif _matches(_GENERAL_MEDICAL_KEYWORDS) or _display_topic_from_raw(message) is not None:
+            # An explicit "<new topic> thì sao?" is a general-medical
+            # topic switch even without a generic question keyword. This
+            # allows the API boundary to replace durable topic state only
+            # for an explicit display-preserving topic, never a follow-up
+            # retrieval query.
             intent = OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
         elif _matches_greeting() and len(message.strip()) <= 40:
             intent = OrchestrationIntent.GENERAL_CONVERSATION
@@ -508,6 +644,9 @@ class SemanticMedicalQuery:
     normalized_query: str
     family: str | None = None
     topic: str | None = None
+    # State transitions must use this preservation-safe display value, never
+    # the ASCII-folded retrieval topic above.
+    display_topic: str | None = None
 
     @property
     def changed(self) -> bool:
@@ -579,6 +718,19 @@ _AMBIGUOUS_FOLLOW_UP_MARKERS = (
 _CONTEXT_CLARIFICATION_REPLY = (
     "Mình chưa xác định đủ ngữ cảnh cho câu hỏi này. Bạn đang muốn hỏi tiếp về bệnh hoặc chủ đề nào?"
 )
+_TRIAGE_CLARIFICATION_REPLY = (
+    "Tình trạng bạn mô tả có thể có nhiều nguyên nhân và mình không thể chẩn đoán qua chat. "
+    "Bạn cho mình biết triệu chứng bắt đầu từ khi nào, mức độ thế nào, và có sốt, nôn, nhìn mờ, "
+    "yếu/tê một bên người, nói khó hoặc đau đột ngột dữ dội không? Nếu có khó thở, đau ngực, "
+    "mất ý thức, co giật, nôn ra máu hoặc triệu chứng nặng lên nhanh, hãy gọi 115 hoặc đến cơ sở "
+    "cấp cứu gần nhất ngay."
+)
+_DOSE_SAFETY_CLARIFICATION_REPLY = (
+    "Mình chưa thể xác định việc dùng số viên này có an toàn hay không chỉ từ số lượng. "
+    "Bạn đang dùng sản phẩm nào, mỗi viên bao nhiêu mg, đã dùng bao nhiêu viên và vào lúc nào? "
+    "Không nên tự tăng hoặc gấp đôi liều khi chưa có hướng dẫn của bác sĩ/dược sĩ. Nếu bạn đã dùng "
+    "nhiều hơn dự định hoặc có triệu chứng bất thường, hãy liên hệ cơ sở y tế hoặc gọi 115 ngay."
+)
 
 
 def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
@@ -593,38 +745,90 @@ def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     raw_query = " ".join(message.strip().split())
     if not raw_query:
         return SemanticMedicalQuery(message, message)
+    display_topic = _display_topic_from_raw(raw_query)
     candidate = raw_query.strip(" ?!.,;:")
     candidate = _TRAILING_MEDICAL_QUESTION_FILLER_RE.sub("", candidate).strip()
 
     cause_topic = _match_semantic_topic(candidate, _CAUSE_PATTERNS)
     if cause_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"nguyen nhan gay {cause_topic}", "cause", cause_topic)
+        return SemanticMedicalQuery(raw_query, f"nguyen nhan gay {cause_topic}", "cause", cause_topic, display_topic)
 
     urgency_topic = _match_semantic_topic(candidate, _URGENCY_PATTERNS)
     if urgency_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"khi nao {urgency_topic} can di kham ngay", "urgent_care", urgency_topic)
+        return SemanticMedicalQuery(raw_query, f"khi nao {urgency_topic} can di kham ngay", "urgent_care", urgency_topic, display_topic)
 
     symptoms_topic = _match_semantic_topic(candidate, _SYMPTOM_PATTERNS)
     if symptoms_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"trieu chung cua {symptoms_topic}", "symptoms", symptoms_topic)
+        return SemanticMedicalQuery(raw_query, f"trieu chung cua {symptoms_topic}", "symptoms", symptoms_topic, display_topic)
 
     danger_topic = _match_semantic_topic(candidate, _DANGER_PATTERNS)
     if danger_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"{danger_topic} co nguy hiem khong", "danger", danger_topic)
+        return SemanticMedicalQuery(raw_query, f"{danger_topic} co nguy hiem khong", "danger", danger_topic, display_topic)
 
     prevention_topic = _match_semantic_topic(candidate, _PREVENTION_PATTERNS)
     if prevention_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"cach phong ngua {prevention_topic}", "prevention", prevention_topic)
+        return SemanticMedicalQuery(raw_query, f"cach phong ngua {prevention_topic}", "prevention", prevention_topic, display_topic)
 
     definition_topic = _match_semantic_topic(raw_query.strip(" ?!.,;:"), _DEFINITION_PATTERNS)
     if definition_topic is not None:
-        return SemanticMedicalQuery(raw_query, f"{definition_topic} la gi", "definition", definition_topic)
+        return SemanticMedicalQuery(raw_query, f"{definition_topic} la gi", "definition", definition_topic, display_topic)
 
     compact = _ascii_fold(raw_query)
     compact = re.sub(r"\s+", " ", compact).strip(" ?!.,;:")
     if compact != raw_query:
-        return SemanticMedicalQuery(raw_query, compact, None, None)
-    return SemanticMedicalQuery(raw_query, raw_query)
+        return SemanticMedicalQuery(raw_query, compact, None, None, display_topic)
+    return SemanticMedicalQuery(raw_query, raw_query, None, None, display_topic)
+
+
+_DISPLAY_TOPIC_PATTERNS = (
+    re.compile(r"^(?:bệnh\s+)?(.+?)\s+(?:là\s+gì|la\s+gi)$", re.IGNORECASE),
+    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:triệu\s+chứng|dấu\s+hiệu)\s+(?:của\s+)?(.+)$", re.IGNORECASE),
+    re.compile(r"^(.+?)\s+có\s+nguy\s+hiểm\s+không$", re.IGNORECASE),
+    re.compile(r"^(?:cách\s+)?(?:phòng\s+ngừa|phòng\s+tránh)\s+(.+)$", re.IGNORECASE),
+    re.compile(r"^(?:còn\s+)?(.+?)\s+(?:thì\s+sao|thi\s+sao)$", re.IGNORECASE),
+)
+
+# BUILD-29D.3 fix (found via real local E2E, 2026-08-23): a bare pattern match
+# above also captures a drug-attribute question with no disease/topic shape at
+# all -- "Cong dung cua thuoc Long Huyet la gi" matches the first pattern and
+# extracts "Cong dung cua thuoc Long Huyet" as if it were a general medical
+# topic name, corrupting active_topic with the same drug-not-a-topic
+# confusion this build exists to eliminate (see fix_bug_01.md section 7 --
+# "Do not turn 'cong dung cua Long Huyet' into a new entity name", which
+# applies equally to state.active_topic). A genuine disease/condition name in
+# this product's own vocabulary (drug knowledge_search topics, symptom/cause
+# patterns above) never contains the word "thuoc" (drug/medication) or one of
+# the fixed drug-attribute labels this backend already asks about elsewhere
+# (backend/agents/v2/suggested_actions.py::_DRUG_LABELS,
+# backend/agents/v2/conversation_state.py::_typed_aliases) -- narrow,
+# deterministic keyword rejection, the same style as _GENERAL_MEDICAL_KEYWORDS
+# and _DISPLAY_TOPIC_PATTERNS themselves, not an attempt to solve entity
+# resolution generally.
+_DRUG_ATTRIBUTE_QUESTION_KEYWORDS = (
+    "thuốc", "thuoc",
+    "công dụng", "cong dung", "chỉ định", "chi dinh",
+    "liều dùng", "lieu dung", "cách dùng", "cach dung",
+    "tác dụng phụ", "tac dung phu", "chống chỉ định", "chong chi dinh",
+    "tương tác", "tuong tac", "thành phần", "thanh phan",
+)
+
+
+def _display_topic_from_raw(message: str) -> str | None:
+    """Extract only an explicit, display-preserving topic for state writes."""
+    candidate = message.strip(" ?!.,;:")
+    for pattern in _DISPLAY_TOPIC_PATTERNS:
+        match = pattern.match(candidate)
+        if match is None:
+            continue
+        topic = match.group(1).strip(" ?!.,;:")
+        if len(topic) < 2:
+            continue
+        lowered = topic.casefold()
+        if any(keyword in lowered for keyword in _DRUG_ATTRIBUTE_QUESTION_KEYWORDS):
+            return None
+        return topic[:80]
+    return None
 
 
 def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -> str | None:
@@ -1281,6 +1485,19 @@ class AgentOrchestrator:
 
         memory_items, session_key = self._recall_memory(request, agent_run_id)
         if raw_decision.intent in {
+            OrchestrationIntent.PERSONAL_SYMPTOM,
+            OrchestrationIntent.MEDICATION_DOSE_SAFETY,
+        }:
+            return self._clinical_clarification_reply(
+                request,
+                raw_decision,
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+            )
+        if raw_decision.intent in {
             OrchestrationIntent.GENERAL_CONVERSATION,
             OrchestrationIntent.DRUG_INFORMATION,
             OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
@@ -1349,6 +1566,12 @@ class AgentOrchestrator:
                     outcome=SafetyOutcome.HANDOFF_REQUIRED,
                     reason_code="ACUTE_DANGER_DETECTED",
                     provenance="agent-orchestrator:acute-danger",
+                )
+            elif decision.intent is OrchestrationIntent.POSSIBLE_OVERDOSE:
+                safety_decision = SafetyDecision(
+                    outcome=SafetyOutcome.HANDOFF_REQUIRED,
+                    reason_code="POSSIBLE_OVERDOSE_REPORTED",
+                    provenance="agent-orchestrator:possible-overdose",
                 )
             else:
                 safety_decision = SafetyDecision(
@@ -1670,6 +1893,50 @@ class AgentOrchestrator:
             trace.trace_id,
             agent_run_id,
             OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+            result.status,
+            result.response,
+            (),
+            (),
+            None,
+            None,
+            result.metrics,
+        )
+
+    def _clinical_clarification_reply(
+        self, request, decision, session_key, trace, agent_run_id, checkpoint_db, lease_token
+    ) -> OrchestrationResult:
+        """Return a deterministic, non-diagnostic clarification for BUILD-29F.
+
+        Acute-red-flag detection has already happened before this method is
+        reached. These ordinary clinical paths deliberately make no model,
+        retrieval or tool call: a missing article or product-strength record
+        must not become a generic drug-information fallback or an invented
+        dose recommendation.
+        """
+
+        if decision.intent is OrchestrationIntent.PERSONAL_SYMPTOM:
+            reply = _TRIAGE_CLARIFICATION_REPLY
+            event_name = "agent_router.triage_clarification"
+        else:
+            reply = _DOSE_SAFETY_CLARIFICATION_REPLY
+            event_name = "agent_router.dose_safety_clarification"
+            if request.active_entity_name:
+                reply = f"Bạn đang hỏi về {request.active_entity_name}. {reply}"
+
+        if self._telemetry is not None:
+            self._telemetry.event(trace, TraceComponent.ROUTER, event_name)
+        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics())
+        if checkpoint_db is not None:
+            if lease_token is None:
+                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+            )
+        self._remember_reply(session_key, agent_run_id, result)
+        return OrchestrationResult(
+            trace.trace_id,
+            agent_run_id,
+            decision.intent,
             result.status,
             result.response,
             (),
