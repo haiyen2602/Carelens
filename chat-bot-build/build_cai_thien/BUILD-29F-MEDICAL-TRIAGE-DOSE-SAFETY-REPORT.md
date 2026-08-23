@@ -345,8 +345,10 @@ changes exactly 5 backend files, none of which are implicated in any of the
 
 - Branch: `feature/build-29f-medical-triage-dose-safety`
 - Base: `origin/main` at `86e8426` (merge of PR #106).
-- Commit / push / PR: created after this report update — see repo history
-  for the commit and PR on this branch.
+- Commit: `ce82261` (`feat(agent-v2): BUILD-29F medical triage + medication
+  dose-safety routing`).
+- PR: [#107](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/107)
+  — "BUILD-29F: Medical triage + medication dose-safety routing".
 - Not deployed; deploy requires review/merge per instruction.
 
 ## 19. Release Gate
