@@ -10,6 +10,7 @@ export type ReportingPatient = {
   gender: string | null;
   heightCm: number | null;
   weightKg: number | null;
+  phone: string | null;
   watch: boolean;
   adherencePct: number | null;
 };
@@ -22,6 +23,7 @@ type ReportingPatientApi = {
   gender: string | null;
   height_cm: number | null;
   weight_kg: number | null;
+  phone?: string | null;
   watch: boolean;
   adherence_pct: number | null;
 };
@@ -45,6 +47,7 @@ function toReportingPatient(p: ReportingPatientApi): ReportingPatient {
     gender: p.gender,
     heightCm: p.height_cm,
     weightKg: p.weight_kg,
+    phone: p.phone ?? null,
     watch: p.watch,
     adherencePct: p.adherence_pct,
   };
@@ -116,4 +119,56 @@ export async function updatePatientHealth(
     weight_kg: number | null;
   } = await response.json();
   return { note: p.note, gender: p.gender, heightCm: p.height_cm, weightKg: p.weight_kg };
+}
+
+// --- Tong hop lieu cho trang "Tổng quan thông tin" -----------------------
+//
+// Goi THANG backend kem Bearer: backend gioi han pham vi theo DoctorWatch cua
+// chinh nguoi dang dang nhap (doc tu JWT), nen phai biet dung ai dang goi -
+// khong di qua route noi bo /api/reporting/* nhu listReportingPatients().
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export type DoseDay = {
+  date: string;
+  taken: number;
+  delayed: number;
+  missed: number;
+  total: number;
+};
+
+export type MissedWindow = {
+  key: string;
+  label: string;
+  missed: number;
+};
+
+export type DoseSummary = {
+  days: number;
+  patientCount: number;
+  daily: DoseDay[];
+  missedByWindow: MissedWindow[];
+};
+
+export async function getDoseSummary(
+  accessToken: string,
+  days = 7,
+): Promise<DoseSummary> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/reporting/dose-summary?days=${days}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!response.ok) return loi(response);
+  const data: {
+    days: number;
+    patient_count: number;
+    daily: DoseDay[];
+    missed_by_window: MissedWindow[];
+  } = await response.json();
+
+  return {
+    days: data.days,
+    patientCount: data.patient_count,
+    daily: data.daily,
+    missedByWindow: data.missed_by_window,
+  };
 }

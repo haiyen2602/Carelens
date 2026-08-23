@@ -137,10 +137,11 @@ export async function createPrescription(input: {
   doctorId: string;
   note?: string;
   items: PrescriptionItemInput[];
+  accessToken?: string | null;
 }): Promise<PrescriptionRecord> {
   const response = await fetch("/api/prescriptions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: kemToken({ "Content-Type": "application/json" }, input.accessToken),
     body: JSON.stringify({
       patient_id: input.patientId,
       doctor_id: input.doctorId,
@@ -169,20 +170,43 @@ export async function updatePrescription(
   return toRecord(await response.json());
 }
 
-async function quyetDinh(prescriptionId: string, hanhDong: "approve" | "reject", doctorId: string) {
+// `doctor_id` trong body van la DEMO_DOCTOR_ID (nghiep vu phac do dang dua
+// vao no), nhung Bearer token cho backend biet AI thuc su vua bam nut de ghi
+// dung ten vao nhat ky thao tac - xem lib/forward-auth.ts.
+function kemToken(
+  headers: Record<string, string>,
+  accessToken?: string | null,
+): Record<string, string> {
+  return accessToken ? { ...headers, Authorization: `Bearer ${accessToken}` } : headers;
+}
+
+async function quyetDinh(
+  prescriptionId: string,
+  hanhDong: "approve" | "reject",
+  doctorId: string,
+  accessToken?: string | null,
+) {
   const response = await fetch(`/api/prescriptions/${prescriptionId}/${hanhDong}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: kemToken({ "Content-Type": "application/json" }, accessToken),
     body: JSON.stringify({ doctor_id: doctorId }),
   });
   if (!response.ok) return loi(response);
   return response.json();
 }
 
-export function approvePrescription(prescriptionId: string, doctorId: string = DEMO_DOCTOR_ID) {
-  return quyetDinh(prescriptionId, "approve", doctorId);
+export function approvePrescription(
+  prescriptionId: string,
+  doctorId: string = DEMO_DOCTOR_ID,
+  accessToken?: string | null,
+) {
+  return quyetDinh(prescriptionId, "approve", doctorId, accessToken);
 }
 
-export function rejectPrescription(prescriptionId: string, doctorId: string = DEMO_DOCTOR_ID) {
-  return quyetDinh(prescriptionId, "reject", doctorId);
+export function rejectPrescription(
+  prescriptionId: string,
+  doctorId: string = DEMO_DOCTOR_ID,
+  accessToken?: string | null,
+) {
+  return quyetDinh(prescriptionId, "reject", doctorId, accessToken);
 }

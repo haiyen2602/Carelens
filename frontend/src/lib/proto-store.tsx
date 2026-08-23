@@ -19,7 +19,12 @@ import {
   type PrescriptionRecord,
 } from "@/lib/prescriptions";
 import { listReportingPatients, setPatientWatch, type ReportingPatient } from "@/lib/reporting";
-import { listEscalations, type Escalation } from "@/lib/escalations";
+import {
+  listEscalations,
+  updateEscalationStatus,
+  type Escalation,
+  type EscalationStatus,
+} from "@/lib/escalations";
 import { listAuditLog, type AuditLogEntry } from "@/lib/audit";
 import {
   listCaregiverLinksForPatient,
@@ -77,10 +82,17 @@ export type SysAlert = {
   trigger: string;
   title: string;
   detail: string;
+  // Gio hien thi "HH:MM" - da mat phan ngay. Loc theo ngay phai dung
+  // `createdAt` ben duoi, KHONG parse lai truong nay.
   at: string;
+  // ISO day du tu Escalation.created_at, giu nguyen de Hop canh bao loc theo
+  // khoang ngay (doctor/alerts/page.tsx). Them 2026-08-23.
+  createdAt: string;
   // "dismissed" = bac si xem va danh gia khong can xu ly (khac "resolved" la
-  // da xu ly that). Chi song trong state cuc bo nhu cac trang thai con lai -
-  // setAlertStatus() chua day nguoc len backend.
+  // da xu ly that). Tu 2026-08-23 setAlertStatus() day nguoc len backend qua
+  // PATCH /escalations/{id}/status nen 4 trang thai OPEN/ACKED/RESOLVED/
+  // DISMISSED song sot qua lan tai trang. Rieng "processing" KHONG co ben
+  // backend - giu trong union cho consumer cu, khong con duong nao tao ra no.
   status: "new" | "processing" | "acknowledged" | "resolved" | "dismissed";
   doseId?: string;
 };
@@ -104,7 +116,10 @@ export type ActivityNotification = {
 export type AuditEntry = {
   id: string;
   patientId: string;
+  // "HH:MM" de hien thi nhanh; `createdAt` giu ISO day du cho viec nhom theo
+  // ngay o trang Lich su (them 2026-08-23) - cung ly do voi SysAlert.
   at: string;
+  createdAt: string;
   utterance: string;
   finalResponse: string | null;
 };
@@ -114,7 +129,14 @@ export type Patient = {
   name: string;
   age: number;
   condition: string;
-  adherence: number;
+  // null = benh nhan CHUA co lieu nao den han, tuc chua du du lieu de ket
+  // luan - KHAC HAN "tuan thu 0%". Truoc 2026-08-23 cho nay map `?? 0` nen
+  // benh nhan moi vao he thong bi tinh la 0%, keo tuan thu trung binh cua ca
+  // dashboard ve 0 va bi dem nham vao nhom "nguy co cao". Moi noi doc truong
+  // nay phai loai null ra khoi mau thay vi coi la so 0.
+  adherence: number | null;
+  // Benh nhan tu nhap o onboarding - con None voi ho so chua hoan tat.
+  phone: string | null;
   watch: boolean;
 };
 
@@ -147,13 +169,14 @@ export type MonitoredRelative = {
   weekHistory: { day: string; status: DoseHistoryStatus }[];
 };
 
-// `phone` khong co trong GET /caregiver-links?patient_id= (BE contract chi
-// tra id/caregiver_account_id/caregiver_name/relationship/created_at) - bo
-// truong nay thay vi bia so dien thoai. Xem doctor/family/page.tsx.
+// `phone` van KHONG co - ca bang caregiver_link lan account deu khong luu so
+// dien thoai, khong bia ra o day. `email` (tu Account.email, them 2026-08-23)
+// la cach lien lac duy nhat he thong biet. Xem doctor/family/page.tsx.
 export type FamilyContact = {
   id: string;
   patientId: string;
   name: string;
+  email: string | null;
   relation: string;
 };
 
@@ -227,10 +250,10 @@ type Ctx = State & {
     verdict: "correct" | "wrong" | "unclear" | "absent",
   ) => Promise<void>;
   familyConfirmDose: (id: string, taken: boolean) => Promise<void>;
-  // Chua co API sua trang thai escalation o backend (BE contract chi co GET
-  // /escalations) - ham nay CHI sua state cuc bo, mat khi refresh trang.
-  // Cung ly do/gioi han voi updatePrescription o tren.
-  setAlertStatus: (id: string, status: SysAlert["status"]) => void;
+  // Day len PATCH /escalations/{id}/status (tu 2026-08-23) - cap nhat state
+  // NGAY roi moi goi API, va tra ve trang thai cu neu API loi, de nut trong
+  // Hop canh bao phan hoi tuc thi. `throw` lai loi de nguoi goi hien toast.
+  setAlertStatus: (id: string, status: SysAlert["status"]) => Promise<void>;
   toggleWatch: (id: string) => Promise<void>;
   pushActivity: (title: string, detail?: string) => void;
   markActivityRead: (id: string) => void;
@@ -351,7 +374,17 @@ function anhXaMucDo(severity: string): AlertLevel {
 function anhXaTrangThaiCanhBao(status: string): SysAlert["status"] {
   if (status === "ACKED") return "acknowledged";
   if (status === "RESOLVED") return "resolved";
+  if (status === "DISMISSED") return "dismissed";
   return "new"; // OPEN
+}
+
+// Chieu nguoc lai, de setAlertStatus() day len PATCH /escalations/{id}/status.
+// "processing" khong co doi ung ben backend (xem SysAlert) - coi nhu OPEN.
+function veTrangThaiBackend(status: SysAlert["status"]): EscalationStatus {
+  if (status === "acknowledged") return "ACKED";
+  if (status === "resolved") return "RESOLVED";
+  if (status === "dismissed") return "DISMISSED";
+  return "OPEN";
 }
 
 function toSysAlert(e: Escalation): SysAlert {
@@ -363,6 +396,7 @@ function toSysAlert(e: Escalation): SysAlert {
     title: e.reason || e.trigger,
     detail: e.rawUtterance || e.trigger,
     at: gioHienThi(e.createdAt),
+    createdAt: e.createdAt,
     status: anhXaTrangThaiCanhBao(e.status),
     doseId: e.doseEventId ?? undefined,
   };
@@ -373,6 +407,7 @@ function toAuditEntry(a: AuditLogEntry): AuditEntry {
     id: a.id,
     patientId: a.patientId,
     at: gioHienThi(a.createdAt),
+    createdAt: a.createdAt,
     utterance: a.utterance,
     finalResponse: a.finalResponse,
   };
@@ -388,7 +423,8 @@ function toPatient(p: ReportingPatient): Patient {
     name: p.fullName,
     age: tinhTuoi(p.yearOfBirth),
     condition: p.note ?? "",
-    adherence: p.adherencePct ?? 0,
+    adherence: p.adherencePct,
+    phone: p.phone,
     watch: p.watch,
   };
 }
@@ -487,6 +523,7 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         id: l.id,
         patientId: patients[i].id,
         name: l.caregiverName,
+        email: l.caregiverEmail,
         relation: l.relationship,
       })),
     );
@@ -582,7 +619,9 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
       setEmergency: (v) => setState((s) => ({ ...s, emergency: v })),
       decidePrescription: async (id, ok) => {
         const prescriptionId = id.split(NOI_ID)[0];
-        await (ok ? approvePrescription(prescriptionId) : rejectPrescription(prescriptionId));
+        await (ok
+          ? approvePrescription(prescriptionId, DEMO_DOCTOR_ID, accessToken)
+          : rejectPrescription(prescriptionId, DEMO_DOCTOR_ID, accessToken));
         await refreshPrescriptions();
       },
       createPrescription: async (input) => {
@@ -596,8 +635,9 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
           doctorId: DEMO_DOCTOR_ID,
           note: input.note,
           items: input.items,
+          accessToken,
         });
-        await approvePrescription(created.id, DEMO_DOCTOR_ID);
+        await approvePrescription(created.id, DEMO_DOCTOR_ID, accessToken);
         await refreshPrescriptions();
       },
       updatePrescription: (id, patch) => {
@@ -622,11 +662,32 @@ export function ProtoProvider({ children }: { children: ReactNode }) {
         await refreshDoses(user?.patient_id);
         await refreshEscalations();
       },
-      setAlertStatus: (id, status) => {
+      setAlertStatus: async (id, status) => {
+        const truocDo = state.alerts.find((a) => a.id === id)?.status;
         setState((s) => ({
           ...s,
           alerts: s.alerts.map((a) => (a.id === id ? { ...a, status } : a)),
         }));
+
+        if (!accessToken) {
+          // Khong co token thi khong the goi API - tra lai ngay thay vi de
+          // giao dien hien mot trang thai se bien mat o lan tai trang sau.
+          setState((s) => ({
+            ...s,
+            alerts: s.alerts.map((a) => (a.id === id && truocDo ? { ...a, status: truocDo } : a)),
+          }));
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        }
+
+        try {
+          await updateEscalationStatus(accessToken, id, veTrangThaiBackend(status));
+        } catch (err) {
+          setState((s) => ({
+            ...s,
+            alerts: s.alerts.map((a) => (a.id === id && truocDo ? { ...a, status: truocDo } : a)),
+          }));
+          throw err;
+        }
       },
       toggleWatch: async (id) => {
         const p = state.patients.find((x) => x.id === id);

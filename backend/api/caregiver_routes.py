@@ -310,12 +310,14 @@ def _list_links_for_patient(db: Session, patient_id: str) -> list[CaregiverLinkF
     caregiver_ids = {r.caregiver_account_id for r in rows}
     accounts = db.execute(select(Account).where(Account.id.in_(caregiver_ids))).scalars().all()
     name_by_id = {a.id: a.full_name for a in accounts}
+    email_by_id = {a.id: a.email for a in accounts}
 
     return [
         CaregiverLinkForPatientOut(
             id=r.id,
             caregiver_account_id=r.caregiver_account_id,
             caregiver_name=name_by_id.get(r.caregiver_account_id, r.caregiver_account_id),
+            caregiver_email=email_by_id.get(r.caregiver_account_id),
             relationship=r.relationship,
             created_at=r.created_at.isoformat(),
             status=r.status,
