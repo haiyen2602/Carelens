@@ -123,6 +123,13 @@ def build_suggested_actions(
 
 
 def _has_drug_evidence(tool_results: tuple[object, ...]) -> bool:
+    # Deliberately defensive against a malformed/unexpected tool_results
+    # entry, not just a missing get_drug_info call: `getattr(..., None)`
+    # never raises for an object without a `name` attribute, and the
+    # `isinstance(..., dict)` check short-circuits the chained `and` (Python
+    # never evaluates the trailing `.get("results")` unless `data` was
+    # already confirmed to be a dict), so a non-dict `.data` cannot raise
+    # AttributeError here.
     return any(
         getattr(result, "name", None) == "get_drug_info"
         and isinstance(getattr(result, "data", {}), dict)

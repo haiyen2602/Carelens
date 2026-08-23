@@ -302,6 +302,34 @@ change, when run against the flipped-on local flag.)
   out of scope to change here per this session's explicit instruction not to
   alter architecture without a build-scoped regression to justify it.
 
+## 15.1 Code Review, Round 1 (post-push)
+
+Two findings raised against the §13.2 fix commit:
+
+1. **Confirmed, fixed.** `conversation_state.transition_state()` itself
+   still had the double-null flaw the §13.2 fix only worked around at its
+   one call site: `if topic: next_entity = None` followed by
+   `if entity: next_topic = None` nulls *both* out if a caller ever passes
+   both truthy at once, silently discarding a real resolved entity. The
+   current caller (`agent_v2_routes.py`) never does this post-fix, but the
+   function had no defense of its own against a future caller doing so.
+   Rewritten as an explicit `if entity / elif topic / else` with entity
+   winning by design (a resolved entity is a stronger, more specific signal
+   than a topic string) — see the inline comment in
+   `backend/agents/v2/conversation_state.py`. Re-verified: 313/313 passed,
+   `ruff check` clean.
+2. **Not a bug — false positive, verified empirically.** The claim that
+   `_has_drug_evidence`'s `.get("results")` could raise `AttributeError` on
+   a non-dict `data` is incorrect: the `isinstance(..., dict)` check and the
+   `.get(...)` call are chained with Python's short-circuiting `and`, so
+   `.get()` is never evaluated unless `isinstance` already confirmed a dict;
+   `getattr(result, "name", None)` already defaults safely for an object
+   without a `.name` attribute. Confirmed with a standalone repro
+   (non-dict `data`, and a `name`-less object — neither raises). Left the
+   logic unchanged; added a one-line comment explaining the short-circuit so
+   this doesn't get re-flagged by a future reviewer unfamiliar with the
+   chained-`and` idiom.
+
 ## 16. Files Changed
 
 - `backend/agents/v2/conversation_state.py`

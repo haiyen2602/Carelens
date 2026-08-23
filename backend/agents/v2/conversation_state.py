@@ -197,12 +197,25 @@ def transition_state(
             state, last_intent=intent, offered_actions=(), pending_selection=None, updated_at=datetime.now(UTC)
         )
 
-    next_topic = ActiveTopic("medical_topic", topic) if topic else state.active_topic
-    next_entity = entity or state.active_entity
-    if topic:
-        next_entity = None
+    # `topic` and `entity` are mutually exclusive by contract (a turn is
+    # either about a general medical topic or about one specific drug, never
+    # both -- see the caller in agent_v2_routes.py, which never sets both on
+    # the same call). Branched with elif rather than two independent `if`s:
+    # the earlier form set `next_entity = None` when `topic` was truthy and
+    # `next_topic = None` when `entity` was truthy, so a call that (against
+    # the contract) passed both truthy at once silently nulled out *both* --
+    # discarding a real resolved entity instead of keeping it. `entity` wins
+    # if that contract is ever violated, since a resolved entity is a
+    # stronger, more specific signal than a topic string.
     if entity:
+        next_entity = entity
         next_topic = None
+    elif topic:
+        next_entity = None
+        next_topic = ActiveTopic("medical_topic", topic)
+    else:
+        next_entity = state.active_entity
+        next_topic = state.active_topic
 
     return ConversationState(
         conversation_id=state.conversation_id,
