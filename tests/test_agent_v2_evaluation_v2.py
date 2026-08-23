@@ -1,5 +1,5 @@
-from types import SimpleNamespace
 import asyncio
+from types import SimpleNamespace
 
 from backend.agents.v2.evaluation_v2 import EvaluationPath, FallbackClassification, MetricStatus, dispatch_evaluation
 from backend.agents.v2.retrieval_eval import hit_at_k, mrr_at_k, ndcg_at_k

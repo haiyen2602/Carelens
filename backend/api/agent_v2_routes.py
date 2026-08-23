@@ -17,7 +17,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager
-from backend.agents.v2.evaluation_v2 import MetricStatus, dispatch_evaluation
 from backend.agents.v2.conversation_state import (
     ActiveEntity,
     SuggestedAction,
@@ -25,6 +24,7 @@ from backend.agents.v2.conversation_state import (
     resolve_state_input,
     transition_state,
 )
+from backend.agents.v2.evaluation_v2 import MetricStatus, dispatch_evaluation
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import OpenAIModelGateway
 from backend.agents.v2.observability import AgentTelemetry, ModelPricingCatalog

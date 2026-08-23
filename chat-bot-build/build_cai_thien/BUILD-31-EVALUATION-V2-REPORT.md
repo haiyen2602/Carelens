@@ -175,13 +175,13 @@ was implemented here.
 ## 18. Branch / Commit / PR
 
 - Branch: `feature/build-31-evaluation-v2`
-- Commit: `e94fc85` — `feat(evaluation): add pipeline-aware metrics`
-- Push: completed to `origin/feature/build-31-evaluation-v2`
-- PR: not created from this environment. `gh` is not installed and no
-  `GH_TOKEN`/`GITHUB_TOKEN` is configured. Create it from the pushed branch:
-  `https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/new/feature/build-31-evaluation-v2`.
+- Base: rebased onto `origin/main` `bd38eab` (BUILD-29D.3 included), with no conflicts.
+- Implementation commit: `71db176` — `feat(evaluation): add pipeline-aware metrics`
+- Validation/report commit before review follow-up: `4b2f92d` — `docs(evaluation): record validation handoff`
+- Push: completed to `origin/feature/build-31-evaluation-v2`.
+- PR: [#105](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/105), opened after push; no deploy or merge was performed.
 
-## 19. Release Gate
+## 19. Original BUILD-31 Release Gate (Historical — Superseded)
 
 | Gate | Status |
 |---|---|
@@ -205,13 +205,11 @@ REPORT CREATED:
 
 ## Pytest Teardown Root Cause and Fix
 
-The hang was not an Agent background thread, scheduler, async task, DB session,
-or telemetry worker. A one-assertion pure retrieval-metric test reproduced it.
-The isolated worktree is not writable by the execution sandbox: pytest's
-default `cacheprovider` could not complete `.pytest_cache` handling and kept
-the process consuming CPU after the test dots printed. Separately, DeepEval
-auto-load and direct import attempt to create `.deepeval` in the current
-directory.
+The initial worktree did not contain `.env`, while application settings load
+that file. The prior cacheprovider/DeepEval explanation was an observation in
+that incomplete sandbox setup, not a proven general root cause, and must not
+be read as an Agent teardown defect. Independent review reproduced a clean
+exit after adding a temporary local `.env` with fake test values.
 
 Validation command now uses a writable temporary cache, disables unrelated
 auto-loaded plugins, explicitly enables `pytest_asyncio`, and opts out of
@@ -223,9 +221,9 @@ DEEPEVAL_TELEMETRY_OPT_OUT=YES
 python -m pytest -p pytest_asyncio.plugin -o cache_dir=%TEMP%\\build31-pytest-cache ...
 ```
 
-This is not a kill workaround: a one-test run exited naturally with code `0`
-and `1 passed in 1.11s`; the Evaluation/RAG suite then exited naturally with
-code `0` and `18 passed in 0.25s`.
+This is not a kill workaround: tests use local-only explicit settings and a
+writable temporary cache. The post-rebase relevant suite exited naturally with
+code `0` and `743 passed, 3 skipped, 7 warnings in 16.28s`.
 
 ## Backend Regression Results
 
@@ -285,7 +283,7 @@ example `gan nhiem mo la gi`) requires a separate approval because the first
 orchestration call may already have consumed a paid model invocation. No
 additional external model call has been made without that approval.
 
-## BUILD-31.1 Final Gate (current)
+## BUILD-31.1 Intermediate Gate (Historical — Superseded)
 
 | Gate | Status |
 |---|---|
@@ -338,12 +336,13 @@ The local server was stopped after the verification. Its scheduler may have
 created only local Docker-copy checkpoint/handoff records; no production data
 was changed.
 
-## BUILD-31.1 Final Gate
+## BUILD-31 Authoritative Final Gate
 
 | Gate | Status |
 |---|---|
 | BUILD-31.1 | PASS |
 | PYTEST CLEAN EXIT | PASS |
+| FULL RELEVANT TEST SUITE | PASS — post-rebase: 743 passed, 3 skipped, 7 warnings |
 | BACKEND REGRESSION | PASS for BUILD-31 scope; four unrelated absent reset/email routes remain documented above |
 | FRONTEND ESLINT | PASS |
 | FRONTEND TYPECHECK | PASS |
@@ -355,9 +354,45 @@ was changed.
 | N/A != ZERO | PASS |
 | METRIC PROVENANCE | PASS |
 | CORRECT DENOMINATORS | PASS |
+| RUFF (new BUILD-31 findings) | PASS |
 | BUILD-29D.3 CONFLICT | NO |
 | READY FOR PR | YES |
 
 The original BUILD-31 release gate is therefore PASS for the agreed scope. No
 Agent response, Safety behavior, conversation state, or BUILD-29D.3 file was
 changed by BUILD-31.1 validation.
+
+## Review Follow-up: PR #105
+
+The branch was rebased onto `origin/main` at `bd38eab`, which includes
+BUILD-29D.3. The rebase completed without a conflict; no BUILD-29D.3 source
+file is changed by this branch. The two Ruff violations introduced by this
+branch (import ordering in `backend/api/agent_v2_routes.py` and the new test)
+were fixed. The eight remaining Ruff findings in
+`backend/api/rag_monitoring_routes.py` are pre-existing on `origin/main` and
+remain outside this BUILD-31 change.
+
+Post-rebase validation commands/results:
+
+```text
+python -m ruff check --no-cache backend/agents/v2/evaluation_v2.py backend/api/agent_v2_routes.py tests/test_agent_v2_evaluation_v2.py
+exit 0
+
+python -m pytest -p pytest_asyncio.plugin -o cache_dir=%TEMP%\\build31-pytest-cache -q <all test_agent_v2_*.py> tests/test_rag_telemetry.py tests/test_api/test_agent_feedback_routes.py tests/test_get_current_patient_id.py tests/test_chat_security_gate.py tests/test_personal_tools_isolation.py
+743 passed, 3 skipped, 7 warnings in 16.28s; exit 0
+
+npm.cmd exec -- eslint src/app/admin/rag/page.tsx
+exit 0
+
+npm.cmd exec -- tsc --noEmit
+exit 0
+
+npm.cmd run build
+exit 0
+```
+
+The earlier report tables remain only as historical snapshots. The
+authoritative status for review is the "BUILD-31 Authoritative Final Gate"
+above: BUILD-31 is PASS for scope, local validation is PASS, and the PR is
+ready for review only; production deployment remains prohibited until review
+and merge.
