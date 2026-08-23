@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.context import ContextBudget, ContextManager
+from backend.agents.v2.evaluation_v2 import MetricStatus, dispatch_evaluation
 from backend.agents.v2.conversation_state import (
     ActiveEntity,
     SuggestedAction,
@@ -317,6 +318,8 @@ def _record_agent_v2_telemetry(
             },
             tags=["agent_v2"],
         )
+        evaluation = dispatch_evaluation(result=result)
+        trace.metadata["evaluation_v2"] = evaluation.as_dict()
 
         tool_results = list(getattr(result, "tool_results", []) or [])
         retrieved_contexts: list[str] = []
@@ -348,9 +351,10 @@ def _record_agent_v2_telemetry(
         gen_obs = telemetry.start_observation(trace, name="generation.answer", obs_type="generation")
         telemetry.end_observation(gen_obs, output_data={"response": response_text})
 
-        if response_text:
+        if response_text and evaluation.metrics["answer_relevance"].status is MetricStatus.AVAILABLE:
             relevance = LLMJudgeEvaluator.evaluate_answer_relevance(request.message, response_text)
             telemetry.record_score(trace, relevance.score_name, relevance.value)
+        if response_text and evaluation.metrics["faithfulness"].status is MetricStatus.AVAILABLE:
             faithfulness = LLMJudgeEvaluator.evaluate_faithfulness(retrieved_contexts, response_text)
             telemetry.record_score(trace, faithfulness.score_name, faithfulness.value)
 
