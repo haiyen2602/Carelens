@@ -56,7 +56,11 @@ export type Dose = {
 export type Prescription = {
   id: string;
   orderId: string;
+  // Ten de HIEN THI; `patientId` de LOC/DOI CHIEU. Truoc 2026-08-23 chi co
+  // `patient` (ten) nen khong loc duoc phac do theo tap benh nhan dang theo
+  // doi - loc theo ten se sai ngay khi hai nguoi trung ten.
   patient: string;
+  patientId: string;
   med: string;
   dose: string;
   perDay: number;
@@ -309,6 +313,7 @@ export function flattenPrescriptions(
         id: `${p.id}${NOI_ID}${idx}`,
         orderId: p.id,
         patient: tenBenhNhan[p.patientId] ?? p.patientId,
+        patientId: p.patientId,
         med: item.tenThuoc,
         dose: item.lieuDung,
         perDay: item.gioNhac.length || 1,

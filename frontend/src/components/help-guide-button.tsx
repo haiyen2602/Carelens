@@ -95,9 +95,10 @@ const HUONG_DAN: Record<string, HuongDan> = {
     title: "Tổng quan thông tin",
     intro: "Báo cáo mức tuân thủ uống thuốc theo thời gian.",
     steps: [
-      "Chọn khoảng ngày để đổi phạm vi thống kê.",
+      "Chọn khoảng ngày ở góc phải — MỌI số liệu trên trang đều thuộc đúng kỳ đó, kể cả các thẻ ở đầu trang.",
       "Tỉ lệ tuân thủ tính trên các liều đã đến hạn — liều chưa tới giờ không bị tính là bỏ lỡ.",
-      "Bệnh nhân chưa có liều nào đến hạn sẽ hiện “—” chứ không phải 0%.",
+      "“Chưa có dữ liệu” là bệnh nhân không có liều nào đến hạn trong kỳ, không phải tuân thủ 0%.",
+      "Khi cả kỳ có quá ít liều, trang hiện số lượt thay vì phần trăm — tỉ lệ trên mẫu nhỏ dễ gây hiểu nhầm.",
     ],
   },
   "/doctor/profile": {

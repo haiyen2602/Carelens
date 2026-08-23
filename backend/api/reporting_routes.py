@@ -23,17 +23,20 @@ from backend.api.security import CurrentUser, require_role
 from backend.db.base import get_db
 from backend.db.models import AuditLog, DoctorWatch, DoseEvent, Escalation, Patient
 from backend.models.schemas import (
+    AdherenceBucketOut,
     AuditLogOut,
     DoseDayOut,
     DoseSummaryOut,
     EscalationOut,
     MissedWindowOut,
+    PatientAdherenceOut,
     PatientWatchOut,
     PatientWatchUpdateRequest,
+    PeriodTotalsOut,
     ReportingPatientOut,
 )
 from backend.services.audit import log_action, patient_label
-from backend.services.reporting.adherence import compute_adherence_pct
+from backend.services.reporting.adherence import compute_adherence_pct, ty_le_tuan_thu
 
 reporting_router = APIRouter()
 
@@ -73,6 +76,21 @@ _TRANG_THAI_CO_KET_QUA = ("TAKEN", "DELAYED", "MISSED")
 
 _SO_NGAY_MAC_DINH = 7
 _SO_NGAY_TOI_DA = 90
+
+# Nguong chia nhom tuan thu - xep tu CAO xuong THAP, tra ve nhom dau tien
+# khop (>= nguong). Dinh nghia o backend de trang bao cao va moi cho khac
+# doc cung mot bang, khong moi noi tu che nguong rieng.
+_NHOM_TUAN_THU = (
+    ("good", "Tuân thủ tốt", 90.0),
+    ("fair", "Trung bình", 70.0),
+    ("poor", "Kém", 50.0),
+    ("bad", "Rất kém", 0.0),
+)
+# Nhom rieng cho benh nhan chua co lieu nao den han trong ky - KHONG phai
+# "tuan thu 0%", va thuong la nhom dong nhat nen phai thay duoc tren bieu do.
+_NHOM_CHUA_CO = ("no_data", "Chưa có dữ liệu")
+
+_NGUONG_NGUY_CO_CAO = 75.0
 
 
 @reporting_router.get(
@@ -189,21 +207,33 @@ def get_dose_summary(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_role("doctor", "admin")),
 ) -> DoseSummaryOut:
-    """Gop du lieu cho 2 bieu do o trang "Tổng quan thông tin" cua bac si:
-    tinh trang lieu theo tung ngay, va so lieu bo lo theo khung gio.
+    """MOT nguon duy nhat cho ca trang "Tổng quan thông tin" cua bac si.
 
-    Gop 1 endpoint vi ca hai deu quet CUNG mot tap DoseEvent - tach ra thanh
-    2 endpoint se doc bang hai lan de ve cung mot man hinh.
+    Gop het vao 1 endpoint vi tat ca deu quet CUNG mot tap DoseEvent, va vi
+    ly do quan trong hon: moi con so tren trang phai thuoc DUNG mot ky. Truoc
+    2026-08-23 the "Tuan thu trung binh" tinh tren toan bo lich su con cac
+    bieu do canh no chi 7 ngay - trang bao "1.46%" trong khi 6/7 ngay khong
+    co lieu nao, hai so do khong the cung dan toi mot quyet dinh.
+
+    Luu y ve moc thoi gian - hai cach quy ky, co chu dich:
+    - Bieu do theo ngay/khung gio dung `scheduled_at`: 1 lieu thuoc ve NGAY
+      NO DUOC HEN, do la thu bac si hinh dung khi nhin cot ngay.
+    - Tuan thu dung `window_end`: 1 lieu chi vao mau khi da HET HAN xac nhan,
+      cung dinh nghia "da den han" cua compute_adherence_pct().
     """
     patient_ids = _benh_nhan_trong_pham_vi(db, current_user)
 
     # Moc dau: 00:00 gio Viet Nam cua ngay dau tien trong khoang, doi nguoc
     # ve UTC de so sanh voi cot scheduled_at.
-    bay_gio_vn = datetime.now(UTC) + _GIO_VN
+    bay_gio = datetime.now(UTC)
+    bay_gio_vn = bay_gio + _GIO_VN
     ngay_dau_vn = (bay_gio_vn - timedelta(days=days - 1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     moc_dau_utc = ngay_dau_vn - _GIO_VN
+    # Ky lien truoc: dai bang dung ky hien tai va ke sat phia truoc, de mui
+    # ten tang/giam so cung mot do dai thoi gian.
+    moc_dau_ky_truoc_utc = moc_dau_utc - timedelta(days=days)
 
     # Khung ngay LUON du `days` dong ke ca ngay khong co lieu nao - bieu do
     # thieu ngay se lam nguoi doc tuong hom do khong co du lieu, trong khi that
@@ -215,30 +245,62 @@ def get_dose_summary(
     dem_theo_khung = {key: 0 for key, _, _, _ in _KHUNG_GIO}
     dem_theo_khung[_KHUNG_TOI[0]] = 0
 
+    # Tuan thu theo tung benh nhan, cho CA ky hien tai va ky lien truoc.
+    # Dem trong Python tren 1 lan quet thay vi goi compute_adherence_pct()
+    # cho tung nguoi: voi 67 benh nhan x 2 ky se thanh 134 truy van rieng.
+    ky_nay: dict[str, dict[str, int]] = {}
+    ky_truoc = {"due": 0, "taken": 0, "delayed": 0, "missed": 0}
+
     # patient_ids == [] (bac si chua theo doi ai) thi bo qua truy van luon -
     # `IN ()` rong vua vo nghia vua khien Postgres quet ca bang.
     if patient_ids is None or patient_ids:
-        query = select(DoseEvent.scheduled_at, DoseEvent.status).where(
-            DoseEvent.scheduled_at >= moc_dau_utc,
+        query = select(
+            DoseEvent.patient_id,
+            DoseEvent.scheduled_at,
+            DoseEvent.window_end,
+            DoseEvent.status,
+        ).where(
             DoseEvent.status.in_(_TRANG_THAI_CO_KET_QUA),
+            or_(
+                DoseEvent.scheduled_at >= moc_dau_utc,
+                DoseEvent.window_end >= moc_dau_ky_truoc_utc,
+            ),
         )
         if patient_ids is not None:
             query = query.where(DoseEvent.patient_id.in_(patient_ids))
 
-        for scheduled_at, status in db.execute(query).all():
-            # scheduled_at tu Postgres la timezone-aware; ep ve UTC truoc khi
-            # cong lech gio de khong phu thuoc vao mui gio cua may chay app.
+        for patient_id, scheduled_at, window_end, status in db.execute(query).all():
+            # Cot tu Postgres la timezone-aware; ep ve UTC truoc khi cong lech
+            # gio de khong phu thuoc mui gio cua may chay app.
             luc_vn = scheduled_at.astimezone(UTC) + _GIO_VN
             ngay = luc_vn.strftime("%Y-%m-%d")
             if ngay in dem_theo_ngay:
                 dem_theo_ngay[ngay][status] += 1
 
-            if status == "MISSED":
-                gio = luc_vn.hour
-                khung = next(
-                    (key for key, _, tu, den in _KHUNG_GIO if tu <= gio < den), _KHUNG_TOI[0]
-                )
-                dem_theo_khung[khung] += 1
+                if status == "MISSED":
+                    gio = luc_vn.hour
+                    khung = next(
+                        (key for key, _, tu, den in _KHUNG_GIO if tu <= gio < den), _KHUNG_TOI[0]
+                    )
+                    dem_theo_khung[khung] += 1
+
+            # Tuan thu: chi tinh lieu DA HET HAN xac nhan (window_end da qua).
+            het_han = window_end.astimezone(UTC)
+            if het_han > bay_gio:
+                continue
+            if het_han >= moc_dau_utc:
+                cua_benh_nhan = ky_nay.setdefault(patient_id, {"due": 0, "taken": 0})
+                cua_benh_nhan["due"] += 1
+                if status == "TAKEN":
+                    cua_benh_nhan["taken"] += 1
+            elif het_han >= moc_dau_ky_truoc_utc:
+                ky_truoc["due"] += 1
+                if status == "TAKEN":
+                    ky_truoc["taken"] += 1
+                elif status == "DELAYED":
+                    ky_truoc["delayed"] += 1
+                else:
+                    ky_truoc["missed"] += 1
 
     daily = [
         DoseDayOut(
@@ -255,13 +317,81 @@ def get_dose_summary(
         for key, label, _, _ in _KHUNG_GIO
     ] + [MissedWindowOut(key=_KHUNG_TOI[0], label=_KHUNG_TOI[1], missed=dem_theo_khung[_KHUNG_TOI[0]])]
 
-    patient_count = (
-        db.query(Patient).count() if patient_ids is None else len(patient_ids)
-    )
+    # Ten benh nhan de danh sach "can uu tien" doc duoc ngay, khong bat
+    # frontend ghep lai tu mot nguon khac (nguon do co the la tap benh nhan
+    # KHAC voi pham vi dang thong ke).
+    if patient_ids is None:
+        ho_so = db.execute(select(Patient)).scalars().all()
+    else:
+        ho_so = (
+            db.execute(select(Patient).where(Patient.id.in_(patient_ids))).scalars().all()
+            if patient_ids
+            else []
+        )
+
+    benh_nhan: list[PatientAdherenceOut] = []
+    for p in ho_so:
+        so_lieu = ky_nay.get(p.id, {"due": 0, "taken": 0})
+        benh_nhan.append(
+            PatientAdherenceOut(
+                patient_id=p.id,
+                full_name=p.full_name,
+                note=p.note,
+                adherence_pct=ty_le_tuan_thu(so_lieu["taken"], so_lieu["due"]),
+                due=so_lieu["due"],
+                taken=so_lieu["taken"],
+            )
+        )
+    # Thap nhat len truoc, benh nhan chua co du lieu xuong cuoi - danh sach
+    # nay de bac si biet xem ai truoc, nguoi chua co so lieu thi chua co gi
+    # de uu tien.
+    benh_nhan.sort(key=lambda b: (b.adherence_pct is None, b.adherence_pct or 0))
+
+    co_du_lieu = [b for b in benh_nhan if b.adherence_pct is not None]
+    dem_nhom = {key: 0 for key, _, _ in _NHOM_TUAN_THU}
+    dem_nhom[_NHOM_CHUA_CO[0]] = len(benh_nhan) - len(co_du_lieu)
+    for b in co_du_lieu:
+        key = next(k for k, _, nguong in _NHOM_TUAN_THU if (b.adherence_pct or 0) >= nguong)
+        dem_nhom[key] += 1
+
+    tong_den_han = sum(b.due for b in benh_nhan)
+    tong_uong = sum(b.taken for b in benh_nhan)
 
     return DoseSummaryOut(
         days=days,
-        patient_count=patient_count,
+        from_date=ngay_theo_thu_tu[0],
+        to_date=ngay_theo_thu_tu[-1],
+        patient_count=len(benh_nhan),
+        with_data_count=len(co_du_lieu),
+        without_data_count=len(benh_nhan) - len(co_du_lieu),
+        high_risk_count=sum(1 for b in co_du_lieu if (b.adherence_pct or 0) < _NGUONG_NGUY_CO_CAO),
+        current=PeriodTotalsOut(
+            # Trung binh tinh tren TONG SO LIEU cua ca nhom, khong phai trung
+            # binh cong cua tung ty le: benh nhan co 1 lieu va benh nhan co
+            # 200 lieu khong the co cung trong so trong mot con so tong hop.
+            average_adherence_pct=ty_le_tuan_thu(tong_uong, tong_den_han),
+            due=tong_den_han,
+            taken=sum(d.taken for d in daily),
+            delayed=sum(d.delayed for d in daily),
+            missed=sum(d.missed for d in daily),
+        ),
+        previous=PeriodTotalsOut(
+            average_adherence_pct=ty_le_tuan_thu(ky_truoc["taken"], ky_truoc["due"]),
+            due=ky_truoc["due"],
+            taken=ky_truoc["taken"],
+            delayed=ky_truoc["delayed"],
+            missed=ky_truoc["missed"],
+        ),
+        buckets=[
+            AdherenceBucketOut(key=key, label=label, count=dem_nhom[key])
+            for key, label, _ in _NHOM_TUAN_THU
+        ]
+        + [
+            AdherenceBucketOut(
+                key=_NHOM_CHUA_CO[0], label=_NHOM_CHUA_CO[1], count=dem_nhom[_NHOM_CHUA_CO[0]]
+            )
+        ],
+        patients=benh_nhan,
         daily=daily,
         missed_by_window=missed_by_window,
     )

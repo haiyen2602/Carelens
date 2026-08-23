@@ -20,20 +20,39 @@ from sqlalchemy.orm import Session
 from backend.db.models import DoseEvent
 
 
-def compute_adherence_pct(db: Session, patient_id: str, *, now: datetime | None = None) -> float | None:
+def ty_le_tuan_thu(taken: int, due: int) -> float | None:
+    """Cong thuc chung, tach ra de moi noi tinh tuan thu deu dung DUNG mot
+    phep chia - ke ca cho tinh theo lo (vd ca trang bao cao trong 1 truy van,
+    xem reporting_routes.py::get_dose_summary) chu khong chi tinh tung nguoi.
+
+    None khi due == 0: chua co lieu nao den han thi CHUA KET LUAN duoc, khac
+    han "0% tuan thu"."""
+    if due <= 0:
+        return None
+    return (taken / due) * 100
+
+
+def compute_adherence_pct(
+    db: Session,
+    patient_id: str,
+    *,
+    now: datetime | None = None,
+    since: datetime | None = None,
+) -> float | None:
     """Tra ve None (KHONG phai 0.0) neu benh nhan chua co lieu nao den han -
-    chua co du lieu de ket luan, khong phai "0% tuan thu"."""
+    chua co du lieu de ket luan, khong phai "0% tuan thu".
+
+    `since` (THEM 2026-08-23) gioi han xuong CHI cac lieu den han TU moc do -
+    truoc day ham nay luon tinh tu truoc toi nay, nen the "Tuan thu trung
+    binh" o trang bao cao bi cac lieu cu ton dong quyet dinh, trong khi cac
+    bieu do canh no chi noi ve 7 ngay. Bo trong `since` giu nguyen hanh vi cu
+    (toan bo lich su) cho cac man hinh dang goi san."""
     reference_time = now or datetime.now(UTC)
 
-    due_events = db.execute(
-        select(DoseEvent.status).where(
-            DoseEvent.patient_id == patient_id,
-            DoseEvent.window_end <= reference_time,
-        )
-    ).scalars().all()
+    dieu_kien = [DoseEvent.patient_id == patient_id, DoseEvent.window_end <= reference_time]
+    if since is not None:
+        dieu_kien.append(DoseEvent.window_end >= since)
 
-    if not due_events:
-        return None
+    due_events = db.execute(select(DoseEvent.status).where(*dieu_kien)).scalars().all()
 
-    taken_count = sum(1 for status in due_events if status == "TAKEN")
-    return (taken_count / len(due_events)) * 100
+    return ty_le_tuan_thu(sum(1 for s in due_events if s == "TAKEN"), len(due_events))

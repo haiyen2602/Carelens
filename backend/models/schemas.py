@@ -914,16 +914,70 @@ class MissedWindowOut(BaseModel):
     missed: int
 
 
-class DoseSummaryOut(BaseModel):
-    """GET /api/v1/reporting/dose-summary - gop 2 bieu do vao 1 lan goi vi ca
-    hai deu quet CUNG mot tap DoseEvent, tach ra se doc bang hai lan.
+class AdherenceBucketOut(BaseModel):
+    """1 nhom trong bieu do "Phan bo muc tuan thu". `key="no_data"` la nhom
+    benh nhan CHUA co lieu nao den han trong ky - truoc day nhom nay chi nam
+    o mot dong chu nho duoi tieu de, trong khi thuc te no thuong la nhom DONG
+    NHAT (vd 53/67), tuc bieu do dang giau di phan lon benh nhan."""
 
-    `patient_count` = so benh nhan nam trong pham vi thong ke, de giao dien
-    phan biet "khong co lieu nao" voi "chua theo doi benh nhan nao" - hai
-    tinh huong nay deu cho bieu do rong nhung loi khuyen cho bac si khac han."""
+    key: str  # good|fair|poor|bad|no_data
+    label: str
+    count: int
+
+
+class PatientAdherenceOut(BaseModel):
+    """Tuan thu cua 1 benh nhan TRONG KY dang xem (khong phai tu truoc toi
+    nay). `adherence_pct=None` = chua co lieu nao den han trong ky.
+
+    `due` di kem de giao dien biet mau to hay nho: "bo lo 100%" cua 1 lieu va
+    cua 200 lieu la hai cau chuyen khac han nhau."""
+
+    patient_id: str
+    full_name: str
+    note: str | None = None
+    adherence_pct: float | None = None
+    due: int
+    taken: int
+
+
+class PeriodTotalsOut(BaseModel):
+    """Tong hop CA KY - dung cho ky hien tai lan ky lien truoc (so sanh xu
+    huong). Ky truoc dai dung bang ky hien tai va ke sat phia truoc, de mui
+    ten tang/giam so cung do dai thoi gian."""
+
+    average_adherence_pct: float | None = None
+    due: int
+    taken: int
+    delayed: int
+    missed: int
+
+
+class DoseSummaryOut(BaseModel):
+    """GET /api/v1/reporting/dose-summary - MOT nguon duy nhat cho ca trang
+    "Tong quan thong tin", gop lai vi tat ca deu quet CUNG mot tap DoseEvent.
+
+    Vi sao gop het vao day thay vi de frontend tu tinh tu `patients`: truoc
+    2026-08-23 the "Tuan thu trung binh" lay tu compute_adherence_pct() -
+    tinh tren TOAN BO lieu tu truoc toi nay - con cac bieu do ben canh chi
+    7 ngay. Hai con so canh nhau nhung khac cua so thoi gian, khong dong nao
+    noi cho nguoi doc biet, nen trang vua bao "1.46%" vua cho thay "6/7 ngay
+    khong co lieu nao". Gio moi so lieu tren trang deu thuoc DUNG mot ky.
+
+    `patient_count` = so benh nhan trong pham vi, de giao dien phan biet
+    "khong co lieu nao" voi "chua theo doi benh nhan nao" - hai tinh huong
+    deu cho bieu do rong nhung loi khuyen cho bac si khac han."""
 
     days: int
+    from_date: str  # YYYY-MM-DD, gio Viet Nam
+    to_date: str
     patient_count: int
+    with_data_count: int
+    without_data_count: int
+    high_risk_count: int
+    current: PeriodTotalsOut
+    previous: PeriodTotalsOut
+    buckets: list[AdherenceBucketOut]
+    patients: list[PatientAdherenceOut]
     daily: list[DoseDayOut]
     missed_by_window: list[MissedWindowOut]
 
