@@ -1,12 +1,11 @@
 """Admin Monitoring & RAG Observability API endpoints.
 Conforms to docs/langfuse_rag_admin_monitoring_spec.md §15, §17, §25, §26.
-100% Real Data Driven: computed strictly from Database (AuditLog, Escalation, DrugChunk, ChatMessage)
+100% Real Data Driven: computed strictly from Database (AuditLog, Escalation, DrugChunk)
 and in-memory/Langfuse Telemetry Traces without synthetic mock data.
 """
 
 from __future__ import annotations
 
-import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Session
 from backend.api.security import CurrentUser, require_role
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import AuditLog, ChatMessage, DrugChunk, Escalation
+from backend.db.models import AuditLog, DrugChunk, Escalation
 from backend.services.telemetry import get_local_traces
 
 rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitoring"])
@@ -173,7 +172,7 @@ async def get_rag_health(
     # Latencies
     latencies = [t.duration_ms for t in traces if t.duration_ms > 0]
     if not latencies and audit_logs:
-        latencies = [l.total_duration_ms for l in audit_logs if l.total_duration_ms > 0]
+        latencies = [audit_log.total_duration_ms for audit_log in audit_logs if audit_log.total_duration_ms > 0]
 
     p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0.0
 
@@ -191,7 +190,9 @@ async def get_rag_health(
         day_end = day_start + timedelta(days=1)
         day_str = day_start.strftime("%d/%m")
 
-        day_logs = [l for l in audit_logs if l.created_at and day_start <= l.created_at < day_end]
+        day_logs = [
+            audit_log for audit_log in audit_logs if audit_log.created_at and day_start <= audit_log.created_at < day_end
+        ]
         day_traces = [
             t for t in traces
             if day_start.timestamp() <= t.start_time < day_end.timestamp()
@@ -199,7 +200,9 @@ async def get_rag_health(
 
         day_faith = _available_metric_scores(day_traces, "faithfulness")
         day_rel = _available_metric_scores(day_traces, "answer_relevance")
-        day_lats = [t.duration_ms for t in day_traces if t.duration_ms > 0] or [l.total_duration_ms for l in day_logs if l.total_duration_ms > 0]
+        day_lats = [t.duration_ms for t in day_traces if t.duration_ms > 0] or [
+            audit_log.total_duration_ms for audit_log in day_logs if audit_log.total_duration_ms > 0
+        ]
 
         trend.append({
             "date": day_str,
@@ -462,7 +465,9 @@ async def get_rag_system(
         else []
     )
 
-    latencies = [t.duration_ms for t in traces if t.duration_ms > 0] or [l.total_duration_ms for l in audit_logs if l.total_duration_ms > 0]
+    latencies = [t.duration_ms for t in traces if t.duration_ms > 0] or [
+        audit_log.total_duration_ms for audit_log in audit_logs if audit_log.total_duration_ms > 0
+    ]
 
     p50 = sorted(latencies)[int(len(latencies) * 0.50)] if latencies else 0.0
     p95 = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0.0
@@ -477,9 +482,9 @@ async def get_rag_system(
 
     # Fallback to persisted AuditLog steps if in-memory trace buffer is empty/cold
     if not step_totals and audit_logs:
-        for l in audit_logs:
-            if isinstance(l.trace, list):
-                for step in l.trace:
+        for audit_log in audit_logs:
+            if isinstance(audit_log.trace, list):
+                for step in audit_log.trace:
                     if isinstance(step, dict):
                         s_name = f"step.{step.get('step', 'step')}"
                         s_dur = float(step.get("duration_ms") or 0.0)
@@ -548,15 +553,15 @@ async def get_rag_traces(
     # every other endpoint in this file).
     if not results and chatbot_version in (None, "all", "legacy") and not model and not prompt_version:
         logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(50).all()
-        for l in logs:
+        for audit_log in logs:
             results.append({
-                "trace_id": f"db_{l.id[:8]}",
-                "timestamp": l.created_at.isoformat() if l.created_at else datetime.now(UTC).isoformat(),
-                "session_id": f"session_{l.patient_id}",
-                "query_preview": l.utterance,
-                "final_answer": l.final_response,
+                "trace_id": f"db_{audit_log.id[:8]}",
+                "timestamp": audit_log.created_at.isoformat() if audit_log.created_at else datetime.now(UTC).isoformat(),
+                "session_id": f"session_{audit_log.patient_id}",
+                "query_preview": audit_log.utterance,
+                "final_answer": audit_log.final_response,
                 "status": "success",
-                "latency_ms": round(l.total_duration_ms, 1),
+                "latency_ms": round(audit_log.total_duration_ms, 1),
                 "faithfulness": 0.0,
                 "relevance": 0.0,
                 "chatbot_version": "legacy",

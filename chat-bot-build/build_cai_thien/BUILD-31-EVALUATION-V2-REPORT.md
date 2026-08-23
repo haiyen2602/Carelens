@@ -354,7 +354,7 @@ was changed.
 | N/A != ZERO | PASS |
 | METRIC PROVENANCE | PASS |
 | CORRECT DENOMINATORS | PASS |
-| RUFF (new BUILD-31 findings) | PASS |
+| RUFF (`rag_monitoring_routes.py` and new BUILD-31 files) | PASS |
 | BUILD-29D.3 CONFLICT | NO |
 | READY FOR PR | YES |
 
@@ -368,9 +368,10 @@ The branch was rebased onto `origin/main` at `bd38eab`, which includes
 BUILD-29D.3. The rebase completed without a conflict; no BUILD-29D.3 source
 file is changed by this branch. The two Ruff violations introduced by this
 branch (import ordering in `backend/api/agent_v2_routes.py` and the new test)
-were fixed. The eight remaining Ruff findings in
-`backend/api/rag_monitoring_routes.py` are pre-existing on `origin/main` and
-remain outside this BUILD-31 change.
+were fixed. The eight pre-existing Ruff findings in
+`backend/api/rag_monitoring_routes.py` were also cleaned up in a subsequent
+no-behavior-change refactor: unused imports were removed and ambiguous `l`
+variables were renamed to `audit_log`.
 
 Post-rebase validation commands/results:
 
@@ -389,6 +390,12 @@ exit 0
 
 npm.cmd run build
 exit 0
+
+python -m ruff check --no-cache backend/api/rag_monitoring_routes.py
+All checks passed
+
+python -m pytest -p pytest_asyncio.plugin -o cache_dir=%TEMP%\\build31-pytest-cache -q tests/test_agent_v2_evaluation_v2.py tests/test_agent_v2_rag_evaluation.py tests/test_rag_telemetry.py
+18 passed in 0.08s; exit 0
 ```
 
 The earlier report tables remain only as historical snapshots. The
