@@ -142,32 +142,110 @@ export type MissedWindow = {
   missed: number;
 };
 
+export type AdherenceBucket = {
+  key: string;
+  label: string;
+  count: number;
+};
+
+export type PatientAdherence = {
+  patientId: string;
+  fullName: string;
+  note: string | null;
+  adherencePct: number | null;
+  due: number;
+  taken: number;
+};
+
+export type PeriodTotals = {
+  averageAdherencePct: number | null;
+  due: number;
+  taken: number;
+  delayed: number;
+  missed: number;
+};
+
 export type DoseSummary = {
   days: number;
+  fromDate: string;
+  toDate: string;
   patientCount: number;
+  withDataCount: number;
+  withoutDataCount: number;
+  highRiskCount: number;
+  current: PeriodTotals;
+  previous: PeriodTotals;
+  buckets: AdherenceBucket[];
+  patients: PatientAdherence[];
   daily: DoseDay[];
   missedByWindow: MissedWindow[];
 };
 
-export async function getDoseSummary(
-  accessToken: string,
-  days = 7,
-): Promise<DoseSummary> {
-  const response = await fetch(
-    `${API_BASE}/api/v1/reporting/dose-summary?days=${days}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
+type PeriodTotalsApi = {
+  average_adherence_pct: number | null;
+  due: number;
+  taken: number;
+  delayed: number;
+  missed: number;
+};
+
+function toPeriodTotals(p: PeriodTotalsApi): PeriodTotals {
+  return {
+    averageAdherencePct: p.average_adherence_pct,
+    due: p.due,
+    taken: p.taken,
+    delayed: p.delayed,
+    missed: p.missed,
+  };
+}
+
+export async function getDoseSummary(accessToken: string, days = 7): Promise<DoseSummary> {
+  const response = await fetch(`${API_BASE}/api/v1/reporting/dose-summary?days=${days}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
   if (!response.ok) return loi(response);
   const data: {
     days: number;
+    from_date: string;
+    to_date: string;
     patient_count: number;
+    with_data_count: number;
+    without_data_count: number;
+    high_risk_count: number;
+    current: PeriodTotalsApi;
+    previous: PeriodTotalsApi;
+    buckets: AdherenceBucket[];
+    patients: {
+      patient_id: string;
+      full_name: string;
+      note: string | null;
+      adherence_pct: number | null;
+      due: number;
+      taken: number;
+    }[];
     daily: DoseDay[];
     missed_by_window: MissedWindow[];
   } = await response.json();
 
   return {
     days: data.days,
+    fromDate: data.from_date,
+    toDate: data.to_date,
     patientCount: data.patient_count,
+    withDataCount: data.with_data_count,
+    withoutDataCount: data.without_data_count,
+    highRiskCount: data.high_risk_count,
+    current: toPeriodTotals(data.current),
+    previous: toPeriodTotals(data.previous),
+    buckets: data.buckets,
+    patients: data.patients.map((p) => ({
+      patientId: p.patient_id,
+      fullName: p.full_name,
+      note: p.note,
+      adherencePct: p.adherence_pct,
+      due: p.due,
+      taken: p.taken,
+    })),
     daily: data.daily,
     missedByWindow: data.missed_by_window,
   };
