@@ -228,6 +228,13 @@ _SEVERE_REACTION_KEYWORDS = (
 # BUILD-29F red flags used by the deterministic Safety entry point. These
 # are symptom-level escalation cues, not diagnoses and not a replacement for
 # the Safety Domain's authority.
+#
+# "non ra mau" (nôn ra máu / vomiting blood) is deliberately NOT repeated
+# here: _SEVERE_REACTION_KEYWORDS above already matches it and is checked
+# first in _detect_acute_danger(), so a duplicate entry here would be dead
+# code that only invites the two lists to drift apart later. If a future
+# change ever makes this list checked independently of severe-reaction
+# keywords, add it back explicitly rather than relying on check order.
 _TRIAGE_RED_FLAG_MARKERS = (
     "kho tho",
     "dau nguc",
@@ -236,7 +243,6 @@ _TRIAGE_RED_FLAG_MARKERS = (
     "liet mot ben",
     "noi kho",
     "co giat",
-    "non ra mau",
     "dau dau dot ngot du doi",
 )
 _SAFETY_BYPASS_KEYWORDS = (

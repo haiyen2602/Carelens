@@ -330,6 +330,36 @@ changes exactly 5 backend files, none of which are implicated in any of the
   this build.
 - Real production app chat was not run; no deployment was performed.
 
+## 16.1 Code Review, Round 1 (post-push)
+
+Two findings raised against the pushed commit:
+
+1. **Not a bug — false positive, verified empirically.** The claim that
+   `_PROPOSED_DOSE_RE`'s `.{0,30}` quantifiers could cause catastrophic
+   (exponential) backtracking on a crafted long string does not hold for
+   this pattern: every quantifier is bounded (`{0,30}`, not `.+`/`.*`), and
+   there is no nested/ambiguous quantifier structure (e.g. `(a+)+`) that
+   would create multiple ways to match the same substring. Confirmed with a
+   standalone benchmark — search time scales linearly with input length
+   (100 → 500,000 chars: 0.02ms → 66ms) and stays linear even against a
+   repeated near-miss adversarial string (165,000 chars in 12.6ms). The
+   incoming `message` field is additionally already bounded to 5,000
+   characters by `AgentV2OrchestrateRequest` (`schemas.py`,
+   `max_length=5000`) before this code ever runs. No code change.
+2. **Confirmed, fixed.** `"non ra mau"` (nôn ra máu / vomiting blood) was
+   listed in both `_SEVERE_REACTION_KEYWORDS` and the new
+   `_TRIAGE_RED_FLAG_MARKERS`. Since `_detect_acute_danger()` checks
+   `_SEVERE_REACTION_KEYWORDS` first, the entry in `_TRIAGE_RED_FLAG_MARKERS`
+   was provably dead code in the current check order — real duplication,
+   not just cosmetic, and exactly the kind of thing that silently drifts if
+   the two lists' escalation logic is ever split apart later. Removed the
+   duplicate entry from `_TRIAGE_RED_FLAG_MARKERS` and added a comment
+   explaining why it isn't repeated there. Re-verified: 24/24 targeted tests
+   still pass, a direct call to `_detect_acute_danger("tôi vừa nôn ra
+   máu")` still returns `True` (via `_SEVERE_REACTION_KEYWORDS`, unchanged
+   behavior), 129/129 in the broader router/safety/acute-danger regression
+   sweep, `ruff check` clean.
+
 ## 17. Files Changed
 
 - `backend/agents/v2/orchestrator.py`
