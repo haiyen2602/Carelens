@@ -1,6 +1,4 @@
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS } from "../login/route";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -23,9 +21,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { refresh_token: refreshToken, ...clientSafeData } = data;
-  const cookieStore = await cookies();
-  cookieStore.set(REFRESH_COOKIE_NAME, refreshToken, REFRESH_COOKIE_OPTIONS);
+  // KHÔNG set refresh_token cookie khi đăng ký vì tài khoản chưa xác thực email
+  // (tránh tự động tạo phiên đăng nhập trước khi người dùng nhấp liên kết kích hoạt email).
+  const { refresh_token: _refreshToken, ...clientSafeData } = data;
 
   return NextResponse.json(clientSafeData, { status: 201 });
 }
+
