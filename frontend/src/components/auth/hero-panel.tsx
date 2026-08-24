@@ -16,7 +16,7 @@ export function HeroPanel() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[clamp(320px,32vw,520px)] w-[clamp(320px,32vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.07] blur-3xl" />
 
         <MascotSpeech
-          text="Uống thuốc đúng giờ, người nhà bớt lo 💙"
+          text="Uống thuốc an toàn, người nhà an tâm ❤️✨"
           className="relative z-10 max-w-[min(100%,26rem)]"
         />
 

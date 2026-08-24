@@ -14,6 +14,11 @@ export type CaregiverLink = {
   id: string;
   caregiverAccountId: string;
   caregiverName: string;
+  // Cach lien lac DUY NHAT toi nguoi than ma he thong luu - khong co cot so
+  // dien thoai o ca caregiver_link lan account. Chi co trong response cua
+  // GET ?patient_id= (POST /caregiver-links tra ve CaregiverLinkOut khong kem
+  // email), nen van la nullable.
+  caregiverEmail: string | null;
   relationship: string;
   createdAt: string;
   status: "pending" | "accepted";
@@ -23,6 +28,7 @@ type CaregiverLinkApi = {
   id: string;
   caregiver_account_id: string;
   caregiver_name: string;
+  caregiver_email?: string | null;
   relationship: string;
   created_at: string;
   status: "pending" | "accepted";
@@ -103,6 +109,7 @@ function toCaregiverLink(l: CaregiverLinkApi): CaregiverLink {
     id: l.id,
     caregiverAccountId: l.caregiver_account_id,
     caregiverName: l.caregiver_name,
+    caregiverEmail: l.caregiver_email ?? null,
     relationship: l.relationship,
     createdAt: l.created_at,
     status: l.status,

@@ -2,6 +2,8 @@
 // Cung ly do ton tai voi app/api/chat/route.ts: backend doi header
 // X-Internal-Secret, khong gan duoc o trinh duyet.
 
+import { kemAuthNeuCo } from "@/lib/forward-auth";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const INTERNAL_SECRET = process.env.INTERNAL_AUTH_SECRET;
 
@@ -33,7 +35,10 @@ export async function POST(request: Request) {
   const body = await request.text();
   const upstream = await fetch(`${BACKEND_URL}/api/v1/prescriptions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Internal-Secret": INTERNAL_SECRET },
+    headers: kemAuthNeuCo(request, {
+      "Content-Type": "application/json",
+      "X-Internal-Secret": INTERNAL_SECRET,
+    }),
     body,
   });
 

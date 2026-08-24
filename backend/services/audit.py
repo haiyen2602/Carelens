@@ -11,7 +11,22 @@ from typing import Any
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from backend.db.models import Account, SystemAuditLog
+from backend.db.models import Account, Patient, SystemAuditLog
+
+
+def patient_label(db: Session, patient_id: str | None) -> str | None:
+    """Tên bệnh nhân kèm mã, dùng làm `target` cho nhật ký.
+
+    Đọc tên NGAY lúc ghi log thay vì tra lại khi hiển thị: nhật ký là bản ghi
+    của thời điểm thao tác, nếu về sau bệnh nhân đổi tên (hoặc hồ sơ bị xoá)
+    thì dòng nhật ký cũ vẫn phải đọc được đúng như lúc nó xảy ra.
+    """
+    if not patient_id:
+        return None
+    patient = db.get(Patient, patient_id)
+    if patient is None or not patient.full_name:
+        return patient_id
+    return f"{patient.full_name} ({patient_id})"
 
 
 def get_actor_display_name(db: Session, user_id: str | None, default_role: str = "admin") -> str:
@@ -45,16 +60,54 @@ def log_system_event(
     return entry
 
 
+def log_action(
+    db: Session,
+    current_user: Any | None,
+    action: str,
+    target: str | None = None,
+) -> SystemAuditLog | None:
+    """Bọc log_system_event() cho các route đã có CurrentUser từ JWT.
+
+    Trả None (KHÔNG ghi gì) khi không biết người gọi là ai - một dòng nhật ký
+    không quy được trách nhiệm cho ai thì tệ hơn là không có dòng nào, vì nó
+    làm người đọc tưởng đã kiểm chứng được hành động đó.
+
+    KHÔNG commit - để nguyên trong transaction của route, đúng tinh thần
+    "nhật ký ghi cùng lúc với thay đổi dữ liệu, hoặc không ghi gì cả": nếu
+    route rollback thì dòng nhật ký cũng biến mất theo, không còn lại lời
+    khai về một thao tác chưa từng xảy ra.
+    """
+    if current_user is None:
+        return None
+    return log_system_event(
+        db,
+        actor_id=current_user.id,
+        actor_name=get_actor_display_name(db, current_user.id, default_role=current_user.role),
+        actor_role=current_user.role,
+        action=action,
+        target=target,
+    )
+
+
 def list_system_audit_logs(
     db: Session,
     *,
     q: str | None = None,
     role: str | None = None,
+    actor_id: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    """Truy vấn danh sách audit log có phân trang, tìm kiếm và lọc theo vai trò."""
+    """Truy vấn danh sách audit log có phân trang, tìm kiếm và lọc theo vai trò.
+
+    `actor_id` giới hạn kết quả về đúng một người - dùng cho trang "Lịch sử"
+    của bác sĩ (mỗi bác sĩ chỉ thấy thao tác của chính mình), khác màn hình
+    admin xem toàn hệ thống.
+    """
     query = db.query(SystemAuditLog)
+
+    if actor_id:
+        query = query.filter(SystemAuditLog.actor_id == actor_id)
 
     if role and role != "all":
         query = query.filter(SystemAuditLog.actor_role == role)

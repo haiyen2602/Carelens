@@ -506,6 +506,11 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> LoginRespons
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tai khoan khong ton tai")
     if account.status != "active":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản đã bị khoá")
+    if not getattr(account, "is_email_verified", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tài khoản chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn.",
+        )
     return _login_response(account)
 
 

@@ -96,7 +96,14 @@ export default function FamilyListPage() {
       </div>
 
       {list.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        // Ghim day khung nhin: the benh nhan cao khong deu (so nguoi than moi
+        // nguoi mot khac) nen thanh phan trang truoc day nhay len xuong theo
+        // chieu dai trang. `sticky` an toan o day vi doctor/layout.tsx cuon
+        // ca trang, khong co container overflow nao chan giua.
+        //
+        // -mx/-mb bu dung padding cua <main> (p-4 sm:p-6) de thanh chay het
+        // chieu ngang va nam sat day, trong nhu mot thanh cong cu that.
+        <div className="sticky bottom-0 z-20 -mx-4 -mb-4 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
           <p className="text-sm text-muted-foreground">
             Hiển thị {firstRecord + 1}–{Math.min(firstRecord + PAGE_SIZE, list.length)} trên{" "}
             {list.length} bệnh nhân

@@ -10,6 +10,7 @@ const riskTone: Record<string, string> = {
   Cao: "bg-destructive/12 text-destructive",
   "Trung bình": "bg-warning/25 text-warning-foreground",
   Thấp: "bg-success/15 text-success",
+  "Chưa rõ": "bg-muted text-muted-foreground",
 };
 
 function barTone(v: number) {
@@ -19,7 +20,14 @@ function barTone(v: number) {
   return "bg-destructive";
 }
 
-function riskOf(adherence: number) {
+// `null` = benh nhan chua co lieu nao den han (xem Patient.adherence trong
+// lib/proto-store.tsx). "Chưa rõ" chu KHONG phai "Cao": chua co du lieu thi
+// khong ket luan duoc gi ve nguy co, xep vao nhom nguy co cao se lam bac si
+// dao nham vao mot danh sach toan benh nhan moi.
+type Risk = "Cao" | "Trung bình" | "Thấp" | "Chưa rõ";
+
+function riskOf(adherence: number | null): Risk {
+  if (adherence === null) return "Chưa rõ";
   if (adherence < 75) return "Cao";
   if (adherence < 90) return "Trung bình";
   return "Thấp";
@@ -83,7 +91,7 @@ const ADHERENCE_BUCKETS = [
 ] as const;
 
 type StatusFilter = "all" | "watching";
-type RiskFilter = "all" | "Cao" | "Trung bình" | "Thấp";
+type RiskFilter = "all" | Risk;
 
 export default function DoctorDashboard() {
   const { patients, prescriptions, alerts } = useProto();
@@ -91,10 +99,15 @@ export default function DoctorDashboard() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
 
+  // Loai benh nhan chua co lieu den han ra khoi mau - `null` la "chua du du
+  // lieu", coi la 0 se keo trung binh xuong sai (xem Patient.adherence).
+  const coSoLieu = patients.filter(
+    (p): p is (typeof patients)[number] & { adherence: number } => p.adherence !== null,
+  );
   const avg =
-    patients.length > 0
-      ? Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length)
-      : 0;
+    coSoLieu.length > 0
+      ? Math.round(coSoLieu.reduce((s, p) => s + p.adherence, 0) / coSoLieu.length)
+      : null;
 
   const watchedCount = patients.filter((p) => p.watch).length;
   const pendingPrescriptions = prescriptions.filter((p) => p.status === "pending").length;
@@ -150,9 +163,9 @@ export default function DoctorDashboard() {
   // dinh) - tong so dong cua 4 bucket LUON = patients.length.
   const donut = ADHERENCE_BUCKETS.map((b) => ({
     ...b,
-    count: patients.filter((p) => b.test(p.adherence)).length,
+    count: coSoLieu.filter((p) => b.test(p.adherence)).length,
   }));
-  const total = patients.length;
+  const total = coSoLieu.length;
   let acc = 0;
   const gradient =
     total === 0
@@ -212,6 +225,7 @@ export default function DoctorDashboard() {
               <option value="Cao">Cao</option>
               <option value="Trung bình">Trung bình</option>
               <option value="Thấp">Thấp</option>
+              <option value="Chưa rõ">Chưa rõ</option>
             </select>
           </div>
 
@@ -254,13 +268,19 @@ export default function DoctorDashboard() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <p className="text-xs font-semibold">{formatDecimal(p.adherence)}%</p>
-                        <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className={`h-full rounded-full ${barTone(p.adherence)}`}
-                            style={{ width: `${p.adherence}%` }}
-                          />
-                        </div>
+                        {p.adherence === null ? (
+                          <p className="text-xs text-muted-foreground">Chưa có liều đến hạn</p>
+                        ) : (
+                          <>
+                            <p className="text-xs font-semibold">{formatDecimal(p.adherence)}%</p>
+                            <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className={`h-full rounded-full ${barTone(p.adherence)}`}
+                                style={{ width: `${p.adherence}%` }}
+                              />
+                            </div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   );
@@ -404,7 +424,9 @@ export default function DoctorDashboard() {
                 />
                 <div className="absolute inset-[18px] grid place-items-center rounded-full bg-card">
                   <div className="text-center">
-                    <p className="text-xl font-extrabold leading-none">{avg}%</p>
+                    <p className="text-xl font-extrabold leading-none">
+                      {avg === null ? "—" : `${avg}%`}
+                    </p>
                     <p className="mt-1 text-[10px] text-muted-foreground">Trung bình</p>
                   </div>
                 </div>

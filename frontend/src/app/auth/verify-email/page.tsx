@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 
 import { createClient } from "@/lib/supabase";
-import { useAuth } from "@/lib/auth";
+import { layLienKet, useAuth, type AuthUser } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 
 export default function VerifyEmailPage() {
@@ -17,6 +17,15 @@ export default function VerifyEmailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [redirectInfo, setRedirectInfo] = useState<{
+    url: string;
+    label: string;
+    message: string;
+  }>({
+    url: "/login",
+    label: "Đăng nhập ngay",
+    message: "Email của bạn đã được xác minh. Hệ thống đang tự động chuyển về trang chính...",
+  });
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -96,16 +105,68 @@ export default function VerifyEmailPage() {
         }
 
         setSuccess(true);
+        let nextTarget = {
+          url: "/login",
+          label: "Đăng nhập ngay",
+          message: "Email của bạn đã được xác minh. Hệ thống đang tự động chuyển về trang đăng nhập...",
+        };
+
         if (data.access_token && data.user) {
-          updateSession(data.access_token, data.user);
-          if (data.user.role === "patient" || data.user.role === "doctor") {
-            protoLogin(data.user.role, data.user.full_name);
+          let fullUser: AuthUser = {
+            ...data.user,
+            patient_id: null,
+            doctor_id: null,
+            profile_completed: null,
+            auth_provider: "password",
+          };
+
+          try {
+            const lienKet = await layLienKet(data.access_token);
+            fullUser = { ...data.user, ...lienKet };
+          } catch (err) {
+            console.warn("Không thể lấy liên kết chi tiết user sau verify:", err);
+          }
+
+          updateSession(data.access_token, fullUser);
+
+          if (fullUser.role === "patient") {
+            protoLogin(fullUser.role, fullUser.full_name);
             pushActivity("Xác minh thành công", "Chào mừng bạn đã kích hoạt tài khoản!");
+            if (fullUser.profile_completed === false) {
+              nextTarget = {
+                url: "/onboarding/profile",
+                label: "Hoàn tất thông tin cá nhân",
+                message:
+                  "Email của bạn đã được xác minh. Hệ thống đang chuyển bạn đến trang hoàn tất thông tin cá nhân...",
+              };
+            } else {
+              nextTarget = {
+                url: "/patient",
+                label: "Vào trang chủ bệnh nhân",
+                message: "Email của bạn đã được xác minh. Hệ thống đang chuyển bạn về trang chủ...",
+              };
+            }
+          } else if (fullUser.role === "doctor") {
+            protoLogin(fullUser.role, fullUser.full_name);
+            pushActivity("Xác minh thành công", "Chào mừng bạn đã kích hoạt tài khoản!");
+            nextTarget = {
+              url: "/doctor",
+              label: "Vào trang bác sĩ",
+              message: "Email của bạn đã được xác minh. Hệ thống đang chuyển bạn về trang bác sĩ...",
+            };
+          } else if (fullUser.role === "admin") {
+            nextTarget = {
+              url: "/admin",
+              label: "Vào trang quản trị",
+              message: "Email của bạn đã được xác minh. Hệ thống đang chuyển bạn về trang quản trị...",
+            };
           }
         }
 
+        setRedirectInfo(nextTarget);
+
         setTimeout(() => {
-          router.push("/login");
+          router.replace(nextTarget.url);
         }, 3000);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Xác minh email thất bại.");
@@ -147,16 +208,14 @@ export default function VerifyEmailPage() {
                 <h3 className="text-base font-semibold text-foreground">
                   Kích hoạt tài khoản thành công!
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Email của bạn đã được xác minh. Hệ thống đang tự động chuyển về trang chính...
-                </p>
+                <p className="text-sm text-muted-foreground">{redirectInfo.message}</p>
               </div>
               <div className="pt-2">
                 <Link
-                  href="/login"
+                  href={redirectInfo.url}
                   className="inline-flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                 >
-                  Đăng nhập ngay
+                  {redirectInfo.label}
                 </Link>
               </div>
             </div>

@@ -6,10 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   Bell,
+  BellOff,
   BookText,
   ChevronLeft,
   FileClock,
-  HelpCircle,
   Home,
   LayoutGrid,
   LogOut,
@@ -21,9 +21,19 @@ import {
   Users2,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { HelpGuideButton } from "@/components/help-guide-button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { presentAlert } from "@/lib/alert-presentation";
 import { useAuth } from "@/lib/auth";
-import { useProto } from "@/lib/proto-store";
+import { useProto, type AlertLevel } from "@/lib/proto-store";
+
+// Cham mau canh theo muc do - popover chi co cho cho mot dau hieu nho, dung
+// vien mau hay nen mau o day se dam hon ca noi dung.
+const alertDotTone: Record<AlertLevel, string> = {
+  low: "bg-primary",
+  mid: "bg-warning",
+  high: "bg-destructive",
+};
 
 type NavItem = {
   to: string;
@@ -60,7 +70,7 @@ const groups: { title: string; items: NavItem[] }[] = [
 ];
 
 export default function DoctorLayout({ children }: { children: ReactNode }) {
-  const { alerts, activity, markAllActivityRead, logout: protoLogout } = useProto();
+  const { alerts, activity, patients, markAllActivityRead, logout: protoLogout } = useProto();
   const { user, loading, logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -240,26 +250,50 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                 )}
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-              <div className="border-b border-border px-4 py-3">
+            <PopoverContent align="end" className="w-[22rem] p-0">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <p className="text-sm font-bold">Thông báo</p>
+                {alertCount > 0 && (
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
+                    {alertCount} cảnh báo mới
+                  </span>
+                )}
               </div>
               <div className="max-h-96 overflow-y-auto">
                 {newAlerts.length > 0 && (
-                  <div className="border-b border-border">
-                    <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="border-b border-border pb-1">
+                    <p className="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       Cảnh báo
                     </p>
-                    {newAlerts.slice(0, 5).map((a) => (
-                      <Link
-                        key={a.id}
-                        href="/doctor/alerts"
-                        className="block px-4 py-2.5 hover:bg-muted"
-                      >
-                        <p className="truncate text-sm font-semibold">{a.title}</p>
-                        <p className="truncate text-xs text-muted-foreground">{a.detail}</p>
-                      </Link>
-                    ))}
+                    {newAlerts.slice(0, 5).map((a) => {
+                      // presentAlert() doi `trigger` ky thuat (vd
+                      // "dose_unconfirmed") thanh cau tieng Viet - truoc day
+                      // popover nay in thang a.detail nen nguoi doc thay dung
+                      // chuoi ma nguon. Cung ham ma trang Hop canh bao dung,
+                      // hai cho khong con doc lech nhau.
+                      const view = presentAlert(a, patients);
+                      return (
+                        <Link
+                          key={a.id}
+                          href="/doctor/alerts"
+                          className="flex gap-3 px-4 py-2.5 hover:bg-muted"
+                        >
+                          <span
+                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alertDotTone[a.level]}`}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold">
+                              {view.title}
+                            </span>
+                            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span className="truncate">{view.patientName}</span>
+                              <span aria-hidden="true">·</span>
+                              <span className="shrink-0">{a.at}</span>
+                            </span>
+                          </span>
+                        </Link>
+                      );
+                    })}
                     <Link
                       href="/doctor/alerts"
                       className="block px-4 py-2.5 text-center text-xs font-semibold text-primary hover:bg-muted"
@@ -269,14 +303,15 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                   </div>
                 )}
 
-                <div>
-                  <p className="px-4 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="pb-1">
+                  <p className="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     Hoạt động
                   </p>
                   {activity.length === 0 && newAlerts.length === 0 && (
-                    <p className="px-4 py-4 text-sm text-muted-foreground">
-                      Chưa có thông báo nào.
-                    </p>
+                    <div className="px-4 py-8 text-center">
+                      <BellOff className="mx-auto h-8 w-8 text-muted-foreground/40" />
+                      <p className="mt-2 text-sm text-muted-foreground">Chưa có thông báo nào.</p>
+                    </div>
                   )}
                   {activity.length === 0 && newAlerts.length > 0 && (
                     <p className="px-4 py-3 text-sm text-muted-foreground">
@@ -284,21 +319,22 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
                     </p>
                   )}
                   {activity.map((n) => (
-                    <div key={n.id} className="px-4 py-2.5">
-                      <p className="truncate text-sm font-semibold">{n.title}</p>
-                      {n.detail && (
-                        <p className="truncate text-xs text-muted-foreground">{n.detail}</p>
-                      )}
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">{n.at}</p>
+                    <div key={n.id} className="flex gap-3 px-4 py-2.5">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-muted-foreground/30" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{n.title}</p>
+                        {n.detail && (
+                          <p className="truncate text-xs text-muted-foreground">{n.detail}</p>
+                        )}
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">{n.at}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </PopoverContent>
           </Popover>
-          <button className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
-            <HelpCircle className="h-[18px] w-[18px]" />
-          </button>
+          <HelpGuideButton />
 
           <div className="shrink-0 border-l border-border pl-3">
             <div

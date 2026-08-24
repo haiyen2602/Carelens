@@ -767,6 +767,35 @@ class EscalationAckResponse(BaseModel):
     resolved_by: str
 
 
+# `DISMISSED` = bac si da xem va danh gia KHONG can xu ly - khac "RESOLVED"
+# (da xu ly that). Them 2026-08-23 cho nut "Tu choi" o Hop canh bao
+# (frontend/src/app/doctor/alerts/page.tsx), truoc do trang thai nay chi song
+# trong state React nen mat khi tai lai trang. Escalation.status la cot String
+# thuong (khong phai Enum/CHECK ben DB) nen KHONG can migration - nhung
+# escalation_reminder.py chi quet status="OPEN", nghia la chuyen sang ACKED
+# hay DISMISSED deu DUNG nhac lai, giong RESOLVED.
+ESCALATION_STATUSES = ("OPEN", "ACKED", "RESOLVED", "DISMISSED")
+
+
+class EscalationStatusUpdateRequest(BaseModel):
+    """PATCH /api/v1/escalations/{id}/status - dat trang thai TUY Y (khac
+    /ack chi mot chieu -> RESOLVED). Cho phep quay ve "OPEN" de nguoi dung
+    hoan tac ngay sau khi bam nham (nut "Hoàn tác" trong toast o FE)."""
+
+    status: Literal["OPEN", "ACKED", "RESOLVED", "DISMISSED"]
+
+
+class EscalationStatusResponse(BaseModel):
+    """`resolved_at`/`resolved_by` la None khi trang thai quay ve OPEN/ACKED
+    (hai truong nay chi co nghia khi canh bao da duoc chot lai) - KHAC
+    EscalationAckResponse o tren luon co gia tri vi chi di mot chieu."""
+
+    id: str
+    status: str
+    resolved_at: str | None = None
+    resolved_by: str | None = None
+
+
 class CurrentEscalationResponse(BaseModel):
     """GET /api/v1/escalations/current (vong 2 muc 4 y 4 - CAN CHOT, PM chot
     2026-08-12: dung field da co san tren Escalation, khong them cot moi).
@@ -852,8 +881,105 @@ class ReportingPatientOut(BaseModel):
     gender: str | None = None
     height_cm: float | None = None
     weight_kg: float | None = None
+    # Benh nhan tu nhap o onboarding (migration 0022), co the con None. Them
+    # 2026-08-23 de bac si goi thang tu Hop canh bao thay vi phai doi trang -
+    # endpoint nay da la require_role("doctor","admin") san.
+    phone: str | None = None
     watch: bool
     adherence_pct: float | None = None
+
+
+class DoseDayOut(BaseModel):
+    """1 ngay trong bieu do "Tinh trang lieu trong 7 ngay" (trang Tong quan
+    thong tin cua bac si). `date` la ngay theo GIO VIET NAM, khong phai UTC -
+    xem ghi chu ve mui gio trong reporting_routes.py::get_dose_summary.
+
+    `total` = taken + delayed + missed, tuc chi cac lieu DA CO KET QUA. Lieu
+    con PENDING/AWAITING_CAREGIVER khong nam trong day - cung nguyen tac voi
+    compute_adherence_pct() (khong dua lieu chua den han vao mau)."""
+
+    date: str
+    taken: int
+    delayed: int
+    missed: int
+    total: int
+
+
+class MissedWindowOut(BaseModel):
+    """1 cot trong bieu do "Khung gio hay bo lo" - dem so lieu MISSED theo
+    khung gio trong ngay (gio Viet Nam)."""
+
+    key: str  # morning|noon|afternoon|evening
+    label: str
+    missed: int
+
+
+class AdherenceBucketOut(BaseModel):
+    """1 nhom trong bieu do "Phan bo muc tuan thu". `key="no_data"` la nhom
+    benh nhan CHUA co lieu nao den han trong ky - truoc day nhom nay chi nam
+    o mot dong chu nho duoi tieu de, trong khi thuc te no thuong la nhom DONG
+    NHAT (vd 53/67), tuc bieu do dang giau di phan lon benh nhan."""
+
+    key: str  # good|fair|poor|bad|no_data
+    label: str
+    count: int
+
+
+class PatientAdherenceOut(BaseModel):
+    """Tuan thu cua 1 benh nhan TRONG KY dang xem (khong phai tu truoc toi
+    nay). `adherence_pct=None` = chua co lieu nao den han trong ky.
+
+    `due` di kem de giao dien biet mau to hay nho: "bo lo 100%" cua 1 lieu va
+    cua 200 lieu la hai cau chuyen khac han nhau."""
+
+    patient_id: str
+    full_name: str
+    note: str | None = None
+    adherence_pct: float | None = None
+    due: int
+    taken: int
+
+
+class PeriodTotalsOut(BaseModel):
+    """Tong hop CA KY - dung cho ky hien tai lan ky lien truoc (so sanh xu
+    huong). Ky truoc dai dung bang ky hien tai va ke sat phia truoc, de mui
+    ten tang/giam so cung do dai thoi gian."""
+
+    average_adherence_pct: float | None = None
+    due: int
+    taken: int
+    delayed: int
+    missed: int
+
+
+class DoseSummaryOut(BaseModel):
+    """GET /api/v1/reporting/dose-summary - MOT nguon duy nhat cho ca trang
+    "Tong quan thong tin", gop lai vi tat ca deu quet CUNG mot tap DoseEvent.
+
+    Vi sao gop het vao day thay vi de frontend tu tinh tu `patients`: truoc
+    2026-08-23 the "Tuan thu trung binh" lay tu compute_adherence_pct() -
+    tinh tren TOAN BO lieu tu truoc toi nay - con cac bieu do ben canh chi
+    7 ngay. Hai con so canh nhau nhung khac cua so thoi gian, khong dong nao
+    noi cho nguoi doc biet, nen trang vua bao "1.46%" vua cho thay "6/7 ngay
+    khong co lieu nao". Gio moi so lieu tren trang deu thuoc DUNG mot ky.
+
+    `patient_count` = so benh nhan trong pham vi, de giao dien phan biet
+    "khong co lieu nao" voi "chua theo doi benh nhan nao" - hai tinh huong
+    deu cho bieu do rong nhung loi khuyen cho bac si khac han."""
+
+    days: int
+    from_date: str  # YYYY-MM-DD, gio Viet Nam
+    to_date: str
+    patient_count: int
+    with_data_count: int
+    without_data_count: int
+    high_risk_count: int
+    current: PeriodTotalsOut
+    previous: PeriodTotalsOut
+    buckets: list[AdherenceBucketOut]
+    patients: list[PatientAdherenceOut]
+    daily: list[DoseDayOut]
+    missed_by_window: list[MissedWindowOut]
 
 
 class PatientWatchUpdateRequest(BaseModel):
@@ -974,6 +1100,11 @@ class CaregiverLinkForPatientOut(BaseModel):
     id: str
     caregiver_account_id: str
     caregiver_name: str
+    # Lay tu Account.email qua CUNG cai join da co san (khong them truy van).
+    # Day la cach lien lac DUY NHAT toi nguoi than ma he thong dang luu -
+    # caregiver_link va account deu KHONG co cot so dien thoai. Them
+    # 2026-08-23 cho khoi "Liên hệ người thân" trong Hop canh bao cua bac si.
+    caregiver_email: str | None = None
     relationship: str
     created_at: str
     status: str = "accepted"

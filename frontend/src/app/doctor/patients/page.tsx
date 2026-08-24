@@ -1,7 +1,8 @@
 "use client";
 
 import { Eye, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { HoverSelect } from "@/components/hover-select";
 import { MedicineCombobox } from "@/components/medicine-combobox";
@@ -719,8 +720,13 @@ const WATCH_FILTER_OPTIONS: { value: WatchFilter; label: string }[] = [
 
 const PATIENTS_PAGE_SIZE = 10;
 
-export default function PatientsPage() {
-  const [q, setQ] = useState("");
+function PatientsContent() {
+  // ?q= cho phep man hinh khac dan thang toi DUNG mot benh nhan - Hop canh bao
+  // (doctor/alerts/page.tsx) gui ma BN qua day tu nut "Hồ sơ đầy đủ" trong
+  // popup canh bao. Chi dung lam gia tri KHOI TAO: sau do o tim la cua nguoi
+  // dung, khong dong bo nguoc len URL.
+  const searchParams = useSearchParams();
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
   const [watchFilter, setWatchFilter] = useState<WatchFilter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -886,5 +892,22 @@ export default function PatientsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PatientsPage() {
+  // useSearchParams() bat buoc phai nam trong <Suspense> (Next 16) - cung mau
+  // voi admin/accounts/page.tsx.
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-10 w-full animate-pulse rounded-xl bg-muted/40" />
+          <div className="h-64 w-full animate-pulse rounded-xl bg-muted/40" />
+        </div>
+      }
+    >
+      <PatientsContent />
+    </Suspense>
   );
 }

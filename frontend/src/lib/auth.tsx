@@ -41,7 +41,7 @@ export type AuthUser = {
 // truong nay) ngay sau khi dang nhap/khoi phuc phien, goi thang backend
 // kem Bearer token - cung pattern voi lib/accounts.ts (khong lien quan
 // cookie nen khong can qua Route Handler).
-async function layLienKet(
+export async function layLienKet(
   accessToken: string,
 ): Promise<
   Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "email" | "auth_provider">
