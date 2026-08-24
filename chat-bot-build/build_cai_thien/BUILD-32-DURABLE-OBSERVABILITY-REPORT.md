@@ -516,3 +516,75 @@ AGENT BEHAVIOR CHANGED: NO     (không sửa response text/routing/safety nào;
                                  không phải hành vi trả lời Agent V2)
 READY FOR PR: YES
 ```
+
+---
+
+## 14. Sự cố sau merge: Admin dashboard hiện N/A → rollback → 2 bug đã vá
+
+Sau khi PR đầu tiên được merge/deploy, trang Admin bị lỗi hiển thị N/A và đã
+được rollback. Rà lại toàn bộ code đường đọc mới (trước đây chỉ tập trung bảo
+vệ đường ghi), phát hiện 2 vấn đề thật, độc lập với nhau:
+
+### 14.1 Bug: `trace_summary_out` bị đảo thứ tự ưu tiên nguồn đọc
+
+`backend/services/agent_feedback.py::trace_summary_out()` (dùng cho trang chi
+tiết ticket) bản đầu tiên đọc `AgentRun` (durable) **trước**, ring buffer chỉ
+là fallback. Vì `AgentRun` được ghi ngay từ lúc checkpoint tạo (có từ trước
+BUILD-32, xảy ra trên hầu như mọi request), nhánh ring buffer gần như không
+bao giờ được chạm tới nữa — mà nhánh durable lại **không** mang theo
+`final_response`/tool output/`scores` (thiết kế cố ý, xem mục 6). Kết quả:
+**mọi ticket detail mới đều hiện trống cho câu trả lời thật**, dù trace vẫn
+còn nguyên trong ring buffer 200 traces.
+
+Đã vá: đảo lại đúng thứ tự — **ring buffer trước** (giữ nguyên hành vi cũ,
+đầy đủ text), **durable chỉ dùng khi ring buffer không còn** trace đó (đúng
+tinh thần thiết kế ban đầu, khớp với `session_messages()`/
+`/admin/rag/traces/{trace_id}` vốn đã làm đúng ngay từ đầu).
+`verify_trace_ownership()` (dùng cho xác thực chống cross-patient) **giữ
+nguyên durable-first** vì đây là quyết định đúng: `AgentRun.actor_id` là id
+thật, đáng tin hơn bản hash trong ring buffer.
+
+### 14.2 Bug: thiếu try/except quanh mọi query đọc bảng mới
+
+Toàn bộ endpoint Admin đọc `agent_run`/`agent_run_span` mới
+(`rag_monitoring_routes.py`: `/health`, `/generation`, `/system`, `/traces`,
+`/traces/{trace_id}`; `agent_feedback.py`: `verify_trace_ownership`,
+`trace_summary_out`, `session_messages`) **không có try/except nào** quanh
+câu query mới — khác hẳn các hàm ghi (`_persist_durable_trace` đã có
+try/except đầy đủ từ đầu, đúng nguyên tắc "observability không được phá
+response thật"). Nếu môi trường đích chưa chạy migration `0042` (thứ tự
+deploy: code lên trước, migration chạy sau/lỗi) hoặc DB có trục trặc tạm
+thời, mọi query này ném lỗi → cả endpoint 500 → toàn bộ card trên trang Admin
+trống/N/A, kể cả những trường không hề liên quan tới BUILD-32 (vì cả response
+hỏng chứ không phải riêng field mới).
+
+Đã vá: bọc try/except quanh **mọi** điểm đọc `AgentRun`/`AgentRunSpan` mới ở
+cả 2 file trên — lỗi được log lại (`logging.getLogger(__name__).warning`),
+hàm/endpoint tự động **giảm cấp về hành vi trước BUILD-32** (ring-buffer-only,
+cost/timeout NOT_AVAILABLE) thay vì crash.
+
+### 14.3 Test mới xác nhận cả 2 fix
+
+- `tests/test_agent_feedback_service.py`: đổi tên +
+  viết lại `test_trace_summary_out_prefers_the_ring_buffer_when_both_exist`
+  (khẳng định ring buffer thắng khi cả hai đều có — đúng bug đã sửa) +
+  `test_trace_summary_out_falls_back_to_the_durable_row_when_buffer_lacks_it`
+  (khẳng định durable fallback vẫn hoạt động); 3 test mới
+  `test_*_degrades_to_ring_buffer_on_durable_read_failure` cho cả
+  `verify_trace_ownership`/`trace_summary_out`/`session_messages` (giả lập
+  `db.execute` ném exception, xác nhận không crash, xác nhận vẫn trả kết quả
+  đúng từ ring buffer).
+- `tests/test_agent_v2_build32_durable_observability.py`:
+  `test_agent_run_query_degrades_to_empty_list_on_db_failure` cho
+  `rag_monitoring_routes._agent_run_query` (choke point chung của
+  `/health`/`/generation`/`/system`/`/traces`).
+
+Toàn bộ suite (`pytest tests/`, trừ 2 dir cv2/numpy) chạy lại sạch sau khi vá:
+xem log chạy thật đính kèm PR — không regression nào so với baseline mục 10.
+
+### Bài học quy trình (khuyến nghị, không chặn PR này)
+
+Trước khi merge lần sau: xác nhận `alembic upgrade head` đã chạy XONG trên
+đúng DB môi trường đích **trước** khi code mới nhận traffic — không giả định
+migration tự chạy đồng bộ với deploy code nếu quy trình hiện tại không đảm
+bảo thứ tự đó.

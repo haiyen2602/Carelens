@@ -369,3 +369,24 @@ def test_persist_durable_trace_is_exception_safe_and_never_raises(db, monkeypatc
     settings = SimpleNamespace(agent_main_model="gpt-5.4-mini")
     # Must not raise.
     routes._persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=_actor())
+
+
+# ---------------------------------------------------------------------------
+# rag_monitoring_routes._agent_run_query -- BUILD-32 bugfix: this is the
+# single choke point /health, /generation, /system, and /traces all read
+# through. Before this fix it had no error handling at all, so a durable-read
+# failure (e.g. migration 0042 not yet applied on this environment) took the
+# whole Admin dashboard down at once -- the real root cause traced back for
+# the reported "Admin page N/A" incident.
+# ---------------------------------------------------------------------------
+
+
+def test_agent_run_query_degrades_to_empty_list_on_db_failure(db, monkeypatch):
+    from backend.api import rag_monitoring_routes
+
+    def _boom(*_args, **_kwargs):
+        raise Exception("simulated missing column (migration not applied)")  # noqa: BLE001
+
+    monkeypatch.setattr(db, "execute", _boom)
+    result = rag_monitoring_routes._agent_run_query(db, chatbot_version=None, model=None, prompt_version=None)
+    assert result == []

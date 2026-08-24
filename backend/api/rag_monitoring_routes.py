@@ -6,6 +6,7 @@ and in-memory/Langfuse Telemetry Traces without synthetic mock data.
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -102,7 +103,19 @@ def _agent_run_query(db: Session, *, chatbot_version: str | None, model: str | N
     stmt = select(AgentRun)
     if model:
         stmt = stmt.where(AgentRun.model == model)
-    return db.execute(stmt).scalars().all()
+    try:
+        return db.execute(stmt).scalars().all()
+    except Exception as durable_err:  # noqa: BLE001
+        # BUILD-32 bugfix: a durable-read failure (e.g. migration 0042 not
+        # yet applied on this environment, or a transient DB hiccup) must
+        # degrade this one KPI to its pre-BUILD-32 shape (0.0/NOT_AVAILABLE
+        # cost, ring-buffer-only traces), never crash the whole endpoint --
+        # every caller of this helper previously had no protection at all,
+        # so any failure here took down /health, /generation, /system, and
+        # /traces together (the real cause of the reported Admin-page N/A
+        # incident).
+        logging.getLogger(__name__).warning("BUILD-32 durable AgentRun query failed: %s", durable_err)
+        return []
 
 
 _FilterParams = tuple[str | None, str | None, str | None]
@@ -769,14 +782,24 @@ async def get_rag_trace_detail(
     # per-span timing from `AgentRunSpan` (captured live, see
     # `backend.api.agent_v2_routes._persist_durable_trace`); message/response
     # text is honestly omitted (see backend.services.agent_feedback's module
-    # docstring for why), not fabricated.
-    run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    # docstring for why), not fabricated. Own try/except (bugfix): a failure
+    # here must fall through to the honest "not_found" response below, never
+    # 500 the whole endpoint.
+    try:
+        run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001
+        logging.getLogger(__name__).warning("BUILD-32 durable trace detail lookup failed: %s", durable_err)
+        run = None
     if run is not None:
-        spans = (
-            db.execute(select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id).order_by(AgentRunSpan.started_at))
-            .scalars()
-            .all()
-        )
+        try:
+            spans = (
+                db.execute(select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id).order_by(AgentRunSpan.started_at))
+                .scalars()
+                .all()
+            )
+        except Exception as durable_err:  # noqa: BLE001
+            logging.getLogger(__name__).warning("BUILD-32 durable span lookup failed: %s", durable_err)
+            spans = []
         return {
             "trace_id": trace_id,
             "session_id": f"conversation_{run.conversation_id}" if run.conversation_id else "unknown",

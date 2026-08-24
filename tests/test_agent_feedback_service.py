@@ -244,9 +244,13 @@ def test_trace_summary_out_never_exposes_hidden_reasoning_only_final_response(db
     assert summary.model == "gpt-5.4-mini"
 
 
-def test_trace_summary_out_prefers_the_durable_row_when_one_exists(db, clean_trace_buffer):
-    """BUILD-32: a durable AgentRun row is the source of truth even when the
-    ring buffer still also has the same trace_id."""
+def test_trace_summary_out_prefers_the_ring_buffer_when_both_exist(db, clean_trace_buffer):
+    """BUILD-32 bugfix: the ring buffer wins when a trace is present in both
+    -- it carries the real final_response/tool-output/scores the durable
+    row deliberately never does. An earlier version of this function got
+    this backwards (durable-first), which meant almost every ticket detail
+    silently lost its real reply text the moment AgentRun existed (i.e.
+    always, since AgentRun is written at checkpoint time on every request)."""
     _seed_trace(trace_id="t-durable", user_id="a", session_id="c", intent="DRUG_INFORMATION")
     db.add(
         AgentRun(
@@ -264,6 +268,32 @@ def test_trace_summary_out_prefers_the_durable_row_when_one_exists(db, clean_tra
     db.commit()
 
     summary = trace_summary_out(db, "t-durable")
+    assert summary.found is True
+    # Ring-buffer-sourced fields, NOT the durable row's -- proves priority.
+    assert summary.status == "success"
+    assert summary.final_response == "ok"  # _seed_trace's default response
+
+
+def test_trace_summary_out_falls_back_to_the_durable_row_when_buffer_lacks_it(db, clean_trace_buffer):
+    """No ring-buffer entry for this trace_id (aged out / pre-restart) --
+    durable AgentRun is still readable, with its own honest scope limit
+    (no final_response text)."""
+    db.add(
+        AgentRun(
+            id="run-durable-2",
+            trace_id="t-durable-only",
+            conversation_id="c",
+            actor_id="a",
+            intent="DRUG_INFORMATION",
+            status="COMPLETED",
+            started_at=datetime.now(UTC),
+            model="gpt-5.4-mini",
+            duration_ms=42.0,
+        )
+    )
+    db.commit()
+
+    summary = trace_summary_out(db, "t-durable-only")
     assert summary.found is True
     assert summary.status == "COMPLETED"
     assert summary.model == "gpt-5.4-mini"
@@ -287,3 +317,52 @@ def test_session_messages_marks_the_reported_turn(db, clean_trace_buffer):
     _seed_trace(trace_id="s-4", user_id="a", session_id="conv-C")
     items, _ = session_messages(db, "conv-C", limit=10, offset=0, highlight_trace_id="s-4")
     assert items[0].is_reported_turn is True
+
+
+# ---------------------------------------------------------------------------
+# BUILD-32 bugfix: a durable-read failure (e.g. migration not yet applied on
+# this environment) must degrade to the pre-BUILD-32 ring-buffer-only
+# behavior, never raise out and break the whole page/ticket flow -- this is
+# the real root cause the reported Admin-page "N/A" incident traced back to.
+# ---------------------------------------------------------------------------
+
+
+def test_verify_trace_ownership_degrades_to_ring_buffer_on_durable_read_failure(db, clean_trace_buffer, monkeypatch):
+    _seed_trace(trace_id="t-degrade", user_id="actor-1", session_id="c")
+
+    def _boom(*_args, **_kwargs):
+        raise Exception("simulated missing column")  # noqa: BLE001
+
+    monkeypatch.setattr(db, "execute", _boom)
+    result = verify_trace_ownership(db, "t-degrade", actor_id="actor-1")
+    # Durable lookup failed (caught, logged, run=None) -- falls through to
+    # the ring-buffer loop, which reads the in-memory buffer directly (no
+    # `db` involved) and still finds the real match.
+    assert result.found is True
+    assert result.owned is True
+
+
+def test_trace_summary_out_degrades_to_ring_buffer_on_durable_read_failure(db, clean_trace_buffer, monkeypatch):
+    _seed_trace(trace_id="t-degrade-2", user_id="a", session_id="c", response="real answer")
+
+    def _boom(*_args, **_kwargs):
+        raise Exception("simulated missing column")  # noqa: BLE001
+
+    monkeypatch.setattr(db, "execute", _boom)
+    # Ring buffer is checked FIRST now, so this succeeds without ever
+    # touching the (broken) durable path.
+    summary = trace_summary_out(db, "t-degrade-2")
+    assert summary.found is True
+    assert summary.final_response == "real answer"
+
+
+def test_session_messages_degrades_to_ring_buffer_on_durable_read_failure(db, clean_trace_buffer, monkeypatch):
+    _seed_trace(trace_id="t-degrade-3", user_id="a", session_id="conv-D")
+
+    def _boom(*_args, **_kwargs):
+        raise Exception("simulated missing column")  # noqa: BLE001
+
+    monkeypatch.setattr(db, "execute", _boom)
+    items, total = session_messages(db, "conv-D", limit=10, offset=0)
+    assert total == 1
+    assert items[0].trace_id == "t-degrade-3"

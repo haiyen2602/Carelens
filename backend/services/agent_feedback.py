@@ -23,6 +23,7 @@ returns the existing ticket rather than inserting a duplicate.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -95,7 +96,12 @@ def verify_trace_ownership(db: Session, trace_id: str | None, *, actor_id: str) 
     """
     if not trace_id:
         return TraceOwnershipResult(found=False, owned=True)
-    run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    try:
+        run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001 -- a durable read failure must degrade to the ring-buffer
+        # check below, never break ticket creation outright.
+        logging.getLogger(__name__).warning("BUILD-32 durable verify_trace_ownership lookup failed: %s", durable_err)
+        run = None
     if run is not None:
         owned = run.actor_id is None or run.actor_id == actor_id
         return TraceOwnershipResult(found=True, owned=owned, intent=run.intent)
@@ -224,48 +230,32 @@ def trace_summary_out(
 ) -> AgentFeedbackTraceSummaryOut:
     """Sanitized trace detail for a ticket's admin-facing detail view.
 
-    BUILD-32: queries the durable ``AgentRun``/``AgentRunSpan`` tables first;
-    falls back to the ring buffer only for a trace that predates BUILD-32 or
-    has not been durably flushed yet. Honest scope note: the durable
-    ``AgentTelemetry`` event pipeline (``backend.agents.v2.observability``)
-    deliberately never carries a tool call's raw output or the final reply
-    text into telemetry attributes (privacy-minimization already built into
-    that module's own sanitizer) -- so the durable path's ``tool_results``
-    carry tool names only (no ``output``) and ``final_response`` is
-    ``None``. This is not a functional loss for the ticket-detail view that
-    is this function's only real caller (``admin_feedback_routes.get_ticket``):
-    the actual reported reply text is already durable on the ticket row
-    itself (``AgentFeedbackTicket.assistant_message``), independent of the
-    trace.
+    BUILD-32 bugfix: the ring buffer is checked FIRST (same priority as
+    ``session_messages``/``/admin/rag/traces/{trace_id}``), durable
+    ``AgentRun``/``AgentRunSpan`` only as a fallback for a trace the buffer
+    no longer holds (aged out past 200 entries, or from before a restart).
+    An earlier version of this function checked durable first -- since
+    ``AgentRun`` is written at checkpoint time on essentially every request
+    (has been since well before BUILD-32), that made the ring buffer branch
+    below nearly unreachable, so every ticket's detail view silently lost
+    its real ``final_response``/tool-output/scores (present in the buffer,
+    never carried into the durable/sanitized telemetry attributes) even
+    while the richer data was still sitting right there in the buffer.
+
+    Honest scope note (still true for the durable fallback branch): the
+    durable ``AgentTelemetry`` event pipeline
+    (``backend.agents.v2.observability``) deliberately never carries a tool
+    call's raw output or the final reply text into telemetry attributes
+    (privacy-minimization already built into that module's own sanitizer)
+    -- so the durable path's ``tool_results`` carry tool names only (no
+    ``output``) and ``final_response`` is ``None``. Not a functional loss
+    for the ticket-detail view that is this function's only real caller
+    (``admin_feedback_routes.get_ticket``): the actual reported reply text
+    is already durable on the ticket row itself
+    (``AgentFeedbackTicket.assistant_message``), independent of the trace.
     """
     if not trace_id:
         return AgentFeedbackTraceSummaryOut(trace_id="", found=False)
-    run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
-    if run is not None:
-        tool_spans = (
-            db.execute(
-                select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id, AgentRunSpan.span_type == "TOOL")
-            )
-            .scalars()
-            .all()
-        )
-        tools = [str(span.metadata_json.get("tool_name") or span.span_name) for span in tool_spans]
-        return AgentFeedbackTraceSummaryOut(
-            trace_id=trace_id,
-            found=True,
-            intent=run.intent,
-            tools=tools,
-            tool_results=[{"name": name} for name in tools],
-            safety_outcome=(
-                run.status if run.status in ("SAFETY_BLOCKED", "HANDOFF_REQUIRED", "HANDOFF_CREATED") else None
-            ),
-            handoff_created=run.status == "HANDOFF_CREATED",
-            model=run.model,
-            latency_ms=run.duration_ms,
-            scores={},
-            final_response=None,
-            status=run.status,
-        )
     for trace in get_local_traces():
         if trace.id != trace_id:
             continue
@@ -295,6 +285,41 @@ def trace_summary_out(
             final_response=final_response,
             status=trace.status,
         )
+
+    try:
+        run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001 -- a durable read failure must degrade, never break the page
+        logging.getLogger(__name__).warning("BUILD-32 durable trace_summary_out lookup failed: %s", durable_err)
+        run = None
+    if run is not None:
+        try:
+            tool_spans = (
+                db.execute(
+                    select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id, AgentRunSpan.span_type == "TOOL")
+                )
+                .scalars()
+                .all()
+            )
+        except Exception as durable_err:  # noqa: BLE001
+            logging.getLogger(__name__).warning("BUILD-32 durable span lookup failed: %s", durable_err)
+            tool_spans = []
+        tools = [str(span.metadata_json.get("tool_name") or span.span_name) for span in tool_spans]
+        return AgentFeedbackTraceSummaryOut(
+            trace_id=trace_id,
+            found=True,
+            intent=run.intent,
+            tools=tools,
+            tool_results=[{"name": name} for name in tools],
+            safety_outcome=(
+                run.status if run.status in ("SAFETY_BLOCKED", "HANDOFF_REQUIRED", "HANDOFF_CREATED") else None
+            ),
+            handoff_created=run.status == "HANDOFF_CREATED",
+            model=run.model,
+            latency_ms=run.duration_ms,
+            scores={},
+            final_response=None,
+            status=run.status,
+        )
     return AgentFeedbackTraceSummaryOut(trace_id=trace_id, found=False)
 
 
@@ -318,15 +343,19 @@ def session_messages(
     placeholder instead of a fabricated preview.
     """
     buffered = {trace.id: trace for trace in get_local_traces() if trace.session_id == conversation_id}
-    durable_runs = (
-        db.execute(
-            select(AgentRun)
-            .where(AgentRun.conversation_id == conversation_id, AgentRun.trace_id.isnot(None))
-            .order_by(AgentRun.started_at.asc())
+    try:
+        durable_runs = (
+            db.execute(
+                select(AgentRun)
+                .where(AgentRun.conversation_id == conversation_id, AgentRun.trace_id.isnot(None))
+                .order_by(AgentRun.started_at.asc())
+            )
+            .scalars()
+            .all()
         )
-        .scalars()
-        .all()
-    )
+    except Exception as durable_err:  # noqa: BLE001 -- degrade to ring-buffer-only turns, never break this view
+        logging.getLogger(__name__).warning("BUILD-32 durable session_messages lookup failed: %s", durable_err)
+        durable_runs = []
 
     entries: list[tuple[datetime, AgentFeedbackSessionMessageOut]] = []
     seen_trace_ids: set[str] = set()
