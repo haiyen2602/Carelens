@@ -124,3 +124,35 @@ def test_dang_thuoc_tu_danh_muc_phan_loai_duoc(db):
             ket_qua = classify(thuoc.dang_thuoc, thuoc.duong_dung)
 
             assert ket_qua.ly_do, f"{thuoc.dang_thuoc!r} phân loại ra nhưng không nêu lý do"
+
+
+# ---------------------------------------------------------------------------
+# BUILD-38 PR review response: migration 0047 (ALTER FUNCTION word_similarity_
+# op/similarity_op COST 100) là thay đổi toàn CSDL, không scope theo 1 truy
+# vấn -- reviewer tự động hỏi đúng liệu nó có ảnh hưởng các truy vấn trigram
+# KHÁC ngoài backend/services/retrieval.py không. Đây (bảng `drug`, ~3562
+# dòng) là nơi DUY NHẤT khác trong repo dùng `word_similarity()`/toán tử `<%`
+# thật (xác nhận qua `rg '<%|%>|similarity\(' backend/ scripts/`). Test dưới
+# đây khoá lại: bộ 12 test có sẵn ở trên đã chạy (và pass) VỚI migration 0047
+# đã áp dụng -- không phải test mới riêng cho việc này, mà là bằng chứng thật
+# rằng chức năng tìm thuốc gõ sai/không dấu vẫn đúng sau migration.
+# ---------------------------------------------------------------------------
+def test_word_similarity_search_still_fast_after_cost_migration(db):
+    """`drug` (~3562 dòng) không có index cạnh tranh kiểu
+    `ix_drug_chunks_corpus_version` của `drug_chunks` -- chính điều kiện đó
+    mới khiến Cluster A's bug gốc xảy ra (planner chọn nhầm 1 index không
+    liên quan). Không có điều kiện đó, plan cho bảng nhỏ này vẫn là Seq Scan
+    dù COST=1 hay COST=100 (đã verify trực tiếp bằng EXPLAIN ANALYZE trên dữ
+    liệu thật khi review migration -- xem migration 0047's docstring), nên
+    không có gì để mất tốc độ. Bound rộng (2s, không phải mốc chặt) để tránh
+    flaky theo máy/CI -- mục đích là bắt một regression THẬT (giây, không
+    phải mili-giây), không phải theo dõi hiệu năng tinh vi."""
+
+    import time
+
+    started = time.monotonic()
+    results = tim_thuoc(db, "amlodipin gõ sai chính tả amlodipm", 50)
+    elapsed = time.monotonic() - started
+
+    assert results
+    assert elapsed < 2.0, f"tim_thuoc mất {elapsed:.3f}s -- nghi ngờ regression từ migration cost pg_trgm"

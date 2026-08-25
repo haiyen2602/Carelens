@@ -283,4 +283,26 @@ READY FOR PR: YES
 Branch: `build-38-quality-improvement-loop`, tách từ `origin/main` (`195ed2c`, sau khi xác nhận PR #118/#119 đã merge).
 Chưa deploy — theo đúng nguyên tắc chương trình (PR → review → merge → deploy, không tự deploy từ feature branch).
 
+---
+
+## 18. Code review response (round 1, post-push)
+
+Review tự động trên PR #120 nêu 2 điểm. Cả 2 đều verify thật (không nhận trên lời):
+
+1. **"Ticket compliance — PR #107/BUILD-29F non-compliant, thiếu PERSONAL_SYMPTOM/MEDICATION_DOSE_SAFETY/POSSIBLE_OVERDOSE/classify_intent()"** — **FALSE POSITIVE, do ticket bị link sai, không phải gap code thật.** Xác nhận: cả 3 intent + `classify_intent()` liên quan đã tồn tại đầy đủ trong `backend/agents/v2/orchestrator.py` hiện tại (`_INTENT_CONFIG`, `_is_possible_overdose`, `_is_proposed_dose_question`, `_is_personal_symptom`, dispatch trong `classify_intent()`) — được implement bởi **BUILD-29F, PR #107, đã merge `2026-08-23T10:03:33Z`** (xác nhận qua `gh pr view 107` + `git log`), **2 ngày TRƯỚC** khi BUILD-38 (PR #120 này) bắt đầu. PR #120 không hề liên quan tới ticket BUILD-29F — nó thuộc phạm vi hoàn toàn khác (retrieval performance + generation wording, xem §1-§8). Đây là lỗi liên kết ticket ở phía công cụ review tự động (rất có thể ticket tracker trỏ nhầm/còn mở dù code đã xong) — **không phải thứ sửa được bằng code trong PR này**; cần kiểm tra/đóng ticket đó ở phía hệ thống quản lý ticket, không phải trong repo.
+2. **"Database Migration — ALTER FUNCTION COST là thay đổi toàn CSDL, cần đảm bảo không ảnh hưởng truy vấn trigram khác ngoài RAG"** — **Câu hỏi hợp lệ, đã verify TRỰC TIẾP, không giả định.** Audit toàn repo tìm toán tự `<%`/`%>`/gọi `similarity()`/`word_similarity()` trong `backend/` + `scripts/`: chỉ có **1 nơi khác** ngoài `retrieval.py` — `backend/services/drug_knowledge/resolver.py` (tra cứu tên thuốc bảng `drug`, ~3562 dòng, dùng cho autocomplete bác sĩ kê đơn). Verify bằng dữ liệu thật: seed lại `drug` local từ `scripts/seed_drug_catalog.py` (3562 dòng, khớp chính xác production), chạy `EXPLAIN ANALYZE` cho đúng truy vấn `resolver.py` dùng với `COST=1` (trước fix) và `COST=100` (sau fix) trên 1 bảng scratch cùng shape/index — **kế hoạch thực thi giống hệt cả 2 lần (`Seq Scan`, không đổi)**. Lý do: bảng `drug` không có index cạnh tranh kiểu `ix_drug_chunks_corpus_version` của `drug_chunks` — chính điều kiện đó mới khiến bug gốc (Cluster A) xảy ra; không có điều kiện đó thì không có gì để planner chọn sai. Chạy thêm 13/13 test thật của `tests/services/drug_knowledge/test_resolver.py` (bao gồm 1 test mới, `test_word_similarity_search_still_fast_after_cost_migration`, khoá lại bound rộng 2s chống regression thật) — tất cả PASS với migration 0047 đã áp dụng.
+
+**Kết quả**: 0 sửa code liên quan finding 1 (không có gì để sửa — ticket link sai, không phải code gap). Finding 2: thêm bằng chứng verify vào chính docstring migration 0047 (để người đọc sau này thấy ngay, không phải đào lại) + 1 test mới. Chạy lại đầy đủ:
+
+```text
+pytest -q tests/services/drug_knowledge/test_resolver.py
+13 passed (12 cũ + 1 mới)
+
+pytest -q tests/test_retrieval_sql.py tests/test_agent_v2_medical_grounding.py
+41 passed, 1 pre-existing failed (không liên quan, xem §9)
+
+ruff check migrations/versions/0047_pg_trgm_word_similarity_cost.py tests/services/drug_knowledge/test_resolver.py
+All checks passed!
+```
+
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

@@ -43,6 +43,25 @@ LUU Y: day la thuoc tinh cua pg_trgm EXTENSION function -- neu extension
 duoc ALTER EXTENSION ... UPDATE trong tuong lai, COST co the bi reset ve
 mac dinh cua extension; migration nay se can chay lai (idempotent, an
 toan chay nhieu lan).
+
+PR REVIEW RESPONSE (round 1): mot reviewer tu dong hoi dung -- day la
+``ALTER FUNCTION`` toan CSDL (global), khong scope theo 1 truy van/session,
+nen co the anh huong CA CAC truy van trigram KHAC ngoai
+``backend/services/retrieval.py``. Da audit toan bo repo
+(tim toan tu <%/%>/goi ham similarity trong backend/ va scripts/) va tim
+dung 1 noi khac dung toan tu nay that:
+``backend/services/drug_knowledge/resolver.py`` (tra cuu
+ten thuoc theo bang ``drug``, ~3562 dong -- ho tro autocomplete cho bac
+si). Da verify THAT (khong doan) bang cach dung du lieu that (copy tu
+``drug_product.display_name`` vao bang scratch cung shape/index), chay
+EXPLAIN ANALYZE voi COST=1 (truoc fix) va COST=100 (sau fix) cho dung truy
+van resolver.py dung: **KE HOACH THUC THI GIONG HET CA 2 LAN** (``Seq Scan``
+ca 2 truong hop, khong doi sang GIN index) -- vi bang ``drug`` nho (~3562
+dong) va KHONG co index nao khac (nhu ``ix_drug_chunks_corpus_version``
+cua ``drug_chunks``) tao ra "plan re gia" de planner nham lan chon sai --
+day chinh la dieu kien CAN de bug goc (Cluster A) xay ra, va bang ``drug``
+khong co dieu kien do. Ket luan: fix nay AN TOAN cho resolver.py, khong
+regress.
 """
 
 from alembic import op
