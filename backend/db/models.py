@@ -1007,6 +1007,102 @@ class AgentRunEvaluation(Base):
     )
 
 
+class AgentRunJudge(Base):
+    """BUILD-33: durable production LLM Judge result for one Agent V2 run.
+
+    Only a sampled/ticketed/anomalous subset of runs ever get a row here (see
+    ``backend.agents.v2.judge_eligibility`` -- most COMPLETED runs get none at
+    all, by design, never a fabricated "not judged" row). Written in two
+    steps, both best-effort and never allowed to affect the real chat
+    response:
+
+    1. **Enqueue** (synchronous, cheap, no LLM call) -- right after
+       ``AgentRunEvaluation`` is persisted in
+       ``backend.api.agent_v2_routes._persist_durable_trace`` (or from
+       ``backend.services.agent_feedback.create_ticket`` for a reported
+       turn), a row is inserted with ``judge_status="JUDGE_PENDING"`` and a
+       sanitized input snapshot (below). This is the ONLY place the actual
+       query/response TEXT for a Judge-eligible run is captured: BUILD-32's
+       durable ``AgentRun``/``AgentRunSpan`` deliberately never carry it
+       (privacy-minimization, see that build's report §6), and the in-memory
+       ring buffer that does hold it is not guaranteed to still have it by
+       the time a background worker tick runs later.
+    2. **Score** (asynchronous, out-of-band, real LLM call) --
+       ``backend.services.agent_judge_worker.process_pending_judge_batch``,
+       run periodically off ``backend.services.escalation_scheduler``'s
+       existing shared APScheduler (never inline in the request/response
+       path), updates the same row to ``JUDGE_COMPLETED``/``JUDGE_FAILED``.
+
+    ``sanitized_query``/``sanitized_response``/``sanitized_context_json`` hold
+    ONLY what ``judge_input.build_judge_input`` assembled after its own
+    PII/PHI rejection guard: user query, final response, execution_path, tool
+    NAMES (never raw tool output/payload), citation labels, and (for a
+    golden-set case, BUILD-35) the expected ground truth. Never a system
+    prompt, chain-of-thought, JWT/credential, or unrelated patient history.
+
+    Safety/Handoff authority is structurally unaffected: nothing in
+    ``backend/agents/v2/orchestrator.py``, ``safety.py``, or ``runtime.py``
+    ever reads this table -- a Judge result is display/review-only, exactly
+    per BUILD-33 §5's "Judge KHONG duoc tu thay doi Safety/Handoff runtime
+    decision."
+    """
+
+    __tablename__ = "agent_run_judge"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String, nullable=False)
+
+    judge_status: Mapped[str] = mapped_column(String, nullable=False, default="JUDGE_PENDING")
+    eligibility_reason: Mapped[str] = mapped_column(String, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    execution_path: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    judge_provider: Mapped[str] = mapped_column(String, nullable=False)
+    judge_model: Mapped[str] = mapped_column(String, nullable=False)
+    judge_config_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    rubric_name: Mapped[str] = mapped_column(String, nullable=False)
+    rubric_version: Mapped[str] = mapped_column(String, nullable=False)
+    judge_prompt_version: Mapped[str] = mapped_column(String, nullable=False)
+    evaluation_version: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    overall_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    dimension_scores_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    flags_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    failure_reason: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cost_status: Mapped[str] = mapped_column(String, nullable=False, default="NOT_AVAILABLE")
+
+    sanitized_query: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sanitized_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sanitized_context_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # Duplicate protection (BUILD-33 §8): the same run must never be
+        # scored twice under the same model+rubric+prompt configuration. A
+        # DIFFERENT judge_model/rubric_version/prompt_version for the same
+        # run is a deliberate re-evaluation (e.g. after a rubric bump), not a
+        # duplicate, so it is intentionally NOT blocked by this index.
+        Index(
+            "uq_agent_run_judge_run_model_rubric_prompt",
+            "agent_run_id",
+            "judge_model",
+            "rubric_version",
+            "judge_prompt_version",
+            unique=True,
+        ),
+        Index("ix_agent_run_judge_trace_id", "trace_id"),
+        Index("ix_agent_run_judge_status_priority_created", "judge_status", "priority", "created_at"),
+    )
+
+
 class AgentRunCheckpoint(Base):
     """Durable, sanitized execution checkpoint for the disabled Agent V2 path.
 

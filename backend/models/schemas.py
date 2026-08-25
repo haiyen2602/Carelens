@@ -705,9 +705,35 @@ class AgentFeedbackSessionOut(BaseModel):
     offset: int
 
 
+class AgentFeedbackJudgeOut(BaseModel):
+    """BUILD-33 §11/§12: ticket detail's view of the durable Judge V2 result
+    for this same run's ``agent_run_id``, when one exists (``None`` on the
+    parent field when it does not -- see
+    ``backend.services.agent_feedback.judge_result_out``, never a fabricated
+    pending/empty result). Deliberately excludes the raw sanitized query/
+    response snapshot -- the ticket's own ``user_message``/
+    ``assistant_message`` already carry that text; this schema is
+    provenance + score only, per BUILD-33 §8."""
+
+    judge_status: str
+    judge_provider: str
+    judge_model: str
+    rubric_name: str
+    rubric_version: str
+    judge_prompt_version: str
+    eligibility_reason: str
+    overall_score: float | None = None
+    dimension_scores: dict[str, float] = Field(default_factory=dict)
+    flags: list[str] = Field(default_factory=list)
+    confidence: float | None = None
+    failure_reason: str | None = None
+    evaluated_at: datetime | None = None
+
+
 class AgentFeedbackTicketDetailOut(BaseModel):
     ticket: AgentFeedbackTicketOut
     trace: AgentFeedbackTraceSummaryOut
+    judge: AgentFeedbackJudgeOut | None = None
 
 
 class AgentFeedbackTicketUpdateRequest(BaseModel):

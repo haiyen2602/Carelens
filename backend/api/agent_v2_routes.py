@@ -74,6 +74,7 @@ from backend.services.agent_idempotency import (
     claim_or_replay,
     record_completion,
 )
+from backend.services.agent_judge_worker import enqueue_run_judge
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
@@ -992,5 +993,14 @@ def run_agent_orchestration(
     # reply/evaluation/spans durable (see _persist_durable_trace's own
     # docstring).
     _persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=actor)
+    # BUILD-33: same best-effort, post-commit shape as the three calls above
+    # -- decides Judge eligibility from real completed-run evidence
+    # (Evaluation V2 dispatch, recomputed cheaply/deterministically inside
+    # enqueue_run_judge) and, when eligible, inserts one JUDGE_PENDING row.
+    # Never calls the Judge model itself -- that happens later, out-of-band,
+    # off backend.services.escalation_scheduler's shared APScheduler. Fully
+    # self-contained (own try/except/rollback/log), so it is safe to call
+    # directly here without extra wrapping, same as _persist_durable_trace.
+    enqueue_run_judge(db, result=result, request_message=request.message, settings=settings)
 
     return response

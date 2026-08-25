@@ -21,6 +21,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from backend.config import get_settings
 from backend.db.base import SessionLocal, engine
+from backend.services.agent_judge_worker import process_pending_judge_batch
 from backend.services.classification import summarize_hourly_conversation
 from backend.services.dose_push_reminder import quet_va_day_nhac
 from backend.services.escalation_reminder import check_and_send_reminders
@@ -88,6 +89,27 @@ async def _run_dose_push_reminder() -> None:
         db.close()
 
 
+async def _run_judge_worker() -> None:
+    """BUILD-33 §4/§14: the only place ``process_pending_judge_batch`` (a
+    real Judge LLM call) ever runs -- never inline in the chat request path.
+    A no-op tick when ``agent_judge_enabled`` is off, same shape as every
+    other flag-gated background job already in this file, so the job is
+    always registered (simpler than conditional ``add_job`` calls) but does
+    nothing until an operator opts in."""
+    settings = get_settings()
+    if not settings.agent_judge_enabled:
+        return
+    db = SessionLocal()
+    try:
+        processed = process_pending_judge_batch(db, settings=settings)
+        if processed:
+            logger.info("Da xu ly %d Judge evaluation dang cho", processed)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        logger.exception("Loi khi chay Judge worker job")
+    finally:
+        db.close()
+
+
 def start_escalation_scheduler() -> AsyncIOScheduler:
     """Goi trong FastAPI lifespan (src/main.py) luc app khoi dong. Idempotent
     - goi nhieu lan chi tao scheduler 1 lan (vd test import lai module)."""
@@ -130,6 +152,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         id="photo_cleanup",
         replace_existing=True,
         max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_judge_worker,
+        "interval",
+        seconds=settings.agent_judge_poll_interval_seconds,
+        id="agent_judge_worker",
+        replace_existing=True,
+        max_instances=1,  # tranh 2 tick chong nhau neu 1 lan Judge call cham hon interval
     )
     _scheduler.start()
     logger.info(
