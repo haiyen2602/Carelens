@@ -394,6 +394,28 @@ def safety_event_detail(db: Session, event_id: str) -> dict[str, Any] | None:
     return summary
 
 
+def safety_event_for_agent_run(db: Session, agent_run_id: str | None) -> dict[str, Any] | None:
+    """BUILD-36: the reverse direction of ``safety_event_detail`` -- given
+    an ``agent_run_id`` (a ticket's, a trace's), find that run's real
+    ``AgentSafetyEvent`` row if one exists. ``None`` for a run that never
+    triggered Safety (the overwhelming majority -- a plain ``SAFE`` outcome
+    gets no row, by design, see ``AgentSafetyEvent``'s own docstring), same
+    "no row is a real, honest state, never a fabricated placeholder" shape
+    as ``agent_feedback.judge_result_out``. Live-joins ``DoctorReviewRequest``
+    exactly like every other read in this module -- never the row's own
+    stale snapshot columns."""
+
+    if not agent_run_id:
+        return None
+    event = db.execute(select(AgentSafetyEvent).where(AgentSafetyEvent.agent_run_id == agent_run_id)).scalars().first()
+    if event is None:
+        return None
+    live = _live_handoff_status(db, event.handoff_id, created_at=event.created_at)
+    summary = _event_summary(event, live)
+    summary["assigned_doctor_id"] = live.assigned_doctor_id
+    return summary
+
+
 # BUILD-34 §4: Judge is a secondary signal only -- this NEVER writes
 # anything, never touches SafetyDecision/AgentSafetyEvent, and never
 # triggers a handoff. It is a read-only correlation for Admin review between

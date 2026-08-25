@@ -32,11 +32,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser
-from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunJudge, AgentRunSpan
+from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunEvaluation, AgentRunJudge, AgentRunSpan
 from backend.models.schemas import (
     AgentFeedbackCreateRequest,
+    AgentFeedbackEvaluationOut,
     AgentFeedbackJudgeOut,
     AgentFeedbackReason,
+    AgentFeedbackSafetyOut,
     AgentFeedbackSessionMessageOut,
     AgentFeedbackTraceSummaryOut,
 )
@@ -362,6 +364,55 @@ def judge_result_out(db: Session, agent_run_id: str | None) -> AgentFeedbackJudg
         confidence=row.confidence,
         failure_reason=row.failure_reason,
         evaluated_at=row.evaluated_at,
+    )
+
+
+def evaluation_result_out(db: Session, agent_run_id: str | None) -> AgentFeedbackEvaluationOut | None:
+    """BUILD-36 audit finding: ticket detail never surfaced Evaluation V2
+    (BUILD-31/32) at all, despite it being durable and already sanitized
+    (status/source/reason per metric -- never a numeric heuristic score,
+    which is ring-buffer-only). Same "no row is a real, honest state, never
+    fabricated" shape as ``judge_result_out`` right above."""
+
+    if not agent_run_id:
+        return None
+    try:
+        row = db.execute(
+            select(AgentRunEvaluation).where(AgentRunEvaluation.agent_run_id == agent_run_id)
+        ).scalars().first()
+    except Exception as durable_err:  # noqa: BLE001 -- a read failure hides this panel, never breaks the ticket page
+        logging.getLogger(__name__).warning("BUILD-36 evaluation_result_out lookup failed: %s", durable_err)
+        return None
+    if row is None:
+        return None
+    return AgentFeedbackEvaluationOut(
+        evaluation_version=row.evaluation_version, execution_path=row.execution_path, metrics=dict(row.metrics_json or {})
+    )
+
+
+def safety_result_out(db: Session, agent_run_id: str | None) -> AgentFeedbackSafetyOut | None:
+    """BUILD-36 audit finding: ticket detail previously only inferred a
+    coarse safety_outcome string from ``AgentRun.status`` -- never the real
+    ``AgentSafetyEvent`` row (severity/reason_code/provenance/live handoff
+    status). Reuses ``agent_safety_monitoring.safety_event_for_agent_run``
+    (the SAME live-join logic BUILD-34's own admin routes already use) --
+    not a second, independent implementation."""
+
+    from backend.services.agent_safety_monitoring import safety_event_for_agent_run
+
+    try:
+        summary = safety_event_for_agent_run(db, agent_run_id)
+    except Exception as durable_err:  # noqa: BLE001
+        logging.getLogger(__name__).warning("BUILD-36 safety_result_out lookup failed: %s", durable_err)
+        return None
+    if summary is None:
+        return None
+    return AgentFeedbackSafetyOut(
+        outcome=summary["outcome"], reason_code=summary["reason_code"], severity=summary["severity"],
+        handoff_required=summary["handoff_required"], handoff_created=summary["handoff_created"],
+        handoff_id=summary["handoff_id"], handoff_status_live=summary["handoff_status_live"],
+        handoff_resolved=summary["handoff_resolved"], assigned_doctor_id=summary["assigned_doctor_id"],
+        time_to_review_seconds=summary["time_to_review_seconds"],
     )
 
 
