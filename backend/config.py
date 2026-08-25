@@ -64,6 +64,78 @@ class Settings(BaseSettings):
     # from the JSON itself.
     agent_model_pricing_version: str = "unversioned"
 
+    # BUILD-33: production LLM Judge V2 (backend/agents/v2/judge_provider.py,
+    # judge_rubrics.py, judge_eligibility.py, judge_input.py, backend/services/
+    # agent_judge_worker.py). Distinct from `rag_judge_model`/
+    # `openai_judge_api_key` above (BUILD-15's offline-only DeepEval judge,
+    # `backend/agents/v2/deepeval_judge.py`, which by its own docstring is
+    # "never imported by Agent runtime/Safety code" and only ever scores
+    # versioned public golden RAG cases) -- this Judge scores REAL sampled/
+    # ticketed production Agent V2 turns, so it gets its own settings/
+    # provenance rather than silently reusing that module's model config,
+    # even though the OpenAI *credential* below IS deliberately shared (same
+    # provider, same "Judge" purpose, `openai_judge_api_key` already exists
+    # for exactly this -- see judge_provider.py's credential resolver).
+    #
+    # Default OFF -- an operator must explicitly opt in once a real judge
+    # credential is configured, same pattern as `agent_runtime_enabled`.
+    agent_judge_enabled: bool = False
+    # Project's stated target (BUILD-32-TO-36-MASTER-PLAN.md, BUILD-33 §2):
+    # Gemini 3.7 Flash, thinking/reasoning=high. Verified real and reachable
+    # 2026-08-25 (model ID `gemini-3.7-flash`, generally available; Google's
+    # OpenAI-compatible endpoint `https://generativelanguage.googleapis.com/
+    # v1beta/openai/` supports it with `reasoning_effort` mapped to its
+    # `thinkingLevel` -- see BUILD-33 report §2). No new SDK dependency: the
+    # existing `openai` package talks to it via `base_url` alone, the exact
+    # precedent already proven in this repo by
+    # backend/vlm_demthuoc/providers.py's own "gemini"/"aistudio"/"google"
+    # base_url presets for a completely different (VLM) pipeline. Shipped as
+    # the DEFAULT below per that stated target; there is no real
+    # `GOOGLE_API_KEY` configured in this local dev environment, so a live
+    # Gemini call could not be verified end-to-end this build (see report
+    # §2/§13) -- `agent_judge_google_api_key` empty is a real, honest
+    # `JUDGE_FAILED`/credential-not-configured state, never a silent
+    # fallback to a different model.
+    agent_judge_provider: Literal["openai", "google"] = "google"
+    agent_judge_model: str = "gemini-3.7-flash"
+    agent_judge_google_api_key: str = ""
+    # Only sent when agent_judge_provider="google" (see judge_provider.py) --
+    # an OpenAI model does not accept this parameter the same way.
+    agent_judge_reasoning_effort: Literal["low", "medium", "high"] = "high"
+    # Empty = provider default endpoint (OpenAI's own, or Google's OpenAI-
+    # compat endpoint when provider="google" -- resolved in judge_provider.py,
+    # never guessed from a bare provider-name abbreviation the way the
+    # standalone VLM tool's own resolve_base_url() does, since this setting
+    # is already an explicit enum).
+    agent_judge_base_url: str = ""
+    agent_judge_timeout_seconds: float = Field(default=30.0, gt=0, le=120.0)
+    # No SDK-level retries (mirrors deepeval_judge.py's own TrackingGPT4oJudge
+    # and vlm_demthuoc's OpenAICompatBackend reasoning): an exhausted Judge
+    # provider failure must surface as JUDGE_FAILED, not silently retry and
+    # inflate the background worker tick.
+    #
+    # Fraction of otherwise-non-eligible COMPLETED runs additionally sampled
+    # for Judge review (on top of, never instead of, ticket/anomaly
+    # eligibility -- see judge_eligibility.py). [CHUA CHOT] placeholder,
+    # same caveat as this project's other not-yet-product-decided rate
+    # constants (rate_limit_*, drug_confirmation_ttl_minutes above).
+    agent_judge_sampling_rate: float = Field(default=0.05, ge=0.0, le=1.0)
+    # A heuristic (never model-authoritative) faithfulness/relevance score
+    # below this threshold makes an otherwise-ordinary RAG/general-model run
+    # LOW_SCORE-eligible for Judge review -- see judge_eligibility.py.
+    agent_judge_low_score_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Bounds one scheduler tick's real LLM-call work (see
+    # backend/services/agent_judge_worker.py::process_pending_judge_batch) --
+    # a slow/degraded Judge provider must not let one tick run indefinitely.
+    agent_judge_max_per_tick: int = Field(default=5, ge=1, le=50)
+    agent_judge_poll_interval_seconds: float = Field(default=30.0, gt=0, le=3600.0)
+    # Bump whenever the rubric prompts in judge_rubrics.py change meaning --
+    # combined with agent_judge_model + rubric_version, this is the
+    # duplicate-protection key (AgentRunJudge's own unique index) and the
+    # provenance every persisted score can be traced back to.
+    agent_judge_prompt_version: str = "judge-v1"
+    agent_judge_rubric_version: str = "rubric-v1"
+
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"
 

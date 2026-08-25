@@ -18,6 +18,7 @@ from backend.config import get_settings
 from backend.db.base import get_db
 from backend.models.schemas import AgentFeedbackCreateRequest, AgentFeedbackTicketOut
 from backend.services.agent_feedback import CrossPatientTraceError, create_ticket
+from backend.services.agent_judge_worker import enqueue_ticket_judge
 
 agent_feedback_router = APIRouter()
 
@@ -68,7 +69,7 @@ def submit_feedback_report(
     _get_default_limiter().check(actor.id)
 
     try:
-        ticket, _created = create_ticket(db, actor=actor, payload=payload)
+        ticket, created = create_ticket(db, actor=actor, payload=payload)
     except CrossPatientTraceError as exc:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="trace_id khong thuoc ve tai khoan nay") from exc
@@ -77,4 +78,12 @@ def submit_feedback_report(
         raise
 
     db.commit()
+
+    # BUILD-33 §3/§11: a reported turn is always Judge-eligible (never
+    # subject to sampling) -- best-effort, its own commit, and only for a
+    # genuinely NEW ticket (a duplicate/idempotent resubmit already has one
+    # enqueued, or is already covered by AgentRunJudge's own unique index).
+    if created:
+        enqueue_ticket_judge(db, ticket=ticket, settings=get_settings())
+
     return AgentFeedbackTicketOut.model_validate(ticket)

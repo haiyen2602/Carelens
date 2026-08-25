@@ -32,9 +32,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser
-from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunSpan
+from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunJudge, AgentRunSpan
 from backend.models.schemas import (
     AgentFeedbackCreateRequest,
+    AgentFeedbackJudgeOut,
     AgentFeedbackReason,
     AgentFeedbackSessionMessageOut,
     AgentFeedbackTraceSummaryOut,
@@ -323,6 +324,47 @@ def trace_summary_out(
     return AgentFeedbackTraceSummaryOut(trace_id=trace_id, found=False)
 
 
+def judge_result_out(db: Session, agent_run_id: str | None) -> AgentFeedbackJudgeOut | None:
+    """BUILD-33 §11: ticket detail's view of this run's durable Judge V2
+    result (backend.db.models.AgentRunJudge), when one exists. ``None`` when
+    no row exists (Judge not enabled, run not eligible, or not yet enqueued)
+    -- never a fabricated ``JUDGE_PENDING`` placeholder for a run that was
+    never actually enqueued. A run with more than one row (a deliberate
+    re-evaluation under a different model/rubric/prompt version, see
+    ``AgentRunJudge``'s unique index) returns the most recently created one.
+    """
+
+    if not agent_run_id:
+        return None
+    try:
+        row = db.execute(
+            select(AgentRunJudge)
+            .where(AgentRunJudge.agent_run_id == agent_run_id)
+            .order_by(AgentRunJudge.created_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001 -- a read failure hides the Judge panel, never breaks the ticket page
+        logging.getLogger(__name__).warning("BUILD-33 judge_result_out lookup failed: %s", durable_err)
+        return None
+    if row is None:
+        return None
+    return AgentFeedbackJudgeOut(
+        judge_status=row.judge_status,
+        judge_provider=row.judge_provider,
+        judge_model=row.judge_model,
+        rubric_name=row.rubric_name,
+        rubric_version=row.rubric_version,
+        judge_prompt_version=row.judge_prompt_version,
+        eligibility_reason=row.eligibility_reason,
+        overall_score=row.overall_score,
+        dimension_scores=dict(row.dimension_scores_json or {}),
+        flags=list(row.flags_json or []),
+        confidence=row.confidence,
+        failure_reason=row.failure_reason,
+        evaluated_at=row.evaluated_at,
+    )
+
+
 _NO_PREVIEW_RETAINED = "(nội dung không còn được lưu tạm -- xem trace để biết thêm chi tiết)"
 
 
@@ -419,6 +461,7 @@ __all__ = [
     "TraceOwnershipResult",
     "classify_priority",
     "create_ticket",
+    "judge_result_out",
     "session_messages",
     "trace_summary_out",
     "verify_trace_ownership",

@@ -27,7 +27,7 @@ from backend.models.schemas import (
     AgentFeedbackTicketOut,
     AgentFeedbackTicketUpdateRequest,
 )
-from backend.services.agent_feedback import session_messages, trace_summary_out
+from backend.services.agent_feedback import judge_result_out, session_messages, trace_summary_out
 
 admin_feedback_router = APIRouter(prefix="/admin/tickets", tags=["admin-feedback-tickets"])
 
@@ -89,7 +89,8 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db), _admin=Depends(_re
     records to begin with."""
     ticket = _get_ticket_or_404(db, ticket_id)
     trace = trace_summary_out(db, ticket.trace_id)
-    return AgentFeedbackTicketDetailOut(ticket=AgentFeedbackTicketOut.model_validate(ticket), trace=trace)
+    judge = judge_result_out(db, ticket.agent_run_id)
+    return AgentFeedbackTicketDetailOut(ticket=AgentFeedbackTicketOut.model_validate(ticket), trace=trace, judge=judge)
 
 
 @admin_feedback_router.get("/{ticket_id}/session", response_model=AgentFeedbackSessionOut)
