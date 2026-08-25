@@ -32,7 +32,12 @@ from backend.agents.v2.judge_input import JudgeInputRejectedError, build_judge_i
 from backend.agents.v2.judge_provider import JudgeOutputSchema, call_judge, resolve_base_url, resolve_credential
 from backend.agents.v2.judge_rubrics import render_prompt, rubric_for_path
 from backend.db.models import AgentRunEvaluation, AgentRunJudge
-from backend.services.agent_judge_worker import enqueue_run_judge, enqueue_ticket_judge, process_pending_judge_batch
+from backend.services.agent_judge_worker import (
+    enqueue_golden_judge,
+    enqueue_run_judge,
+    enqueue_ticket_judge,
+    process_pending_judge_batch,
+)
 
 # ---------------------------------------------------------------------------
 # shared fakes
@@ -471,6 +476,135 @@ def test_enqueue_ticket_judge_uses_real_execution_path_when_durable_row_exists(d
     row = enqueue_ticket_judge(db, ticket=ticket, settings=_settings())
     assert row.execution_path == "MEDICATION_DOSE_SAFETY"
     assert row.rubric_name == "judge-dose-safety"
+
+
+# ---------------------------------------------------------------------------
+# enqueue_golden_judge (BUILD-35 SS10) -- same DB/fakes/no-network pattern as
+# the ticket tests above; this function lives in this module because it is
+# a third sibling of enqueue_run_judge/enqueue_ticket_judge, even though the
+# real call site is scripts/agent_v2/run_golden_evaluation.py, not a request
+# handler.
+# ---------------------------------------------------------------------------
+
+
+def test_enqueue_golden_judge_is_always_eligible_with_priority_zero(db):
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-1",
+        trace_id="trace-golden-1",
+        query="sỏi thận là bệnh gì",
+        response_text="Sỏi thận là tình trạng...",
+        execution_path=EvaluationPath.RAG,
+        tool_names=("search_drug",),
+        citation_titles=("Bệnh sỏi thận",),
+        evaluation_version="evaluation-v2",
+        settings=_settings(agent_judge_sampling_rate=0.0, agent_judge_enabled=False),
+    )
+    assert row is not None
+    assert row.eligibility_reason == "GOLDEN"
+    assert row.priority == 0
+    assert row.execution_path == "RAG"
+    assert row.rubric_name == "judge-rag"
+    assert row.sanitized_query == "sỏi thận là bệnh gì"
+
+
+def test_enqueue_golden_judge_ignores_agent_judge_enabled_flag(db):
+    """Unlike enqueue_run_judge, a golden run is a deliberate one-off
+    invocation -- it must enqueue even when the production background
+    worker toggle is off."""
+
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-2",
+        trace_id="trace-golden-2",
+        query="q",
+        response_text="a",
+        execution_path=EvaluationPath.GENERAL_MODEL,
+        settings=_settings(agent_judge_enabled=False),
+    )
+    assert row is not None
+
+
+def test_enqueue_golden_judge_uses_caller_supplied_execution_path_for_rubric(db):
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-3",
+        trace_id="trace-golden-3",
+        query="Toi vua uong nham 20 vien thuoc roi",
+        response_text="Day la huong dan an toan...",
+        execution_path=EvaluationPath.SAFETY,
+        settings=_settings(),
+    )
+    assert row.execution_path == "SAFETY"
+    assert row.rubric_name == "judge-safety-handoff"
+
+
+def test_enqueue_golden_judge_missing_execution_path_falls_back_to_generic_rubric(db):
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-4",
+        trace_id="trace-golden-4",
+        query="q",
+        response_text="a",
+        execution_path=None,
+        settings=_settings(),
+    )
+    assert row.execution_path is None
+    assert row.rubric_name == "judge-generic"
+
+
+def test_enqueue_golden_judge_duplicate_protection_same_run_model_rubric_prompt(db):
+    kwargs = dict(
+        agent_run_id="run-golden-5",
+        trace_id="trace-golden-5",
+        query="q",
+        response_text="a",
+        execution_path=EvaluationPath.RAG,
+        settings=_settings(),
+    )
+    first = enqueue_golden_judge(db, **kwargs)
+    second = enqueue_golden_judge(db, **kwargs)
+    assert first is not None
+    assert second is None  # re-running the same golden case under the same judge config must not duplicate
+    assert len(db.execute(select(AgentRunJudge)).scalars().all()) == 1
+
+
+def test_enqueue_golden_judge_pii_input_is_rejected_not_enqueued(db):
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-6",
+        trace_id="trace-golden-6",
+        query="q",
+        response_text="goi 0912345678 nhe",
+        execution_path=EvaluationPath.GENERAL_MODEL,
+        settings=_settings(),
+    )
+    assert row is None
+    assert db.execute(select(AgentRunJudge)).scalar_one_or_none() is None
+
+
+def test_enqueue_golden_judge_never_raises_even_on_internal_failure(db, monkeypatch):
+    """Same 'Judge failure must not lose the deterministic golden grading'
+    contract as enqueue_run_judge's own equivalent test -- the golden
+    runner's grade_case() result must survive a Judge-side internal
+    exception untouched, never degrading to a fabricated score."""
+
+    import backend.services.agent_judge_worker as worker
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated internal failure")
+
+    monkeypatch.setattr(worker, "build_judge_input", _boom)
+    row = enqueue_golden_judge(
+        db,
+        agent_run_id="run-golden-7",
+        trace_id="trace-golden-7",
+        query="q",
+        response_text="a",
+        execution_path=EvaluationPath.RAG,
+        settings=_settings(),
+    )  # must not raise
+    assert row is None
 
 
 # ---------------------------------------------------------------------------

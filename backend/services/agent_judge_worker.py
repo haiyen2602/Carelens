@@ -33,6 +33,7 @@ from backend.agents.v2.evaluation_v2 import EvaluationPath, EvaluationResult, Me
 from backend.agents.v2.judge_eligibility import (
     JudgeEligibility,
     evaluate_sampling_eligibility,
+    golden_eligibility,
     ticket_eligibility,
 )
 from backend.agents.v2.judge_input import JudgeInputPayload, JudgeInputRejectedError, build_judge_input
@@ -216,6 +217,98 @@ def enqueue_run_judge(
     except Exception:  # noqa: BLE001 -- Judge enqueue is best-effort; it must never break the real chat response
         db.rollback()
         logger.exception("Judge enqueue failed for agent_run_id=%s", getattr(result, "agent_run_id", "?"))
+        return None
+
+
+def enqueue_golden_judge(
+    db: Session,
+    *,
+    agent_run_id: str,
+    trace_id: str,
+    query: str,
+    response_text: str,
+    execution_path: EvaluationPath | None,
+    tool_names: tuple[str, ...] = (),
+    citation_titles: tuple[str, ...] = (),
+    evaluation_version: str | None = None,
+    settings: Any,
+) -> AgentRunJudge | None:
+    """Golden-set-triggered enqueue (BUILD-35 SS10) -- called by
+    ``scripts/agent_v2/run_golden_evaluation.py`` right after a golden case's
+    real ``run_agent_orchestration()`` call has already completed and
+    committed. Always eligible (``golden_eligibility()``, priority 0, same
+    tier as TICKET) -- a golden case is a deliberate, curated trigger, never
+    subject to sampling/heuristic gating.
+
+    Deliberately shaped like ``enqueue_ticket_judge``, NOT ``enqueue_run_
+    judge``: the golden runner calls the *public*
+    ``backend.api.agent_v2_routes.run_agent_orchestration`` entry point (the
+    same one a real request uses -- exercising the identical code path is
+    the whole point of a golden regression run), which returns the HTTP-
+    shaped ``AgentV2OrchestrateResponse``, not the internal orchestrator's
+    ``OrchestrationResult``. That response has tool *names* (already
+    flattened, no ``.data``) and citation objects, but no live
+    ``safety_decision``/``handoff_result`` to re-run ``dispatch_evaluation``
+    against. Rather than reconstruct a fake internal result, the caller
+    passes the already-durable ``execution_path`` (BUILD-32's own
+    ``AgentRunEvaluation.execution_path`` row for this exact
+    ``agent_run_id``, written by that same real request) directly. One real
+    consequence: RAG ``retrieved_evidence`` (tool ``.data`` snippets) is
+    never populated here -- acceptable, since it is supplementary grounding
+    context for the Judge, not required input (``JudgeInputPayload.
+    retrieved_evidence`` already defaults to empty).
+
+    Same "never raises, never blocks the caller" contract as the other two
+    ``enqueue_*_judge`` functions: the golden runner's own deterministic
+    ``grade_case()`` result must never be lost or degraded because a Judge
+    call failed to even enqueue, let alone because it later failed to score
+    (that failure mode is handled downstream by ``_score_one_row`` writing
+    JUDGE_FAILED, never a fabricated 0 score).
+
+    Unlike ``enqueue_run_judge``, this does NOT gate on
+    ``settings.agent_judge_enabled`` -- a golden evaluation run explicitly
+    opting into Judge scoring (``run_golden_evaluation.py --with-judge``) is
+    a deliberate one-off invocation, independent of whether the production
+    background worker is turned on for live traffic. The caller decides
+    whether to invoke this function at all.
+    """
+
+    try:
+        # SimpleNamespace shims satisfy build_judge_input's getattr-based
+        # duck typing (`.name`/`.data` for tools, `.title` for citations)
+        # without requiring judge_input.py to grow a second, string-only
+        # code path -- see docstring above for why only names/titles (never
+        # `.data`) are available here.
+        from types import SimpleNamespace
+
+        tool_results = tuple(SimpleNamespace(name=name, data=None) for name in tool_names if name)
+        citations = tuple(SimpleNamespace(title=title) for title in citation_titles if title)
+
+        try:
+            payload = build_judge_input(
+                query=query,
+                response=response_text,
+                path=execution_path or EvaluationPath.OUT_OF_SCOPE,
+                tool_results=tool_results,
+                citations=citations,
+            )
+        except JudgeInputRejectedError as rejected:
+            logger.warning("Golden Judge input rejected for agent_run_id=%s: %s", agent_run_id, rejected)
+            return None
+
+        row = _new_row(
+            agent_run_id=agent_run_id,
+            trace_id=trace_id,
+            execution_path=execution_path,
+            evaluation_version=evaluation_version,
+            settings=settings,
+            eligibility=golden_eligibility(),
+            payload=payload,
+        )
+        return _insert_row(db, row)
+    except Exception:  # noqa: BLE001 -- Judge enqueue is best-effort; it must never break the golden run's own deterministic grading
+        db.rollback()
+        logger.exception("Golden Judge enqueue failed for agent_run_id=%s", agent_run_id)
         return None
 
 

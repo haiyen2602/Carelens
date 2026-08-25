@@ -68,3 +68,72 @@ jobs:
           OPENAI_API_KEY: test-key
           INTERNAL_AUTH_SECRET: test-internal-secret-for-ci-testing-only
           JWT_SECRET: test-jwt-secret-for-ci-testing-only
+
+  # BUILD-35: a new, separate, minimal job -- deliberately NOT folded into
+  # lint-and-test above. That job has no Postgres service block at all (see
+  # its own history/PR discussion) and this repo's own standing note is that
+  # it has been broken for a while; fixing it is out of this build's scope
+  # (BUILD-32-TO-36-MASTER-PLAN.md's own "do not silently expand a build's
+  # scope" rule). This job only runs the golden-set categories whose real
+  # grading contract asserts zero model calls
+  # (scripts/agent_v2/run_golden_evaluation.py's own
+  # _DETERMINISTIC_CATEGORIES) -- schedule/triage/dose-safety/safety-
+  # escalation/out-of-scope/auth-isolation -- so it needs a real Postgres
+  # instance (Agent V2 durably writes AgentRun/AgentRunEvaluation/
+  # AgentSafetyEvent) but explicitly never a paid model credential
+  # (OPENAI_API_KEY stays the same fake test-key lint-and-test already uses;
+  # deterministic paths never reach the model gateway -- see BUILD-35's own
+  # report for the verification of this claim).
+  golden-smoke:
+    runs-on: [self-hosted, linux, x64, cohort3]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: golden_ci
+          POSTGRES_PASSWORD: golden_ci
+          POSTGRES_DB: golden_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install --default-timeout=100 --retries 5 -r requirements.txt
+
+      - name: Run migrations
+        run: alembic upgrade head
+        env:
+          DATABASE_URL: postgresql://golden_ci:golden_ci@localhost:5432/golden_ci
+
+      - name: Seed the Agent V2 staging canary fixtures the golden set's fixture.patient references
+        run: python scripts/agent_v2/seed_staging_agent_v2_data.py
+        env:
+          DATABASE_URL: postgresql://golden_ci:golden_ci@localhost:5432/golden_ci
+          APP_ENV: test
+          OPENAI_API_KEY: test-key
+          INTERNAL_AUTH_SECRET: test-internal-secret-for-ci-testing-only
+          JWT_SECRET: test-jwt-secret-for-ci-testing-only
+
+      - name: Run golden-set deterministic-only smoke
+        run: python scripts/agent_v2/run_golden_evaluation.py --deterministic-only --out-dir /tmp/golden-ci-out
+        env:
+          DATABASE_URL: postgresql://golden_ci:golden_ci@localhost:5432/golden_ci
+          AGENT_RUNTIME_ENABLED: "true"
+          APP_ENV: test
+          OPENAI_API_KEY: test-key
+          INTERNAL_AUTH_SECRET: test-internal-secret-for-ci-testing-only
+          JWT_SECRET: test-jwt-secret-for-ci-testing-only
