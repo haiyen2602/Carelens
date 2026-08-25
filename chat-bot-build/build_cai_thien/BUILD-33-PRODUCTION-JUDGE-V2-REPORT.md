@@ -553,6 +553,44 @@ utc` thay vì alias `datetime.UTC`) đã có TỪ TRƯỚC BUILD-33, không nằ
 2 dòng tôi thực sự sửa (1 import + 1 field mới) — cố ý không dọn dẹp lẫn
 vào diff của build này, ghi rõ ở đây thay vì lặng im).
 
+## 13.1 Code Review tự động (post-push) — 3 finding, xác minh từng cái
+
+Một review tự động trên PR flag 3 điểm. Xác minh bằng code/test thật, không
+nhận đúng chỉ vì bot nói:
+
+1. **"Potential DB Deadlock" trong `_insert_row`** — claim: `db.commit()`
+   gọi trong lúc savepoint (`db.begin_nested()`) còn active có thể deadlock.
+   **Sai, đã bác bỏ bằng chứng thật**: `with db.begin_nested()` đã RELEASE
+   savepoint và thoát khối trước khi `db.commit()` chạy — lúc đó session
+   không còn ở trong nested transaction nào cả, `commit()` là commit bình
+   thường lên transaction ngoài cùng, đúng chuẩn SQLAlchemy (cùng pattern
+   `agent_idempotency.py`/`agent_feedback.create_ticket` đã dùng). Verify
+   trực tiếp trên Postgres thật: insert trùng 2 lần liên tiếp trên CÙNG 1
+   session — lần 2 trả `None` sạch (không raise, không treo), session vẫn
+   dùng được bình thường ngay sau đó (insert 1 row khác, commit thành công).
+   Không sửa gì.
+2. **"Resource Leak" trong `call_judge`** — claim: nếu có exception không
+   lường trước xảy ra trước khi tới `client.close()`, connection pool có
+   thể leak. Xem xét kỹ: mọi nhánh thoát THẬT trong code cũ đều đã gọi
+   `client.close()` (thành công, `BadRequestError`, `Exception` chung) —
+   không có leak THẬT trong luồng đang chạy được. Nhưng đề xuất sửa
+   (`with openai.OpenAI(...) as client:`) là cải tiến hợp lý, mạnh mẽ hơn,
+   loại bỏ 3 chỗ gọi `close()` rải rác — **đã áp dụng**, xác nhận lại bằng
+   1 lệnh gọi Judge thật (Gemini qua Vilao) sau khi sửa, vẫn `SCORED` đúng.
+3. **"Heuristic Score Risk" trong `_heuristic_score`** — claim:
+   `LLMJudgeEvaluator` "likely performs its own LLM calls or heavy
+   computation", vi phạm yêu cầu enqueue phải rẻ/đồng bộ. **Sai, xác minh
+   trực tiếp bằng cách đọc lại `backend/services/evaluators.py`**:
+   `evaluate_answer_relevance`/`evaluate_faithfulness` là hàm thuần
+   Python, chỉ `re.findall` + phép giao tập hợp từ — không I/O, không gọi
+   model, không tính toán nặng. Tên lớp `LLMJudgeEvaluator` gây hiểu lầm
+   (đặt từ trước BUILD-33, không phải do build này) nhưng bản thân
+   implementation không phải LLM. Không sửa code logic; đủ để ghi rõ ở
+   đây cho review sau không hiểu lầm lại.
+
+Test sau khi sửa (chỉ finding 2 cần code change): 49/49 vẫn pass, 802/802
+agent_v2-scoped vẫn pass, `ruff` clean.
+
 ---
 
 ## 14. Migration test (upgrade → downgrade → upgrade)

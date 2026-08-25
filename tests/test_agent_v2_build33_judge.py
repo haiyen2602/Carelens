@@ -277,6 +277,13 @@ class _FakeClient:
     def close(self):
         self.closed = True
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
 
 def _patch_openai_client(monkeypatch, outcome):
     fake_client = _FakeClient(outcome)

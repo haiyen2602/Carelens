@@ -143,7 +143,6 @@ def call_judge(
     if not model:
         return JudgeCallResult(status="JUDGE_FAILED", failure_reason="MODEL_NOT_CONFIGURED")
 
-    client = openai.OpenAI(api_key=api_key, base_url=base_url, timeout=timeout_seconds, max_retries=0)
     kwargs: dict = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -156,32 +155,34 @@ def call_judge(
     if provider == "google" and reasoning_effort:
         kwargs["reasoning_effort"] = reasoning_effort
 
-    # 2-rung ladder, same resilience idiom as this repo's own
-    # backend/vlm_demthuoc/providers.py::OpenAICompatBackend (schema/object/
-    # off) -- json_object first (broadly supported, guarantees valid JSON
-    # syntax); if the endpoint rejects `response_format` entirely, fall back
-    # to plain prompting + best-effort JSON-substring extraction rather than
-    # failing every call on a provider that simply does not support the
-    # parameter.
-    attempts = [{**kwargs, "response_format": {"type": "json_object"}}, kwargs]
-    completion = None
-    for index, attempt_kwargs in enumerate(attempts):
-        is_last_attempt = index == len(attempts) - 1
-        try:
-            completion = client.chat.completions.create(**attempt_kwargs)
-            break
-        except openai.BadRequestError as error:
-            message = str(getattr(error, "message", "") or error).lower()
-            unsupported = "response_format" in message or "not supported" in message
-            if not is_last_attempt and unsupported:
-                continue
-            client.close()
-            return JudgeCallResult(status="JUDGE_FAILED", failure_reason=_failure_status(error))
-        except Exception as error:  # noqa: BLE001 -- every provider failure must degrade to JUDGE_FAILED, never raise
-            client.close()
-            return JudgeCallResult(status="JUDGE_FAILED", failure_reason=_failure_status(error))
-    client.close()
-    assert completion is not None  # every loop exit above either returns or sets completion
+    # `with` (not a bare `openai.OpenAI(...)` + scattered `client.close()`
+    # calls) guarantees the underlying httpx connection pool is released on
+    # every exit path -- including one this function's own exception
+    # handling below does not explicitly anticipate.
+    with openai.OpenAI(api_key=api_key, base_url=base_url, timeout=timeout_seconds, max_retries=0) as client:
+        # 2-rung ladder, same resilience idiom as this repo's own
+        # backend/vlm_demthuoc/providers.py::OpenAICompatBackend (schema/
+        # object/off) -- json_object first (broadly supported, guarantees
+        # valid JSON syntax); if the endpoint rejects `response_format`
+        # entirely, fall back to plain prompting + best-effort JSON-
+        # substring extraction rather than failing every call on a provider
+        # that simply does not support the parameter.
+        attempts = [{**kwargs, "response_format": {"type": "json_object"}}, kwargs]
+        completion = None
+        for index, attempt_kwargs in enumerate(attempts):
+            is_last_attempt = index == len(attempts) - 1
+            try:
+                completion = client.chat.completions.create(**attempt_kwargs)
+                break
+            except openai.BadRequestError as error:
+                message = str(getattr(error, "message", "") or error).lower()
+                unsupported = "response_format" in message or "not supported" in message
+                if not is_last_attempt and unsupported:
+                    continue
+                return JudgeCallResult(status="JUDGE_FAILED", failure_reason=_failure_status(error))
+            except Exception as error:  # noqa: BLE001 -- every provider failure must degrade to JUDGE_FAILED, never raise
+                return JudgeCallResult(status="JUDGE_FAILED", failure_reason=_failure_status(error))
+        assert completion is not None  # every loop exit above either returns or sets completion
 
     usage = completion.usage
     input_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
