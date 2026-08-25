@@ -329,6 +329,47 @@ pytest -q -k "agent_v2 or safety_monitoring or admin_safety" --ignore=tests/serv
 
 `ruff check` trên toàn bộ file BUILD-34 mới/sửa: **clean**.
 
+## 10.1 Code Review tự động (post-push) — 2 finding, xác minh bằng thực nghiệm
+
+1. **"Potential ZeroDivisionError" / race condition trong `safety_metrics_
+   summary`** — claim: `total_runs` và `events` lấy qua 2 query riêng biệt,
+   nếu có commit chen giữa, `trigger_count` về lý thuyết có thể vượt
+   `total_runs`, ra rate > 1.0. **Phân tích kỹ + xác nhận qua code path
+   thật**: (1) `events` được query TRƯỚC, `total_runs` (đếm `agent_run`,
+   chỉ tăng, không bao giờ giảm/xoá) query SAU — dưới READ COMMITTED,
+   `total_runs` ở lần đọc sau chỉ có thể >= giá trị tại lần đọc trước; (2)
+   quan trọng hơn: `persist_safety_event` LUÔN chạy sau khi `AgentRun` của
+   chính run đó đã tồn tại thật (tạo từ lúc checkpoint, rất lâu trước khi
+   hàm này chạy ở cuối request) — nên bất kỳ `AgentSafetyEvent` nào query
+   `events` thấy được, `AgentRun` tương ứng của nó chắc chắn đã được commit
+   từ trước đó; (3) **kiểm tra thêm một khả năng khác đáng ngờ hơn**: liệu
+   idempotency-replay (BUILD-22) có gọi lại `persist_safety_event` 2 lần
+   cho cùng 1 run không? Đọc thẳng code:
+   `agent_v2_routes.py`'s `if idempotency_claim.is_replay: ... return ...`
+   **return SỚM, trước khi chạm tới `persist_safety_event`** — xác nhận
+   không có đường nào tạo 2 row cho cùng 1 `agent_run_id`. Kết luận:
+   `trigger_count > total_runs` **không reachable** trong codebase này.
+   Không đổi hành vi code — chỉ thêm comment giải thích đầy đủ 3 điểm trên
+   ngay tại vị trí query, để review sau không phải suy luận lại từ đầu.
+2. **"Performance Concern" trong `judge_suspected_missed_risk_signals`** —
+   claim: over-fetch 1 lần (`limit*4`) rồi lọc ở Python có thể trả về ÍT
+   HƠN `limit` dù có nhiều signal thật hơn tồn tại (khi các dòng điểm thấp
+   nằm rải rác, không nằm trong batch đầu). **Xác nhận ĐÚNG, đây là bug
+   thật** (khác với finding 1) — đã sửa: đổi sang vòng lặp phân trang có
+   giới hạn (`page_size = max(limit, 20)`, tổng số dòng quét tối đa
+   `max(limit*10, 200)` — vẫn có chặn trên, không quét vô hạn), dừng khi đủ
+   `limit` signal hoặc hết dòng hoặc chạm chặn quét. Viết **test hồi quy
+   thật** chứng minh trực tiếp: 45 dòng điểm cao (nhiều hơn `limit*4=40`
+   của code cũ) đứng trước 3 dòng điểm thấp thật (cố tình đặt
+   `created_at` cũ hơn để xếp sau khi sort) — code cũ (`.limit(40)`) sẽ
+   KHÔNG BAO GIỜ thấy 3 dòng thật đó; code mới thấy đủ cả 3
+   (`test_judge_missed_risk_signal_finds_sparse_matches_beyond_the_first_
+   page`). Re-verify trên Postgres thật: hàm chạy sạch, không lỗi.
+
+Test sau khi sửa: 33/33 pass (26 unit gốc + 1 test hồi quy mới cho finding
+2 = 27 unit, cộng 6 API test) — `ruff` clean, không đổi hành vi write-path
+nào.
+
 ---
 
 ## 11. Local E2E (§9/§10 — traffic thật, không mock)

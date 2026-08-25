@@ -446,6 +446,53 @@ def test_judge_missed_risk_signal_ignores_high_red_flag_handling_score(db):
     assert judge_suspected_missed_risk_signals(db) == []
 
 
+def test_judge_missed_risk_signal_finds_sparse_matches_beyond_the_first_page(db):
+    """Regression for a real completeness gap found in code review: a naive
+    single over-fetch (LIMIT N, then filter in Python) can under-return real
+    signals when matches are sparse -- e.g. the first `limit` candidates by
+    recency are all high-scoring (filtered out) and the low scorers only
+    start appearing after that. The paged loop must keep going instead of
+    stopping after one page."""
+
+    # 45 recent, high-scoring TRIAGE runs (never signals) -- deliberately
+    # MORE than limit*4 (=40 for limit=10 below), the old single-over-fetch
+    # cap: with that old implementation these alone would have filled the
+    # entire fetch and the 3 real signals below would never be seen at all.
+    for i in range(45):
+        run_id = f"run-triage-high-{i}"
+        _add_run(db, run_id)
+        db.add(
+            AgentRunJudge(
+                agent_run_id=run_id, trace_id=f"t-high-{i}", judge_status="JUDGE_COMPLETED", eligibility_reason="RANDOM_SAMPLE",
+                priority=4, execution_path="TRIAGE", judge_provider="openai", judge_model="gpt-4o", judge_config_json={},
+                rubric_name="judge-triage", rubric_version="v1", judge_prompt_version="v1", overall_score=0.9,
+                dimension_scores_json={"red_flag_handling": 0.9}, flags_json=[],
+            )
+        )
+    # ... then 3 OLDER, low-scoring ones (real signals) -- given created_at
+    # ordering (most-recent-first), these only appear on a later page when
+    # `limit` is small (page_size below is max(limit, 20)).
+    import datetime
+
+    for i in range(3):
+        run_id = f"run-triage-low-{i}"
+        _add_run(db, run_id)
+        db.add(
+            AgentRunJudge(
+                agent_run_id=run_id, trace_id=f"t-low-{i}", judge_status="JUDGE_COMPLETED", eligibility_reason="RANDOM_SAMPLE",
+                priority=4, execution_path="TRIAGE", judge_provider="openai", judge_model="gpt-4o", judge_config_json={},
+                rubric_name="judge-triage", rubric_version="v1", judge_prompt_version="v1", overall_score=0.2,
+                dimension_scores_json={"red_flag_handling": 0.1}, flags_json=[],
+                created_at=datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC),  # much older -- sorts last
+            )
+        )
+    db.commit()
+
+    signals = judge_suspected_missed_risk_signals(db, limit=10)
+    assert len(signals) == 3
+    assert {s["agent_run_id"] for s in signals} == {"run-triage-low-0", "run-triage-low-1", "run-triage-low-2"}
+
+
 def test_judge_missed_risk_signal_never_touches_safety_decision_or_creates_handoff():
     """Structural: the function has no db.add/db.commit at all -- purely
     read-only, confirmed by reading its own source for any write call."""

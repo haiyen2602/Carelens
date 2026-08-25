@@ -197,6 +197,21 @@ def safety_metrics_summary(db: Session, *, date_from: datetime | None = None, da
     are always queryable once migrated, so every metric below is either a
     real number or a real 0, never fabricated)."""
 
+    # Deliberately queried in THIS order (events, then the total_runs
+    # denominator) -- not merely a stylistic choice. `AgentRun`/
+    # `AgentSafetyEvent` rows are insert-only (never updated to a smaller
+    # count, never deleted), and `persist_safety_event` is only ever called
+    # AFTER this same request's own `AgentRun` row already exists (created
+    # at checkpoint time, well before this tail-end call -- see
+    # `agent_v2_routes.run_agent_orchestration`). So for any
+    # `AgentSafetyEvent` this `events` query can see, its own `AgentRun` row
+    # was already visible strictly earlier -- meaning `total_runs`, queried
+    # SECOND against a later (READ COMMITTED) snapshot, can only be >= the
+    # event count captured here, never smaller. `trigger_count > total_runs`
+    # is not reachable via this ordering, even under real concurrent writes.
+    # (A verified idempotency replay -- see `claim_or_replay`'s `is_replay`
+    # branch -- returns before `persist_safety_event` is ever called, so it
+    # cannot create a second row for the same run either.)
     stmt = select(AgentSafetyEvent)
     if date_from is not None:
         stmt = stmt.where(AgentSafetyEvent.created_at >= date_from)
@@ -357,44 +372,58 @@ def judge_suspected_missed_risk_signals(
     a missed risk" (§4's own example)."""
 
     # "Safety did NOT trigger" is pushed into the query itself as a real SQL
-    # NOT EXISTS anti-join (one round-trip, not N+1 -- portable across both
-    # Postgres and the SQLite this module's own tests use). Only the
-    # dimension-score threshold stays in Python: `dimension_scores_json` is
-    # a JSON column, and comparing a JSON field numerically is not
-    # expressible identically across both dialects.
+    # NOT EXISTS anti-join (portable across both Postgres and the SQLite
+    # this module's own tests use). The dimension-score threshold stays in
+    # Python -- `dimension_scores_json` is a JSON column, and comparing a
+    # JSON field numerically is not expressible identically across both
+    # dialects.
+    #
+    # Fetched in bounded PAGES (not one single over-fetch): a single
+    # `LIMIT N` before the Python-side score filter can under-return real
+    # signals whenever matches are sparse in the table (the first N rows by
+    # recency might contain fewer than `limit` low scorers even though more
+    # exist further back) -- this loop keeps paging until either `limit`
+    # real signals are collected, no more candidate rows exist, or a hard
+    # cap on total rows scanned is reached (bounded work, never unbounded).
     no_safety_event = ~select(AgentSafetyEvent.id).where(AgentSafetyEvent.agent_run_id == AgentRunJudge.agent_run_id).exists()
-    stmt = (
-        select(AgentRunJudge)
-        .where(
-            AgentRunJudge.judge_status == "JUDGE_COMPLETED",
-            AgentRunJudge.execution_path == EvaluationPath.TRIAGE.value,
-            no_safety_event,
-        )
-        .order_by(AgentRunJudge.created_at.desc())
-        .limit(limit * 4)  # over-fetch before the (Python-side) dimension-score filter, same idiom as a cheap pre-filter
-    )
-    candidates = list(db.execute(stmt).scalars().all())
+    base_stmt = select(AgentRunJudge).where(
+        AgentRunJudge.judge_status == "JUDGE_COMPLETED",
+        AgentRunJudge.execution_path == EvaluationPath.TRIAGE.value,
+        no_safety_event,
+    ).order_by(AgentRunJudge.created_at.desc())
 
+    page_size = max(limit, 20)
+    max_rows_scanned = max(limit * 10, 200)
     signals: list[dict[str, Any]] = []
-    for judge in candidates:
-        score = (judge.dimension_scores_json or {}).get(_MISSED_RISK_DIMENSION)
-        if score is None or float(score) >= threshold:
-            continue
-        signals.append(
-            {
-                "signal": "REVIEW_SUSPECTED_MISSED_RISK",
-                "agent_run_id": judge.agent_run_id,
-                "trace_id": judge.trace_id,
-                "dimension": _MISSED_RISK_DIMENSION,
-                "dimension_score": score,
-                "judge_flags": judge.flags_json,
-                "judge_model": judge.judge_model,
-                "created_at": judge.created_at.isoformat() if judge.created_at else None,
-            }
-        )
-        if len(signals) >= limit:
+    rows_scanned = 0
+    page_offset = 0
+    while len(signals) < limit and rows_scanned < max_rows_scanned:
+        page = list(db.execute(base_stmt.limit(page_size).offset(page_offset)).scalars().all())
+        if not page:
             break
+        rows_scanned += len(page)
+        page_offset += page_size
+        for judge in page:
+            score = (judge.dimension_scores_json or {}).get(_MISSED_RISK_DIMENSION)
+            if score is None or float(score) >= threshold:
+                continue
+            signals.append(_missed_risk_signal(judge, score))
+            if len(signals) >= limit:
+                break
     return signals
+
+
+def _missed_risk_signal(judge: AgentRunJudge, score: float) -> dict[str, Any]:
+    return {
+        "signal": "REVIEW_SUSPECTED_MISSED_RISK",
+        "agent_run_id": judge.agent_run_id,
+        "trace_id": judge.trace_id,
+        "dimension": _MISSED_RISK_DIMENSION,
+        "dimension_score": score,
+        "judge_flags": judge.flags_json,
+        "judge_model": judge.judge_model,
+        "created_at": judge.created_at.isoformat() if judge.created_at else None,
+    }
 
 
 def legacy_escalation_count(db: Session, *, date_from: datetime | None = None, date_to: datetime | None = None) -> int:
