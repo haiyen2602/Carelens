@@ -155,4 +155,104 @@ graph LR
 | Safety Detection | Keyword rules OR LLM layer | Tối đa hoá recall triệu chứng nghiêm trọng, chấp nhận false positive |
 | Photo Verification | Tối đa 2 lần chụp lại, sau đó fallback caregiver review | Cân bằng giữa trải nghiệm bệnh nhân và độ chính xác xác minh |
 | Database | PostgreSQL | Hỗ trợ pgvector native, đủ mạnh cho quan hệ phác đồ/dose_event/audit log |
+
+## Agent V2 Observability & Evaluation Pipeline (cập nhật BUILD-37, 2026-08-25)
+
+*Phần trên (System Overview/Diagram/Components §1-2) mô tả kiến trúc Agent
+gốc ("LangGraph Agent" + "Safety Layer song song") — đã được thay thế bởi
+Agent V2 (`backend/agents/v2/`, router + tool-calling + safety xác định
+trước Main Model, từ BUILD-16 trở đi). Việc viết lại toàn bộ tài liệu gốc
+cho khớp Agent V2 nằm ngoài phạm vi BUILD-37 (chỉ release/verify BUILD-32→36,
+không sửa runtime/router). Phần này bổ sung riêng — có phạm vi rõ — cho
+pipeline observability/evaluation được BUILD-32→36 xây, đã verify thật
+trên production trong BUILD-37.**
+
+### Data flow thật (production, xác nhận qua BUILD-37)
+
+```mermaid
+graph TB
+    Req[Patient request<br/>/api/chat FE proxy hoặc gọi thẳng backend] --> Router
+    subgraph AgentV2["Agent V2 (backend/agents/v2/)"]
+        Router[classify_intent<br/>router thuần, không gọi model] --> Safety{Safety /<br/>Handoff bypass?}
+        Safety -->|ACUTE_DANGER/POSSIBLE_OVERDOSE| SafetyPath[Fixed reason-code reply<br/>0 model call]
+        Safety -->|no| Sched{Schedule/History<br/>intent?}
+        Sched -->|TODAY/UPCOMING/MEDICATION_HISTORY| SchedPath[Deterministic DB read<br/>0 model call]
+        Sched -->|no| Context[Context/Memory recall] --> Tools[Tool-calling<br/>RAG / drug lookup / Vinmec web] --> Model[Main Model<br/>gpt-5.4-mini] --> Grounding[Grounding enforcement<br/>0 evidence -> honest decline]
+    end
+    SafetyPath --> Persist
+    SchedPath --> Persist
+    Grounding --> Persist
+
+    subgraph Durable["Durable Observability (BUILD-32)"]
+        Persist[_persist_durable_trace] --> AgentRun[(agent_run<br/>status/intent/tokens/cost/duration/<br/>prompt_version/retrieval_version)]
+        Persist --> Spans[(agent_run_span<br/>per-step real timing)]
+        Persist --> EvalV2[dispatch_evaluation<br/>Evaluation V2]
+        EvalV2 --> EvalRow[(agent_run_evaluation<br/>execution_path + per-metric<br/>AVAILABLE/NOT_APPLICABLE)]
+    end
+
+    subgraph AsyncJudge["Judge V2 (BUILD-33) -- ASYNC, separate scheduler tick"]
+        AgentRun -.->|enqueue_run_judge<br/>5% sample OR anomaly/error/ticket priority| JudgeQueue[(agent_run_judge<br/>JUDGE_PENDING)]
+        Scheduler[_run_judge_worker<br/>APScheduler, 30s tick] --> JudgeQueue
+        JudgeQueue --> JudgeCall[Real LLM call<br/>Google Gemini via Vilao reseller]
+        JudgeCall --> JudgeDone[(agent_run_judge<br/>JUDGE_COMPLETED / honest JUDGE_FAILED<br/>own tokens/cost, separate from Agent cost)]
+    end
+
+    subgraph SafetyMon["Safety Monitoring (BUILD-34)"]
+        AgentRun -.->|SAFETY_BLOCKED / HANDOFF_REQUIRED only| SafetyEvent[(agent_safety_event<br/>severity/reason_code/handoff snapshot)]
+        SafetyEvent -.->|live JOIN by handoff_id<br/>never trust the snapshot| DRR[(doctor_review_request<br/>CURRENT status)]
+    end
+
+    subgraph GoldenEval["Golden Evaluation (BUILD-35/36)"]
+        Runner[run_golden_evaluation.py<br/>--persist, manual/CI trigger] --> GoldenRun[(agent_golden_run /<br/>agent_golden_run_case)]
+    end
+
+    AgentRun --> Dash
+    Spans --> Dash
+    EvalRow --> Dash
+    JudgeDone --> Dash
+    SafetyEvent --> Dash
+    DRR --> Dash
+    GoldenRun --> Dash
+    Ring[In-memory ring buffer<br/>200 traces, process-local<br/>ONLY raw query/reply text] -.->|content_available flag,<br/>honest False once aged out/restarted| Dash
+
+    Dash[Admin Monitoring Dashboard V2<br/>BUILD-36, /admin/monitoring<br/>10 tabs + Trace/Session Explorer]
+```
+
+### Nguyên tắc / source of truth (đã verify thật trên production, không chỉ trên giấy)
+
+- **Metrics (status/intent/tokens/cost/spans/error_code/safety/Judge) luôn
+  durable, độc lập ring buffer** — sống sót qua restart/redeploy. Chỉ
+  RAW QUERY/REPLY TEXT phụ thuộc ring buffer (200-entry, in-memory,
+  process-local, mất khi restart) — đây là giới hạn kiến trúc **có chủ
+  đích** (privacy-minimization, quyết định từ trước BUILD-32), không phải
+  thiếu sót. Dashboard phải render `content_available: false` trung thực
+  khi đã mất, không bao giờ tái tạo/giả lập nội dung.
+- **Judge là một ranh giới BẤT ĐỒNG BỘ thật** — chạy qua APScheduler job
+  riêng (`_run_judge_worker`, tick 30s), tách hoàn toàn khỏi request/
+  response cycle của chat. Một request luôn trả lời xong TRƯỚC KHI Judge
+  từng chạm vào nó — đảm bảo bằng kiến trúc (2 tiến trình khác nhau theo
+  thời gian), không phải try/except phòng thủ. Judge enqueue theo 2 kiểu:
+  5% random sample (`enqueue_run_judge`) HOẶC ưu tiên tức thời cho
+  ticket/safety-anomaly/error-fallback (`enqueue_ticket_judge`,
+  `eligibility_reason=SAFETY_ANOMALY`/`ERROR_OR_FALLBACK`) — xác nhận thật
+  trên production BUILD-37: request lỗi/fallback được judge dù roll ngẫu
+  nhiên trượt.
+- **Judge KHÔNG BAO GIỜ override SafetyDecision** — đúng theo thiết kế
+  BUILD-34 (đã có structural test xác nhận zero `db.add`/`SafetyDecision(`
+  trong hàm tạo `REVIEW_SUSPECTED_MISSED_RISK`), chỉ là tín hiệu review
+  phụ, không viết lại `agent_safety_event`/`doctor_review_request`.
+- **Provenance thật, không giả định** — production hiện dùng model chính
+  `gpt-5.4-mini` (OpenAI), Judge dùng `anxs/gemini-3.7-flash-high` (Google,
+  qua reseller OpenAI-compatible Vilao — `AGENT_JUDGE_BASE_URL=
+  https://api.vilao.ai/v1`), KHÔNG giống config Vilao local — xác nhận
+  bằng cách đọc thật `agent_run_judge.judge_provider`/`judge_model` từ
+  các row Judge thật trên production trong BUILD-37, không giả định.
+  Judge cost hiện `NOT_AVAILABLE` (Gemini/Vilao chưa có trong
+  `AGENT_MODEL_PRICING_JSON`) — trung thực, không phải `$0` giả.
+- **Golden Evaluation là quy trình thủ công/CI, không tự động chạy trên
+  traffic thật** — `run_golden_evaluation.py --persist` ghi vào
+  `agent_golden_run`/`agent_golden_run_case`; Dashboard đọc run gần nhất
+  nếu có, hiển thị `has_run: false` trung thực nếu chưa từng persist
+  (đúng trạng thái production ngay sau BUILD-37 release, trước khi ai
+  chạy `--persist` lần đầu).
 | Frontend | Next.js (bác sĩ), PWA (bệnh nhân), Mobile (người thân) | Khớp với thiết bị sử dụng thực tế của từng vai trò |
