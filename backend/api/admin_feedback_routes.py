@@ -1,9 +1,12 @@
 """BUILD-29: Admin "Chatbot Issues / User Reports" ticket explorer.
 
 Every route here is admin-only (``require_role("admin")`` -- the same
-BUILD-29 security fix applied to ``rag_monitoring_routes.py``). Ticket
-detail/session reuse the existing Agent V2 telemetry buffer for trace/
-conversation correlation -- no new Trace Explorer, per instruction.
+BUILD-29 security fix applied to ``rag_monitoring_routes.py``). BUILD-32:
+ticket detail/session now correlate against the durable ``AgentRun``/
+``AgentRunSpan`` tables first (``backend.services.agent_feedback``), with the
+in-memory Agent V2 telemetry ring buffer only as a fallback for a trace that
+predates BUILD-32 or has not been durably flushed yet -- still no separate
+Trace Explorer built here, per the original BUILD-29 instruction.
 """
 
 from __future__ import annotations
@@ -85,7 +88,7 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db), _admin=Depends(_re
     the model's own hidden chain-of-thought, which Agent V2's telemetry never
     records to begin with."""
     ticket = _get_ticket_or_404(db, ticket_id)
-    trace = trace_summary_out(ticket.trace_id)
+    trace = trace_summary_out(db, ticket.trace_id)
     return AgentFeedbackTicketDetailOut(ticket=AgentFeedbackTicketOut.model_validate(ticket), trace=trace)
 
 
@@ -107,7 +110,7 @@ def get_ticket_session(
     rather than replaces."""
     ticket = _get_ticket_or_404(db, ticket_id)
     items, total = session_messages(
-        ticket.conversation_id, limit=limit, offset=offset, highlight_trace_id=ticket.trace_id
+        db, ticket.conversation_id, limit=limit, offset=offset, highlight_trace_id=ticket.trace_id
     )
     return AgentFeedbackSessionOut(conversation_id=ticket.conversation_id, items=items, total=total, limit=limit, offset=offset)
 

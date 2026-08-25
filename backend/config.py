@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     # not hard-coded because provider pricing/version contracts can change.
     # Example: {"gpt-5.4-mini":{"input_per_million":0.0,"cached_input_per_million":0.0,"output_per_million":0.0}}
     agent_model_pricing_json: str = "{}"
+    # BUILD-32: a human-assigned label for whatever `agent_model_pricing_json`
+    # currently holds, so a durably-persisted cost figure can always be traced
+    # back to the price list that produced it (see AgentRun.pricing_version).
+    # Bump this whenever the JSON above is edited; it is not derived/parsed
+    # from the JSON itself.
+    agent_model_pricing_version: str = "unversioned"
 
     # Database — PostgreSQL + pgvector (ADR-0008), KHONG dung vector DB rieng.
     database_url: str = "postgresql://vmec:vmec@localhost:5432/vmec04"

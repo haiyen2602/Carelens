@@ -151,9 +151,25 @@ def test_admin_overview_exposes_only_applicable_metric_denominators(monkeypatch)
         def all(self):
             return []
 
+    class _Scalars:
+        def all(self):
+            return []
+
+    class _ExecuteResult:
+        def scalars(self):
+            return _Scalars()
+
     class _Db:
         def query(self, _model):
             return _Query()
+
+        # BUILD-32: rag_monitoring_routes now also queries the durable
+        # AgentRun table (backend.api.rag_monitoring_routes._agent_run_query)
+        # for real cost/timeout aggregates -- this fake stands in for that
+        # too, with no rows (same "no data yet" shape `_Query.all()` above
+        # already models).
+        def execute(self, _stmt):
+            return _ExecuteResult()
 
     monkeypatch.setattr(rag_monitoring_routes, "get_local_traces", lambda: [rag_trace, schedule_trace, safety_trace])
     payload = asyncio.run(
@@ -167,3 +183,7 @@ def test_admin_overview_exposes_only_applicable_metric_denominators(monkeypatch)
     assert payload["kpis"]["faithfulness_sample_count"] == 1
     assert payload["kpis"]["answer_relevance"] == 0.6
     assert payload["kpis"]["answer_relevance_sample_count"] == 1
+    # No AgentRun rows in this fake -- honest NOT_AVAILABLE, never a
+    # fabricated 0.0 (BUILD-32).
+    assert payload["kpis"]["cost_per_query"] is None
+    assert payload["metric_provenance"]["cost_per_query"]["status"] == "NOT_AVAILABLE"

@@ -14,12 +14,13 @@ import math
 import re
 import time
 import uuid
-from collections import Counter, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
+from threading import Lock
 from typing import Any, Protocol
 
 from backend.agents.v2.model_gateway import ModelRole, ModelUsage
@@ -38,6 +39,14 @@ class TraceComponent(StrEnum):
     CHECKPOINT = "CHECKPOINT"
     GUARDRAIL = "GUARDRAIL"
     RUNTIME = "RUNTIME"
+    # BUILD-32: added so the durable span contract (BUILD-32-TO-36-MASTER-
+    # PLAN.md §4) can name every real span type it lists. CONVERSATION_CONTEXT
+    # is deliberately not added here -- see the BUILD-32 report's "Honest
+    # scope limits" section for why it is out of scope this build.
+    TIME_QUERY = "TIME_QUERY"
+    GROUNDING = "GROUNDING"
+    ANSWER_COMPOSITION = "ANSWER_COMPOSITION"
+    EVALUATION = "EVALUATION"
 
 
 @dataclass(frozen=True)
@@ -72,13 +81,24 @@ class CostEstimate:
     model_role: ModelRole
     usage: ModelUsage
     estimated_cost_usd: float | None
+    # BUILD-32: which pricing catalog produced this estimate -- lets a
+    # durably-persisted cost figure always be traced back to the price list
+    # that computed it (see backend.config.Settings.agent_model_pricing_version).
+    # "unversioned" (the settings default) when the operator never assigned one.
+    pricing_version: str = "unversioned"
+    # BUILD-32: input/output cost breakdown (durable trace contract §6 wants
+    # both, not just the total). `None` exactly when `estimated_cost_usd` is
+    # `None` (unknown model, no invented cost).
+    input_cost_usd: float | None = None
+    output_cost_usd: float | None = None
 
 
 class ModelPricingCatalog:
     """Exact-model price configuration; unknown models never get invented cost."""
 
-    def __init__(self, prices: dict[str, ModelPrice] | None = None) -> None:
+    def __init__(self, prices: dict[str, ModelPrice] | None = None, *, version: str = "unversioned") -> None:
         self._prices = prices or {}
+        self.version = version
 
     @classmethod
     def from_settings(cls, settings: object) -> ModelPricingCatalog:
@@ -101,24 +121,22 @@ class ModelPricingCatalog:
                 )
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError("invalid model pricing values") from error
-        return cls(prices)
+        version = str(getattr(settings, "agent_model_pricing_version", "unversioned") or "unversioned")
+        return cls(prices, version=version)
 
     def estimate(self, *, model: str, model_role: ModelRole, usage: ModelUsage) -> CostEstimate:
         price = self._prices.get(model)
         if price is None:
-            return CostEstimate(model, model_role, usage, None)
+            return CostEstimate(model, model_role, usage, None, self.version)
         input_tokens = int(usage.input_tokens or 0)
         cached_tokens = int(usage.cached_input_tokens or 0)
         if cached_tokens > input_tokens:
             cached_tokens = input_tokens
         uncached_tokens = input_tokens - cached_tokens
         output_tokens = int(usage.output_tokens or 0)
-        cost = (
-            uncached_tokens * price.input_per_million
-            + cached_tokens * price.cached_input_per_million
-            + output_tokens * price.output_per_million
-        ) / 1_000_000
-        return CostEstimate(model, model_role, usage, cost)
+        input_cost = (uncached_tokens * price.input_per_million + cached_tokens * price.cached_input_per_million) / 1_000_000
+        output_cost = (output_tokens * price.output_per_million) / 1_000_000
+        return CostEstimate(model, model_role, usage, input_cost + output_cost, self.version, input_cost, output_cost)
 
 
 @dataclass(frozen=True)
@@ -159,6 +177,57 @@ class InMemoryTelemetrySink:
 
     def emit(self, event: TelemetryEvent) -> None:
         self.events.append(event)
+
+
+# BUILD-32: BUFFERING_SINK_MAX_TRACES bounds how many in-flight traces'
+# events this process will hold in memory at once. `AgentTelemetry.span()`/
+# `record_model()` already measure real wall-clock timing live, during the
+# actual runtime/orchestrator call (see their docstrings/callers) -- the gap
+# this build closes is that the only sink wired in production
+# (`StructuredLogSink`) threw that real data away into an unqueryable log
+# line. `BufferingSink` keeps every existing sink's behavior (it always
+# delegates to an inner sink first) and additionally buffers each trace's
+# events in memory, keyed by trace_id, so a post-response step
+# (`backend.api.agent_v2_routes._persist_durable_trace`) can pop them and
+# write real `AgentRunSpan` rows -- the DB write happens a few milliseconds
+# after the run finishes, but the durations inside it were captured live, not
+# reconstructed. Bounded/FIFO-evicting for the same reason
+# `backend.services.telemetry`'s ring buffer is capped at 200: a run whose
+# post-response persistence step never fires (process crash, an orchestrator-
+# level exception before a trace_id is ever popped) must not leak memory
+# forever.
+_BUFFERING_SINK_MAX_TRACES = 500
+
+
+class BufferingSink:
+    """Tee sink: forwards every event to `inner`, and separately buffers it
+    per trace_id for later durable persistence. Thread-safe (multiple
+    concurrent requests share one `AgentTelemetry` instance/sink)."""
+
+    def __init__(self, inner: TelemetrySink, *, max_traces: int = _BUFFERING_SINK_MAX_TRACES) -> None:
+        self._inner = inner
+        self._max_traces = max_traces
+        self._lock = Lock()
+        self._buffers: OrderedDict[str, list[TelemetryEvent]] = OrderedDict()
+
+    def emit(self, event: TelemetryEvent) -> None:
+        self._inner.emit(event)
+        trace_id = event.trace.trace_id
+        with self._lock:
+            bucket = self._buffers.get(trace_id)
+            if bucket is None:
+                if len(self._buffers) >= self._max_traces:
+                    evicted_id, _ = self._buffers.popitem(last=False)
+                    LOGGER.warning("BufferingSink evicted unflushed trace %s (buffer full)", evicted_id)
+                bucket = []
+                self._buffers[trace_id] = bucket
+            bucket.append(event)
+
+    def pop(self, trace_id: str) -> list[TelemetryEvent]:
+        """Return and remove every buffered event for `trace_id` (empty list
+        if none/already popped/evicted)."""
+        with self._lock:
+            return self._buffers.pop(trace_id, [])
 
 
 @dataclass(frozen=True)
@@ -317,6 +386,14 @@ class AgentTelemetry:
         self._pricing = pricing or ModelPricingCatalog()
         self._clock = clock
         self._now = now
+
+    @property
+    def pricing(self) -> ModelPricingCatalog:
+        """BUILD-32: read-only access so a post-response persistence step
+        (`backend.api.agent_v2_routes._persist_durable_trace`) can estimate a
+        run's total cost from its aggregated `RunMetrics` token counts using
+        the SAME catalog/version this run's own per-call estimates used."""
+        return self._pricing
 
     def start_run(self, *, agent_run_id: str | None = None) -> TraceContext:
         trace = TraceContext.create(agent_run_id=agent_run_id)
@@ -503,6 +580,7 @@ __all__ = [
     "AgentMetricsSnapshot",
     "AgentTelemetry",
     "AlertSeverity",
+    "BufferingSink",
     "CostEstimate",
     "InMemoryTelemetrySink",
     "ModelPrice",

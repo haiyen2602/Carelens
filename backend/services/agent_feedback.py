@@ -1,11 +1,14 @@
 """BUILD-29: user feedback ticket creation + trace/priority correlation.
 
-Reuses the existing Agent V2 telemetry buffer (``backend.services.telemetry``)
-for trace correlation -- deliberately does NOT build a new persistence layer
-or a second Trace Explorer. Agent V2 itself has no durable server-side
-message log (short-term memory is process-local/ephemeral by design, see
+BUILD-32: trace/session correlation now queries the durable
+``AgentRun``/``AgentRunSpan``/``AgentRunEvaluation`` tables FIRST -- the
+in-memory telemetry ring buffer (``backend.services.telemetry``, capped at
+200 traces process-wide, reset on every restart/deploy) is now only a
+fallback for a trace that predates BUILD-32 or has not been durably flushed
+yet, never the source of truth. Agent V2 itself has no durable server-side
+*message* log (short-term memory is process-local/ephemeral by design, see
 ``backend.agents.v2.short_term_memory``), so ``conversation_id``/``trace_id``/
-``agent_run_id`` and the reported message text all come from the client --
+``agent_run_id`` and the reported message text still come from the client --
 exactly what it already received back from the real
 ``/agent/v2/orchestrate`` call being reported. ``actor_id``/``patient_id``
 are the one thing NEVER taken from the client: always bound here from the
@@ -20,6 +23,7 @@ returns the existing ticket rather than inserting a duplicate.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -28,14 +32,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser
-from backend.db.models import AgentFeedbackTicket
+from backend.db.models import AgentFeedbackTicket, AgentRun, AgentRunSpan
 from backend.models.schemas import (
     AgentFeedbackCreateRequest,
     AgentFeedbackReason,
     AgentFeedbackSessionMessageOut,
     AgentFeedbackTraceSummaryOut,
 )
-from backend.services.telemetry import TraceRecord, get_local_traces, hash_identifier
+from backend.services.telemetry import get_local_traces, hash_identifier
 
 _MAX_CLAIM_ATTEMPTS = 3
 
@@ -61,46 +65,65 @@ class CrossPatientTraceError(FeedbackTicketError):
 
 @dataclass(frozen=True)
 class TraceOwnershipResult:
-    trace: TraceRecord | None
     found: bool
     owned: bool  # True when not found (nothing to contradict) or found+matches
+    # Durable AgentRun.intent (or the ring-buffer fallback's own
+    # trace.metadata["intent"]) when a real trace was found -- classify_priority's
+    # only use of the resolved trace, so this replaces carrying the whole
+    # ring-buffer-specific TraceRecord type through this module.
+    intent: str | None = None
 
 
-def verify_trace_ownership(trace_id: str | None, *, actor_id: str) -> TraceOwnershipResult:
-    """Look up ``trace_id`` in the same in-memory buffer ``/admin/rag/traces``
-    reads. ``TraceRecord.user_id`` is already a one-way hash of the real
-    actor id (``hash_identifier``, set in ``TelemetryService.create_trace``)
-    -- recompute the same hash here rather than ever storing/comparing a raw
-    account id against it.
+def verify_trace_ownership(db: Session, trace_id: str | None, *, actor_id: str) -> TraceOwnershipResult:
+    """BUILD-32: query the durable ``AgentRun`` table first (by ``trace_id``,
+    indexed); fall back to the in-memory ring buffer
+    (``backend.services.telemetry``, capped at 200 traces, reset on every
+    restart/deploy) only for a trace that predates BUILD-32 or has not been
+    durably flushed yet. ``TraceRecord.user_id``/``AgentRun.actor_id`` both
+    ultimately trace back to the same authenticated actor -- the ring-buffer
+    copy is a one-way hash (``hash_identifier``), the durable column is the
+    real id (never exposed outside this authenticated, server-side check).
 
-    Three real outcomes, not two: no ``trace_id`` given, or one the buffer no
-    longer holds (BUILD-25's documented ring-buffer limit -- at most the last
-    200 traces process-wide, reset on every deploy) both come back
-    ``found=False, owned=True`` (nothing to verify against, so nothing to
-    reject -- the ticket still carries the client's own reported text and
-    remains useful even without a live trace to cross-check). Only a trace
-    that *is* found and whose owner hash does NOT match is ``owned=False`` --
-    that is the one case ``create_ticket`` fails closed on.
+    Three real outcomes, not two: no ``trace_id`` given, or one neither
+    source holds, both come back ``found=False, owned=True`` (nothing to
+    verify against, so nothing to reject -- the ticket still carries the
+    client's own reported text and remains useful even without a live trace
+    to cross-check). Only a trace that *is* found and whose owner does NOT
+    match is ``owned=False`` -- that is the one case ``create_ticket`` fails
+    closed on. A durable row found with ``actor_id IS NULL`` (a run recorded
+    before BUILD-32, or whose durable-persistence step never completed) is
+    treated the same as "nothing to verify" rather than a false deny.
     """
     if not trace_id:
-        return TraceOwnershipResult(trace=None, found=False, owned=True)
+        return TraceOwnershipResult(found=False, owned=True)
+    try:
+        run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001 -- a durable read failure must degrade to the ring-buffer
+        # check below, never break ticket creation outright.
+        logging.getLogger(__name__).warning("BUILD-32 durable verify_trace_ownership lookup failed: %s", durable_err)
+        run = None
+    if run is not None:
+        owned = run.actor_id is None or run.actor_id == actor_id
+        return TraceOwnershipResult(found=True, owned=owned, intent=run.intent)
     for trace in get_local_traces():
         if trace.id == trace_id:
-            return TraceOwnershipResult(trace=trace, found=True, owned=trace.user_id == hash_identifier(actor_id))
-    return TraceOwnershipResult(trace=None, found=False, owned=True)
+            return TraceOwnershipResult(
+                found=True, owned=trace.user_id == hash_identifier(actor_id), intent=trace.metadata.get("intent")
+            )
+    return TraceOwnershipResult(found=False, owned=True)
 
 
-def classify_priority(reason: AgentFeedbackReason, *, trace: TraceRecord | None) -> tuple[str, bool]:
+def classify_priority(reason: AgentFeedbackReason, *, intent: str | None) -> tuple[str, bool]:
     """Deterministic priority + P0-review flag (BUILD-29 §7). Never based on
     free-text ``user_note`` -- only the structured reason the user picked and
-    the real trace's own structured signals, same "no NLP guesswork on a
+    the real run's own structured signal, same "no NLP guesswork on a
     safety-adjacent decision" principle every other Agent V2 deterministic
     backstop in this project already follows.
 
     - UNSAFE_OR_INAPPROPRIATE (the user's own explicit "not safe/appropriate"
-      pick), or a trace whose real intent was ACUTE_DANGER_ESCALATION/
-      DOCTOR_REVIEW (the closest deterministic proxy this telemetry buffer
-      has for "unsafe clinical output") -> P0, p0_review_required=True.
+      pick), or a run whose real intent was ACUTE_DANGER_ESCALATION/
+      DOCTOR_REVIEW (the closest deterministic proxy available for "unsafe
+      clinical output") -> P0, p0_review_required=True.
     - WRONG_MEDICATION_INFO -> P1 (a factual medication/schedule error is
       more urgent than a generic wrong answer, less urgent than a safety one).
     - WRONG_ANSWER / NOT_UNDERSTOOD / TECHNICAL_ERROR -> P2.
@@ -117,7 +140,7 @@ def classify_priority(reason: AgentFeedbackReason, *, trace: TraceRecord | None)
     """
     if reason == "UNSAFE_OR_INAPPROPRIATE":
         return "P0", True
-    if trace is not None and trace.metadata.get("intent") in _UNSAFE_SIGNAL_INTENTS:
+    if intent in _UNSAFE_SIGNAL_INTENTS:
         return "P0", True
     if reason == "WRONG_MEDICATION_INFO":
         return "P1", False
@@ -156,11 +179,11 @@ def create_ticket(
     account -- see ``verify_trace_ownership``.
     """
     at = (now or datetime.now(UTC)).astimezone(UTC)
-    ownership = verify_trace_ownership(payload.trace_id, actor_id=actor.id)
+    ownership = verify_trace_ownership(db, payload.trace_id, actor_id=actor.id)
     if not ownership.owned:
         raise CrossPatientTraceError("trace_id does not belong to the reporting account")
 
-    priority, p0_review_required = classify_priority(payload.reason, trace=ownership.trace)
+    priority, p0_review_required = classify_priority(payload.reason, intent=ownership.intent)
     patient_id = actor.patient_id or actor.id
 
     for _attempt in range(_MAX_CLAIM_ATTEMPTS):
@@ -202,11 +225,35 @@ def create_ticket(
     raise FeedbackTicketError("could not create feedback ticket after retrying contention")
 
 
-def trace_summary_out(trace_id: str | None, *, actor_id_hint: str | None = None) -> AgentFeedbackTraceSummaryOut:
-    """Sanitized trace detail for a ticket's admin-facing detail view --
-    same fields already exposed by GET /admin/rag/traces/{trace_id}, never
-    hidden chain-of-thought (Agent V2's telemetry never records that to
-    begin with -- see module docstring)."""
+def trace_summary_out(
+    db: Session, trace_id: str | None, *, actor_id_hint: str | None = None
+) -> AgentFeedbackTraceSummaryOut:
+    """Sanitized trace detail for a ticket's admin-facing detail view.
+
+    BUILD-32 bugfix: the ring buffer is checked FIRST (same priority as
+    ``session_messages``/``/admin/rag/traces/{trace_id}``), durable
+    ``AgentRun``/``AgentRunSpan`` only as a fallback for a trace the buffer
+    no longer holds (aged out past 200 entries, or from before a restart).
+    An earlier version of this function checked durable first -- since
+    ``AgentRun`` is written at checkpoint time on essentially every request
+    (has been since well before BUILD-32), that made the ring buffer branch
+    below nearly unreachable, so every ticket's detail view silently lost
+    its real ``final_response``/tool-output/scores (present in the buffer,
+    never carried into the durable/sanitized telemetry attributes) even
+    while the richer data was still sitting right there in the buffer.
+
+    Honest scope note (still true for the durable fallback branch): the
+    durable ``AgentTelemetry`` event pipeline
+    (``backend.agents.v2.observability``) deliberately never carries a tool
+    call's raw output or the final reply text into telemetry attributes
+    (privacy-minimization already built into that module's own sanitizer)
+    -- so the durable path's ``tool_results`` carry tool names only (no
+    ``output``) and ``final_response`` is ``None``. Not a functional loss
+    for the ticket-detail view that is this function's only real caller
+    (``admin_feedback_routes.get_ticket``): the actual reported reply text
+    is already durable on the ticket row itself
+    (``AgentFeedbackTicket.assistant_message``), independent of the trace.
+    """
     if not trace_id:
         return AgentFeedbackTraceSummaryOut(trace_id="", found=False)
     for trace in get_local_traces():
@@ -238,33 +285,131 @@ def trace_summary_out(trace_id: str | None, *, actor_id_hint: str | None = None)
             final_response=final_response,
             status=trace.status,
         )
+
+    try:
+        run = db.execute(select(AgentRun).where(AgentRun.trace_id == trace_id)).scalar_one_or_none()
+    except Exception as durable_err:  # noqa: BLE001 -- a durable read failure must degrade, never break the page
+        logging.getLogger(__name__).warning("BUILD-32 durable trace_summary_out lookup failed: %s", durable_err)
+        run = None
+    if run is not None:
+        try:
+            tool_spans = (
+                db.execute(
+                    select(AgentRunSpan).where(AgentRunSpan.agent_run_id == run.id, AgentRunSpan.span_type == "TOOL")
+                )
+                .scalars()
+                .all()
+            )
+        except Exception as durable_err:  # noqa: BLE001
+            logging.getLogger(__name__).warning("BUILD-32 durable span lookup failed: %s", durable_err)
+            tool_spans = []
+        tools = [str(span.metadata_json.get("tool_name") or span.span_name) for span in tool_spans]
+        return AgentFeedbackTraceSummaryOut(
+            trace_id=trace_id,
+            found=True,
+            intent=run.intent,
+            tools=tools,
+            tool_results=[{"name": name} for name in tools],
+            safety_outcome=(
+                run.status if run.status in ("SAFETY_BLOCKED", "HANDOFF_REQUIRED", "HANDOFF_CREATED") else None
+            ),
+            handoff_created=run.status == "HANDOFF_CREATED",
+            model=run.model,
+            latency_ms=run.duration_ms,
+            scores={},
+            final_response=None,
+            status=run.status,
+        )
     return AgentFeedbackTraceSummaryOut(trace_id=trace_id, found=False)
 
 
-def session_messages(conversation_id: str, *, limit: int, offset: int, highlight_trace_id: str | None = None) -> tuple[list[AgentFeedbackSessionMessageOut], int]:
-    """Every trace whose ``session_id`` matches ``conversation_id``, oldest
-    first, paginated -- the Admin session view (BUILD-29 §6). Sourced from
-    the SAME telemetry buffer as ``/admin/rag/traces``, subject to the same
-    process-local/200-entry ring-buffer limitation (a turn from before the
-    last deploy, or beyond the buffer's capacity, will not appear here even
-    though it really happened)."""
-    matching = sorted(
-        (trace for trace in get_local_traces() if trace.session_id == conversation_id),
-        key=lambda t: t.start_time,
-    )
-    total = len(matching)
-    page = matching[offset : offset + limit]
-    items = [
-        AgentFeedbackSessionMessageOut(
-            trace_id=trace.id,
-            timestamp=datetime.fromtimestamp(trace.start_time, tz=UTC),
-            query_preview=str(trace.input.get("message", "")) if isinstance(trace.input, dict) else "",
-            final_answer_preview=str(trace.output.get("response", "")) if isinstance(trace.output, dict) else "",
-            status=trace.status,
-            is_reported_turn=trace.id == highlight_trace_id,
+_NO_PREVIEW_RETAINED = "(nội dung không còn được lưu tạm -- xem trace để biết thêm chi tiết)"
+
+
+def session_messages(
+    db: Session, conversation_id: str, *, limit: int, offset: int, highlight_trace_id: str | None = None
+) -> tuple[list[AgentFeedbackSessionMessageOut], int]:
+    """Every turn in this conversation, oldest first, paginated -- the Admin
+    session view (BUILD-29 §6).
+
+    BUILD-32: merges the ring buffer (rich -- still carries a real query/
+    answer text preview, but capped at 200 traces process-wide and reset on
+    every restart/deploy) with durable ``AgentRun`` rows for this
+    conversation the buffer no longer holds. Honest scope note: message/reply
+    TEXT is deliberately not part of BUILD-32's durable schema (that is
+    Conversation/Message's job, out of scope here -- see the BUILD-32 report)
+    -- a durable-only turn is still shown (so Admin can see a turn happened,
+    when, its status, and its trace_id to drill into further) with a fixed
+    placeholder instead of a fabricated preview.
+    """
+    buffered = {trace.id: trace for trace in get_local_traces() if trace.session_id == conversation_id}
+    try:
+        durable_runs = (
+            db.execute(
+                select(AgentRun)
+                .where(AgentRun.conversation_id == conversation_id, AgentRun.trace_id.isnot(None))
+                .order_by(AgentRun.started_at.asc())
+            )
+            .scalars()
+            .all()
         )
-        for trace in page
-    ]
+    except Exception as durable_err:  # noqa: BLE001 -- degrade to ring-buffer-only turns, never break this view
+        logging.getLogger(__name__).warning("BUILD-32 durable session_messages lookup failed: %s", durable_err)
+        durable_runs = []
+
+    entries: list[tuple[datetime, AgentFeedbackSessionMessageOut]] = []
+    seen_trace_ids: set[str] = set()
+    for run in durable_runs:
+        trace_id = run.trace_id
+        if trace_id is None or trace_id in seen_trace_ids:
+            continue
+        seen_trace_ids.add(trace_id)
+        buffered_trace = buffered.get(trace_id)
+        if buffered_trace is not None:
+            entries.append((
+                run.started_at,
+                AgentFeedbackSessionMessageOut(
+                    trace_id=trace_id,
+                    timestamp=run.started_at,
+                    query_preview=str(buffered_trace.input.get("message", "")) if isinstance(buffered_trace.input, dict) else "",
+                    final_answer_preview=str(buffered_trace.output.get("response", "")) if isinstance(buffered_trace.output, dict) else "",
+                    status=run.status,
+                    is_reported_turn=trace_id == highlight_trace_id,
+                ),
+            ))
+        else:
+            entries.append((
+                run.started_at,
+                AgentFeedbackSessionMessageOut(
+                    trace_id=trace_id,
+                    timestamp=run.started_at,
+                    query_preview=_NO_PREVIEW_RETAINED,
+                    final_answer_preview=_NO_PREVIEW_RETAINED,
+                    status=run.status,
+                    is_reported_turn=trace_id == highlight_trace_id,
+                ),
+            ))
+    # Ring-buffer-only turns (not yet durably flushed, or from before
+    # BUILD-32) still appear, richly, same as before this build.
+    for trace_id, trace in buffered.items():
+        if trace_id in seen_trace_ids:
+            continue
+        entries.append((
+            datetime.fromtimestamp(trace.start_time, tz=UTC),
+            AgentFeedbackSessionMessageOut(
+                trace_id=trace_id,
+                timestamp=datetime.fromtimestamp(trace.start_time, tz=UTC),
+                query_preview=str(trace.input.get("message", "")) if isinstance(trace.input, dict) else "",
+                final_answer_preview=str(trace.output.get("response", "")) if isinstance(trace.output, dict) else "",
+                status=trace.status,
+                is_reported_turn=trace_id == highlight_trace_id,
+            ),
+        ))
+
+    entries.sort(key=lambda pair: pair[0])
+    matching = [item for _ts, item in entries]
+    total = len(matching)
+    items = matching[offset : offset + limit]
     return items, total
 
 

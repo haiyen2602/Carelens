@@ -11,6 +11,7 @@ import json
 import logging
 import time
 import uuid
+from datetime import UTC, datetime, timedelta
 from threading import Lock
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -24,10 +25,17 @@ from backend.agents.v2.conversation_state import (
     resolve_state_input,
     transition_state,
 )
-from backend.agents.v2.evaluation_v2 import MetricStatus, dispatch_evaluation
+from backend.agents.v2.evaluation_v2 import EvaluationResult, MetricStatus, dispatch_evaluation
 from backend.agents.v2.handoff import DoctorHandoffGateway
-from backend.agents.v2.model_gateway import OpenAIModelGateway
-from backend.agents.v2.observability import AgentTelemetry, ModelPricingCatalog
+from backend.agents.v2.model_gateway import ModelRole, ModelUsage, OpenAIModelGateway
+from backend.agents.v2.observability import (
+    AgentTelemetry,
+    BufferingSink,
+    ModelPricingCatalog,
+    StructuredLogSink,
+    TraceComponent,
+    TraceContext,
+)
 from backend.agents.v2.orchestrator import (
     AgentOrchestrator,
     OrchestrationIntent,
@@ -45,7 +53,7 @@ from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import AgentActivitySnapshot
+from backend.db.models import AgentActivitySnapshot, AgentRun, AgentRunEvaluation, AgentRunSpan
 from backend.models.schemas import (
     AgentActivityItemOut,
     AgentActivityOut,
@@ -200,6 +208,12 @@ def _require_agent_v2_enabled(settings: object, actor: CurrentUser) -> None:
 _singleton_lock = Lock()
 _short_term_memory: ShortTermMemoryStore | None = None
 _telemetry: AgentTelemetry | None = None
+# BUILD-32: the same BufferingSink instance `_telemetry` was constructed
+# with -- kept as its own module global (rather than reading it back off
+# `_telemetry`) so `_persist_durable_trace` can `.pop()` one run's real,
+# live-captured spans without adding a public sink accessor to
+# `AgentTelemetry` itself.
+_telemetry_sink: BufferingSink | None = None
 
 
 def _shared_short_term_memory(context_manager: ContextManager) -> ShortTermMemoryStore:
@@ -222,10 +236,16 @@ def _shared_telemetry(settings: object) -> AgentTelemetry:
     shares across requests -- a later config change still needs a restart to
     take effect, matching every other Settings-derived value already cached
     behind ``get_settings()``'s own ``lru_cache``."""
-    global _telemetry
+    global _telemetry, _telemetry_sink
     with _singleton_lock:
         if _telemetry is None:
-            _telemetry = AgentTelemetry(pricing=ModelPricingCatalog.from_settings(settings))
+            # BUILD-32: BufferingSink still delegates every event to
+            # StructuredLogSink first (existing log behavior unchanged) and
+            # additionally buffers each trace's real, live-captured events so
+            # `_persist_durable_trace` can turn them into durable
+            # `AgentRunSpan` rows after the response commits.
+            _telemetry_sink = BufferingSink(StructuredLogSink())
+            _telemetry = AgentTelemetry(sink=_telemetry_sink, pricing=ModelPricingCatalog.from_settings(settings))
         return _telemetry
 
 
@@ -410,6 +430,202 @@ def _persist_activity_snapshot(
     except Exception as activity_err:  # noqa: BLE001 -- must never break the real response
         db.rollback()
         logging.getLogger(__name__).warning("Agent V2 activity snapshot recording failed: %s", activity_err)
+
+
+# BUILD-32: makes Agent V2's real per-run token usage/cost/duration/timeout/
+# error-code/empty-reply/evaluation durable in Postgres. Same best-effort,
+# post-response shape as `_record_agent_v2_telemetry`/
+# `_persist_activity_snapshot` right above -- a bug here must never affect a
+# real chat response, and never runs before the real response is already
+# committed.
+#
+# Spans: `AgentTelemetry.span()`/`record_model()` already measure real
+# wall-clock duration live, during the actual runtime/orchestrator call (see
+# `backend.agents.v2.observability`) -- the durability gap this build closes
+# is only that the production sink threw that real data away into an
+# unqueryable log line. `_telemetry_sink.pop(result.trace_id)` retrieves the
+# exact events `BufferingSink` already buffered live for this run; only
+# events carrying a real measured `latency_ms` (span-close/model-call/run-
+# terminal events -- never a bare instantaneous marker event) become
+# `AgentRunSpan` rows, so no fabricated-duration row is ever written.
+#
+# AgentRun columns: stamped here (not synchronously inside
+# `CheckpointedTerminalStateRecorder`) because two terminal paths
+# (SAFETY_BLOCKED, HANDOFF_CREATED) never reach that recorder at all --
+# doing it in the one place that sees every `OrchestrationResult` uniformly
+# guarantees complete coverage instead of two divergent code paths.
+_TIMEOUT_ERROR_CODES = frozenset({"MODEL_TIMEOUT", "REQUEST_TIMEOUT"})
+
+
+def _span_name_for(event_name: str, attributes: dict) -> str:
+    if event_name == "agent_model.completed":
+        return "model_call"
+    if event_name == "agent_run.finished":
+        return "run"
+    tool_name = attributes.get("tool_name")
+    operation = attributes.get("operation")
+    if tool_name:
+        return f"{operation}:{tool_name}" if operation else str(tool_name)
+    return str(operation or "span")
+
+
+def _build_span_rows(events: list) -> list[AgentRunSpan]:
+    """Turn one run's buffered, already-real-timed events into durable
+    `AgentRunSpan` rows.
+
+    `AgentTelemetry.span()` emits a SEPARATE ``agent_span.started`` event
+    (carries the call's own attributes, e.g. ``tool_name``/``model``) and
+    ``agent_span.finished`` event (carries ``latency_ms``/``outcome`` only) --
+    paired here (FIFO per component+operation; spans in this codebase are
+    never nested) so neither the real duration nor the call's own attributes
+    is lost. ``agent_model.completed``/``agent_run.finished`` are single,
+    self-contained events (record_model()/record_terminal() emit everything
+    in one call) and need no pairing. Bare instantaneous marker events (e.g.
+    ``agent_router.classified``, ``agent_tool.completed``,
+    ``agent_guardrail.*``) carry no ``latency_ms`` and are intentionally not
+    turned into a (fabricated-duration) span row.
+    """
+    pending: dict[tuple[str, str], list[dict]] = {}
+    rows: list[AgentRunSpan] = []
+    for event in events:
+        attributes = event.attributes
+        if event.name == "agent_span.started":
+            key = (event.component.value, str(attributes.get("operation") or ""))
+            pending.setdefault(key, []).append(attributes)
+            continue
+        if event.name == "agent_span.finished":
+            key = (event.component.value, str(attributes.get("operation") or ""))
+            queue = pending.get(key)
+            started_attrs = queue.pop(0) if queue else {}
+            merged = {**started_attrs, **attributes}
+            latency_ms = merged.get("latency_ms")
+            if not isinstance(latency_ms, (int, float)):
+                continue
+            duration_ms = max(0.0, float(latency_ms))
+            completed_at = event.occurred_at
+            rows.append(
+                AgentRunSpan(
+                    agent_run_id=event.trace.agent_run_id,
+                    trace_id=event.trace.trace_id,
+                    span_name=_span_name_for(event.name, merged),
+                    span_type=event.component.value,
+                    status="ERROR" if merged.get("outcome") == "ERROR" else "OK",
+                    started_at=completed_at - timedelta(milliseconds=duration_ms),
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    metadata_json=merged,
+                )
+            )
+            continue
+        if event.name in ("agent_model.completed", "agent_run.finished"):
+            latency_ms = attributes.get("latency_ms")
+            if not isinstance(latency_ms, (int, float)):
+                continue
+            duration_ms = max(0.0, float(latency_ms))
+            completed_at = event.occurred_at
+            rows.append(
+                AgentRunSpan(
+                    agent_run_id=event.trace.agent_run_id,
+                    trace_id=event.trace.trace_id,
+                    span_name=_span_name_for(event.name, attributes),
+                    span_type=event.component.value,
+                    status="ERROR" if attributes.get("outcome") == "ERROR" else "OK",
+                    started_at=completed_at - timedelta(milliseconds=duration_ms),
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    metadata_json=dict(attributes),
+                )
+            )
+    return rows
+
+
+def _persist_durable_trace(
+    db: Session,
+    *,
+    result,
+    telemetry: AgentTelemetry,
+    settings: object,
+    actor: CurrentUser,
+) -> None:
+    try:
+        trace = TraceContext(trace_id=result.trace_id, agent_run_id=result.agent_run_id)
+        # BUILD-32: real timing around the (small, synchronous, deterministic)
+        # evaluation dispatch -- a genuine new span, not a reconstruction.
+        with telemetry.span(trace, TraceComponent.EVALUATION, operation="dispatch_evaluation"):
+            evaluation: EvaluationResult = dispatch_evaluation(result=result)
+
+        events = _telemetry_sink.pop(result.trace_id) if _telemetry_sink is not None else []
+        db.add_all(_build_span_rows(events))
+
+        evaluation_payload = evaluation.as_dict()
+        evaluation_version = str(evaluation_payload.get("evaluator_version") or "evaluation-v2")
+        execution_path = evaluation_payload.get("execution_path")
+        db.add(
+            AgentRunEvaluation(
+                agent_run_id=result.agent_run_id,
+                trace_id=result.trace_id,
+                evaluation_version=evaluation_version,
+                execution_path=execution_path,
+                metrics_json=evaluation_payload,
+            )
+        )
+
+        metrics = result.metrics
+        model_name = str(getattr(settings, "agent_main_model", "") or "") or None
+        error_code = getattr(result, "error_code", None)
+        # A schedule/out-of-scope/clarification reply makes zero model calls
+        # -- that is a real, definite zero, never "unknown"/N/A (plan §6).
+        if metrics.model_calls <= 0:
+            input_cost_usd = output_cost_usd = total_cost_usd = 0.0
+            cost_status = "AVAILABLE"
+            pricing_version = telemetry.pricing.version
+        else:
+            usage = ModelUsage(
+                input_tokens=metrics.input_tokens,
+                cached_input_tokens=metrics.cached_input_tokens,
+                output_tokens=metrics.output_tokens,
+            )
+            estimate = telemetry.pricing.estimate(model=model_name or "unknown", model_role=ModelRole.MAIN, usage=usage)
+            pricing_version = estimate.pricing_version
+            if estimate.estimated_cost_usd is None:
+                input_cost_usd = output_cost_usd = total_cost_usd = None
+                cost_status = "NOT_AVAILABLE"
+            else:
+                input_cost_usd, output_cost_usd, total_cost_usd = (
+                    estimate.input_cost_usd,
+                    estimate.output_cost_usd,
+                    estimate.estimated_cost_usd,
+                )
+                cost_status = "AVAILABLE"
+
+        run = db.get(AgentRun, result.agent_run_id)
+        if run is not None:
+            run.trace_id = result.trace_id
+            run.actor_id = actor.id
+            run.input_tokens = metrics.input_tokens
+            run.cached_input_tokens = metrics.cached_input_tokens
+            run.output_tokens = metrics.output_tokens
+            run.total_tokens = metrics.token_total
+            run.model_calls = metrics.model_calls
+            run.model = model_name
+            run.pricing_version = pricing_version
+            run.input_cost_usd = input_cost_usd
+            run.output_cost_usd = output_cost_usd
+            run.total_cost_usd = total_cost_usd
+            run.cost_status = cost_status
+            run.duration_ms = metrics.elapsed_ms
+            run.timeout = error_code in _TIMEOUT_ERROR_CODES
+            run.error_code = error_code
+            # Plan §8: None/empty/whitespace-only/no user-visible answer --
+            # never a legitimate deterministic empty-dataset reply the
+            # composer still produced real text for.
+            run.empty_reply = not (result.response or "").strip()
+            run.evaluation_version = evaluation_version
+
+        db.commit()
+    except Exception as durable_err:  # noqa: BLE001 -- observability must never break the real response
+        db.rollback()
+        logging.getLogger(__name__).warning("Agent V2 durable trace recording failed: %s", durable_err)
 
 
 @agent_v2_router.get("/agent/v2/traces/{trace_id}/activity", response_model=AgentActivityOut)
@@ -599,6 +815,33 @@ def run_agent_orchestration(
         )
     except Exception:
         db.rollback()
+        # BUILD-32: previously this path recorded absolutely nothing durable
+        # -- neither `_record_agent_v2_telemetry` nor `_persist_activity_
+        # snapshot`/`_persist_durable_trace` runs when `orchestrator.run()`
+        # itself raises, since none of them are reached. `db.rollback()`
+        # above already undid any partial `AgentRun`/checkpoint row this
+        # attempt staged, so a fresh minimal row is the only way an Admin can
+        # see that this request happened and failed at all. Best-effort, own
+        # try/except: a failure here must not shadow the real exception below.
+        try:
+            db.add(
+                AgentRun(
+                    conversation_id=conversation_id,
+                    patient_id=patient_id,
+                    actor_id=actor.id,
+                    request_id=request.idempotency_key,
+                    intent=None,
+                    status="FAILED",
+                    started_at=datetime.now(UTC),
+                    completed_at=datetime.now(UTC),
+                    error_code="INTERNAL_ERROR",
+                    cost_status="NOT_AVAILABLE",
+                )
+            )
+            db.commit()
+        except Exception as internal_err:  # noqa: BLE001
+            db.rollback()
+            logging.getLogger(__name__).warning("Agent V2 INTERNAL_ERROR durable recording failed: %s", internal_err)
         raise
 
     semantic = normalize_semantic_medical_query(input_resolution.query)
@@ -744,5 +987,10 @@ def run_agent_orchestration(
         suggested_actions=suggested.actions,
         selected_action=selected_action,
     )
+    # BUILD-32: same best-effort, post-commit shape as the two calls above --
+    # makes this run's real token usage/cost/duration/timeout/error/empty-
+    # reply/evaluation/spans durable (see _persist_durable_trace's own
+    # docstring).
+    _persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=actor)
 
     return response
