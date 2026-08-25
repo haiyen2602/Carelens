@@ -311,6 +311,60 @@ export default function AdminTicketDetailPage() {
         )}
       </div>
 
+      {/* BUILD-36: the backend already computed this Judge result (BUILD-33's
+          judge_result_out, wired into the route since then) -- this page
+          simply never rendered it. Same for Evaluation V2/Safety, both
+          genuinely new here (BUILD-36's own audit found neither was ever
+          surfaced to ticket detail at all). */}
+      {detail.judge && (
+        <div className="surface-card space-y-3 p-5">
+          <h3 className="font-bold">Kết quả Judge (BUILD-33)</h3>
+          <p className="text-xs text-muted-foreground">
+            Tín hiệu chất lượng phụ dựa trên LLM. Không phải xác nhận y khoa tuyệt đối.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoRow label="Trạng thái" value={detail.judge.judge_status} />
+            <InfoRow label="Model" value={`${detail.judge.judge_provider}:${detail.judge.judge_model}`} />
+            <InfoRow label="Rubric" value={`${detail.judge.rubric_name} (${detail.judge.rubric_version})`} />
+            <InfoRow label="Điểm tổng" value={detail.judge.overall_score != null ? detail.judge.overall_score.toFixed(2) : "N/A"} />
+            {Object.keys(detail.judge.dimension_scores).length > 0 && (
+              <div className="sm:col-span-2">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Điểm theo tiêu chí</p>
+                <p className="text-sm">{Object.entries(detail.judge.dimension_scores).map(([k, v]) => `${k}=${v}`).join(", ")}</p>
+              </div>
+            )}
+            {detail.judge.flags.length > 0 && <InfoRow label="Flags" value={detail.judge.flags.join(", ")} />}
+            {detail.judge.failure_reason && <InfoRow label="Lý do lỗi" value={detail.judge.failure_reason} />}
+          </div>
+        </div>
+      )}
+
+      {detail.evaluation && (
+        <div className="surface-card space-y-3 p-5">
+          <h3 className="font-bold">Evaluation V2 (BUILD-31/32)</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoRow label="Execution path" value={detail.evaluation.execution_path ?? "N/A"} />
+            <InfoRow label="Evaluation version" value={detail.evaluation.evaluation_version} />
+          </div>
+          <pre className="max-h-48 overflow-auto rounded-lg bg-muted/40 p-3 text-xs">{JSON.stringify(detail.evaluation.metrics, null, 2)}</pre>
+        </div>
+      )}
+
+      {detail.safety && (
+        <div className="surface-card space-y-3 border-rose-500/30 p-5">
+          <h3 className="font-bold text-rose-600">Safety / Handoff (BUILD-34)</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoRow label="Outcome" value={detail.safety.outcome} />
+            <InfoRow label="Reason code" value={detail.safety.reason_code} />
+            <InfoRow label="Mức độ" value={detail.safety.severity} />
+            <InfoRow label="Handoff required" value={detail.safety.handoff_required ? "có" : "không"} />
+            <InfoRow label="Handoff created" value={detail.safety.handoff_created ? "có" : "không"} />
+            <InfoRow label="Trạng thái handoff (live)" value={detail.safety.handoff_status_live ?? "N/A"} />
+            {detail.safety.assigned_doctor_id && <InfoRow label="Bác sĩ phụ trách" value={detail.safety.assigned_doctor_id} />}
+          </div>
+        </div>
+      )}
+
       <div className="surface-card space-y-3 p-5">
         <div className="flex items-center gap-2">
           <MessageSquareText className="h-4 w-4 text-muted-foreground" />

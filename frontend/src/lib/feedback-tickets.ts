@@ -58,9 +58,52 @@ export type FeedbackTraceSummary = {
   status: string | null;
 };
 
+// BUILD-33/36: backend already returns these on GET /admin/tickets/{id}
+// (agent_feedback.judge_result_out/evaluation_result_out/safety_result_out)
+// -- the frontend type previously didn't even declare `judge`, so it was
+// silently dropped by every caller despite the backend already computing
+// it (see BUILD-36 report's own audit finding).
+export type FeedbackJudgeResult = {
+  judge_status: string;
+  judge_provider: string;
+  judge_model: string;
+  rubric_name: string;
+  rubric_version: string;
+  judge_prompt_version: string;
+  eligibility_reason: string;
+  overall_score: number | null;
+  dimension_scores: Record<string, number>;
+  flags: string[];
+  confidence: number | null;
+  failure_reason: string | null;
+  evaluated_at: string | null;
+};
+
+export type FeedbackEvaluationResult = {
+  evaluation_version: string;
+  execution_path: string | null;
+  metrics: Record<string, unknown>;
+};
+
+export type FeedbackSafetyResult = {
+  outcome: string;
+  reason_code: string;
+  severity: string;
+  handoff_required: boolean;
+  handoff_created: boolean;
+  handoff_id: string | null;
+  handoff_status_live: string | null;
+  handoff_resolved: boolean;
+  assigned_doctor_id: string | null;
+  time_to_review_seconds: number | null;
+};
+
 export type FeedbackTicketDetail = {
   ticket: FeedbackTicket;
   trace: FeedbackTraceSummary;
+  judge: FeedbackJudgeResult | null;
+  evaluation: FeedbackEvaluationResult | null;
+  safety: FeedbackSafetyResult | null;
 };
 
 export type FeedbackSessionMessage = {

@@ -931,6 +931,16 @@ class AgentRun(Base):
     error_code: Mapped[str | None] = mapped_column(String, nullable=True)
     empty_reply: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     evaluation_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    # BUILD-36: stamped from settings.rag_prompt_version/rag_retriever_version
+    # at the same _persist_durable_trace write point as `model` above --
+    # deployment-wide constants at any given moment (this app has no
+    # per-request prompt/retrieval override), so within one deployment every
+    # row gets the same value; the point is enabling a real before/after
+    # comparison ACROSS deployments (Admin Monitoring V2's Versions tab),
+    # not a per-run varying signal. NULL for any row written before this
+    # column existed -- never backfilled/guessed.
+    prompt_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    retrieval_version: Mapped[str | None] = mapped_column(String, nullable=True)
 
     __table_args__ = (
         Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
@@ -938,6 +948,8 @@ class AgentRun(Base):
         Index("ix_agent_run_trace_id", "trace_id"),
         Index("ix_agent_run_status_created", "status", "created_at"),
         Index("ix_agent_run_error_code_created", "error_code", "created_at"),
+        Index("ix_agent_run_prompt_version", "prompt_version"),
+        Index("ix_agent_run_retrieval_version", "retrieval_version"),
     )
 
 
@@ -1330,6 +1342,13 @@ class AgentFeedbackTicket(Base):
         Index("ix_agent_feedback_ticket_priority_created", "priority", "created_at"),
         Index("ix_agent_feedback_ticket_conversation", "conversation_id"),
         Index("ix_agent_feedback_ticket_chatbot_version", "chatbot_version"),
+        # BUILD-36 audit: judge_result_out()/agent_safety_monitoring's
+        # ticket<->safety-event correlation both filter directly by these
+        # two columns (neither previously indexed) -- added once BUILD-36
+        # made this a genuinely hot path (ticket detail drill-down), not
+        # speculatively for every column that is ever filtered on.
+        Index("ix_agent_feedback_ticket_trace_id", "trace_id"),
+        Index("ix_agent_feedback_ticket_agent_run_id", "agent_run_id"),
     )
 
 
@@ -1786,5 +1805,90 @@ class SystemAuditLog(Base):
     target: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False, index=True
+    )
+
+
+class AgentGoldenRun(Base):
+    """BUILD-36: durable persistence for one BUILD-35 golden-evaluation run.
+
+    BUILD-35's own runner (``scripts/agent_v2/run_golden_evaluation.py``)
+    deliberately only ever wrote JSON/Markdown files to a gitignored local
+    directory -- fine for a human running it on their own machine, but a
+    live Admin dashboard cannot query a file that only exists on whichever
+    laptop/CI runner happened to execute the last golden run. This table is
+    populated by that SAME runner's own optional ``--persist`` flag (never
+    by any other writer) -- additive only, the JSON/Markdown file output is
+    completely unchanged. ``id`` reuses the runner's own ``run_id`` (already
+    a unique, sortable UTC timestamp string, e.g. "20260825T070211Z") rather
+    than a fresh UUID, so a human comparing a dashboard row to a JSON
+    filename on disk sees the exact same identifier.
+
+    The `*_json` columns are the runner's own already-computed dicts,
+    stored verbatim (same values the JSON file on disk has) -- this table
+    is a durable mirror of that JSON, not a re-derivation of it. The
+    handful of denormalized top-level columns (``pass_rate``,
+    ``regression_gate_passed``, etc.) exist ONLY so "latest run"/"gate
+    currently failing" queries do not need to parse JSON in SQL -- they are
+    computed once at persist time from the same source, never independently.
+    """
+
+    __tablename__ = "agent_golden_run"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    golden_set_version: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    git_commit: Mapped[str] = mapped_column(String, nullable=False)
+    started_at: Mapped[str] = mapped_column(String, nullable=False)
+    completed_at: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    total_cases: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    passed_cases: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed_cases: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # NULL (not 0.0) when total_cases == 0 -- same "never fabricate a rate
+    # from a zero denominator" rule as every rate this project computes.
+    pass_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    regression_gate_passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    provenance_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    aggregate_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    regression_gate_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    comparisons_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+
+    # index=True already generates ix_agent_golden_run_created_at -- an
+    # earlier version of this class ALSO declared the same index explicitly
+    # in __table_args__ under the identical name, which is a hard duplicate
+    # (not just redundant) and fails table creation outright. Caught by
+    # this build's own new unit tests failing to even set up their SQLite
+    # fixture, not by inspection.
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
+
+
+class AgentGoldenRunCase(Base):
+    """BUILD-36: one row per golden case's result within one persisted
+    ``AgentGoldenRun`` -- lets the dashboard list/filter failed cases by
+    category without parsing the parent row's JSON. Deliberately no hard FK
+    to ``AgentGoldenRun.id`` (plain indexed string column) -- same
+    no-hard-FK-between-operational-tables convention this project already
+    uses for ``AgentSafetyEvent``/``DoctorReviewRequest`` and every other
+    BUILD-32-35 durable table.
+    """
+
+    __tablename__ = "agent_golden_run_case"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    # No index=True here -- __table_args__ below already declares
+    # ix_agent_golden_run_case_run_id explicitly; index=True would generate
+    # the identical name a second time (the same real duplicate-index bug
+    # AgentGoldenRun's own created_at column had, caught by this build's
+    # own unit tests failing to even set up their SQLite fixture).
+    run_id: Mapped[str] = mapped_column(String, nullable=False)
+    case_id: Mapped[str] = mapped_column(String, nullable=False)
+    category: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    passed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    checks_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_agent_golden_run_case_run_id", "run_id"),
+        Index("ix_agent_golden_run_case_category_passed", "category", "passed"),
     )
 

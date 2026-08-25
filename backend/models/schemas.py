@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, EmailStr, Field
 
@@ -730,10 +730,45 @@ class AgentFeedbackJudgeOut(BaseModel):
     evaluated_at: datetime | None = None
 
 
+class AgentFeedbackEvaluationOut(BaseModel):
+    """BUILD-36: ticket detail's view of this run's durable Evaluation V2
+    result (backend.db.models.AgentRunEvaluation) -- already the sanitized
+    status/source/reason-per-metric shape ``evaluation_v2.dispatch_
+    evaluation`` produces (never a numeric heuristic score, which is
+    ring-buffer-only, see BUILD-36 report's own audit). ``None`` on the
+    parent field when no row exists (a pre-BUILD-32 run, or a durable-read
+    hiccup) -- never a fabricated disposition."""
+
+    evaluation_version: str
+    execution_path: str | None = None
+    metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentFeedbackSafetyOut(BaseModel):
+    """BUILD-36: ticket detail's view of this run's real Safety/Handoff
+    event (backend.db.models.AgentSafetyEvent), live-joined against
+    DoctorReviewRequest exactly like every other BUILD-34 read -- never the
+    row's own stale snapshot. ``None`` on the parent field when this run
+    never triggered Safety (the overwhelming majority of tickets)."""
+
+    outcome: str
+    reason_code: str
+    severity: str
+    handoff_required: bool
+    handoff_created: bool
+    handoff_id: str | None = None
+    handoff_status_live: str | None = None
+    handoff_resolved: bool = False
+    assigned_doctor_id: str | None = None
+    time_to_review_seconds: float | None = None
+
+
 class AgentFeedbackTicketDetailOut(BaseModel):
     ticket: AgentFeedbackTicketOut
     trace: AgentFeedbackTraceSummaryOut
     judge: AgentFeedbackJudgeOut | None = None
+    evaluation: AgentFeedbackEvaluationOut | None = None
+    safety: AgentFeedbackSafetyOut | None = None
 
 
 class AgentFeedbackTicketUpdateRequest(BaseModel):

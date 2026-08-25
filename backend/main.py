@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.account_routes import account_router
 from backend.api.admin_drug_routes import admin_drug_router
 from backend.api.admin_feedback_routes import admin_feedback_router
+from backend.api.admin_monitoring_routes import admin_monitoring_router
 from backend.api.admin_safety_routes import admin_safety_router
 from backend.api.agent_feedback_routes import agent_feedback_router
 from backend.api.agent_v2_routes import agent_v2_router
@@ -129,6 +130,7 @@ app.include_router(agent_v2_router, prefix="/api/v1")
 app.include_router(agent_feedback_router, prefix="/api/v1")
 app.include_router(admin_feedback_router, prefix="/api/v1")
 app.include_router(admin_safety_router, prefix="/api/v1")
+app.include_router(admin_monitoring_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")

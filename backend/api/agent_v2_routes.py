@@ -623,6 +623,13 @@ def _persist_durable_trace(
             # composer still produced real text for.
             run.empty_reply = not (result.response or "").strip()
             run.evaluation_version = evaluation_version
+            # BUILD-36: stamped so the Admin Monitoring V2 Versions tab has
+            # a real, durable column to filter/compare on -- deployment-wide
+            # constants at any given moment (this app has no per-request
+            # prompt/retrieval override), meaningful for before/after
+            # comparison ACROSS deployments, not a per-run varying signal.
+            run.prompt_version = str(getattr(settings, "rag_prompt_version", "") or "") or None
+            run.retrieval_version = str(getattr(settings, "rag_retriever_version", "") or "") or None
 
         db.commit()
     except Exception as durable_err:  # noqa: BLE001 -- observability must never break the real response

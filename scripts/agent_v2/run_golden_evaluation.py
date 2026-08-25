@@ -53,6 +53,27 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+# BUILD-36 bugfix (found by actually re-running the bare CLI as a fresh
+# process, not assumed fixed from the BUILD-35 pytest/E2E runs alone):
+# `backend.db.base` calls `get_settings()` at ITS OWN module level, and
+# that module gets pulled in transitively by the `from backend.api.
+# agent_v2_routes import ...` block below -- i.e. BEFORE Python ever
+# reaches the `if __name__ == "__main__":` guard at the bottom of this
+# file, since imports always execute first. Setting the env var only in
+# that bottom guard (BUILD-35's original fix) left the lru_cache'd
+# Settings object permanently poisoned with AGENT_RUNTIME_ENABLED unset
+# for any bare `python scripts/agent_v2/run_golden_evaluation.py`
+# invocation -- BUILD-35's own testing never caught this because its E2E
+# script sets the env var BEFORE importing this module, not after.
+# `__name__` is already correctly "__main__" (or not) at this exact point
+# in the file, before any of the heavy imports below run -- checking it
+# here, ahead of those imports, is what actually fixes the ordering,
+# while still leaving a plain `import scripts.agent_v2.run_golden_
+# evaluation` (from a test file) with `__name__ != "__main__"` and no
+# side effect, preserving BUILD-35's own original fix's intent.
+if __name__ == "__main__":
+    os.environ.setdefault("AGENT_RUNTIME_ENABLED", "true")
+
 from fastapi import HTTPException  # noqa: E402
 from sqlalchemy import select  # noqa: E402
 
@@ -525,7 +546,75 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--non-critical-threshold", type=float, default=0.8)
     parser.add_argument("--out-dir", default=str(DEFAULT_RUNS_DIR))
     parser.add_argument("--case-id", action="append", default=None, help="restrict to one or more specific case_id values (repeatable)")
+    parser.add_argument(
+        "--persist", action="store_true",
+        help="BUILD-36: also write this run's summary to the durable agent_golden_run/agent_golden_run_case "
+        "tables (additive -- the JSON/Markdown file output is unchanged either way), so the Admin Monitoring "
+        "V2 dashboard's Golden Evaluation section has real data to read instead of only a local file.",
+    )
     return parser
+
+
+def _persist_to_db(
+    *, run_id: str, provenance: RunProvenance, aggregate: dict[str, Any], gate: RegressionGateResult,
+    comparisons: list, results: list[CaseResult],
+) -> None:
+    """BUILD-36: additive durable mirror of the SAME JSON this run already
+    writes to disk -- never a re-derivation, every value here is the exact
+    one already computed above. Own try/except: a persistence failure must
+    never make an otherwise-successful golden run look like it failed (the
+    JSON/Markdown files on disk are already the authoritative record either
+    way; this is a second, queryable copy for the dashboard, not the source
+    of truth)."""
+
+    from backend.db.models import AgentGoldenRun, AgentGoldenRunCase
+
+    db = SessionLocal()
+    try:
+        db.add(
+            AgentGoldenRun(
+                id=run_id,
+                golden_set_version=provenance.golden_set_version,
+                git_commit=provenance.git_commit,
+                started_at=provenance.started_at,
+                completed_at=provenance.completed_at,
+                total_cases=aggregate["total_cases"],
+                passed_cases=aggregate["passed_cases"],
+                failed_cases=aggregate["failed_cases"],
+                pass_rate=aggregate["pass_rate"],
+                regression_gate_passed=gate.passed,
+                provenance_json=provenance.as_dict(),
+                aggregate_json=aggregate,
+                regression_gate_json={
+                    "passed": gate.passed,
+                    "critical_failures": list(gate.critical_failures),
+                    "regressed_non_critical": list(gate.regressed_non_critical),
+                    "non_critical_pass_rate": gate.non_critical_pass_rate,
+                    "non_critical_threshold": gate.non_critical_threshold,
+                },
+                comparisons_json=[
+                    {
+                        "case_id": c.case_id, "category": c.category, "status": c.status.value,
+                        "baseline_passed": c.baseline_passed, "candidate_passed": c.candidate_passed,
+                    }
+                    for c in comparisons
+                ],
+            )
+        )
+        for r in results:
+            db.add(
+                AgentGoldenRunCase(
+                    run_id=run_id, case_id=r.case_id, category=r.category, passed=r.passed,
+                    checks_json=[{"name": c.name, "status": c.status.value, "detail": c.detail} for c in r.checks],
+                )
+            )
+        db.commit()
+        print(f"Persisted run {run_id} to agent_golden_run/agent_golden_run_case")
+    except Exception as exc:  # noqa: BLE001 -- persistence is best-effort, never turns a real PASS run into a reported failure
+        db.rollback()
+        print(f"WARNING: --persist failed (run {run_id} still written to JSON/Markdown as normal): {exc}")
+    finally:
+        db.close()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -589,6 +678,9 @@ def main(argv: list[str] | None = None) -> int:
         comparisons=comparisons, gate=gate, dataset_errors=[],
     )
 
+    if args.persist:
+        _persist_to_db(run_id=run_id, provenance=provenance, aggregate=aggregate, gate=gate, comparisons=comparisons, results=results)
+
     print(f"\n{aggregate['passed_cases']}/{aggregate['total_cases']} cases passed (pass_rate={aggregate['pass_rate']})")
     print(f"Regression gate: {'PASS' if gate.passed else 'FAIL'}")
     if gate.critical_failures:
@@ -602,14 +694,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    # Deliberately set here, not at module import time: this module is
-    # imported both by the real CLI entry point below AND by
-    # tests/test_agent_v2_build35_golden_runner.py (pure helper-function
-    # tests, no DB) and scripts/agent_v2/build35_golden_evaluation_local_
-    # e2e.py (which sets this itself before importing, same as every other
-    # local E2E script in this project). `os.environ` is process-global --
-    # a module-level `setdefault` here would leak into every OTHER test in
-    # the same pytest session merely from this module being imported (a
-    # real regression this exact ordering fixed: see BUILD-35 report §12).
-    os.environ.setdefault("AGENT_RUNTIME_ENABLED", "true")
+    # AGENT_RUNTIME_ENABLED is already set (see the top of this file, right
+    # after sys.path.insert -- BUILD-36 bugfix, see that comment for why it
+    # cannot live only here).
     raise SystemExit(main())

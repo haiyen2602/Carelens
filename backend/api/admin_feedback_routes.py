@@ -27,7 +27,13 @@ from backend.models.schemas import (
     AgentFeedbackTicketOut,
     AgentFeedbackTicketUpdateRequest,
 )
-from backend.services.agent_feedback import judge_result_out, session_messages, trace_summary_out
+from backend.services.agent_feedback import (
+    evaluation_result_out,
+    judge_result_out,
+    safety_result_out,
+    session_messages,
+    trace_summary_out,
+)
 
 admin_feedback_router = APIRouter(prefix="/admin/tickets", tags=["admin-feedback-tickets"])
 
@@ -90,7 +96,17 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db), _admin=Depends(_re
     ticket = _get_ticket_or_404(db, ticket_id)
     trace = trace_summary_out(db, ticket.trace_id)
     judge = judge_result_out(db, ticket.agent_run_id)
-    return AgentFeedbackTicketDetailOut(ticket=AgentFeedbackTicketOut.model_validate(ticket), trace=trace, judge=judge)
+    # BUILD-36: completes the correlation chain the spec's own §16 asks for
+    # (reported message -> session -> trace -> Evaluation V2 -> Judge ->
+    # Safety/Handoff) -- both were previously entirely absent from ticket
+    # detail (Evaluation V2 was never read here at all; Safety was only a
+    # coarse status string inferred from AgentRun.status, never the real
+    # AgentSafetyEvent row).
+    evaluation = evaluation_result_out(db, ticket.agent_run_id)
+    safety = safety_result_out(db, ticket.agent_run_id)
+    return AgentFeedbackTicketDetailOut(
+        ticket=AgentFeedbackTicketOut.model_validate(ticket), trace=trace, judge=judge, evaluation=evaluation, safety=safety
+    )
 
 
 @admin_feedback_router.get("/{ticket_id}/session", response_model=AgentFeedbackSessionOut)
