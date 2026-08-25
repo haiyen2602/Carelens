@@ -170,6 +170,86 @@ def test_overview_metrics_ticket_and_judge_counted_correctly(db):
     assert result["judged_rate"]["numerator"] == 1
 
 
+def test_overview_metrics_daily_cost_usd_is_none_not_a_crash_when_no_cost_rows(db):
+    """Code-review response: a reviewer flagged `round(daily_cost_value, 4)`
+    as a possible AttributeError when `cost_rows` is empty. Reading the
+    actual code shows this is already guarded (`if daily_cost_value is not
+    None else None`) -- `daily_cost_value` itself is set to `None`, not an
+    empty list, whenever `cost_rows` is empty, so the ternary never reaches
+    `round(None, ...)`. This test locks that guard in: real AgentRun rows
+    exist (non-zero total_requests) but NONE have `cost_status=AVAILABLE`,
+    isolating the exact code path the finding was about -- not just an
+    empty-database case that could pass for unrelated reasons."""
+
+    _run(db, "run-1", cost_status="NOT_AVAILABLE", total_cost_usd=None)
+    _run(db, "run-2", cost_status="NOT_AVAILABLE", total_cost_usd=None)
+    result = overview_metrics(db, MonitoringFilters())
+    assert result["available"] is True
+    assert result["total_requests"] == 2
+    assert result["daily_cost_usd"]["value"] is None
+    assert result["daily_cost_usd"]["status"] == "NOT_APPLICABLE"
+    assert result["cost_per_query_usd"]["status"] == "NOT_APPLICABLE"
+
+
+def test_overview_metrics_safety_rates_no_scope_note_when_no_extra_filters(db):
+    _run(db, "run-1")
+    db.add(AgentSafetyEvent(
+        agent_run_id="run-1", trace_id="tr-1", outcome="HANDOFF_REQUIRED", reason_code="ACUTE_DANGER_DETECTED",
+        severity="CRITICAL", severity_source="reason_code_mapped", handoff_required=True, handoff_created=True,
+    ))
+    db.commit()
+    result = overview_metrics(db, MonitoringFilters())
+    assert result["safety_trigger_rate"]["numerator"] == 1
+    assert result["safety_trigger_rate"]["denominator"] == 1
+    assert "scope_note" not in result["safety_trigger_rate"]
+    assert "scope_note" not in result["handoff_rate"]
+
+
+def test_overview_metrics_safety_rates_scope_note_when_model_filter_active(db):
+    """Code-review response: `safety_metrics_summary` (BUILD-34) only
+    accepts date_from/date_to, so its denominator (ALL runs in range) does
+    not shrink to match a `model`/`prompt_version`/etc filter the way every
+    other Overview card's denominator does -- a real, deliberate mismatch,
+    not a bug, but it must be visibly flagged to the admin rather than
+    silently presented as if fully scoped. This was previously untested."""
+
+    _run(db, "run-1", model="gpt-5.4-mini")
+    _run(db, "run-2", model="gpt-5.4")
+    db.add(AgentSafetyEvent(
+        agent_run_id="run-1", trace_id="tr-1", outcome="HANDOFF_REQUIRED", reason_code="ACUTE_DANGER_DETECTED",
+        severity="CRITICAL", severity_source="reason_code_mapped", handoff_required=True, handoff_created=True,
+    ))
+    db.commit()
+    result = overview_metrics(db, MonitoringFilters(model="gpt-5.4-mini"))
+    # the model filter narrows total_requests to 1, but the safety
+    # denominator is still the full 2 -- exactly the mismatch the scope_note
+    # exists to disclose.
+    assert result["total_requests"] == 1
+    assert result["safety_trigger_rate"]["denominator"] == 2
+    assert result["safety_trigger_rate"]["scope_note"] == "date_range_filter_only_model_and_other_filters_not_applied"
+    assert result["handoff_rate"]["scope_note"] == "date_range_filter_only_model_and_other_filters_not_applied"
+
+
+def test_overview_metrics_safety_rates_degrade_without_breaking_rest_of_overview(db, monkeypatch):
+    """Confirms the section's own fine-grained try/except actually degrades
+    ONLY the 2 safety cards (not the whole Overview section) when
+    `safety_metrics_summary` itself raises -- the specific behavior the
+    surrounding code comment claims but that had no test proving it."""
+
+    import backend.services.agent_monitoring_metrics as amm
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated safety-summary failure")
+
+    monkeypatch.setattr(amm, "safety_metrics_summary", _boom)
+    _run(db, "run-1")
+    result = overview_metrics(db, MonitoringFilters())
+    assert result["available"] is True
+    assert result["total_requests"] == 1
+    assert result["safety_trigger_rate"]["status"] == "NOT_AVAILABLE"
+    assert result["handoff_rate"]["status"] == "NOT_AVAILABLE"
+
+
 # ---------------------------------------------------------------------------
 # quality_metrics
 # ---------------------------------------------------------------------------

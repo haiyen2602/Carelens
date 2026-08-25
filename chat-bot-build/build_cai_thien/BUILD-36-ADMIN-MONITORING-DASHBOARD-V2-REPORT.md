@@ -460,6 +460,72 @@ nhánh build này khớp đúng 11/11 với baseline thật đó.
 
 ---
 
+## 24.1 Code review response (round 1, post-push)
+
+Review tự động trên PR #116 nêu 3 điểm về `overview_metrics`
+(`backend/services/agent_monitoring_metrics.py`). Cả 3 đều verify thật
+(đọc code + chạy test thật), không nhận trên lời:
+
+1. **"Potential Performance Issue"** — `_percentiles`/`durations`/
+   `token_values` fetch toàn bộ giá trị filtered vào Python để tính
+   percentile/average thay vì SQL `percentile_cont`. **Xác nhận là thật,
+   nhưng đã là trade-off có chủ đích và đã ghi rõ trong chính docstring
+   của `_percentiles`** (dòng 129-138): lý do là test suite của dự án
+   chạy cùng 1 hàm này trên cả SQLite (không có `percentile_cont`) lẫn
+   Postgres thật, và scope hiện tại luôn là 1 cửa sổ filter của admin
+   (không phải toàn bộ bảng production không giới hạn). Docstring tự nêu
+   rõ: "A future build moving this to a real SQL aggregate if row counts
+   grow is a legitimate, separate optimization" — tức đã được disclose
+   là giới hạn kiến trúc đã biết, không phải bug âm thầm. **Không sửa
+   trong build này** (đổi sang SQL-native percentile là một thay đổi
+   hành vi/kiến trúc riêng, ngoài scope monitoring-only của BUILD-36) —
+   ghi nhận làm follow-up khi row count thật sự lớn.
+
+2. **"Possible Issue" (AttributeError khi `round(None, 4)`)** — **FALSE
+   POSITIVE, verify được bằng cách đọc chính đoạn code đầy đủ (reviewer
+   chỉ quote đến dòng gán `daily_cost_value`, không quote đến `return`)**:
+   `"value": round(daily_cost_value, 4) if daily_cost_value is not None
+   else None` đã guard `is not None` trước khi gọi `round()` — khi
+   `cost_rows` rỗng, `daily_cost_value` là `None` (không phải rỗng-nhưng-
+   không-None), nên nhánh `round()` không bao giờ chạy với `None`. Xác
+   nhận thêm bằng test thật mới (`test_overview_metrics_daily_cost_usd_is_
+   none_not_a_crash_when_no_cost_rows`, seed 2 `AgentRun` thật với
+   `cost_status=NOT_AVAILABLE` — cô lập đúng path nghi vấn, không chỉ
+   test database rỗng chung chung) — PASS, không crash, `daily_cost_usd.
+   value=None`/`status=NOT_APPLICABLE` đúng như thiết kế.
+
+3. **"Inconsistent Filtering"** (safety cards dùng denominator không lọc
+   theo `model`/filter khác trong khi numerator... thực ra cả numerator
+   VÀ denominator đều lấy từ `safety_metrics_summary` — chỉ là hàm đó
+   chỉ nhận `date_from`/`date_to`, không nhận `model` như phần còn lại
+   của Overview) — **xác nhận là thật và đã là quyết định có chủ đích,
+   đã ghi rõ trong code comment (dòng 201-209) VÀ đã hiển thị cho admin
+   qua `scope_note`** (render thật trong `MetricCard`,
+   `frontend/admin/monitoring/page.tsx:102-103` — không phải field chết).
+   **Gap thật tìm thấy**: 0 test nào verify hành vi này trước review —
+   đã thêm 2 test mới xác nhận cả 2 chiều: không có `scope_note` khi
+   không có filter phụ, và có đúng `scope_note` + denominator KHÔNG co
+   lại khi filter `model` được áp — đúng như comment mô tả. Thêm 1 test
+   thứ 4 xác nhận nhánh degrade (`safety_metrics_summary` raise →
+   `safety_trigger_rate`/`handoff_rate` thành `NOT_AVAILABLE`, phần còn
+   lại của Overview vẫn `available=True`) — hành vi code comment tự nhận
+   nhưng trước đó chưa có test nào chứng minh.
+
+**Kết quả**: 0 sửa code hành vi (cả 2 điểm "Issue" đều verify là đã đúng
+sẵn); thêm 4 test mới (`tests/test_agent_v2_build36_admin_monitoring.py`)
+khoá lại đúng 3 điểm review nêu — chạy thật cả trên SQLite (unit) và xác
+nhận không phá gì trên Postgres thật:
+
+```text
+pytest -q tests/test_agent_v2_build36_admin_monitoring.py tests/test_api/test_admin_monitoring_routes.py
+44 passed (40 cũ + 4 mới)
+
+ruff check tests/test_agent_v2_build36_admin_monitoring.py backend/services/agent_monitoring_metrics.py
+All checks passed!
+```
+
+---
+
 ## 25. Production Smoke
 
 Chưa thực hiện — theo đúng quy trình dự án: chỉ sau PR → review → merge →
