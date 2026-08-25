@@ -370,6 +370,40 @@ Test sau khi sửa: 33/33 pass (26 unit gốc + 1 test hồi quy mới cho findi
 2 = 27 unit, cộng 6 API test) — `ruff` clean, không đổi hành vi write-path
 nào.
 
+## 10.2 Code Review tự động (post-push, vòng 2) — 2 finding, cả 2 đều xác nhận đúng
+
+1. **"Potential Performance Issue" trong `judge_suspected_missed_risk_
+   signals`** — chỉ ra chính vòng lặp phân trang vừa thêm ở vòng 1 (mục
+   10.1 finding 2) có thể tốn NHIỀU round-trip DB liên tiếp nếu signal thật
+   rải rác. **Đúng, và có cách tốt hơn**: thay vì phân trang (nhiều query
+   nhỏ), đổi thành **1 query duy nhất** với `LIMIT max_rows_scanned` (vẫn
+   giữ nguyên chặn trên `max(limit*10, 200)`, không quét vô hạn), rồi lọc +
+   dừng sớm trong Python. Giữ đúng tính đầy đủ (đã có test hồi quy từ vòng
+   1 xác nhận lại: 45 dòng điểm cao + 3 dòng điểm thấp thật, code mới vẫn
+   tìm đủ cả 3) nhưng giờ **luôn đúng 1 round-trip**, không phải tối đa 10.
+2. **"N+1 Query Problem" trong `list_safety_events`** — chỉ ra vòng lặp gọi
+   `_live_handoff_status` (1 query/row) cho từng event trong danh sách —
+   `limit=20` mặc định = 21 query thay vì 1. **Xác nhận ĐÚNG, bug thật**
+   (và phát hiện thêm: `safety_metrics_summary`'s vòng lặp tính
+   `handoff_status_distribution`/`unresolved_count` có **cùng lỗi N+1**,
+   dù bot chỉ nêu tên `list_safety_events` — sửa luôn cả 2 chỗ, không chỉ
+   chỗ bị nêu tên). Đã thêm `_live_handoff_statuses_batch()` — 1 query
+   `WHERE id IN (...)` cho toàn bộ `handoff_id` khác nhau trên 1 trang/1
+   lần gọi, dùng `_compute_live_status()` (hàm thuần, tách ra dùng chung
+   với bản đơn lẻ `_live_handoff_status` cho `safety_event_detail`, nơi N+1
+   không áp dụng vì chỉ có 1 event).
+
+   **Test hồi quy thật, đếm query thật** (không chỉ assert kết quả đúng):
+   `test_list_safety_events_batches_handoff_status_lookup_not_n_plus_1`
+   dùng `sqlalchemy.event.listen(engine, "before_cursor_execute", ...)` để
+   đếm số round-trip DB thật khi gọi `list_safety_events` với 5 event, mỗi
+   event có `handoff_id` khác nhau — assert tổng số query <= 4 (code cũ sẽ
+   ra 7: 1 đếm + 1 events + 5 lookup riêng).
+
+Test sau khi sửa cả 2 vòng: 34/34 pass, `ruff` clean, xác nhận lại trên
+Postgres thật (`list_safety_events`/`safety_metrics_summary`/`judge_
+suspected_missed_risk_signals` đều chạy sạch, không lỗi).
+
 ---
 
 ## 11. Local E2E (§9/§10 — traffic thật, không mock)

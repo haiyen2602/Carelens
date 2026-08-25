@@ -353,6 +353,54 @@ def test_list_safety_events_filters_by_severity_and_reason_code(db):
     assert total == 1 and items[0]["severity"] == "HIGH"
 
 
+def test_list_safety_events_batches_handoff_status_lookup_not_n_plus_1(db):
+    """Regression for a real N+1 found in code review: fetching live
+    handoff status for a page of events must be O(1) extra queries, not
+    O(N events) -- counts real DB round-trips via SQLAlchemy's own
+    before_cursor_execute event, not just asserting correctness."""
+
+    from sqlalchemy import event
+
+    for i in range(5):
+        run_id = f"run-n1-{i}"
+        _add_run(db, run_id)
+        db.commit()
+        persist_safety_event(
+            db,
+            result=_fake_result(
+                agent_run_id=run_id, trace_id=f"t-n1-{i}", handoff_request_id=f"handoff-n1-{i}", handoff_status="PENDING", handoff_created=True
+            ),
+            conversation_id="c", patient_id="p", actor_id="a",
+        )
+        db.add(
+            DoctorReviewRequest(
+                id=f"handoff-n1-{i}", patient_id="p", created_by_actor_id="a", reason_code="ACUTE_DANGER_DETECTED",
+                risk_disposition="HANDOFF_REQUIRED", patient_question="q", agent_summary="s", status="PENDING",
+                idempotency_key=f"k-n1-{i}",
+            )
+        )
+    db.commit()
+
+    query_count = {"n": 0}
+
+    def _count(conn, cursor, statement, parameters, context, executemany):
+        query_count["n"] += 1
+
+    engine = db.get_bind()
+    event.listen(engine, "before_cursor_execute", _count)
+    try:
+        items, total = list_safety_events(db, limit=10)
+    finally:
+        event.remove(engine, "before_cursor_execute", _count)
+
+    assert total == 5
+    assert len(items) == 5
+    # Old N+1 code: 1 count + 1 events + 5 (one _live_handoff_status per
+    # event) = 7. New batched code: 1 count + 1 events + 1 batched handoff
+    # lookup = 3. Bounding at 4 leaves slack without re-permitting O(N).
+    assert query_count["n"] <= 4, f"expected O(1) queries regardless of event count, got {query_count['n']}"
+
+
 def test_safety_event_detail_links_ticket_and_judge_when_present(db):
     _add_run(db, "run-1")
     db.commit()

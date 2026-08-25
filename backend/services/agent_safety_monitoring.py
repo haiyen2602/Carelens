@@ -157,12 +157,15 @@ class HandoffLiveStatus:
     assigned_doctor_id: str | None
 
 
-def _live_handoff_status(db: Session, handoff_id: str | None, *, created_at: datetime | None) -> HandoffLiveStatus:
-    if not handoff_id:
-        return HandoffLiveStatus(status=None, resolved=False, resolved_at=None, time_to_review_seconds=None, assigned_doctor_id=None)
-    request = db.get(DoctorReviewRequest, handoff_id)
-    if request is None:
-        return HandoffLiveStatus(status=None, resolved=False, resolved_at=None, time_to_review_seconds=None, assigned_doctor_id=None)
+_NO_HANDOFF_STATUS = HandoffLiveStatus(status=None, resolved=False, resolved_at=None, time_to_review_seconds=None, assigned_doctor_id=None)
+
+
+def _compute_live_status(request: DoctorReviewRequest, *, created_at: datetime | None) -> HandoffLiveStatus:
+    """Pure -- turns one already-fetched ``DoctorReviewRequest`` row into a
+    ``HandoffLiveStatus``. The one real implementation both the single-row
+    and batched lookups below share, so there is only one place that knows
+    how to compute ``resolved``/``time_to_review_seconds``."""
+
     resolved_at = request.answered_at or request.cancelled_at
     ttr = None
     if resolved_at is not None and created_at is not None:
@@ -174,6 +177,46 @@ def _live_handoff_status(db: Session, handoff_id: str | None, *, created_at: dat
         time_to_review_seconds=ttr,
         assigned_doctor_id=request.assigned_doctor_id,
     )
+
+
+def _live_handoff_status(db: Session, handoff_id: str | None, *, created_at: datetime | None) -> HandoffLiveStatus:
+    """Single-row lookup (one query) -- used where there is only ever one
+    event to resolve (``safety_event_detail``). For a LIST of events, use
+    ``_live_handoff_statuses_batch`` instead -- calling this in a loop is
+    exactly the N+1 pattern a real code review caught (fixed below)."""
+
+    if not handoff_id:
+        return _NO_HANDOFF_STATUS
+    request = db.get(DoctorReviewRequest, handoff_id)
+    if request is None:
+        return _NO_HANDOFF_STATUS
+    return _compute_live_status(request, created_at=created_at)
+
+
+def _live_handoff_statuses_batch(db: Session, events: list[AgentSafetyEvent]) -> dict[str, HandoffLiveStatus]:
+    """Batched version -- ONE query for every distinct ``handoff_id`` among
+    ``events``, not one query per event. Returns a dict keyed by
+    ``handoff_id``; an event with no ``handoff_id`` (handoff never created)
+    simply has no entry -- callers use ``.get(handoff_id, _NO_HANDOFF_
+    STATUS)``."""
+
+    handoff_ids = {event.handoff_id for event in events if event.handoff_id}
+    if not handoff_ids:
+        return {}
+    requests_by_id = {
+        request.id: request
+        for request in db.execute(select(DoctorReviewRequest).where(DoctorReviewRequest.id.in_(handoff_ids))).scalars().all()
+    }
+    created_at_by_handoff_id = {event.handoff_id: event.created_at for event in events if event.handoff_id}
+
+    result: dict[str, HandoffLiveStatus] = {}
+    for handoff_id in handoff_ids:
+        request = requests_by_id.get(handoff_id)
+        if request is None:
+            result[handoff_id] = _NO_HANDOFF_STATUS
+            continue
+        result[handoff_id] = _compute_live_status(request, created_at=created_at_by_handoff_id.get(handoff_id))
+    return result
 
 
 def _agent_v2_total_runs(db: Session, *, date_from: datetime | None, date_to: datetime | None) -> int:
@@ -231,11 +274,14 @@ def safety_metrics_summary(db: Session, *, date_from: datetime | None = None, da
         severity_distribution[event.severity] = severity_distribution.get(event.severity, 0) + 1
         reason_code_distribution[event.reason_code] = reason_code_distribution.get(event.reason_code, 0) + 1
 
+    # Batched (one query for every distinct handoff_id in handoff_created),
+    # not one _live_handoff_status() call per event -- fixes a real N+1.
+    live_statuses = _live_handoff_statuses_batch(db, handoff_created)
     handoff_status_distribution: dict[str, int] = {}
     unresolved_count = 0
     review_seconds: list[float] = []
     for event in handoff_created:
-        live = _live_handoff_status(db, event.handoff_id, created_at=event.created_at)
+        live = live_statuses.get(event.handoff_id, _NO_HANDOFF_STATUS)
         label = live.status or "UNKNOWN"
         handoff_status_distribution[label] = handoff_status_distribution.get(label, 0) + 1
         if not live.resolved:
@@ -284,10 +330,11 @@ def list_safety_events(
     total = int(db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one() or 0)
     rows = list(db.execute(stmt.limit(limit).offset(offset)).scalars().all())
 
-    items = []
-    for event in rows:
-        live = _live_handoff_status(db, event.handoff_id, created_at=event.created_at)
-        items.append(_event_summary(event, live))
+    # Batched -- one query for every distinct handoff_id on this page, not
+    # one _live_handoff_status() call per row (fixes a real N+1: default
+    # limit=20 was 21 queries, now 2).
+    live_statuses = _live_handoff_statuses_batch(db, rows)
+    items = [_event_summary(event, live_statuses.get(event.handoff_id, _NO_HANDOFF_STATUS)) for event in rows]
     return items, total
 
 
@@ -378,38 +425,38 @@ def judge_suspected_missed_risk_signals(
     # JSON field numerically is not expressible identically across both
     # dialects.
     #
-    # Fetched in bounded PAGES (not one single over-fetch): a single
-    # `LIMIT N` before the Python-side score filter can under-return real
-    # signals whenever matches are sparse in the table (the first N rows by
-    # recency might contain fewer than `limit` low scorers even though more
-    # exist further back) -- this loop keeps paging until either `limit`
-    # real signals are collected, no more candidate rows exist, or a hard
-    # cap on total rows scanned is reached (bounded work, never unbounded).
+    # A single query, bounded by `max_rows_scanned` (not `limit` itself) --
+    # NOT a paged loop. An earlier version of this function paged through
+    # the table in a `while` loop to avoid under-returning real signals
+    # when matches are sparse (a single `LIMIT limit` before the score
+    # filter could miss real signals sitting further back) -- correct, but
+    # a real code review pointed out that could mean many sequential
+    # round-trips for one admin request. Fetching the full bounded
+    # candidate set (`max_rows_scanned` rows, still a hard cap -- never
+    # unbounded) in ONE query and filtering/short-circuiting in Python gets
+    # the same completeness guarantee with exactly one round-trip.
     no_safety_event = ~select(AgentSafetyEvent.id).where(AgentSafetyEvent.agent_run_id == AgentRunJudge.agent_run_id).exists()
-    base_stmt = select(AgentRunJudge).where(
-        AgentRunJudge.judge_status == "JUDGE_COMPLETED",
-        AgentRunJudge.execution_path == EvaluationPath.TRIAGE.value,
-        no_safety_event,
-    ).order_by(AgentRunJudge.created_at.desc())
-
-    page_size = max(limit, 20)
     max_rows_scanned = max(limit * 10, 200)
+    stmt = (
+        select(AgentRunJudge)
+        .where(
+            AgentRunJudge.judge_status == "JUDGE_COMPLETED",
+            AgentRunJudge.execution_path == EvaluationPath.TRIAGE.value,
+            no_safety_event,
+        )
+        .order_by(AgentRunJudge.created_at.desc())
+        .limit(max_rows_scanned)
+    )
+    candidates = db.execute(stmt).scalars().all()
+
     signals: list[dict[str, Any]] = []
-    rows_scanned = 0
-    page_offset = 0
-    while len(signals) < limit and rows_scanned < max_rows_scanned:
-        page = list(db.execute(base_stmt.limit(page_size).offset(page_offset)).scalars().all())
-        if not page:
+    for judge in candidates:
+        score = (judge.dimension_scores_json or {}).get(_MISSED_RISK_DIMENSION)
+        if score is None or float(score) >= threshold:
+            continue
+        signals.append(_missed_risk_signal(judge, score))
+        if len(signals) >= limit:
             break
-        rows_scanned += len(page)
-        page_offset += page_size
-        for judge in page:
-            score = (judge.dimension_scores_json or {}).get(_MISSED_RISK_DIMENSION)
-            if score is None or float(score) >= threshold:
-                continue
-            signals.append(_missed_risk_signal(judge, score))
-            if len(signals) >= limit:
-                break
     return signals
 
 
