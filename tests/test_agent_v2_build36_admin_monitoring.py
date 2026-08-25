@@ -538,3 +538,49 @@ def test_trace_detail_real_correlation(db):
     assert detail["agent_run_id"] == "run-1"
     assert detail["execution_path"] == "RAG"
     assert detail["evaluation"] == {"x": 1}
+
+
+def test_trace_detail_content_unavailable_when_nothing_buffered(db):
+    """No ring-buffer trace at all (aged out / process restarted) -- honest
+    False, never a silent guess."""
+
+    run = _run(db, "run-2")
+    run.trace_id = "trace-aged-out"
+    db.commit()
+    detail = trace_detail(db, "trace-aged-out")
+    assert detail["content_available"] is False
+    assert detail["query_preview"] is None
+    assert detail["response_preview"] is None
+
+
+def test_trace_detail_content_available_keys_on_trace_id_not_agent_run_id(db):
+    """BUILD-37 regression: the ring buffer's TraceRecord.id is stamped from
+    trace_id (see backend.services.telemetry.TelemetryService.create_trace
+    and agent_v2_routes._record_agent_v2_telemetry's own call site), which
+    is a DIFFERENT uuid than AgentRun.id (the agent_run_id). A real BUILD-36
+    bug matched `t.id == run.id` (agent_run_id) instead of `run.trace_id`,
+    so `content_available` was unconditionally False even for a trace still
+    genuinely sitting in the buffer -- found via live production
+    verification (BUILD-37 report Sec 12), not by this test suite, because
+    no prior test ever populated the buffer at all. This test seeds a real
+    TraceRecord via the real TelemetryService (not a hand-rolled fixture
+    that could silently share the same wrong-key mistake) and asserts the
+    genuinely-buffered content actually surfaces."""
+
+    from backend.services.telemetry import TelemetryService
+
+    run = _run(db, "run-3")
+    run.trace_id = "trace-still-buffered"
+    db.commit()
+
+    telemetry = TelemetryService()
+    trace = telemetry.create_trace(
+        trace_id="trace-still-buffered", session_id="conv-1", user_id="patient-1",
+        input_data="Hôm nay tôi uống thuốc gì?",
+    )
+    telemetry.finalize_trace(trace, output_data="Bạn chưa có lịch uống thuốc hôm nay.")
+
+    detail = trace_detail(db, "trace-still-buffered")
+    assert detail["content_available"] is True
+    assert detail["query_preview"] == "Hôm nay tôi uống thuốc gì?"
+    assert detail["response_preview"] == "Bạn chưa có lịch uống thuốc hôm nay."

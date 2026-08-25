@@ -886,7 +886,18 @@ def trace_detail(db: Session, trace_id: str) -> dict[str, Any] | None:
 
     from backend.services.telemetry import get_local_traces
 
-    buffered = next((t for t in get_local_traces() if t.id == run.id), None)
+    # BUILD-37 fix: ring-buffer TraceRecord.id is stamped from trace_id
+    # (see agent_v2_routes._record_agent_v2_telemetry's own
+    # `telemetry.create_trace(trace_id=result.trace_id, ...)` call and
+    # TelemetryService.create_trace's `TraceRecord(id=trace_id, ...)`) --
+    # NOT agent_run_id. Comparing against `run.id` (the AgentRun primary
+    # key, a different UUID) meant `content_available` was unconditionally
+    # False for every trace, even ones still genuinely in the buffer --
+    # found via live production verification (BUILD-37 report Sec 12):
+    # the session-detail endpoint (which correctly keys by trace_id) found
+    # real query/reply text for a trace seconds old, while this endpoint
+    # claimed it was already unavailable for the exact same trace.
+    buffered = next((t for t in get_local_traces() if t.id == run.trace_id), None)
 
     return {
         "trace_id": run.trace_id,
