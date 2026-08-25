@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.account_routes import account_router
 from backend.api.admin_drug_routes import admin_drug_router
 from backend.api.admin_feedback_routes import admin_feedback_router
+from backend.api.admin_safety_routes import admin_safety_router
 from backend.api.agent_feedback_routes import agent_feedback_router
 from backend.api.agent_v2_routes import agent_v2_router
 from backend.api.audit_routes import audit_router, my_audit_router
@@ -25,9 +26,9 @@ from backend.api.photo_routes import photo_router
 from backend.api.prescription_routes import prescription_router
 from backend.api.push_routes import push_router
 from backend.api.rag_monitoring_routes import rag_monitoring_router
-from backend.api.vlm_monitoring_routes import vlm_monitoring_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.routes import router
+from backend.api.vlm_monitoring_routes import vlm_monitoring_router
 from backend.config import get_settings
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
@@ -127,6 +128,7 @@ app.include_router(chat_router, prefix="/api/v1")
 app.include_router(agent_v2_router, prefix="/api/v1")
 app.include_router(agent_feedback_router, prefix="/api/v1")
 app.include_router(admin_feedback_router, prefix="/api/v1")
+app.include_router(admin_safety_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")

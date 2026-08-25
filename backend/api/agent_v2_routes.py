@@ -78,6 +78,7 @@ from backend.services.agent_judge_worker import enqueue_run_judge
 from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
+from backend.services.agent_safety_monitoring import persist_safety_event
 from backend.services.evaluators import LLMJudgeEvaluator
 from backend.services.telemetry import get_telemetry_service
 from backend.services.vinmec_web_search import VinmecWebSearchService
@@ -1002,5 +1003,12 @@ def run_agent_orchestration(
     # self-contained (own try/except/rollback/log), so it is safe to call
     # directly here without extra wrapping, same as _persist_durable_trace.
     enqueue_run_judge(db, result=result, request_message=request.message, settings=settings)
+    # BUILD-34: same best-effort, post-commit shape as the calls above --
+    # writes exactly one AgentSafetyEvent row when (and only when) this
+    # run's real SafetyDecision.outcome was SAFETY_BLOCKED/HANDOFF_REQUIRED
+    # (None for a plain SAFE outcome, by design). Pure consumer of the
+    # already-computed `result` -- never influences Safety/Handoff runtime
+    # behavior (BUILD-34 §12). Fully self-contained, safe to call directly.
+    persist_safety_event(db, result=result, conversation_id=conversation_id, patient_id=patient_id, actor_id=actor.id)
 
     return response
