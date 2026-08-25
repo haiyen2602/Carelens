@@ -1103,6 +1103,77 @@ class AgentRunJudge(Base):
     )
 
 
+class AgentSafetyEvent(Base):
+    """BUILD-34: canonical, durable Safety/Handoff monitoring event for one
+    Agent V2 run. Written best-effort, post-response (same shape as every
+    other durability step in ``backend.api.agent_v2_routes``:
+    ``_persist_durable_trace``/``enqueue_run_judge``), purely from an
+    already-completed ``OrchestrationResult``'s ``safety_decision``/
+    ``handoff_result`` -- this table NEVER changes what Safety/Handoff
+    decided (BUILD-34 §12: monitoring only, not a redesign of the Safety
+    engine), only records it durably for Admin.
+
+    One row per run whose ``SafetyDecision.outcome`` was
+    ``SAFETY_BLOCKED`` or ``HANDOFF_REQUIRED`` -- a plain ``SAFE`` outcome
+    (the overwhelming majority of traffic) gets no row at all, by design
+    (BUILD-34's own "not 100% of traffic" spirit, mirrored from BUILD-33's
+    Judge eligibility).
+
+    ``handoff_status``/``resolved_at`` here are a SNAPSHOT taken at the
+    moment this row was written -- ``DoctorReviewRequest.status`` can change
+    later (a doctor answers/cancels) and this table is deliberately never
+    synced back to reflect that (syncing would mean writing to this table
+    from the doctor-side resolution route, a real behavior-adjacent change
+    outside BUILD-34's monitoring-only scope). Admin reads for CURRENT
+    status/unresolved-count/time-to-review always LEFT JOIN
+    ``DoctorReviewRequest`` live via ``handoff_id`` -- see
+    ``backend.services.agent_safety_monitoring`` -- never trust this row's
+    own snapshot columns for "is this resolved right now."
+    """
+
+    __tablename__ = "agent_safety_event"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    agent_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    trace_id: Mapped[str] = mapped_column(String, nullable=False)
+    conversation_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    patient_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    outcome: Mapped[str] = mapped_column(String, nullable=False)  # SAFETY_BLOCKED | HANDOFF_REQUIRED
+    reason_code: Mapped[str] = mapped_column(String, nullable=False)
+    severity: Mapped[str] = mapped_column(String, nullable=False)  # LOW | MEDIUM | HIGH | CRITICAL
+    severity_source: Mapped[str] = mapped_column(String, nullable=False)  # risk_level_field | reason_code_mapped
+    safety_path: Mapped[str | None] = mapped_column(String, nullable=True)  # Evaluation V2 execution_path (SAFETY|HANDOFF)
+    provenance: Mapped[str | None] = mapped_column(String, nullable=True)  # SafetyDecision.provenance
+
+    handoff_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    handoff_created: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    handoff_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Snapshot only -- see class docstring. Never re-read as "current" status.
+    handoff_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String, nullable=True)  # e.g. HANDOFF_FAILURE
+
+    evaluation_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # Deliberately always NULL on this row -- resolution is read live from
+    # DoctorReviewRequest.answered_at/cancelled_at, never synced here. Kept
+    # as a real column (not omitted) because BUILD-34's own canonical
+    # contract names it explicitly; see class docstring for why it stays
+    # unpopulated rather than a second, staleness-prone copy of state.
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_agent_safety_event_agent_run_id", "agent_run_id"),
+        Index("ix_agent_safety_event_trace_id", "trace_id"),
+        Index("ix_agent_safety_event_patient_id", "patient_id"),
+        Index("ix_agent_safety_event_handoff_id", "handoff_id"),
+        Index("ix_agent_safety_event_severity_created", "severity", "created_at"),
+        Index("ix_agent_safety_event_reason_code_created", "reason_code", "created_at"),
+        Index("ix_agent_safety_event_created_at", "created_at"),
+    )
+
+
 class AgentRunCheckpoint(Base):
     """Durable, sanitized execution checkpoint for the disabled Agent V2 path.
 

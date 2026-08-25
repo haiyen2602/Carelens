@@ -18,6 +18,7 @@ from backend.api.security import CurrentUser, require_role
 from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import AgentRun, AgentRunSpan, AuditLog, DrugChunk, Escalation
+from backend.services.agent_safety_monitoring import safety_metrics_summary
 from backend.services.telemetry import get_local_traces
 
 rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitoring"])
@@ -450,10 +451,18 @@ async def get_rag_safety(
 
     NOTE (BUILD-25 §8.2, unchanged by BUILD-25B): `incidents` below is still
     sourced entirely from the legacy `Escalation` table -- Agent V2's own
-    safety/handoff data (`doctor_review_request`, `agent_run_checkpoint`)
-    isn't joined in here yet, so filtering to chatbot_version=agent-v2 does
-    NOT change the incidents list itself, only the `total_answers`
-    denominator below. Documented, not silently glossed over.
+    safety/handoff data isn't joined into `incidents` itself, so filtering
+    to chatbot_version=agent-v2 does NOT change the incidents list, only the
+    `total_answers` denominator below. Documented, not silently glossed
+    over.
+
+    BUILD-34: `agent_v2_safety` is a genuinely separate block, sourced from
+    the new durable `agent_safety_event` table
+    (`backend.services.agent_safety_monitoring`) -- never summed into
+    `critical_safety_failures`/`incidents` above (BUILD-34 §6: no double
+    counting between legacy and Agent V2). A dedicated drill-down surface
+    (`GET /admin/safety/*`, `backend/api/admin_safety_routes.py`) exists for
+    anything beyond this summary-level view.
     """
     chatbot_version, model, prompt_version = filters
     escalations = db.query(Escalation).order_by(Escalation.created_at.desc()).all()
@@ -493,7 +502,21 @@ async def get_rag_safety(
         # endpoint in this file already uses.
         "unsafe_answer_rate": round((critical_count / total_answers) * 100, 2) if total_answers else 0.0,
         "incidents": incidents,
+        "agent_v2_safety": _safe_agent_v2_safety_summary(db),
     }
+
+
+def _safe_agent_v2_safety_summary(db: Session) -> dict[str, Any] | None:
+    # BUILD-32's own post-merge incident (report §14.2): a read against a
+    # table the target environment's migration hasn't run yet must degrade,
+    # never 500 the whole endpoint (which would blank every OTHER card on
+    # this same response, not just this new field). `None` here is an
+    # honest "not available", never a fabricated empty summary.
+    try:
+        return safety_metrics_summary(db)
+    except Exception as durable_err:  # noqa: BLE001
+        logging.getLogger(__name__).warning("BUILD-34 agent_v2_safety summary read failed: %s", durable_err)
+        return None
 
 
 @rag_monitoring_router.get("/knowledge")
