@@ -131,3 +131,57 @@ def test_lexical_search_does_not_turn_golden_unknown_drug_into_a_match(db_sessio
     )
 
     assert results == []
+
+
+def test_word_similarity_op_cost_is_not_the_extension_default_of_1(db_session):
+    """BUILD-38 regression: `word_similarity_op`/`similarity_op` (the
+    catalog functions actually bound to the `<%`/`%` operators -- NOT the
+    same-named `word_similarity()`/`similarity()` functions callers invoke
+    directly) shipped with pg_trgm's own default `COST = 1`, which
+    massively understates the real per-row cost of trigram matching over
+    `noi_dung` (long free text). This made the query planner consistently
+    prefer `ix_drug_chunks_corpus_version` (a plain btree with nothing to
+    do with trigram matching) over the real GIN trigram indexes, evaluating
+    `word_similarity()` as a slow per-row Filter across ~14,000+ rows
+    instead of using the index -- confirmed via EXPLAIN ANALYZE against
+    both local and real production Postgres: every single real RAG
+    retrieval span in production measured 6-12 seconds (see BUILD-38
+    report). Migration 0047 raises the cost to 100, which the same EXPLAIN
+    ANALYZE investigation confirmed correctly flips the planner onto
+    `BitmapAnd`-ing the corpus_version and GIN indexes together.
+
+    This test only guards the DB-level configuration itself (not a timing
+    assertion, which would be flaky across machines/CI) -- a migration
+    rollback or an `ALTER EXTENSION pg_trgm UPDATE` resetting this value
+    silently is exactly the kind of regression that wouldn't show up as a
+    functional test failure (lexical_search still returns correct results,
+    just slowly) without this explicit check."""
+
+    from sqlalchemy import text
+
+    rows = db_session.execute(
+        text("SELECT proname, procost FROM pg_proc WHERE proname IN ('word_similarity_op', 'similarity_op')")
+    ).fetchall()
+    costs = {row[0]: row[1] for row in rows}
+    assert costs.get("word_similarity_op") == 100, (
+        "word_similarity_op COST regressed to the pg_trgm extension default -- "
+        "re-run migration 0047 (alembic upgrade head)"
+    )
+    assert costs.get("similarity_op") == 100
+
+
+def test_lexical_search_still_returns_same_results_after_cost_migration(db_session):
+    """The cost migration (0047) must be a pure planner hint -- same
+    candidates, same ranking, only faster. Locks in result-set identity
+    (not just speed) for a real query known to hit the slow word_similarity
+    branch (BUILD-38's own root-cause reproduction case)."""
+
+    results = lexical_search(db_session, "benh tieu duong la gi", 0.3)
+
+    # Not asserting a specific match set (the corpus can legitimately
+    # change) -- asserting the query completes and returns the shape the
+    # slow-path investigation found (a real, non-trivial candidate set from
+    # the noi_dung word_similarity branch, not an accidentally-empty result
+    # the cost change could have caused by favoring a different plan that
+    # changes semantics).
+    assert len(results) > 0

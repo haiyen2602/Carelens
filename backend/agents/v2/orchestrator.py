@@ -1201,10 +1201,41 @@ _SCHEDULE_INTENTS = frozenset(
     {OrchestrationIntent.MEDICATION_HISTORY, OrchestrationIntent.TODAY_DOSES, OrchestrationIntent.UPCOMING_DOSES}
 )
 
+# BUILD-38 grounding-decline-reply-v2 (see BUILD-38 report Cluster B):
+# this backstop previously used ONE fixed string for every intent in
+# `_GROUNDING_REQUIRED_INTENTS`, whose clarification ask ("cho mình biết
+# tên thuốc cụ thể" -- tell me the specific drug name) only makes sense
+# for the drug-shaped intents. A GENERAL_MEDICAL_INFORMATION/
+# UNKNOWN_OR_AMBIGUOUS question (a disease, a symptom, a general health
+# topic -- never about a specific drug at all) got the same "give me a
+# drug name" ask, which is a non-sequitur. Confirmed as a real quality
+# defect via production Judge V2 scores (not guessed): every
+# GROUNDING_FAILURE run judged so far scored low `relevance` (0.1-0.4)
+# with flags `unhelpful_refusal`/`refusal_on_basic_query`/
+# `irrelevant_clarification_request`/`misaligned_followup_prompt` --
+# all consistent with this exact mismatch. Still 100% deterministic
+# (zero model call, zero new information source, same safety guarantee
+# as before -- no unsupported medical claim is ever added), only the
+# WORDING of the clarification ask changes per intent shape.
 _UNGROUNDED_ANSWER_DECLINE_REPLY = (
     "Mình chưa có dữ liệu đã xác minh (từ hệ thống nội bộ hoặc tra cứu) để trả lời "
     "chắc chắn cho câu hỏi này. Bạn có thể cho mình biết rõ hơn (ví dụ tên thuốc cụ "
     "thể) để mình tra cứu, hoặc hỏi trực tiếp bác sĩ/dược sĩ để được tư vấn chính xác."
+)
+
+# Used only for the non-drug-shaped grounding-required intents
+# (GENERAL_MEDICAL_INFORMATION, UNKNOWN_OR_AMBIGUOUS) -- asks for more
+# context about the health question itself, never presumes a drug name
+# is the missing piece.
+_UNGROUNDED_GENERAL_MEDICAL_DECLINE_REPLY = (
+    "Mình chưa có dữ liệu đã xác minh (từ hệ thống nội bộ hoặc tra cứu) để trả lời "
+    "chắc chắn cho câu hỏi này. Bạn có thể mô tả rõ hơn (ví dụ triệu chứng cụ thể, "
+    "hoàn cảnh liên quan) để mình tra cứu thêm, hoặc hỏi trực tiếp bác sĩ để được tư "
+    "vấn chính xác."
+)
+
+_GENERAL_MEDICAL_DECLINE_INTENTS = frozenset(
+    {OrchestrationIntent.GENERAL_MEDICAL_INFORMATION, OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS}
 )
 
 
@@ -1228,9 +1259,12 @@ def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent
     # BUILD-32: the only place this backstop actually replaces a reply -- tag
     # it with the canonical GROUNDING_FAILURE error code so it is durably
     # distinguishable from an ordinary COMPLETED run.
-    return RunResult(
-        result.status, _UNGROUNDED_ANSWER_DECLINE_REPLY, result.tool_results, result.metrics, "GROUNDING_FAILURE"
+    decline_reply = (
+        _UNGROUNDED_GENERAL_MEDICAL_DECLINE_REPLY
+        if intent in _GENERAL_MEDICAL_DECLINE_INTENTS
+        else _UNGROUNDED_ANSWER_DECLINE_REPLY
     )
+    return RunResult(result.status, decline_reply, result.tool_results, result.metrics, "GROUNDING_FAILURE")
 
 
 # BUILD-27B: real V2 dose-state values (backend/services/scheduling/

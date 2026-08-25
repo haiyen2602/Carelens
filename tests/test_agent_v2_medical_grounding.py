@@ -32,22 +32,22 @@ import pytest
 
 from backend.agents.v2.model_gateway import ModelPlan, ModelSynthesis, ToolCall
 from backend.agents.v2.orchestrator import (
+    _UNGROUNDED_ANSWER_DECLINE_REPLY,
+    _UNGROUNDED_GENERAL_MEDICAL_DECLINE_REPLY,
     Citation,
     OrchestrationIntent,
     _enforce_medical_grounding,
-    _UNGROUNDED_ANSWER_DECLINE_REPLY,
 )
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import RunMetrics, RunResult, RunStatus
-
+from backend.services.agent_retrieval import DomainRetrievalResult, RetrievedKnowledgeDocument
 from tests.test_agent_v2_orchestrator import (
-    _RetrievalDomain,
-    _SpyModelGateway,
     _orchestrator,
     _request,
+    _RetrievalDomain,
+    _SpyModelGateway,
     _tools,
 )
-from backend.services.agent_retrieval import DomainRetrievalResult, RetrievedKnowledgeDocument
 
 _NO_CITATIONS: tuple[Citation, ...] = ()
 _ONE_CITATION = (Citation(title="drug-1", source="cong_dung — Paracetamol", url=None),)
@@ -68,15 +68,34 @@ def _result(response: str, status: RunStatus = RunStatus.COMPLETED, tool_results
         OrchestrationIntent.DRUG_INFORMATION,
         OrchestrationIntent.PRESCRIPTION_INFORMATION,
         OrchestrationIntent.DOSE_STATUS,
-        OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
-        OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
     ],
 )
-def test_grounding_required_intent_with_zero_evidence_is_declined(intent):
+def test_grounding_required_drug_shaped_intent_with_zero_evidence_is_declined(intent):
     original = _result("Thuoc nay uong truoc an, tot nhat truoc bua an 30-60 phut.")
     corrected = _enforce_medical_grounding(original, intent=intent, citations=_NO_CITATIONS)
     assert corrected.response == _UNGROUNDED_ANSWER_DECLINE_REPLY
     assert corrected.status == original.status  # status untouched, only text corrected
+
+
+@pytest.mark.parametrize(
+    "intent",
+    [OrchestrationIntent.GENERAL_MEDICAL_INFORMATION, OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS],
+)
+def test_grounding_required_general_medical_intent_with_zero_evidence_is_declined(intent):
+    """BUILD-38 Cluster B: a non-drug-shaped grounding-required intent gets
+    its own decline text -- not the drug-specific one, which asks for a
+    'specific drug name' that doesn't make sense for e.g. a disease/symptom
+    question. Confirmed as a real production Judge V2 quality defect
+    (low `relevance`, flags `irrelevant_clarification_request`/
+    `misaligned_followup_prompt`) before this fix -- see BUILD-38 report."""
+
+    original = _result("Thuoc nay uong truoc an, tot nhat truoc bua an 30-60 phut.")
+    corrected = _enforce_medical_grounding(original, intent=intent, citations=_NO_CITATIONS)
+    assert corrected.response == _UNGROUNDED_GENERAL_MEDICAL_DECLINE_REPLY
+    assert corrected.status == original.status
+    # the drug-specific clarification ask must not leak into the general-
+    # medical decline -- this is the exact mismatch the fix addresses.
+    assert "tên thuốc" not in corrected.response
 
 
 @pytest.mark.parametrize(
