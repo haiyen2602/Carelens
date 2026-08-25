@@ -553,7 +553,7 @@ utc` thay vì alias `datetime.UTC`) đã có TỪ TRƯỚC BUILD-33, không nằ
 2 dòng tôi thực sự sửa (1 import + 1 field mới) — cố ý không dọn dẹp lẫn
 vào diff của build này, ghi rõ ở đây thay vì lặng im).
 
-## 13.1 Code Review tự động (post-push) — 3 finding, xác minh từng cái
+## 13.1 Code Review tự động (post-push, vòng 1) — 3 finding, xác minh từng cái
 
 Một review tự động trên PR flag 3 điểm. Xác minh bằng code/test thật, không
 nhận đúng chỉ vì bot nói:
@@ -590,6 +590,47 @@ nhận đúng chỉ vì bot nói:
 
 Test sau khi sửa (chỉ finding 2 cần code change): 49/49 vẫn pass, 802/802
 agent_v2-scoped vẫn pass, `ruff` clean.
+
+## 13.2 Code Review tự động (post-push, vòng 2) — 2 finding, xác minh bằng thực nghiệm
+
+Review tự động chạy lại sau vòng 1 (nhìn code đã sửa), flag thêm 2 điểm.
+Cả 2 lần này đều xác minh bằng **script thực nghiệm thật**, không chỉ đọc
+code suy luận:
+
+1. **"Potential Race Condition" trong `_insert_row`** — claim: `db.commit()`
+   ở đây có thể "prematurely persist other pending changes" nếu session còn
+   thay đổi khác chưa validate xong. **Cơ chế claim nêu ra là ĐÚNG THẬT**
+   (verify bằng thực nghiệm trên Postgres thật: thêm 1 `AgentRun` khác vào
+   CÙNG session, cố ý KHÔNG commit, rồi gọi `_insert_row` — row kia bị commit
+   theo thật, xác nhận bằng cách đọc lại từ 1 session hoàn toàn mới) — vì
+   `db.commit()` luôn commit TOÀN BỘ session, không chỉ dòng của riêng nó,
+   đây là bản chất của mọi lệnh commit, không phải lỗi riêng của hàm này.
+   **Nhưng không phải bug reachable được trong code thật**: cả 2 call site
+   thật (`agent_v2_routes.py` sau `_persist_durable_trace`'s own commit;
+   `agent_feedback_routes.py` sau ticket's own commit) đều đã commit xong
+   phần việc CỦA CHÍNH NÓ trước khi gọi enqueue Judge — không có gì "chưa
+   validate xong" còn treo trong session ở thời điểm đó. Cân nhắc đổi thiết
+   kế (không commit trong `_insert_row`, bắt caller tự commit) nhưng **từ
+   chối đổi**: điều đó đánh đổi lấy một rủi ro khác ĐÃ THẬT XẢY RA trong
+   chính dự án này trước đây — BUILD-18B's "run_agent_orchestration never
+   called db.commit()" (xem docstring `tests/test_agent_v2_transaction_
+   durability.py`), tức quên commit làm mất dữ liệu âm thầm. Giữ nguyên
+   thiết kế tự-commit, nhưng **thêm docstring tường minh** ghi rõ precondition
+   này + lý do đánh đổi, để review sau (người hoặc bot) không phải đoán lại.
+2. **"Resource Leak" (bản sửa đổi) trong `call_judge`** — claim: nếu lần thử
+   đầu (`response_format=json_object`) thất bại và rơi xuống lần thử thứ 2,
+   một `client` MỚI bị khởi tạo. **Sai, đã bác bỏ bằng thực nghiệm trực
+   tiếp**: `openai.OpenAI(...)` nằm NGOÀI vòng lặp `for`, bên trong khối
+   `with` bao trọn cả vòng lặp — cùng 1 `client` được dùng cho cả 2 lần thử,
+   không hề tạo lại. Viết 1 script đếm số lần constructor `openai.OpenAI()`
+   thật sự được gọi khi giả lập lần 1 thất bại (BadRequestError "response_
+   format not supported") rồi lần 2 thành công: **kết quả đếm được = 1**,
+   không phải 2. Claim này mô tả sai hành vi thật của code hiện tại (có thể
+   review dựa trên bản diff cũ trước lần sửa vòng 1, không phải trạng thái
+   cuối). Không sửa code.
+
+Không có thay đổi hành vi thật nào ở vòng 2 (chỉ thêm docstring giải thích
+cho finding 1). 49/49 test vẫn pass, `ruff` clean.
 
 ---
 

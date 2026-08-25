@@ -95,7 +95,24 @@ def _insert_row(db: Session, row: AgentRunJudge) -> AgentRunJudge | None:
     IntegrityError pattern as backend.services.agent_idempotency/
     agent_feedback.create_ticket. Returns None (not an error) when a row for
     this exact (agent_run_id, judge_model, rubric_version, prompt_version)
-    already exists."""
+    already exists.
+
+    Deliberately commits (unlike ``create_ticket``, which leaves that to its
+    HTTP-route caller) -- ``enqueue_run_judge``/``enqueue_ticket_judge`` are
+    meant to be fully self-contained, call-directly-with-no-extra-wrapping
+    best-effort units, same shape as ``agent_v2_routes._persist_durable_
+    trace``. Since ``db.commit()`` commits the WHOLE session, not just this
+    row, this function's precondition is that its caller's own prior work is
+    ALREADY committed by the time it runs -- both real call sites honor this
+    (``agent_v2_routes.py`` calls this right after ``_persist_durable_
+    trace``'s own commit; ``agent_feedback_routes.py`` calls this right
+    after the ticket's own commit) and this has been verified directly
+    against real Postgres. The alternative (never commit here, require every
+    caller to commit afterward) trades this for a strictly worse, previously
+    REAL failure mode in this exact codebase -- see
+    ``tests/test_agent_v2_transaction_durability.py``'s own docstring on the
+    historical "run_agent_orchestration never called db.commit()" defect --
+    so this is a considered trade-off, not an oversight."""
 
     try:
         with db.begin_nested():
