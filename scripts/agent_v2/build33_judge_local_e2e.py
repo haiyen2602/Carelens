@@ -15,15 +15,23 @@ a real live model into an unreliable failure state. Scenario G deliberately
 misconfigures the Judge credential to prove a real provider failure marks
 JUDGE_FAILED without touching the chat response already returned in A-D.
 
-Usage (run from repo root, needs a real OPENAI_API_KEY in .env; Judge
-provider is forced to "openai"/"gpt-4o" here since no live GOOGLE_API_KEY is
-configured in this environment -- see BUILD-33 report section 2/13):
+Usage (run from repo root, needs a real credential for whichever provider
+is selected in .env):
 
     python scripts/agent_v2/build33_judge_local_e2e.py
+        [--provider openai|google] [--model MODEL] [--base-url URL]
+
+Defaults to provider=openai/model=gpt-4o (no --provider/--model given) since
+no live GOOGLE_API_KEY was available in this environment when this build was
+first verified -- see BUILD-33 report section 2/13. Pass --provider google
+--model <real model id> --base-url <real endpoint> to verify against Gemini
+(directly, or via a third-party OpenAI-compatible reseller -- the base_url
+is whatever the caller configures, this script never hardcodes one).
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 import time
@@ -31,10 +39,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+_parser = argparse.ArgumentParser(description="BUILD-33 Judge local E2E")
+_parser.add_argument("--provider", choices=["openai", "google"], default="openai")
+_parser.add_argument("--model", default="gpt-4o")
+_parser.add_argument("--base-url", default="")
+_cli_args = _parser.parse_args()
+
 os.environ.setdefault("AGENT_RUNTIME_ENABLED", "true")
 os.environ["AGENT_JUDGE_ENABLED"] = "true"
-os.environ["AGENT_JUDGE_PROVIDER"] = "openai"
-os.environ["AGENT_JUDGE_MODEL"] = "gpt-4o"
+os.environ["AGENT_JUDGE_PROVIDER"] = _cli_args.provider
+os.environ["AGENT_JUDGE_MODEL"] = _cli_args.model
+if _cli_args.base_url:
+    os.environ["AGENT_JUDGE_BASE_URL"] = _cli_args.base_url
 os.environ["AGENT_JUDGE_SAMPLING_RATE"] = "1.0"  # guarantee every scenario below is Judge-eligible
 
 from backend.agents.v2.evaluation_v2 import EvaluationPath  # noqa: E402
@@ -70,18 +86,35 @@ def _run(message: str, conversation_id: str) -> tuple[object, float]:
 
 def _judge_row_for_trace(trace_id: str) -> AgentRunJudge | None:
     """Fresh session -- proves this reads real committed rows, not
-    in-process state from the call above."""
+    in-process state from the call above. Most-recent-first: a re-run of
+    this script against a different provider/model creates a genuinely new
+    row (duplicate protection is keyed on model+rubric+prompt version, see
+    AgentRunJudge's unique index) rather than replacing the old one, so an
+    unordered lookup could otherwise return a stale result from an earlier
+    run."""
     db = SessionLocal()
     try:
         from sqlalchemy import select
 
-        return db.execute(select(AgentRunJudge).where(AgentRunJudge.trace_id == trace_id)).scalars().first()
+        return (
+            db.execute(select(AgentRunJudge).where(AgentRunJudge.trace_id == trace_id).order_by(AgentRunJudge.created_at.desc()))
+            .scalars()
+            .first()
+        )
     finally:
         db.close()
 
 
 def main() -> int:
-    print("BUILD-33 local E2E -- real Postgres, real OpenAI, agent-v2-staging-patient-1\n")
+    import uuid
+
+    # Unique per run so the constructed-fixture scenarios (E/F/G) below never
+    # collide with a prior run's rows on AgentRunEvaluation's unique
+    # agent_run_id index -- this script is meant to be re-runnable (e.g.
+    # once against openai, again against google) without manual DB cleanup.
+    run_suffix = uuid.uuid4().hex[:8]
+
+    print(f"BUILD-33 local E2E -- real Postgres, real {_cli_args.provider}/{_cli_args.model}, agent-v2-staging-patient-1 (run={run_suffix})\n")
 
     scenarios = [
         ("A-RAG-good", "gan nhiem mo la gi"),
@@ -107,7 +140,7 @@ def main() -> int:
 
     db = SessionLocal()
     try:
-        fixture_run_id, fixture_trace_id = "build33-e2e-fixture-rag-unsupported", "build33-e2e-fixture-rag-unsupported-trace"
+        fixture_run_id, fixture_trace_id = f"build33-e2e-fixture-rag-unsupported-{run_suffix}", f"build33-e2e-fixture-rag-unsupported-trace-{run_suffix}"
         db.merge(AgentRun(id=fixture_run_id, status="COMPLETED", started_at=__import__("datetime").datetime.now(__import__("datetime").UTC)))
         db.commit()
         fixture_result = SimpleNamespace(
@@ -131,7 +164,7 @@ def main() -> int:
     # ---- Scenario F: constructed FALLBACK fixture --------------------------
     db = SessionLocal()
     try:
-        fixture_run_id, fixture_trace_id = "build33-e2e-fixture-fallback", "build33-e2e-fixture-fallback-trace"
+        fixture_run_id, fixture_trace_id = f"build33-e2e-fixture-fallback-{run_suffix}", f"build33-e2e-fixture-fallback-trace-{run_suffix}"
         db.merge(AgentRun(id=fixture_run_id, status="FAILED", started_at=__import__("datetime").datetime.now(__import__("datetime").UTC)))
         db.commit()
         fixture_result = SimpleNamespace(
@@ -152,8 +185,8 @@ def main() -> int:
     finally:
         db.close()
 
-    chat_traces.append(("E-RAG-unsupported-fixture", "build33-e2e-fixture-rag-unsupported-trace"))
-    chat_traces.append(("F-FALLBACK-fixture", "build33-e2e-fixture-fallback-trace"))
+    chat_traces.append(("E-RAG-unsupported-fixture", f"build33-e2e-fixture-rag-unsupported-trace-{run_suffix}"))
+    chat_traces.append(("F-FALLBACK-fixture", f"build33-e2e-fixture-fallback-trace-{run_suffix}"))
 
     # ---- Process the Judge queue for real -----------------------------------
     print("\nProcessing pending Judge queue (real OpenAI calls)...")
@@ -185,7 +218,7 @@ def main() -> int:
     print("\n[G-PROVIDER-FAILURE] enqueuing with a deliberately invalid credential...")
     db = SessionLocal()
     try:
-        fixture_run_id, fixture_trace_id = "build33-e2e-fixture-bad-credential", "build33-e2e-fixture-bad-credential-trace"
+        fixture_run_id, fixture_trace_id = f"build33-e2e-fixture-bad-credential-{run_suffix}", f"build33-e2e-fixture-bad-credential-trace-{run_suffix}"
         db.merge(AgentRun(id=fixture_run_id, status="COMPLETED", started_at=__import__("datetime").datetime.now(__import__("datetime").UTC)))
         db.commit()
         db.add(
@@ -223,7 +256,7 @@ def main() -> int:
     finally:
         db.close()
 
-    row = _judge_row_for_trace("build33-e2e-fixture-bad-credential-trace")
+    row = _judge_row_for_trace(f"build33-e2e-fixture-bad-credential-trace-{run_suffix}")
     if row is not None and row.judge_status == "JUDGE_FAILED" and row.failure_reason and "AUTH" in row.failure_reason:
         print(f"[G-PROVIDER-FAILURE] JUDGE_FAILED as expected: {row.failure_reason} -- chat scenarios A-D were entirely unaffected (already returned before this ran).")
     else:
