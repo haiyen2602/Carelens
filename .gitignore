@@ -88,3 +88,9 @@ data pharmacy/_chunks.jsonl
 
 # Prototype runtime output — not a deliverable
 prototypes/**/missing_drugs_log.jsonl
+
+# BUILD-35 golden evaluation run artifacts — generated per-run by
+# scripts/agent_v2/run_golden_evaluation.py, not a deliverable. The dataset
+# itself (scripts/agent_v2/golden/golden_set_*.json) is NOT covered by this
+# pattern and stays committed.
+scripts/agent_v2/golden/runs/
