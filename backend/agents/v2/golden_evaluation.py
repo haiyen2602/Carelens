@@ -145,13 +145,34 @@ def validate_golden_set(cases: list[GoldenCase]) -> list[DatasetValidationError]
                 )
             )
 
+        # Checked on EVERY turn that carries a non-empty `expected` dict, not
+        # just the last one -- mirrors grade_case's own rule for which turns
+        # get graded at all (`if not turn.expected: continue`). A turn is
+        # still allowed to be entirely empty (a deliberate "nothing asserted
+        # here" turn, see GoldenTurn's own docstring) -- but once an author
+        # puts ANYTHING in a turn's `expected`, it must be the full
+        # per-category contract, never a silently-weaker partial one that
+        # only the dataset author would notice was incomplete.
         required = _REQUIRED_EXPECTED_KEYS.get(case.category, frozenset())
-        last_turn_expected = case.turns[-1].expected
-        missing = required - set(last_turn_expected.keys())
-        if missing:
-            errors.append(
-                DatasetValidationError(case.case_id, f"MISSING_EXPECTED_KEYS:{','.join(sorted(missing))}")
-            )
+        for turn_index, turn in enumerate(case.turns):
+            if not turn.expected:
+                continue
+            missing = required - set(turn.expected.keys())
+            if missing:
+                errors.append(
+                    DatasetValidationError(
+                        case.case_id, f"MISSING_EXPECTED_KEYS:turn={turn_index},{','.join(sorted(missing))}"
+                    )
+                )
+
+        # A case where EVERY turn is empty asserts nothing at all -- grade_
+        # case would then produce zero checks, and `passed = all(check.
+        # status != FAIL for check in [])` is vacuously True, silently
+        # "passing" a case that never actually tested anything. Caught here
+        # (real edge case surfaced while re-verifying the fix above), not
+        # left for grade_case to paper over.
+        if not any(turn.expected for turn in case.turns):
+            errors.append(DatasetValidationError(case.case_id, "NO_TURN_HAS_ANY_EXPECTED_ASSERTION"))
     return errors
 
 

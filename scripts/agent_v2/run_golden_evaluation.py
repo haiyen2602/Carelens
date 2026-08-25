@@ -376,7 +376,24 @@ def _drain_judge_batch(settings: Any, *, max_ticks: int = 20) -> int:
     score in THIS run's own output, not just a PENDING row, so this drains
     the queue synchronously by calling the exact same production function
     repeatedly until it reports nothing left (bounded by `max_ticks` so a
-    provider outage can never hang the run forever)."""
+    provider outage can never hang the run forever).
+
+    Code-review finding, verified not fixed here: `process_pending_judge_
+    batch` selects from the SHARED, global `JUDGE_PENDING` queue with no
+    row-level claim (no `FOR UPDATE SKIP LOCKED`) -- this is a real,
+    pre-existing property of that function since BUILD-33, not something
+    this call site introduces. Two concurrent callers (e.g. this run and
+    the production scheduler tick, or two golden runs against the same
+    Postgres) could both select and score the same row, wasting one real
+    Judge API call -- bounded cost, never data corruption (last commit
+    wins, always a valid terminal COMPLETED/FAILED state) and never
+    incorrect grading (`grade_case` never reads judge_* fields). Fixing
+    this for real means adding row claiming inside `process_pending_judge_
+    batch` itself -- BUILD-33's shared, production-serving function --
+    which deserves its own dedicated change and verification, not a
+    reactive patch here. Documented, not fixed: this golden runner's own
+    intended usage (one person, one local/staging Postgres, no concurrent
+    scheduler activity) does not exercise this race in practice."""
 
     db = SessionLocal()
     total = 0

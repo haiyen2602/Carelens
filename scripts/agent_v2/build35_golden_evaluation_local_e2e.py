@@ -52,9 +52,16 @@ def scenario_a_dataset_loads_and_validates_clean() -> bool:
 
 def scenario_b_malformed_dataset_rejected_before_any_run() -> bool:
     raw = json.loads(DATASET.read_text(encoding="utf-8"))
-    broken = [dict(raw[0]), dict(raw[0])]  # duplicate case_id, only entry
-    broken[1] = dict(raw[1])
-    broken[1]["turns"] = [{"query": "x", "expected": {}}]  # strips required keys
+    broken = [dict(raw[0]), dict(raw[0])]  # exact duplicate case_id (both copies of raw[0])
+    # ACUTE_DANGER requires execution_path + expected_severity +
+    # expected_handoff_required -- present-but-incomplete (not empty -- an
+    # empty turn is a deliberate, valid skip; this specifically tests
+    # MISSING_EXPECTED_KEYS on a turn that DOES assert something but leaves
+    # out required keys) on the SECOND entry only, so this dataset carries
+    # two distinct real validation errors at once (DUPLICATE_CASE_ID +
+    # MISSING_EXPECTED_KEYS), same as the scenario's own name claims.
+    broken[1]["category"] = "ACUTE_DANGER"
+    broken[1]["turns"] = [{"query": "x", "expected": {"execution_path": "SAFETY"}}]
     with tempfile.TemporaryDirectory() as tmp:
         broken_path = Path(tmp) / "broken.json"
         broken_path.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")

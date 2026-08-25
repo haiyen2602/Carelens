@@ -470,9 +470,11 @@ trình trên (đúng yêu cầu — thiết kế, không phải build).
 | Reproducibility metadata | `test_agent_v2_build35_golden_runner.py` (`RunProvenance`) | ✓ |
 | No patient secret leakage | cùng file (`_write_outputs` — grep JSON không có `patient_id`/`actor_id`/token) | ✓ |
 
-Tổng số test mới/sửa: 27 (pure grading, `test_agent_v2_build35_golden_evaluation.py`)
+Tổng số test mới/sửa: 31 (pure grading, `test_agent_v2_build35_golden_evaluation.py`
+— gồm 4 test thêm sau code-review response §16.1: contract-version, 2 test
+turn-level validation, 1 test vacuous-pass edge case)
 + 14 (pure runner helper, `test_agent_v2_build35_golden_runner.py`) + 7
-(golden Judge enqueue, `test_agent_v2_build33_judge.py`) = **48 test mới**,
+(golden Judge enqueue, `test_agent_v2_build33_judge.py`) = **52 test mới**,
 tất cả pass, `ruff` clean trên toàn bộ file build này.
 
 ---
@@ -504,14 +506,85 @@ Full dataset (23/23 case, không filter): `23/23 cases passed
 
 ---
 
+## 16.1 Code Review tự động (post-push) — 2 finding, xác minh bằng thực nghiệm
+
+**Finding 1 — "Potential Race Condition" trong `_drain_judge_batch`.**
+Claim: gọi đồng bộ `process_pending_judge_batch` có thể "cướp"/bị "cướp"
+task Judge của tiến trình khác (worker nền production hoặc 1 golden run
+khác) chạy đồng thời.
+
+Xác minh bằng cách đọc trực tiếp `process_pending_judge_batch`: câu
+`SELECT ... WHERE judge_status='JUDGE_PENDING' ... LIMIT` **không có
+`FOR UPDATE SKIP LOCKED` hay bất kỳ row-claim nào** — cơ chế race **có
+thật**. Nhưng: (1) đây là tính chất **có sẵn từ BUILD-33** của chính
+`process_pending_judge_batch` (BUILD-35 không sửa hàm đó dù 1 dòng — xác
+nhận bằng `git diff`), không phải lỗi mới do build này gây ra; (2) hậu quả
+thật tối đa là gọi trùng 1 lần API Judge cho cùng 1 dòng (tốn chi phí,
+không phải data corruption — dòng cuối cùng commit luôn ở trạng thái hợp
+lệ COMPLETED/FAILED); (3) **không ảnh hưởng kết quả PASS/FAIL** —
+`grade_case` không đọc `judge_*` ở bất kỳ check nào; (4) nếu dòng của
+CHÍNH golden run không kịp được xử lý (do tiến trình khác lấy mất/limit
+chạm trần), hệ thống đã tự nhiên degrade đúng cách: `judge_status` vẫn
+trung thực là `JUDGE_PENDING`, không bao giờ bịa điểm. Sửa fix thật (row
+claiming) đòi hỏi sửa `process_pending_judge_batch` — hàm dùng chung, đang
+phục vụ traffic production thật — nên **không sửa trong build này**
+(tránh thay đổi rủi ro vào code production-serving chỉ để phản hồi 1 bot
+review trên PR khác); ghi rõ bằng comment code tại `_drain_judge_batch`
+giải thích đầy đủ cơ chế + lý do không sửa, đúng cách BUILD-33 round 2 đã
+xử lý 1 finding tương tự (race có thật nhưng không reachable theo cách
+gây hại trong luồng gọi thật của codebase này).
+
+**Finding 2 — Validation logic chỉ kiểm turn cuối.**
+Claim: `validate_golden_set` chỉ kiểm `case.turns[-1].expected`, nên turn
+giữa (không phải cuối) có contract thiếu key sẽ không bị bắt, "có thể gây
+lỗi runtime khi chấm điểm hoặc evaluation không đầy đủ".
+
+Xác minh 2 phần riêng: **"lỗi runtime" — SAI, xác nhận bằng cách đọc TOÀN
+BỘ hàm `_grade_*`** — không hàm nào truy cập key trực tiếp
+(`expected["key"]`), tất cả dùng `.get()`/`in` an toàn (vd
+`expected.get("expected_severity")`, `if "expected_reason_code" in
+expected:`) — `_eq_check(name, None, actual)` trả `NOT_APPLICABLE`, không
+crash. **"evaluation không đầy đủ" — ĐÚNG, đây là gap thật**: 1 turn giữa
+có `expected` không rỗng nhưng thiếu key bắt buộc sẽ được chấm với ít check
+hơn dự định, không có cảnh báo nào — âm thầm yếu hơn ý định tác giả. SỬA
+THẬT: `validate_golden_set` giờ kiểm MỌI turn có `expected` không rỗng
+(không chỉ turn cuối), khớp đúng quy tắc `grade_case` đã dùng để quyết
+định turn nào được chấm (`if not turn.expected: continue`) — 1 turn hoàn
+toàn rỗng vẫn được phép (chủ ý "không assert gì ở đây", đúng docstring
+`GoldenTurn`), nhưng 1 turn ĐÃ có nội dung thì phải đủ contract, không được
+thiếu nửa vời. Verify: dataset thật 23 case (kể cả 2 case multi-turn
+`GOLD-MULTI-001`/`GOLD-DRUG-002`) vẫn validate sạch sau khi sửa (không
+case nào đang lợi dụng lỗ hổng này). 2 test mới:
+`test_malformed_expected_contract_on_a_non_last_turn_is_also_rejected`
+(turn 0 thiếu key giờ bị bắt) và
+`test_empty_intermediate_turn_stays_allowed_not_flagged` (turn rỗng vẫn
+hợp lệ, không bị coi là lỗi).
+
+**Tự phát hiện 1 edge case thật khi re-verify fix của finding 2** (không
+phải qua review, mà qua chạy lại chính bộ E2E của build này): cho phép 1
+turn HOÀN TOÀN rỗng được bỏ qua validate kéo theo hệ quả — 1 case mà MỌI
+turn đều rỗng sẽ không có check nào cả, và `all(status != FAIL for _ in
+[])` = `True` theo kiểu vacuous truth — case như vậy sẽ "PASS" mà không hề
+test bất kỳ điều gì. Phát hiện qua scenario B của E2E suite tự dưng FAIL
+sau khi sửa finding 2 (fixture của scenario B vốn có 1 bug xây dựng khác —
+dòng gán `broken[1] = dict(raw[1])` vô tình xoá mất phần duplicate case_id
+đã setup trước đó — sửa luôn cả 2). Thêm rule thật: 1 case phải có ÍT NHẤT
+1 turn không rỗng (`NO_TURN_HAS_ANY_EXPECTED_ASSERTION` nếu vi phạm), test
+mới `test_case_with_every_turn_empty_is_rejected_not_a_vacuous_pass`.
+
+Sau tất cả các sửa: 129 test pass (126 → 128 → 129), `ruff` clean, chạy lại
+toàn bộ 11 scenario E2E (A–K) — **11/11 OK**, full dataset 23/23 vẫn PASS.
+
+---
+
 ## 17. Regression Results
 
 ```text
 pytest -q tests/test_agent_v2_build35_golden_evaluation.py tests/test_agent_v2_build35_golden_runner.py tests/test_agent_v2_build33_judge.py tests/test_agent_v2_build34_safety_monitoring.py
-126 passed
+129 passed
 
 pytest -q tests/ --ignore=tests/services/photo_verification --ignore=tests/vlm_demthuoc
-8 failed, 1687 passed, 20 skipped, 496 warnings in 276.69s (nhánh build này)
+8 failed, 1690 passed, 20 skipped, 496 warnings in 284.53s (nhánh build này, sau code-review response)
 
 pytest -q tests/ (git worktree origin/main, cùng máy, cùng .env/Postgres, sequential không chạy song song)
 8 failed, 1638 passed, 20 skipped, 496 warnings in 288.74s (baseline)
@@ -523,9 +596,10 @@ pytest -q tests/ (git worktree origin/main, cùng máy, cùng .env/Postgres, seq
 `test_get_current_user_valid_jwt`, cross-patient chat-history ambient
 fixture, `test_word_similarity_threshold_guc_is_set_not_just_similarity_
 threshold` — corpus local phụ thuộc, không liên quan build này) — **0 lỗi
-mới**. 1687 − 1638 = 49, khớp chính xác với 42 test mới (2 file pure mới)
-+ 7 test mới (`test_agent_v2_build33_judge.py`) = 49 — đối chiếu số học
-chính xác, xác nhận không có test nào khác bị ảnh hưởng.
+mới**. 1690 − 1638 = 52, khớp chính xác với 45 test trong 2 file pure mới
+(sau code-review response: 42 gốc + 3 test mới từ §16.1) + 7 test mới
+(`test_agent_v2_build33_judge.py`) = 52 — đối chiếu số học chính xác, xác
+nhận không có test nào khác bị ảnh hưởng.
 
 **Sự cố methodology tự phát hiện khi đo regression**: lần chạy đầu (2 full
 suite chạy song song, cùng lúc, cùng 1 Postgres local) cho kết quả sai
