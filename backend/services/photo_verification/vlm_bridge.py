@@ -218,10 +218,26 @@ def _coerce(payload: dict[str, Any]) -> tuple[dict[str, int], int, str, str]:
 # ---------------------------------------------------------------------------
 # Gọi endpoint tương thích OpenAI, thử lại khi phản hồi rỗng.
 # ---------------------------------------------------------------------------
-_UNSUPPORTED_HINTS = (
-    "response_format", "json_schema", "not supported", "unsupported",
-    "unrecognized", "unknown parameter", "invalid_type",
-)
+# CHI cac dau hieu chac chan noi ve response_format. TRUOC 2026-08-26 danh
+# sach nay con co "not supported"/"unsupported"/"unknown parameter" chung
+# chung, nen MOI loi 400 ve tham so KHAC cung bi hieu nham thanh "endpoint
+# khong ho tro JSON mode" va lam thang hu cap schema->object->off - dot 3
+# lan goi API cho mot van de khong lien quan (bat duoc that khi doi sang
+# gpt-5.4-mini: loi that la "max_tokens is not supported", xem _MAX_TOKENS_KEYS).
+_UNSUPPORTED_HINTS = ("response_format", "json_schema")
+
+# gpt-5.x doi `max_completion_tokens`; cac model/endpoint cu (gpt-4o,
+# api.vilao.ai) chi hieu `max_tokens`. Khong hardcode mot ben nao: thu ben
+# mac dinh truoc, thay ten khi endpoint bao sai, de doi model qua lai giua
+# hai the he ma khong phai sua code.
+_MAX_TOKENS_KEYS = ("max_tokens", "max_completion_tokens")
+
+# Ten tham so DA DO DUOC cho tung model, nho o muc MODULE chu khong phai
+# instance: dem_thuoc_trong_anh() dung mot _OpenAICompatCaller MOI cho moi
+# anh, nen nho o instance thi moi anh deu phai dam mot lan goi 400 roi moi
+# doi ten - dung 25 lan goi thua trong mot lan chay golden set (do duoc
+# 2026-08-26). Khoa theo ten model de doi model van tu do lai tu dau.
+_MAX_TOKENS_KEY_DA_BIET: dict[str, str] = {}
 
 
 class _OpenAICompatCaller:
@@ -246,6 +262,10 @@ class _OpenAICompatCaller:
         self.json_mode = settings.vlm_json_mode
         self.retries = settings.vlm_retries
         self.retry_delay = settings.vlm_retry_delay
+        # Ten tham so gioi han do dai tra loi - tu doi khi endpoint tu choi
+        # (xem _MAX_TOKENS_KEYS). Doc tu cache muc module de chi phai do MOT
+        # lan cho moi model, khong phai moi anh.
+        self.max_tokens_key = _MAX_TOKENS_KEY_DA_BIET.get(self.model, _MAX_TOKENS_KEYS[0])
 
     def dem(self, image_b64: str) -> KetQuaDemVlm:
         started = time.monotonic()
@@ -264,7 +284,7 @@ class _OpenAICompatCaller:
                 {"role": "system", "content": build_system_prompt(True, mode != "schema")},
                 {"role": "user", "content": user_content},
             ]
-            kwargs: dict[str, Any] = {"model": self.model, "messages": messages, "max_tokens": 4000}
+            kwargs: dict[str, Any] = {"model": self.model, "messages": messages, self.max_tokens_key: 4000}
             response_format = self._response_format(mode)
             if response_format is not None:
                 kwargs["response_format"] = response_format
@@ -326,12 +346,47 @@ class _OpenAICompatCaller:
         lowered = message.lower()
         return any(hint in lowered for hint in _UNSUPPORTED_HINTS)
 
+    def _doi_ten_max_tokens(self, kwargs: dict[str, Any], message: str) -> bool:
+        """Đổi `max_tokens` ⇄ `max_completion_tokens` khi endpoint từ chối tên đang dùng.
+
+        Trả về True nếu đã đổi (người gọi nên thử lại), False nếu lỗi 400 này
+        không phải về tên tham số đó — lúc ấy đừng nuốt, để nó nổi lên."""
+        lowered = message.lower()
+        if "max_tokens" not in lowered and "max_completion_tokens" not in lowered:
+            return False
+        ten_cu = self.max_tokens_key
+        ten_moi = next((k for k in _MAX_TOKENS_KEYS if k != ten_cu), None)
+        if ten_moi is None or ten_cu not in kwargs:
+            return False
+        kwargs[ten_moi] = kwargs.pop(ten_cu)
+        self.max_tokens_key = ten_moi
+        _MAX_TOKENS_KEY_DA_BIET[self.model] = ten_moi
+        logger.warning(
+            "Endpoint VLM không nhận %r (%s). Chuyển sang %r.",
+            ten_cu, message[:120], ten_moi,
+        )
+        return True
+
     def _goi_co_thu_lai(self, kwargs: dict[str, Any]) -> Any:
         """Gọi API, thử lại khi phản hồi rỗng/không parse được — xem docstring module."""
         cuoi_cung: Any = None
+        da_doi_ten = False
         for lan in range(1, self.retries + 1):
             try:
                 cuoi_cung = self.client.chat.completions.create(**kwargs)
+            except self._openai.BadRequestError as exc:
+                # Sai TÊN tham số giới hạn độ dài (gpt-5.x vs model cũ) —
+                # đổi tên rồi thử lại NGAY, không tính vào hạn mức thử lại
+                # vì lần gọi vừa rồi hỏng vì cấu hình, không phải vì endpoint.
+                message = str(getattr(exc, "message", "") or exc)
+                if not da_doi_ten and self._doi_ten_max_tokens(kwargs, message):
+                    da_doi_ten = True
+                    cuoi_cung = self.client.chat.completions.create(**kwargs)
+                    text, loi = _doc_phan_hoi(cuoi_cung)
+                    if text or loi == "__MAX_TOKENS__":
+                        return cuoi_cung
+                else:
+                    raise
             except json.JSONDecodeError as exc:
                 cuoi_cung = None
                 loi = f"body không phải JSON ({exc})"
