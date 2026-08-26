@@ -116,9 +116,10 @@ def test_failed_record_retries_only_when_requested(tmp_path: Path) -> None:
     failed = FakeDownloader({item.original_image_url: (None, None, "HTTP_FAILURE")})
     collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", downloader=failed)  # type: ignore[arg-type]
     skipped = FakeDownloader({item.original_image_url: (image_bytes(), "image/png", None)})
-    records, _queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, downloader=skipped)  # type: ignore[arg-type]
+    records, queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, downloader=skipped)  # type: ignore[arg-type]
     assert skipped.requests == []
     assert stats["SKIPPED_FAILED"] == 1
+    assert [queue.reason_code for queue in queues] == ["DOWNLOAD_FAILED"]
     retried = FakeDownloader({item.original_image_url: (image_bytes(), "image/png", None)})
     records, _queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, retry_failed=True, downloader=retried)  # type: ignore[arg-type]
     assert retried.requests == [item.original_image_url]

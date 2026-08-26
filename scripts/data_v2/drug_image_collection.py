@@ -126,12 +126,14 @@ def read_jsonl(path: Path) -> Iterable[dict[str, Any]]:
 
 
 def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
-    """Write a deterministic JSONL artifact with one row per record."""
+    """Atomically write a deterministic JSONL artifact with one row per record."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as handle:
+    temporary_path = path.with_suffix(f"{path.suffix}.tmp")
+    with temporary_path.open("w", encoding="utf-8", newline="\n") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+    temporary_path.replace(path)
 
 
 def image_record_id(candidate: SourceCandidate) -> str:
@@ -419,6 +421,14 @@ def load_existing_records(manifest_path: Path) -> dict[str, ImageRecord]:
     return {row.image_record_id: row for row in rows}
 
 
+def load_existing_queues(queue_path: Path) -> list[QueueItem]:
+    """Keep prior structured failures visible across a resume-only rerun."""
+
+    if not queue_path.exists():
+        return []
+    return [QueueItem(**row) for row in read_jsonl(queue_path)]
+
+
 def valid_existing_record(record: ImageRecord, output_dir: Path) -> bool:
     """Accept an existing record only when its local derivative still verifies."""
 
@@ -493,9 +503,10 @@ def collect(
         raise PermissionError("source download requires --source-rights-status APPROVED")
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = output_dir / "manifest.jsonl"
+    failure_queue_path = output_dir / "failure_queues.jsonl"
     existing = load_existing_records(manifest_path) if resume or retry_failed else {}
-    records: dict[str, ImageRecord] = {}
-    queues: list[QueueItem] = []
+    records = dict(existing)
+    queues = load_existing_queues(failure_queue_path) if resume or retry_failed else []
     stats: Counter[str] = Counter(TOTAL_ELIGIBLE=len(candidates))
     first_by_url: dict[str, str] = {}
     first_by_checksum: dict[str, str] = {}
@@ -504,7 +515,14 @@ def collect(
     known_placeholder_urls = known_placeholder_urls or set()
     known_placeholder_checksums = known_placeholder_checksums or set()
 
-    for candidate in candidates:
+    def checkpoint() -> None:
+        ordered = [records[key] for key in sorted(records)]
+        write_jsonl(manifest_path, (asdict(record) for record in ordered))
+        write_jsonl(failure_queue_path, (asdict(item) for item in queues))
+
+    for position, candidate in enumerate(candidates):
+        if position and position % 25 == 0:
+            checkpoint()
         record_id = image_record_id(candidate)
         prior = existing.get(record_id)
         if prior and valid_existing_record(prior, output_dir):
@@ -585,9 +603,8 @@ def collect(
         records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="VALIDATED", reason=None, mime_type=mime_type, checksum=checksum, normalized_checksum=normalized_checksum, width=image.width, height=image.height, file_size=len(content), storage_relative_path=relative_path.as_posix(), duplicate_url_of=duplicate_url_of, duplicate_checksum_of=duplicate_checksum_of)
         stats["VALIDATED"] += 1
 
+    checkpoint()
     ordered_records = [records[key] for key in sorted(records)]
-    write_jsonl(manifest_path, (asdict(record) for record in ordered_records))
-    write_jsonl(output_dir / "failure_queues.jsonl", (asdict(item) for item in queues))
     return ordered_records, queues, stats
 
 

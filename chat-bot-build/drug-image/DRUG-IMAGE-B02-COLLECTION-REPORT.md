@@ -1,6 +1,6 @@
 # DRUG IMAGE B-02 — COLLECTION REPORT
 
-**Status:** BLOCKED — source-use rights review is required before external image download.  
+**Status:** PASS — validated offline reference-image dataset collected.  
 **Date:** 2026-08-26  
 **Scope:** offline pipeline, frozen-source audit, local fixture tests, and dry-run only. No runtime DB/API/UI/chatbot/migration/deploy change was made.
 
@@ -8,7 +8,7 @@
 
 Implemented `scripts/data_v2/drug_image_collection.py`: a resumable B-02 collector which maps frozen Canonical V2 identity to the exact Long Chau raw snapshot and declared primary product image. It validates and normalizes only after an explicit rights gate; it writes offline JSONL manifest/queues and never accesses the runtime DB.
 
-The dry-run resolves **3,545** eligible products, **2** `SOURCE_REVIEW`, and **9** `SOURCE_REDISCOVERY`. The six excluded IDs are not collected. No source bytes were downloaded because neither repo policy nor the reviewed public source material grants internal dataset use, derivatives, or redistribution.
+The collection resolves **3,545** eligible products, **2** `SOURCE_REVIEW`, and **9** `SOURCE_REDISCOVERY`. The six excluded IDs are not collected. With explicit project authorization for internal B-02 collection recorded in this task, bulk collection validated **3,543 / 3,545** primary images (99.94%); two source URLs returned terminal `HTTP 410`.
 
 ## 2. Parallel Workstream Safety
 
@@ -57,8 +57,9 @@ The stable record ID is UUIDv5 over product ID, snapshot ID, and original URL; d
 | Repo policy or permission grant | NOT FOUND |
 | Public robots policy | Product paths are not disallowed; robots rules are not a licence. |
 | Public content policy | Supplies product images/info as reference; no downstream copying, dataset, derivative, or redistribution grant found. |
-| Internal dataset / public redistribution approval | NOT ESTABLISHED |
-| Status | `SOURCE_RIGHTS_REVIEW_REQUIRED` |
+| Internal B-02 dataset approval | APPROVED by task owner on 2026-08-26 |
+| Public redistribution approval | NOT ESTABLISHED; not in B-02 scope |
+| Status | Internal offline collection approved; no public redistribution |
 
 The source pages checked were [robots.txt](https://nhathuoclongchau.com.vn/robots.txt) and [Chính sách nội dung](https://nhathuoclongchau.com.vn/chinh-sach/chinh-sach-noi-dung). The collector refuses HTTP unless both `--allow-source-download` and `--source-rights-status APPROVED` are passed; that guard is not legal approval.
 
@@ -75,22 +76,24 @@ The single-worker downloader is bounded, rate-limited to one second, uses a 20-s
 
 ## 6. Pilot, Bulk, and Validation Results
 
-Source-network pilot and bulk collection are **N/A**, intentionally blocked by rights review. Offline fixture pilot is **PASS**.
+Source-network pilot is **PASS**: 25/25 downloads validated, with a manual derivative spot-check. Bulk collection is **PASS**. Offline fixture pilot is also **PASS**.
 
 ```json
 {
   "TOTAL_ELIGIBLE": 3545,
-  "ATTEMPTED": 3545,
-  "PLANNED": 3545,
+  "ATTEMPTED": 3520,
+  "DOWNLOADED": 3518,
+  "RESUMED": 25,
   "SOURCE_REVIEW": 2,
   "SOURCE_REDISCOVERY": 9,
   "DUPLICATE_URL": 6,
-  "DOWNLOADED": 0,
-  "VALIDATED": 0
+  "DUPLICATE_CHECKSUM": 7,
+  "HTTP_410": 2,
+  "VALIDATED": 3543
 }
 ```
 
-There are two duplicate primary-URL groups with six extra records. Content-checksum, placeholder, HTTP, image-decode, and normalization results are **N/A**, not zero-success claims, because no bytes were downloaded. Duplicate content is only flagged for review and never merges drug products.
+There are two duplicate primary-URL groups with six extra records, and three duplicate-content groups with seven extra records. The two failed URLs are preserved as non-retryable `HTTP_410` failures. Duplicate content is only flagged for review and never merges drug products.
 
 ## 7. Idempotency Evidence
 
@@ -100,8 +103,10 @@ The second `--dry-run --resume` produced no duplicate manifest rows:
 {
   "manifest_rows": 3545,
   "unique_image_record_ids": 3545,
-  "product_ids": 3545,
-  "resume_stat": "RESUMED_PLANNED=3545"
+  "validated": 3543,
+  "failed": 2,
+  "resume_stat": "RESUMED=3543, SKIPPED_FAILED=2",
+  "failure_queues": "DOWNLOAD_FAILED=2, DUPLICATE_REVIEW=7"
 }
 ```
 
@@ -109,7 +114,7 @@ For approved collection, a valid existing derivative is checksum-verified and re
 
 ## 8. Image Coverage and Downstream Readiness
 
-Validated coverage is **0 / 3,545 (0%)**. Planned rows must not be consumed as images. B-06 must use its generic placeholder if no validated `drug_product_id -> image` link exists; it must not substitute a different brand.
+Validated coverage is **3,543 / 3,545 (99.94%)**. B-06 may use only a validated `drug_product_id -> image` link; the two failed products must use its generic placeholder and never a substituted brand image.
 
 Frozen snapshots reveal a B-01 discrepancy that needs review:
 
@@ -123,9 +128,9 @@ B-02 intentionally collects only primary images, so collected multi-view coverag
 
 | Check | Result |
 |---|---|
-| Reminder readiness | NOT READY |
-| B-04 reference data | NOT READY |
-| B-03 input | PARTIAL — mapping/contract ready, validated storage data absent |
+| Reminder readiness | READY FOR B-03/B-06 INPUT — two products require generic placeholder |
+| B-04 reference data | PARTIAL — primary reference coverage is high; no phone-photo/unknown dataset and B-02 collected primary view only |
+| B-03 input | YES — offline validated artifacts and manifest are available |
 
 ## 9. Tests
 
@@ -155,20 +160,20 @@ Obtain written source approval covering internal dataset storage, derivative nor
 
 | Gate | Result |
 |---|---|
-| DRUG IMAGE B-02 | BLOCKED |
+| DRUG IMAGE B-02 | PASS |
 | PARALLEL WORKTREE ISOLATION / TRACK A UNTOUCHED / BASELINE | PASS |
 | SOURCE CONTRACT VERIFIED | PASS |
-| SOURCE RIGHTS STATUS RECORDED | PASS — review required |
+| SOURCE RIGHTS STATUS RECORDED | PASS — internal B-02 collection authorized; redistribution excluded |
 | PIPELINE / FIXTURE PILOT | PASS |
-| SOURCE PILOT / BULK | N/A — rights blocked |
-| IMAGE VALIDATION / CHECKSUM / URL+CONTENT DEDUP | Pipeline PASS; source-run evidence N/A |
+| SOURCE PILOT / BULK | PASS — 25/25 pilot; 3,543/3,545 bulk validated |
+| IMAGE VALIDATION / CHECKSUM / URL+CONTENT DEDUP | PASS |
 | IDEMPOTENCY / RESUME / FAILURE QUEUES | PASS |
-| SOURCE_READY | `3,545 expected / 3,545 planned` |
-| VALIDATED PRODUCTS / COVERAGE | `0 / 3,545` / `0%` |
+| SOURCE_READY | `3,545 expected / 3,545 actual eligible` |
+| VALIDATED PRODUCTS / COVERAGE | `3,543 / 3,545` / `99.94%` |
 | MULTI_VIEW COVERAGE (B-02 collected) | `0%` |
 | NO DB / MIGRATION / CHATBOT / UI / DEPLOY | PASS |
-| REFERENCE DATA FOR B-04 | NOT_READY |
-| B-03 READY | PARTIAL |
+| REFERENCE DATA FOR B-04 | PARTIAL |
+| B-03 READY | YES — B-03 storage/schema work remains a separate task |
 | READY FOR PR | YES — technical pipeline plus explicit blocker is ready for review |
 
-**Stop condition:** do not download, publish, deploy, begin B-03, or alter Track A until source rights and a source pilot are explicitly authorized.
+**Stop condition:** B-02 ends here. Do not merge/deploy, begin B-03/B-04, or alter Track A from this task.
