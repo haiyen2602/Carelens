@@ -819,12 +819,22 @@ _DRUG_ASPECT_LABELS: dict[str, str] = {
     "warnings": "Lưu ý khi dùng {entity}",
     "interactions": "Tương tác thuốc của {entity}",
 }
+# PR #130 review: these two dicts are maintained separately (detection
+# keywords vs. display label) and must stay key-for-key in sync -- a
+# future edit that adds an aspect to one without the other would silently
+# KeyError deep inside a live orchestration run (_detect_drug_aspect can
+# only ever return a _DRUG_ASPECT_KEYWORDS key, so the risk is one-
+# directional: a NEW keyword group with no matching label). Fails loud at
+# import time instead of waiting for it to happen in production.
+assert set(_DRUG_ASPECT_KEYWORDS) == set(_DRUG_ASPECT_LABELS), (
+    "_DRUG_ASPECT_KEYWORDS and _DRUG_ASPECT_LABELS must define the exact same aspect keys"
+)
 
 
 def _detect_drug_aspect(message: str) -> str | None:
     lowered = message.casefold()
     for aspect, keywords in _DRUG_ASPECT_KEYWORDS.items():
-        if any(keyword in lowered for keyword in keywords):
+        if any(keyword in lowered for keyword in keywords) and aspect in _DRUG_ASPECT_LABELS:
             return aspect
     return None
 

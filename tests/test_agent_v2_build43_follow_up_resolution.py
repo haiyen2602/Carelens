@@ -188,6 +188,37 @@ def test_k_classify_follow_up_signature_has_no_retrieval_query_input():
 
 
 # ---------------------------------------------------------------------------
+# PR #130 review: _DRUG_ASPECT_KEYWORDS (detection) and _DRUG_ASPECT_LABELS
+# (display text) are two separately-maintained dicts that must stay
+# key-for-key in sync -- a real maintenance risk (not a live bug today,
+# both currently define the exact same 7 keys) since a future edit could
+# add a keyword group with no matching label and KeyError deep inside a
+# live run. Locked by both a module-load-time assertion (orchestrator.py)
+# and a defensive membership check inside _detect_drug_aspect itself.
+# ---------------------------------------------------------------------------
+
+
+def test_drug_aspect_keywords_and_labels_stay_in_sync():
+    from backend.agents.v2.orchestrator import _DRUG_ASPECT_KEYWORDS, _DRUG_ASPECT_LABELS
+
+    assert set(_DRUG_ASPECT_KEYWORDS) == set(_DRUG_ASPECT_LABELS)
+
+
+def test_detect_drug_aspect_never_returns_a_key_missing_from_labels(monkeypatch):
+    """Simulates the exact drift the review warned about: a keyword group
+    added to _DRUG_ASPECT_KEYWORDS with no matching _DRUG_ASPECT_LABELS
+    entry. _detect_drug_aspect must degrade to None (safe), never surface
+    a key that would KeyError at the real call site."""
+    import backend.agents.v2.orchestrator as orchestrator_module
+
+    drifted_keywords = dict(orchestrator_module._DRUG_ASPECT_KEYWORDS)
+    drifted_keywords["storage"] = ("bảo quản", "bao quan")
+    monkeypatch.setattr(orchestrator_module, "_DRUG_ASPECT_KEYWORDS", drifted_keywords)
+
+    assert orchestrator_module._detect_drug_aspect("Bảo quản thuốc này thế nào?") is None
+
+
+# ---------------------------------------------------------------------------
 # N. Safety precedence -- Safety still runs first, follow-up resolution
 # never overrides ACUTE_DANGER/POSSIBLE_OVERDOSE/MEDICATION_DOSE_SAFETY.
 # ---------------------------------------------------------------------------
