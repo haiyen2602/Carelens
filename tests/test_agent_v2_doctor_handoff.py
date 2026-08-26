@@ -198,6 +198,44 @@ def test_safety_triggered_gateway_binds_authorized_actor_and_denies_cross_patien
         )
 
 
+def test_adapter_reuses_an_active_uncertainty_handoff_instead_of_duplicating(db):
+    """BUILD-44 defensive fix: ``_ACTIVE_HANDOFF_STATUSES`` (agent_doctor_
+    handoff.py) did not include ``ACTIVE`` -- a status this build introduced
+    -- so a patient whose existing UNCERTAINTY_HANDOFF row a doctor has
+    already claimed AND activated would not have been reused by this dedup
+    check, creating a second, rival ``DoctorReviewRequest`` for the same
+    episode. In the real production route this branch is currently
+    unreachable while ACTIVE (agent_v2_routes.py's own takeover check
+    returns first, see the BUILD-44 report SS7) -- this test exercises the
+    adapter directly, the way a future caller or refactor might, so the
+    dedup logic is correct on its own terms, not only by accident of call
+    order elsewhere."""
+    from backend.agents.v2.handoff import HandoffCreateCommand as AgentHandoffCreateCommand
+
+    _patient(db)
+    active = DoctorReviewRequest(
+        id="active-1", patient_id="patient-1", created_by_actor_id="acct-1",
+        reason_code="REPEATED_CLARIFICATION", risk_disposition="UNCERTAINTY_HANDOFF",
+        patient_question="q", agent_summary="s", status=HandoffStatus.ACTIVE,
+        idempotency_key="key-active-1", assigned_doctor_id="doctor-1",
+    )
+    db.add(active)
+    db.commit()
+
+    actor = CurrentUser(id="acct-1", role="patient", patient_id="patient-1", doctor_id=None)
+    result = AuthorizedDoctorHandoffAdapter(db, actor).create(
+        AgentHandoffCreateCommand(
+            patient_id="patient-1", actor_id="acct-1", patient_question="another turn",
+            reason_code="REPEATED_CLARIFICATION", risk_disposition="UNCERTAINTY_HANDOFF",
+            idempotency_key="key-active-2", verified_context_refs=(),
+        ),
+        created_at=NOW,
+    )
+    assert result.created is False
+    assert result.request_id == "active-1"
+    assert db.execute(select(func.count()).select_from(DoctorReviewRequest)).scalar_one() == 1
+
+
 def test_gateway_rejects_non_safety_handoff_and_runtime_stops_before_model():
     class _Domain:
         def create(self, command, *, created_at):
