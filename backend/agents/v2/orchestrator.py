@@ -363,12 +363,44 @@ _MEDICATION_PRODUCT_MARKERS = (
     "si ro",
 )
 _MEDICATION_INFORMATION_MARKERS = ("la gi", "tac dung", "cong dung", "dung de")
+# "dùng để [làm gì]" is structurally product-specific on its own -- see
+# `_is_medication_information_query`'s own docstring for why (a disease is
+# never "used for" anything).
+_UNAMBIGUOUS_MEDICATION_MARKERS = ("dung de",)
 _GENERIC_MEDICATION_CLASS_MARKERS = (
     "thuoc giam dau",
     "thuoc ha sot",
     "thuoc khang sinh",
     "thuoc huyet ap",
 )
+# BUILD-40: "tác dụng phụ CỦA <X>" (side effects OF X) names a specific
+# complement -- a disease/condition doesn't have "side effects" (it has
+# triệu chứng/biến chứng), so whatever follows "của" is a product. Bare
+# "tác dụng phụ" with no "của X" at all ("nguyên nhân gây ra tác dụng phụ
+# là gì" -- what CAUSES side effects, no drug named) is a genuine general-
+# medical question and must NOT match this -- found because an earlier,
+# broader version of this check (bare "tác dụng phụ" alone) wrongly forced
+# that exact query to DRUG_INFORMATION, ahead of the "nguyên nhân" general-
+# medical keyword this router already had.
+_SIDE_EFFECT_OF_ENTITY_RE = re.compile(r"\btac dung phu cua \S", re.IGNORECASE)
+# BUILD-40: "[dùng|uống] + <manner/time/amount question word>" is the
+# common Vietnamese grammar for "how/when/how much do I use/take this".
+# By the time classify_intent() reaches this function, dose-safety/
+# personal-symptom/schedule intents have already been ruled out (checked
+# earlier in classify_intent()), so this residual pattern is a genuine
+# product-usage question, not a dose proposal or a symptom report.
+# Generalizes real dataset phrasings ("dùng sao", "dùng như thế nào",
+# "uống trước/sau [ăn]", "uống bao nhiêu viên") rather than listing each
+# literal sentence.
+_DRUG_USAGE_QUESTION_RE = re.compile(
+    r"\b(?:dung|uong)\s+(?:sao|the nao|nhu the nao|truoc|sau|luc nao|may lan|bao nhieu)\b",
+    re.IGNORECASE,
+)
+# BUILD-40 (BUILD-24G golden query_id 54): "sau khi uống thuốc, <symptom>"
+# is the common way a user reports a suspected drug reaction/side effect
+# without using the clinical term "tác dụng phụ" at all -- a recurring
+# Vietnamese phrase pattern, not a one-off literal sentence.
+_SUSPECTED_SIDE_EFFECT_REPORT_MARKER = "sau khi uong thuoc"
 
 
 def _is_possible_overdose(message: str) -> bool:
@@ -392,15 +424,50 @@ def _is_medication_information_query(message: str) -> bool:
     """Recognize a product-information question without relying on entity search."""
 
     lowered = _ascii_fold(message)
-    if not any(marker in lowered for marker in _MEDICATION_INFORMATION_MARKERS):
+    has_generic_class = any(marker in lowered for marker in _GENERIC_MEDICATION_CLASS_MARKERS)
+
+    # BUILD-40 (router audit): these patterns are structurally product-
+    # specific enough to skip the info-question gate below entirely --
+    # *unless* a generic drug CLASS is also named ("thuốc giảm đau dùng
+    # như thế nào" stays a general clinical/RAG question, same rule the
+    # "thuốc "-word check below already applies), so that exclusion is
+    # checked first here too rather than kept as a second, differently-
+    # scoped copy of it. Found via the required BUILD-40 test dataset (not
+    # the 6 CANDIDATE-01 production strings): "Paracetamol dùng để làm
+    # gì"/"tác dụng phụ của amoxicillin" name a real drug WITHOUT the word
+    # "thuốc", so they never matched the product-marker/"thuốc "-word check
+    # further down at all -- previously "working" only by accident of the
+    # old wrong DRUG_INFORMATION default, silently broken by the fallback
+    # fix elsewhere in this module.
+    if not has_generic_class and (
+        any(marker in lowered for marker in _UNAMBIGUOUS_MEDICATION_MARKERS)
+        or _SIDE_EFFECT_OF_ENTITY_RE.search(lowered)
+        or _DRUG_USAGE_QUESTION_RE.search(lowered)
+        or _SUSPECTED_SIDE_EFFECT_REPORT_MARKER in lowered
+    ):
+        return True
+
+    # BUILD-40: the literal "la gi" marker below only matches the exact
+    # 2-word phrase, same gap as `_GENERAL_MEDICAL_KEYWORDS`'s own "là gì"
+    # entry (see `_GENERAL_MEDICAL_QUESTION_FORM_RE`) -- "Paracetamol LÀ
+    # THUỐC GÌ" ("what medicine is Paracetamol", unambiguously drug-shaped)
+    # has "thuốc" between "là" and "gì" and previously matched NEITHER this
+    # marker tuple NOR (correctly) the general-medical regex, since that
+    # regex is only reached if this function returns False first. Reusing
+    # the SAME shared pattern here (checked first, so a real drug name
+    # still wins this function's own step 3 "thuốc " check below) keeps
+    # there being exactly one definition of the "là [0-2 words] gì" form,
+    # not two independently-maintained near-duplicates.
+    if not (
+        any(marker in lowered for marker in _MEDICATION_INFORMATION_MARKERS)
+        or _GENERAL_MEDICAL_QUESTION_FORM_RE.search(lowered)
+    ):
         return False
     if any(marker in lowered for marker in _MEDICATION_PRODUCT_MARKERS):
         return True
     # A named product after “thuốc” is drug information; a generic class
     # such as “thuốc giảm đau” remains a general clinical/RAG question.
-    return "thuoc " in lowered and not any(
-        marker in lowered for marker in _GENERIC_MEDICATION_CLASS_MARKERS
-    )
+    return "thuoc " in lowered and not has_generic_class
 
 
 # Ordered (most specific first) so an unambiguous safety- or handoff-relevant
@@ -433,6 +500,17 @@ _GENERAL_MEDICAL_KEYWORDS = (
     "đi khám", "di kham", "đi viện", "di vien", "nguy hiểm", "nguy hiem",
     "phòng ngừa", "phong ngua", "phòng tránh", "phong tranh", "do đâu", "do dau",
 )
+# BUILD-40 (CANDIDATE-01, router audit): "X là gì" only matches the literal
+# 2-word phrase -- a very common alternate Vietnamese question form, "X là
+# [bệnh/tình trạng/chứng/hội chứng] gì?" ("what disease/condition is X?"),
+# has 1-2 words between "là" and "gì" and silently missed the keyword above.
+# A grammatical generalization (0-2 intervening words), not a per-disease
+# phrase list -- matches "là gì" itself too (0 words), so this is additive,
+# never narrower than the keyword form it complements. Checked against the
+# ascii-folded text (this file's own established convention for regex
+# checks, e.g. `_POSSIBLE_OVERDOSE_RE`/`_PROPOSED_DOSE_RE`), so it covers
+# both accented and unaccented input without a duplicate keyword pair.
+_GENERAL_MEDICAL_QUESTION_FORM_RE = re.compile(r"\bla\s+(?:\S+\s+){0,2}gi\b", re.IGNORECASE)
 # BUILD-24H (persona/capability/domain guard, golden query_id 75/76/78/79):
 # identity questions ("bạn tên gì, ai tạo ra bạn"), capability questions the
 # system structurally cannot fulfil (no booking tool exists at all -- "bạn
@@ -603,7 +681,11 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
             intent = OrchestrationIntent.VINMEC_WEB_INFORMATION
         elif _is_medication_information_query(message):
             intent = OrchestrationIntent.DRUG_INFORMATION
-        elif _matches(_GENERAL_MEDICAL_KEYWORDS) or _display_topic_from_raw(message) is not None:
+        elif (
+            _matches(_GENERAL_MEDICAL_KEYWORDS)
+            or _GENERAL_MEDICAL_QUESTION_FORM_RE.search(_ascii_fold(message))
+            or _display_topic_from_raw(message) is not None
+        ):
             # An explicit "<new topic> thì sao?" is a general-medical
             # topic switch even without a generic question keyword. This
             # allows the API boundary to replace durable topic state only
@@ -613,7 +695,24 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
         elif _matches_greeting() and len(message.strip()) <= 40:
             intent = OrchestrationIntent.GENERAL_CONVERSATION
         else:
-            intent = OrchestrationIntent.DRUG_INFORMATION
+            # BUILD-40 (CANDIDATE-01, router audit): this is the terminal
+            # fallback for a message that matched NONE of the deterministic
+            # categories above -- previously defaulted to DRUG_INFORMATION,
+            # silently presuming every unclassified query was about a
+            # specific drug. Real production evidence (BUILD-39 report):
+            # 6/9 real disease/symptom questions ("huyết áp cao có dấu hiệu
+            # nào", "viêm gan B lây qua đường nào", ...) fell through to
+            # here and got a drug-shaped honest-decline asking for "tên
+            # thuốc cụ thể" -- a Judge-confirmed non-sequitur for a message
+            # that was never about any drug. UNKNOWN_OR_AMBIGUOUS already
+            # exists in the taxonomy, is already grounding-required, and
+            # already gets the non-drug-shaped honest-decline text (BUILD-38
+            # Cluster B) -- it was simply never assigned by classify_intent()
+            # itself before this fix. This is the systemic root-cause fix
+            # (the wrong DEFAULT assumption), not a patch for the 6 specific
+            # strings above -- it changes the outcome for ANY future
+            # phrasing this router still can't confidently classify.
+            intent = OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
 
     trigger, requires_occurrence, bypass, use_retrieval, use_web = _INTENT_CONFIG[intent]
     return RouterDecision(intent, trigger, requires_occurrence, bypass, use_retrieval, use_web, time_range)

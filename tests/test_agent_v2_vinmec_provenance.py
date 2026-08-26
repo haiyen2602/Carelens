@@ -338,10 +338,20 @@ def test_scenario_5_rag_evidence_mislabeled_as_vinmec_is_corrected_not_discarded
 
 # ---------------------------------------------------------------------------
 # Regression scenario 6 (BUILD-24D, report 35 section 4.1): the exact golden-
-# set failure shape -- a bare drug-name query (no "vinmec" anywhere in the
-# user's own message, e.g. golden query_id 7 "vizicin") where the model
-# calls the internal canonical catalog tool but still mislabels the answer
-# as Vinmec-sourced. Must keep the real catalog answer, never the fallback.
+# set failure shape -- a drug-name query (no "vinmec" anywhere in the user's
+# own message, e.g. golden query_id 7 "vizicin") where the model calls the
+# internal canonical catalog tool but still mislabels the answer as Vinmec-
+# sourced. Must keep the real catalog answer, never the fallback.
+#
+# BUILD-40: the query itself is no longer the fully bare single-token
+# "vizicin" the original golden case used -- a bare product name with no
+# question form at all is now honestly UNKNOWN_OR_AMBIGUOUS (see
+# test_agent_v2_build40_router_taxonomy.py group D: "aspirin"/"vitamin" get
+# the exact same treatment, consistent with the spec's "honest ambiguity
+# over a false drug presumption" rule), since the router has no entity
+# lookup to confirm a bare unrecognized token is really a drug name. This
+# test's own purpose -- the Vinmec-mislabel correction, not router keyword
+# coverage -- is unaffected by adding an explicit question form.
 # ---------------------------------------------------------------------------
 
 
@@ -353,7 +363,7 @@ def test_scenario_6_bare_drug_name_query_keeps_canonical_answer_not_the_vinmec_f
     synthesis = ModelSynthesis(response="Theo Vinmec, vizicin la thuoc dang vien nen, ham luong 500mg.")
     orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
-    result = orchestrator.run(_request("vizicin"), tools=_tools())
+    result = orchestrator.run(_request("vizicin la thuoc gi"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED

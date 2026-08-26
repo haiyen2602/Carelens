@@ -292,7 +292,7 @@ def test_drug_information_query_calls_tools_and_completes():
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
     tools = _tools()
 
-    result = orchestrator.run(_request("Cho toi biet thong tin ve thuoc paracetamol"), tools=tools)
+    result = orchestrator.run(_request("Cong dung cua thuoc paracetamol la gi"), tools=tools)
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED
