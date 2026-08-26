@@ -69,7 +69,8 @@ too-blurry reasons. It is not a drug-confidence score. `REJECT` stops retrieval.
 
 Reranking is explicitly a baseline heuristic, not a learned confidence model:
 visual score + name corroboration (0.20) + strength (0.08) + ingredient (0.12),
-with a -1.0 hard-conflict penalty. These are labeled
+with a -1.0 penalty per hard conflict. Candidates with any hard conflict sort
+after every conflict-free candidate regardless of cosine range. These are labeled
 `deterministic-baseline-heuristic-v1`, not calibrated clinical thresholds.
 Components, conflicts, visual rank, and fused score remain inspectable.
 
@@ -122,7 +123,10 @@ identical and do not prove text-fusion improvement. Outcomes were five
 - False confident identification rate: `0.0` (0 high-evidence results).
 - High-evidence precision: `N/A` (no high-evidence results).
 - Ambiguous rate: `0.625`; insufficient-evidence rate: `0.375`.
-- End-to-end latency: P50 `620.5 ms`, P95 `1232.6 ms` on local CPU and
+- Post-review quality-gate benchmark on the same B-02 1000×1000 image improved
+  from `534.3 ms` with the Python pixel loop to `34.5 ms` using native Pillow
+  difference operations (single local runs; not a production SLA).
+- End-to-end latency after the fix: P50 `241.9 ms`, P95 `435.8 ms` on local CPU and
   Docker/Postgres; not a production SLA.
 - Generative-model calls: `0`.
 
@@ -133,10 +137,11 @@ unknown-image distribution exists. No unknown-rejection percentage is claimed.
 
 ## Failure coverage and tests
 
-Targeted local result: **21 passed**; Ruff lint and format pass. Coverage
+Targeted local result: **22 passed**; Ruff lint and format pass. Coverage
 includes quality reasons, normalization/strength parsing, product and ingredient
 matching, B-04 candidate generation/product deduplication, deterministic output
-and versioning, duplicate ambiguity, hard visual/text conflict, unknown text,
+and versioning, duplicate ambiguity, hard visual/text conflict (including a
+conflict-free candidate with lower cosine), unknown text,
 no OCR text, no forced Top-1, high-evidence corroboration, no medical facts, and
 no query persistence. The E2E pilot additionally covers controlled crop/blur.
 

@@ -14,7 +14,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from PIL import Image, ImageOps, ImageStat
+from PIL import Image, ImageChops, ImageOps, ImageStat
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -234,17 +234,18 @@ def inspect_image_quality(image: Image.Image, *, minimum_dimension: int = 64) ->
 
 
 def _mean_absolute_gradient(image: Image.Image) -> float:
-    pixels = image.load()
+    """Return a native Pillow edge-energy proxy without a Python pixel loop."""
+
     width, height = image.size
     if width < 2 or height < 2:
         return 0.0
-    total = 0
-    comparisons = 0
-    for y in range(height - 1):
-        for x in range(width - 1):
-            total += abs(pixels[x, y] - pixels[x + 1, y]) + abs(pixels[x, y] - pixels[x, y + 1])
-            comparisons += 2
-    return total / comparisons if comparisons else 0.0
+    horizontal = ImageChops.difference(image, ImageChops.offset(image, -1, 0))
+    vertical = ImageChops.difference(image, ImageChops.offset(image, 0, -1))
+    try:
+        return (ImageStat.Stat(horizontal).mean[0] + ImageStat.Stat(vertical).mean[0]) / 2
+    finally:
+        horizontal.close()
+        vertical.close()
 
 
 class DrugImageRecognizer:
@@ -369,8 +370,10 @@ def _rerank(
             + (0.08 if strength_match else 0.0)
             + (0.12 if ingredient_match else 0.0)
         )
-        if conflicts:
-            fused -= 1.0
+        # A hard conflict must not be able to outrank a conflict-free candidate,
+        # regardless of cosine range. The score remains explanatory only; the
+        # sort key below enforces that safety invariant.
+        fused -= float(len(conflicts))
         prepared.append(
             RecognitionCandidate(
                 rank=0,
@@ -385,7 +388,14 @@ def _rerank(
             )
         )
     ordered = sorted(
-        prepared, key=lambda item: (-item.fused_score, -item.visual_score, item.drug_product_id, item.drug_image_id)
+        prepared,
+        key=lambda item: (
+            bool(item.conflicts),
+            -item.fused_score,
+            -item.visual_score,
+            item.drug_product_id,
+            item.drug_image_id,
+        ),
     )
     return [RecognitionCandidate(**{**item.__dict__, "rank": index}) for index, item in enumerate(ordered, start=1)]
 

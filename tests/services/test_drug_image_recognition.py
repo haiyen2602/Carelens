@@ -21,11 +21,14 @@ from backend.services.drug_image_recognition import (
     QUALITY_REJECT,
     DrugImageRecognizer,
     OcrObservation,
+    ProductMetadata,
+    TextSignal,
+    _rerank,
     extract_structured_signals,
     inspect_image_quality,
     normalize_for_match,
 )
-from backend.services.drug_image_retrieval import EMBEDDING_DIMENSION, PREPROCESSING_VERSION
+from backend.services.drug_image_retrieval import EMBEDDING_DIMENSION, PREPROCESSING_VERSION, DrugImageSearchResult
 
 
 class FakeEmbedder:
@@ -214,6 +217,27 @@ def test_visual_text_conflict_never_becomes_high_evidence() -> None:
         image.close()
     assert result.outcome != HIGH_EVIDENCE_MATCH
     assert any("NAME_CONFLICT" in item.conflicts for item in result.candidates)
+
+
+def test_conflict_free_candidate_outranks_hard_conflict_regardless_of_visual_score() -> None:
+    visual = (
+        DrugImageSearchResult(1, "image-a", "product-a", 0.99, "test/image", "test-v1"),
+        DrugImageSearchResult(2, "image-b", "product-b", -0.90, "test/image", "test-v1"),
+    )
+    metadata = {
+        "product-a": ProductMetadata("product-a", "Paracetamol 500mg", "500 mg", None, ()),
+        "product-b": ProductMetadata("product-b", "Amoxicillin 500mg", "500 mg", None, ()),
+    }
+    signals = (
+        TextSignal("product_name_candidate", "Amoxicillin", "amoxicillin"),
+        TextSignal("strength_candidate", "500 mg", "500 mg"),
+    )
+
+    candidates = _rerank(visual, metadata, signals)
+
+    assert candidates[0].drug_product_id == "product-b"
+    assert candidates[0].conflicts == ()
+    assert candidates[1].conflicts == ("NAME_CONFLICT",)
 
 
 def test_duplicate_content_without_text_remains_ambiguous_not_forced_top_one() -> None:
