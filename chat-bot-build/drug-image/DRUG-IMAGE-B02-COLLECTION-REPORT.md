@@ -74,6 +74,8 @@ frozen artifact -> source mapping -> URL validation -> rights gate
 
 The single-worker downloader is bounded, rate-limited to one second, uses a 20-second timeout and three exponential-backoff retries. It rejects HTML masquerading as image, corrupt files, invalid dimensions/aspect ratio, known placeholder URL/checksum, and never crops/upscales. It emits `DOWNLOAD_FAILED`, `INVALID_IMAGE`, `SOURCE_REVIEW`, `SOURCE_REDISCOVERY`, and `DUPLICATE_REVIEW` queues. Large binaries stay under the existing ignored `data/` policy; only code/tests/report are versioned.
 
+The pre-merge hardening removes the former URL-to-raw-bytes cache. A duplicate URL keeps only lightweight manifest metadata and reuses the first persisted, checksum-verified WebP derivative by atomic file copy; source bytes are released after each individual candidate is validated. All artifact writes now use unique same-directory temporary files. A `.drug-image-collection.lock` OS lock enforces a single writer for the entire CLI artifact run and fails fast if another collector owns the same output directory.
+
 ## 6. Pilot, Bulk, and Validation Results
 
 Source-network pilot is **PASS**: 25/25 downloads validated, with a manual derivative spot-check. Bulk collection is **PASS**. Offline fixture pilot is also **PASS**.
@@ -139,14 +141,14 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
 python -m pytest --confcutdir=tests/data_v2 -p no:cacheprovider \
   tests/data_v2/test_drug_image_collection.py -q
 
-12 passed in 9.12s
+14 passed (targeted B-02 suite)
 ruff check --no-cache scripts/data_v2/drug_image_collection.py \
   tests/data_v2/test_drug_image_collection.py
 
 All checks passed
 ```
 
-Tests cover source mapping/exclusions, manifest fields, real local image I/O, corrupt image, placeholder handling, URL/checksum dedup, deterministic path, idempotency, resume, retry failed, and no-download dry-run. The isolated invocation avoids unrelated runtime secrets and the preinstalled `deepeval` plugin.
+Tests cover source mapping/exclusions, manifest fields, real local image I/O, corrupt image, placeholder handling, URL/checksum dedup, deterministic path, idempotency, resume, retry failed, interrupted-checkpoint manifest recovery, same-directory single-writer protection, and no-download dry-run. The duplicate-URL test verifies one normalization followed by persisted-derivative reuse, rather than retaining source bytes in RAM. The isolated invocation avoids unrelated runtime secrets and the preinstalled `deepeval` plugin.
 
 ## 10. Files Changed
 
@@ -154,9 +156,9 @@ Tests cover source mapping/exclusions, manifest fields, real local image I/O, co
 - `tests/data_v2/test_drug_image_collection.py`
 - `chat-bot-build/drug-image/DRUG-IMAGE-B02-COLLECTION-REPORT.md`
 
-## 11. B-03 Recommendation and Release Gate
+## 11. Pre-merge Fix and Release Gate
 
-Obtain written source approval covering internal dataset storage, derivative normalization, intended product use, retention, redistribution, and permitted rate/volume. Then explicitly authorize a 20–50 product source pilot, review samples/placeholders/duplicate groups, run bulk collection, and update this report with real coverage.
+The B-02 pre-merge review found and resolved the raw-image memory retention risk. No re-collection was needed: the frozen source contract, existing 3,543/3,545 derivatives, manifest semantics, and queues are unchanged. A representative fixture pilot now exercises duplicate URL reuse, restart after the 25-record checkpoint, idempotent resume, and writer contention. The completed 25-product source pilot and 3,545-product bulk result above remain the current collection evidence; no bulk run remains outstanding.
 
 | Gate | Result |
 |---|---|
@@ -174,6 +176,7 @@ Obtain written source approval covering internal dataset storage, derivative nor
 | NO DB / MIGRATION / CHATBOT / UI / DEPLOY | PASS |
 | REFERENCE DATA FOR B-04 | PARTIAL |
 | B-03 READY | YES — B-03 storage/schema work remains a separate task |
-| READY FOR PR | YES — technical pipeline plus explicit blocker is ready for review |
+| PRE-MERGE MEMORY / SINGLE-WRITER HARDENING | PASS — raw bytes are not retained across URLs; one writer per artifact directory |
+| READY FOR PR | YES — technical pipeline is ready for review |
 
 **Stop condition:** B-02 ends here. Do not merge/deploy, begin B-03/B-04, or alter Track A from this task.

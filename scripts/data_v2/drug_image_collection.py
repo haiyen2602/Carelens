@@ -13,10 +13,15 @@ import argparse
 import hashlib
 import io
 import json
+import os
+import shutil
+import tempfile
+import threading
 import time
 import uuid
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -46,6 +51,9 @@ REQUEST_TIMEOUT_SECONDS = 20
 MAX_RETRIES = 3
 DEFAULT_RATE_LIMIT_SECONDS = 1.0
 USER_AGENT = "VMEC-04-DrugImageCollector/1.0 (internal offline dataset)"
+LOCK_FILENAME = ".drug-image-collection.lock"
+_ACTIVE_OUTPUT_LOCKS: set[Path] = set()
+_ACTIVE_OUTPUT_LOCKS_GUARD = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -125,15 +133,104 @@ def read_jsonl(path: Path) -> Iterable[dict[str, Any]]:
                     raise ValueError(f"invalid JSONL at {path}:{line_number}") from error
 
 
+def unique_temporary_path(path: Path) -> Path:
+    """Create a same-directory temporary path that cannot collide with another writer."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(descriptor)
+    return Path(temporary_name)
+
+
 def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
     """Atomically write a deterministic JSONL artifact with one row per record."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_suffix(f"{path.suffix}.tmp")
-    with temporary_path.open("w", encoding="utf-8", newline="\n") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
-    temporary_path.replace(path)
+    temporary_path = unique_temporary_path(path)
+    try:
+        with temporary_path.open("w", encoding="utf-8", newline="\n") as handle:
+            for row in rows:
+                handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+        temporary_path.replace(path)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
+def write_text_atomically(path: Path, content: str) -> None:
+    """Replace one text artifact without exposing a partial file to a reader."""
+
+    temporary_path = unique_temporary_path(path)
+    try:
+        temporary_path.write_text(content, encoding="utf-8", newline="\n")
+        temporary_path.replace(path)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
+def copy_file_atomically(source: Path, target: Path) -> None:
+    """Copy a persisted derivative without retaining its bytes in Python memory."""
+
+    temporary_path = unique_temporary_path(target)
+    try:
+        shutil.copyfile(source, temporary_path)
+        temporary_path.replace(target)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
+class OutputDirectoryBusyError(RuntimeError):
+    """Raised when another B-02 collector owns an output artifact directory."""
+
+
+@contextmanager
+def output_directory_lock(output_dir: Path) -> Iterator[None]:
+    """Fail fast unless this process is the sole writer for ``output_dir``.
+
+    The marker can remain after a crash: operating-system byte-range locks are
+    released automatically when the owning process exits, so it is not a stale
+    lock condition. The in-process guard also makes accidental re-entry fail.
+    """
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = (output_dir / LOCK_FILENAME).resolve()
+    with _ACTIVE_OUTPUT_LOCKS_GUARD:
+        if lock_path in _ACTIVE_OUTPUT_LOCKS:
+            raise OutputDirectoryBusyError(f"another collector already owns {output_dir}")
+        _ACTIVE_OUTPUT_LOCKS.add(lock_path)
+
+    handle = None
+    try:
+        handle = lock_path.open("a+b")
+        if lock_path.stat().st_size == 0:
+            handle.write(b"\0")
+            handle.flush()
+        handle.seek(0)
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            raise OutputDirectoryBusyError(f"another collector already owns {output_dir}") from error
+        try:
+            yield
+        finally:
+            handle.seek(0)
+            if os.name == "nt":
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        if handle is not None:
+            handle.close()
+        with _ACTIVE_OUTPUT_LOCKS_GUARD:
+            _ACTIVE_OUTPUT_LOCKS.discard(lock_path)
 
 
 def image_record_id(candidate: SourceCandidate) -> str:
@@ -172,13 +269,13 @@ def extract_primary_image_url(raw_next_data: dict[str, Any]) -> tuple[str | None
     inspect page chrome, recommendations, logos, or banners.
     """
 
-    page_props = ((raw_next_data.get("props") or {}).get("pageProps") or {})
+    page_props = (raw_next_data.get("props") or {}).get("pageProps") or {}
     product = page_props.get("product") or {}
     url = value_url(product.get("primaryImage"))
     if url:
         return url, "product.primaryImage"
 
-    gallery = ((page_props.get("transformedProductData") or {}).get("galleryImgUrls") or [])
+    gallery = (page_props.get("transformedProductData") or {}).get("galleryImgUrls") or []
     if gallery:
         url = value_url(gallery[0])
         if url:
@@ -219,10 +316,7 @@ def load_source_candidates(
     become ``SOURCE_REVIEW``.  This preserves the B-01 boundaries.
     """
 
-    products = {
-        str(row["legacy_drug_id"]): str(row["id"])
-        for row in read_jsonl(canonical_dir / "drug_product.jsonl")
-    }
+    products = {str(row["legacy_drug_id"]): str(row["id"]) for row in read_jsonl(canonical_dir / "drug_product.jsonl")}
     candidates: list[SourceCandidate] = []
     queues: list[QueueItem] = []
 
@@ -289,7 +383,7 @@ def load_source_candidates(
             )
             continue
         url, _origin = extract_primary_image_url(raw_next_data)
-        product = (((raw_next_data.get("props") or {}).get("pageProps") or {}).get("product") or {})
+        product = ((raw_next_data.get("props") or {}).get("pageProps") or {}).get("product") or {}
         if not url:
             queues.append(
                 queue_item(
@@ -497,6 +591,34 @@ def collect(
     known_placeholder_urls: set[str] | None = None,
     known_placeholder_checksums: set[str] | None = None,
 ) -> tuple[list[ImageRecord], list[QueueItem], Counter[str]]:
+    """Collect under an exclusive writer lock for the target artifact directory."""
+
+    with output_directory_lock(output_dir):
+        return _collect(
+            candidates,
+            output_dir=output_dir,
+            allow_source_download=allow_source_download,
+            source_rights_status=source_rights_status,
+            resume=resume,
+            retry_failed=retry_failed,
+            downloader=downloader,
+            known_placeholder_urls=known_placeholder_urls,
+            known_placeholder_checksums=known_placeholder_checksums,
+        )
+
+
+def _collect(
+    candidates: list[SourceCandidate],
+    *,
+    output_dir: Path,
+    allow_source_download: bool,
+    source_rights_status: str | None,
+    resume: bool = False,
+    retry_failed: bool = False,
+    downloader: RequestsImageDownloader | None = None,
+    known_placeholder_urls: set[str] | None = None,
+    known_placeholder_checksums: set[str] | None = None,
+) -> tuple[list[ImageRecord], list[QueueItem], Counter[str]]:
     """Collect validated derivatives, or create a safe offline dry-run plan."""
 
     if allow_source_download and source_rights_status != "APPROVED":
@@ -510,7 +632,7 @@ def collect(
     stats: Counter[str] = Counter(TOTAL_ELIGIBLE=len(candidates))
     first_by_url: dict[str, str] = {}
     first_by_checksum: dict[str, str] = {}
-    bytes_by_url: dict[str, tuple[bytes, str | None, str | None]] = {}
+    processed_by_url: dict[str, ImageRecord] = {}
     downloader = downloader or RequestsImageDownloader()
     known_placeholder_urls = known_placeholder_urls or set()
     known_placeholder_checksums = known_placeholder_checksums or set()
@@ -520,6 +642,144 @@ def collect(
         write_jsonl(manifest_path, (asdict(record) for record in ordered))
         write_jsonl(failure_queue_path, (asdict(item) for item in queues))
 
+    def remember_processed_url(record: ImageRecord) -> None:
+        """Keep lightweight result metadata only after content was received."""
+
+        if record.image_checksum_sha256:
+            processed_by_url.setdefault(record.original_image_url, record)
+
+    def queue_invalid(
+        candidate: SourceCandidate,
+        reason: str,
+        *,
+        checksum: str | None = None,
+        mime_type: str | None = None,
+        file_size: int | None = None,
+        duplicate_url_of: str | None = None,
+    ) -> ImageRecord:
+        record = make_record(
+            candidate,
+            retrieved_at=utc_now(),
+            status="INVALID",
+            reason=reason,
+            mime_type=mime_type,
+            checksum=checksum,
+            file_size=file_size,
+            duplicate_url_of=duplicate_url_of,
+        )
+        queues.append(
+            queue_item(
+                drug_product_id=candidate.drug_product_id,
+                legacy_drug_id=candidate.legacy_drug_id,
+                source=candidate.source,
+                reason_code="INVALID_IMAGE",
+                detail=reason,
+                retryable=False,
+            )
+        )
+        stats["INVALID_IMAGE"] += 1
+        return record
+
+    def queue_placeholder(
+        candidate: SourceCandidate,
+        reason: str,
+        *,
+        checksum: str | None = None,
+        mime_type: str | None = None,
+        file_size: int | None = None,
+        duplicate_url_of: str | None = None,
+    ) -> ImageRecord:
+        record = make_record(
+            candidate,
+            retrieved_at=utc_now(),
+            status="REJECTED",
+            reason=reason,
+            mime_type=mime_type,
+            checksum=checksum,
+            file_size=file_size,
+            duplicate_url_of=duplicate_url_of,
+        )
+        queues.append(
+            queue_item(
+                drug_product_id=candidate.drug_product_id,
+                legacy_drug_id=candidate.legacy_drug_id,
+                source=candidate.source,
+                reason_code="INVALID_IMAGE",
+                detail=reason,
+                retryable=False,
+            )
+        )
+        stats["PLACEHOLDER_REJECTED"] += 1
+        return record
+
+    def record_duplicate_checksum(candidate: SourceCandidate, checksum: str) -> str | None:
+        duplicate_checksum_of = first_by_checksum.get(checksum)
+        if duplicate_checksum_of:
+            stats["DUPLICATE_CHECKSUM"] += 1
+            queues.append(
+                queue_item(
+                    drug_product_id=candidate.drug_product_id,
+                    legacy_drug_id=candidate.legacy_drug_id,
+                    source=candidate.source,
+                    reason_code="DUPLICATE_REVIEW",
+                    detail=f"same content checksum as {duplicate_checksum_of}; products are not merged",
+                    retryable=False,
+                )
+            )
+        else:
+            first_by_checksum[checksum] = image_record_id(candidate)
+        return duplicate_checksum_of
+
+    def reuse_persisted_url_result(
+        candidate: SourceCandidate, cached: ImageRecord, duplicate_url_of: str | None
+    ) -> ImageRecord | None:
+        """Reuse lightweight metadata and a persisted derivative for a duplicate URL."""
+
+        checksum = cached.image_checksum_sha256
+        if not checksum:
+            return None
+        stats["DOWNLOADED"] += 1
+        if cached.validation_status == "REJECTED":
+            return queue_placeholder(
+                candidate,
+                cached.validation_reason or "KNOWN_PLACEHOLDER_CHECKSUM",
+                checksum=checksum,
+                mime_type=cached.mime_type,
+                file_size=cached.file_size,
+                duplicate_url_of=duplicate_url_of,
+            )
+        if cached.validation_status == "INVALID":
+            return queue_invalid(
+                candidate,
+                cached.validation_reason or "INVALID_IMAGE",
+                checksum=checksum,
+                mime_type=cached.mime_type,
+                file_size=cached.file_size,
+                duplicate_url_of=duplicate_url_of,
+            )
+        if cached.validation_status != "VALIDATED" or not valid_existing_record(cached, output_dir):
+            stats["DOWNLOADED"] -= 1
+            return None
+        duplicate_checksum_of = record_duplicate_checksum(candidate, checksum)
+        relative_path = Path("images") / candidate.drug_product_id / "primary.webp"
+        copy_file_atomically(output_dir / str(cached.storage_relative_path), output_dir / relative_path)
+        stats["VALIDATED"] += 1
+        return make_record(
+            candidate,
+            retrieved_at=utc_now(),
+            status="VALIDATED",
+            reason=None,
+            mime_type=cached.mime_type,
+            checksum=checksum,
+            normalized_checksum=cached.normalized_checksum_sha256,
+            width=cached.width,
+            height=cached.height,
+            file_size=cached.file_size,
+            storage_relative_path=relative_path.as_posix(),
+            duplicate_url_of=duplicate_url_of,
+            duplicate_checksum_of=duplicate_checksum_of,
+        )
+
     for position, candidate in enumerate(candidates):
         if position and position % 25 == 0:
             checkpoint()
@@ -527,6 +787,10 @@ def collect(
         prior = existing.get(record_id)
         if prior and valid_existing_record(prior, output_dir):
             records[record_id] = prior
+            first_by_url.setdefault(candidate.original_image_url, record_id)
+            if prior.image_checksum_sha256:
+                first_by_checksum.setdefault(prior.image_checksum_sha256, record_id)
+            remember_processed_url(prior)
             stats["RESUMED"] += 1
             stats["VALIDATED"] += 1
             continue
@@ -542,10 +806,7 @@ def collect(
         stats["ATTEMPTED"] += 1
         url_reason = validate_source_url(candidate.original_image_url)
         if url_reason:
-            record = make_record(candidate, retrieved_at=utc_now(), status="INVALID", reason=url_reason)
-            records[record_id] = record
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="INVALID_IMAGE", detail=url_reason, retryable=False))
-            stats["INVALID_IMAGE"] += 1
+            records[record_id] = queue_invalid(candidate, url_reason)
             continue
         duplicate_url_of = first_by_url.get(candidate.original_image_url)
         if duplicate_url_of:
@@ -553,54 +814,105 @@ def collect(
         else:
             first_by_url[candidate.original_image_url] = record_id
         if candidate.original_image_url in known_placeholder_urls:
-            record = make_record(candidate, retrieved_at=utc_now(), status="REJECTED", reason="KNOWN_PLACEHOLDER_URL", duplicate_url_of=duplicate_url_of)
-            records[record_id] = record
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="INVALID_IMAGE", detail="KNOWN_PLACEHOLDER_URL", retryable=False))
-            stats["PLACEHOLDER_REJECTED"] += 1
+            records[record_id] = queue_placeholder(
+                candidate, "KNOWN_PLACEHOLDER_URL", duplicate_url_of=duplicate_url_of
+            )
             continue
         if not allow_source_download:
-            records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="PLANNED", reason="SOURCE_RIGHTS_REVIEW_REQUIRED", duplicate_url_of=duplicate_url_of)
+            records[record_id] = make_record(
+                candidate,
+                retrieved_at=utc_now(),
+                status="PLANNED",
+                reason="SOURCE_RIGHTS_REVIEW_REQUIRED",
+                duplicate_url_of=duplicate_url_of,
+            )
             stats["PLANNED"] += 1
             continue
 
-        if candidate.original_image_url in bytes_by_url:
-            content, content_type, download_reason = bytes_by_url[candidate.original_image_url]
-        else:
-            content, content_type, download_reason = downloader.fetch(candidate.original_image_url)
-            if content is not None:
-                bytes_by_url[candidate.original_image_url] = (content, content_type, download_reason)
+        cached = processed_by_url.get(candidate.original_image_url)
+        if cached:
+            reused = reuse_persisted_url_result(candidate, cached, duplicate_url_of)
+            if reused:
+                records[record_id] = reused
+                remember_processed_url(reused)
+                continue
+
+        content, content_type, download_reason = downloader.fetch(candidate.original_image_url)
         if download_reason or content is None:
             reason = download_reason or "HTTP_FAILURE"
-            records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="FAILED", reason=reason, mime_type=content_type, duplicate_url_of=duplicate_url_of)
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="DOWNLOAD_FAILED", detail=reason, retryable=reason in {"TIMEOUT", "HTTP_FAILURE"} or reason.startswith("HTTP_5")))
+            records[record_id] = make_record(
+                candidate,
+                retrieved_at=utc_now(),
+                status="FAILED",
+                reason=reason,
+                mime_type=content_type,
+                duplicate_url_of=duplicate_url_of,
+            )
+            queues.append(
+                queue_item(
+                    drug_product_id=candidate.drug_product_id,
+                    legacy_drug_id=candidate.legacy_drug_id,
+                    source=candidate.source,
+                    reason_code="DOWNLOAD_FAILED",
+                    detail=reason,
+                    retryable=reason in {"TIMEOUT", "HTTP_FAILURE"} or reason.startswith("HTTP_5"),
+                )
+            )
             stats[reason] += 1
             continue
         stats["DOWNLOADED"] += 1
         checksum = hashlib.sha256(content).hexdigest()
         if checksum in known_placeholder_checksums:
-            records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="REJECTED", reason="KNOWN_PLACEHOLDER_CHECKSUM", mime_type=content_type, checksum=checksum, file_size=len(content), duplicate_url_of=duplicate_url_of)
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="INVALID_IMAGE", detail="KNOWN_PLACEHOLDER_CHECKSUM", retryable=False))
-            stats["PLACEHOLDER_REJECTED"] += 1
+            records[record_id] = queue_placeholder(
+                candidate,
+                "KNOWN_PLACEHOLDER_CHECKSUM",
+                checksum=checksum,
+                mime_type=content_type,
+                file_size=len(content),
+                duplicate_url_of=duplicate_url_of,
+            )
+            remember_processed_url(records[record_id])
             continue
         image, mime_type, validation_reason = validate_image_bytes(content, content_type)
         if validation_reason or image is None:
-            records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="INVALID", reason=validation_reason, mime_type=mime_type, checksum=checksum, file_size=len(content), duplicate_url_of=duplicate_url_of)
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="INVALID_IMAGE", detail=validation_reason or "INVALID_IMAGE", retryable=False))
-            stats["INVALID_IMAGE"] += 1
+            records[record_id] = queue_invalid(
+                candidate,
+                validation_reason or "INVALID_IMAGE",
+                checksum=checksum,
+                mime_type=mime_type,
+                file_size=len(content),
+                duplicate_url_of=duplicate_url_of,
+            )
+            remember_processed_url(records[record_id])
             continue
         normalized = normalize_image(image)
         normalized_checksum = hashlib.sha256(normalized).hexdigest()
-        duplicate_checksum_of = first_by_checksum.get(checksum)
-        if duplicate_checksum_of:
-            stats["DUPLICATE_CHECKSUM"] += 1
-            queues.append(queue_item(drug_product_id=candidate.drug_product_id, legacy_drug_id=candidate.legacy_drug_id, source=candidate.source, reason_code="DUPLICATE_REVIEW", detail=f"same content checksum as {duplicate_checksum_of}; products are not merged", retryable=False))
-        else:
-            first_by_checksum[checksum] = record_id
+        duplicate_checksum_of = record_duplicate_checksum(candidate, checksum)
         relative_path = Path("images") / candidate.drug_product_id / "primary.webp"
         target_path = output_dir / relative_path
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_bytes(normalized)
-        records[record_id] = make_record(candidate, retrieved_at=utc_now(), status="VALIDATED", reason=None, mime_type=mime_type, checksum=checksum, normalized_checksum=normalized_checksum, width=image.width, height=image.height, file_size=len(content), storage_relative_path=relative_path.as_posix(), duplicate_url_of=duplicate_url_of, duplicate_checksum_of=duplicate_checksum_of)
+        temporary_path = unique_temporary_path(target_path)
+        try:
+            temporary_path.write_bytes(normalized)
+            temporary_path.replace(target_path)
+        except BaseException:
+            temporary_path.unlink(missing_ok=True)
+            raise
+        records[record_id] = make_record(
+            candidate,
+            retrieved_at=utc_now(),
+            status="VALIDATED",
+            reason=None,
+            mime_type=mime_type,
+            checksum=checksum,
+            normalized_checksum=normalized_checksum,
+            width=image.width,
+            height=image.height,
+            file_size=len(content),
+            storage_relative_path=relative_path.as_posix(),
+            duplicate_url_of=duplicate_url_of,
+            duplicate_checksum_of=duplicate_checksum_of,
+        )
+        remember_processed_url(records[record_id])
         stats["VALIDATED"] += 1
 
     checkpoint()
@@ -639,25 +951,29 @@ def main() -> int:
         candidates = [candidate for candidate in candidates if candidate.drug_product_id in selected]
     if args.limit is not None:
         candidates = candidates[: args.limit]
-    write_source_queues(args.output_dir, source_queues)
-    records, failures, stats = collect(
-        candidates,
-        output_dir=args.output_dir,
-        allow_source_download=args.allow_source_download,
-        source_rights_status=args.source_rights_status,
-        resume=args.resume,
-        retry_failed=args.retry_failed,
-    )
-    summary = {
-        "collection_version": COLLECTION_VERSION,
-        "generated_at": utc_now(),
-        "source_queue_counts": dict(Counter(item.reason_code for item in source_queues)),
-        "stats": dict(stats),
-        "record_count": len(records),
-        "failure_count": len(failures),
-        "dry_run": not args.allow_source_download,
-    }
-    (args.output_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with output_directory_lock(args.output_dir):
+        write_source_queues(args.output_dir, source_queues)
+        records, failures, stats = _collect(
+            candidates,
+            output_dir=args.output_dir,
+            allow_source_download=args.allow_source_download,
+            source_rights_status=args.source_rights_status,
+            resume=args.resume,
+            retry_failed=args.retry_failed,
+        )
+        summary = {
+            "collection_version": COLLECTION_VERSION,
+            "generated_at": utc_now(),
+            "source_queue_counts": dict(Counter(item.reason_code for item in source_queues)),
+            "stats": dict(stats),
+            "record_count": len(records),
+            "failure_count": len(failures),
+            "dry_run": not args.allow_source_download,
+        }
+        write_text_atomically(
+            args.output_dir / "summary.json",
+            json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        )
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
     return 0
 

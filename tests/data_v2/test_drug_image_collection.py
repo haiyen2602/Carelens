@@ -12,17 +12,23 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "data_v2"))
 
+import drug_image_collection as collection  # noqa: E402
 from drug_image_collection import (  # noqa: E402
     ImageRecord,
+    OutputDirectoryBusyError,
     SourceCandidate,
     collect,
     extract_primary_image_url,
+    load_existing_records,
     load_source_candidates,
+    output_directory_lock,
     validate_image_bytes,
 )
 
 
-def candidate(*, product_id: str = "product-1", url: str = "https://cdn.nhathuoclongchau.com.vn/a.jpg") -> SourceCandidate:
+def candidate(
+    *, product_id: str = "product-1", url: str = "https://cdn.nhathuoclongchau.com.vn/a.jpg"
+) -> SourceCandidate:
     return SourceCandidate(
         drug_product_id=product_id,
         legacy_drug_id=f"legacy-{product_id}",
@@ -55,21 +61,49 @@ class FakeDownloader:
         return self.responses[url]
 
 
+class InterruptAfterDownloader(FakeDownloader):
+    def __init__(self, responses: dict[str, tuple[bytes | None, str | None, str | None]], interrupt_after: int) -> None:
+        super().__init__(responses)
+        self.interrupt_after = interrupt_after
+
+    def fetch(self, url: str) -> tuple[bytes | None, str | None, str | None]:
+        if len(self.requests) >= self.interrupt_after:
+            raise RuntimeError("simulated collector interruption")
+        return super().fetch(url)
+
+
 def test_primary_image_prefers_declared_product_image() -> None:
     data = {
         "props": {
             "pageProps": {
                 "product": {"primaryImage": {"url": "https://cdn.nhathuoclongchau.com.vn/primary.jpg"}},
-                "transformedProductData": {"galleryImgUrls": [{"url": "https://cdn.nhathuoclongchau.com.vn/gallery.jpg"}]},
+                "transformedProductData": {
+                    "galleryImgUrls": [{"url": "https://cdn.nhathuoclongchau.com.vn/gallery.jpg"}]
+                },
             }
         }
     }
-    assert extract_primary_image_url(data) == ("https://cdn.nhathuoclongchau.com.vn/primary.jpg", "product.primaryImage")
+    assert extract_primary_image_url(data) == (
+        "https://cdn.nhathuoclongchau.com.vn/primary.jpg",
+        "product.primaryImage",
+    )
 
 
 def test_primary_image_uses_product_gallery_not_page_chrome() -> None:
-    data = {"props": {"pageProps": {"product": {}, "transformedProductData": {"galleryImgUrls": [{"url": "https://cdn.nhathuoclongchau.com.vn/gallery.jpg"}]}}}}
-    assert extract_primary_image_url(data) == ("https://cdn.nhathuoclongchau.com.vn/gallery.jpg", "transformedProductData.galleryImgUrls[0]")
+    data = {
+        "props": {
+            "pageProps": {
+                "product": {},
+                "transformedProductData": {
+                    "galleryImgUrls": [{"url": "https://cdn.nhathuoclongchau.com.vn/gallery.jpg"}]
+                },
+            }
+        }
+    }
+    assert extract_primary_image_url(data) == (
+        "https://cdn.nhathuoclongchau.com.vn/gallery.jpg",
+        "transformedProductData.galleryImgUrls[0]",
+    )
 
 
 def test_html_disguised_as_image_is_rejected() -> None:
@@ -79,10 +113,21 @@ def test_html_disguised_as_image_is_rejected() -> None:
     assert reason == "CORRUPT_IMAGE"
 
 
-def test_collection_deduplicates_url_and_records_checksum_review(tmp_path: Path) -> None:
+def test_duplicate_url_reuses_persisted_derivative_without_raw_bytes_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     url = "https://cdn.nhathuoclongchau.com.vn/shared.jpg"
     payload = image_bytes()
     downloader = FakeDownloader({url: (payload, "image/png", None)})
+    normalization_calls = 0
+    original_normalize = collection.normalize_image
+
+    def tracked_normalize(image: Image.Image) -> bytes:
+        nonlocal normalization_calls
+        normalization_calls += 1
+        return original_normalize(image)
+
+    monkeypatch.setattr(collection, "normalize_image", tracked_normalize)
     records, queues, stats = collect(
         [candidate(product_id="product-1", url=url), candidate(product_id="product-2", url=url)],
         output_dir=tmp_path,
@@ -91,11 +136,15 @@ def test_collection_deduplicates_url_and_records_checksum_review(tmp_path: Path)
         downloader=downloader,  # type: ignore[arg-type]
     )
     assert downloader.requests == [url]
+    assert normalization_calls == 1
     assert stats["DUPLICATE_URL"] == 1
     assert stats["DUPLICATE_CHECKSUM"] == 1
     assert all(record.validation_status == "VALIDATED" for record in records)
     assert records[1].duplicate_url_of == records[0].image_record_id
     assert records[1].duplicate_checksum_of == records[0].image_record_id
+    assert (tmp_path / str(records[0].storage_relative_path)).read_bytes() == (
+        tmp_path / str(records[1].storage_relative_path)
+    ).read_bytes()
     assert any(item.reason_code == "DUPLICATE_REVIEW" for item in queues)
 
 
@@ -105,7 +154,14 @@ def test_resume_does_not_download_a_valid_existing_image(tmp_path: Path) -> None
     first = FakeDownloader({item.original_image_url: (payload, "image/png", None)})
     collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", downloader=first)  # type: ignore[arg-type]
     second = FakeDownloader({item.original_image_url: (None, None, "HTTP_FAILURE")})
-    records, _queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, downloader=second)  # type: ignore[arg-type]
+    records, _queues, stats = collect(
+        [item],
+        output_dir=tmp_path,
+        allow_source_download=True,
+        source_rights_status="APPROVED",
+        resume=True,
+        downloader=second,
+    )  # type: ignore[arg-type]
     assert second.requests == []
     assert stats["RESUMED"] == 1
     assert records[0].validation_status == "VALIDATED"
@@ -116,12 +172,27 @@ def test_failed_record_retries_only_when_requested(tmp_path: Path) -> None:
     failed = FakeDownloader({item.original_image_url: (None, None, "HTTP_FAILURE")})
     collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", downloader=failed)  # type: ignore[arg-type]
     skipped = FakeDownloader({item.original_image_url: (image_bytes(), "image/png", None)})
-    records, queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, downloader=skipped)  # type: ignore[arg-type]
+    records, queues, stats = collect(
+        [item],
+        output_dir=tmp_path,
+        allow_source_download=True,
+        source_rights_status="APPROVED",
+        resume=True,
+        downloader=skipped,
+    )  # type: ignore[arg-type]
     assert skipped.requests == []
     assert stats["SKIPPED_FAILED"] == 1
     assert [queue.reason_code for queue in queues] == ["DOWNLOAD_FAILED"]
     retried = FakeDownloader({item.original_image_url: (image_bytes(), "image/png", None)})
-    records, _queues, stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", resume=True, retry_failed=True, downloader=retried)  # type: ignore[arg-type]
+    records, _queues, stats = collect(
+        [item],
+        output_dir=tmp_path,
+        allow_source_download=True,
+        source_rights_status="APPROVED",
+        resume=True,
+        retry_failed=True,
+        downloader=retried,
+    )  # type: ignore[arg-type]
     assert retried.requests == [item.original_image_url]
     assert stats["VALIDATED"] == 1
     assert records[0].validation_status == "VALIDATED"
@@ -130,7 +201,9 @@ def test_failed_record_retries_only_when_requested(tmp_path: Path) -> None:
 def test_dry_run_never_uses_downloader_and_marks_rights_review(tmp_path: Path) -> None:
     item = candidate()
     downloader = FakeDownloader({item.original_image_url: (image_bytes(), "image/png", None)})
-    records, _queues, stats = collect([item], output_dir=tmp_path, allow_source_download=False, source_rights_status=None, downloader=downloader)  # type: ignore[arg-type]
+    records, _queues, stats = collect(
+        [item], output_dir=tmp_path, allow_source_download=False, source_rights_status=None, downloader=downloader
+    )  # type: ignore[arg-type]
     assert downloader.requests == []
     assert stats["PLANNED"] == 1
     assert records[0].validation_reason == "SOURCE_RIGHTS_REVIEW_REQUIRED"
@@ -144,6 +217,46 @@ def test_dry_run_resume_keeps_one_planned_record(tmp_path: Path) -> None:
     )
     assert len(records) == 1
     assert stats["RESUMED_PLANNED"] == 1
+
+
+def test_interrupted_checkpoint_recovers_full_manifest_on_resume(tmp_path: Path) -> None:
+    payload = image_bytes()
+    candidates = [
+        candidate(product_id=f"product-{index}", url=f"https://cdn.nhathuoclongchau.com.vn/{index}.jpg")
+        for index in range(30)
+    ]
+    responses = {item.original_image_url: (payload, "image/png", None) for item in candidates}
+    interrupted = InterruptAfterDownloader(responses, interrupt_after=25)
+    with pytest.raises(RuntimeError, match="simulated collector interruption"):
+        collect(
+            candidates,
+            output_dir=tmp_path,
+            allow_source_download=True,
+            source_rights_status="APPROVED",
+            downloader=interrupted,
+        )  # type: ignore[arg-type]
+
+    assert len(load_existing_records(tmp_path / "manifest.jsonl")) == 25
+    resumed = FakeDownloader(responses)
+    records, _queues, stats = collect(
+        candidates,
+        output_dir=tmp_path,
+        allow_source_download=True,
+        source_rights_status="APPROVED",
+        resume=True,
+        downloader=resumed,  # type: ignore[arg-type]
+    )
+    assert len(records) == 30
+    assert len(load_existing_records(tmp_path / "manifest.jsonl")) == 30
+    assert len({record.image_record_id for record in records}) == 30
+    assert stats["RESUMED"] == 25
+    assert resumed.requests == [item.original_image_url for item in candidates[25:]]
+
+
+def test_same_directory_collection_fails_fast_when_writer_is_active(tmp_path: Path) -> None:
+    with output_directory_lock(tmp_path):
+        with pytest.raises(OutputDirectoryBusyError, match="already owns"):
+            collect([candidate()], output_dir=tmp_path, allow_source_download=False, source_rights_status=None)
 
 
 def test_known_placeholder_url_is_rejected_without_downloading(tmp_path: Path) -> None:
@@ -172,9 +285,14 @@ def test_normalized_checksum_matches_persisted_derivative(tmp_path: Path) -> Non
     item = candidate()
     payload = image_bytes()
     downloader = FakeDownloader({item.original_image_url: (payload, "image/png", None)})
-    records, _queues, _stats = collect([item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", downloader=downloader)  # type: ignore[arg-type]
+    records, _queues, _stats = collect(
+        [item], output_dir=tmp_path, allow_source_download=True, source_rights_status="APPROVED", downloader=downloader
+    )  # type: ignore[arg-type]
     record: ImageRecord = records[0]
-    assert hashlib.sha256((tmp_path / str(record.storage_relative_path)).read_bytes()).hexdigest() == record.normalized_checksum_sha256
+    assert (
+        hashlib.sha256((tmp_path / str(record.storage_relative_path)).read_bytes()).hexdigest()
+        == record.normalized_checksum_sha256
+    )
     assert set(record.__dataclass_fields__) <= set(record.__dict__)
     assert record.storage_relative_path == "images/product-1/primary.webp"
 
