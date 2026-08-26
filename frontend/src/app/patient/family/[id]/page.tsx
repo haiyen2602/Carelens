@@ -57,8 +57,14 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
   const xacNhan = async (trangThai: "TAKEN" | "MISSED") => {
     setDangXuLy(true);
     try {
-      await updateDoseStatus(dose.id, trangThai, accessToken);
-      toast.success(trangThai === "TAKEN" ? "Đã xác nhận: đã uống" : "Đã xác nhận: bỏ liều");
+      const ketQua = await updateDoseStatus(dose.id, trangThai, accessToken);
+      // Bao ngay diem thuong tren chinh toast xac nhan (yeu cau UX
+      // 2026-08-26) - benh nhan/nguoi than khong phai mo rieng trang
+      // Diem thuong de biet vua duoc cong bao nhieu.
+      const hauTo = ketQua.pointsAwarded > 0 ? ` · +${ketQua.pointsAwarded} điểm` : "";
+      toast.success(
+        (trangThai === "TAKEN" ? "Đã xác nhận: đã uống" : "Đã xác nhận: bỏ liều") + hauTo,
+      );
       onXong();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không xác nhận được");
@@ -93,7 +99,6 @@ function AnhCanDuyet({ dose, onXong }: { dose: Dose; onXong: () => void }) {
       {!dangTai && lanCuoi && (
         <div className="space-y-2">
           {lanCuoi.hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photoVerificationImageUrl(lanCuoi.id)}
               alt={`Ảnh chụp lần ${lanCuoi.attempt}`}

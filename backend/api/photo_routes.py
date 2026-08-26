@@ -165,6 +165,7 @@ def _to_out(row: PhotoVerification) -> PhotoVerificationOut:
         message=row.thong_bao,
         created_at=row.created_at.isoformat(),
         has_image=bool(row.image_path and Path(row.image_path).is_file()),
+        points_awarded=row.points_awarded,
     )
 
 

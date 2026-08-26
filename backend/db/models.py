@@ -1539,6 +1539,15 @@ class PhotoVerification(Base):
 
     image_path: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    # So diem thuong VUA cong khi anh nay duoc xac nhan KHOP (THEM
+    # 2026-08-26, migration 0051) - xem backend/services/reward_ledger.py
+    # ::award_dose_on_time. NULL o moi dong khac (lech/khong_xac_minh_duoc/
+    # loi_he_thong/do_tin_cay_thap/AWAITING_CAREGIVER), khong phai 0: NULL
+    # nghia la "khong ap dung", 0 se lam FE tuong nham la co xet nhung
+    # khong duoc gi. Cho GET /photo-verifications/{id} (patient/page.tsx
+    # poll ket qua) bao ngay "+N diem" ma benh nhan khong phai mo rieng
+    # trang Diem thuong.
+    points_awarded: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class Account(Base):
@@ -1890,5 +1899,102 @@ class AgentGoldenRunCase(Base):
     __table_args__ = (
         Index("ix_agent_golden_run_case_run_id", "run_id"),
         Index("ix_agent_golden_run_case_category_passed", "category", "passed"),
+    )
+
+
+class PatientRewardAccount(Base):
+    """So diem thuong cua 1 benh nhan (THEM 2026-08-25, migration 0049).
+
+    Hai loai diem TACH RIENG, khong suy ra duoc tu nhau:
+      - `lifetime_points` (LP): CHI TANG, khong bao gio giam - dung de xet
+        Rank tron doi (Dong/Bac/Vang/Kim Cuong). Doi qua KHONG dung toi cot
+        nay, nen benh nhan da len Rank thi giu Rank vinh vien (yeu cau
+        nghiep vu ro rang trong reward/reward.md).
+      - `spendable_points` (SP): tang cung luc voi LP khi duoc thuong, nhung
+        GIAM khi doi qua. Day la so du that su tieu duoc.
+
+    Moi lan cong/tru deu ghi kem 1 dong PatientRewardEvent - bang nay chi la
+    ban TONG HOP de doc nhanh (khong phai phai cong don ca ledger moi biet so
+    du). Hai bang phai luon duoc ghi trong CUNG 1 transaction.
+
+    `patient_id` la khoa chinh (moi benh nhan dung 1 dong duy nhat) va la
+    string tu do, KHONG dat FK that - cung ly do da giai thich o
+    CaregiverLink/Patient o tren."""
+
+    __tablename__ = "patient_reward_account"
+
+    patient_id: Mapped[str] = mapped_column(String, primary_key=True)
+    lifetime_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    spendable_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class PatientRewardEvent(Base):
+    """Ledger append-only: MOI lan cong/tru diem la 1 dong (THEM 2026-08-25,
+    migration 0049). Vua la lich su hien cho benh nhan xem, vua la co che
+    CHONG CONG TRUNG.
+
+    `occurred_on` la NGAY (local, khong phai timestamp) ma su kien duoc tinh
+    cong - cung voi UniqueConstraint ben duoi, no bien "cong diem 1 lan/ngay"
+    thanh rang buoc o tang DB thay vi chi la if/else o tang service: goi
+    award_* nhieu lan trong cung 1 ngay chi co dong dau tien duoc ghi, cac
+    lan sau bi DB tu choi (IntegrityError -> service nuot va bo qua).
+
+    Rieng event_type="REDEEM" (doi qua) KHONG chiu rang buoc 1-lan/ngay do:
+    benh nhan co the doi nhieu mon khac nhau trong cung 1 ngay. De van chan
+    duoc "doi trung 1 mon", REDEEM dung `item_id` (cot rieng ben duoi) -
+    xem reward_ledger.redeem_item(). Vi vay `occurred_on` cua REDEEM van
+    duoc ghi (de hien lich su theo ngay) nhung khong tham gia khoa duy nhat
+    -> UniqueConstraint chi ap dung cho cac loai theo-ngay, va de lam duoc
+    the ma van dung 1 constraint, REDEEM ghi `occurred_on` = NULL.
+
+    `points_delta` am khi tru (doi qua), duong khi cong. `item_id` chi co
+    gia tri voi REDEEM, NULL voi moi loai khac.
+
+    `patient_id` la string tu do, KHONG dat FK that - cung ly do da giai
+    thich o CaregiverLink/Patient o tren."""
+
+    __tablename__ = "patient_reward_event"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    # DOSE_ON_TIME | DAILY_SURVEY | WEEKLY_STREAK | MONTHLY_STREAK | REDEEM
+    event_type: Mapped[str] = mapped_column(String, nullable=False)
+    points_delta: Mapped[int] = mapped_column(Integer, nullable=False)
+    # NULL voi REDEEM (xem docstring) - co gia tri voi cac loai cong theo ngay.
+    occurred_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Chi co gia tri voi REDEEM: slug mon qua trong reward_catalog.py.
+    item_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Nhan hien thi tren lich su, chot lai TAI THOI DIEM ghi (vd ten mon qua)
+    # - gia/ten trong catalog co the doi ve sau, lich su cu phai giu nguyen.
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        # Postgres coi moi NULL la khac nhau -> cac dong REDEEM (occurred_on
+        # NULL) khong bao gio dung nhau o index nay, dung nhu y muon.
+        #
+        # LOAI TRU DOSE_ON_TIME (migration 0050): tu 2026-08-26 diem uong
+        # thuoc cong theo TUNG LIEU nen 1 ngay co nhieu dong. Cac loai con
+        # lai VAN phai 1-lan-moi-ngay va van duoc DB chan o day. Rieng
+        # DOSE_ON_TIME chong cong trung o tang service bang phep tru
+        # "dang le duoc" - "da cong hom nay" (reward_ledger).
+        Index(
+            "uq_patient_reward_event_daily_non_dose",
+            "patient_id",
+            "event_type",
+            "occurred_on",
+            unique=True,
+            # Khai cho CA HAI dialect: prod chay Postgres, nhung test
+            # (tests/test_reward_ledger.py) dung SQLite in-memory. Neu chi
+            # co postgresql_where, SQLAlchemy bo qua no tren SQLite va tao
+            # index unique TOAN PHAN -> chan mat dong DOSE_ON_TIME thu hai
+            # trong ngay, test do nhung prod xanh (hoac nguoc lai).
+            postgresql_where=text("event_type <> 'DOSE_ON_TIME'"),
+            sqlite_where=text("event_type <> 'DOSE_ON_TIME'"),
+        ),
+        Index("ix_patient_reward_event_patient_created", "patient_id", "created_at"),
+        Index("ix_patient_reward_event_patient_item", "patient_id", "item_id"),
     )
 

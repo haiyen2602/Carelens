@@ -18,6 +18,11 @@ export type Dose = {
   windowEnd: string;
   status: string; // PENDING|TAKEN|MISSED|DELAYED|CANCELLED|AWAITING_CAREGIVER
   expectedItems: DoseItem[];
+  // >0 CHI tren ket qua tra ve tu updateDoseStatus() khi lan goi do VUA
+  // cong diem thuong (backend/api/dose_routes.py::_dose_summary). GET
+  // /doses (danh sach, listDoses()) luon la 0 - dung "gia tri co san",
+  // khong optional, de khoi phai ?? 0 o moi noi doc.
+  pointsAwarded: number;
 };
 
 // dang_xu_ly khong nam trong 3 gia tri matcher.KetQua (khop/lech/khong_xac_minh_duoc)
@@ -42,6 +47,10 @@ export type PhotoVerification = {
   message: string;
   createdAt: string;
   hasImage: boolean;
+  // >0 khi anh nay VUA duoc xac nhan khop va cong diem thuong. null khi
+  // khong ap dung (chua xong/khong khop/tre...) - phan biet voi 0 "co xet
+  // nhung khong duoc gi" (vd anh nay khong phai lieu cuoi trong ngay).
+  pointsAwarded: number | null;
 };
 
 type DoseApiItem = {
@@ -58,6 +67,7 @@ type DoseApiItem = {
     dang_thuoc?: string;
     duong_dung?: string;
   }[];
+  points_awarded?: number;
 };
 
 type PhotoVerificationApi = {
@@ -74,6 +84,7 @@ type PhotoVerificationApi = {
   message: string;
   created_at: string;
   has_image: boolean;
+  points_awarded: number | null;
 };
 
 // Nhan hien thi cho trang thai lieu THAT (backend/db/models.py::DoseEvent) -
@@ -130,6 +141,7 @@ function toDose(d: DoseApiItem): Dose {
       dangThuoc: it.dang_thuoc,
       duongDung: it.duong_dung,
     })),
+    pointsAwarded: d.points_awarded ?? 0,
   };
 }
 
@@ -148,6 +160,7 @@ function toPhotoVerification(p: PhotoVerificationApi): PhotoVerification {
     message: p.message,
     createdAt: p.created_at,
     hasImage: p.has_image,
+    pointsAwarded: p.points_awarded,
   };
 }
 

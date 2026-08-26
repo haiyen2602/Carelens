@@ -24,6 +24,7 @@ from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import CaregiverLink, DoseEvent, Patient
 from backend.models.schemas import DoseStatusUpdateRequest, DoseSummary
+from backend.services import reward_ledger
 from backend.services.prescription.errors import VmecError
 from backend.services.scheduling.runtime_adapter import (
     DoseRuntimeGroup,
@@ -63,7 +64,7 @@ def list_doses(
     ]
 
 
-def _dose_summary(r: DoseEvent) -> DoseSummary:
+def _dose_summary(r: DoseEvent, *, points_awarded: int = 0) -> DoseSummary:
     return DoseSummary(
         id=r.id,
         prescription_id=r.prescription_id,
@@ -72,6 +73,10 @@ def _dose_summary(r: DoseEvent) -> DoseSummary:
         window_end=r.window_end.isoformat(),
         status=r.status,
         expected_items=r.expected_items,
+        # >0 chi khi PATCH nay VUA cong diem (xem _thuong_diem_neu_uong_du
+        # ben duoi) - GET /doses (danh sach) khong truyen tham so nay nen
+        # luon la 0, dung nhu y muon (khong phai "tong diem cua lieu").
+        points_awarded=points_awarded,
     )
 
 
@@ -139,9 +144,34 @@ def update_dose_status(
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền sửa liều này")
 
     dose.status = body.status
+    diem = _thuong_diem_neu_uong_du(db, patient_id=dose.patient_id, scheduled_at=dose.scheduled_at)
     db.commit()
     db.refresh(dose)
-    return _dose_summary(dose)
+    return _dose_summary(dose, points_awarded=diem)
+
+
+def _thuong_diem_neu_uong_du(db: Session, *, patient_id: str, scheduled_at: datetime) -> int:
+    """Cong diem thuong khi benh nhan da uong DU thuoc cua ngay (BUILD-reward).
+
+    Goi sau moi lan cap nhat trang thai, KHONG chi khi status=TAKEN: lieu
+    cuoi cung trong ngay co the duoc chot qua mot duong khac, va ham ben
+    duoi tu kiem tra dieu kien roi bo qua neu chua du - goi thua khong ton
+    gi ngoai mot cau SELECT.
+
+    `db.flush()` la BAT BUOC: SessionLocal dat autoflush=False
+    (backend/db/base.py), nen thay doi `dose.status` o tren van con nam
+    trong bo nho phien - khong flush thi cau SELECT dem lieu trong ngay se
+    doc ra trang thai CU va khong bao gio thay du dieu kien.
+
+    Diem tinh theo NGAY CUA LIEU (gio Viet Nam), khong phai ngay hien tai:
+    benh nhan xac nhan lieu 23:50 hom truoc luc 00:10 hom sau van phai duoc
+    tinh cho dung ngay cua lieu do.
+
+    Tra ve so diem VUA cong (0 neu khong co) de nguoi goi dua vao response,
+    benh nhan thay ngay "+N diem" ma khong phai mo trang Diem thuong."""
+    db.flush()
+    ngay_cua_lieu = reward_ledger.ngay_vn(scheduled_at)
+    return reward_ledger.award_dose_on_time(db, patient_id, ngay_cua_lieu)
 
 
 def _update_v2_dose_status(
@@ -181,6 +211,14 @@ def _update_v2_dose_status(
             actor_type=current_user.role.upper(),
             actor_id=current_user.id,
         )
+        # CHUA cong diem thuong o nhanh v2 - CO Y, khong phai quen.
+        # reward_ledger.da_uong_du_thuoc_trong_ngay() truy van bang
+        # `dose_event` (legacy); o che do v2 lieu nam ben `dose_occurrence`
+        # nen goi award_dose_on_time() o day se luon thay "ngay khong co
+        # lieu nao" va tra ve False - mot hook nhin thi tuong da xu ly ma
+        # thuc te khong bao gio cong duoc diem, con te hon la khong co.
+        # Khi nhom bat dose_runtime_mode=v2 that: phai sua ledger doc
+        # ca dose_occurrence TRUOC, roi moi gan hook vao day.
         db.commit()
     except VmecError as exc:
         db.rollback()

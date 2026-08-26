@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { CapySheet } from "@/components/capy/capy-ui";
 import { DoseCallOverlay } from "@/components/capy/dose-call-overlay";
 import { NudgeBanner } from "@/components/capy/nudge-banner";
+import { PointsProgress } from "@/components/capy/points-progress";
+import { RankBadge } from "@/components/capy/rank-badge";
 import { useAuth } from "@/lib/auth";
 import { daNhac, danhDauDaNhac } from "@/lib/dose-reminder-log";
 import { gioHienThi, listDoses } from "@/lib/doses";
@@ -32,6 +34,7 @@ import {
 } from "@/lib/notifications";
 import { useProto } from "@/lib/proto-store";
 import { hasPushSubscription, subscribeToPush } from "@/lib/push";
+import { getRewardSummary, type RewardSummary } from "@/lib/rewards";
 
 // Khoang cach giua 2 lan poll GET /nudges/unseen (backend/api/nudge_routes.py)
 // - repo chua co ha tang realtime (WebSocket/SSE), 8s la do tre chap nhan
@@ -85,6 +88,10 @@ export function CapyShell({ children }: { children: ReactNode }) {
   // Da dang ky Web Push tren may nay chua - quyet dinh CO tu ban
   // Notification he thong o day hay khong (xem effect ban thong bao ben duoi).
   const [daDangKyPush, setDaDangKyPush] = useState(false);
+  // Rank + diem thuong de hien huy hieu canh ten va thanh diem trong sheet.
+  // null = chua tai xong (hoac tai loi) -> khong ve huy hieu, KHONG doan bua
+  // Rank Dong: hien nham rank thap hon that su thi te hon la chua hien gi.
+  const [reward, setReward] = useState<RewardSummary | null>(null);
   const activeBanner = bannerQueue[0] ?? null;
 
   useEffect(() => {
@@ -99,6 +106,26 @@ export function CapyShell({ children }: { children: ReactNode }) {
     // gan lien voi 1 click that (nut "Bat thong bao" trong sheet tai khoan
     // ben duoi) thi Chromium moi hien popup day du.
   }, []);
+
+  // Tai lai moi khi doi tab VA moi khi mo sheet tai khoan: diem doi sau khi
+  // benh nhan xac nhan lieu hoac tra loi khao sat (deu o tab khac), nen doc
+  // 1 lan luc mount se hien so cu. `pathname` doi la du de bat het cac luong
+  // do ma khong can polling dinh ky.
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    getRewardSummary(accessToken)
+      .then((s) => {
+        if (!cancelled) setReward(s);
+      })
+      .catch(() => {
+        // Diem thuong la tinh nang phu - hong thi an huy hieu di, khong bao
+        // loi de khong lam phien luong uong thuoc.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, pathname, sheetOpen]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -250,8 +277,20 @@ export function CapyShell({ children }: { children: ReactNode }) {
             aria-label="Tài khoản của bạn"
             className="flex items-center gap-2 rounded-full bg-white py-[5px] pl-[6px] pr-3 transition-colors hover:bg-[#F4F7FC]"
           >
-            <span className="font-display grid h-[30px] w-[30px] place-items-center rounded-full bg-[#CFE6FF] text-[14px] font-bold text-[#16386E]">
-              {chuDau}
+            {/* Huy hieu Rank de len goc duoi-phai avatar chu cai (khong thay
+                the avatar) - `-ml-2` keo no chong len de khong lam nut dai ra. */}
+            <span className="relative flex items-end">
+              <span className="font-display grid h-[30px] w-[30px] place-items-center rounded-full bg-[#CFE6FF] text-[14px] font-bold text-[#16386E]">
+                {chuDau}
+              </span>
+              {reward && (
+                <RankBadge
+                  rank={reward.rank}
+                  label={reward.rankLabel}
+                  size={16}
+                  className="-ml-2"
+                />
+              )}
             </span>
             <span className="text-[12px] font-semibold text-[#16386E]">{tenNgan}</span>
             <span className="font-mono text-[10px] text-[#62708A]">▾</span>
@@ -298,22 +337,56 @@ export function CapyShell({ children }: { children: ReactNode }) {
         {sheetOpen && (
           <CapySheet onClose={() => setSheetOpen(false)}>
             <div className="flex items-center gap-3.5">
-              <span className="font-display grid h-14 w-14 place-items-center rounded-[20px] bg-[#CFE6FF] text-[22px] font-bold text-[#16386E]">
-                {chuDau}
+              <span className="relative flex shrink-0 items-end">
+                <span className="font-display grid h-14 w-14 place-items-center rounded-[20px] bg-[#CFE6FF] text-[22px] font-bold text-[#16386E]">
+                  {chuDau}
+                </span>
+                {reward && (
+                  <RankBadge
+                    rank={reward.rank}
+                    label={reward.rankLabel}
+                    size={26}
+                    className="-ml-3"
+                  />
+                )}
               </span>
-              <span className="block min-w-0">
+              <span className="block min-w-0 flex-1">
                 <span className="font-display block text-[20px] font-extrabold text-[#16386E]">
                   {ten}
                 </span>
-                {user?.patient_id && (
-                  <span className="font-mono block text-[11px] text-[#62708A]">
-                    {user.patient_id}
+                {reward ? (
+                  <span className="mt-0.5 block text-[12px] font-semibold text-[#8A6516]">
+                    Rank {reward.rankLabel}
                   </span>
+                ) : (
+                  user?.patient_id && (
+                    <span className="font-mono block text-[11px] text-[#62708A]">
+                      {user.patient_id}
+                    </span>
+                  )
                 )}
               </span>
             </div>
 
+            {/* Thanh diem ngay duoi ten - dung yeu cau "ben duoi la thanh diem". */}
+            {reward && (
+              <div className="mt-3">
+                <PointsProgress summary={reward} />
+              </div>
+            )}
+
             <div className="mt-[18px] flex flex-col gap-2">
+              <Link
+                href="/patient/rewards"
+                onClick={() => setSheetOpen(false)}
+                className="flex min-h-[54px] items-center gap-3 rounded-[18px] bg-[#F4F7FC] px-4 text-[14.5px] font-semibold text-[#1B2A44] transition-colors hover:bg-[#EDF0F6]"
+              >
+                <span aria-hidden="true" className="text-[18px]">
+                  🎁
+                </span>
+                Điểm thưởng &amp; đổi quà
+                <span className="font-mono ml-auto text-[12px] text-[#62708A]">›</span>
+              </Link>
               <Link
                 href="/patient/settings"
                 onClick={() => setSheetOpen(false)}

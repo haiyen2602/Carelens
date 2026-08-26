@@ -51,7 +51,6 @@ function MotLanChup({ v }: { v: PhotoVerification }) {
       </div>
 
       {v.hasImage && !loiAnh ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photoVerificationImageUrl(v.id)}
           alt={`Ảnh chụp lần ${v.attempt}`}

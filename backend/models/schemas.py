@@ -460,6 +460,11 @@ class DoseSummary(BaseModel):
     window_end: str
     status: str
     expected_items: list[dict]
+    # >0 CHI tren response cua PATCH /doses/{id} khi lan goi NAY vua cong
+    # diem thuong (backend/api/dose_routes.py::_dose_summary) - THEM
+    # 2026-08-26 de FE bao ngay "+N diem" (yeu cau UX, xem reward_ledger.py
+    # ::award_dose_on_time). GET /doses (danh sach) luon tra 0.
+    points_awarded: int = 0
 
 
 class PhotoSubmitResponse(BaseModel):
@@ -498,6 +503,10 @@ class PhotoVerificationOut(BaseModel):
     next_action: str | None = None  # None khi con dang_xu_ly/loi_he_thong/do_tin_cay_thap
     message: str
     created_at: str
+    # >0 khi anh nay VUA duoc xac nhan khop va cong diem thuong (THEM
+    # 2026-08-26, migration 0051 - xem backend/services/photo_verification/
+    # verifier.py). None khi khong ap dung (chua xong/khong khop/tre...).
+    points_awarded: int | None = None
     has_image: bool
 
 

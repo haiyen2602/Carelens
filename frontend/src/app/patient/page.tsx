@@ -39,6 +39,7 @@ import { useAuth } from "@/lib/auth";
 import { randomCapyQuote, type CapyQuote } from "@/lib/capy-quotes";
 import { daNhac, danhDauDaNhac } from "@/lib/dose-reminder-log";
 import { useProto } from "@/lib/proto-store";
+import { postDailyCheckin } from "@/lib/rewards";
 
 // GET /api/v1/doses tra ve TOAN BO lich (ke ca cac ngay tuong lai - moi don
 // mac dinh sinh 7 ngay, xem SO_NGAY_MAC_DINH trong service.py), khong loc
@@ -146,7 +147,11 @@ export default function PatientToday() {
   // Man hinh "Xong rồi!" sau khi anh khop - giu lai gio ghi nhan THAT va
   // ten thuoc cua lieu VUA xac nhan, vi sau khi tai lai `next` da nhay sang
   // lieu ke tiep (dung bug ma ban goc da ghi chu trong markNext()).
-  const [thanhCong, setThanhCong] = useState<{ at: string; line: string } | null>(null);
+  const [thanhCong, setThanhCong] = useState<{
+    at: string;
+    line: string;
+    pointsAwarded: number;
+  } | null>(null);
   // Anh + quote Capy doi ngau nhien moi lan vao lai tab nay. Chon trong
   // useEffect chu khong phai luc render - xem ghi chu o randomCapyQuote().
   const [capy, setCapy] = useState<CapyQuote | null>(null);
@@ -157,6 +162,7 @@ export default function PatientToday() {
   // 1 lan, tra loi roi thi khong hoi nua du con vao lai trang.
   const [daTraLoiKhaoSat, setDaTraLoiKhaoSat] = useState(true);
   const [mungRo, setMungRo] = useState(false);
+  const [diemKhaoSat, setDiemKhaoSat] = useState(0);
   const khoaKhaoSat = `khao-sat-suc-khoe:${new Date().toDateString()}`;
 
   useEffect(() => {
@@ -168,6 +174,15 @@ export default function PatientToday() {
   const traLoiKhaoSat = (on: boolean) => {
     danhDauDaNhac(khoaKhaoSat);
     setDaTraLoiKhaoSat(true);
+    // Ghi nhan de cong diem thuong. KHONG await: benh nhan tra loi "Khong
+    // on" phai duoc dieu huong sang Capy AI ngay, khong doi mang. Backend tu
+    // chan cong trung trong ngay nen goi lai khong sinh diem ao.
+    postDailyCheckin(on, accessToken).then((ketQua) => {
+      // Chi hien diem khi con o man hinh mung ro (tra loi "On") - nhanh
+      // "Khong on" da dieu huong sang Capy AI ngay ben duoi, khong ai
+      // con thay state nay nua.
+      if (ketQua && ketQua.pointsAwarded > 0) setDiemKhaoSat(ketQua.pointsAwarded);
+    });
     if (on) {
       setMungRo(true);
     } else {
@@ -204,6 +219,13 @@ export default function PatientToday() {
   // de khong hien nham man hinh "Xong het roi! 🎉".
   const choDuyet = dosesHomNay.filter((d) => d.status === "AWAITING_CAREGIVER");
   const tatCaXong = dosesHomNay.length > 0 && !next && choDuyet.length === 0;
+  // Khao sat suc khoe hoi duoc khi khong con gi phai lam trong ngay - KE CA
+  // benh nhan khong co don thuoc nao (truoc day `tatCaXong` doi
+  // dosesHomNay.length > 0 nen nhom nay khong bao gio duoc hoi, va cung
+  // khong co cach nao tich diem). Tach bien rieng thay vi noi long
+  // `tatCaXong`: khoi "Xong het roi 🎉" ben duoi VAN phai doi co lieu that,
+  // khong the chuc mung nguoi chua uong gi.
+  const duocKhaoSat = tatCaXong || dosesHomNay.length === 0;
   // `xacMinh` la ket qua cua lan chup GAN NHAT, khong tu xoa khi `next` nhay
   // sang lieu khac (vd lieu vua chup het 3 lan -> AWAITING_CAREGIVER, hero
   // card chuyen sang lieu ke tiep) - neu dung thang `xacMinh` o duoi, canh
@@ -262,6 +284,7 @@ export default function PatientToday() {
             line: lieu
               ? `${tenThuoc(lieu)} · ${lieuLuong(lieu)} • hẹn ${gioHienThi(lieu.scheduledAt)}`
               : "",
+            pointsAwarded: ketQua.pointsAwarded ?? 0,
           }
         : null;
 
@@ -403,18 +426,21 @@ export default function PatientToday() {
               </div>
             )}
 
-            {!dangGui && xacMinhChoLieuNay && !xacMinhChoLieuNay.matched && xacMinhChoLieuNay.status !== "dang_xu_ly" && (
-              <div
-                className="rounded-[16px] p-3 text-sm"
-                style={
-                  xacMinhChoLieuNay.nextAction === "CAREGIVER_REVIEW"
-                    ? { background: "#FDEBC9", color: "#8A6516" }
-                    : { background: "#F6E1DD", color: "#B4432C" }
-                }
-              >
-                {xacMinhChoLieuNay.message}
-              </div>
-            )}
+            {!dangGui &&
+              xacMinhChoLieuNay &&
+              !xacMinhChoLieuNay.matched &&
+              xacMinhChoLieuNay.status !== "dang_xu_ly" && (
+                <div
+                  className="rounded-[16px] p-3 text-sm"
+                  style={
+                    xacMinhChoLieuNay.nextAction === "CAREGIVER_REVIEW"
+                      ? { background: "#FDEBC9", color: "#8A6516" }
+                      : { background: "#F6E1DD", color: "#B4432C" }
+                  }
+                >
+                  {xacMinhChoLieuNay.message}
+                </div>
+              )}
 
             {loiGui && (
               <div className="rounded-[16px] bg-[#F6E1DD] p-3 text-sm text-[#B4432C]">{loiGui}</div>
@@ -495,13 +521,15 @@ export default function PatientToday() {
 
       {/* Khao sat suc khoe - chi hien khi da xong het lieu hom nay VA chua
           tra loi khao sat cua hom nay. */}
-      {!dangTai && tatCaXong && !daTraLoiKhaoSat && (
+      {!dangTai && duocKhaoSat && !daTraLoiKhaoSat && (
         <div className="capy-pop rounded-[30px] bg-white p-5 text-center shadow-[0_10px_30px_rgba(22,56,110,.07)]">
           <p className="font-display m-0 text-[19px] font-bold text-[#16386E]">
             Hôm nay bạn cảm thấy thế nào?
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-[#5B6A85]">
-            Đã uống hết thuốc rồi, Capy hỏi thăm bạn một chút.
+            {dosesHomNay.length === 0
+              ? "Hôm nay bạn không có liều nào, Capy hỏi thăm bạn một chút."
+              : "Đã uống hết thuốc rồi, Capy hỏi thăm bạn một chút."}
           </p>
           <div className="mt-4 flex gap-2.5">
             <CapySecondaryButton className="flex-1" onClick={() => traLoiKhaoSat(false)}>
@@ -690,6 +718,11 @@ export default function PatientToday() {
             Capy ghi nhận lúc <strong>{thanhCong.at}</strong> ✨
           </p>
           <p className="m-0 mt-1.5 text-[12.5px] text-[#2F6A54]">{thanhCong.line}</p>
+          {thanhCong.pointsAwarded > 0 && (
+            <p className="font-display m-0 mt-2 text-[15px] font-extrabold text-[#14563F]">
+              +{thanhCong.pointsAwarded} điểm
+            </p>
+          )}
           <p className="font-mono m-0 mt-1 text-[12px] text-[#2F6A54]">
             {daXong} / {dosesHomNay.length} liều hôm nay
           </p>
@@ -724,8 +757,16 @@ export default function PatientToday() {
           <p className="m-0 mt-2 text-[15px] font-medium leading-[1.5] text-[#1F6A50]">
             Cảm ơn bạn đã chia sẻ. Chúc bạn một ngày khoẻ mạnh!
           </p>
+          {diemKhaoSat > 0 && (
+            <p className="font-display m-0 mt-2 text-[15px] font-extrabold text-[#14563F]">
+              +{diemKhaoSat} điểm
+            </p>
+          )}
           <button
-            onClick={() => setMungRo(false)}
+            onClick={() => {
+              setMungRo(false);
+              setDiemKhaoSat(0);
+            }}
             className="font-display relative mt-[26px] flex min-h-[56px] min-w-[200px] items-center justify-center rounded-[20px] bg-[#16386E] text-[17px] font-bold text-white transition-colors hover:bg-[#0E2749]"
           >
             Về Hôm nay

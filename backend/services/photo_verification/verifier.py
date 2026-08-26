@@ -40,6 +40,7 @@ from backend.services.photo_verification.matcher import (
     tinh_yeu_cau,
 )
 from backend.services.photo_verification.vlm_bridge import dem_thuoc_trong_anh
+from backend.services.reward_ledger import award_dose_on_time, ngay_vn
 from backend.services.vlm_telemetry import get_vlm_telemetry_service
 
 logger = logging.getLogger(__name__)
@@ -309,6 +310,25 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
             # so window_end với giờ hiện tại — không phân biệt "trễ trong ngày" với
             # "trễ nhiều ngày", đơn giản hoá có chủ đích vì chưa có gì để so lệch.
             dose_event.status = "TAKEN" if datetime.now(UTC) <= dose_event.window_end else "DELAYED"
+            # Cong diem thuong o CA day nua, khong chi o PATCH /doses/{id}
+            # (dose_routes.py): day moi la duong xac nhan CHINH cua benh
+            # nhan (ADR-0011 - chup anh vien thuoc). Neu chi hook o
+            # dose_routes, benh nhan xac nhan lieu CUOI trong ngay bang anh
+            # se lam ngay do "du thuoc" ma khong bao gio duoc cong 20 diem
+            # - bug that, dung lai duoc bang tay 2026-08-26.
+            #
+            # award_dose_on_time tu kiem tra "da cong bao nhieu hom nay" nen
+            # goi thua (lieu giua ngay, hoac DELAYED) chi tra ve 0, khong
+            # cong trung neu ca 2 duong cung ban vao cung 1 ngay. flush() de
+            # truy van ben trong thay status vua gan.
+            db.flush()
+            # Luu lai SO DIEM VUA CONG tren chinh dong PhotoVerification
+            # (migration 0051) de GET /photo-verifications/{id} tra ve duoc
+            # cho FE, benh nhan thay ngay "+N diem" tren man hinh ket qua
+            # thay vi phai tu mo trang Diem thuong (yeu cau UX 2026-08-26).
+            row.points_awarded = award_dose_on_time(
+                db, dose_event.patient_id, ngay_vn(dose_event.scheduled_at)
+            )
         elif next_action == NEXT_ACTION_CAREGIVER_REVIEW:
             dose_event.status = "AWAITING_CAREGIVER"
             _escalate_photo_mismatch(db, dose_event, row)
