@@ -312,6 +312,38 @@ def test_safety_metrics_summary_time_to_review_and_unresolved_from_live_doctor_r
     assert metrics["handoff_status_distribution"] == {"ANSWERED": 1}
 
 
+def test_safety_metrics_summary_resolved_via_build44_doctor_workflow_counts_as_resolved(db):
+    """BUILD-44 regression: a SAFETY-type handoff resolved through the NEW
+    claim/activate/message/resolve doctor workflow (status=RESOLVED,
+    resolved_at set, answered_at/cancelled_at both NULL -- the pre-existing
+    ANSWERED-only quick-answer path is a separate, untouched flow) must
+    still be counted as resolved here, not silently show as permanently
+    unresolved. Found via audit while building BUILD-44, not assumed."""
+    import datetime
+
+    _add_run(db, "run-a")
+    db.commit()
+    created = datetime.datetime(2026, 8, 25, 8, 0, tzinfo=datetime.UTC)
+    resolved = datetime.datetime(2026, 8, 25, 8, 45, tzinfo=datetime.UTC)
+    result = _fake_result(agent_run_id="run-a", trace_id="trace-a", handoff_request_id="doc-review-3", handoff_status="PENDING", handoff_created=True)
+    row = persist_safety_event(db, result=result, conversation_id="c", patient_id="p", actor_id="a")
+    row.created_at = created
+    db.add(
+        DoctorReviewRequest(
+            id="doc-review-3", patient_id="p", created_by_actor_id="a", reason_code="ACUTE_DANGER_DETECTED",
+            risk_disposition="HANDOFF_REQUIRED", patient_question="q", agent_summary="s", status="RESOLVED",
+            idempotency_key="k3", created_at=created, assigned_doctor_id="doc-1",
+            assigned_at=created, activated_at=created, resolved_at=resolved, resolved_by_doctor_id="doc-1",
+        )
+    )
+    db.commit()
+
+    metrics = safety_metrics_summary(db)
+    assert metrics["unresolved_handoff_count"] == 0
+    assert metrics["time_to_review_avg_seconds"] == pytest.approx(2700.0)
+    assert metrics["handoff_status_distribution"] == {"RESOLVED": 1}
+
+
 def test_safety_metrics_summary_unresolved_when_handoff_still_pending(db):
     _add_run(db, "run-a")
     db.commit()

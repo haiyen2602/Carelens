@@ -887,12 +887,48 @@ class DoctorReviewRequest(Base):
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     answered_by_doctor_id: Mapped[str | None] = mapped_column(String, nullable=True)
     doctor_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # BUILD-44: takeover lifecycle (ASSIGNED -> ACTIVE -> RESOLVED), additive
+    # -- the ANSWERED/answered_at/answered_by_doctor_id/doctor_answer columns
+    # above are a separate, pre-existing "quick answer, no takeover" path
+    # (BUILD-10) left completely unchanged; see the BUILD-44 report for why
+    # the two lifecycles are kept distinct rather than merged.
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_by_doctor_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
     __table_args__ = (
         Index("uq_doctor_review_request_idempotency", "idempotency_key", unique=True),
         Index("ix_doctor_review_request_patient_status", "patient_id", "status"),
         Index("ix_doctor_review_request_doctor_status", "assigned_doctor_id", "status"),
         Index("ix_doctor_review_request_created", "created_at"),
+    )
+
+
+class DoctorReviewMessage(Base):
+    """BUILD-44: the real-time patient/doctor/system message thread for one
+    handoff episode -- scoped by ``handoff_id``, not a general always-on
+    chat history. See the BUILD-44 report's own audit for why neither the
+    legacy ``ChatMessage`` table (patient_id-only, never written by Agent
+    V2) nor the pre-existing, entirely-unused ``Conversation``/``Message``
+    pair below was reused for this narrower, handoff-scoped purpose."""
+
+    __tablename__ = "doctor_review_message"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    handoff_id: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False)
+    # "PATIENT" | "DOCTOR" | "SYSTEM" -- never "ASSISTANT": Agent V2 does not
+    # speak during an ACTIVE takeover (see backend/services/agent_doctor_
+    # takeover.py), so there is structurally nothing for that role to mean
+    # in this table.
+    sender_role: Mapped[str] = mapped_column(String, nullable=False)
+    actor_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_doctor_review_message_handoff_created", "handoff_id", "created_at"),
+        Index("ix_doctor_review_message_patient_id", "patient_id"),
     )
 
 

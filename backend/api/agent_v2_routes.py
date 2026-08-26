@@ -71,6 +71,7 @@ from backend.services.agent_activity import build_activity_timeline
 from backend.services.agent_authorization import require_agent_patient_access
 from backend.services.agent_conversation_state import AgentConversationStateStore
 from backend.services.agent_doctor_handoff import AuthorizedDoctorHandoffAdapter
+from backend.services.agent_doctor_takeover import get_active_takeover
 from backend.services.agent_idempotency import (
     IdempotencyBusyError,
     IdempotencyClaim,
@@ -82,6 +83,7 @@ from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
 from backend.services.agent_safety_monitoring import persist_safety_event
+from backend.services.doctor_handoff import MessageSenderRole, record_doctor_review_message
 from backend.services.evaluators import LLMJudgeEvaluator
 from backend.services.telemetry import get_telemetry_service
 from backend.services.vinmec_web_search import VinmecWebSearchService
@@ -694,6 +696,74 @@ def get_trace_activity(
     )
 
 
+# BUILD-44 SS13: never promise an SLA the app does not actually have; SS10
+# uses almost this exact wording as its own spec example.
+_DOCTOR_TAKEOVER_ACK_REPLY = "Bác sĩ đang theo dõi cuộc trò chuyện này. Tin nhắn của bạn đã được gửi."
+
+
+def _respond_with_doctor_takeover_active(
+    db: Session,
+    *,
+    request: AgentV2OrchestrateRequest,
+    patient_id: str,
+    conversation_id: str,
+    actor: CurrentUser,
+    handoff,
+    started: float,
+) -> AgentV2OrchestrateResponse:
+    """BUILD-44 SS8/SS10/SS25: 0 router/RAG/Main Model/tool calls -- the
+    patient's message is persisted for the doctor to read, never sent to
+    Agent V2 synthesis. A real, minimal, durable ``AgentRun`` row is still
+    written (status ``DOCTOR_ACTIVE`` -- a new, explicit, honest value,
+    never a fabricated ``COMPLETED``/``model_calls=0`` that would misread
+    as "the bot actually answered") so this turn is not invisible to the
+    patient's own trace history or Admin Monitoring -- the same
+    ``except Exception`` fallback a few lines below already establishes
+    this pattern (a minimal direct ``AgentRun`` insert) for a different
+    reason (the run raised before any durable row existed at all)."""
+    now = datetime.now(UTC)
+    record_doctor_review_message(
+        db,
+        handoff_id=handoff.id,
+        patient_id=patient_id,
+        sender_role=MessageSenderRole.PATIENT,
+        actor_id=actor.id,
+        content=request.message,
+        created_at=now,
+    )
+    trace_id = str(uuid.uuid4())
+    run = AgentRun(
+        conversation_id=conversation_id,
+        patient_id=patient_id,
+        actor_id=actor.id,
+        request_id=request.idempotency_key,
+        intent=None,
+        status="DOCTOR_ACTIVE",
+        started_at=now,
+        completed_at=now,
+        trace_id=trace_id,
+        duration_ms=max(0.0, (time.monotonic() - started) * 1000),
+        cost_status="NOT_APPLICABLE",
+    )
+    db.add(run)
+    db.commit()
+    handoff_type = handoff_type_for(reason_code=handoff.reason_code, risk_disposition=handoff.risk_disposition).value
+    return AgentV2OrchestrateResponse(
+        status="DOCTOR_ACTIVE",
+        reply=_DOCTOR_TAKEOVER_ACK_REPLY,
+        intent="DOCTOR_TAKEOVER",
+        tools=[],
+        citations=[],
+        safety_disposition=None,
+        handoff_id=handoff.id,
+        handoff_required=True,
+        handoff_type=handoff_type,
+        trace_id=trace_id,
+        agent_run_id=run.id,
+        suggested_actions=[],
+    )
+
+
 @agent_v2_router.post("/agent/v2/read-only", response_model=AgentV2ReadOnlyResponse)
 def run_read_only_agent(
     request: AgentV2ReadOnlyRequest,
@@ -736,6 +806,27 @@ def run_agent_orchestration(
     # A missing id is explicitly one-shot.  It must not accidentally reuse
     # state from a prior request by the same account.
     conversation_id = request.conversation_id or f"one-shot:{uuid.uuid4()}"
+    # BUILD-44: Agent V2 must not speak for a patient while a doctor OWNS
+    # their conversation. Checked as early as possible -- before router/
+    # RAG/Main Model/ConversationState work -- 0 model calls, same fail-
+    # closed-before-work shape _require_agent_v2_enabled/patient access
+    # above already use. ACTIVE only: PENDING/ASSIGNED do NOT suppress the
+    # bot (see backend/services/agent_doctor_takeover.py's own docstring
+    # and the BUILD-44 report SS7 for why). Patient-scoped (matching
+    # BUILD-42's own cross-run dedup scope, not conversation-scoped) so a
+    # patient cannot bypass an active takeover by starting a fresh
+    # conversation_id.
+    active_takeover = get_active_takeover(db, patient_id=patient_id)
+    if active_takeover is not None:
+        return _respond_with_doctor_takeover_active(
+            db,
+            request=request,
+            patient_id=patient_id,
+            conversation_id=conversation_id,
+            actor=actor,
+            handoff=active_takeover,
+            started=_started,
+        )
     state_store = AgentConversationStateStore()
     conversation_state = state_store.load(db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id)
     selected_action = _validated_selected_action(conversation_state, request.selected_action)

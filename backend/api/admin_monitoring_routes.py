@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.security import require_role
 from backend.db.base import get_db
+from backend.services.agent_doctor_handoff_metrics import doctor_queue_metrics
 from backend.services.agent_feedback import session_messages
 from backend.services.agent_monitoring_metrics import (
     MonitoringFilters,
@@ -80,6 +81,21 @@ def _filters(
 @admin_monitoring_router.get("/overview")
 def get_overview(db: Session = Depends(get_db), _admin=Depends(_require_admin), filters: MonitoringFilters = Depends(_filters)) -> dict[str, Any]:
     return overview_metrics(db, filters)
+
+
+@admin_monitoring_router.get("/doctor-queue")
+def get_doctor_queue(
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _admin=Depends(_require_admin),
+) -> dict[str, Any]:
+    """BUILD-44 SS21/SS22: doctor-queue lifecycle metrics (status/type
+    counts, time-to-claim/activate/resolve). Separate from Safety's own
+    ``/admin/safety/*`` -- an UNCERTAINTY/USER_REQUEST handoff is counted
+    here but never as an ``AgentSafetyEvent`` (see
+    ``agent_doctor_handoff_metrics`` module docstring)."""
+    return doctor_queue_metrics(db, date_from=date_from, date_to=date_to)
 
 
 @admin_monitoring_router.get("/quality")

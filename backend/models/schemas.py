@@ -1345,3 +1345,80 @@ class SystemAuditLogListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+# ---------------------------------------------------------------------------
+# BUILD-44: Doctor Chat Queue & Takeover. Wire contract for
+# backend/api/doctor_review_routes.py -- reads backend/services/
+# doctor_handoff.py's DoctorReviewRequest/DoctorReviewMessage rows only;
+# never exposes verified_context_refs/agent_summary raw internals (SS4:
+# "no hidden reasoning, no raw Judge output, no chain-of-thought").
+# ---------------------------------------------------------------------------
+
+
+class DoctorReviewQueueItemOut(BaseModel):
+    handoff_id: str
+    patient_id: str
+    patient_name: str
+    conversation_id: str | None = None
+    handoff_type: str
+    reason_code: str
+    risk_disposition: str
+    status: str
+    patient_question: str
+    created_at: datetime
+    assigned_doctor_id: str | None = None
+    assigned_at: datetime | None = None
+    activated_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+
+class DoctorReviewQueueResponse(BaseModel):
+    items: list[DoctorReviewQueueItemOut]
+    total: int
+
+
+class DoctorReviewMessageOut(BaseModel):
+    id: str
+    sender_role: str
+    actor_id: str | None = None
+    content: str
+    created_at: datetime
+
+
+class DoctorReviewDetailOut(BaseModel):
+    handoff_id: str
+    patient_id: str
+    patient_name: str
+    conversation_id: str | None = None
+    handoff_type: str
+    reason_code: str
+    risk_disposition: str
+    status: str
+    patient_question: str
+    created_at: datetime
+    assigned_doctor_id: str | None = None
+    assigned_at: datetime | None = None
+    activated_at: datetime | None = None
+    resolved_at: datetime | None = None
+    resolved_by_doctor_id: str | None = None
+    messages: list[DoctorReviewMessageOut] = Field(default_factory=list)
+
+
+class DoctorReviewSendMessageRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=5000)
+
+
+class PatientHandoffStatusOut(BaseModel):
+    """GET /api/v1/agent/v2/handoff/status (backend/api/agent_v2_routes.py)
+    -- the patient's own view of their current handoff, if any. Never
+    exposes ``assigned_doctor_id``/other patients' data; only what this
+    patient is authorized to see about their own episode."""
+
+    has_active_handoff: bool
+    handoff_id: str | None = None
+    handoff_type: str | None = None
+    status: str | None = None
+    created_at: datetime | None = None
+    activated_at: datetime | None = None
+    messages: list[DoctorReviewMessageOut] = Field(default_factory=list)

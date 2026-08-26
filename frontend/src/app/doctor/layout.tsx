@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  MessageCircleQuestion,
   Pill,
   Settings,
   UserCircle,
@@ -56,6 +57,7 @@ const groups: { title: string; items: NavItem[] }[] = [
     items: [
       { to: "/doctor", label: "Trang chủ", icon: Home, exact: true },
       { to: "/doctor/patients", label: "Quản lý bệnh nhân", icon: Users2 },
+      { to: "/doctor/reviews", label: "Hàng đợi tư vấn", icon: MessageCircleQuestion },
       { to: "/doctor/prescribe", label: "Kê đơn thuốc", icon: Pill },
       { to: "/doctor/drugs", label: "Tra cứu thuốc", icon: BookText },
       { to: "/doctor/alerts", label: "Hộp cảnh báo", icon: Bell, badge: "alerts" },
