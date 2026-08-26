@@ -1542,10 +1542,10 @@ class PhotoVerification(Base):
 
 
 class Account(Base):
-    """TASK-010 (api-contracts.md muc 1, auth-api) - 1 bang chung cho CA 4
-    role (doctor|patient|caregiver|admin), phan biet qua cot `role` - dung
-    quyet dinh da chot voi PM 2026-08-12 (KHONG tach bang/endpoint rieng
-    theo role, tranh lech contract Draft san trong specs/api-contracts.md).
+    """TASK-010 (api-contracts.md muc 1, auth-api) - 1 bang chung cho CAC
+    role (doctor|patient|caregiver|admin|super_admin), phan biet qua cot `role`.
+    - `super_admin`: quyen cao nhat, quan ly moi tai khoan ke ca admin.
+    - `admin`: quan tri vien van hanh, chi quan ly doctor|patient|caregiver.
 
     `patient_id`/`doctor_id` la lien ket TOI THIEU de get_current_patient_id()
     (backend/api/security.py) doc duoc patient_id cua chinh nguoi dang dang

@@ -37,7 +37,7 @@ from backend.services.agent_feedback import (
 
 admin_feedback_router = APIRouter(prefix="/admin/tickets", tags=["admin-feedback-tickets"])
 
-_require_admin = require_role("admin")
+_require_admin = require_role("admin", "super_admin")
 
 
 @admin_feedback_router.get("", response_model=AgentFeedbackTicketListOut)

@@ -45,7 +45,7 @@ def get_audit_logs(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> SystemAuditLogListResponse:
-    """Lấy danh sách nhật ký kiểm toán hệ thống (chỉ dành cho Admin, Read-Only)."""
+    """Lấy danh sách nhật ký kiểm toán hệ thống (chỉ dành cho Admin & Super Admin, Read-Only)."""
     return list_system_audit_logs(db, q=q, role=role, page=page, page_size=page_size)

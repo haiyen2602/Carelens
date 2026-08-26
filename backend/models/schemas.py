@@ -237,7 +237,7 @@ class MeResponse(BaseModel):
 
 
 
-AccountRole = Literal["doctor", "patient", "caregiver", "admin"]
+AccountRole = Literal["doctor", "patient", "caregiver", "admin", "super_admin"]
 AccountStatus = Literal["active", "locked"]
 
 

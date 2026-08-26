@@ -30,15 +30,16 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (authLoading || !user || redirectedRef.current) return;
-    if (user.role === "doctor" || user.role === "patient" || user.role === "admin") {
+    if (user.role === "doctor" || user.role === "patient") {
       redirectedRef.current = true;
       if (user.role === "doctor") {
         router.replace("/doctor");
       } else if (user.role === "patient") {
         router.replace(user.profile_completed === false ? "/onboarding/profile" : "/patient");
-      } else if (user.role === "admin") {
-        router.replace("/admin");
       }
+    } else if (user.role === "admin" || user.role === "super_admin") {
+      redirectedRef.current = true;
+      router.replace("/admin");
     }
   }, [user, authLoading, router]);
 
@@ -65,8 +66,9 @@ function LoginPageContent() {
         } else {
           router.push(u.role === "doctor" ? "/doctor" : "/patient");
         }
-      } else if (u.role === "admin") {
-        router.push("/admin");
+      } else if (u.role === "admin" || u.role === "super_admin") {
+        setError("Tài khoản quản trị vui lòng đăng nhập tại Cổng quản trị hệ thống (/admin/login).");
+        setLoading(false);
       } else {
         setError("Vai trò người thân/caregiver chưa được hỗ trợ trên giao diện web.");
         setLoading(false);
@@ -174,7 +176,7 @@ function LoginPageContent() {
           © {new Date().getFullYear()} CapyMedi. Bảo lưu mọi quyền.
           {" · "}
           <a
-            href="/admin"
+            href="/admin/login"
             className="underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
             Quản trị hệ thống

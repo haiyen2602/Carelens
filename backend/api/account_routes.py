@@ -31,6 +31,7 @@ account_router = APIRouter()
 ROLE_LABELS = {
     "doctor": "Bác sĩ",
     "admin": "Quản trị",
+    "super_admin": "Quản trị cấp cao",
     "patient": "Bệnh nhân",
     "caregiver": "Người thân",
 }
@@ -44,8 +45,14 @@ def get_account_target(account: Account) -> str:
 async def create_account(
     body: AccountCreateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> Account:
+    if body.role in ("admin", "super_admin") and _admin.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ super_admin mới có quyền tạo tài khoản quản trị",
+        )
+
     if find_account_by_email(db, body.email) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email đã có tài khoản")
 
@@ -87,7 +94,7 @@ async def create_account(
 
 @account_router.get("/accounts", response_model=list[AccountOut])
 async def list_accounts(
-    db: Session = Depends(get_db), _admin: CurrentUser = Depends(require_role("admin"))
+    db: Session = Depends(get_db), _admin: CurrentUser = Depends(require_role("admin", "super_admin"))
 ) -> list[Account]:
     return db.query(Account).order_by(Account.created_at.desc()).all()
 
@@ -97,11 +104,17 @@ async def update_account_status(
     account_id: str,
     body: AccountStatusUpdateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> Account:
     account = db.query(Account).filter(Account.id == account_id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản không tồn tại")
+
+    if account.role in ("admin", "super_admin") and _admin.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ super_admin mới có quyền thay đổi trạng thái tài khoản quản trị",
+        )
 
     account.status = body.status
     action_text = "Khoá tài khoản" if body.status == "locked" else "Mở khoá tài khoản"
@@ -127,11 +140,17 @@ async def update_account(
     account_id: str,
     body: AccountUpdateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> Account:
     account = db.query(Account).filter(Account.id == account_id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tài khoản không tồn tại")
+
+    if account.role in ("admin", "super_admin") and _admin.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ super_admin mới có quyền chỉnh sửa tài khoản quản trị",
+        )
 
     if body.email is not None and body.email != account.email:
         existing = find_account_by_email(db, body.email)

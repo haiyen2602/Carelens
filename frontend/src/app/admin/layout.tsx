@@ -64,7 +64,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     "/admin/accounts": true,
   });
   const { user, loading, logout } = useAuth();
-  const authChecked = !loading && !!user && user.role === "admin";
+  const authChecked = !loading && !!user && (user.role === "admin" || user.role === "super_admin");
   // Kiem tra that qua GET /health cua backend (khong can auth) - thay cho
   // badge "He thong on dinh" hardcode truoc day khong phan anh trang thai
   // thuc. null = dang kiem tra lan dau, sau do tu poll lai moi 60s.
@@ -91,7 +91,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoginRoute || loading) return;
-    if (!user || user.role !== "admin") {
+    if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
       router.replace("/admin/login");
     }
   }, [isLoginRoute, loading, user, router]);
@@ -395,7 +395,9 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
                 <p className="truncate text-sm font-semibold leading-tight">
                   {user?.full_name ?? "…"}
                 </p>
-                <p className="text-xs text-muted-foreground">Quản trị viên</p>
+                <p className="text-xs text-muted-foreground">
+                  {user?.role === "super_admin" ? "Quản trị cấp cao" : "Quản trị viên"}
+                </p>
               </div>
               <ChevronDown className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
             </DropdownMenuTrigger>

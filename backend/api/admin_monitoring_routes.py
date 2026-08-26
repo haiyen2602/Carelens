@@ -48,7 +48,7 @@ from backend.services.agent_monitoring_metrics import (
 
 admin_monitoring_router = APIRouter(prefix="/admin/monitoring", tags=["admin-monitoring-v2"])
 
-_require_admin = require_role("admin")
+_require_admin = require_role("admin", "super_admin")
 _logger = logging.getLogger(__name__)
 
 

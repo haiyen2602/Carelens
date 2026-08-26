@@ -10,7 +10,8 @@
 | `doctor` | Bác sĩ nội khoa/chuyên khoa quản lý nhiều bệnh nhân mãn tính | Tạo & **duyệt** phác đồ; xem preview timeline lịch nhắc; duyệt/từ chối đề xuất đổi lịch của agent; xem dashboard tuân thủ; nhận cảnh báo mức Trung bình & Nghiêm trọng; xem audit log | Web desktop (Next.js) |
 | `patient` | Bệnh nhân dùng thuốc dài ngày (chủ yếu cao tuổi, nhiều bệnh nền) hoặc liệu trình ngắn hạn | Nhận nhắc thuốc 3 cấp độ; xác nhận liều bằng ảnh hoặc nút bấm; chat tự nhiên với agent; xem lịch uống thuốc của **chính mình**; hỏi thông tin thuốc | Mobile PWA |
 | `caregiver` | Người thân/người chăm sóc bệnh nhân (con cái…) | Duyệt ảnh xác nhận trong 1 giờ khi vision không khớp; xử lý hàng đợi cảnh báo có ngữ cảnh; xem lịch sử/heatmap tuân thủ của bệnh nhân được liên kết; nhận cảnh báo mọi mức từ Trung bình trở lên | Mobile |
-| `admin` | Quản trị hệ thống (nội bộ team/demo) | Quản lý tài khoản, liên kết bệnh nhân ↔ bác sĩ ↔ người thân, nạp/cập nhật dữ liệu thuốc cho RAG, xem log hệ thống | Web desktop |
+| `admin` | Quản trị viên vận hành | Quản lý tài khoản (chỉ doctor, patient, caregiver - không được sửa/khoá/tạo admin khác), liên kết bệnh nhân ↔ bác sĩ ↔ người thân, nạp/cập nhật dữ liệu thuốc cho RAG, xem log hệ thống | Web desktop |
+| `super_admin` | Quản trị viên cấp cao nhất | Toàn quyền hệ thống, bao gồm tạo, sửa, khoá/mở khoá mọi tài khoản kể cả `admin` và `super_admin` | Web desktop |
 
 **Quan hệ liên kết (bắt buộc để phân quyền dữ liệu):**
 
@@ -21,23 +22,24 @@
 
 ## Ma trận quyền (Permission matrix)
 
-| Chức năng | `doctor` | `patient` | `caregiver` | `admin` |
-|---|---|---|---|---|
-| Tạo phác đồ | ✅ | ❌ | ❌ | ❌ |
-| **Duyệt** phác đồ (kích hoạt agent) | ✅ | ❌ | ❌ | ❌ |
-| Sửa/dừng phác đồ đang chạy | ✅ | ❌ | ❌ | ❌ |
-| Xem lịch nhắc của bệnh nhân | ✅ (bệnh nhân của mình) | ✅ (của mình) | ✅ (bệnh nhân liên kết) | ✅ |
-| Xác nhận liều bằng ảnh / nút bấm | ❌ | ✅ | ❌ | ❌ |
-| Chat với agent | ❌ | ✅ | `[CẦN CHỐT: caregiver có được chat thay không?]` | ❌ |
-| Duyệt ảnh xác nhận khi vision không khớp | ❌ | ❌ | ✅ | ❌ |
-| Nhận cảnh báo mức **Nhẹ** | ❌ (chỉ ghi log) | ❌ | ❌ | ❌ |
-| Nhận cảnh báo mức **Trung bình** | ✅ | ❌ | ✅ | ❌ |
-| Nhận cảnh báo mức **Nghiêm trọng** (< 2 phút) | ✅ | ✅ (overlay cấp cứu) | ✅ | ❌ |
-| Duyệt đề xuất đổi lịch nhắc của agent | ✅ | ❌ | ❌ | ❌ |
-| Xem dashboard tuân thủ (tự khai vs có xác minh) | ✅ | ❌ | ⚠️ bản đơn giản (heatmap) | ✅ |
-| Xem audit log hành động của agent | ✅ | ❌ | ❌ | ✅ |
-| Nạp/sửa dữ liệu thuốc cho RAG | ❌ | ❌ | ❌ | ✅ |
-| Quản lý tài khoản & liên kết | ❌ | ❌ | ❌ | ✅ |
+| Chức năng | `doctor` | `patient` | `caregiver` | `admin` | `super_admin` |
+|---|---|---|---|---|---|
+| Tạo phác đồ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Duyệt** phác đồ (kích hoạt agent) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Sửa/dừng phác đồ đang chạy | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Xem lịch nhắc của bệnh nhân | ✅ (bệnh nhân của mình) | ✅ (của mình) | ✅ (bệnh nhân liên kết) | ✅ | ✅ |
+| Xác nhận liều bằng ảnh / nút bấm | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Chat với agent | ❌ | ✅ | `[CẦN CHỐT: caregiver có được chat thay không?]` | ❌ | ❌ |
+| Duyệt ảnh xác nhận khi vision không khớp | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Nhận cảnh báo mức **Nhẹ** | ❌ (chỉ ghi log) | ❌ | ❌ | ❌ | ❌ |
+| Nhận cảnh báo mức **Trung bình** | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Nhận cảnh báo mức **Nghiêm trọng** (< 2 phút) | ✅ | ✅ (overlay cấp cứu) | ✅ | ❌ | ❌ |
+| Duyệt đề xuất đổi lịch nhắc của agent | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Xem dashboard tuân thủ (tự khai vs có xác minh) | ✅ | ❌ | ⚠️ bản đơn giản (heatmap) | ✅ | ✅ |
+| Xem audit log hành động của agent | ✅ | ❌ | ❌ | ✅ | ✅ |
+| Nạp/sửa dữ liệu thuốc cho RAG | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Quản lý tài khoản nghiệp vụ (doctor, patient, caregiver) | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Quản lý tài khoản Admin / Super Admin | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 Ký hiệu: ✅ được phép · ❌ không được phép · ⚠️ được phép ở mức giới hạn
 

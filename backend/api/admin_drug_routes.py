@@ -33,7 +33,7 @@ admin_drug_router = APIRouter(prefix="/admin/drugs", tags=["admin-drugs"])
 @admin_drug_router.get("/filters", response_model=AdminDrugFiltersResponse)
 def get_filters(
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> AdminDrugFiltersResponse:
     """Return available dosage forms and routes for filtering."""
     return get_admin_drug_filters(db)
@@ -48,7 +48,7 @@ def list_drugs(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> AdminDrugListResponse:
     return list_admin_drugs(
         db,
@@ -65,7 +65,7 @@ def list_drugs(
 def create_drug(
     body: AdminDrugCreateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> AdminDrugDetailResponse:
     drug = create_admin_drug(db, body)
     target_id = drug.legacy_drug_id or drug.id
@@ -86,7 +86,7 @@ def create_drug(
 def get_drug(
     drug_product_id: str,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> AdminDrugDetailResponse:
     drug = get_admin_drug(db, drug_product_id)
     if drug is None:
@@ -99,7 +99,7 @@ def patch_drug(
     drug_product_id: str,
     body: AdminDrugUpdateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> AdminDrugDetailResponse:
     drug = update_admin_drug(
         db,
@@ -138,7 +138,7 @@ def patch_drug(
 def delete_drug(
     drug_product_id: str,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> Response:
     drug = get_admin_drug(db, drug_product_id)
     if drug is None:

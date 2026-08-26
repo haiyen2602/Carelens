@@ -38,7 +38,7 @@ _CONFIDENCE_SCORE = {"cao": 1.0, "trung_binh": 0.5, "thap": 0.0}
 # report 54-build-25-agent-v2-monitoring-audit.md muc 8: "_require_admin
 # khong co role check that - bat ky JWT nao, role nao, doc duoc /admin/rag/*")
 # - o day vá luon tu dau, khong lap lai lo hong da biet.
-_require_admin = require_role("admin")
+_require_admin = require_role("admin", "super_admin")
 
 
 @vlm_monitoring_router.get("/health")

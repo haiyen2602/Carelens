@@ -32,7 +32,7 @@ rag_monitoring_router = APIRouter(prefix="/admin/rag", tags=["admin-rag-monitori
 # simply never wired in here. Kept as a module-level name (not inlined at
 # every ``Depends(...)`` call site below) so the fix is one line, not an
 # 11-site rename.
-_require_admin = require_role("admin")
+_require_admin = require_role("admin", "super_admin")
 
 
 # BUILD-25B: real filtering by chatbot system / model / prompt version,

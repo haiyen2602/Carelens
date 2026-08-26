@@ -1,4 +1,4 @@
-export type AccountRole = "doctor" | "patient" | "caregiver" | "admin";
+export type AccountRole = "doctor" | "patient" | "caregiver" | "admin" | "super_admin";
 export type AccountStatus = "active" | "locked" | "pending";
 
 export type MedicineStatus = "indexed" | "processing" | "error";
@@ -137,6 +137,7 @@ export const roleLabel: Record<AccountRole, string> = {
   patient: "Bệnh nhân",
   caregiver: "Người thân",
   admin: "Quản trị",
+  super_admin: "Quản trị cấp cao",
 };
 
 export const statusLabel: Record<AccountStatus, string> = {

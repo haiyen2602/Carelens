@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (authLoading || !user || redirectedRef.current) return;
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.role === "super_admin") {
       redirectedRef.current = true;
       router.replace("/admin");
     }
@@ -37,8 +37,8 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const u = await login(username.trim(), password);
-      if (u.role !== "admin") {
-        setError("Tài khoản này không phải quản trị viên.");
+      if (u.role !== "admin" && u.role !== "super_admin") {
+        setError("Tài khoản này không có quyền truy cập trang quản trị.");
         setLoading(false);
         return;
       }
@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
     }
   };
 
-  if (authLoading || (user && user.role === "admin")) {
+  if (authLoading || (user && (user.role === "admin" || user.role === "super_admin"))) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <p className="text-sm text-muted-foreground">Đang kiểm tra phiên đăng nhập...</p>

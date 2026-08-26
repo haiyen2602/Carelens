@@ -41,6 +41,7 @@ def main() -> int:
     parser.add_argument("--email", required=True)
     parser.add_argument("--password", required=True, help="Mat khau that - KHONG go thang vao shell history dung/CI log")
     parser.add_argument("--full-name", required=True)
+    parser.add_argument("--role", default="super_admin", choices=["super_admin", "admin"], help="Role cua tai khoan (mac dinh super_admin)")
     args = parser.parse_args()
 
     if len(args.password) < 8:
@@ -65,14 +66,15 @@ def main() -> int:
             full_name=args.full_name,
             email=email,
             password_hash=hash_password(args.password),
-            role="admin",
+            role=args.role,
         )
         db.add(account)
         db.commit()
 
-        print("Da tao tai khoan admin:")
+        print(f"Da tao tai khoan {args.role}:")
         print(f"  id    = {account.id}")
         print(f"  email = {account.email}")
+        print(f"  role  = {account.role}")
     finally:
         db.close()
 

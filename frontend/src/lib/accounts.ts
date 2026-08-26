@@ -2,8 +2,8 @@
 // chinh FE, giu X-Internal-Secret an toan phia server - cung mau voi
 // lib/prescriptions.ts).
 
-export type AccountRole = "doctor" | "patient" | "caregiver" | "admin";
-export type AccountCreationRole = Extract<AccountRole, "doctor" | "admin">;
+export type AccountRole = "doctor" | "patient" | "caregiver" | "admin" | "super_admin";
+export type AccountCreationRole = Extract<AccountRole, "doctor" | "admin" | "super_admin">;
 export type AccountStatus = "active" | "locked" | "pending";
 
 export type AccountRecord = {
