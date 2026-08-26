@@ -237,6 +237,23 @@ though the underlying row's own `reason_code` is `REPEATED_CLARIFICATION`
 match, not the original row's provenance — a deliberate, documented
 choice, not a bug: the row itself keeps its true original reason_code).
 
+**PR #127 review addendum (round 2, commit `eaba1f0`)**: the reuse check
+above was originally a plain check-then-act SELECT with no lock. An
+automated review correctly flagged a real race: two *different* concurrent
+agent runs for the same patient (different idempotency keys, so the
+pre-existing unique-idempotency-key constraint does not help) could both
+see no active handoff before either committed, creating two rows for the
+same episode. Fixed by locking the always-present `Patient` row for the
+duration of the check-then-act sequence, scoped to the
+`UNCERTAINTY_HANDOFF` branch only (no migration, no change to the shared
+`require_agent_patient_access` helper, no effect on the Safety path).
+Verified with a real two-thread Postgres concurrency test
+(`test_agent_v2_answerability_dedup_postgres.py`, opt-in via
+`BUILD42_TEST_DATABASE_URL`) that proves the second run genuinely blocks
+and converges on the first run's row — confirmed the test catches the
+regression by temporarily reverting the lock and re-running it (failed as
+expected), then restoring and passing again.
+
 ## 9. DoctorReviewRequest reuse
 
 No new table. `HandoffContextSource` (`handoff.py`) and the parallel
@@ -419,6 +436,18 @@ already produced.
    it properly would require either fabricating a Safety Domain artifact
    (exactly what this build avoids) or a genuine redesign of the
    checkpoint system's own state machine, out of scope here.
+   **Correction (PR #127 review, round 1, commit `a98c355`)**: the
+   original text above under-scoped this limitation to the checkpoint row
+   alone. A review pass found that `_terminalize` (agent_checkpoint.py) is
+   also the *only* place that ever moves the durable `AgentRun.status` off
+   its initial `"RUNNING"` value — so every Answerability-Gate handoff run
+   was ALSO left `AgentRun.status="RUNNING"`/`completed_at=NULL` forever,
+   the actual table Admin Monitoring/stuck-run sweepers query, not a
+   cosmetic gap. Fixed with a new narrow helper, `mark_run_status_only()`,
+   called right after a successful handoff creation — mirrors only
+   `AgentRun.status`/`completed_at`. The checkpoint row itself still stays
+   non-terminal, unchanged; that (narrower) half of the trade-off above
+   remains accurate and accepted.
 2. **Golden Set v3 deferred** (§12).
 3. **Admin dashboard has no dedicated `handoff_type` filter yet** (§11) —
    the durable data already supports adding one without backend rework.
@@ -451,6 +480,29 @@ already produced.
   should use to distinguish SAFETY/UNCERTAINTY/USER_REQUEST priority and
   presentation, without needing any new persisted field.
 
+## 17.5 PR #127 review response (post-report, both rounds pushed to this branch)
+
+An automated PR review raised 4 findings across two rounds. Each was
+independently re-verified against real code/behavior before acting —
+2 were real gaps and fixed, 2 were false and disproven with evidence
+(never accepted or dismissed on the review's word alone):
+
+| # | Finding | Verdict | Resolution |
+|---|---|---|---|
+| 1 | Race in `claim_resume`/checkpoint lease-claiming | **False** | Pre-existing `SELECT ... FOR UPDATE` row lock, unchanged by this build. No fix needed. |
+| 2 | Answerability-Gate handoffs never checkpoint-terminalized | **True — worse than §16.1 originally said** | `AgentRun.status`/`completed_at` (not just the checkpoint row) were left stale forever. Fixed: `mark_run_status_only()` (commit `a98c355`). See §16.1's correction. |
+| 3 | `_NEED_MORE_INFO_REPLIES[reason_code]` KeyError for a clinical-clarification turn | **False** | Conflated two different call sites/functions; the dict is never indexed by the function that returns `reason_code=None`. Disproven with a new real-orchestrator test (commit `eaba1f0`). |
+| 4 | Race in the SS12 cross-run dedup check | **True** | Two concurrent agent runs for the same patient could both create a handoff. Fixed: lock the `Patient` row for the check-then-act sequence (commit `eaba1f0`). See §8's addendum. |
+
+Both real fixes were verified with a genuine repro, not just static
+reading: the AgentRun-status gap was confirmed via a passing/failing
+regression test at the real HTTP-route level plus a live-Postgres E2E
+re-run; the dedup race was confirmed via a real two-thread Postgres test
+that was deliberately proven to fail without the fix, then pass with it.
+Both false claims were disproven by a real test exercising the exact
+named scenario, not just a rebuttal in prose. No merge, no deploy — both
+rounds are commits on this same PR branch, pending review.
+
 ## 18. File scope
 
 ```
@@ -465,6 +517,11 @@ MOD    backend/api/agent_v2_routes.py
 MOD    backend/models/schemas.py
 NEW    tests/test_agent_v2_build42_answerability.py
 MOD    tests/test_agent_v2_medical_grounding.py
+
+-- PR #127 review response, both rounds (post-report) --
+MOD    backend/services/agent_checkpoint.py       (mark_run_status_only)
+NEW    tests/test_agent_v2_answerability_dedup_postgres.py
+MOD    tests/test_agent_v2_transaction_durability.py
 ```
 
 No migration. No retrieval-tuning changes (BUILD-38 untouched). No
