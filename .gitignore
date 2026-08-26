@@ -51,6 +51,7 @@ data/
 !data/drug-images/
 !data/drug-images/eval/
 !data/drug-images/eval/visual_retrieval_v1.jsonl
+!data/drug-images/eval/drug_recognition_v1.jsonl
 
 # Logs
 logs/
