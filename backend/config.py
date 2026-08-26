@@ -191,6 +191,10 @@ class Settings(BaseSettings):
     # Can gan Railway Volume vao mount path chua thu muc nay thi anh moi song
     # qua lan deploy lai (xem docs/DEPLOY.md muc "Volume anh xac nhan lieu").
     photo_storage_dir: str = "./data/photo_verifications"
+    # B-03 catalog reference images are non-PHI and intentionally isolated
+    # from uploaded dose-verification photos, while reusing local-volume
+    # storage conventions until a reviewed storage backend is introduced.
+    drug_image_storage_dir: str = "./data/drug_images"
     # Canh dai nhat sau khi resize + chat luong nen JPEG - dong bo voi
     # max_edge=1600, jpeg_quality=90 da tune tren golden dataset trong
     # backend/vlm_demthuoc/vlm_client.py::encode_frame, khong bia so moi.

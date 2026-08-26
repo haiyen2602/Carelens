@@ -24,9 +24,11 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Float,
+    ForeignKey,
     Index,
     Integer,
     Numeric,
@@ -429,6 +431,65 @@ class DrugIdMap(Base):
             postgresql_where=text("mapping_status = 'ACTIVE'"),
         ),
         Index("ix_drug_id_map_mapping_status", "mapping_status"),
+    )
+
+
+class DrugImage(Base):
+    """Validated reference image and provenance owned by one canonical product.
+
+    Binary content remains in the configured storage backend.  This table only
+    records the deterministic storage key and enough source provenance to
+    reproduce or retire an imported B-02 image safely.
+    """
+
+    __tablename__ = "drug_image"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    drug_product_id: Mapped[str] = mapped_column(ForeignKey("drug_product.id"), nullable=False, index=True)
+    legacy_drug_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    storage_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    source_page_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_snapshot_id: Mapped[str] = mapped_column(String, nullable=False)
+    source_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    normalized_checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String, nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    view_type: Mapped[str] = mapped_column(String, nullable=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    validation_status: Mapped[str] = mapped_column(String, nullable=False)
+    collection_version: Mapped[str] = mapped_column(String, nullable=False)
+    source_retrieved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "validation_status IN ('VALIDATED', 'INVALID', 'RETIRED')",
+            name="ck_drug_image_validation_status",
+        ),
+        CheckConstraint("width > 0 AND height > 0 AND file_size > 0", name="ck_drug_image_dimensions"),
+        UniqueConstraint(
+            "drug_product_id",
+            "source_snapshot_id",
+            "source_url",
+            "checksum_sha256",
+            "view_type",
+            name="uq_drug_image_source_identity",
+        ),
+        Index("ix_drug_image_checksum_sha256", "checksum_sha256"),
+        Index("ix_drug_image_product_status", "drug_product_id", "validation_status"),
+        Index(
+            "uq_drug_image_validated_primary",
+            "drug_product_id",
+            "collection_version",
+            unique=True,
+            postgresql_where=text("is_primary AND validation_status = 'VALIDATED'"),
+            sqlite_where=text("is_primary AND validation_status = 'VALIDATED'"),
+        ),
     )
 
 
