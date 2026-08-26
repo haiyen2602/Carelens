@@ -17,6 +17,7 @@ from threading import Lock
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.agents.v2.answerability import handoff_type_for
 from backend.agents.v2.context import ContextBudget, ContextManager
 from backend.agents.v2.conversation_state import (
     ActiveEntity,
@@ -818,6 +819,10 @@ def run_agent_orchestration(
                 requested_attribute=selected_action.label
                 if selected_action and selected_action.type == "drug_followup"
                 else None,
+                # BUILD-42: resolved from the same durable ConversationState
+                # loaded above, same provenance discipline as every other
+                # server-authored field in this request envelope.
+                answerability_attempt_count=conversation_state.answerability_attempt_count,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -910,6 +915,21 @@ def run_agent_orchestration(
         tool_results=result.tool_results,
         safety_event=safety_event,
     )
+    # BUILD-42: nonzero only when THIS turn's Answerability Gate decision was
+    # NEED_MORE_INFO -- every other turn (answered, topic switch, NEED_DOCTOR
+    # handoff, or the gate never engaging at all) resets the bounded-
+    # clarification counter, matching ``transition_state``'s own docstring.
+    next_answerability_attempt_count = (
+        result.answerability_decision.attempt_count
+        if result.answerability_decision is not None
+        and result.answerability_decision.outcome.value == "NEED_MORE_INFO"
+        else 0
+    )
+    next_answerability_reason = (
+        result.answerability_decision.reason_code.value
+        if result.answerability_decision is not None and result.answerability_decision.reason_code is not None
+        else None
+    )
     next_state = transition_state(
         conversation_state,
         intent=result.intent.value,
@@ -918,6 +938,8 @@ def run_agent_orchestration(
         selected_action=selected_action,
         offered_actions=suggested.actions,
         safety_event=safety_event,
+        answerability_attempt_count=next_answerability_attempt_count,
+        last_answerability_reason=next_answerability_reason,
     )
     state_store.save(
         db,
@@ -927,6 +949,22 @@ def run_agent_orchestration(
         state=next_state,
     )
 
+    # BUILD-42: a handoff created via the Answerability Gate always carries
+    # `answerability_decision` with a real reason_code (see
+    # `_answerability_handoff_reply` in orchestrator.py) -- any OTHER
+    # handoff (Safety-Domain-sourced: acute danger, overdose, dose-
+    # unresolved, or the pre-existing DOCTOR_REVIEW intent) never sets that
+    # field, so its absence is exactly the SAFETY signal.
+    handoff_type = None
+    if result.handoff_result is not None:
+        handoff_type = (
+            handoff_type_for(
+                reason_code=result.answerability_decision.reason_code.value, risk_disposition="UNCERTAINTY_HANDOFF"
+            ).value
+            if result.answerability_decision is not None and result.answerability_decision.reason_code is not None
+            else handoff_type_for(reason_code=None, risk_disposition="HANDOFF_REQUIRED").value
+        )
+
     response = AgentV2OrchestrateResponse(
         status=result.status,
         reply=suggested.reply,
@@ -935,6 +973,8 @@ def run_agent_orchestration(
         citations=[AgentV2CitationOut(title=c.title, source=c.source, url=c.url) for c in result.citations],
         safety_disposition=result.safety_decision.outcome.value if result.safety_decision else None,
         handoff_id=result.handoff_result.request_id if result.handoff_result else None,
+        handoff_required=result.handoff_result is not None,
+        handoff_type=handoff_type,
         trace_id=result.trace_id,
         agent_run_id=result.agent_run_id,
         suggested_actions=[SuggestedActionOut(**action.as_dict()) for action in next_state.offered_actions],

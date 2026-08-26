@@ -158,6 +158,20 @@ class CheckpointedDoctorHandoffGateway:
             self._telemetry.event(trace, TraceComponent.HANDOFF, "agent_handoff.created", handoff_outcome="CREATED")
         return result
 
+    # BUILD-42: deliberately NO ``create_for_uncertainty`` method here (an
+    # earlier version of this build added one, mirroring ``create`` above --
+    # removed after real local E2E showed it always raises `CheckpointError`).
+    # Both ``handoff_idempotency_key`` and ``record_handoff_created``
+    # (agent_checkpoint.py) hard-require ``checkpoint.safety_disposition ==
+    # "HANDOFF_REQUIRED"``, and `finish_run` explicitly rejects a
+    # `HANDOFF_CREATED` status too -- there is structurally no existing,
+    # safe way to checkpoint-terminalize an Answerability-Gate-created
+    # handoff without fabricating a Safety Domain artifact for it (exactly
+    # what SS17 says not to do). The orchestrator calls
+    # ``DoctorHandoffGateway.create_for_uncertainty`` (non-checkpointed)
+    # directly instead -- see ``AgentOrchestrator._create_answerability_
+    # handoff``'s own docstring for the full trade-off.
+
 
 class CheckpointedTerminalStateRecorder:
     """Mirror the existing runtime terminal status into durable checkpoint state."""

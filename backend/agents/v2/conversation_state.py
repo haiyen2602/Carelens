@@ -92,6 +92,15 @@ class ConversationState:
     offered_actions: tuple[SuggestedAction, ...] = ()
     pending_selection: str | None = None
     updated_at: datetime | None = None
+    # BUILD-42: bounded clarification-attempt tracking for the Answerability
+    # Gate (see backend/agents/v2/answerability.py). Reset to 0 by
+    # ``transition_state`` on every turn the Answerability Gate did not
+    # itself decide NEED_MORE_INFO for -- see that function's own docstring.
+    # No equivalent counter existed anywhere in this module before this
+    # build (confirmed by audit before adding it, per the build's own
+    # instruction not to duplicate existing state).
+    answerability_attempt_count: int = 0
+    last_answerability_reason: str | None = None
 
     @property
     def requested_aspect(self) -> str | None:
@@ -104,7 +113,7 @@ class ConversationState:
 
     def as_dict(self, *, actor_id: str, patient_id: str) -> dict[str, object]:
         return {
-            "version": 3,
+            "version": 4,
             "actor_id": actor_id,
             "patient_id": patient_id,
             "conversation_id": self.conversation_id,
@@ -131,6 +140,8 @@ class ConversationState:
             "offered_actions": [action.as_dict() for action in self.offered_actions],
             "pending_selection": self.pending_selection,
             "updated_at": (self.updated_at or datetime.now(UTC)).isoformat(),
+            "answerability_attempt_count": self.answerability_attempt_count,
+            "last_answerability_reason": self.last_answerability_reason,
         }
 
     @classmethod
@@ -190,6 +201,13 @@ class ConversationState:
                 offered_actions=actions,
                 pending_selection=str(value["pending_selection"]) if value.get("pending_selection") else None,
                 updated_at=datetime.fromisoformat(value["updated_at"]) if value.get("updated_at") else None,
+                # BUILD-42: absent on any state persisted before this build
+                # (older ``version: 3`` rows) -- default 0/None reads back
+                # exactly as a fresh conversation, never a fabricated count.
+                answerability_attempt_count=int(value.get("answerability_attempt_count") or 0),
+                last_answerability_reason=str(value["last_answerability_reason"])
+                if value.get("last_answerability_reason")
+                else None,
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -243,11 +261,27 @@ def transition_state(
     selected_action: SuggestedAction | None = None,
     offered_actions: tuple[SuggestedAction, ...] = (),
     safety_event: bool = False,
+    answerability_attempt_count: int = 0,
+    last_answerability_reason: str | None = None,
 ) -> ConversationState:
-    """Persist a server-authoritative state transition without fallback templates."""
+    """Persist a server-authoritative state transition without fallback templates.
+
+    BUILD-42: ``answerability_attempt_count`` defaults to 0 -- the caller
+    (agent_v2_routes.py) only passes a nonzero value when this exact turn's
+    ``OrchestrationResult.answerability_decision`` was NEED_MORE_INFO, so
+    every other turn (an answered question, a topic switch, a genuinely new
+    question) resets the bounded-clarification counter rather than letting
+    it silently accumulate across unrelated turns.
+    """
     if safety_event:
         return replace(
-            state, last_intent=intent, offered_actions=(), pending_selection=None, updated_at=datetime.now(UTC)
+            state,
+            last_intent=intent,
+            offered_actions=(),
+            pending_selection=None,
+            updated_at=datetime.now(UTC),
+            answerability_attempt_count=0,
+            last_answerability_reason=None,
         )
 
     # `topic` and `entity` are mutually exclusive by contract (a turn is
@@ -279,6 +313,8 @@ def transition_state(
         offered_actions=tuple(action for action in offered_actions if is_allowed_action(action))[:4],
         pending_selection=None,
         updated_at=datetime.now(UTC),
+        answerability_attempt_count=answerability_attempt_count,
+        last_answerability_reason=last_answerability_reason,
     )
 
 

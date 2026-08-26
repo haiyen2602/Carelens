@@ -76,6 +76,14 @@ from math import ceil
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
+from backend.agents.v2.answerability import (
+    AnswerabilityDecision,
+    AnswerabilityOutcome,
+    AnswerabilityReasonCode,
+    evaluate_clinical_clarification_answerability,
+    evaluate_grounding_answerability,
+    is_explicit_doctor_request,
+)
 from backend.agents.v2.checkpoint import (
     CheckpointedDoctorHandoffGateway,
     CheckpointedSafetyGateway,
@@ -102,7 +110,12 @@ from backend.agents.v2.vinmec_web import (
     VinmecWebSearchResult,
     VinmecWebStatus,
 )
-from backend.services.agent_checkpoint import CheckpointCreateCommand, claim_resume, create_or_load_checkpoint
+from backend.services.agent_checkpoint import (
+    CheckpointCreateCommand,
+    claim_resume,
+    create_or_load_checkpoint,
+    mark_run_status_only,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -832,6 +845,51 @@ _DOSE_SAFETY_CLARIFICATION_REPLY = (
     "nhiều hơn dự định hoặc có triệu chứng bất thường, hãy liên hệ cơ sở y tế hoặc gọi 115 ngay."
 )
 
+# BUILD-42: Answerability Gate fixed reply text -- one entry per reason_code
+# that needs its own focused ask/decline (SS7/SS13: "focused, actionable...
+# avoid 'Bạn có thể cung cấp thêm thông tin không?'"). A reason_code not
+# listed here (currently only REPEATED_CLARIFICATION/MAX_ATTEMPTS_REACHED,
+# which never reach this dict -- they always go to NEED_DOCTOR, never
+# NEED_MORE_INFO) has no NEED_MORE_INFO text at all by construction.
+#
+# ONLY ``evaluate_grounding_answerability``'s NEED_MORE_INFO branch ever
+# indexes into this dict (the one call site below, fed by that function --
+# its reason_code is always UNRESOLVED_ENTITY or MISSING_REQUIRED_CONTEXT,
+# both keys present here). ``evaluate_clinical_clarification_answerability``
+# (the OTHER function that can return NEED_MORE_INFO, used by
+# ``_clinical_clarification_reply``) deliberately sets ``reason_code=None``
+# for that outcome and is NEVER used to index this dict -- its caller passes
+# the existing fixed ``_TRIAGE_CLARIFICATION_REPLY``/``_DOSE_SAFETY_
+# CLARIFICATION_REPLY`` text straight to ``_answerability_more_info_reply``
+# instead (see its own docstring: "the existing fixed clarification text is
+# unchanged"). PR #127 review (round 2) flagged this as a potential
+# KeyError conflating the two functions/call sites; verified false by
+# reading both real call sites plus a passing real orchestrator-level test
+# (test_c_missing_drug_strength_need_more_info) that exercises exactly the
+# dict-indexed path end to end.
+_NEED_MORE_INFO_REPLIES: dict[AnswerabilityReasonCode, str] = {
+    AnswerabilityReasonCode.UNRESOLVED_ENTITY: (
+        "Mình cần thêm một chút thông tin để trả lời chính xác. Bạn đang dùng thuốc tên đầy đủ và "
+        "hàm lượng bao nhiêu mg (ví dụ: Paracetamol 500mg)?"
+    ),
+    AnswerabilityReasonCode.MISSING_REQUIRED_CONTEXT: (
+        "Mình cần thêm một chút thông tin để trả lời chính xác. Bạn có thể cho biết tên đầy đủ của "
+        "thuốc (và hàm lượng nếu biết) mà bạn đang hỏi không?"
+    ),
+}
+
+# SS13: never claim "khẩn cấp" (emergency) here -- that word is reserved for
+# a real Safety-authored message (ACUTE_DANGER_DETECTED/
+# POSSIBLE_OVERDOSE_REPORTED in runtime.py); an Answerability-Gate handoff is
+# non-emergency by definition (SS4). Never promise a response-time SLA the
+# system does not actually have.
+_NEED_DOCTOR_REPLY = (
+    "Mình chưa có đủ thông tin đáng tin cậy để trả lời chắc chắn câu hỏi này. Mình sẽ chuyển cuộc "
+    "trò chuyện để bác sĩ có thể xem và hỗ trợ bạn."
+)
+_EXPLICIT_DOCTOR_REQUEST_REPLY = "Mình sẽ chuyển yêu cầu này cho bác sĩ."
+_ANSWERABILITY_HANDOFF_UNAVAILABLE_REPLY = "Không thể chuyển yêu cầu cho bác sĩ lúc này. Vui lòng thử lại sau."
+
 
 def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     """Canonicalize bounded medical paraphrases before retrieval.
@@ -1076,6 +1134,10 @@ class OrchestrationRequest:
     active_entity_id: str | None = None
     active_entity_name: str | None = None
     requested_attribute: str | None = None
+    # BUILD-42: resolved exclusively from durable ConversationState by the
+    # API boundary, same provenance discipline as the fields above -- never
+    # a client-supplied count. See answerability.py's own module docstring.
+    answerability_attempt_count: int = 0
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -1118,6 +1180,12 @@ class OrchestrationResult:
     # enforcement, dependency-unavailable fail-closed) that never goes
     # through `ReadOnlyAgentRuntime.run()` at all.
     error_code: str | None = None
+    # BUILD-42: set only when the Answerability Gate made an explicit
+    # NEED_MORE_INFO/NEED_DOCTOR decision this turn -- `None` for every
+    # ordinary ANSWERABLE turn (the vast majority), which is exactly the
+    # signal agent_v2_routes.py uses to reset (rather than carry forward)
+    # ConversationState.answerability_attempt_count.
+    answerability_decision: AnswerabilityDecision | None = None
 
 
 _EVIDENCE_PREAMBLE = (
@@ -1771,6 +1839,35 @@ class AgentOrchestrator:
         needs_handoff = safety_decision is not None and safety_decision.outcome is SafetyOutcome.HANDOFF_REQUIRED
         is_safety_blocked = safety_decision is not None and safety_decision.outcome is SafetyOutcome.SAFETY_BLOCKED
 
+        # BUILD-42 SS10: an explicit "connect me to a doctor" request is
+        # checked here -- deliberately AFTER Safety's own decision is fully
+        # computed above (`needs_handoff`/`is_safety_blocked`), so a message
+        # that is ALSO a real Safety trigger (e.g. an overdose report that
+        # also asks for a doctor) is already handled by Safety and never
+        # reaches this branch at all (`not needs_handoff and not
+        # is_safety_blocked` guards it) -- Safety authority is unchanged by
+        # construction, not by ordering convention alone. Deliberately
+        # BEFORE Tools/RAG/Model: "no need to force the user through
+        # clarification" (spec SS10) for a request that is not actually
+        # asking this system a medical question at all. Not routed through
+        # the existing OrchestrationIntent.DOCTOR_REVIEW keyword/Safety
+        # bypass (see answerability.py's own docstring for why: that intent
+        # is untouched by this build, reason_code EXPLICIT_DOCTOR_REQUEST is
+        # new and Answerability-Gate-owned, not Safety-owned).
+        if not needs_handoff and not is_safety_blocked and is_explicit_doctor_request(request.message):
+            return self._answerability_handoff_reply(
+                request,
+                decision.intent,
+                AnswerabilityReasonCode.EXPLICIT_DOCTOR_REQUEST,
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+                started,
+                reply_text=_EXPLICIT_DOCTOR_REQUEST_REPLY,
+            )
+
         # -- Doctor Handoff ----------------------------------------------------
         handoff_result: AgentHandoffResult | None = None
         if needs_handoff:
@@ -1867,6 +1964,54 @@ class AgentOrchestrator:
                 result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
         else:
             result = _enforce_medical_grounding(result, intent=decision.intent, citations=tuple(citations))
+
+        # BUILD-42 SS23: only the personalized-medication-shaped grounding
+        # failures (DRUG_INFORMATION/PRESCRIPTION_INFORMATION/DOSE_STATUS --
+        # i.e. every _GROUNDING_REQUIRED_INTENTS member outside
+        # _GENERAL_MEDICAL_DECLINE_INTENTS) go through the Answerability
+        # Gate's bounded-clarification policy. GENERAL_MEDICAL_INFORMATION/
+        # UNKNOWN_OR_AMBIGUOUS keep the existing Cluster B honest-decline
+        # behavior completely untouched -- "general educational question
+        # with no evidence: honest decline may be acceptable" (spec's own
+        # words) is not something this build changes. `has_ambiguous_
+        # candidates=False` always here: `_enforce_medical_grounding` only
+        # ever replaces the reply when `result.tool_results` is EMPTY (see
+        # its own docstring) -- a real multiple-candidate search_drug result
+        # (e.g. a bare "aspirin"/"vitamin" query, BUILD-40/41) already
+        # counts as tool evidence and never reaches this branch at all.
+        if (
+            result.status is RunStatus.COMPLETED
+            and result.error_code == "GROUNDING_FAILURE"
+            and decision.intent not in _GENERAL_MEDICAL_DECLINE_INTENTS
+        ):
+            answerability_decision = evaluate_grounding_answerability(
+                attempt_count=request.answerability_attempt_count,
+                provenance=f"agent-orchestrator:grounding-failure:{decision.intent.value.lower()}",
+                has_ambiguous_candidates=False,
+            )
+            if answerability_decision.outcome is AnswerabilityOutcome.NEED_DOCTOR:
+                return self._answerability_handoff_reply(
+                    request,
+                    decision.intent,
+                    answerability_decision.reason_code,
+                    session_key,
+                    trace,
+                    agent_run_id,
+                    checkpoint_db,
+                    lease_token,
+                    started,
+                )
+            return self._answerability_more_info_reply(
+                decision.intent,
+                answerability_decision,
+                _NEED_MORE_INFO_REPLIES[answerability_decision.reason_code],
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+                started,
+            )
 
         if checkpoint_db is not None and result.status not in (RunStatus.SAFETY_BLOCKED, RunStatus.HANDOFF_CREATED):
             if lease_token is None:
@@ -1973,6 +2118,187 @@ class AgentOrchestrator:
                 agent_run_id=agent_run_id, lease_token=lease_token, request=handoff_request, safety=safety_decision, trace=trace
             )
         return self._handoff_gateway.create(request=handoff_request, safety=safety_decision)
+
+    def _create_answerability_handoff(
+        self,
+        request: OrchestrationRequest,
+        reason_code: AnswerabilityReasonCode,
+        *,
+        agent_run_id,
+        checkpoint_db,
+        lease_token,
+        trace,
+    ) -> AgentHandoffResult:
+        """BUILD-42: parallel to ``_create_handoff`` above, but for a
+        NEED_DOCTOR decision the Answerability Gate made itself -- never a
+        ``SafetyDecision``. Same idempotency-key shape (``agent-run:{id}:
+        handoff``) as the Safety path, so a retry of the SAME agent run
+        cannot duplicate its own handoff either way (``create_doctor_review_
+        request``'s own idempotency-key dedup handles this, independent of
+        the checkpoint system -- see ``doctor_handoff.py``); the SEPARATE
+        cross-run/patient-level dedup (SS12) lives in
+        ``AuthorizedDoctorHandoffAdapter.create``, not here.
+
+        Deliberately NEVER routed through ``CheckpointedDoctorHandoffGateway``
+        (unlike ``_create_handoff`` above): both ``handoff_idempotency_key``
+        and ``record_handoff_created`` (agent_checkpoint.py) hard-require
+        ``checkpoint.safety_disposition == "HANDOFF_REQUIRED"`` -- a real
+        Safety Domain artifact this build's whole design goal is to NOT
+        fabricate for an uncertainty handoff (SS17). ``finish_run`` (used by
+        the generic ``CheckpointedTerminalStateRecorder``) explicitly
+        rejects ``HANDOFF_CREATED`` too ("must be recorded through the
+        Doctor Handoff gateway") -- there is structurally no existing,
+        safe way to checkpoint-terminalize this specific status without
+        also touching Safety-coupled code. Found via real local E2E (not
+        assumed): the checkpoint-routed call raised ``CheckpointError``,
+        caught by ``_answerability_handoff_reply``'s own
+        ``except Exception`` and surfaced as a HANDOFF_FAILURE, before this
+        fix. Known, documented limitation of this trade-off: an
+        Answerability-Gate-created handoff's checkpoint row is never
+        terminalized, so a genuine mid-run crash-and-resume (not an
+        ordinary HTTP retry, which ``agent_idempotency`` already handles
+        completely separately) could re-attempt this call -- safe, since
+        the SAME idempotency key is reused and ``create_doctor_review_
+        request`` is itself idempotent (see report SS16).
+
+        A PR review of this checkpoint gap correctly flagged that the
+        consequence is bigger than the checkpoint row alone: ``_terminalize``
+        (agent_checkpoint.py) is also the ONLY place that ever moves the
+        durable ``AgentRun.status`` off its initial ``"RUNNING"`` value --
+        the table Admin Monitoring/stuck-run sweepers actually query, not
+        the checkpoint row. Skipping it entirely would leave every
+        Answerability-Gate handoff run permanently ``status="RUNNING"``,
+        ``completed_at=NULL`` despite having genuinely finished. Fixed below
+        via ``mark_run_status_only`` -- a narrow helper that mirrors ONLY
+        ``AgentRun.status``/``completed_at``, still deliberately leaving the
+        checkpoint row itself non-terminal (that half of the trade-off is
+        unchanged and still safe, per the paragraph above)."""
+        handoff_request = DoctorHandoffRequest(
+            patient_id=request.patient_id,
+            actor_id=request.actor_id,
+            patient_question=request.message,
+            idempotency_key=f"agent-run:{agent_run_id}:handoff",
+            conversation_id=request.conversation_id,
+        )
+        provenance = f"answerability-gate:{reason_code.value.lower().replace('_', '-')}"
+        result = self._handoff_gateway.create_for_uncertainty(
+            request=handoff_request, reason_code=reason_code.value, provenance=provenance
+        )
+        if checkpoint_db is not None:
+            mark_run_status_only(checkpoint_db, agent_run_id=agent_run_id, status="HANDOFF_CREATED")
+        return result
+
+    def _answerability_handoff_reply(
+        self,
+        request: OrchestrationRequest,
+        intent: OrchestrationIntent,
+        reason_code: AnswerabilityReasonCode,
+        session_key,
+        trace,
+        agent_run_id,
+        checkpoint_db,
+        lease_token,
+        started,
+        *,
+        reply_text: str | None = None,
+    ) -> OrchestrationResult:
+        """Shared terminal-state builder for every Answerability-Gate
+        NEED_DOCTOR outcome (explicit request -- SS10; exhausted
+        clarification -- SS8/SS9; unsupported personalized question --
+        SS23). Mirrors ``run()``'s own Safety-handoff-failure shape on
+        failure (fails the run rather than silently answering). On success,
+        deliberately does NOT touch the checkpoint's own row (``Agent
+        RunCheckpoint`` stays non-terminal) -- see
+        ``_create_answerability_handoff``'s own docstring for why no
+        existing checkpoint-terminalization path can accept a HANDOFF_
+        CREATED status without a real Safety disposition, and why that is
+        still a safe, documented trade-off. The durable ``AgentRun`` row
+        itself (the table Admin Monitoring/sweepers actually query) IS
+        still marked terminal, via ``mark_run_status_only`` inside
+        ``_create_answerability_handoff``."""
+        try:
+            handoff_result = self._create_answerability_handoff(
+                request, reason_code, agent_run_id=agent_run_id, checkpoint_db=checkpoint_db, lease_token=lease_token, trace=trace
+            )
+        except Exception:
+            if self._telemetry is not None:
+                self._telemetry.event(trace, TraceComponent.HANDOFF, "agent_handoff.failed", error_code="DOCTOR_HANDOFF_UNAVAILABLE")
+            return OrchestrationResult(
+                trace.trace_id,
+                agent_run_id,
+                intent,
+                RunStatus.FAILED,
+                _ANSWERABILITY_HANDOFF_UNAVAILABLE_REPLY,
+                (),
+                (),
+                None,
+                None,
+                RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)),
+                "HANDOFF_FAILURE",
+            )
+        reply = reply_text or _NEED_DOCTOR_REPLY
+        metrics = RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000))
+        if self._telemetry is not None:
+            self._telemetry.event(
+                trace, TraceComponent.HANDOFF, "agent_answerability.handoff_created", reason_code=reason_code.value
+            )
+        self._remember_reply(session_key, agent_run_id, RunResult(RunStatus.HANDOFF_CREATED, reply, (), metrics))
+        return OrchestrationResult(
+            trace.trace_id,
+            agent_run_id,
+            intent,
+            RunStatus.HANDOFF_CREATED,
+            reply,
+            (),
+            (),
+            None,
+            handoff_result,
+            metrics,
+            None,
+            answerability_decision=AnswerabilityDecision(
+                AnswerabilityOutcome.NEED_DOCTOR, reason_code, "agent-orchestrator:answerability-gate", 0
+            ),
+        )
+
+    def _answerability_more_info_reply(
+        self,
+        intent: OrchestrationIntent,
+        answerability_decision: AnswerabilityDecision,
+        reply_text: str,
+        session_key,
+        trace,
+        agent_run_id,
+        checkpoint_db,
+        lease_token,
+        started,
+    ) -> OrchestrationResult:
+        """Shared terminal-state builder for a NEED_MORE_INFO decision --
+        same COMPLETED/checkpoint shape as the pre-existing
+        ``_context_clarification_reply``/``_clinical_clarification_reply``,
+        with ``answerability_decision`` attached so the API boundary
+        (agent_v2_routes.py) can persist the incremented attempt count."""
+        result = RunResult(RunStatus.COMPLETED, reply_text, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)))
+        if checkpoint_db is not None:
+            if lease_token is None:
+                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+            )
+        self._remember_reply(session_key, agent_run_id, result)
+        return OrchestrationResult(
+            trace.trace_id,
+            agent_run_id,
+            intent,
+            result.status,
+            result.response,
+            (),
+            (),
+            None,
+            None,
+            result.metrics,
+            result.error_code,
+            answerability_decision=answerability_decision,
+        )
 
     # -- retrieval / web --------------------------------------------------------
 
@@ -2106,6 +2432,12 @@ class AgentOrchestrator:
         retrieval or tool call: a missing article or product-strength record
         must not become a generic drug-information fallback or an invented
         dose recommendation.
+
+        BUILD-42: previously asked the same fixed clarification forever with
+        no bounded escalation. ``answerability_attempt_count`` (from durable
+        ConversationState, threaded in via ``request``) now bounds it -- see
+        ``evaluate_clinical_clarification_answerability`` in answerability.py.
+        The first-attempt clarification text itself is completely unchanged.
         """
 
         if decision.intent is OrchestrationIntent.PERSONAL_SYMPTOM:
@@ -2117,28 +2449,27 @@ class AgentOrchestrator:
             if request.active_entity_name:
                 reply = f"Bạn đang hỏi về {request.active_entity_name}. {reply}"
 
+        answerability_decision = evaluate_clinical_clarification_answerability(
+            attempt_count=request.answerability_attempt_count,
+            provenance=f"agent-orchestrator:clinical-clarification:{decision.intent.value.lower()}",
+        )
+        if answerability_decision.outcome is AnswerabilityOutcome.NEED_DOCTOR:
+            return self._answerability_handoff_reply(
+                request,
+                decision.intent,
+                answerability_decision.reason_code,
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+                started,
+            )
+
         if self._telemetry is not None:
             self._telemetry.event(trace, TraceComponent.ROUTER, event_name)
-        result = RunResult(RunStatus.COMPLETED, reply, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)))
-        if checkpoint_db is not None:
-            if lease_token is None:
-                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
-            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
-                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
-            )
-        self._remember_reply(session_key, agent_run_id, result)
-        return OrchestrationResult(
-            trace.trace_id,
-            agent_run_id,
-            decision.intent,
-            result.status,
-            result.response,
-            (),
-            (),
-            None,
-            None,
-            result.metrics,
-            result.error_code,
+        return self._answerability_more_info_reply(
+            decision.intent, answerability_decision, reply, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
         )
 
     def _schedule_reply(

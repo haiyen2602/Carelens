@@ -30,8 +30,11 @@ from __future__ import annotations
 
 import pytest
 
+from backend.agents.v2.answerability import AnswerabilityOutcome, AnswerabilityReasonCode
 from backend.agents.v2.model_gateway import ModelPlan, ModelSynthesis, ToolCall
 from backend.agents.v2.orchestrator import (
+    _NEED_DOCTOR_REPLY,
+    _NEED_MORE_INFO_REPLIES,
     _UNGROUNDED_ANSWER_DECLINE_REPLY,
     _UNGROUNDED_GENERAL_MEDICAL_DECLINE_REPLY,
     Citation,
@@ -163,6 +166,18 @@ def test_golden_query_21_omeprazole_ungrounded_answer_is_now_declined():
     # drug-timing fact from its own general knowledge, calling no tool at
     # all (plan.response alone becomes the final reply per BUILD-19B, since
     # there are no tool_calls to synthesize from).
+    #
+    # BUILD-42: through the FULL orchestrator.run() pipeline (unlike the
+    # _enforce_medical_grounding unit tests below, which call that function
+    # directly and are unaffected -- it is unchanged), a DRUG_INFORMATION-
+    # shaped grounding failure's FIRST occurrence in a conversation is no
+    # longer this fixed decline -- it is now a NEED_MORE_INFO clarification
+    # ask via the Answerability Gate (see answerability.py). The fixed
+    # decline text (_UNGROUNDED_ANSWER_DECLINE_REPLY) itself still exists
+    # and is still what _enforce_medical_grounding computes internally, but
+    # the orchestrator now overrides it for this specific intent group --
+    # see test_golden_query_21_second_grounding_failure_escalates_to_doctor
+    # below for what happens once the clarification attempt is exhausted.
     plan = ModelPlan(response="Omeprazole thuong uong truoc an, tot nhat truoc bua an 30-60 phut.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan))
 
@@ -170,9 +185,38 @@ def test_golden_query_21_omeprazole_ungrounded_answer_is_now_declined():
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED  # still answers -- just not with the fabricated fact
-    assert result.response == _UNGROUNDED_ANSWER_DECLINE_REPLY
+    assert result.response == _NEED_MORE_INFO_REPLIES[AnswerabilityReasonCode.MISSING_REQUIRED_CONTEXT]
     assert result.citations == ()
     assert result.tool_results == ()
+    assert result.answerability_decision is not None
+    assert result.answerability_decision.outcome is AnswerabilityOutcome.NEED_MORE_INFO
+    assert result.answerability_decision.attempt_count == 1
+
+
+def test_golden_query_21_second_grounding_failure_escalates_to_doctor():
+    """BUILD-42: the SAME unresolved drug-information grounding failure, now
+    on a THIRD turn (``answerability_attempt_count=2``, as the API boundary
+    would thread in from durable ConversationState after two prior
+    NEED_MORE_INFO turns -- spec's own SS8 example: "turn1 -> NEED_MORE_INFO
+    attempt=1, turn2 -> NEED_MORE_INFO attempt=2, turn3 -> NEED_DOCTOR")
+    exhausts the bounded clarification budget
+    (answerability.MAX_CLARIFICATION_ATTEMPTS=2) and hands off instead of
+    asking a third time."""
+    plan = ModelPlan(response="Omeprazole thuong uong truoc an, tot nhat truoc bua an 30-60 phut.")
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan))
+
+    result = orchestrator.run(
+        _request("thuoc omeprazole uong truoc hay sau an", answerability_attempt_count=2), tools=_tools()
+    )
+
+    assert result.intent is OrchestrationIntent.DRUG_INFORMATION
+    assert result.status is RunStatus.HANDOFF_CREATED
+    assert result.response == _NEED_DOCTOR_REPLY
+    assert result.handoff_result is not None
+    assert result.answerability_decision is not None
+    assert result.answerability_decision.outcome is AnswerabilityOutcome.NEED_DOCTOR
+    assert result.answerability_decision.reason_code is AnswerabilityReasonCode.MAX_ATTEMPTS_REACHED
+    assert result.safety_decision is None  # never routed through the Safety Domain -- see SS17
 
 
 def test_grounded_drug_information_query_is_unaffected():

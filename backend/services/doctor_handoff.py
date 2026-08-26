@@ -32,6 +32,13 @@ class VerifiedContextSource(StrEnum):
     OPERATIONAL_DB = "OPERATIONAL_DB"
     DOCTOR = "DOCTOR"
     DRUG_KNOWLEDGE_V2 = "DRUG_KNOWLEDGE_V2"
+    # BUILD-42: mirrors HandoffContextSource.ANSWERABILITY_GATE
+    # (backend/agents/v2/handoff.py) -- this domain-layer enum and that
+    # agent-facing one are kept in sync by convention (see
+    # agent_doctor_handoff.py::_context_ref, the one place a value crosses
+    # from one to the other); found missing via real local E2E (a raw
+    # ValueError, not caught by any earlier code review), not by inspection.
+    ANSWERABILITY_GATE = "ANSWERABILITY_GATE"
 
 
 class DoctorHandoffError(RuntimeError):

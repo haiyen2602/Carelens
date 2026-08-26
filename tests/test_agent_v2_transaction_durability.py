@@ -161,6 +161,59 @@ def test_handoff_persists_and_is_visible_from_an_independent_session(db_path):
 
 
 # ---------------------------------------------------------------------------
+# BUILD-42 follow-up (PR #127 review): an Answerability-Gate handoff (never
+# routed through CheckpointedDoctorHandoffGateway -- see
+# AgentOrchestrator._create_answerability_handoff's own docstring) must
+# still mark the durable AgentRun row terminal, even though its checkpoint
+# row deliberately stays non-terminal (accepted, documented trade-off).
+# Uses the EXPLICIT_DOCTOR_REQUEST path (deterministic regex, zero model
+# calls, zero Safety Domain involvement) so this needs no OpenAI
+# credentials, exactly like the DOCTOR_REVIEW tests above.
+# ---------------------------------------------------------------------------
+
+
+def test_answerability_gate_handoff_marks_agent_run_terminal_but_not_checkpoint(db_path):
+    _seed_patient(db_path)
+    session_a = _new_session(db_path)
+    try:
+        response = run_agent_orchestration(
+            _http_request(message="Tôi muốn nói chuyện với bác sĩ."), db=session_a, actor=_actor()
+        )
+    finally:
+        session_a.close()
+
+    assert response.status == "HANDOFF_CREATED"
+    # EXPLICIT_DOCTOR_REQUEST derives HandoffType.USER_REQUEST specifically
+    # (handoff_type_for, answerability.py) -- still risk_disposition=
+    # "UNCERTAINTY_HANDOFF" under the hood, same non-Safety creation path
+    # as every other Answerability-Gate handoff this test is really about.
+    assert response.handoff_type == "USER_REQUEST"
+    assert response.handoff_id is not None
+
+    session_b = _new_session(db_path)
+    try:
+        run = session_b.get(AgentRun, response.agent_run_id)
+        assert run is not None
+        # The fix: AgentRun.status/completed_at ARE mirrored for this path
+        # (mark_run_status_only, agent_checkpoint.py) -- before the fix this
+        # stayed "RUNNING"/None forever, which Admin Monitoring/stuck-run
+        # sweepers query directly.
+        assert run.status == "HANDOFF_CREATED"
+        assert run.completed_at is not None
+
+        checkpoint = session_b.execute(
+            select(AgentRunCheckpoint).where(AgentRunCheckpoint.agent_run_id == response.agent_run_id)
+        ).scalar_one()
+        # Unchanged, still-accepted half of the trade-off: the checkpoint
+        # row itself is never terminalized for this path (see
+        # _create_answerability_handoff's docstring for why).
+        assert checkpoint.terminal_status is None
+        assert checkpoint.safety_disposition is None
+    finally:
+        session_b.close()
+
+
+# ---------------------------------------------------------------------------
 # exception rollback: nothing durable survives a mid-run failure
 # ---------------------------------------------------------------------------
 

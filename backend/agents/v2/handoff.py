@@ -15,6 +15,10 @@ class HandoffContextSource(StrEnum):
     OPERATIONAL_DB = "OPERATIONAL_DB"
     DOCTOR = "DOCTOR"
     DRUG_KNOWLEDGE_V2 = "DRUG_KNOWLEDGE_V2"
+    # BUILD-42: provenance source for a handoff the Answerability Gate
+    # created directly -- never the Safety Domain (see
+    # ``DoctorHandoffGateway.create_for_uncertainty`` below).
+    ANSWERABILITY_GATE = "ANSWERABILITY_GATE"
 
 
 @dataclass(frozen=True)
@@ -95,6 +99,47 @@ class DoctorHandoffGateway:
             patient_question=request.patient_question,
             reason_code=safety.reason_code,
             risk_disposition=safety.outcome,
+            idempotency_key=request.idempotency_key,
+            verified_context_refs=refs,
+            conversation_id=request.conversation_id,
+            source_message_id=request.source_message_id,
+        )
+        return self._domain.create(command, created_at=created_at or datetime.now(UTC))
+
+    def create_for_uncertainty(
+        self,
+        *,
+        request: DoctorHandoffRequest,
+        reason_code: str,
+        provenance: str,
+        created_at: datetime | None = None,
+    ) -> AgentHandoffResult:
+        """BUILD-42: create a handoff from the Answerability Gate's own
+        decision -- deliberately NEVER routed through the Safety Domain
+        (contrast with ``create`` above, which hard-requires a
+        ``SafetyDecision``). ``risk_disposition="UNCERTAINTY_HANDOFF"`` is a
+        distinct, new string value on the *existing* ``DoctorReviewRequest.
+        risk_disposition`` column (no migration -- it is a plain ``String``,
+        never DB-enum-constrained, see ``backend/db/models.py``) and is what
+        ``answerability.handoff_type_for`` uses to tell a Safety handoff
+        apart from an Answerability-Gate one. Not creating an
+        ``AgentSafetyEvent`` here (unlike ``create``, whose caller always
+        also calls ``CheckpointedSafetyGateway.record`` first) is exactly
+        what keeps ``safety_trigger_rate`` unaffected by construction --
+        see BUILD-42 report SS17.
+        """
+        if not reason_code or not provenance:
+            raise ValueError("ANSWERABILITY_HANDOFF_REQUIRES_REASON_AND_PROVENANCE")
+        gate_ref = HandoffContextRef(HandoffContextSource.ANSWERABILITY_GATE, reason_code, provenance)
+        refs = request.verified_context_refs
+        if gate_ref not in refs:
+            refs = (*refs, gate_ref)
+        command = HandoffCreateCommand(
+            patient_id=request.patient_id,
+            actor_id=request.actor_id,
+            patient_question=request.patient_question,
+            reason_code=reason_code,
+            risk_disposition="UNCERTAINTY_HANDOFF",
             idempotency_key=request.idempotency_key,
             verified_context_refs=refs,
             conversation_id=request.conversation_id,
