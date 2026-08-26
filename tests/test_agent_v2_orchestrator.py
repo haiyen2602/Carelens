@@ -553,8 +553,16 @@ def test_short_term_memory_recalls_prior_turns_without_becoming_a_citation():
     assert "paracetamol 500mg" in second_prompt.casefold()  # the earlier turn was actually recalled
 
 
+# BUILD-43: these follow-up-resolution tests now pass the CANONICAL prior
+# topic explicitly via ``prior_active_topic`` (the real contract --
+# ``ConversationState.active_topic``, loaded by the API boundary from
+# durable state -- see follow_up.py's own module docstring for why this
+# replaced the old two-call, shared-short-term-memory pattern: that old
+# mechanism re-derived "the current topic" from raw memory TEXT via regex,
+# entirely independent of the canonical state BUILD-29D/BUILD-42 already
+# established as authoritative, which was the real root cause of
+# CANDIDATE-02, not just message length).
 def test_follow_up_resolution_enriches_router_retrieval_and_prompt_for_same_conversation():
-    store = ShortTermMemoryStore(_context_manager())
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(
         _SpyModelGateway(),
@@ -564,25 +572,25 @@ def test_follow_up_resolution_enriches_router_retrieval_and_prompt_for_same_conv
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="Sỏi thận cần đi khám ngay khi đau dữ dội.")),
         retrieval_gateway=retrieval_gateway,
-        short_term_memory=store,
     )
     tools = _tools()
 
-    first = orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=tools)
-    assert first.status is RunStatus.COMPLETED
+    result = orchestrator.run(
+        _request("Khi nào tôi cần đi khám ngay?", prior_active_topic="sỏi thận"), tools=tools
+    )
 
-    second = orchestrator.run(_request("Khi nào tôi cần đi khám ngay?"), tools=tools)
-
-    assert second.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
-    assert second.status is RunStatus.COMPLETED
-    assert retrieval_domain.calls[-1]["query"] == "khi nao benh soi than can di kham ngay"
-    assert "khi nao benh soi than can di kham ngay" in gateway.calls[-1]["message"]
+    assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert result.status is RunStatus.COMPLETED
+    assert result.follow_up_decision.category.value == "TRUE_FOLLOWUP"
+    assert result.follow_up_decision.inherited_topic is True
+    assert retrieval_domain.calls[-1]["query"] == "khi nao soi than can di kham ngay"
+    assert "khi nao soi than can di kham ngay" in gateway.calls[-1]["message"]
 
 
 @pytest.mark.parametrize(
     ("follow_up", "expected_query"),
     [
-        ("Bao giờ thì nên đi viện?", "khi nao benh soi than can di kham ngay"),
+        ("Bao giờ thì nên đi viện?", "khi nao soi than can di kham ngay"),
         ("Khi nào bệnh này nguy hiểm?", "soi than co nguy hiem khong"),
         ("Nguyên nhân thì sao?", "nguyen nhan gay soi than"),
         ("Bệnh này do đâu?", "nguyen nhan gay soi than"),
@@ -591,7 +599,6 @@ def test_follow_up_resolution_enriches_router_retrieval_and_prompt_for_same_conv
     ],
 )
 def test_follow_up_resolution_supports_semantic_variants(follow_up, expected_query):
-    store = ShortTermMemoryStore(_context_manager())
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(
         _SpyModelGateway(),
@@ -601,19 +608,16 @@ def test_follow_up_resolution_supports_semantic_variants(follow_up, expected_que
     orchestrator, _ = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
         retrieval_gateway=retrieval_gateway,
-        short_term_memory=store,
     )
 
-    orchestrator.run(_request("Bệnh sỏi thận là gì?"), tools=_tools())
-    result = orchestrator.run(_request(follow_up), tools=_tools())
+    result = orchestrator.run(_request(follow_up, prior_active_topic="sỏi thận"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
     assert retrieval_domain.calls[-1]["query"] == expected_query
 
 
-@pytest.mark.parametrize("topic", ["Bệnh sỏi thận", "Bệnh tiểu đường", "Bệnh viêm xoang"])
+@pytest.mark.parametrize("topic", ["sỏi thận", "tiểu đường", "viêm xoang"])
 def test_follow_up_resolution_is_not_kidney_stone_hardcoded(topic):
-    store = ShortTermMemoryStore(_context_manager())
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(
         _SpyModelGateway(),
@@ -623,18 +627,27 @@ def test_follow_up_resolution_is_not_kidney_stone_hardcoded(topic):
     orchestrator, _ = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
         retrieval_gateway=retrieval_gateway,
-        short_term_memory=store,
     )
 
-    orchestrator.run(_request(f"{topic} là gì?"), tools=_tools())
-    orchestrator.run(_request("Nguyên nhân thì sao?"), tools=_tools())
+    orchestrator.run(_request(f"{topic.capitalize()} là gì?"), tools=_tools())
+    result = orchestrator.run(_request("Nguyên nhân thì sao?", prior_active_topic=topic), tools=_tools())
 
+    assert result.follow_up_decision.category.value == "TRUE_FOLLOWUP"
     expected_topic = normalize_semantic_medical_query(f"Giải thích {topic}").topic
     assert retrieval_domain.calls[-1]["query"] == f"nguyen nhan gay {expected_topic}"
 
 
 def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
-    store = ShortTermMemoryStore(_context_manager())
+    """BUILD-43: 'Tôi muốn hỏi về tiểu đường' has no ``là gì``-shaped
+    ending, so it does not itself set the canonical topic via this build's
+    own ``_explicit_topic`` (a narrower, intentional scope than the old
+    ``_TOPIC_PATTERNS`` regex, which additionally matched this exact
+    "tôi muốn hỏi về X" intro shape) -- the durable ConversationState write
+    for a turn like this is agent_v2_routes.py's job (semantic.display_topic
+    /`_authoritative_topic_for_turn`, unchanged by BUILD-43), not the
+    follow-up classifier's. This test now asserts the STILL-required
+    invariant directly: once a topic IS canonical, a pronoun follow-up
+    correctly inherits it."""
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(
         _SpyModelGateway(),
@@ -644,11 +657,9 @@ def test_follow_up_resolution_extracts_explicit_ask_about_topic_intro():
     orchestrator, _ = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="grounded")),
         retrieval_gateway=retrieval_gateway,
-        short_term_memory=store,
     )
 
-    orchestrator.run(_request("Tôi muốn hỏi về tiểu đường"), tools=_tools())
-    result = orchestrator.run(_request("Triệu chứng của nó?"), tools=_tools())
+    result = orchestrator.run(_request("Triệu chứng của nó?", prior_active_topic="tiểu đường"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
     assert retrieval_domain.calls[-1]["query"] == "trieu chung cua tieu duong"
@@ -748,6 +759,10 @@ def test_semantic_normalization_does_not_rewrite_ambiguous_safety_or_time_querie
 
 
 def test_follow_up_without_context_asks_clarification_and_does_not_retrieve():
+    """An attribute-only phrase ("Nguyên nhân thì sao?") with NO
+    ``prior_active_topic``/``prior_active_entity_name`` at all -- BUILD-43:
+    AMBIGUOUS_FRAGMENT, same as before but now decided from the canonical-
+    state contract rather than an empty memory buffer."""
     retrieval_domain = _RetrievalDomain(DomainRetrievalResult((_retrieved_document(),), no_source_found=False))
     retrieval_gateway = RetrievalGateway(
         _SpyModelGateway(),
@@ -763,12 +778,19 @@ def test_follow_up_without_context_asks_clarification_and_does_not_retrieve():
     result = orchestrator.run(_request("Nguyên nhân thì sao?"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+    assert result.follow_up_decision.category.value == "AMBIGUOUS_FRAGMENT"
     assert "chủ đề nào" in result.response
     assert retrieval_domain.calls == []
     assert gateway.calls == []
 
 
 def test_ambiguous_follow_up_with_weak_context_asks_clarification():
+    """"Còn cái kia?" (E1/E2, follow_up.py) names no subject of its own and
+    -- BUILD-43: prior context is now ALWAYS explicit per-call
+    (``prior_active_topic``/``prior_active_entity_name``), never re-derived
+    from raw memory text -- this call passes neither, so AMBIGUOUS_FRAGMENT
+    is the only possible outcome regardless of what an earlier, unrelated
+    turn in the same in-process short-term memory happened to discuss."""
     store = ShortTermMemoryStore(_context_manager())
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
@@ -779,11 +801,21 @@ def test_ambiguous_follow_up_with_weak_context_asks_clarification():
     result = orchestrator.run(_request("Còn cái kia?"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+    assert result.follow_up_decision.category.value == "AMBIGUOUS_FRAGMENT"
     assert "chủ đề nào" in result.response
     assert gateway.calls[-1]["message"] != "Còn cái kia?"
 
 
 def test_follow_up_context_does_not_leak_across_conversation_session_or_actor():
+    """BUILD-43: since prior context is always explicit per-call rather than
+    read from an orchestrator-internal memory object, a structurally
+    stronger guarantee than the old mechanism's own scoping -- there is no
+    stateful lookup here at all for a leak to occur through. This still
+    exercises the real, unchanged risk surface (the SAME in-process
+    ``ShortTermMemoryStore`` instance, reused across differently-scoped
+    calls exactly as a shared-process deployment would) and confirms
+    ``prior_active_topic`` genuinely has to be supplied per call -- it is
+    never inferred from a different conversation/session/actor's memory."""
     store = ShortTermMemoryStore(_context_manager())
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")),
@@ -798,6 +830,7 @@ def test_follow_up_context_does_not_leak_across_conversation_session_or_actor():
     ):
         result = orchestrator.run(_request("Nguyên nhân thì sao?", **overrides), tools=_tools())
         assert result.intent is OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS
+        assert result.follow_up_decision.category.value == "AMBIGUOUS_FRAGMENT"
         assert "chủ đề nào" in result.response
     assert len(gateway.calls) == 1
 
