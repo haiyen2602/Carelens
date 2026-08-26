@@ -212,6 +212,28 @@ def test_e_repeated_clarification_unresolved_escalates_to_doctor():
     assert result.safety_decision is None
 
 
+def test_e2_first_attempt_clinical_clarification_need_more_info_no_key_error():
+    """PR #127 review (round 2): a bot review claimed
+    ``_NEED_MORE_INFO_REPLIES[answerability_decision.reason_code]`` would
+    KeyError "when a clinical clarification turn occurs", reasoning from
+    ``evaluate_clinical_clarification_answerability`` setting
+    ``reason_code=None`` for NEED_MORE_INFO. Verified false: that dict is
+    indexed ONLY by the (unrelated) grounding-failure call site, fed by
+    ``evaluate_grounding_answerability`` instead, whose reason_code is
+    never None. This is the FIRST-ATTEMPT (attempt_count=0, not yet
+    exhausted -- the actual "clinical clarification turn" the claim names)
+    real orchestrator run for the PERSONAL_SYMPTOM path -- the companion
+    test above only covers the already-exhausted turn -- and confirms it
+    returns the pre-existing fixed triage text with no exception."""
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway())
+    result = orchestrator.run(_request("tôi bị đau đầu", answerability_attempt_count=0), tools=_tools())
+    assert result.intent is OrchestrationIntent.PERSONAL_SYMPTOM
+    assert result.status is RunStatus.COMPLETED
+    assert result.answerability_decision.outcome is AnswerabilityOutcome.NEED_MORE_INFO
+    assert result.answerability_decision.reason_code is None
+    assert result.handoff_result is None
+
+
 def test_f_explicit_doctor_request_need_doctor():
     """F. Explicit doctor request -> NEED_DOCTOR, no model call at all."""
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="ignored")))

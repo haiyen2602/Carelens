@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.agents.v2.handoff import AgentHandoffResult, HandoffContextRef
 from backend.agents.v2.handoff import HandoffCreateCommand as AgentHandoffCreateCommand
 from backend.api.security import CurrentUser
-from backend.db.models import DoctorReviewRequest
+from backend.db.models import DoctorReviewRequest, Patient
 from backend.services.agent_authorization import require_agent_patient_access
 from backend.services.doctor_handoff import (
     HandoffCreateCommand,
@@ -47,6 +47,21 @@ class AuthorizedDoctorHandoffAdapter:
         # command never has this value (always "HANDOFF_REQUIRED"), so this
         # branch never fires for -- and never changes -- the Safety path.
         if command.risk_disposition == "UNCERTAINTY_HANDOFF":
+            # PR #127 review: this reuse check is a plain check-then-act --
+            # without a lock, two DIFFERENT concurrent agent runs for the
+            # SAME patient (e.g. a rapid double-send, each its own agent_run_
+            # id and therefore its own idempotency_key) could both see no
+            # existing active row before either commits its insert, creating
+            # two handoff rows for the same episode. The idempotency_key
+            # unique constraint (doctor_handoff.py) only protects a retry of
+            # the SAME agent run, not this cross-run case. Locking the
+            # Patient row here (it always exists -- already fetched, un-
+            # locked, by require_agent_patient_access above) serializes
+            # concurrent creation attempts for the same patient without a
+            # new migration or touching the shared, heavily-reused
+            # require_agent_patient_access helper itself. No-op contention
+            # for any other patient; released at this transaction's commit.
+            self._db.execute(select(Patient.id).where(Patient.id == command.patient_id).with_for_update())
             existing = self._db.execute(
                 select(DoctorReviewRequest)
                 .where(

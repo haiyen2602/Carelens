@@ -851,6 +851,22 @@ _DOSE_SAFETY_CLARIFICATION_REPLY = (
 # listed here (currently only REPEATED_CLARIFICATION/MAX_ATTEMPTS_REACHED,
 # which never reach this dict -- they always go to NEED_DOCTOR, never
 # NEED_MORE_INFO) has no NEED_MORE_INFO text at all by construction.
+#
+# ONLY ``evaluate_grounding_answerability``'s NEED_MORE_INFO branch ever
+# indexes into this dict (the one call site below, fed by that function --
+# its reason_code is always UNRESOLVED_ENTITY or MISSING_REQUIRED_CONTEXT,
+# both keys present here). ``evaluate_clinical_clarification_answerability``
+# (the OTHER function that can return NEED_MORE_INFO, used by
+# ``_clinical_clarification_reply``) deliberately sets ``reason_code=None``
+# for that outcome and is NEVER used to index this dict -- its caller passes
+# the existing fixed ``_TRIAGE_CLARIFICATION_REPLY``/``_DOSE_SAFETY_
+# CLARIFICATION_REPLY`` text straight to ``_answerability_more_info_reply``
+# instead (see its own docstring: "the existing fixed clarification text is
+# unchanged"). PR #127 review (round 2) flagged this as a potential
+# KeyError conflating the two functions/call sites; verified false by
+# reading both real call sites plus a passing real orchestrator-level test
+# (test_c_missing_drug_strength_need_more_info) that exercises exactly the
+# dict-indexed path end to end.
 _NEED_MORE_INFO_REPLIES: dict[AnswerabilityReasonCode, str] = {
     AnswerabilityReasonCode.UNRESOLVED_ENTITY: (
         "Mình cần thêm một chút thông tin để trả lời chính xác. Bạn đang dùng thuốc tên đầy đủ và "
