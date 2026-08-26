@@ -11,6 +11,7 @@ import json
 import logging
 import time
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from threading import Lock
 
@@ -27,6 +28,7 @@ from backend.agents.v2.conversation_state import (
     transition_state,
 )
 from backend.agents.v2.evaluation_v2 import EvaluationResult, MetricStatus, dispatch_evaluation
+from backend.agents.v2.follow_up import FollowUpCategory
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import ModelRole, ModelUsage, OpenAIModelGateway
 from backend.agents.v2.observability import (
@@ -106,8 +108,20 @@ def _validated_selected_action(state, candidate) -> SuggestedAction | None:
     return None
 
 
-def _resolved_drug_entity(tool_results) -> ActiveEntity | None:
-    """Promote only a server-returned canonical drug result into state."""
+def _resolved_drug_entity(tool_results, *, known_entity: ActiveEntity | None = None) -> ActiveEntity | None:
+    """Promote only a server-returned canonical drug result into state.
+
+    ``known_entity`` (BUILD-43): the already-known canonical entity for
+    this SAME id, if any -- the orchestrator's TRUE_FOLLOWUP bound-lookup
+    shortcut (``effective_entity_id``, orchestrator.py) calls
+    ``get_drug_info`` directly, bypassing ``search_drug`` entirely (the
+    whole point of the shortcut is to avoid re-searching an already-known
+    drug), so the ``search_drug``-sourced display name below is never
+    present for that path. Without this, the id-as-name fallback would
+    silently DEGRADE an already-real display name back to a raw catalog
+    slug every time a follow-up re-confirms the same entity -- found via
+    real local E2E, not assumed.
+    """
     info_ids = [item.data.get("legacy_drug_id") for item in tool_results if item.name == "get_drug_info"]
     if len(info_ids) != 1 or not info_ids[0]:
         return None
@@ -118,6 +132,8 @@ def _resolved_drug_entity(tool_results) -> ActiveEntity | None:
         for candidate in item.data.get("items", []):
             if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
                 return ActiveEntity("drug", drug_id, str(candidate["name"]))
+    if known_entity is not None and known_entity.id == drug_id:
+        return known_entity
     return ActiveEntity("drug", drug_id, drug_id)
 
 
@@ -823,6 +839,21 @@ def run_agent_orchestration(
                 # loaded above, same provenance discipline as every other
                 # server-authored field in this request envelope.
                 answerability_attempt_count=conversation_state.answerability_attempt_count,
+                # BUILD-43: the CANONICAL prior state, ALWAYS passed (unlike
+                # active_entity_id/active_entity_name above, which are only
+                # set for the already-authorized button/typed-action path)
+                # -- see follow_up.py's own module docstring and
+                # OrchestrationRequest's own field comments for why this
+                # replaced memory-text-based follow-up resolution.
+                prior_active_topic=conversation_state.active_topic.canonical_name
+                if conversation_state.active_topic
+                else None,
+                prior_active_entity_id=conversation_state.active_entity.id
+                if conversation_state.active_entity
+                else None,
+                prior_active_entity_name=conversation_state.active_entity.canonical_name
+                if conversation_state.active_entity
+                else None,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -859,7 +890,7 @@ def run_agent_orchestration(
         raise
 
     semantic = normalize_semantic_medical_query(input_resolution.query)
-    resolved_entity = _resolved_drug_entity(result.tool_results)
+    resolved_entity = _resolved_drug_entity(result.tool_results, known_entity=conversation_state.active_entity)
     safety_event = result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None
     # BUILD-29D.2 fix (found via real local E2E, 2026-08-23): the keyword
     # router (classify_intent) can label a message GENERAL_MEDICAL_INFORMATION
@@ -893,17 +924,36 @@ def run_agent_orchestration(
     # at all -- the turn's `else` branch in transition_state then correctly
     # carries the existing state forward unchanged) is the only display-safe
     # fallback.
+    # BUILD-43: an explicit TOPIC_SWITCH decision (follow_up.py) means the
+    # canonical prior topic/entity must NOT be silently carried forward just
+    # because THIS turn also failed to independently re-resolve a new one
+    # (e.g. a genuinely new disease question whose phrasing doesn't happen
+    # to match `_authoritative_topic_for_turn`'s own narrow rewrite rules
+    # below) -- invariant #7 ("a topic switch must clear incompatible
+    # inherited state"). `conversation_state_for_carry_forward` is what the
+    # rest of this turn falls back to instead of `conversation_state`
+    # itself for that one purpose; `conversation_state` itself is untouched
+    # (still the real prior state passed to `transition_state` for every
+    # OTHER field, and still what gets persisted if this turn fails).
+    is_topic_switch = (
+        result.follow_up_decision is not None and result.follow_up_decision.category is FollowUpCategory.TOPIC_SWITCH
+    )
+    conversation_state_for_carry_forward = (
+        replace(conversation_state, active_topic=None, active_entity=None) if is_topic_switch else conversation_state
+    )
     topic = _authoritative_topic_for_turn(
-        conversation_state,
+        conversation_state_for_carry_forward,
         selected_action=selected_action,
         semantic_topic=semantic.display_topic,
         is_general_medical_turn=result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
         resolved_entity=resolved_entity,
     )
     active_topic = topic or (
-        conversation_state.active_topic.canonical_name if conversation_state.active_topic else None
+        conversation_state_for_carry_forward.active_topic.canonical_name
+        if conversation_state_for_carry_forward.active_topic
+        else None
     )
-    active_entity = resolved_entity or conversation_state.active_entity
+    active_entity = resolved_entity or conversation_state_for_carry_forward.active_entity
     suggested = build_suggested_actions(
         reply=result.response,
         status=result.status,
@@ -931,7 +981,7 @@ def run_agent_orchestration(
         else None
     )
     next_state = transition_state(
-        conversation_state,
+        conversation_state_for_carry_forward,
         intent=result.intent.value,
         topic=topic,
         entity=resolved_entity,

@@ -69,7 +69,7 @@ import time
 import unicodedata
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from math import ceil
@@ -90,6 +90,7 @@ from backend.agents.v2.checkpoint import (
     CheckpointedTerminalStateRecorder,
 )
 from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextManager
+from backend.agents.v2.follow_up import FollowUpCategory, FollowUpDecision, classify_follow_up
 from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, DoctorHandoffRequest
 from backend.agents.v2.observability import AgentTelemetry, TraceComponent, TraceContext
 from backend.agents.v2.retrieval import RetrievalGateway, RetrievalGatewayResult, RetrievalRequest, RetrievalStatus
@@ -731,26 +732,6 @@ def classify_intent(message: str, *, has_dose_id: bool = False, now: datetime | 
     return RouterDecision(intent, trigger, requires_occurrence, bypass, use_retrieval, use_web, time_range)
 
 
-class ContextResolutionStatus(StrEnum):
-    NOT_APPLICABLE = "NOT_APPLICABLE"
-    RESOLVED = "RESOLVED"
-    AMBIGUOUS = "AMBIGUOUS"
-    NO_CONTEXT = "NO_CONTEXT"
-
-
-@dataclass(frozen=True)
-class ContextResolution:
-    status: ContextResolutionStatus
-    resolved_query: str
-    resolved_topic: str | None = None
-    resolution_source_turn: int | None = None
-    category: str | None = None
-
-    @property
-    def used(self) -> bool:
-        return self.status is ContextResolutionStatus.RESOLVED
-
-
 @dataclass(frozen=True)
 class SemanticMedicalQuery:
     raw_query: str
@@ -766,15 +747,6 @@ class SemanticMedicalQuery:
         return self.normalized_query != self.raw_query
 
 
-_TOPIC_PATTERNS = (
-    re.compile(r"\b(bệnh\s+[^?!.]{2,80}?)\s+(?:là\s+gì|la\s+gi)\b", re.IGNORECASE),
-    re.compile(r"\b(benh\s+[^?!.]{2,80}?)\s+(?:la\s+gi)\b", re.IGNORECASE),
-    re.compile(
-        r"\b(?:tôi\s+muốn\s+hỏi|toi\s+muon\s+hoi|cho\s+tôi\s+hỏi|cho\s+toi\s+hoi|"
-        r"tôi\s+đang\s+hỏi|toi\s+dang\s+hoi)\s+(?:về|ve)\s+([^?!.]{2,80})",
-        re.IGNORECASE,
-    ),
-)
 _TRAILING_MEDICAL_QUESTION_FILLER_RE = re.compile(
     r"\s+(?:là\s+gì|la\s+gi|nghĩa\s+là\s+gì|nghia\s+la\s+gi)\s*$",
     re.IGNORECASE,
@@ -820,14 +792,68 @@ _FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "danger": ("nguy hiểm", "nguy hiem", "nặng không", "nang khong"),
     "prevention": ("phòng ngừa", "phong ngua", "phòng tránh", "phong tranh", "tránh", "tranh"),
 }
-_FOLLOW_UP_MARKERS = (
-    "còn", "con", "thì sao", "thi sao", "bệnh này", "benh nay", "nó", "no",
-    "của nó", "cua no", "thế nào", "the nao", "vậy", "vay",
+
+# BUILD-43: drug-attribute equivalent of _FOLLOW_UP_CATEGORY_KEYWORDS above,
+# used only for a TRUE_FOLLOWUP with an INHERITED drug entity (follow_up.py)
+# -- deterministic keyword -> aspect detection, never a model call. Values
+# and label text intentionally mirror suggested_actions.py's own
+# DRUG_ACTION_VALUES/_DRUG_LABELS (not imported directly: that module's
+# labels are private and entity-name-templated for button rendering, this
+# is a smaller, message-text-facing detector only) so a resolved aspect
+# reads identically to what a clicked suggestion button would have asked.
+_DRUG_ASPECT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "side_effects": ("tác dụng phụ", "tac dung phu"),
+    "dosage": ("liều dùng", "lieu dung", "liều lượng", "lieu luong"),
+    "administration": ("cách dùng", "cach dung", "cách uống", "cach uong", "uống trước hay sau ăn", "uong truoc hay sau an"),
+    "contraindications": ("chống chỉ định", "chong chi dinh"),
+    "warnings": ("lưu ý", "luu y", "cảnh báo", "canh bao"),
+    "interactions": ("tương tác", "tuong tac"),
+    "drug_uses": ("công dụng", "cong dung", "chỉ định", "chi dinh", "dùng để làm gì", "dung de lam gi"),
+}
+_DRUG_ASPECT_LABELS: dict[str, str] = {
+    "drug_uses": "Công dụng của {entity}",
+    "dosage": "Liều dùng {entity}",
+    "administration": "Cách dùng {entity}",
+    "side_effects": "Tác dụng phụ của {entity}",
+    "contraindications": "Chống chỉ định của {entity}",
+    "warnings": "Lưu ý khi dùng {entity}",
+    "interactions": "Tương tác thuốc của {entity}",
+}
+# PR #130 review: these two dicts are maintained separately (detection
+# keywords vs. display label) and must stay key-for-key in sync -- a
+# future edit that adds an aspect to one without the other would silently
+# KeyError deep inside a live orchestration run (_detect_drug_aspect can
+# only ever return a _DRUG_ASPECT_KEYWORDS key, so the risk is one-
+# directional: a NEW keyword group with no matching label). Fails loud at
+# import time instead of waiting for it to happen in production.
+assert set(_DRUG_ASPECT_KEYWORDS) == set(_DRUG_ASPECT_LABELS), (
+    "_DRUG_ASPECT_KEYWORDS and _DRUG_ASPECT_LABELS must define the exact same aspect keys"
 )
-_AMBIGUOUS_FOLLOW_UP_MARKERS = (
-    "còn cái kia", "con cai kia", "cái kia", "cai kia", "cái đó", "cai do",
-    "cái này", "cai nay", "vậy thì sao", "vay thi sao",
-)
+
+
+def _detect_drug_aspect(message: str) -> str | None:
+    lowered = message.casefold()
+    for aspect, keywords in _DRUG_ASPECT_KEYWORDS.items():
+        if any(keyword in lowered for keyword in keywords) and aspect in _DRUG_ASPECT_LABELS:
+            return aspect
+    return None
+
+
+def _follow_up_aspect_keyword(message: str) -> str | None:
+    """Same keyword-detection shape as ``_detect_drug_aspect`` above, for the
+    disease/topic aspect vocabulary instead (``_FOLLOW_UP_CATEGORY_KEYWORDS``,
+    unchanged from the pre-BUILD-43 mechanism -- only its TRIGGER condition
+    moved to ``follow_up.classify_follow_up``)."""
+    lowered = message.casefold()
+    for category, keywords in _FOLLOW_UP_CATEGORY_KEYWORDS.items():
+        if any(keyword in lowered for keyword in keywords):
+            return category
+    return None
+
+
+# BUILD-43: fixed reply text reused as-is from the pre-BUILD-43 mechanism --
+# only its TRIGGER condition changed (see follow_up.py / _context_
+# clarification_reply below), not its wording.
 _CONTEXT_CLARIFICATION_REPLY = (
     "Mình chưa xác định đủ ngữ cảnh cho câu hỏi này. Bạn đang muốn hỏi tiếp về bệnh hoặc chủ đề nào?"
 )
@@ -1016,87 +1042,6 @@ def _ascii_fold(value: str) -> str:
     return folded.replace("đ", "d").replace("Đ", "d")
 
 
-def resolve_conversation_context(message: str, memory_items: list[ContextItem]) -> ContextResolution:
-    """Resolve ordinary medical follow-ups from same-session memory only.
-
-    The caller has already let safety/action/time routing inspect the raw
-    message first. This layer is intentionally conservative: it only rewrites
-    short follow-up shapes with a recent explicit disease topic in memory.
-    """
-
-    category = _follow_up_category(message)
-    is_ambiguous = _is_ambiguous_follow_up(message)
-    if category is None and not is_ambiguous:
-        return ContextResolution(ContextResolutionStatus.NOT_APPLICABLE, message)
-
-    topic, source_turn = _recent_topic(memory_items)
-    if topic is None:
-        return ContextResolution(ContextResolutionStatus.NO_CONTEXT, message, category=category)
-    if category is None:
-        return ContextResolution(
-            ContextResolutionStatus.AMBIGUOUS,
-            message,
-            resolved_topic=topic,
-            resolution_source_turn=source_turn,
-        )
-    return ContextResolution(
-        ContextResolutionStatus.RESOLVED,
-        _resolved_query_for(topic, category),
-        resolved_topic=topic,
-        resolution_source_turn=source_turn,
-        category=category,
-    )
-
-
-def _follow_up_category(message: str) -> str | None:
-    lowered = message.casefold()
-    marker_present = any(marker in lowered for marker in _FOLLOW_UP_MARKERS) or (
-        len(message.strip()) <= 35 and not _looks_like_explicit_medical_question(lowered)
-    )
-    if not marker_present:
-        return None
-    for category, keywords in _FOLLOW_UP_CATEGORY_KEYWORDS.items():
-        if any(keyword in lowered for keyword in keywords):
-            return category
-    return None
-
-
-def _looks_like_explicit_medical_question(lowered: str) -> bool:
-    return any(marker in lowered for marker in (" gây ", " gay ", "gây ra", "gay ra", " của ", " cua "))
-
-
-def _is_ambiguous_follow_up(message: str) -> bool:
-    lowered = message.casefold()
-    return any(marker in lowered for marker in _AMBIGUOUS_FOLLOW_UP_MARKERS)
-
-
-def _recent_topic(memory_items: list[ContextItem]) -> tuple[str | None, int | None]:
-    user_messages = [
-        item.content
-        for item in memory_items
-        if item.provenance.endswith(":user") and item.content.strip()
-    ]
-    for index_from_end, content in enumerate(reversed(user_messages), start=1):
-        topic = _extract_topic(content)
-        if topic is not None:
-            return topic, len(user_messages) - index_from_end + 1
-    return None, None
-
-
-def _extract_topic(message: str) -> str | None:
-    normalized = " ".join(message.strip().split())
-    for pattern in _TOPIC_PATTERNS:
-        match = pattern.search(normalized)
-        if match is not None:
-            return _clean_topic(match.group(1))
-    return None
-
-
-def _clean_topic(topic: str) -> str:
-    cleaned = topic.strip(" ?!.,;:")
-    return cleaned[:80].casefold()
-
-
 def _resolved_query_for(topic: str, category: str) -> str:
     if category == "urgent_care":
         return f"Khi nào {topic} cần đi khám ngay?"
@@ -1138,6 +1083,19 @@ class OrchestrationRequest:
     # API boundary, same provenance discipline as the fields above -- never
     # a client-supplied count. See answerability.py's own module docstring.
     answerability_attempt_count: int = 0
+    # BUILD-43: the CANONICAL ConversationState.active_topic/active_entity
+    # display names as of BEFORE this turn -- always populated when the
+    # durable state has them, regardless of whether a button/typed action
+    # was used this turn. Distinct from active_entity_id/active_entity_name
+    # above (this turn's AUTHORIZED, already-resolved tool-binding, only set
+    # for the matched-action path): these three fields are raw prior-state
+    # evidence for follow_up.classify_follow_up() only, never implying
+    # authorization to bind a tool call by themselves. See follow_up.py's
+    # own module docstring for why this replaced memory-text-based
+    # resolution (CANDIDATE-02).
+    prior_active_topic: str | None = None
+    prior_active_entity_id: str | None = None
+    prior_active_entity_name: str | None = None
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -1186,6 +1144,16 @@ class OrchestrationResult:
     # signal agent_v2_routes.py uses to reset (rather than carry forward)
     # ConversationState.answerability_attempt_count.
     answerability_decision: AnswerabilityDecision | None = None
+    # BUILD-43: set only for the four intents the follow-up classifier ever
+    # runs for (GENERAL_CONVERSATION/DRUG_INFORMATION/GENERAL_MEDICAL_
+    # INFORMATION/UNKNOWN_OR_AMBIGUOUS) AND only when a button/typed action
+    # did not already resolve this turn (``request.resolved_query`` unset)
+    # -- `None` for every schedule/safety/out-of-scope/doctor-review/
+    # explicit-action turn, which never reach the classifier at all. The API
+    # boundary (agent_v2_routes.py) uses this to decide whether to clear
+    # stale ``ConversationState.active_topic``/``active_entity`` on a
+    # TOPIC_SWITCH, matching BUILD-43 invariant #7.
+    follow_up_decision: FollowUpDecision | None = None
 
 
 _EVIDENCE_PREAMBLE = (
@@ -1664,8 +1632,14 @@ class AgentOrchestrator:
         else:
             raw_decision = classify_intent(request.message, has_dose_id=bool(request.dose_id), now=self._now())
         decision = raw_decision
-        resolution = ContextResolution(ContextResolutionStatus.NOT_APPLICABLE, request.message)
+        follow_up_decision: FollowUpDecision | None = None
         router_message = request.message
+        # BUILD-43: only overridden below when the follow-up classifier
+        # actually inherits a drug entity for this turn -- the pre-existing
+        # button/typed-action path (request.active_entity_id/
+        # requested_attribute) always takes precedence and is untouched.
+        effective_entity_id = request.active_entity_id
+        effective_requested_attribute = request.requested_attribute
 
         lease_token: str | None = None
         if checkpoint_db is not None:
@@ -1738,19 +1712,83 @@ class AgentOrchestrator:
             OrchestrationIntent.GENERAL_MEDICAL_INFORMATION,
             OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
         }:
-            previous_memory = [item for item in memory_items if item.id != f"short-term:{agent_run_id}:user"]
-            resolution = (
-                ContextResolution(ContextResolutionStatus.RESOLVED, router_message)
-                if request.resolved_query
-                else resolve_conversation_context(request.message, previous_memory)
-            )
-            if resolution.status in {ContextResolutionStatus.AMBIGUOUS, ContextResolutionStatus.NO_CONTEXT}:
-                return self._context_clarification_reply(
-                    request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
+            # BUILD-43 (CANDIDATE-02 fix): a button/typed action already
+            # resolved this turn (request.resolved_query set) takes the same
+            # precedence it always did -- the classifier below is for
+            # FREE-TEXT follow-ups only. Otherwise, classify off the
+            # CANONICAL prior state (never raw memory text -- see
+            # follow_up.py's own module docstring for why that was the real
+            # root cause of CANDIDATE-02, not just message length).
+            if not request.resolved_query:
+                follow_up_decision = classify_follow_up(
+                    request.message,
+                    prior_topic=request.prior_active_topic,
+                    prior_entity_name=request.prior_active_entity_name,
                 )
-            if resolution.used:
-                router_message = resolution.resolved_query
-                decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+                if follow_up_decision.category is FollowUpCategory.AMBIGUOUS_FRAGMENT:
+                    return self._context_clarification_reply(
+                        request, follow_up_decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
+                    )
+                if follow_up_decision.category is FollowUpCategory.TRUE_FOLLOWUP:
+                    if follow_up_decision.inherited_entity and request.prior_active_entity_id:
+                        effective_entity_id = request.prior_active_entity_id
+                        aspect = _detect_drug_aspect(request.message)
+                        if aspect:
+                            effective_requested_attribute = _DRUG_ASPECT_LABELS[aspect].format(
+                                entity=request.prior_active_entity_name
+                            )
+                            # The raw message alone (e.g. "Tác dụng phụ thì
+                            # sao?") often has no drug name and no keyword
+                            # shape classify_intent's own DRUG_INFORMATION
+                            # detector recognizes (it looks for specific
+                            # Vietnamese grammar patterns, not just an
+                            # attribute keyword) -- re-classifying ANY
+                            # rewritten text is unreliable here. Since the
+                            # aspect keyword + an already-inherited canonical
+                            # entity together are already stronger, more
+                            # deterministic evidence than the keyword router
+                            # itself produces from raw text, force the
+                            # decision directly (reusing the real
+                            # _INTENT_CONFIG entry, never a fabricated one)
+                            # rather than gambling on a constructed sentence
+                            # matching the router's own narrow regexes.
+                            # router_message stays the raw message -- the
+                            # most natural text for the Main Model to read;
+                            # the entity/aspect binding is handled
+                            # deterministically below, not by keyword replay.
+                            trigger, requires_occurrence, bypass, use_retrieval, use_web = _INTENT_CONFIG[
+                                OrchestrationIntent.DRUG_INFORMATION
+                            ]
+                            decision = RouterDecision(
+                                OrchestrationIntent.DRUG_INFORMATION, trigger, requires_occurrence, bypass, use_retrieval, use_web, None
+                            )
+                        else:
+                            effective_requested_attribute = None
+                            decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+                    elif follow_up_decision.inherited_topic and request.prior_active_topic:
+                        aspect = _follow_up_aspect_keyword(request.message)
+                        router_message = (
+                            _resolved_query_for(request.prior_active_topic, aspect)
+                            if aspect
+                            else request.prior_active_topic
+                        )
+                        decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+                    else:
+                        decision = classify_intent(router_message, has_dose_id=bool(request.dose_id), now=self._now())
+                elif follow_up_decision.category is FollowUpCategory.TOPIC_SWITCH:
+                    # SS8/invariant #7: an explicit new subject must clear
+                    # stale prior context -- never let this turn's tool
+                    # binding/router reuse the OLD entity/topic. Nothing to
+                    # set here (effective_* already default to request.
+                    # active_entity_id/requested_attribute, which are always
+                    # None on this unresolved-free-text path); the actual
+                    # ConversationState clearing happens at the API boundary
+                    # (agent_v2_routes.py), driven by result.follow_up_decision.
+                    pass
+                # STANDALONE_QUESTION: no inheritance, router_message/
+                # effective_entity_id/effective_requested_attribute all stay
+                # at their defaults (request.message / request.active_entity_id
+                # / request.requested_attribute -- i.e. unchanged).
             semantic_query = normalize_semantic_medical_query(router_message)
             if semantic_query.changed:
                 router_message = semantic_query.normalized_query
@@ -1760,10 +1798,10 @@ class AgentOrchestrator:
                 trace,
                 TraceComponent.ROUTER,
                 "agent_context_resolution.completed",
-                context_resolution_used=resolution.used,
-                resolved_topic=resolution.resolved_topic,
-                resolution_source_turn=resolution.resolution_source_turn,
-                resolution_status=resolution.status.value,
+                follow_up_category=follow_up_decision.category.value if follow_up_decision is not None else None,
+                follow_up_reason_code=follow_up_decision.reason_code.value if follow_up_decision is not None else None,
+                inherited_topic=follow_up_decision.inherited_topic if follow_up_decision is not None else None,
+                inherited_entity=follow_up_decision.inherited_entity if follow_up_decision is not None else None,
                 final_router_intent=decision.intent.value,
             )
 
@@ -1903,19 +1941,22 @@ class AgentOrchestrator:
                 return self._fail_closed(trace, agent_run_id, decision.intent, gathered, checkpoint_db, lease_token, started)
             evidence_items, retrieval_ids, web_ids, citations = gathered
 
-            # A selected drug action is bound to the canonical ID previously
-            # resolved by the server.  Do the exact lookup here rather than
-            # asking the model to search an ambiguous drug name again.
-            if request.active_entity_id and request.requested_attribute and decision.intent is OrchestrationIntent.DRUG_INFORMATION:
+            # A selected drug action -- or, BUILD-43, a TRUE_FOLLOWUP that
+            # inherited the canonical prior entity (effective_entity_id/
+            # effective_requested_attribute, set above) -- is bound to a
+            # canonical ID already resolved by the server. Do the exact
+            # lookup here rather than asking the model to search an
+            # ambiguous drug name again.
+            if effective_entity_id and effective_requested_attribute and decision.intent is OrchestrationIntent.DRUG_INFORMATION:
                 try:
                     bound = tools.execute(
                         ToolName.GET_DRUG_INFO.value,
-                        {"legacy_drug_id": request.active_entity_id, "query": request.requested_attribute},
+                        {"legacy_drug_id": effective_entity_id, "query": effective_requested_attribute},
                     )
                 except ToolExecutionError:
                     return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token, started)
                 bound_tool_results.append(bound)
-                evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{request.active_entity_id}"))
+                evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{effective_entity_id}"))
 
         augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids)
         if decision.use_vinmec_web and not web_ids:
@@ -1939,6 +1980,22 @@ class AgentOrchestrator:
             handoff_result=handoff_result,
             trace=trace,
         )
+        if bound_tool_results:
+            # BUILD-43: found via real E2E -- the pre-existing bound-drug-
+            # lookup shortcut (button/typed-action path, above) injects its
+            # evidence into the model's PROMPT (augmented_message) but never
+            # into `result.tool_results` itself, which is exactly what
+            # `_enforce_medical_grounding` below checks. A bound lookup with
+            # no OTHER tool call from the model's own turn (the whole point
+            # of the shortcut -- it exists so the model does not need to
+            # search again) was therefore silently flagged GROUNDING_FAILURE
+            # despite real, verified evidence being used to answer -- a
+            # latent gap in the pre-existing mechanism this build's own
+            # TRUE_FOLLOWUP entity inheritance was the first real end-to-end
+            # test to actually exercise. Merged here (once, before every
+            # downstream backstop) rather than only at the final return, so
+            # every one of them sees the true evidence set.
+            result = replace(result, tool_results=tuple(bound_tool_results) + result.tool_results)
         # BUILD-24B/24D: deterministic backstop, applied regardless of intent
         # (RAG evidence could in principle be mislabeled the same way) -- a
         # no-op for every status whose reply text is a fixed string
@@ -2028,12 +2085,16 @@ class AgentOrchestrator:
             intent=decision.intent,
             status=result.status,
             response=result.response,
-            tool_results=tuple(bound_tool_results) + result.tool_results,
+            # bound_tool_results is already merged into result.tool_results
+            # above (before _enforce_medical_grounding ran) -- not re-added
+            # here, which would double it.
+            tool_results=result.tool_results,
             citations=tuple(citations),
             safety_decision=safety_decision,
             handoff_result=handoff_result,
             metrics=result.metrics,
             error_code=result.error_code,
+            follow_up_decision=follow_up_decision,
         )
 
     # -- memory ---------------------------------------------------------------
@@ -2271,12 +2332,18 @@ class AgentOrchestrator:
         checkpoint_db,
         lease_token,
         started,
+        *,
+        follow_up_decision: FollowUpDecision | None = None,
     ) -> OrchestrationResult:
         """Shared terminal-state builder for a NEED_MORE_INFO decision --
         same COMPLETED/checkpoint shape as the pre-existing
         ``_context_clarification_reply``/``_clinical_clarification_reply``,
         with ``answerability_decision`` attached so the API boundary
-        (agent_v2_routes.py) can persist the incremented attempt count."""
+        (agent_v2_routes.py) can persist the incremented attempt count.
+        ``follow_up_decision`` (BUILD-43) is set only by
+        ``_context_clarification_reply``'s own AMBIGUOUS_FRAGMENT path --
+        pure observability, no inheritance to act on for a NEED_MORE_INFO
+        outcome (nothing was resolved this turn either way)."""
         result = RunResult(RunStatus.COMPLETED, reply_text, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)))
         if checkpoint_db is not None:
             if lease_token is None:
@@ -2298,6 +2365,7 @@ class AgentOrchestrator:
             result.metrics,
             result.error_code,
             answerability_decision=answerability_decision,
+            follow_up_decision=follow_up_decision,
         )
 
     # -- retrieval / web --------------------------------------------------------
@@ -2383,43 +2451,59 @@ class AgentOrchestrator:
         )
 
     def _context_clarification_reply(
-        self, request, resolution, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
+        self, request, follow_up_decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
     ) -> OrchestrationResult:
-        """Ask for clarification when a follow-up lacks a strong same-conversation topic."""
+        """Ask for clarification for an AMBIGUOUS_FRAGMENT follow-up
+        (follow_up.py) that names no subject of its own and has no prior
+        conversation context to resolve it against.
 
+        BUILD-43: now routed through the SAME Answerability Gate bounded-
+        clarification mechanism ``_clinical_clarification_reply`` already
+        uses (``evaluate_clinical_clarification_answerability`` --
+        BUILD-42), reusing its generic ``reason_code=None`` shape exactly as
+        designed ("the existing fixed clarification text is unchanged").
+        Previously this path had NO escalation at all: a genuinely
+        unresolvable fragment could loop on this same fixed reply forever,
+        with no NEED_DOCTOR path and no attempt-count tracking (BUILD-42's
+        own report never covered this specific reply builder)."""
         if self._telemetry is not None:
             self._telemetry.event(
                 trace,
                 TraceComponent.ROUTER,
                 "agent_context_resolution.completed",
-                context_resolution_used=False,
-                resolved_topic=resolution.resolved_topic,
-                resolution_source_turn=resolution.resolution_source_turn,
-                resolution_status=resolution.status.value,
+                follow_up_category=follow_up_decision.category.value,
+                follow_up_reason_code=follow_up_decision.reason_code.value,
+                inherited_topic=follow_up_decision.inherited_topic,
+                inherited_entity=follow_up_decision.inherited_entity,
                 final_router_intent=OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS.value,
             )
-        result = RunResult(
-            RunStatus.COMPLETED, _CONTEXT_CLARIFICATION_REPLY, (), RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000))
+        answerability_decision = evaluate_clinical_clarification_answerability(
+            attempt_count=request.answerability_attempt_count,
+            provenance="agent-orchestrator:context-clarification:ambiguous-fragment",
         )
-        if checkpoint_db is not None:
-            if lease_token is None:
-                lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
-            CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
-                agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+        if answerability_decision.outcome is AnswerabilityOutcome.NEED_DOCTOR:
+            return self._answerability_handoff_reply(
+                request,
+                OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+                answerability_decision.reason_code,
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+                started,
             )
-        self._remember_reply(session_key, agent_run_id, result)
-        return OrchestrationResult(
-            trace.trace_id,
-            agent_run_id,
+        return self._answerability_more_info_reply(
             OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
-            result.status,
-            result.response,
-            (),
-            (),
-            None,
-            None,
-            result.metrics,
-            result.error_code,
+            answerability_decision,
+            _CONTEXT_CLARIFICATION_REPLY,
+            session_key,
+            trace,
+            agent_run_id,
+            checkpoint_db,
+            lease_token,
+            started,
+            follow_up_decision=follow_up_decision,
         )
 
     def _clinical_clarification_reply(
@@ -2560,8 +2644,6 @@ class AgentOrchestrator:
 __all__ = [
     "AgentOrchestrator",
     "Citation",
-    "ContextResolution",
-    "ContextResolutionStatus",
     "OrchestrationIntent",
     "OrchestrationRequest",
     "OrchestrationResult",
@@ -2569,5 +2651,4 @@ __all__ = [
     "SemanticMedicalQuery",
     "classify_intent",
     "normalize_semantic_medical_query",
-    "resolve_conversation_context",
 ]
