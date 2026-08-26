@@ -19,16 +19,21 @@ audit for why the existing ``chat_messages`` table was not reused: it is
 only written by legacy ``chat_routes.py``, never Agent V2, and has no
 handoff/conversation linkage at all).
 
-Revision ID: 0053
-Revises: 0052
+Revision ID: 0054
+Revises: 0053
 Create Date: 2026-08-26
+
+Renumbered from the original 0053 (BUILD-44 branched from the same 0052
+head as Track B's 0053_drug_image_embeddings.py, which merged to main
+first) -- content/logic unchanged, only revision/down_revision updated to
+chain after it. See the BUILD-44 report's own account of this.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0053"
-down_revision = "0052"
+revision = "0054"
+down_revision = "0053"
 branch_labels = None
 depends_on = None
 
