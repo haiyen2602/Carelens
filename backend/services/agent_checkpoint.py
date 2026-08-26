@@ -385,6 +385,35 @@ def finish_run(
     return _snapshot(checkpoint)
 
 
+def mark_run_status_only(db: Session, *, agent_run_id: str, status: str, now: datetime | None = None) -> None:
+    """Mirror a terminal status onto the durable ``AgentRun`` row ONLY --
+    deliberately does NOT touch ``AgentRunCheckpoint`` at all (no lease
+    check, no ``workflow_state``/``terminal_status``/``revision`` update).
+
+    Narrow escape hatch for BUILD-42's Answerability-Gate handoff path
+    (``AgentOrchestrator._create_answerability_handoff``): that path cannot
+    use ``record_handoff_created``/``finish_run`` (both hard-require a real
+    Safety ``HANDOFF_REQUIRED`` disposition this build's design goal is to
+    NOT fabricate -- SS17) and so never calls ``_terminalize`` -- but
+    ``_terminalize`` is also the ONLY place that ever moves ``AgentRun.
+    status`` off its initial ``"RUNNING"`` value (set once, in
+    ``create_or_load_checkpoint``). Without this call, an Answerability-
+    Gate-created handoff's ``AgentRun`` row -- the durable, unconditionally-
+    read table Admin Monitoring/stuck-run sweepers/duration metrics query,
+    not just the checkpoint row -- would stay ``status="RUNNING"``,
+    ``completed_at=NULL`` forever, even though the run genuinely finished.
+    Found via a follow-up correctness pass after a PR review flagged the
+    checkpoint row's own non-terminalization (already a known, documented
+    trade-off); this fixes the more significant, previously-unaddressed
+    ``AgentRun`` half of that gap. The checkpoint row itself stays
+    non-terminal -- still the same accepted trade-off, unchanged."""
+    run = db.get(AgentRun, agent_run_id)
+    if run is not None:
+        run.status = status
+        run.completed_at = now or datetime.now(UTC)
+    db.flush()
+
+
 def _require_checkpoint(db: Session, agent_run_id: str) -> AgentRunCheckpoint:
     checkpoint = _locked_checkpoint(db, agent_run_id)
     if checkpoint is None:
@@ -526,6 +555,7 @@ __all__ = [
     "create_or_load_checkpoint",
     "finish_run",
     "handoff_idempotency_key",
+    "mark_run_status_only",
     "record_handoff_created",
     "record_safety_disposition",
 ]

@@ -110,7 +110,12 @@ from backend.agents.v2.vinmec_web import (
     VinmecWebSearchResult,
     VinmecWebStatus,
 )
-from backend.services.agent_checkpoint import CheckpointCreateCommand, claim_resume, create_or_load_checkpoint
+from backend.services.agent_checkpoint import (
+    CheckpointCreateCommand,
+    claim_resume,
+    create_or_load_checkpoint,
+    mark_run_status_only,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -2138,7 +2143,20 @@ class AgentOrchestrator:
         ordinary HTTP retry, which ``agent_idempotency`` already handles
         completely separately) could re-attempt this call -- safe, since
         the SAME idempotency key is reused and ``create_doctor_review_
-        request`` is itself idempotent (see report SS16)."""
+        request`` is itself idempotent (see report SS16).
+
+        A PR review of this checkpoint gap correctly flagged that the
+        consequence is bigger than the checkpoint row alone: ``_terminalize``
+        (agent_checkpoint.py) is also the ONLY place that ever moves the
+        durable ``AgentRun.status`` off its initial ``"RUNNING"`` value --
+        the table Admin Monitoring/stuck-run sweepers actually query, not
+        the checkpoint row. Skipping it entirely would leave every
+        Answerability-Gate handoff run permanently ``status="RUNNING"``,
+        ``completed_at=NULL`` despite having genuinely finished. Fixed below
+        via ``mark_run_status_only`` -- a narrow helper that mirrors ONLY
+        ``AgentRun.status``/``completed_at``, still deliberately leaving the
+        checkpoint row itself non-terminal (that half of the trade-off is
+        unchanged and still safe, per the paragraph above)."""
         handoff_request = DoctorHandoffRequest(
             patient_id=request.patient_id,
             actor_id=request.actor_id,
@@ -2147,9 +2165,12 @@ class AgentOrchestrator:
             conversation_id=request.conversation_id,
         )
         provenance = f"answerability-gate:{reason_code.value.lower().replace('_', '-')}"
-        return self._handoff_gateway.create_for_uncertainty(
+        result = self._handoff_gateway.create_for_uncertainty(
             request=handoff_request, reason_code=reason_code.value, provenance=provenance
         )
+        if checkpoint_db is not None:
+            mark_run_status_only(checkpoint_db, agent_run_id=agent_run_id, status="HANDOFF_CREATED")
+        return result
 
     def _answerability_handoff_reply(
         self,
@@ -2170,12 +2191,15 @@ class AgentOrchestrator:
         clarification -- SS8/SS9; unsupported personalized question --
         SS23). Mirrors ``run()``'s own Safety-handoff-failure shape on
         failure (fails the run rather than silently answering). On success,
-        deliberately does NOT touch the checkpoint system at all -- see
+        deliberately does NOT touch the checkpoint's own row (``Agent
+        RunCheckpoint`` stays non-terminal) -- see
         ``_create_answerability_handoff``'s own docstring for why no
         existing checkpoint-terminalization path can accept a HANDOFF_
-        CREATED status without a real Safety disposition, and why leaving
-        this run's checkpoint row non-terminal is a safe, documented
-        trade-off rather than a correctness issue."""
+        CREATED status without a real Safety disposition, and why that is
+        still a safe, documented trade-off. The durable ``AgentRun`` row
+        itself (the table Admin Monitoring/sweepers actually query) IS
+        still marked terminal, via ``mark_run_status_only`` inside
+        ``_create_answerability_handoff``."""
         try:
             handoff_result = self._create_answerability_handoff(
                 request, reason_code, agent_run_id=agent_run_id, checkpoint_db=checkpoint_db, lease_token=lease_token, trace=trace
