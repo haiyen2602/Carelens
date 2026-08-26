@@ -36,7 +36,7 @@ from backend.services.agent_safety_monitoring import (
 
 admin_safety_router = APIRouter(prefix="/admin/safety", tags=["admin-safety-monitoring"])
 
-_require_admin = require_role("admin")
+_require_admin = require_role("admin", "super_admin")
 _logger = logging.getLogger(__name__)
 
 

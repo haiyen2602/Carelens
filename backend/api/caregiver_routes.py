@@ -55,7 +55,7 @@ _WEEK_HISTORY_DAYS = 7
 def create_caregiver_link(
     body: CaregiverLinkCreateRequest,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> CaregiverLinkOut:
     """Admin tao thang, KHONG can nguoi duoc theo doi dong y - admin da xac
     nhan quan he ngoai doi truoc khi tao (BR ngam dinh cua man hinh

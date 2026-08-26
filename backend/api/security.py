@@ -219,11 +219,11 @@ def verify_patient_access(
 ) -> bool:
     """Kiểm tra xem current_user có quyền truy cập dữ liệu của patient_id hay không (ReBAC).
 
-    - admin: Được truy cập mọi bệnh nhân.
+    - admin, super_admin: Được truy cập mọi bệnh nhân.
     - patient: Chỉ truy cập bệnh nhân của chính mình (current_user.patient_id).
     - doctor / caregiver: Được truy cập dữ liệu bệnh nhân trong danh sách phụ trách / liên kết.
     """
-    if current_user.role == "admin":
+    if current_user.role in ("admin", "super_admin"):
         return True
     if current_user.role == "patient":
         return current_user.patient_id == patient_id

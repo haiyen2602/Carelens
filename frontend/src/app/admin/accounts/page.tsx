@@ -42,6 +42,7 @@ const roleTone: Record<AccountRole, string> = {
   patient: "bg-primary/10 text-primary",
   caregiver: "bg-warning/25 text-warning-foreground",
   admin: "bg-accent text-accent-foreground",
+  super_admin: "bg-primary text-primary-foreground font-bold",
 };
 
 const statusTone: Record<AccountStatus, string> = {
@@ -61,7 +62,8 @@ type AccountGroup = "patients" | "doctors" | "admins";
 
 function AccountsContent() {
   const queryClient = useQueryClient();
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const searchParams = useSearchParams();
   const groupParam = searchParams.get("group");
   const initialGroup: AccountGroup =
@@ -164,7 +166,7 @@ function AccountsContent() {
             ? a.role === "patient" || a.role === "caregiver"
             : activeGroup === "doctors"
               ? a.role === "doctor"
-              : a.role === "admin";
+              : a.role === "admin" || a.role === "super_admin";
         return matchesGroup;
       }),
     [accounts, activeGroup],
@@ -202,6 +204,10 @@ function AccountsContent() {
     admins: "Admin",
   };
 
+  const availableCreationRoles: AccountCreationRole[] = isSuperAdmin
+    ? ["doctor", "admin", "super_admin"]
+    : ["doctor"];
+
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
@@ -213,7 +219,7 @@ function AccountsContent() {
             {groupAccounts.length} tài khoản trong nhóm {groupNames[activeGroup].toLowerCase()}.
           </p>
         </div>
-        {activeGroup !== "patients" && (
+        {activeGroup !== "patients" && (activeGroup !== "admins" || isSuperAdmin) && (
           <Dialog
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -275,7 +281,7 @@ function AccountsContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(["doctor", "admin"] as const).map((r) => (
+                      {availableCreationRoles.map((r) => (
                         <SelectItem key={r} value={r}>
                           {roleLabel[r]}
                         </SelectItem>
@@ -376,8 +382,10 @@ function AccountsContent() {
                 </td>
               </tr>
             )}
-            {list.map((a: AccountRecord) => (
-              <tr key={a.id} className="border-b border-border last:border-0">
+            {list.map((a: AccountRecord) => {
+              const isTargetAdmin = a.role === "admin" || a.role === "super_admin";
+              return (
+                <tr key={a.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
@@ -412,47 +420,49 @@ function AccountsContent() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setEditingAccount(a);
-                        setEditForm({ fullName: a.fullName, email: a.email });
-                        setEditError("");
-                        setEditDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={statusMutation.isPending}
-                      onClick={() => {
-                        setStatusError("");
-                        const action: { id: string; next: AccountStatus } = {
-                          id: a.id,
-                          next: a.status === "locked" ? "active" : "locked",
-                        };
-                        setLastStatusAction(action);
-                        statusMutation.mutate(action);
-                      }}
-                    >
-                      {a.status === "locked" ? (
-                        <>
-                          <Unlock className="mr-1 h-3.5 w-3.5" /> Mở khoá
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="mr-1 h-3.5 w-3.5" /> Khoá
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  {(!isTargetAdmin || isSuperAdmin) && (
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingAccount(a);
+                          setEditForm({ fullName: a.fullName, email: a.email });
+                          setEditError("");
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={statusMutation.isPending}
+                        onClick={() => {
+                          setStatusError("");
+                          const action: { id: string; next: AccountStatus } = {
+                            id: a.id,
+                            next: a.status === "locked" ? "active" : "locked",
+                          };
+                          setLastStatusAction(action);
+                          statusMutation.mutate(action);
+                        }}
+                      >
+                        {a.status === "locked" ? (
+                          <>
+                            <Unlock className="mr-1 h-3.5 w-3.5" /> Mở khoá
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="mr-1 h-3.5 w-3.5" /> Khoá
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </td>
               </tr>
-            ))}
+            );})}
             {!accountsQuery.isLoading && !accountsQuery.isError && list.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">

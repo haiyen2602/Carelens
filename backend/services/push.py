@@ -17,7 +17,12 @@ from __future__ import annotations
 import json
 import logging
 
-from pywebpush import WebPushException, webpush
+try:
+    from pywebpush import WebPushException, webpush
+except ImportError:  # pragma: no cover
+    WebPushException = Exception  # type: ignore[misc,assignment]
+    webpush = None  # type: ignore[assignment]
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

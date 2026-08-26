@@ -96,7 +96,7 @@ def list_my_drug_requests(
 def list_all_drug_requests(
     status: Annotated[DrugRequestStatus | None, Query()] = None,
     db: Session = Depends(get_db),
-    _admin: CurrentUser = Depends(require_role("admin")),
+    _admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> DrugRequestListResponse:
     rows = liet_ke_yeu_cau(db, status=status)
     return DrugRequestListResponse(items=[DrugRequestOut.model_validate(r) for r in rows])
@@ -107,7 +107,7 @@ def approve_drug_request(
     request_id: str,
     payload: DrugRequestApprove,
     db: Session = Depends(get_db),
-    admin: CurrentUser = Depends(require_role("admin")),
+    admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> DrugRequestOut:
     try:
         yeu_cau = duyet_yeu_cau(db, request_id, admin_account_id=admin.id, note=payload.note)
@@ -121,7 +121,7 @@ def reject_drug_request(
     request_id: str,
     payload: DrugRequestReject,
     db: Session = Depends(get_db),
-    admin: CurrentUser = Depends(require_role("admin")),
+    admin: CurrentUser = Depends(require_role("admin", "super_admin")),
 ) -> DrugRequestOut:
     try:
         yeu_cau = tu_choi_yeu_cau(db, request_id, admin_account_id=admin.id, note=payload.note)
