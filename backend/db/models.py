@@ -493,6 +493,39 @@ class DrugImage(Base):
     )
 
 
+class DrugImageEmbedding(Base):
+    """Versioned visual embedding for one validated reference image.
+
+    The vector stays separate from ``DrugImage`` because encoder and
+    preprocessing versions can change independently of source provenance.
+    ``Vector(512)`` is deliberately fixed to the selected B-04 OpenCLIP
+    baseline; a different dimensional model requires its own reviewed
+    migration rather than silently mixing incompatible vectors.
+    """
+
+    __tablename__ = "drug_image_embedding"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    drug_image_id: Mapped[str] = mapped_column(ForeignKey("drug_image.id", ondelete="CASCADE"), nullable=False)
+    embedding_model: Mapped[str] = mapped_column(String, nullable=False)
+    embedding_version: Mapped[str] = mapped_column(String, nullable=False)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(512), nullable=False)
+    preprocessing_version: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("embedding_dimension = 512", name="ck_drug_image_embedding_dimension"),
+        UniqueConstraint(
+            "drug_image_id",
+            "embedding_model",
+            "embedding_version",
+            name="uq_drug_image_embedding_model_version",
+        ),
+        Index("ix_drug_image_embedding_model_version", "embedding_model", "embedding_version"),
+    )
+
+
 class Ingredient(Base):
     """Canonical ingredient identity imported from Drug Knowledge V2 later."""
 
