@@ -593,6 +593,11 @@ class AgentV2OrchestrateResponse(BaseModel):
     citations: list[AgentV2CitationOut] = Field(default_factory=list)
     safety_disposition: str | None = None
     handoff_id: str | None = None
+    # BUILD-42: user-safe handoff metadata (spec SS14) -- SAFETY/UNCERTAINTY/
+    # USER_REQUEST, derived server-side (see answerability.handoff_type_for),
+    # never a raw internal reason_code, risk score, or Judge output.
+    handoff_required: bool = False
+    handoff_type: str | None = None
     trace_id: str
     agent_run_id: str
     suggested_actions: list[SuggestedActionOut] = Field(default_factory=list)

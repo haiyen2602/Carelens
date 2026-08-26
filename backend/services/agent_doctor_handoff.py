@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.handoff import AgentHandoffResult, HandoffContextRef
 from backend.agents.v2.handoff import HandoffCreateCommand as AgentHandoffCreateCommand
 from backend.api.security import CurrentUser
+from backend.db.models import DoctorReviewRequest
 from backend.services.agent_authorization import require_agent_patient_access
 from backend.services.doctor_handoff import (
     HandoffCreateCommand,
@@ -16,6 +18,14 @@ from backend.services.doctor_handoff import (
     VerifiedContextSource,
     create_doctor_review_request,
 )
+
+# BUILD-42 SS12: an active (not yet resolved) review request for the same
+# patient. Deliberately scoped to Answerability-Gate-created handoffs only
+# (see the ``risk_disposition == "UNCERTAINTY_HANDOFF"`` check in ``create``
+# below) -- the pre-existing Safety-Domain-sourced path has no such
+# cross-run dedup today (per-agent-run idempotency only, see
+# ``doctor_handoff.py``) and this build does not change that.
+_ACTIVE_HANDOFF_STATUSES = ("PENDING", "ASSIGNED")
 
 
 class AuthorizedDoctorHandoffAdapter:
@@ -31,6 +41,22 @@ class AuthorizedDoctorHandoffAdapter:
             raise PermissionError("DOCTOR_HANDOFF_ACTOR_MISMATCH")
         if patient_id != command.patient_id:
             raise PermissionError("DOCTOR_HANDOFF_PATIENT_MISMATCH")
+        # BUILD-42 SS12: reuse an already-active Answerability-Gate handoff
+        # for this patient instead of creating a new row every turn. Scoped
+        # to risk_disposition == UNCERTAINTY_HANDOFF only -- a Safety-sourced
+        # command never has this value (always "HANDOFF_REQUIRED"), so this
+        # branch never fires for -- and never changes -- the Safety path.
+        if command.risk_disposition == "UNCERTAINTY_HANDOFF":
+            existing = self._db.execute(
+                select(DoctorReviewRequest)
+                .where(
+                    DoctorReviewRequest.patient_id == command.patient_id,
+                    DoctorReviewRequest.status.in_(_ACTIVE_HANDOFF_STATUSES),
+                )
+                .order_by(DoctorReviewRequest.created_at.desc())
+            ).scalars().first()
+            if existing is not None:
+                return AgentHandoffResult(existing.id, existing.status, existing.assigned_doctor_id, created=False)
         result = create_doctor_review_request(
             self._db,
             command=HandoffCreateCommand(
