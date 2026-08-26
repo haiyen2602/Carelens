@@ -23,6 +23,7 @@
 | `drug-request-api` | REST | `drug-requests` | FE bác sĩ, FE admin | Draft | §1e |
 | `prescription-api` | REST | `prescription` | FE bác sĩ, `scheduling` | Draft | §2 |
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
+| `drug-image-delivery-api` | REST | `drug-image` | FE bệnh nhân | Draft | §3a |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
 | `photo-api` | REST | `photo-verification` | FE bệnh nhân, FE người thân | Draft | §5 |
 | `escalation-api` | REST | `escalation` | FE người thân, FE bác sĩ | Draft | §6 |
@@ -267,7 +268,18 @@ prescription or `dose_event` responses.
   "status": "PENDING",
   "reminder_level": 0,
   "expected_items": [
-    { "drug_id": "panadol-extra", "ten_thuoc": "Panadol Extra", "so_vien": 1 }
+    {
+      "drug_id": "panadol-extra",
+      "drug_product_id": "drug-product-panadol-extra",
+      "ten_thuoc": "Panadol Extra",
+      "so_vien": 1,
+      "image": {
+        "status": "AVAILABLE",
+        "url": "/api/v1/drug-images/img_01",
+        "alt": "Hình ảnh bao bì Panadol Extra",
+        "view_type": "front"
+      }
+    }
   ],
   "evidence": { "type": null, "verified": false }
 }
@@ -275,6 +287,24 @@ prescription or `dose_event` responses.
 
 `status` ∈ `PENDING` | `TAKEN` | `MISSED` | `DELAYED` | `SIDE_EFFECT` | `AWAITING_CAREGIVER`
 `evidence.type` ∈ `null` | `photo` | `self_report` | `caregiver_approved`
+
+`drug_product_id` và `image` là trường bổ sung trong từng `expected_items[]`.
+Client cũ có thể bỏ qua chúng. `image.status` ∈ `AVAILABLE` | `NO_IMAGE`;
+`NO_IMAGE` luôn có `url: null` và không được thay bằng ảnh của sản phẩm khác.
+Mọi định danh ảnh bắt nguồn từ `drug_product_id`, hoặc từ `drug_id` legacy qua
+`drug_id_map` có trạng thái `ACTIVE`; không có mapping theo tên/slug/OCR.
+
+### 3a. `drug-image-delivery-api`
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| GET | `/api/v1/drug-images/{drug_image_id}` | authenticated | Trả bytes của ảnh catalog `VALIDATED` + `is_primary`, chỉ khi caller có liên kết với bệnh nhân đang được kê đúng canonical product |
+
+`drug_image_id` là định danh opaque do dose response cung cấp. Route không nhận
+`storage_key`, đường dẫn file, source URL, hay `patient_id`; backend tự xác thực
+JWT và quan hệ patient/caregiver/doctor. Response dùng MIME đã lưu trong catalog,
+`Cache-Control: private, max-age=86400`, và không phải delivery route cho ảnh
+xác nhận liều của bệnh nhân.
 
 ## 4. `chat-api`
 
@@ -610,6 +640,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-17 | `auth-api` (§1, §1c), `account-api` (§1b) | `email` là danh tính **không phân biệt chữ hoa/thường**: mọi endpoint nhận email chuẩn hoá `trim`+`lower` trước khi tra cứu/lưu, kèm unique index `ux_account_email_normalized` trên `lower(btrim(email))` (migration 0026, đã chuẩn hoá 3 dòng cũ trên production). Sửa bug thật: cùng một người thành 2 tài khoản khi đăng ký thủ công bằng chữ hoa rồi đăng nhập bằng Google. **Có thể breaking với client cũ** ở một chỗ: `/auth/register` và `POST /accounts` giờ trả `409` cho email chỉ khác nhau về chữ hoa/thường, và `GET /auth/me` trả email ở dạng chữ thường. | `[chờ Architect/PM review]` |
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
 | 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
+| 2026-08-26 | `dose-api` (§3), `drug-image-delivery-api` (mới, §3a) | B-06 thêm metadata ảnh catalog an toàn vào `expected_items[]` và route bytes xác thực. Không breaking: field là additive; ảnh thiếu trả `NO_IMAGE`/`url: null`; không lộ storage/provenance. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

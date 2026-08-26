@@ -17,9 +17,14 @@ os.environ["JWT_SECRET"] = "b03-local-test-jwt"
 from backend.db.models import DrugIdMap, DrugImage, DrugProduct
 from backend.services import drug_images
 from backend.services.drug_images import (
+    IMAGE_AVAILABLE,
+    IMAGE_NO_IMAGE,
     FileSystemStorageBackend,
+    drug_image_presentation,
     get_primary_drug_image,
     get_primary_drug_image_for_legacy_id,
+    get_primary_drug_images,
+    get_primary_drug_images_for_legacy_ids,
     import_manifest,
 )
 
@@ -115,9 +120,7 @@ def test_manifest_import_creates_traceable_primary_and_deterministic_key(tmp_pat
     assert get_primary_drug_image(session, "product-1").id == "record-1"  # type: ignore[union-attr]
 
 
-def test_filesystem_storage_copies_through_the_exclusive_temporary_descriptor(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_filesystem_storage_copies_through_the_exclusive_temporary_descriptor(tmp_path: Path, monkeypatch) -> None:
     source_path = tmp_path / "source.webp"
     source_path.write_bytes(b"verified-image")
     storage = FileSystemStorageBackend(tmp_path / "storage")
@@ -242,3 +245,50 @@ def test_failed_b02_row_is_excluded_and_legacy_lookup_uses_only_active_mapping(t
     session.commit()
     assert get_primary_drug_image_for_legacy_id(session, "legacy-product-1").id == "record-1"  # type: ignore[union-attr]
     assert get_primary_drug_image_for_legacy_id(session, "wrong-name") is None
+
+
+def test_batch_lookup_keeps_exact_product_ownership_and_explicit_no_image(tmp_path: Path) -> None:
+    session = db_session()
+    add_product(session, "product-a", "legacy-a")
+    add_product(session, "product-b", "legacy-b")
+    manifest_path, artifact_root = write_manifest(tmp_path, [manifest_row(product_id="product-a", record_id="image-a")])
+    import_manifest(
+        session,
+        CountingStorage(tmp_path / "storage"),
+        manifest_path=manifest_path,
+        artifact_root=artifact_root,
+        dry_run=False,
+    )
+    session.add_all(
+        (
+            DrugIdMap(
+                id="active-a",
+                legacy_drug_id="legacy-a",
+                drug_product_id="product-a",
+                mapping_status="ACTIVE",
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            ),
+            DrugIdMap(
+                id="retired-b",
+                legacy_drug_id="legacy-b",
+                drug_product_id="product-b",
+                mapping_status="RETIRED",
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            ),
+        )
+    )
+    session.commit()
+
+    by_product = get_primary_drug_images(session, ("product-a", "product-b"))
+    by_legacy = get_primary_drug_images_for_legacy_ids(session, ("legacy-a", "legacy-b", "same-name"))
+
+    assert set(by_product) == {"product-a"}
+    assert by_product["product-a"].id == "image-a"
+    assert set(by_legacy) == {"legacy-a"}
+    assert by_legacy["legacy-a"].drug_product_id == "product-a"
+    available = drug_image_presentation(by_product["product-a"], display_name="Thuốc A")
+    missing = drug_image_presentation(by_product.get("product-b"), display_name="Thuốc B")
+    assert (available.status, available.url) == (IMAGE_AVAILABLE, "/api/v1/drug-images/image-a")
+    assert (missing.status, missing.url) == (IMAGE_NO_IMAGE, None)

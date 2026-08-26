@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import tempfile
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,8 +25,12 @@ from sqlalchemy.orm import Session
 
 from backend.db.models import DrugIdMap, DrugImage, DrugProduct
 
+logger = logging.getLogger(__name__)
+
 VALIDATION_STATUS = "VALIDATED"
 PRIMARY_VIEW = "front"
+IMAGE_AVAILABLE = "AVAILABLE"
+IMAGE_NO_IMAGE = "NO_IMAGE"
 IMPORT_COUNTERS = (
     "TOTAL_MANIFEST",
     "VALIDATED_INPUT",
@@ -187,6 +192,16 @@ class DrugImageLookup:
     collection_version: str
 
 
+@dataclass(frozen=True)
+class DrugImagePresentation:
+    """Patient-safe metadata for a canonically resolved catalog image."""
+
+    status: str
+    url: str | None
+    alt: str
+    view_type: str | None
+
+
 def import_manifest(
     session: Session,
     storage: StorageBackend,
@@ -246,16 +261,47 @@ def import_manifest(
 def get_primary_drug_image(session: Session, drug_product_id: str) -> DrugImageLookup | None:
     """Return only a validated primary image for the exact canonical product."""
 
-    row = session.scalar(
+    return get_primary_drug_images(session, (drug_product_id,)).get(drug_product_id)
+
+
+def get_primary_drug_images(session: Session, drug_product_ids: Iterable[str]) -> dict[str, DrugImageLookup]:
+    """Batch-resolve validated primary images by exact canonical product ID.
+
+    The newest collection version wins for a product, matching the existing
+    single-product lookup.  There is no name or checksum fallback.
+    """
+
+    product_ids = tuple(dict.fromkeys(product_id for product_id in drug_product_ids if product_id))
+    if not product_ids:
+        return {}
+    rows = session.scalars(
         select(DrugImage)
         .where(
-            DrugImage.drug_product_id == drug_product_id,
+            DrugImage.drug_product_id.in_(product_ids),
             DrugImage.is_primary.is_(True),
             DrugImage.validation_status == VALIDATION_STATUS,
         )
-        .order_by(DrugImage.collection_version.desc())
-    )
-    return _lookup(row) if row else None
+        .order_by(DrugImage.drug_product_id, DrugImage.collection_version.desc(), DrugImage.id)
+    ).all()
+    resolved: dict[str, DrugImageLookup] = {}
+    blocked_products: set[str] = set()
+    selected_versions: dict[str, str] = {}
+    for row in rows:
+        if row.drug_product_id in blocked_products:
+            continue
+        if row.drug_product_id not in resolved:
+            resolved[row.drug_product_id] = _lookup(row)
+            selected_versions[row.drug_product_id] = row.collection_version
+            continue
+        if selected_versions[row.drug_product_id] == row.collection_version:
+            logger.error(
+                "DRUG_IMAGE_PRIMARY_INTEGRITY product_id=%s collection_version=%s",
+                row.drug_product_id,
+                row.collection_version,
+            )
+            resolved.pop(row.drug_product_id)
+            blocked_products.add(row.drug_product_id)
+    return resolved
 
 
 def get_primary_drug_image_for_legacy_id(session: Session, legacy_drug_id: str) -> DrugImageLookup | None:
@@ -268,6 +314,51 @@ def get_primary_drug_image_for_legacy_id(session: Session, legacy_drug_id: str) 
         )
     )
     return get_primary_drug_image(session, product_id) if product_id else None
+
+
+def get_primary_drug_images_for_legacy_ids(
+    session: Session, legacy_drug_ids: Iterable[str]
+) -> dict[str, DrugImageLookup]:
+    """Batch-resolve only ACTIVE legacy mappings without name-based fallback."""
+
+    mappings = get_active_drug_product_ids_for_legacy_ids(session, legacy_drug_ids)
+    by_product = get_primary_drug_images(session, mappings.values())
+    return {legacy_id: by_product[product_id] for legacy_id, product_id in mappings.items() if product_id in by_product}
+
+
+def get_active_drug_product_ids_for_legacy_ids(session: Session, legacy_drug_ids: Iterable[str]) -> dict[str, str]:
+    """Batch-resolve canonical product IDs through ACTIVE legacy mappings only."""
+
+    legacy_ids = tuple(dict.fromkeys(legacy_id for legacy_id in legacy_drug_ids if legacy_id))
+    if not legacy_ids:
+        return {}
+    mappings = session.execute(
+        select(DrugIdMap.legacy_drug_id, DrugIdMap.drug_product_id).where(
+            DrugIdMap.legacy_drug_id.in_(legacy_ids),
+            DrugIdMap.mapping_status == "ACTIVE",
+        )
+    ).all()
+    return dict(mappings)
+
+
+def drug_image_presentation(
+    image: DrugImageLookup | None, *, display_name: str, endpoint_prefix: str = "/api/v1/drug-images"
+) -> DrugImagePresentation:
+    """Create additive presentation metadata without exposing provenance/storage."""
+
+    if image is None:
+        return DrugImagePresentation(
+            status=IMAGE_NO_IMAGE,
+            url=None,
+            alt="Chưa có hình ảnh thuốc",
+            view_type=None,
+        )
+    return DrugImagePresentation(
+        status=IMAGE_AVAILABLE,
+        url=f"{endpoint_prefix}/{image.id}",
+        alt=f"Hình ảnh bao bì {display_name}" if display_name else "Hình ảnh bao bì thuốc",
+        view_type=image.view_type,
+    )
 
 
 def _action_for_record(current: DrugImage | None, record: ManifestDrugImage) -> str:

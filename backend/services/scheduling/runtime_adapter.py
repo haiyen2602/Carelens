@@ -16,6 +16,12 @@ from sqlalchemy.orm import Session
 
 from backend.config import get_settings
 from backend.db.models import DoseOccurrence, Prescription, PrescriptionItem
+from backend.services.drug_images import (
+    DrugImageLookup,
+    drug_image_presentation,
+    get_primary_drug_images,
+    get_primary_drug_images_for_legacy_ids,
+)
 from backend.services.safety_policy_domain.runtime import process_dose_safety_runtime
 from backend.services.scheduling.dose_state import (
     CANCELLED,
@@ -57,9 +63,7 @@ def _utc(value: datetime) -> datetime:
 
 def _group_id(item: PrescriptionItem, occurrence: DoseOccurrence) -> str:
     if occurrence.scheduled_local_date is None or occurrence.scheduled_local_time is None or not occurrence.timezone:
-        raise InvalidDoseTransitionError(
-            "V2 occurrence thiếu local scheduling context.", occurrence_id=occurrence.id
-        )
+        raise InvalidDoseTransitionError("V2 occurrence thiếu local scheduling context.", occurrence_id=occurrence.id)
     key = ":".join(
         (
             item.prescription_id,
@@ -71,7 +75,12 @@ def _group_id(item: PrescriptionItem, occurrence: DoseOccurrence) -> str:
     return str(uuid5(NAMESPACE_URL, f"vmec04:dose-runtime-group:{key}"))
 
 
-def _expected_item(item: PrescriptionItem, prescription: Prescription | None) -> dict:
+def _expected_item(
+    item: PrescriptionItem,
+    prescription: Prescription | None,
+    *,
+    image: DrugImageLookup | None,
+) -> dict:
     raw: dict = {}
     if (
         prescription is not None
@@ -81,12 +90,21 @@ def _expected_item(item: PrescriptionItem, prescription: Prescription | None) ->
         and isinstance(prescription.items[item.migration_item_index], dict)
     ):
         raw = prescription.items[item.migration_item_index]
+    display_name = item.drug_display_name or raw.get("ten_thuoc", "")
+    presentation = drug_image_presentation(image, display_name=display_name)
     return {
         "drug_id": item.legacy_drug_id or raw.get("drug_id", ""),
-        "ten_thuoc": item.drug_display_name or raw.get("ten_thuoc", ""),
+        "drug_product_id": item.drug_product_id or (image.drug_product_id if image else None),
+        "ten_thuoc": display_name,
         "so_vien": raw.get("so_vien_moi_lan"),
         "dang_thuoc": raw.get("dang_thuoc", ""),
         "duong_dung": raw.get("duong_dung", ""),
+        "image": {
+            "status": presentation.status,
+            "url": presentation.url,
+            "alt": presentation.alt,
+            "view_type": presentation.view_type,
+        },
     }
 
 
@@ -99,12 +117,25 @@ def _group_rows(db: Session, *, patient_id: str) -> list[DoseRuntimeGroup]:
             .order_by(DoseOccurrence.scheduled_at, DoseOccurrence.id)
         ).all()
     )
-    prescriptions = {
-        prescription.id: prescription
-        for prescription in db.execute(
-            select(Prescription).where(Prescription.id.in_({item.prescription_id for _, item in rows}))
-        ).scalars()
-    } if rows else {}
+    prescriptions = (
+        {
+            prescription.id: prescription
+            for prescription in db.execute(
+                select(Prescription).where(Prescription.id.in_({item.prescription_id for _, item in rows}))
+            ).scalars()
+        }
+        if rows
+        else {}
+    )
+    items = [item for _, item in rows]
+    images_by_product = get_primary_drug_images(
+        db,
+        (item.drug_product_id for item in items if item.drug_product_id),
+    )
+    images_by_legacy = get_primary_drug_images_for_legacy_ids(
+        db,
+        (item.legacy_drug_id for item in items if item.drug_product_id is None and item.legacy_drug_id),
+    )
     grouped: dict[str, list[tuple[DoseOccurrence, PrescriptionItem]]] = {}
     for occurrence, item in rows:
         grouped.setdefault(_group_id(item, occurrence), []).append((occurrence, item))
@@ -134,10 +165,25 @@ def _group_rows(db: Session, *, patient_id: str) -> list[DoseRuntimeGroup]:
                 patient_id=patient_id,
                 prescription_id=item.prescription_id,
                 scheduled_at=scheduled_at,
-                window_start=_utc(occurrence.window_start) if occurrence.window_start else scheduled_at - DOSE_WINDOW_HALF_WIDTH,
-                window_end=_utc(occurrence.window_end) if occurrence.window_end else scheduled_at + DOSE_WINDOW_HALF_WIDTH,
+                window_start=_utc(occurrence.window_start)
+                if occurrence.window_start
+                else scheduled_at - DOSE_WINDOW_HALF_WIDTH,
+                window_end=_utc(occurrence.window_end)
+                if occurrence.window_end
+                else scheduled_at + DOSE_WINDOW_HALF_WIDTH,
                 status=_V2_TO_LEGACY_STATUS.get(occurrence.status or SCHEDULED, occurrence.status or SCHEDULED),
-                expected_items=[_expected_item(member_item, prescriptions.get(member_item.prescription_id)) for _, member_item in members],
+                expected_items=[
+                    _expected_item(
+                        member_item,
+                        prescriptions.get(member_item.prescription_id),
+                        image=(
+                            images_by_product.get(member_item.drug_product_id)
+                            if member_item.drug_product_id
+                            else images_by_legacy.get(member_item.legacy_drug_id or "")
+                        ),
+                    )
+                    for _, member_item in members
+                ],
                 occurrence_ids=tuple(occurrence.id for occurrence, _ in members),
             )
         )
@@ -211,10 +257,7 @@ def transition_v2_dose_group(
             actor_type=actor_type,
             actor_id=actor_id,
         )
-        if (
-            target_status in _SAFETY_ASSESSMENT_TARGETS
-            and get_settings().safety_runtime_mode == "shadow"
-        ):
+        if target_status in _SAFETY_ASSESSMENT_TARGETS and get_settings().safety_runtime_mode == "shadow":
             process_dose_safety_runtime(db, occurrence_id=occurrence_id, evaluated_at=event_at)
     db.flush()
     return get_v2_dose_group(db, dose_group_id=dose_group_id)

@@ -5,10 +5,19 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 
-from backend.db.models import DoseEventLog, DoseOccurrence, NotificationJob, Prescription, PrescriptionItem
+from backend.db.models import (
+    DoseEventLog,
+    DoseOccurrence,
+    DrugIdMap,
+    DrugImage,
+    NotificationJob,
+    Prescription,
+    PrescriptionItem,
+)
+from backend.services.scheduling import runtime_adapter
 from backend.services.scheduling.dose_state import TAKEN
 from backend.services.scheduling.errors import InvalidDoseTransitionError
 from backend.services.scheduling.runtime_adapter import (
@@ -17,6 +26,8 @@ from backend.services.scheduling.runtime_adapter import (
 )
 
 TABLES = (
+    DrugIdMap.__table__,
+    DrugImage.__table__,
     Prescription.__table__,
     PrescriptionItem.__table__,
     DoseOccurrence.__table__,
@@ -137,3 +148,41 @@ def test_adapter_fails_closed_for_divergent_group_statuses(db: Session) -> None:
 
     with pytest.raises(InvalidDoseTransitionError, match="phân kỳ"):
         list_v2_dose_groups(db, patient_id="patient-1")
+
+
+def test_adapter_batches_legacy_image_resolution_once_per_dose_list(db: Session, monkeypatch) -> None:
+    _grouped_occurrences(db)
+    calls: list[tuple[str, tuple[str, ...]]] = []
+
+    def batch_products(_db: Session, product_ids):
+        calls.append(("product", tuple(product_ids)))
+        return {}
+
+    def batch_legacy(_db: Session, legacy_ids):
+        calls.append(("legacy", tuple(legacy_ids)))
+        return {}
+
+    monkeypatch.setattr(runtime_adapter, "get_primary_drug_images", batch_products)
+    monkeypatch.setattr(runtime_adapter, "get_primary_drug_images_for_legacy_ids", batch_legacy)
+
+    groups = list_v2_dose_groups(db, patient_id="patient-1")
+
+    assert calls == [("product", ()), ("legacy", ("legacy-1", "legacy-2"))]
+    assert [item["image"]["status"] for item in groups[0].expected_items] == ["NO_IMAGE", "NO_IMAGE"]
+
+
+def test_adapter_does_not_add_image_query_per_legacy_item(db: Session) -> None:
+    _grouped_occurrences(db)
+    statements: list[str] = []
+
+    def count_statements(_connection, _cursor, statement, _parameters, _context, _executemany) -> None:
+        statements.append(statement)
+
+    event.listen(db.get_bind(), "before_cursor_execute", count_statements)
+    try:
+        groups = list_v2_dose_groups(db, patient_id="patient-1")
+    finally:
+        event.remove(db.get_bind(), "before_cursor_execute", count_statements)
+
+    assert len(groups) == 1
+    assert len(statements) == 3  # occurrences/items, prescriptions, one active legacy-map batch
