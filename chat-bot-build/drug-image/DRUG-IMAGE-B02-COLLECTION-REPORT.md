@@ -1,6 +1,6 @@
 # DRUG IMAGE B-02 — COLLECTION REPORT
 
-**Status:** PASS — validated offline reference-image dataset collected.  
+**Status:** PASS — validated offline reference-image dataset collected.
 **Date:** 2026-08-26  
 **Scope:** offline pipeline, frozen-source audit, local fixture tests, and dry-run only. No runtime DB/API/UI/chatbot/migration/deploy change was made.
 
