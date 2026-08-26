@@ -45,6 +45,13 @@ data/
 *.db
 *.sqlite3
 
+# B-04 keeps only the small, reproducible query metadata under data/.  Reference
+# and synthetic binaries remain ignored and are generated/read locally.
+!data/
+!data/drug-images/
+!data/drug-images/eval/
+!data/drug-images/eval/visual_retrieval_v1.jsonl
+
 # Logs
 logs/
 *.log

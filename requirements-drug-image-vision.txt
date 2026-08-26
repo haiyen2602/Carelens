@@ -1,0 +1,7 @@
+# Offline B-04 visual retrieval only.  These packages are intentionally not
+# part of requirements.txt, so production API/chatbot images do not acquire a
+# vision inference runtime.  Install in an isolated Python 3.11 environment.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
+open_clip_torch==2.26.1
