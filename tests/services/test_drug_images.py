@@ -15,6 +15,7 @@ os.environ["INTERNAL_AUTH_SECRET"] = "b03-local-test-secret"
 os.environ["JWT_SECRET"] = "b03-local-test-jwt"
 
 from backend.db.models import DrugIdMap, DrugImage, DrugProduct
+from backend.services import drug_images
 from backend.services.drug_images import (
     FileSystemStorageBackend,
     get_primary_drug_image,
@@ -112,6 +113,23 @@ def test_manifest_import_creates_traceable_primary_and_deterministic_key(tmp_pat
     assert row.storage_key == "drug-images/drug-image-b02-v1/product-1/front/record-1.webp"
     assert storage.exists(row.storage_key)
     assert get_primary_drug_image(session, "product-1").id == "record-1"  # type: ignore[union-attr]
+
+
+def test_filesystem_storage_copies_through_the_exclusive_temporary_descriptor(
+    tmp_path: Path, monkeypatch
+) -> None:
+    source_path = tmp_path / "source.webp"
+    source_path.write_bytes(b"verified-image")
+    storage = FileSystemStorageBackend(tmp_path / "storage")
+    synced_descriptors: list[int] = []
+    monkeypatch.setattr(drug_images.os, "fsync", synced_descriptors.append)
+
+    storage.put_file("drug-images/v1/product-1/front/record-1.webp", source_path)
+
+    target = storage.path_for("drug-images/v1/product-1/front/record-1.webp")
+    assert target.read_bytes() == b"verified-image"
+    assert synced_descriptors
+    assert not list(target.parent.glob(f".{target.name}.*.tmp"))
 
 
 def test_dry_run_makes_zero_database_or_storage_mutations(tmp_path: Path) -> None:

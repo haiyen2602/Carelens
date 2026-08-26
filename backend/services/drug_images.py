@@ -74,10 +74,14 @@ class FileSystemStorageBackend:
         target = self.path_for(storage_key)
         target.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
-        os.close(descriptor)
         temporary_path = Path(temporary_name)
         try:
-            shutil.copyfile(source_path, temporary_path)
+            # Keep the exclusively-created descriptor open while copying.  Reopening
+            # the temporary path after mkstemp() would introduce a TOCTOU window.
+            with source_path.open("rb") as source_handle, os.fdopen(descriptor, "wb") as temporary_handle:
+                shutil.copyfileobj(source_handle, temporary_handle, length=1024 * 1024)
+                temporary_handle.flush()
+                os.fsync(temporary_handle.fileno())
             temporary_path.replace(target)
         except BaseException:
             temporary_path.unlink(missing_ok=True)

@@ -52,6 +52,8 @@ drug-images/{collection_version}/{drug_product_id}/{view_type}/{image_record_id}
 
 Including collection/product/view/image-record identity supports future versions, replacement, rollback, and non-primary views without overwriting old content. Duplicate binary checksums remain separate product-image rows and separate deterministic product paths; products are never merged.
 
+Pre-merge hardening keeps the uniquely-created temporary file descriptor open while bytes are copied, flushes and syncs it, then atomically replaces the target. This removes the prior close-and-reopen path window; failed writes clean up their temporary file.
+
 No public/signed URL policy was invented. The internal lookup returns a storage key and metadata; a future reviewed delivery/API task must decide exposure policy.
 
 ## 6. Importer, Dry-run, and Idempotency
@@ -86,7 +88,7 @@ The two `HTTP_410` products remain absent from `DrugImage`; B-06 must render its
 
 Migration `0052_drug_image_storage` is additive, has one parent (`0051`), and creates only `drug_image` plus focused indexes/constraints. On an isolated local PostgreSQL database, `alembic upgrade 0051 → 0052 → downgrade 0051` passed.
 
-Targeted unit suite covers valid mapping, deterministic key, dry-run zero mutation, missing product/artifact, checksum mismatch, idempotent rerun, duplicate checksum across products, primary uniqueness, failed B-02 exclusion, canonical and legacy lookup, and no wrong-product fallback.
+Targeted unit suite covers valid mapping, deterministic key, descriptor-backed atomic file copy, dry-run zero mutation, missing product/artifact, checksum mismatch, idempotent rerun, duplicate checksum across products, primary uniqueness, failed B-02 exclusion, canonical and legacy lookup, and no wrong-product fallback.
 
 ## 9. Known Limitations and Readiness
 
