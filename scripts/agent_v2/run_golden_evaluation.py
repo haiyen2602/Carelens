@@ -539,7 +539,7 @@ def _write_outputs(
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="BUILD-35 golden-set continuous-evaluation runner")
-    parser.add_argument("--dataset", default="v1", help="golden set version (e.g. v1) or a literal path to a .json file")
+    parser.add_argument("--dataset", default="v2", help="golden set version (e.g. v1) or a literal path to a .json file")
     parser.add_argument("--baseline", default=None, help="path to a prior run's JSON output, for comparison")
     parser.add_argument("--with-judge", action="store_true", help="enqueue + synchronously score real Judge results for this run")
     parser.add_argument("--deterministic-only", action="store_true", help="run only zero-model-call categories (CI-safe, no paid credentials)")

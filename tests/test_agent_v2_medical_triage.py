@@ -36,7 +36,13 @@ def test_triage_and_dose_taxonomy_covers_personal_vietnamese_paraphrases(message
         ("Đau đầu là gì?", OrchestrationIntent.GENERAL_MEDICAL_INFORMATION),
         ("Vitamin C là gì?", OrchestrationIntent.DRUG_INFORMATION),
         ("Thuốc ngủ có tác dụng gì?", OrchestrationIntent.DRUG_INFORMATION),
-        ("Tôi không uống 10 viên thuốc ngủ", OrchestrationIntent.DRUG_INFORMATION),
+        # BUILD-40: a negated dose report ("did NOT take") names no real
+        # question about the product -- previously landed on
+        # DRUG_INFORMATION only by accident of the router's old wrong
+        # catch-all default (see test_agent_v2_build40_router_taxonomy.py);
+        # this negative control's own purpose is "stays non-acute", which
+        # UNKNOWN_OR_AMBIGUOUS satisfies just as well as the old value did.
+        ("Tôi không uống 10 viên thuốc ngủ", OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS),
     ],
 )
 def test_triage_and_dose_negative_controls_remain_non_acute(message, intent):
