@@ -198,11 +198,15 @@ def extract_structured_signals(visible_text: str) -> tuple[TextSignal, ...]:
 def inspect_image_quality(image: Image.Image, *, minimum_dimension: int = 64) -> ImageQuality:
     """Run small, deterministic checks.  This is not a drug-confidence score."""
 
+    normalized: Image.Image | None = None
     try:
         normalized = ImageOps.exif_transpose(image).convert("RGB")
         normalized.load()
     except (OSError, ValueError):
+        if normalized is not None:
+            normalized.close()
         return ImageQuality(QUALITY_REJECT, ("IMAGE_UNREADABLE",), None, None)
+    assert normalized is not None
     try:
         width, height = normalized.size
         reasons: list[str] = []

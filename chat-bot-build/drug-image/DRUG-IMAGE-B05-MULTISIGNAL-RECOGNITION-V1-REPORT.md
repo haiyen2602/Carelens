@@ -137,12 +137,12 @@ unknown-image distribution exists. No unknown-rejection percentage is claimed.
 
 ## Failure coverage and tests
 
-Targeted local result: **22 passed**; Ruff lint and format pass. Coverage
+Targeted local result: **23 passed**; Ruff lint and format pass. Coverage
 includes quality reasons, normalization/strength parsing, product and ingredient
 matching, B-04 candidate generation/product deduplication, deterministic output
 and versioning, duplicate ambiguity, hard visual/text conflict (including a
 conflict-free candidate with lower cosine), unknown text,
-no OCR text, no forced Top-1, high-evidence corroboration, no medical facts, and
+no OCR text, decoder-failure image cleanup, no forced Top-1, high-evidence corroboration, no medical facts, and
 no query persistence. The E2E pilot additionally covers controlled crop/blur.
 
 ## B-06, B-07, and B-08 boundaries

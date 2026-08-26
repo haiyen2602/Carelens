@@ -150,6 +150,32 @@ def test_quality_gate_reports_deterministic_retake_and_reject_reasons() -> None:
         blank.close()
 
 
+def test_quality_gate_closes_normalized_image_when_loading_fails(monkeypatch) -> None:
+    class FailingNormalizedImage:
+        closed = False
+
+        def convert(self, mode: str) -> FailingNormalizedImage:  # noqa: ARG002 - Pillow-compatible test double
+            return self
+
+        def load(self) -> None:
+            raise OSError("decoder failure")
+
+        def close(self) -> None:
+            self.closed = True
+
+    normalized = FailingNormalizedImage()
+    monkeypatch.setattr("backend.services.drug_image_recognition.ImageOps.exif_transpose", lambda image: normalized)
+    source = Image.new("RGB", (100, 100), "black")
+    try:
+        quality = inspect_image_quality(source)
+    finally:
+        source.close()
+
+    assert quality.status == QUALITY_REJECT
+    assert quality.reason_codes == ("IMAGE_UNREADABLE",)
+    assert normalized.closed is True
+
+
 def test_normalization_preserves_strength_units_and_extracts_only_visible_signals() -> None:
     signals = extract_structured_signals("PÁRACÉTAMOL\n500mg\nNSX: Demo Pharma\nVD-1234-56")
     assert normalize_for_match("PÁRACÉTAMOL 500mg") == "paracetamol 500mg"
