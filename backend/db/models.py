@@ -343,6 +343,11 @@ class Patient(Base):
     # suy tu cac cot khac co NULL hay khong (benh nhan co the chu y bo trong
     # 1 truong nao do sau khi da "hoan tat").
     profile_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # THEM 2026-08-27 (migration 0052) - benh nhan tu bat/tat yeu cau chup
+    # anh khi xac nhan uong thuoc (man hinh Cai dat). Mac dinh True = giu
+    # nguyen hanh vi hien tai (chup anh). Khi False, frontend coi moi lieu la
+    # "khong can anh" - xem frontend/src/app/patient/page.tsx.
+    photo_capture_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # DB Architecture V2 additive columns (DB-4A, WIP - xem
     # docs/data/database_architecture_v2_plan.md). Nullable until backfill and
     # validation gates pass; legacy fields above remain source-compatible.

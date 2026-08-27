@@ -1,20 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-react";
+import { Bell, Camera, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { EditPersonalInfoDialog } from "@/components/edit-personal-info-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
+import { updateMyPatientProfile } from "@/lib/patients";
 import { useProto } from "@/lib/proto-store";
 
 export function AccountSettings() {
   const { phone, role } = useProto();
-  const { user } = useAuth();
+  const { user, accessToken, updateSession } = useAuth();
   const [reminders, setReminders] = useState(true);
   const [emergencyAlerts, setEmergencyAlerts] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(false);
+  const [dangLuuChupAnh, setDangLuuChupAnh] = useState(false);
+
+  // Khac 3 switch "Thong bao" o duoi (chi doi UI, chua luu he thong) - switch
+  // nay goi PATCH /patients/me THAT, vi no doi hanh vi xac nhan lieu thuoc o
+  // tab "Hom nay" (xem app/patient/page.tsx::chupAnhBat), khong phai tuy
+  // chon hien thi don thuan. updateSession() de "Hom nay" thay gia tri MOI
+  // ngay, khong phai doi tai lai trang/dang nhap lai.
+  const doiChupAnh = async (bat: boolean) => {
+    if (!user || !accessToken) return;
+    setDangLuuChupAnh(true);
+    try {
+      await updateMyPatientProfile(accessToken, { photo_capture_enabled: bat });
+      updateSession(accessToken, { ...user, photo_capture_enabled: bat });
+      toast.success(bat ? "Đã bật chụp ảnh xác nhận" : "Đã tắt chụp ảnh xác nhận");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không lưu được thay đổi");
+    } finally {
+      setDangLuuChupAnh(false);
+    }
+  };
 
   // THEM 2026-08-17: tai khoan tao qua Login with Google chua co mat khau -
   // nhan phai la "Đặt mật khẩu", biet TRUOC khi mo dialog (neu vao trong roi
@@ -120,6 +141,29 @@ export function AccountSettings() {
           />
         </div>
       </section>
+
+      {role === "patient" && (
+        <section className="surface-card space-y-4 p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+            <Camera className="h-4 w-4" /> Chụp ảnh xác nhận
+          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium">Yêu cầu chụp ảnh khi uống thuốc</p>
+              <p className="text-xs text-muted-foreground">
+                Khi tắt, bạn chỉ cần chọn &quot;Tôi đã uống&quot; hoặc &quot;Chưa uống&quot; — người
+                thân sẽ xác nhận lại giúp bạn trước khi tính là đã uống.
+              </p>
+            </div>
+            <Switch
+              aria-label="Yêu cầu chụp ảnh khi uống thuốc"
+              checked={user?.photo_capture_enabled ?? true}
+              disabled={dangLuuChupAnh}
+              onCheckedChange={doiChupAnh}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="surface-card p-5">
         <h2 className="text-sm font-bold uppercase text-muted-foreground">Bảo mật</h2>

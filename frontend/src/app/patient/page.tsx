@@ -246,7 +246,12 @@ export default function PatientToday() {
     return "due";
   })();
   const hero = HERO[trangThai];
-  const khongCanAnh = trangThai === "overdue" || trangThai === "waiting";
+  // THEM (migration 0052) - benh nhan tu tat yeu cau chup anh trong Cai dat
+  // (xem components/account-settings.tsx). Khi tat, MOI lieu duoc coi la
+  // "khong can anh" (giong lieu qua gio/da hoan) bat ke khung gio - nut
+  // chinh luon la "Toi da uong"/"Chua uong", khong bao gio mo camera.
+  const chupAnhBat = user?.photo_capture_enabled ?? true;
+  const khongCanAnh = !chupAnhBat || trangThai === "overdue" || trangThai === "waiting";
 
   const cuaSo = (() => {
     if (!next) return "";
@@ -255,7 +260,8 @@ export default function PatientToday() {
       const phut = Math.round((Date.now() - new Date(next.windowEnd).getTime()) / 60000);
       return `quá giờ hẹn ${phut} phút • giờ xác nhận thật sẽ được ghi`;
     }
-    return `khung xác nhận: ${gioHienThi(next.windowStart)} – ${gioHienThi(next.windowEnd)} • cần ảnh`;
+    const hauTo = chupAnhBat ? " • cần ảnh" : "";
+    return `khung xác nhận: ${gioHienThi(next.windowStart)} – ${gioHienThi(next.windowEnd)}${hauTo}`;
   })();
 
   const gioSau = (phut: number) =>
@@ -475,7 +481,7 @@ export default function PatientToday() {
             <CapyPrimaryButton
               disabled={dangGui}
               onClick={
-                xacMinhChoLieuNay?.nextAction === "RETAKE" || !khongCanAnh
+                chupAnhBat && (xacMinhChoLieuNay?.nextAction === "RETAKE" || !khongCanAnh)
                   ? () => setCameraOpen(true)
                   : () => setSheet("confirm")
               }
@@ -485,7 +491,13 @@ export default function PatientToday() {
               ) : (
                 <>
                   {!khongCanAnh && <Camera className="h-4 w-4" />}
-                  {xacMinhChoLieuNay?.nextAction === "RETAKE" ? "Chụp lại" : hero.primary}
+                  {(() => {
+                    if (xacMinhChoLieuNay?.nextAction === "RETAKE" && chupAnhBat) return "Chụp lại";
+                    // chupAnhBat=false: nhan luon phai la "Toi da uong", du
+                    // hero.primary (theo trangThai upcoming/due) noi "Chụp &
+                    // xác nhận" - nut o day khong bao gio mo camera nua.
+                    return chupAnhBat ? hero.primary : "Tôi đã uống";
+                  })()}
                 </>
               )}
             </CapyPrimaryButton>
@@ -494,9 +506,11 @@ export default function PatientToday() {
               <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("notyet")}>
                 {hero.secondary}
               </CapySecondaryButton>
-              <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("huongdan")}>
-                Xem hướng dẫn
-              </CapySecondaryButton>
+              {chupAnhBat && (
+                <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("huongdan")}>
+                  Xem hướng dẫn
+                </CapySecondaryButton>
+              )}
             </div>
           </div>
         </div>
