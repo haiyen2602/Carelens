@@ -18,6 +18,12 @@
 | [`TASK-009`](./TASK-009-hoan-thien-context-base.md) | Hoàn thiện context base | `docs` | Cả team | P1 | 🔄 In Progress |
 | [`TASK-010`](./TASK-010-build-chatbot.md) | Build chatbot/RAG (VMEC-04) — backend + tích hợp frontend | `drug-knowledge` | Nguyễn Minh Đạt | **P0** | 🔄 In Progress (backend Done) |
 
+## Task bảo trì ngoài sprint
+
+| Task | Tên | Domain | Owner | Ưu tiên | Status |
+|---|---|---|---|---|---|
+| [`TASK-AI-LOG-CODEX`](./TASK-AI-LOG-CODEX.md) | Ghi nhận và gửi AI log của Codex | `infra` | Nguyễn Hải Yến + AI | P1 | 🔄 In Progress |
+
 > Sprint 01 diễn ra **trước khi** repo có `/tasks` nên không có file task — xem [`sprint-01.md`](../planning/sprints/sprint-01.md).
 
 ## Quy ước
