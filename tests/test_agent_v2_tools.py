@@ -95,6 +95,41 @@ def test_all_six_allowlisted_tools_validate_and_return_authoritative_metadata(
     assert result.data
 
 
+def test_search_drug_unique_match_field_survives_the_real_gateway_boundary():
+    """BUILD-45 Candidate A regression lock: found via this build's own
+    local E2E, not assumed. ``ToolGateway.execute`` re-serializes every raw
+    domain-tool dict through its declared ``output_model``
+    (``output_model.model_validate(raw).model_dump(...)``) -- an
+    undeclared key is silently dropped. The domain tool
+    (``agent_read_only_tools.py::search_drug``) correctly computed
+    ``unique_match_legacy_drug_id``, but it never reached
+    ``_resolved_drug_entity`` until ``SearchDrugOutput`` (tools.py) also
+    declared the field -- this test exercises the REAL gateway boundary
+    (unlike ``test_agent_v2_build45_cold_entity_binding.py``'s unit tests,
+    which construct ``ToolResult`` directly and would never have caught
+    this)."""
+
+    class _UniqueMatchDomain(_DomainTools):
+        def search_drug(self, *, query, limit):
+            self.calls.append(("search_drug", {"query": query, "limit": limit}))
+            return {
+                "items": [{"legacy_drug_id": "drug-1", "name": "Drug 1", "dosage_form": "tablet", "route": "oral"}],
+                "unique_match_legacy_drug_id": "drug-1",
+            }
+
+    result = _gateway(_UniqueMatchDomain()).execute("search_drug", {"query": "drug 1", "limit": 5})
+    assert result.data["unique_match_legacy_drug_id"] == "drug-1"
+
+
+def test_search_drug_unique_match_field_defaults_to_none_when_domain_omits_it():
+    """Backward compatibility: a domain implementation that never sets the
+    field (e.g. every OTHER existing test's stub in this file) must not
+    fail gateway validation -- the field is optional, defaulting to None,
+    never a required key that would break every pre-existing caller."""
+    result = _gateway().execute("search_drug", {"query": "para", "limit": 5})
+    assert result.data["unique_match_legacy_drug_id"] is None
+
+
 def test_patient_scope_is_server_owned_and_cannot_be_overridden_by_tool_arguments():
     domain = _DomainTools()
     gateway = _gateway(domain)

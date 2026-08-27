@@ -125,18 +125,39 @@ def _resolved_drug_entity(tool_results, *, known_entity: ActiveEntity | None = N
     real local E2E, not assumed.
     """
     info_ids = [item.data.get("legacy_drug_id") for item in tool_results if item.name == "get_drug_info"]
-    if len(info_ids) != 1 or not info_ids[0]:
-        return None
-    drug_id = str(info_ids[0])
-    for item in tool_results:
-        if item.name != "search_drug":
-            continue
-        for candidate in item.data.get("items", []):
-            if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
-                return ActiveEntity("drug", drug_id, str(candidate["name"]))
-    if known_entity is not None and known_entity.id == drug_id:
-        return known_entity
-    return ActiveEntity("drug", drug_id, drug_id)
+    if len(info_ids) == 1 and info_ids[0]:
+        drug_id = str(info_ids[0])
+        for item in tool_results:
+            if item.name != "search_drug":
+                continue
+            for candidate in item.data.get("items", []):
+                if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
+                    return ActiveEntity("drug", drug_id, str(candidate["name"]))
+        if known_entity is not None and known_entity.id == drug_id:
+            return known_entity
+        return ActiveEntity("drug", drug_id, drug_id)
+
+    # BUILD-45 Candidate A (cold drug entity binding): no get_drug_info call
+    # happened this turn -- the natural cold-turn shape ("Paracetamol dung
+    # de lam gi?" -> the model often calls only search_drug), previously an
+    # unconditional None here. Promote anyway when search_drug's OWN
+    # server-computed uniqueness signal (search_catalog_unique_match,
+    # v2_agent.py -- the query's full, untruncated ranked result has
+    # exactly one match, never inferred from len(items) alone, which a
+    # caller-chosen `limit` could truncate) says this was genuinely
+    # unambiguous, not a top-1-of-many fuzzy guess. Requires exactly one
+    # search_drug call this turn -- multiple distinct searches in one turn
+    # is rare and itself a form of ambiguity, so it falls through to None
+    # rather than guessing which search "counts". Zero extra model calls:
+    # this reads evidence the run already produced.
+    search_calls = [item for item in tool_results if item.name == "search_drug"]
+    if len(search_calls) == 1:
+        unique_id = search_calls[0].data.get("unique_match_legacy_drug_id")
+        if unique_id:
+            for candidate in search_calls[0].data.get("items", []):
+                if candidate.get("legacy_drug_id") == unique_id and candidate.get("name"):
+                    return ActiveEntity("drug", str(unique_id), str(candidate["name"]))
+    return None
 
 
 def _authoritative_topic_for_turn(

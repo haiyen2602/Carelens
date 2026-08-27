@@ -117,15 +117,6 @@ _QUESTION_PARTICLES = (
     "khac",
 )
 
-_DISPLAY_TOPIC_PATTERNS = (
-    re.compile(r"^(?:bệnh\s+)?(.+?)\s+(?:là\s+gì|la\s+gi)$", re.IGNORECASE),
-    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
-    re.compile(r"^(?:triệu\s+chứng|dấu\s+hiệu)\s+(?:của\s+)?(.+)$", re.IGNORECASE),
-    re.compile(r"^(.+?)\s+có\s+nguy\s+hiểm\s+không$", re.IGNORECASE),
-    re.compile(r"^(?:cách\s+)?(?:phòng\s+ngừa|phòng\s+tránh)\s+(.+)$", re.IGNORECASE),
-)
-
-
 _PRONOUN_ONLY_WORDS = frozenset({"no", "do", "nay", "kia", "cai nay", "cai do", "cai kia"})
 
 
@@ -138,11 +129,25 @@ def _ascii_fold(value: str) -> str:
 def _explicit_topic(message: str) -> str | None:
     """A disease/topic name in an explicit, self-contained question shape.
 
-    Deliberately reuses the same narrow pattern family
-    ``_DISPLAY_TOPIC_PATTERNS`` (orchestrator.py) is built on -- a genuine
-    disease/condition name never contains a bare attribute keyword, so this
-    also never fires for a drug-attribute-only phrase.
+    BUILD-45 Candidate B: ``_DISPLAY_TOPIC_PATTERNS`` used to be
+    independently re-defined here too -- a second, separately-maintained
+    copy of orchestrator.py's own tuple that had ALREADY drifted from it
+    (confirmed by real audit, not assumed: orchestrator.py's copy once had
+    a "con X thi sao" shape this one lacked). Now imported directly from
+    the single canonical source (a function-local import -- orchestrator.py
+    imports FROM this module at ITS OWN module level, so importing back
+    from it here at module level would be a genuine circular import;
+    deferring to call time breaks that safely). This function's own
+    REJECTION logic below (``_ATTRIBUTE_KEYWORDS``/``_PRONOUN_ONLY_WORDS``)
+    is deliberately NOT shared with orchestrator.py's own
+    ``_display_topic_from_raw`` -- the two have intentionally different,
+    independently-tuned rejection vocabularies for their own call sites,
+    and unifying THAT (not just the pattern shapes) would risk changing
+    this safety-adjacent classifier's own decisions without the extensive
+    re-verification such a change would need.
     """
+    from backend.agents.v2.orchestrator import _DISPLAY_TOPIC_PATTERNS
+
     candidate = message.strip(" ?!.,;:")
     for pattern in _DISPLAY_TOPIC_PATTERNS:
         match = pattern.match(candidate)
@@ -159,6 +164,19 @@ def _explicit_topic(message: str) -> str | None:
         # subject -- falls through to the deictic/attribute-only case
         # instead, same as "Thuốc này..." already does.
         if folded in _PRONOUN_ONLY_WORDS:
+            continue
+        # BUILD-45 Candidate B: a topic CONTAINING a deictic word (e.g.
+        # "Bệnh này" -> "benh nay", already one of _DEICTIC_MARKERS' own
+        # entries) is just as much a reference to the PRIOR topic as a
+        # bare pronoun is -- the check above only ever caught a topic that
+        # IS wholly a pronoun, never one that merely contains one. Exposed
+        # by widening _DISPLAY_TOPIC_PATTERNS (a new cause-shaped pattern
+        # now matches "Bệnh này do đâu?", which the narrower pre-BUILD-45
+        # pattern set never did) -- confirmed as a real, pre-existing gap
+        # in this function's own rejection logic, not a new one this
+        # build introduces; found via the existing BUILD-43 regression
+        # suite itself catching it, not assumed safe.
+        if _has_deictic_marker(folded):
             continue
         return topic
     return None

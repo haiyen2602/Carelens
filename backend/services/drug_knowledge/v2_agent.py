@@ -325,7 +325,13 @@ class V2AgentKnowledgeService:
         product = self.products_by_legacy.get(legacy_drug_id)
         return self._to_catalog_item(product) if product else None
 
-    def search_catalog(self, query: str, limit: int = 20) -> list[DrugCatalogItem]:
+    def _ranked_catalog_matches(self, query: str) -> list[DrugCatalogItem]:
+        """Full ranked match list, before any caller-supplied ``limit``
+        truncates it. The one place both ``search_catalog`` and
+        ``search_catalog_unique_match`` (BUILD-45) read from, so a query's
+        TRUE candidate count is never re-derived from an already-truncated
+        list (which would conflate "the caller only asked for N" with "there
+        is genuinely only one match")."""
         query = (query or "").strip()
         if not query:
             return []
@@ -348,14 +354,55 @@ class V2AgentKnowledgeService:
                 if any(token.startswith(prefix) for token in normalize_text(item.ten_thuoc).split())
             ]
             ranked_prefixes.sort(key=lambda item: (-item[0], normalize_text(item[1].ten_thuoc), item[1].drug_id))
-            return [item for _, item in ranked_prefixes[: max(1, min(limit, 50))]]
+            return [item for _, item in ranked_prefixes]
         ranked = [
             (self._name_score(query, item.ten_thuoc), item)
             for item in self.catalog_items
         ]
         ranked = [item for item in ranked if item[0] >= 0.20]
         ranked.sort(key=lambda item: (-item[0], normalize_text(item[1].ten_thuoc), item[1].drug_id))
-        return [item for _, item in ranked[: max(1, min(limit, 50))]]
+        return [item for _, item in ranked]
+
+    def search_catalog(self, query: str, limit: int = 20) -> list[DrugCatalogItem]:
+        return self._ranked_catalog_matches(query)[: max(1, min(limit, 50))]
+
+    # BUILD-45 Candidate A: deliberately much stricter than search_catalog's
+    # own 0.20 browsing floor. Empirically confirmed against the real
+    # catalog (not assumed): at 0.20, a query for a product's own EXACT full
+    # name still matches 100+ unrelated products (shared manufacturer/
+    # dosage/packaging tokens like "40mg"/"Astrazeneca"/"2x7" push token_score
+    # well past 0.20 for genuinely different drugs) -- 0.20 is calibrated for
+    # a human browsing a combobox, not for "is this query singularly
+    # identifying one real product". 0.90 is the token_score branch's own
+    # mathematical ceiling for anything short of a near-exact match
+    # (0.55 + 0.35*f_score maxes at 0.90 when precision=recall=1.0); only the
+    # exact-substring branch (a flat 1.0) or a very close paraphrase clears
+    # it. Verified: 30/30 real catalog items resolve to themselves uniquely
+    # at this bar when queried by their own exact name; the pre-existing
+    # 0.20 floor gave 0/30.
+    _UNIQUE_MATCH_SCORE_FLOOR = 0.90
+
+    def search_catalog_unique_match(self, query: str) -> DrugCatalogItem | None:
+        """The single catalog item, but ONLY when the query resolves to
+        exactly one HIGH-CONFIDENCE match (see ``_UNIQUE_MATCH_SCORE_FLOOR``)
+        -- genuine structural uniqueness, independent of whatever ``limit``
+        a caller happens to pass to ``search_catalog``. ``None`` for zero
+        strong matches, for real ambiguity (2+ strong matches -- e.g. a bare
+        ingredient/brand name with multiple real strengths/forms in the
+        catalog, which stays correctly unresolved), or for a short prefix
+        query (the doctor-combobox branch uses a different, looser scoring
+        scheme not safe to treat as an identity signal at all). Never a
+        "top-1-of-many" fuzzy guess. This is the deterministic evidence
+        ``_resolved_drug_entity`` (agent_v2_routes.py) promotes an
+        ``active_entity`` from without requiring a ``get_drug_info`` call."""
+        query = (query or "").strip()
+        if not query:
+            return None
+        query_tokens = normalize_text(query).split()
+        if len(query_tokens) == 1 and len(query_tokens[0]) <= 3:
+            return None
+        strong_matches = [item for item in self.catalog_items if self._name_score(query, item.ten_thuoc) >= self._UNIQUE_MATCH_SCORE_FLOOR]
+        return strong_matches[0] if len(strong_matches) == 1 else None
 
     def search_identity_candidates(self, query: str, limit: int = 5) -> list[DrugIdentityCandidate]:
         ranked = [
