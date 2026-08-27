@@ -42,6 +42,7 @@ def _to_profile(p: Patient) -> PatientProfileOut:
         height_cm=p.height_cm,
         weight_kg=p.weight_kg,
         profile_completed=p.profile_completed,
+        photo_capture_enabled=p.photo_capture_enabled,
     )
 
 
@@ -153,7 +154,7 @@ def update_my_profile(
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
 
-    for field in ("phone", "address", "gender", "height_cm", "weight_kg"):
+    for field in ("phone", "address", "gender", "height_cm", "weight_kg", "photo_capture_enabled"):
         value = getattr(body, field)
         if value is not None:
             setattr(patient, field, value)
