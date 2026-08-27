@@ -427,6 +427,40 @@ def record_doctor_review_message(
     return message
 
 
+def send_active_doctor_message(
+    db: Session, *, request_id: str, doctor_id: str, actor_id: str, content: str, created_at: datetime
+) -> DoctorReviewMessage:
+    """Doctor sends a message during an ACTIVE takeover -- the status/
+    assignment check and the message insert happen under the SAME row
+    lock as every other transition in this module (claim/activate/
+    resolve/cancel), closing a real check-then-act race a route-level
+    plain read would otherwise leave open: without the lock here, a
+    doctor resolving the handoff (a separate transaction, itself
+    correctly ``with_for_update()``-locked) could commit BETWEEN the
+    route's stale status check and its own commit, silently appending an
+    orphaned DOCTOR message to a handoff that is, by the time this
+    commits, already RESOLVED. Confirmed via a real reproduction against
+    Postgres before this fix (PR #134 review), not assumed."""
+    request = db.execute(
+        select(DoctorReviewRequest).where(DoctorReviewRequest.id == request_id).with_for_update()
+    ).scalar_one_or_none()
+    if request is None:
+        raise HandoffNotFoundError("doctor handoff was not found")
+    if request.status != HandoffStatus.ACTIVE:
+        raise InvalidHandoffTransitionError("only active handoffs accept messages")
+    if request.assigned_doctor_id != doctor_id:
+        raise DoctorAuthorizationError("only the assigned doctor can send a message")
+    return record_doctor_review_message(
+        db,
+        handoff_id=request.id,
+        patient_id=request.patient_id,
+        sender_role=MessageSenderRole.DOCTOR,
+        actor_id=actor_id,
+        content=content,
+        created_at=created_at,
+    )
+
+
 def list_doctor_review_messages(db: Session, *, handoff_id: str) -> list[DoctorReviewMessage]:
     """Server timestamp + row-insertion order only (SS19) -- never a
     client-supplied timestamp."""
@@ -459,4 +493,5 @@ __all__ = [
     "record_doctor_review_message",
     "resolve_approved_doctor",
     "resolve_doctor_review_request",
+    "send_active_doctor_message",
 ]

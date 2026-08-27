@@ -404,3 +404,55 @@ async def test_doctor_resolve_and_patient_message_persist_concurrently_no_corrup
             assert len(messages) == 0
     finally:
         db.close()
+
+
+# ---------------------------------------------------------------------------
+# Real Postgres concurrent doctor-message-vs-resolve, through the real HTTP
+# route (PR #134 review finding -- see send_active_doctor_message's own
+# docstring in doctor_handoff.py)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_doctor_message_and_resolve_race_through_http_never_orphans_a_message(account_client, real_patient):
+    """The bot review correctly flagged that ``send_doctor_message``'s old
+    plain ``db.get()`` read (no row lock) let a concurrent ``resolve``
+    commit between the status check and the message write, silently
+    appending a DOCTOR message to an already-RESOLVED handoff -- confirmed
+    with a real reproduction before this fix. Now that the check-and-insert
+    happens under ``send_active_doctor_message``'s own row lock, exactly
+    one of two safe outcomes is possible for every real concurrent
+    ordering, never a third, corrupted one: (a) the message legitimately
+    lands while the row was still ACTIVE at lock-acquisition time (200,
+    resolve applies after), or (b) the message is cleanly rejected once the
+    row is already RESOLVED (409) -- never a message row surviving next to
+    a RESOLVED status."""
+    handoff = _pending_uncertainty(real_patient)
+    doctor_id = f"doc-msgrace-{uuid.uuid4().hex[:8]}"
+    doctor = await account_client("doctor", doctor_id=doctor_id)
+
+    claim = await doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/claim")
+    assert claim.status_code == 200
+    activate = await doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/activate")
+    assert activate.status_code == 200
+
+    message_resp, resolve_resp = await asyncio.gather(
+        doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/messages", json={"content": "gui trong luc dua resolve"}),
+        doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/resolve"),
+    )
+    assert resolve_resp.status_code == 200
+    assert message_resp.status_code in (200, 409), f"unexpected status {message_resp.status_code}: {message_resp.text}"
+
+    db = SessionLocal()
+    try:
+        row = db.get(DoctorReviewRequest, handoff.id)
+        assert row.status == "RESOLVED"
+        messages = db.execute(
+            select(DoctorReviewMessage).where(DoctorReviewMessage.handoff_id == handoff.id)
+        ).scalars().all()
+        if message_resp.status_code == 200:
+            assert len(messages) == 1, "message accepted (200) but not durably persisted, or duplicated"
+        else:
+            assert len(messages) == 0, "message rejected (409) but a row was still written -- the exact orphan bug"
+    finally:
+        db.close()

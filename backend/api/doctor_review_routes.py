@@ -42,13 +42,12 @@ from backend.services.doctor_handoff import (
     HandoffNotFoundError,
     HandoffStatus,
     InvalidHandoffTransitionError,
-    MessageSenderRole,
     activate_doctor_review_request,
     cancel_doctor_review_request,
     claim_doctor_review_request,
     list_doctor_review_messages,
-    record_doctor_review_message,
     resolve_doctor_review_request,
+    send_active_doctor_message,
 )
 
 doctor_review_router = APIRouter(prefix="/doctor/reviews", tags=["doctor-review"])
@@ -207,24 +206,25 @@ def send_doctor_message(
     actor: CurrentUser = Depends(_require_doctor),
 ) -> DoctorReviewDetailOut:
     doctor_id = require_active_doctor(db, actor)
-    row = _get_or_404(db, handoff_id)
-    if row.status != HandoffStatus.ACTIVE:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Yeu cau chua o trang thai ACTIVE")
-    if row.assigned_doctor_id != doctor_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chi bac si duoc giao moi co the gui tin nhan")
-    # SS24: doctor text is human-authored -- persisted verbatim, never
-    # rewritten through the Main Model before delivery.
-    record_doctor_review_message(
-        db,
-        handoff_id=row.id,
-        patient_id=row.patient_id,
-        sender_role=MessageSenderRole.DOCTOR,
-        actor_id=actor.id,
-        content=request.content,
-        created_at=datetime.now(UTC),
-    )
+    # PR #134 review: the status/assignment check and the message insert
+    # must happen under the SAME row lock, not a plain db.get() read
+    # followed by a separate write -- a concurrent resolve (itself
+    # correctly with_for_update()-locked) could otherwise commit in
+    # between and leave an orphaned message on an already-RESOLVED
+    # handoff. Confirmed via a real reproduction before this fix; see
+    # send_active_doctor_message's own docstring. SS24: doctor text is
+    # human-authored -- persisted verbatim, never rewritten through the
+    # Main Model before delivery.
+    try:
+        message = send_active_doctor_message(
+            db, request_id=handoff_id, doctor_id=doctor_id, actor_id=actor.id,
+            content=request.content, created_at=datetime.now(UTC),
+        )
+    except DoctorHandoffError as exc:
+        db.rollback()
+        raise _map_domain_error(exc) from exc
     db.commit()
-    return _detail(db, row)
+    return _detail(db, db.get(DoctorReviewRequest, message.handoff_id))
 
 
 @doctor_review_router.post("/{handoff_id}/resolve", response_model=DoctorReviewDetailOut)

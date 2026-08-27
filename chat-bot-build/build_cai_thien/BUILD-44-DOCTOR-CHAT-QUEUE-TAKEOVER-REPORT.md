@@ -345,6 +345,16 @@ already deterministic — `handoff_type_for`, BUILD-42) — not a Judge-derived 
   `DB4I_TEST_DATABASE_URL`, `APP5_TEST_DATABASE_URL` unset in this dev env) plus 2 demo-seed-data-gated
   tests, none new to this build.
 
+## 22.5 PR #134 review response
+
+Automated review raised 2 findings, both independently verified before acting (same discipline as every prior build's own review response):
+
+**Finding 1 (race condition in `send_doctor_message`) — verified TRUE via a real reproduction, fixed.** The route read the handoff row with a plain `db.get()` (no `with_for_update()`), unlike every other transition (`claim`/`activate`/`resolve`/`cancel`, all row-locked domain functions) — so the `status == ACTIVE` check was a stale snapshot. Reproduced directly against real Postgres before writing any fix: read the row as ACTIVE in one session, resolved it for real in a second session (committed), then continued the first session's message-write and commit — **it succeeded**, leaving a DOCTOR message orphaned on an already-RESOLVED handoff. Fixed by adding `send_active_doctor_message` (`doctor_handoff.py`) — the status/assignment check and the message insert now happen under the SAME `with_for_update()` row lock as every other transition, closing the check-then-act window structurally rather than patching the symptom. Re-verified both concurrent orderings against real Postgres: (a) the message call acquires the lock first → legitimately succeeds while still ACTIVE, resolve applies right after, no corruption; (b) resolve acquires the lock first → the message call blocks on the lock, then correctly sees RESOLVED and rejects with a clean 409, zero orphaned rows. New permanent regression test, `test_doctor_message_and_resolve_race_through_http_never_orphans_a_message` (real Postgres, real concurrent HTTP calls via `asyncio.gather`, both real orderings possible, asserts internal consistency for either) — stable across 5 repeated runs.
+
+**Finding 2 (missing authorization check in `claim_doctor_review_request`) — verified as already-intentional, not a bug.** The function's own docstring already states this is deliberate: identity verification is the caller's job, "matching every other actor-derived check in this codebase" (the same pattern `assign_doctor_review_request`/`activate_doctor_review_request`/`resolve_doctor_review_request`/`cancel_doctor_review_request` all use — none of them re-verify identity internally either). Confirmed empirically: `require_active_doctor` (`agent_doctor_takeover.py`) — a real, fresh `Account` lookup verifying `role == "doctor"`, `status == "active"`, and `doctor_id` match — runs at the START of every route in `doctor_review_routes.py`, before any domain function is ever called; `claim_doctor_review_request`'s only real caller in this codebase always passes an already-verified `doctor_id`. The review's own text acknowledges this ("While common in this codebase") — a legitimate defense-in-depth observation for a hypothetical future caller that bypasses the route layer, but not a deviation this build introduced and not an actionable fix against the current code. No change made.
+
+Both findings addressed in commit (see `git log`); no merge, no deploy.
+
 ## 23. Release Gate
 
 ```text
@@ -365,6 +375,8 @@ MIGRATION UPGRADE/DOWNGRADE/UPGRADE: PASS  (verified against reconciled real loc
 AUTHORIZATION FAIL-CLOSED: PASS        (require_active_doctor, fresh per-request Account check)
 CLAIM CONCURRENCY (REAL POSTGRES): PASS (scenario A, exactly one winner)
 NO SELECT-THEN-UPDATE RACE: PASS       (with_for_update() on every transition)
+MESSAGE-VS-RESOLVE RACE: FOUND AND FIXED (PR #134 review -- §22.5, send_active_doctor_message now
+                                           row-locked; reproduced before AND after the fix)
 
 ACTIVE-ONLY BOT SUPPRESSION: PASS      (PENDING/ASSIGNED do not suppress, verified)
 ZERO MODEL CALLS DURING TAKEOVER: PASS (structural -- gateway constructed after the check; empirical --
