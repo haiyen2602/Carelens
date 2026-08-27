@@ -42,6 +42,12 @@ from backend.services.doctor_handoff import (
 # must not block a genuinely new escalation.
 _ACTIVE_HANDOFF_STATUSES = ("PENDING", "ASSIGNED", "ACTIVE")
 
+# BUILD-46 Fix B (PR #144 review): bounds the reuse-candidate scan below to
+# a fixed SQL LIMIT -- see that query's own comment for the full reasoning.
+# Generous headroom over any realistic per-patient count of simultaneously
+# OPEN handoffs (a personal escalation queue, not a shared table).
+_MAX_REUSE_CANDIDATES = 20
+
 
 class AuthorizedDoctorHandoffAdapter:
     """Binds the JWT actor before durable creation; no client chooses a doctor."""
@@ -108,6 +114,22 @@ class AuthorizedDoctorHandoffAdapter:
             # recent but type-INCOMPATIBLE row is skipped (not returned,
             # not blocking a fresh create for the new type either).
             incoming_type = handoff_type_for(reason_code=command.reason_code, risk_disposition=command.risk_disposition)
+            # PR #144 review: the pre-fix query was SQL-bounded to 1 row
+            # (`.first()` -> `LIMIT 1`); filtering by type in Python
+            # requires seeing more than the single most-recent row, but an
+            # UNBOUNDED `.all()` here would hold the Patient-row lock open
+            # over an arbitrarily large table scan if a patient's own
+            # active-handoff count ever balloons (a symptom of a DIFFERENT
+            # bug -- rows genuinely stuck open -- not something this fix
+            # should make worse by scanning without limit while holding a
+            # lock). `_MAX_REUSE_CANDIDATES` bounds the worst case back to a
+            # small, fixed SQL `LIMIT` -- generous headroom over any
+            # realistic per-patient open-handoff count (this is a personal
+            # escalation queue, not a shared table) so it changes no real
+            # outcome; a genuinely pathological patient beyond this bound
+            # degrades to "create a fresh row" (still correct -- strictly
+            # safer than the pre-fix behavior, never a type-incompatible
+            # reuse) rather than an unbounded scan.
             candidates = self._db.execute(
                 select(DoctorReviewRequest)
                 .where(
@@ -115,6 +137,7 @@ class AuthorizedDoctorHandoffAdapter:
                     DoctorReviewRequest.status.in_(_ACTIVE_HANDOFF_STATUSES),
                 )
                 .order_by(DoctorReviewRequest.created_at.desc())
+                .limit(_MAX_REUSE_CANDIDATES)
             ).scalars().all()
             existing = next(
                 (
