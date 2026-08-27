@@ -5,14 +5,15 @@ import {
   ArrowRight,
   ArrowUpRight,
   FileClock,
+  Inbox,
   Loader2,
   PillBottle,
-  ShieldAlert,
   Users2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { MEDICINES } from "@/lib/admin-mock";
 import { listAccounts, type AccountRecord } from "@/lib/accounts";
+import { listAdminDrugs } from "@/lib/admin-drugs";
+import { listAllDrugRequests } from "@/lib/drug-requests";
 import { listSystemAuditLogs, type SystemAuditLogEntry } from "@/lib/audit";
 import { useAuth } from "@/lib/auth";
 
@@ -21,12 +22,14 @@ const roleBadgeTone: Record<string, string> = {
   patient: "bg-primary/10 text-primary",
   caregiver: "bg-warning/25 text-warning-foreground",
   admin: "bg-accent text-accent-foreground",
+  super_admin: "bg-accent text-accent-foreground",
   system: "bg-muted text-muted-foreground",
   "Hệ thống": "bg-muted text-muted-foreground",
 };
 
 const roleDisplayName: Record<string, string> = {
   admin: "Quản trị",
+  super_admin: "Quản trị cấp cao",
   doctor: "Bác sĩ",
   patient: "Bệnh nhân",
   caregiver: "Người thân",
@@ -60,35 +63,40 @@ function formatDateTime(isoString: string) {
 export default function AdminDashboard() {
   const { accessToken } = useAuth();
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
+  const [drugTotalCount, setDrugTotalCount] = useState<number | null>(null);
+  const [pendingDrugRequestsCount, setPendingDrugRequestsCount] = useState<number | null>(null);
   const [recentAuditLogs, setRecentAuditLogs] = useState<SystemAuditLogEntry[]>([]);
   const [auditTotalCount, setAuditTotalCount] = useState(0);
-  const [auditLoading, setAuditLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listAccounts()
-      .then(setAccounts)
-      .catch(() => undefined);
+    if (!accessToken) return;
 
-    listSystemAuditLogs({ pageSize: 5, accessToken })
-      .then((res) => {
+    setLoading(true);
+    Promise.allSettled([
+      listAccounts(accessToken).then(setAccounts),
+      listAdminDrugs({ page: 1, pageSize: 1, accessToken }).then((res) =>
+        setDrugTotalCount(res.total),
+      ),
+      listAllDrugRequests("PENDING", accessToken).then((items) =>
+        setPendingDrugRequestsCount(items.length),
+      ),
+      listSystemAuditLogs({ pageSize: 5, accessToken }).then((res) => {
         setRecentAuditLogs(res.items);
         setAuditTotalCount(res.total);
-      })
-      .catch(() => undefined)
-      .finally(() => setAuditLoading(false));
+      }),
+    ]).finally(() => setLoading(false));
   }, [accessToken]);
 
   const total = accounts.length;
   const pending = accounts.filter((a) => a.status === "pending").length;
   const locked = accounts.filter((a) => a.status === "locked").length;
-  const indexed = MEDICINES.filter((m) => m.status === "indexed").length;
-  const needsAttention = MEDICINES.filter((m) => m.status !== "indexed").length;
 
   const roleCounts = {
     patient: accounts.filter((a) => a.role === "patient").length,
     doctor: accounts.filter((a) => a.role === "doctor").length,
     caregiver: accounts.filter((a) => a.role === "caregiver").length,
-    admin: accounts.filter((a) => a.role === "admin").length,
+    admin: accounts.filter((a) => a.role === "admin" || (a.role as string) === "super_admin").length,
   };
   const pctOf = (n: number) => (total > 0 ? (n / total) * 100 : 0);
   const donut = [
@@ -121,7 +129,7 @@ export default function AdminDashboard() {
   const stats = [
     {
       label: "Tổng tài khoản",
-      value: total,
+      value: loading && accounts.length === 0 ? "..." : total,
       note: `${pending} chờ kích hoạt · ${locked} đã khoá`,
       noteTone: pending || locked ? "text-warning-foreground" : "text-success",
       icon: Users2,
@@ -130,18 +138,33 @@ export default function AdminDashboard() {
     },
     {
       label: "Dữ liệu thuốc (RAG)",
-      value: `${indexed}/${MEDICINES.length}`,
-      note: `${needsAttention} bản ghi cần xử lý`,
-      noteTone: needsAttention ? "text-warning-foreground" : "text-success",
+      value: drugTotalCount !== null ? drugTotalCount : (loading ? "..." : "0"),
+      note: "Kho tri thức dược lâm sàng",
+      noteTone: "text-success",
       icon: PillBottle,
-      tone: "bg-warning/25 text-warning-foreground",
+      tone: "bg-success/15 text-success",
       link: { to: "/admin/medicines", label: "Quản lý dữ liệu thuốc" },
-      mock: true,
     },
     {
-      label: "Sự kiện hệ thống gần đây",
-      value: auditTotalCount,
-      note: "Xem toàn bộ audit log",
+      label: "Yêu cầu bổ sung thuốc",
+      value:
+        pendingDrugRequestsCount !== null
+          ? pendingDrugRequestsCount
+          : (loading ? "..." : "0"),
+      note:
+        (pendingDrugRequestsCount ?? 0) > 0
+          ? `${pendingDrugRequestsCount} yêu cầu đang chờ duyệt`
+          : "Không có yêu cầu chờ",
+      noteTone:
+        (pendingDrugRequestsCount ?? 0) > 0 ? "text-warning-foreground" : "text-success",
+      icon: Inbox,
+      tone: "bg-warning/25 text-warning-foreground",
+      link: { to: "/admin/drug-requests", label: "Xử lý yêu cầu" },
+    },
+    {
+      label: "Sự kiện hệ thống",
+      value: loading && auditTotalCount === 0 ? "..." : auditTotalCount,
+      note: "Xem toàn bộ nhật ký kiểm toán",
       noteTone: "text-muted-foreground",
       icon: FileClock,
       tone: "bg-accent text-accent-foreground",
@@ -165,11 +188,6 @@ export default function AdminDashboard() {
           const Icon = s.icon;
           return (
             <div key={s.label} className="surface-card relative flex flex-col justify-between p-5">
-              {s.mock && (
-                <span className="absolute right-4 top-4 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                  Mock
-                </span>
-              )}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>
@@ -256,7 +274,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="mt-4 divide-y divide-border">
-            {auditLoading ? (
+            {loading ? (
               <div className="py-8 text-center text-muted-foreground">
                 <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
                 <p className="mt-2 text-xs">Đang tải hoạt động gần đây...</p>
@@ -298,47 +316,6 @@ export default function AdminDashboard() {
         </section>
       </div>
 
-      <section className="surface-card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-bold">
-            <ShieldAlert className="h-5 w-5 text-warning-foreground" /> Cần chú ý
-          </h2>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Users2 className="h-4 w-4 text-primary" /> {pending} tài khoản chờ kích hoạt
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Cần xác minh và cấp quyền trước khi cho đăng nhập.
-            </p>
-            <Link
-              href="/admin/accounts"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-            >
-              Xử lý ngay <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <PillBottle className="h-4 w-4 text-warning-foreground" /> {needsAttention} dữ liệu
-              thuốc chưa index xong
-              <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                Mock
-              </span>
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Agent RAG có thể trả lời thiếu chính xác nếu chưa xử lý.
-            </p>
-            <Link
-              href="/admin/medicines"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-            >
-              Kiểm tra <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
