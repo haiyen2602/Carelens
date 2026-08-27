@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.agents.v2.answerability import handoff_type_for
 from backend.agents.v2.handoff import AgentHandoffResult, HandoffContextRef
 from backend.agents.v2.handoff import HandoffCreateCommand as AgentHandoffCreateCommand
 from backend.api.security import CurrentUser
@@ -76,14 +77,54 @@ class AuthorizedDoctorHandoffAdapter:
             # require_agent_patient_access helper itself. No-op contention
             # for any other patient; released at this transaction's commit.
             self._db.execute(select(Patient.id).where(Patient.id == command.patient_id).with_for_update())
-            existing = self._db.execute(
+            # BUILD-46 Fix B (found live during BUILD-44's own production
+            # validation, not fixed there per that task's own out-of-scope
+            # instruction -- see agent-v2-handoff-dedup-type-bug memory):
+            # this "if" guard only ever gates on the INCOMING command's own
+            # risk_disposition ("is this an Answerability-Gate-sourced
+            # command allowed to reuse at all"), but "UNCERTAINTY_HANDOFF"
+            # is the literal, hardcoded risk_disposition BOTH a genuine
+            # UNCERTAINTY handoff AND a USER_REQUEST handoff are created
+            # with (handoff.py::create_for_uncertainty -- USER_REQUEST vs
+            # UNCERTAINTY is a DERIVED display distinction computed from
+            # reason_code via answerability.handoff_type_for, never its own
+            # separately stored disposition value). The query below used to
+            # match candidates by patient_id + open status ALONE, with NO
+            # filter on the EXISTING row's own type -- so it could return
+            # (and silently mislabel) a genuinely open SAFETY handoff
+            # (risk_disposition=e.g. "HANDOFF_REQUIRED", a completely
+            # different type) as the "reused" result for a brand new
+            # USER_REQUEST/UNCERTAINTY trigger. Confirmed live on
+            # production: a USER_REQUEST message reused a real 2-day-old
+            # SAFETY (ACUTE_DANGER_DETECTED) handoff.
+            #
+            # Fix: derive the CANONICAL HandoffType (SAFETY/UNCERTAINTY/
+            # USER_REQUEST) for both the incoming command and every
+            # candidate row using the SAME existing `handoff_type_for`
+            # function already authoritative for this distinction
+            # elsewhere (agent_v2_routes.py's own response-shaping) --
+            # never a second, parallel type-derivation. Reuse only the
+            # most recent candidate whose OWN derived type matches; a more
+            # recent but type-INCOMPATIBLE row is skipped (not returned,
+            # not blocking a fresh create for the new type either).
+            incoming_type = handoff_type_for(reason_code=command.reason_code, risk_disposition=command.risk_disposition)
+            candidates = self._db.execute(
                 select(DoctorReviewRequest)
                 .where(
                     DoctorReviewRequest.patient_id == command.patient_id,
                     DoctorReviewRequest.status.in_(_ACTIVE_HANDOFF_STATUSES),
                 )
                 .order_by(DoctorReviewRequest.created_at.desc())
-            ).scalars().first()
+            ).scalars().all()
+            existing = next(
+                (
+                    row
+                    for row in candidates
+                    if handoff_type_for(reason_code=row.reason_code, risk_disposition=row.risk_disposition)
+                    == incoming_type
+                ),
+                None,
+            )
             if existing is not None:
                 return AgentHandoffResult(existing.id, existing.status, existing.assigned_doctor_id, created=False)
         result = create_doctor_review_request(

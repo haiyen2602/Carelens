@@ -40,12 +40,12 @@ pytestmark = pytest.mark.skipif(
 NOW = datetime(2026, 8, 26, tzinfo=UTC)
 
 
-def _command(patient_id: str, actor_id: str, idempotency_key: str) -> HandoffCreateCommand:
+def _command(patient_id: str, actor_id: str, idempotency_key: str, reason_code: str = "REPEATED_CLARIFICATION") -> HandoffCreateCommand:
     return HandoffCreateCommand(
         patient_id=patient_id,
         actor_id=actor_id,
         patient_question="Tôi bị đau đầu.",
-        reason_code="REPEATED_CLARIFICATION",
+        reason_code=reason_code,
         risk_disposition="UNCERTAINTY_HANDOFF",
         idempotency_key=idempotency_key,
         verified_context_refs=(),
@@ -103,6 +103,73 @@ def test_postgres_concurrent_uncertainty_handoffs_for_the_same_patient_serialize
                     select(func.count()).select_from(DoctorReviewRequest).where(DoctorReviewRequest.patient_id == patient_id)
                 ).scalar_one()
                 == 1
+            )
+    finally:
+        with Session(engine) as cleanup, cleanup.begin():
+            cleanup.query(DoctorReviewRequest).filter(DoctorReviewRequest.patient_id == patient_id).delete(synchronize_session=False)
+            cleanup.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        engine.dispose()
+
+
+def test_postgres_concurrent_different_type_handoffs_for_the_same_patient_serialize_correctly_into_two_rows() -> None:
+    """BUILD-46 Fix B, section 11: two concurrent agent runs for the SAME
+    patient but DIFFERENT handoff types (UNCERTAINTY vs USER_REQUEST, both
+    literal risk_disposition="UNCERTAINTY_HANDOFF" -- see
+    test_agent_v2_build46_handoff_dedup_type_safety.py's own module
+    docstring for why) must both still serialize on the same Patient-row
+    lock (unchanged from the pre-existing BUILD-42 fix above), but now
+    correctly produce TWO separate, correctly-typed rows -- never merged
+    into one, never orphaned, never a corrupted/ambiguous state."""
+    assert DATABASE_URL is not None
+    engine = create_engine(DATABASE_URL, pool_size=3, max_overflow=0)
+    suffix = uuid4().hex
+    patient_id = f"build46-type-dedup-patient-{suffix}"
+    actor_id = f"build46-type-dedup-account-{suffix}"
+    actor = CurrentUser(id=actor_id, role="patient", patient_id=patient_id, doctor_id=None)
+    try:
+        with Session(engine) as setup, setup.begin():
+            setup.add(Patient(id=patient_id, full_name="Build46 Type Dedup Patient", doctor_id=None))
+
+        first_session = Session(engine, expire_on_commit=False)
+        first_transaction = first_session.begin()
+        first = AuthorizedDoctorHandoffAdapter(first_session, actor).create(
+            _command(patient_id, actor_id, f"build46-type-dedup-run-a-{suffix}", reason_code="REPEATED_CLARIFICATION"),
+            created_at=NOW,
+        )
+        finished = threading.Event()
+        worker_result: dict[str, object] = {}
+
+        def concurrent_second_run() -> None:
+            with Session(engine, expire_on_commit=False) as second, second.begin():
+                worker_result["result"] = AuthorizedDoctorHandoffAdapter(second, actor).create(
+                    _command(
+                        patient_id, actor_id, f"build46-type-dedup-run-b-{suffix}", reason_code="EXPLICIT_DOCTOR_REQUEST"
+                    ),
+                    created_at=NOW,
+                )
+            finished.set()
+
+        worker = threading.Thread(target=concurrent_second_run)
+        worker.start()
+        assert not finished.wait(timeout=0.25), "second concurrent run did not wait for the patient row lock"
+        first_transaction.commit()
+        first_session.close()
+        worker.join(timeout=5)
+        assert finished.is_set(), "second concurrent run did not complete after the first commit"
+
+        second = worker_result["result"]
+        # Both created their OWN row -- correctly serialized (not racing),
+        # but never merged into one just because they shared the lock.
+        assert first.created is True
+        assert second.created is True
+        assert second.request_id != first.request_id
+
+        with Session(engine) as verify:
+            assert (
+                verify.execute(
+                    select(func.count()).select_from(DoctorReviewRequest).where(DoctorReviewRequest.patient_id == patient_id)
+                ).scalar_one()
+                == 2
             )
     finally:
         with Session(engine) as cleanup, cleanup.begin():
