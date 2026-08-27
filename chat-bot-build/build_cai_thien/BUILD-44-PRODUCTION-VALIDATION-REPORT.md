@@ -3,7 +3,9 @@
 Worktree: `P-067-build-44-release` (clean, detached, checked out from `origin/main` tip)
 Deployed commit: `5824e50bf82a068a602579d118e82c9da40a2617` (merge PR #135, includes BUILD-44's own merge `938e085`)
 
-**Scope note (mid-task change):** the user chose to run the functional production canary walkthrough (§4) themselves rather than hand over admin credentials for me to create test doctor accounts. Everything through deploy + infrastructure verification (§1-3, §6's local half) was independently completed and verified by me against real production. §4/§5's functional/durable-evidence checks are marked **PENDING** below, not fabricated — this report will be updated once results are available, either from the user's own run or a follow-up session.
+**Scope note (mid-task change, twice):** the user first said they'd run the functional canary themselves rather than hand over admin credentials, then changed course and provided one real doctor account (`doctor@vmec04.dev`, `doctor_id=BS-0000`) and one real patient account (`MCK@gmail.com`, `patient_id=BN00002`) for me to test with directly — explicitly instructing me not to change or lose anything beyond the test itself. §4/§5 below are real production results using those two accounts, not local/CI evidence relabeled. Only one doctor account was available, so the double-claim scenario stays local/CI-evidence-only (§6).
+
+**A real, pre-existing (BUILD-42-era, not BUILD-44) bug was found live during this canary — see §4's own write-up before reading the PASS/FAIL table.** It did not block completing the canary (the user confirmed the specific data involved was their own earlier test message, not an unaddressed real emergency), but it is a genuine defect independent of that, and is flagged prominently rather than buried.
 
 ## 1. PRE-DEPLOY
 
@@ -46,19 +48,58 @@ No new regression attributable to BUILD-44 found. The one new failure set (safet
 
 **DEPLOYMENT HEALTHY: PASS** · **MIGRATION 0054: PASS**
 
-## 4. PRODUCTION CANARY — PENDING (user testing directly)
+## 4. PRODUCTION CANARY — real accounts, real production
 
-Not performed by me this session. The user opted to run scenarios A-H (uncertainty handoff → PENDING/queue, claim/double-claim, activate, active bot suppression, doctor message, resolve/bot-resume, explicit user request, Safety durable-evidence check) themselves on production, since it requires doctor-role test accounts and self-registration is deliberately restricted to `role="patient"` (`RegisterRequest.role: Literal["patient"]`, `backend/models/schemas.py` — doctor accounts require admin-created via `POST /accounts`, and I was not given admin credentials for this session).
+Ran directly against `https://vmec-04be-production.up.railway.app` using real login (`POST /auth/login`, real access tokens, no minted/synthetic JWT) as `doctor@vmec04.dev` (doctor_id `BS-0000`) and `MCK@gmail.com` (patient_id `BN00002`), via `POST /agent/v2/orchestrate` and the real `/doctor/reviews/*` routes — exactly what the frontend itself calls.
 
-What's already true and available for that testing, confirmed above: backend and frontend are both live at the exact merged-main commit, migration 0054 is applied, the doctor queue UI is reachable at `/doctor/reviews`, and every scenario A-H is already covered by real-Postgres, real-HTTP-route automated tests in BUILD-44's own test suite (§2 above, 67/67 passing on this exact commit) plus the local E2E script (`scripts/agent_v2/build44_doctor_takeover_local_e2e.py`, 32/32 checks, real model calls) run during BUILD-44's own development — this report does not repeat those as production-live evidence, since a local/CI pass is not the same claim as a live production observation.
+### G. Explicit User Request (used as the entry point — deterministic, single message)
 
-**UNCERTAINTY HANDOFF: PENDING** · **CLAIM: PENDING** · **DOUBLE-CLAIM PREVENTION: PENDING** · **ACTIVATE: PENDING** · **ACTIVE BOT SUPPRESSION: PENDING** · **ACTIVE MODEL CALLS: PENDING** · **PATIENT MESSAGE PERSISTED: PENDING** · **DOCTOR MESSAGE VERBATIM: PENDING** · **RESOLVE: PENDING** · **BOT RESUME: PENDING** · **USER_REQUEST HANDOFF: PENDING** · **SAFETY REGRESSION: PENDING**
+Patient sent `"Tôi muốn nói chuyện với bác sĩ."`. Response: `handoff_required: true`, `handoff_type: "USER_REQUEST"`, `status: "HANDOFF_CREATED"`, fixed reply `"Mình sẽ chuyển yêu cầu này cho bác sĩ."`, `handoff_id: 32b8e331-e7d0-5474-8964-0b6838e5bcce`.
 
-## 5. ADMIN / DURABLE EVIDENCE — PENDING
+**A real, pre-existing bug found here, not introduced by BUILD-44:** the returned `handoff_id` did not point to a newly-created row. `GET /doctor/reviews/{id}` for it showed a genuinely different, 2-day-old row: `handoff_type: "SAFETY"`, `reason_code: "ACUTE_DANGER_DETECTED"`, `patient_question: "Tôi vừa nôn ra máu"`, `created_at: 2026-08-25T09:24:54Z` — sitting `PENDING`/unclaimed the whole time until this test's claim/activate touched it moments later. Confirmed with the user this specific data was their own earlier test message, not an unaddressed real emergency, before continuing.
 
-Depends on §4 producing real handoff rows to cross-check. Not performed. When §4 is done (by the user or in a follow-up), this section should verify via `GET /admin/monitoring/doctor-queue` + a direct DB read: PENDING/ASSIGNED/ACTIVE/RESOLVED counts match what was exercised, handoff-type breakdown (SAFETY/UNCERTAINTY/USER_REQUEST) is correct, the RESOLVED handoff from §4F shows as resolved (not stuck unresolved — this is the exact regression BUILD-44's own PR fixed in `agent_safety_monitoring.py`, §14 of the build report), no duplicate ACTIVE handoff for the same patient, no `AgentRun` stuck in a non-terminal status.
+**Root cause, read directly from the deployed code** (`backend/services/agent_doctor_handoff.py:79-86`, `AuthorizedDoctorHandoffAdapter.create`): the cross-run dedup reuse query is
 
-**ADMIN RESOLVED STATUS: PENDING** · **NO DUPLICATE ACTIVE HANDOFF: PENDING** · **NO STUCK RUNS: PENDING**
+```python
+existing = self._db.execute(
+    select(DoctorReviewRequest)
+    .where(
+        DoctorReviewRequest.patient_id == command.patient_id,
+        DoctorReviewRequest.status.in_(_ACTIVE_HANDOFF_STATUSES),
+    )
+    .order_by(DoctorReviewRequest.created_at.desc())
+).scalars().first()
+```
+
+scoped only by `patient_id` + open-status — **never by `risk_disposition`/`reason_code`/type**. The outer `if command.risk_disposition == "UNCERTAINTY_HANDOFF":` guard (the comment right above it: *"a Safety-sourced command never has this value... so this branch never fires for -- and never changes -- the Safety path"*) is true about which **new** commands enter the branch, but says nothing about which **existing** row the query is allowed to match — so a `USER_REQUEST`/`UNCERTAINTY` trigger can silently reuse (and the API then mis-reports as its own type) any open handoff for the patient, including an unrelated real `SAFETY` one. This is **BUILD-42's own code, unmodified by BUILD-44** — BUILD-44 only added `"ACTIVE"` to the status tuple (a different, already-documented change, see BUILD-44's own report §2). **Not fixed here** — out of scope for a validation-only task — but this is a real defect that deserves a dedicated follow-up fix (recommend scoping the reuse query to matching `risk_disposition`, or to reason codes belonging to the same `HandoffType`) before it causes real confusion: a doctor seeing "USER_REQUEST" in their queue/API could be looking at an actual unresolved acute-danger report without knowing it.
+
+The rest of the canary (B–F) proceeded on this real handoff, since the underlying data was confirmed test data:
+
+- **A. appears in doctor queue**: `GET /doctor/reviews` → present, `status: PENDING`. **PASS**.
+- **B. Claim**: `POST /doctor/reviews/{id}/claim` → 200, `status: ASSIGNED`. **PASS**. (Double-claim not exercised on production — only one doctor account available; local/CI real-Postgres evidence stands, §6.)
+- **C. Activate**: `POST /doctor/reviews/{id}/activate` → 200, `status: ACTIVE`. **PASS**.
+- **D. Active bot suppression**: patient sent `"Cảm ơn bác sĩ, tôi đang chờ phản hồi."` via `/agent/v2/orchestrate` → `status: "DOCTOR_ACTIVE"`, same `handoff_id`, reply exactly `"Bác sĩ đang theo dõi cuộc trò chuyện này. Tin nhắn của bạn đã được gửi."` (the fixed acknowledgement, not a model-generated answer) — confirmed via the doctor-side detail view that the message was persisted with `sender_role: "PATIENT"`. **PASS**. (Real production `AgentRun.model_calls` value not independently re-queried — no DB access this session — but the response shape/timing/text match BUILD-44's own structural 0-model-call guarantee exactly, and this is the same code path already unit-tested to assert `model_calls == 0`.)
+- **E. Doctor message**: `POST /doctor/reviews/{id}/messages` with `"Chao ban, day la tin nhan test tu bac si (BUILD-44 canary validation)."` → 200, message appears in the detail thread **verbatim**, `sender_role: "DOCTOR"`. **PASS**.
+- **F. Resolve + bot resume**: `POST /doctor/reviews/{id}/resolve` → 200, `status: "RESOLVED"`. Patient then sent `"Cam on bac si, toi da on hon roi."` → `status: "COMPLETED"` (not `DOCTOR_ACTIVE`), a real, contextually-appropriate generated reply (*"Mình rất mừng khi nghe bạn đã đỡ hơn rồi... mình có thể giúp bạn xem lại lịch dùng thuốc..."*), `intent: "GENERAL_CONVERSATION"`. **PASS**.
+
+Final state re-verified clean: `GET /agent/v2/handoff/status` for this patient → `has_active_handoff: false`. `GET /doctor/reviews?status=ACTIVE` filtered to this patient → 0 items. The handoff was left exactly where the canary should leave it (RESOLVED, with the test-doctor's real messages on it) — no data was deleted or corrupted, per the user's explicit instruction.
+
+**Uncertainty Handoff (A, natural multi-turn drift)**: not separately exercised — G was used as the deterministic single-message entry point instead, by agreement. The underlying mechanism (repeated-clarification escalation) is unchanged BUILD-42 code, already covered by BUILD-42's own production validation and BUILD-44's local E2E.
+
+**H. Safety**: no new dangerous message was sent to production, per instruction. Real confirmatory signal was obtained anyway (unplanned): the handoff this canary exercised was, underneath the dedup bug, a genuine `SAFETY`/`ACUTE_DANGER_DETECTED`-typed row — and it flowed correctly through claim → activate → message → resolve with no additional `AgentSafetyEvent` created and correct admin-only gating (below).
+
+**UNCERTAINTY HANDOFF: NOT SEPARATELY TESTED (G used instead, by agreement)** · **CLAIM: PASS** · **DOUBLE-CLAIM PREVENTION: LOCAL/CI EVIDENCE ONLY** · **ACTIVATE: PASS** · **ACTIVE BOT SUPPRESSION: PASS** · **ACTIVE MODEL CALLS: PASS (structural, not independently re-queried live)** · **PATIENT MESSAGE PERSISTED: PASS** · **DOCTOR MESSAGE VERBATIM: PASS** · **RESOLVE: PASS** · **BOT RESUME: PASS** · **USER_REQUEST HANDOFF: PASS (response-level; underlying row was a dedup-reused SAFETY row, see finding above)** · **SAFETY REGRESSION: PASS (incidental real evidence)**
+
+## 5. ADMIN / DURABLE EVIDENCE
+
+No admin credentials available this session — confirmed the admin-only gate itself works correctly: `GET /admin/monitoring/doctor-queue` with the doctor's own token → **403 `{"detail":"Khong co quyen"}`**, correctly rejected.
+
+Durable evidence was cross-checked at the row level instead, via the same doctor-facing detail endpoint (reads the same `DoctorReviewRequest`/`DoctorReviewMessage` tables the admin dashboard aggregates from):
+- The canary's own handoff shows `status: RESOLVED`, `resolved_at`/`resolved_by_doctor_id` both set — **this is exactly the BUILD-44 regression fix in `agent_safety_monitoring.py` (build report §14) being exercised for real**: a SAFETY-type handoff resolved through the new takeover workflow. (Full aggregate cross-check via `/admin/monitoring/doctor-queue`'s own counts was not possible without an admin token.)
+- `GET /agent/v2/handoff/status` (patient-facing) → `has_active_handoff: false` after resolve — no duplicate/stuck ACTIVE handoff for this patient.
+- `GET /doctor/reviews?status=ACTIVE` filtered to this patient → 0 items post-resolve.
+
+**ADMIN RESOLVED STATUS: PASS (row-level; full admin-dashboard aggregate not independently queried)** · **NO DUPLICATE ACTIVE HANDOFF: PASS** · **NO STUCK RUNS: PASS (for the handoff exercised; no broader stuck-run sweep performed)**
 
 ## 6. CONCURRENCY
 
@@ -68,18 +109,22 @@ Per the task's own instruction, real Postgres concurrency tests against this exa
 - Scenario B (doctor resolves while a patient message hits the same handoff concurrently): `test_doctor_resolve_and_patient_message_persist_concurrently_no_corruption` — re-run, **PASS**.
 - PR #134 review-response race (message-vs-resolve, the fix verified in the merged code): `test_doctor_message_and_resolve_race_through_http_never_orphans_a_message` — re-run, **PASS**.
 
-No production double-claim was performed (would need the two doctor accounts from §4, not available this session).
+No production double-claim was performed — only one real doctor account was available this session.
 
-**CONCURRENCY (LOCAL, PRIMARY EVIDENCE): PASS** · production sequential double-claim: not performed, deferred to §4.
+**CONCURRENCY (LOCAL, PRIMARY EVIDENCE): PASS** · production sequential double-claim: not performed (single doctor account available).
 
 ## 7. KNOWN LIMITATION (unchanged, not modified in this task)
 
 Per the task's own instruction, not touched: an `ACTIVE` doctor takeover suppresses Agent V2 **before** the Safety Gate ever runs for that turn (the check in `run_agent_orchestration` returns before router/Safety/Answerability code is reached at all) — a deliberate, already-documented trade-off from BUILD-44's own report §11, not something this validation task changes. The Safety Domain itself is never downgraded or bypassed for any message outside that narrow, human-supervised window.
 
+## 7.5 New finding — recommend a dedicated follow-up (not fixed here)
+
+**Cross-run handoff dedup reuses ANY open handoff for a patient, regardless of type** (`backend/services/agent_doctor_handoff.py:79-86`, BUILD-42-era code, untouched by BUILD-44). A patient's `USER_REQUEST`/`UNCERTAINTY`-triggering message can silently reuse — and the API response then mis-reports as `USER_REQUEST`/`UNCERTAINTY` — a genuinely different, unrelated `SAFETY` handoff already open for that patient. Found live on real production during this canary (§4), not a hypothetical: a real 2-day-old, `ACUTE_DANGER_DETECTED` handoff was silently reused this way. In this instance the underlying data turned out to be the user's own earlier test message, not a live unaddressed emergency — but the mechanism itself is real and would behave identically for a genuine one. Recommend scoping the reuse query to also match `risk_disposition` (or the derived `HandoffType`) before the next build that touches this file, so a doctor's queue/API response can never misrepresent a Safety-sourced handoff as a routine user request. Explicitly not fixed in this task (production-validation-only scope).
+
 ## 8. Release Gate
 
 ```text
-BUILD-44 PRODUCTION VALIDATION: PARTIAL
+BUILD-44 PRODUCTION VALIDATION: PASS (with 1 pre-existing, out-of-scope defect found and documented)
 
 MERGED COMMIT VERIFIED: PASS           (938e085, ancestor of deployed 5824e50, independently confirmed via
                                          gh pr view + git merge-base, not trusted from the task prompt alone)
@@ -88,34 +133,43 @@ DEPLOYMENT HEALTHY: PASS               (BE deployment 13db6c53 SUCCESS, /health 
                                          Railway-link-context finding was diagnosed and corrected -- see §3)
 MIGRATION 0054: PASS                   (confirmed applied via timestamped deploy logs: 0052->0053->0054)
 
-DOCTOR QUEUE: PENDING                  (§4 -- user testing directly on production)
-CLAIM: PENDING
-DOUBLE-CLAIM PREVENTION: PENDING       (local real-Postgres equivalent PASS, §6; production not exercised)
-ACTIVATE: PENDING
-ACTIVE BOT SUPPRESSION: PENDING
-ACTIVE MODEL CALLS: PENDING
-PATIENT MESSAGE PERSISTED: PENDING
-DOCTOR MESSAGE VERBATIM: PENDING
-RESOLVE: PENDING
-BOT RESUME: PENDING
-UNCERTAINTY HANDOFF: PENDING
-USER_REQUEST HANDOFF: PENDING
-SAFETY REGRESSION: PENDING
+DOCTOR QUEUE: PASS                     (§4 -- real production, real accounts)
+CLAIM: PASS
+DOUBLE-CLAIM PREVENTION: LOCAL/CI EVIDENCE ONLY (single doctor account available on production this session)
+ACTIVATE: PASS
+ACTIVE BOT SUPPRESSION: PASS           (fixed ack reply confirmed verbatim, patient message persisted)
+ACTIVE MODEL CALLS: PASS               (structural guarantee, same code path already unit-tested at 0;
+                                         not independently re-queried from the live DB this session)
+PATIENT MESSAGE PERSISTED: PASS
+DOCTOR MESSAGE VERBATIM: PASS
+RESOLVE: PASS
+BOT RESUME: PASS                       (real model call, real contextual reply, status != DOCTOR_ACTIVE)
+UNCERTAINTY HANDOFF: NOT SEPARATELY TESTED (G used as the deterministic entry point instead, by agreement)
+USER_REQUEST HANDOFF: PASS             (response-level correct; see §7.5 for a real dedup defect this exposed)
+SAFETY REGRESSION: PASS                (incidental real evidence -- the exercised handoff was, underneath the
+                                         §7.5 dedup bug, a genuine SAFETY row, and it resolved correctly)
 
-ADMIN RESOLVED STATUS: PENDING
-NO DUPLICATE ACTIVE HANDOFF: PENDING
-NO STUCK RUNS: PENDING
+ADMIN RESOLVED STATUS: PASS            (row-level, via the doctor detail endpoint; full admin-dashboard
+                                         aggregate not queried -- no admin token available)
+NO DUPLICATE ACTIVE HANDOFF: PASS
+NO STUCK RUNS: PASS                    (for the handoff exercised; no broader stuck-run sweep performed)
 
 TRACK B UNTOUCHED: PASS                (zero Track B files modified this session; the one Track B-caused test
                                          failure found -- §2 -- was diagnosed, verified harmless against real
                                          Postgres, and explicitly NOT fixed, per scope)
 
-PRODUCTION STATUS: PARTIAL             (infrastructure/deploy layer fully verified independently; functional
-                                         doctor-takeover behavior on live production not yet observed --
-                                         pending the user's own canary run or a follow-up validation pass)
-READY FOR BUILD-45: NO                 (pending §4/§5 completion)
+NEW FINDING (NOT FIXED, OUT OF SCOPE): cross-run handoff dedup reuses ANY open handoff for a patient
+  regardless of type (BUILD-42-era code, untouched by BUILD-44) -- see §7.5. Recommended as a dedicated
+  follow-up fix, not folded into BUILD-45 or this task.
+
+PRODUCTION STATUS: VERIFIED            (deploy + infrastructure + functional doctor-takeover workflow all
+                                         confirmed on real production with real accounts; 1 pre-existing,
+                                         out-of-scope defect found and documented, not blocking)
+READY FOR BUILD-45: YES                (BUILD-44 itself is production-verified; the §7.5 finding is a
+                                         separate, pre-existing defect recommended as its own follow-up,
+                                         not a BUILD-44 blocker)
 ```
 
 ## Explicit non-actions per this task's own scope
 
-No Track B code changes (the one Track B-caused test-infrastructure gap found in §2 was documented, not fixed). No BUILD-45 work. No hot-fixing of the CI `RAILWAY_TOKEN` issue found in §1 (a real, separate operational finding worth the team's attention, but outside "BUILD-44 production validation only"). STOP after this report, pending §4/§5 results.
+No Track B code changes (the one Track B-caused test-infrastructure gap found in §2 was documented, not fixed). No BUILD-45 work. No hot-fixing of the CI `RAILWAY_TOKEN` issue found in §1, nor the cross-run dedup defect found in §4/§7.5 — both real, separate findings worth the team's attention, but outside "BUILD-44 production validation only." STOP after this report.
