@@ -170,7 +170,25 @@ Vietnamese OCR is `NOT_READY` still stands unchanged.
   the options, which is a real, non-zero risk in a medication-identity
   flow.
 
-## 7. Final gate
+## 7. Review response: startup warmup vs. healthcheck timeout
+
+**Finding**: adding `get_drug_image_recognizer()` to the lifespan warmup
+adds ~22s to container startup; `/health` (registered outside the
+`lifespan` block, but only served by the ASGI server after `lifespan`
+runs everything before its `yield`) will not respond until warmup
+finishes, which could fail a healthcheck with an aggressive timeout.
+
+**Verified, not just asserted**: `railway.json` already sets
+`healthcheckTimeout: 300` (5 minutes) — unchanged by this PR, and
+independently confirmed live in this project's own Railway deploy logs
+this session ("Retry window: 5m0s"). Combined startup warmup is the
+pre-existing RAG warmup (~13s, unrelated to this change) plus the new
+drug-image warmup (~22s) ≈ 35s total — about 12% of the 300s budget,
+comfortable headroom. **No code change needed for this deployment.**
+Recorded here so a future warmup addition re-checks the combined total
+against the same 300s budget rather than assuming it always fits.
+
+## 8. Final gate
 
 ```
 REAL-PHONE EVIDENCE GATHERED: YES (8 photos / 1 product, see §1)
