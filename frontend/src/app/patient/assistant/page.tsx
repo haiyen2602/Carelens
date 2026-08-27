@@ -9,8 +9,9 @@
 // van la mo hinh that tra loi, nen khong co cau tra loi dung san nao.
 
 import { useEffect, useRef, useState } from "react";
-import { History, Paperclip, Plus, X } from "lucide-react";
+import { History, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CameraCapture } from "@/components/camera-capture";
 import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
@@ -47,6 +48,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePending, setImagePending] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const lastQuestion = useRef("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
@@ -169,6 +171,11 @@ export default function AssistantPage() {
       e.preventDefault();
       submit(input);
     }
+  };
+
+  const selectImage = (file: File | null) => {
+    if (!file) return;
+    setSelectedImage(file);
   };
 
   const submitImage = async () => {
@@ -322,27 +329,37 @@ export default function AssistantPage() {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="sr-only"
-            onChange={(event) => setSelectedImage(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              selectImage(event.target.files?.[0] ?? null);
+              event.currentTarget.value = "";
+            }}
           />
           {plusOpen && (
             <div className="absolute bottom-[60px] left-0 flex gap-2 rounded-[20px] bg-white p-2 shadow-[0_10px_30px_rgba(22,56,110,.14)]">
-              {[
-                { icon: "📷", label: "Chụp ảnh" },
-                { icon: "🖼️", label: "Tải ảnh lên" },
-                { icon: "🎙️", label: "Nói với Capy" },
-              ].map((b) => (
-                <button
-                  key={b.label}
-                  aria-label={b.label}
-                  onClick={() => {
-                    setPlusOpen(false);
-                    toast(`${b.label} chưa nối API — sắp có`);
-                  }}
-                  className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6]"
-                >
-                  {b.icon}
-                </button>
-              ))}
+              <button
+                type="button"
+                aria-label="Chụp ảnh thuốc"
+                disabled={isPending || imagePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  setCameraOpen(true);
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                📷
+              </button>
+              <button
+                type="button"
+                aria-label="Tải ảnh thuốc lên"
+                disabled={isPending || imagePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  imageInputRef.current?.click();
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                🖼️
+              </button>
             </div>
           )}
           <button
@@ -356,15 +373,6 @@ export default function AssistantPage() {
             }
           >
             +
-          </button>
-          <button
-            type="button"
-            aria-label="Đính kèm ảnh gói thuốc"
-            disabled={isPending || imagePending}
-            onClick={() => imageInputRef.current?.click()}
-            className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] bg-[#EDF0F6] text-[#1B2A44] disabled:opacity-50"
-          >
-            <Paperclip className="h-5 w-5" aria-hidden="true" />
           </button>
           <input
             value={input}
@@ -386,6 +394,16 @@ export default function AssistantPage() {
           </button>
         </div>
       </div>
+
+      <CameraCapture
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onCapture={(file) => {
+          setCameraOpen(false);
+          selectImage(file);
+        }}
+        onFallbackToFile={() => imageInputRef.current?.click()}
+      />
 
       {historyOpen && (
         <div className="absolute inset-0 z-50">
