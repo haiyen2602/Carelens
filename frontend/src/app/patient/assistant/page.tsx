@@ -216,6 +216,20 @@ export default function AssistantPage() {
     }
   };
 
+  // B-08 enablement: khong co goi y nao dung. Khong goi API xac nhan (khong
+  // co gi de "huy" phia server - attempt chua confirm se tu het han theo
+  // TTL cua no); chi ghi nhan trong lich su hoi thoai va huong dan nguoi
+  // dung go ten thuoc, tranh viec ho buoc phai chon dai 1 goi y sai.
+  const rejectCandidates = (_attemptId: string) => {
+    if (!activeId || imagePending || isPending) return;
+    appendMessage(activeId, "user", "Không phải thuốc nào ở trên.");
+    appendMessage(
+      activeId,
+      "assistant",
+      "Được, bạn hãy nhập tên thuốc hoặc mô tả (ví dụ: tên trên hộp, công dụng) để mình tìm giúp nhé.",
+    );
+  };
+
   const confirmCandidate = async (attemptId: string, actionId: string, label: string) => {
     if (!activeId || imagePending || isPending) return;
     setImagePending(true);
@@ -288,6 +302,7 @@ export default function AssistantPage() {
             accessToken={accessToken}
             actionsDisabled={isPending || imagePending}
             onConfirmDrugCandidate={confirmCandidate}
+            onRejectDrugCandidates={rejectCandidates}
             onSelectAction={(action) => {
               const { label: _label, ...selectedAction } = action;
               submit(action.label, selectedAction);
