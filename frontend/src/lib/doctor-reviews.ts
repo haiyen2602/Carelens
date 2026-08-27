@@ -27,6 +27,7 @@ export type DoctorReviewMessage = {
   actorId: string | null;
   content: string;
   createdAt: string;
+  imageAttachmentId: string | null;
 };
 
 export type DoctorReviewDetail = DoctorReviewQueueItem & {
@@ -57,6 +58,7 @@ type MessageApi = {
   actor_id: string | null;
   content: string;
   created_at: string;
+  image_attachment_id: string | null;
 };
 
 type DetailApi = QueueItemApi & {
@@ -90,6 +92,7 @@ function toMessage(m: MessageApi): DoctorReviewMessage {
     actorId: m.actor_id,
     content: m.content,
     createdAt: m.created_at,
+    imageAttachmentId: m.image_attachment_id,
   };
 }
 
@@ -157,6 +160,23 @@ export async function getDoctorReviewDetail(
   return toDetail(await response.json());
 }
 
+export async function getDoctorReviewImageAttachment(
+  handoffId: string,
+  attachmentId: string,
+  accessToken?: string | null,
+): Promise<Blob> {
+  const response = await fetch(
+    `/api/doctor/reviews/${encodeURIComponent(handoffId)}/image-attachments/${encodeURIComponent(attachmentId)}`,
+    { headers: authHeaders(accessToken) },
+  );
+  if (!response.ok) {
+    throw new Error(
+      (await parseErrorDetail(response)) ?? `Không tải được ảnh bệnh nhân (${response.status})`,
+    );
+  }
+  return response.blob();
+}
+
 async function postAction(path: string, accessToken?: string | null): Promise<DoctorReviewDetail> {
   const response = await fetch(path, { method: "POST", headers: authHeaders(accessToken) });
   if (!response.ok) {
@@ -184,6 +204,13 @@ export function resolveDoctorReview(
   accessToken?: string | null,
 ): Promise<DoctorReviewDetail> {
   return postAction(`/api/doctor/reviews/${encodeURIComponent(handoffId)}/resolve`, accessToken);
+}
+
+export function cancelDoctorReview(
+  handoffId: string,
+  accessToken?: string | null,
+): Promise<DoctorReviewDetail> {
+  return postAction(`/api/doctor/reviews/${encodeURIComponent(handoffId)}/cancel`, accessToken);
 }
 
 export async function sendDoctorReviewMessage(
