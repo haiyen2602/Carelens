@@ -1,6 +1,9 @@
-# Offline B-04 visual retrieval only.  These packages are intentionally not
-# part of requirements.txt, so production API/chatbot images do not acquire a
-# vision inference runtime.  Install in an isolated Python 3.11 environment.
+# Offline B-04/B-05 dev/local environment pin (isolated Python 3.11 venv,
+# outside the backend container). As of the 2026-08-28 B-08 production
+# enablement these same pins were ALSO added directly to requirements.txt so
+# the backend container acquires them too - this file is kept only for the
+# isolated local dev workflow already documented in B-04/B-05, not because
+# production still excludes them.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.5.1+cpu
 torchvision==0.20.1+cpu
