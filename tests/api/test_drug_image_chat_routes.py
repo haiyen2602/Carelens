@@ -29,8 +29,10 @@ def _settings(*, enabled: bool) -> SimpleNamespace:
         drug_image_chat_max_dimension_px=200,
         drug_image_chat_max_pixels=40_000,
         drug_image_chat_recognition_enabled=enabled,
+        drug_image_chat_temp_dir="./unused",
         drug_image_chat_doctor_storage_dir="./unused",
         drug_image_chat_doctor_attachment_ttl_seconds=60,
+        drug_image_chat_recognition_timeout_seconds=30,
     )
 
 
@@ -113,3 +115,32 @@ def test_safety_route_stays_ahead_of_upload_and_recognition(monkeypatch: pytest.
     )
 
     assert response.status == "SAFETY_DEFERRED"
+
+
+def test_enabled_model_load_failure_returns_safe_503_and_releases_slot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _route_defaults(monkeypatch, enabled=True)
+    monkeypatch.setattr(routes, "get_active_takeover", lambda _db, **_kwargs: None)
+
+    def unavailable_recognizer() -> None:
+        raise RuntimeError("model missing")
+
+    monkeypatch.setattr(routes, "get_drug_image_recognizer", unavailable_recognizer)
+    database = SimpleNamespace(rollback=lambda: None)
+
+    with pytest.raises(routes.HTTPException) as error:
+        asyncio.run(
+            routes.recognize_drug_image(
+                patient_id="patient-a",
+                conversation_id="conversation-a",
+                message="",
+                file=_upload(),
+                db=database,
+                actor=SimpleNamespace(id="actor-a"),
+            )
+        )
+
+    assert error.value.status_code == 503
+    assert routes._recognition_slot.acquire(blocking=False) is True
+    routes._recognition_slot.release()
