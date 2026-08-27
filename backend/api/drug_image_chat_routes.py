@@ -73,9 +73,8 @@ async def recognize_drug_image(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     actor: CurrentUser = Depends(get_current_user),
-    recognizer: RecognitionRunner = Depends(get_drug_image_recognizer),
 ) -> DrugImageRecognitionOut:
-    """Validate then run B-05 only when safety/takeover do not own the turn."""
+    """Validate then run B-05 only when safety/takeover and policy permit it."""
 
     patient_id = require_agent_patient_access(db, actor, patient_id)
     protected_intents = {
@@ -159,12 +158,24 @@ async def recognize_drug_image(
             reply="Bac si dang phu trach cuoc trao doi nay. Anh va tin nhan cua ban da duoc chuyen rieng den bac si.",
         )
 
+    # Do not construct the optional OpenCLIP runtime through FastAPI
+    # dependencies: unavailable production vision dependencies must be a
+    # policy response, not an unhandled 500 before this handler.
+    if not settings.drug_image_chat_recognition_enabled:
+        _recognition_slot.release()
+        logger.info("DRUG_IMAGE_UPLOAD_ACCEPTED conversation_id=%s outcome=RECOGNITION_UNAVAILABLE", conversation_id)
+        return DrugImageRecognitionOut(
+            status="RECOGNITION_UNAVAILABLE",
+            reply="Tinh nang nhan dien thuoc tu anh hien chua kha dung. Ban co the nhap ten thuoc hoac hoi bac si.",
+        )
+
     temp_dir = Path(settings.drug_image_chat_temp_dir)
     path: Path | None = None
     started = time.monotonic()
     logger.info("DRUG_IMAGE_UPLOAD_ACCEPTED conversation_id=%s", conversation_id)
     logger.info("DRUG_RECOGNITION_STARTED conversation_id=%s", conversation_id)
     try:
+        recognizer = get_drug_image_recognizer()
         temp_dir.mkdir(parents=True, exist_ok=True)
         descriptor, temp_name = tempfile.mkstemp(prefix="drug-image-chat-", suffix=".upload", dir=temp_dir)
         path = Path(temp_name)

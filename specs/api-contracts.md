@@ -399,6 +399,10 @@ format, byte-size and image-bound validation. Its response contains only an
 opaque `recognition_attempt_id`, bounded patient-safe candidate fields
 (`action_id`, `product_display_name`, `strength_text`, `rank`) and a safe
 reply. It never returns a product ID, score, OCR text, storage path or source.
+When production recognition is disabled by policy, `recognize` returns the
+bounded `RECOGNITION_UNAVAILABLE` status and a patient-safe reply without
+constructing a vision runtime or creating a recognition attempt. This is not
+a candidate and never changes the active entity.
 
 `confirm` accepts `patient_id`, `conversation_id`, `recognition_attempt_id`
 and opaque `action_id`. The server binds the action to the latest unexpired
