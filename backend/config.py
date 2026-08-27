@@ -546,6 +546,30 @@ class Settings(BaseSettings):
     rag_retriever_version: str = Field(default="hybrid-rrf-v2", description="Retriever pipeline version")
     rag_index_version: str = Field(default="med-kb-2026-08-20", description="Knowledge base index version")
 
+    # Telegram bot - kenh nhac gio uong thuoc THU HAI ben canh Web Push
+    # (backend/services/telegram.py). Bot API khong gui duoc theo so dien
+    # thoai/email, chi theo chat_id co duoc sau khi benh nhan bam /start.
+    #
+    # CO Y de default RONG va KHONG fail-closed, GIONG HET VAPID o tren va
+    # khac han internal_auth_secret/jwt_secret: thieu token Telegram chi la
+    # "khong co kenh Telegram", nhac o client va Web Push van chay dung. Bat
+    # buoc cau hinh se lam vo moi truong local cua ca nhom vi 1 kenh phu.
+    telegram_bot_token: str = Field(
+        default="", description="Token bot lay tu @BotFather. Rong = tat kenh Telegram."
+    )
+    telegram_bot_username: str = Field(
+        default="", description="Username bot (khong co @) - dung dung link t.me/<username>?start=<token>"
+    )
+    telegram_link_token_ttl_seconds: int = Field(
+        default=600, description="Han dung cua ma ghep tai khoan Telegram (giay)"
+    )
+    # Gio dia phuong dung khi render tin Telegram. Web Push khong can (trinh
+    # duyet tu doi gio may), nhung Telegram gui TEXT THO - khong doi thi benh
+    # nhan doc "hen 14:00" cho lieu 21:00.
+    telegram_display_utc_offset_hours: int = Field(
+        default=7, description="Lech gio so voi UTC khi hien gio trong tin Telegram (VN = 7)"
+    )
+
 
 
 @lru_cache

@@ -29,6 +29,7 @@ from backend.services.drug_image_chat import cleanup_expired_takeover_uploads
 from backend.services.escalation_reminder import check_and_send_reminders
 from backend.services.hourly_conversation_summary import create_completed_hour_summaries
 from backend.services.photo_cleanup import xoa_anh_het_han
+from backend.services.telegram import quet_update_moi
 
 logger = logging.getLogger("escalation_scheduler")
 
@@ -111,6 +112,25 @@ async def _run_dose_push_reminder() -> None:
         db.close()
 
 
+async def _run_telegram_updates() -> None:
+    """Keo tin benh nhan gui toi bot (chi /start <token> de ghep tai khoan).
+
+    Dat chung _scheduler co san vi dung ly do da ghi o _run_dose_push_reminder:
+    SQLAlchemyJobStore dam bao chi 1 worker thuc su chay. Dieu do QUAN TRONG
+    hon o job nay - getUpdates la hang doi TIEU THU MOT LAN, hai worker cung
+    keo se moi ben nhan mot nua so tin, benh nhan bam /start co the roi vao
+    worker khong xu ly."""
+    db = SessionLocal()
+    try:
+        da_ghep = quet_update_moi(db)
+        if da_ghep:
+            logger.info("Da ghep %d tai khoan Telegram moi", da_ghep)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        logger.exception("Loi khi chay Telegram update poller")
+    finally:
+        db.close()
+
+
 async def _run_judge_worker() -> None:
     """BUILD-33 §4/§14: the only place ``process_pending_judge_batch`` (a
     real Judge LLM call) ever runs -- never inline in the chat request path.
@@ -181,6 +201,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         hour=3,
         minute=10,
         id="drug_image_chat_cleanup",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_telegram_updates,
+        "interval",
+        seconds=60,
+        id="telegram_updates",
         replace_existing=True,
         max_instances=1,
     )

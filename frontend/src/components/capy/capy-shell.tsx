@@ -28,12 +28,11 @@ import {
   getNotificationPermission,
   playDoseAlarmShort,
   playNudgeSound,
-  requestNotificationPermission,
   showBrowserNotification,
   type NotificationPermissionState,
 } from "@/lib/notifications";
 import { useProto } from "@/lib/proto-store";
-import { hasPushSubscription, subscribeToPush } from "@/lib/push";
+import { hasPushSubscription } from "@/lib/push";
 import { getRewardSummary, type RewardSummary } from "@/lib/rewards";
 
 // Khoang cach giua 2 lan poll GET /nudges/unseen (backend/api/nudge_routes.py)
@@ -398,39 +397,28 @@ export function CapyShell({ children }: { children: ReactNode }) {
                 Chỉnh sửa thông tin
                 <span className="font-mono ml-auto text-[12px] text-[#62708A]">›</span>
               </Link>
-              <button
-                onClick={async () => {
-                  if (notifPerm === "denied") {
-                    toast("Bạn đã từ chối nhận thông báo — mở cài đặt trình duyệt để bật lại");
-                    return;
-                  }
-                  const result = await requestNotificationPermission();
-                  setNotifPerm(result);
-                  if (result === "granted") {
-                    // Dang ky luon Web Push trong cung 1 cu bam - de nguoi
-                    // dung nhan duoc nhac uong thuoc ke ca khi da dong app.
-                    // That bai (trinh duyet khong ho tro/server chua cau hinh
-                    // VAPID) thi im lang bo qua: thong bao khi app dang mo
-                    // van chay, khong bao loi ve thu ho khong doi hoi.
-                    const daPush = accessToken ? await subscribeToPush(accessToken) : false;
-                    setDaDangKyPush(daPush);
-                    toast.success(
-                      daPush ? "Đã bật thông báo — kể cả khi bạn đóng app" : "Đã bật thông báo",
-                    );
-                  } else if (result === "denied") toast("Bạn đã từ chối nhận thông báo");
-                }}
+              {/* SUA 2026-08-28: hang nay tung la nut XIN QUYEN trinh duyet -
+                  bam lan dau thi co tac dung, tu lan hai tro di la ngo cut
+                  (quyen da granted thi lan xin quyen thu hai tra ve ngay,
+                  khong co gi xay ra). Gio dan sang man hinh Cai dat, noi
+                  co day du 2 tang tuy chon (nhac uong thuoc + chon kenh Web
+                  Push/Telegram) va cung xin quyen o dung cho can. Nhan van doi
+                  theo trang thai quyen de nguoi dung biet minh dang o dau. */}
+              <Link
+                href="/patient/settings"
+                onClick={() => setSheetOpen(false)}
                 className="flex min-h-[54px] items-center gap-3 rounded-[18px] bg-[#F4F7FC] px-4 text-[14.5px] font-semibold text-[#1B2A44] transition-colors hover:bg-[#EDF0F6]"
               >
                 <span aria-hidden="true" className="text-[18px]">
                   🔔
                 </span>
                 {notifPerm === "granted"
-                  ? "Đã bật thông báo"
+                  ? "Thông báo"
                   : notifPerm === "denied"
                     ? "Thông báo: đã từ chối"
                     : "Bật thông báo"}
                 <span className="font-mono ml-auto text-[12px] text-[#62708A]">›</span>
-              </button>
+              </Link>
               <Link
                 href="/patient/family"
                 onClick={() => setSheetOpen(false)}

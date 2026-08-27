@@ -5,12 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type HuongDan = {
   title: string;
@@ -61,6 +56,16 @@ const HUONG_DAN: Record<string, HuongDan> = {
       "Tìm theo tên thương mại hoặc hoạt chất.",
       "Dùng các bộ lọc để thu hẹp theo dạng bào chế hoặc nhóm thuốc.",
       "Thông tin ở đây là tài liệu tham khảo, không thay thế quyết định lâm sàng của bạn.",
+    ],
+  },
+  "/doctor/reviews": {
+    title: "Hàng đợi tư vấn",
+    intro: "Các cuộc trò chuyện cần bác sĩ hỗ trợ trực tiếp.",
+    steps: [
+      "Ca có bác sĩ phụ trách được ưu tiên giao; ca chưa xác định người phụ trách nằm trong hàng đợi chung để một bác sĩ nhận xử lý.",
+      "Dùng bộ lọc trạng thái, lý do chuyển tiếp và nút “Ca của tôi” để thu hẹp danh sách.",
+      "Nhận ca rồi bấm “Bắt đầu trao đổi” để chatbot tạm dừng; tin nhắn sau đó được gửi trực tiếp giữa bạn và bệnh nhân.",
+      "Kết thúc trao đổi khi đã đủ thông tin. Chatbot sẽ tiếp tục hỗ trợ bệnh nhân ở lượt nhắn kế tiếp.",
     ],
   },
   "/doctor/alerts": {

@@ -36,5 +36,10 @@ def auto_watch_new_patient(db: Session, patient_id: str) -> None:
         .scalars()
         .all()
     )
-    for doctor_id in set(doctor_ids):
+    watched_doctor_ids = set(
+        db.execute(select(DoctorWatch.doctor_id).where(DoctorWatch.patient_id == patient_id))
+        .scalars()
+        .all()
+    )
+    for doctor_id in set(doctor_ids) - watched_doctor_ids:
         db.add(DoctorWatch(doctor_id=doctor_id, patient_id=patient_id))

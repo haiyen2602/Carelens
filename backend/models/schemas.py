@@ -1127,7 +1127,7 @@ class PatientProfileUpdateRequest(BaseModel):
     """PATCH /api/v1/patients/me - benh nhan tu dien thong tin ca nhan o
     trang onboarding (migration 0022). Tat ca field optional (partial
     update, cung quy uoc voi PatientHealthUpdateRequest o tren) - nhung
-    frontend yeu cau nhap du date_of_birth/phone/address/gender truoc khi
+    frontend yeu cau nhap du date_of_birth/phone/address/gender/height_cm/weight_kg truoc khi
     goi, de lan goi dau tien la lan danh dau profile_completed=True."""
 
     date_of_birth: NgaySinh | None = None
@@ -1329,6 +1329,68 @@ class PushSubscribeRequest(BaseModel):
 
 class PushVapidKeyResponse(BaseModel):
     public_key: str = Field(default="", description="Rong = chua cau hinh VAPID, push tat")
+
+
+class TelegramLinkStartResponse(BaseModel):
+    """POST /api/v1/telegram/link-token - link benh nhan bam de ghep tai khoan.
+
+    Tra ve ca `deep_link` da lap san thay vi de frontend tu noi chuoi: username
+    bot nam o config backend, frontend khong nen giu ban sao thu hai (cung ly
+    do voi VAPID public key o tren)."""
+
+    deep_link: str = Field(..., description="https://t.me/<bot>?start=<token>")
+    expires_in_seconds: int
+
+
+class TelegramStatusResponse(BaseModel):
+    """GET /api/v1/telegram/status - frontend hien nut 'Kết nối' hay 'Đã kết nối'."""
+
+    configured: bool = Field(..., description="False = server chua cau hinh bot, an tinh nang di")
+    linked: bool
+    username: str | None = None
+    # TACH BIET voi `linked`: da noi tai khoan (linked) nhung tam tat nhac
+    # (enabled=False) la trang thai hop le - frontend hien cong tac o vi tri
+    # tat, KHONG hien nut "Kết nối" lai.
+    enabled: bool = False
+
+
+class TelegramPreferenceRequest(BaseModel):
+    """PATCH /api/v1/telegram/link - bat/tat nhac Telegram, GIU lien ket."""
+
+    enabled: bool
+
+
+class NotificationPrefResponse(BaseModel):
+    """GET /api/v1/notifications/preferences - man hinh Cai dat 2 tang.
+
+    Gom CA tuy chon Telegram vao day du no luu o bang khac
+    (telegram_link.enabled): man hinh Cai dat ve 1 khoi thong bao duy nhat,
+    bat frontend goi 2 endpoint roi tu ghep lai chi de lo chi tiet luu tru
+    o dau la viec khong can thiet."""
+
+    # HAI CO KHONG LOAI TRU NHAU - 1 nguoi vua co lich uong thuoc cua chinh
+    # minh vua theo doi bo/me la chuyen binh thuong. Frontend dung 2 co nay
+    # de quyet dinh hien phan nao, KHONG dua vao Account.role (chi giu duoc
+    # 1 gia tri nen se cat mat 1 nua vai tro).
+    is_patient: bool = True
+    is_caregiver: bool = False
+    dose_reminder_enabled: bool
+    web_push_enabled: bool
+    telegram_configured: bool = Field(..., description="False = server chua cau hinh bot, an muc Telegram")
+    telegram_linked: bool
+    telegram_enabled: bool
+    telegram_username: str | None = None
+
+
+class NotificationPrefRequest(BaseModel):
+    """PATCH /api/v1/notifications/preferences.
+
+    MOI truong deu None-able va chi ap dung truong duoc gui: man hinh Cai dat
+    gat 1 cong tac tai 1 thoi diem, gui ca cum se ghi de nham gia tri cong
+    tac kia neu benh nhan dang mo 2 tab."""
+
+    dose_reminder_enabled: bool | None = None
+    web_push_enabled: bool | None = None
 
 
 class OpenEscalationBrief(BaseModel):

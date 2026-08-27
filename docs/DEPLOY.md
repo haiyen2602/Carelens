@@ -97,6 +97,7 @@ Env lưu trên Railway, **không** đọc từ `.env` khi deploy. Xem bằng `ra
 | `CORS_ORIGINS` | Chỉ còn `https://vmec-04fe-production.up.railway.app`. Phân tách bằng dấu phẩy, **so khớp chính xác** |
 | `APP_ENV` / `APP_HOST` / `LOG_LEVEL` / `EMBEDDING_MODEL` | Cấu hình app |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push (nhắc uống thuốc khi app đã đóng). **Không bắt buộc** — xem mục dưới |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Nhắc uống thuốc qua Telegram (bù chỗ Web Push yếu trên iOS). **Không bắt buộc** — xem mục dưới |
 
 #### Web Push (VAPID)
 
@@ -124,6 +125,135 @@ báo; backend tự dọn dòng chết khi dịch vụ đẩy trả 404/410.
 **iOS**: bệnh nhân phải "Thêm vào Màn hình chính" (cài như PWA) và dùng iOS
 ≥ 16.4 thì Safari mới nhận push; tab Safari thường không nhận. Android/desktop
 không cần bước này.
+
+#### Telegram bot (nhắc uống thuốc — kênh thứ 3)
+
+Kênh này bù đúng chỗ Web Push yếu nhất: **iOS**. Safari chỉ nhận push nếu bệnh
+nhân đã "Thêm vào Màn hình chính" — việc phần lớn người cao tuổi không bao giờ
+làm. Telegram thì chỉ cần có sẵn app.
+
+Bỏ trống `TELEGRAM_BOT_TOKEN` thì **kênh tự tắt, app vẫn chạy bình thường** —
+cùng nguyên tắc fail-mềm với VAPID ở trên (xem `backend/services/telegram.py`).
+Frontend cũng tự ẩn hẳn mục Telegram trong Cài đặt khi server chưa cấu hình.
+
+##### Giới hạn gốc phải biết trước khi thiết kế thêm
+
+Bot API **không gửi được tin theo số điện thoại hay email**. `sendMessage` chỉ
+nhận `chat_id`, và `chat_id` chỉ tồn tại sau khi chính bệnh nhân bấm `/start`
+với bot. Đây là cơ chế chống spam cố ý của Telegram, không phải thiếu sót API.
+
+Vì vậy mỗi bệnh nhân **bắt buộc phải ghép tài khoản một lần**. Không có cách nào
+làm thay họ. Nếu cần gửi thẳng theo số điện thoại (không bắt người dùng thao tác)
+thì phải dùng kênh khác — Zalo ZNS hoặc SMS.
+
+##### Bước 1 — Tạo bot với @BotFather
+
+Miễn phí, khoảng 2 phút, **không cần đăng ký doanh nghiệp**.
+
+1. Mở Telegram, tìm **@BotFather** (có tick xanh)
+2. Gửi `/newbot`
+3. Nhập **tên hiển thị** — cái bệnh nhân nhìn thấy, ví dụ `CapyMedi`
+4. Nhập **username** — phải là duy nhất toàn Telegram và **kết thúc bằng `bot`**,
+   ví dụ `CapyMediReminderBot`
+5. BotFather trả về token dạng `123456789:AAF-xxxxxxxxxxxxxxxxxxxxxxxxx`
+
+Vài lệnh nên chạy thêm để bệnh nhân thấy bot đàng hoàng:
+
+```
+/setdescription   → Mình là CapyMedi, mình sẽ nhắc bạn uống thuốc đúng giờ nhé!
+/setabouttext     → Trợ lý nhắc uống thuốc CapyMedi
+/setuserpic       → (gửi ảnh avatar)
+```
+
+> **Token là mật khẩu của bot.** Ai có nó đều nhắn được cho toàn bộ bệnh nhân đã
+> ghép. Không commit vào git, không dán vào chat nhóm. Lỡ lộ thì `/revoke` trong
+> BotFather để lấy token mới.
+
+##### Bước 2 — Điền vào `.env`
+
+```bash
+TELEGRAM_BOT_TOKEN=123456789:AAF-xxxxxxxxxxxxxxxxxxxxxxxxx
+TELEGRAM_BOT_USERNAME=CapyMediReminderBot     # KHÔNG có @
+TELEGRAM_DISPLAY_UTC_OFFSET_HOURS=7           # giờ VN
+```
+
+`TELEGRAM_BOT_USERNAME` dùng để dựng link `t.me/<username>?start=<token>`. Điền
+sai thì nút "Kết nối" mở ra một bot không tồn tại.
+
+`TELEGRAM_DISPLAY_UTC_OFFSET_HOURS` cần vì Telegram gửi **text thô** — khác Web
+Push (trình duyệt tự đổi theo giờ máy). Để mặc định 0 thì bệnh nhân đọc
+"hẹn 14:00" cho liều 21:00 của chính mình.
+
+Rồi rebuild backend:
+
+```bash
+docker compose up -d --build backend
+```
+
+##### Bước 3 — Bệnh nhân ghép tài khoản
+
+Trên web: **Cài đặt → Thông báo → Telegram → Kết nối**. Nút mở thẳng
+`t.me/<bot>?start=<token>`, bệnh nhân bấm **Start**, xong.
+
+Luồng đầy đủ phía trong:
+
+```
+Web: bấm Kết nối
+  → POST /api/v1/telegram/link-token   (token dùng 1 lần, hạn 10 phút)
+  → mở t.me/<bot>?start=<token>
+  → bệnh nhân bấm Start
+  → Telegram nhận "/start <token>"
+  → job telegram_updates (60s/lần) kéo về, đổi token lấy chat_id
+  → ghi bảng telegram_link → bot trả lời "Kết nối thành công!"
+```
+
+Vì bước cuối chạy theo job định kỳ nên có thể **chậm tới 60 giây** — bình thường,
+không phải lỗi. Màn hình Cài đặt tự tải lại trạng thái khi bệnh nhân quay về tab.
+
+##### Bước 4 — Kiểm tra
+
+```bash
+# Token đúng chưa (trả về thông tin bot)
+curl -s "https://api.telegram.org/bot<TOKEN>/getMe"
+
+# Đã ghép được ai chưa
+docker compose exec db psql -U vmec -d vmec04 -c "SELECT patient_id, chat_id, username, enabled FROM telegram_link;"
+
+# Job có chạy không
+docker compose logs backend | grep -i telegram
+```
+
+##### Production (Railway)
+
+```bash
+railway variables --service "VMEC-04/BE" --set "TELEGRAM_BOT_TOKEN=..."
+railway variables --service "VMEC-04/BE" --set "TELEGRAM_BOT_USERNAME=..."
+```
+
+**Dùng bot RIÊNG cho local và production.** Hai môi trường chung một token sẽ
+tranh nhau `getUpdates` — `/start` của bệnh nhân có thể rơi vào máy dev và
+production không bao giờ nhận được. Tạo thêm bot thứ hai tên `CapyMediDevBot`
+cho local là xong.
+
+##### Những chỗ dễ vấp
+
+| Hiện tượng | Nguyên nhân |
+|---|---|
+| Không thấy mục Telegram trong Cài đặt | `TELEGRAM_BOT_TOKEN` rỗng, hoặc chưa rebuild backend |
+| Bấm Kết nối, Telegram mở nhưng báo bot không tồn tại | `TELEGRAM_BOT_USERNAME` sai (thừa `@`, hoặc gõ nhầm) |
+| Bấm Start rồi mà web vẫn hiện "Kết nối" | Chờ đủ 60s rồi quay lại tab; nếu vẫn không được, xem log job |
+| Bot im lặng, log có `getUpdates that bai (HTTP 409)` | Đã đặt webhook cho bot này. Gỡ: `curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"` |
+| Bot trả lời "link đã hết hạn" | Token quá 10 phút hoặc đã dùng rồi — bấm Kết nối lại lấy link mới |
+| Đã ghép nhưng không nhận tin nhắc | Kiểm tra `enabled` trong `telegram_link`, và `dose_reminder_enabled` trong `patient_notification_pref` |
+
+##### Ghi chú kỹ thuật
+
+Bản hiện tại dùng **long-polling** (`getUpdates`, job `telegram_updates` trong
+`backend/services/escalation_scheduler.py`) chứ không phải webhook — nhờ vậy chạy
+được ngay trên máy local không cần domain public.
+
+Nếu sau này chuyển sang webhook thì **phải bỏ job đó đi**: Telegram từ chối
+`getUpdates` bằng lỗi 409 khi đã đặt webhook, hai cơ chế loại trừ nhau.
 
 Hai origin `*.vercel.app` (backend cũ project `capymedi` và frontend cũ `capymedi-web`) đã được
 **xoá hẳn** khỏi `CORS_ORIGINS` ngày 2026-08-13 — dự án không còn deploy trên Vercel. Frontend

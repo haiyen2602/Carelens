@@ -3,6 +3,14 @@
 # Run once after cloning: bash scripts/setup_hooks.sh
 set -e
 
+START_FRESH=false
+if [ "${1:-}" = "--start-fresh" ]; then
+  START_FRESH=true
+elif [ "$#" -gt 0 ]; then
+  echo "Usage: bash scripts/setup_hooks.sh [--start-fresh]" >&2
+  exit 2
+fi
+
 HOOK_FILE=".git/hooks/pre-push"
 
 cat > "$HOOK_FILE" <<'EOF'
@@ -21,5 +29,9 @@ echo "[ai-log] Git pre-push hook installed."
 
 mkdir -p .ai-log
 touch .ai-log/.gitkeep
+
+if [ "$START_FRESH" = true ]; then
+  bash scripts/_pyrun.sh scripts/set_ai_log_cutoff.py
+fi
 
 echo "[ai-log] Setup complete. Configure AI_LOG_SERVER in your .env file."

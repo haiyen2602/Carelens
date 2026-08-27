@@ -6,12 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Cake, MapPin, Phone, Ruler, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  CAN_NANG_KG,
-  CHIEU_CAO_CM,
-  kiemTraCanNang,
-  kiemTraChieuCao,
-} from "@/lib/body-metrics";
+import { CAN_NANG_KG, CHIEU_CAO_CM, kiemTraCanNang, kiemTraChieuCao } from "@/lib/body-metrics";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
+import { getMyPatientProfile, updateMyPatientProfile } from "@/lib/patients";
 
 // Onboarding bat buoc ngay sau lan dang nhap dau tien cua benh nhan
 // (migration 0022, backend/api/patient_routes.py::update_my_profile). Khong
@@ -41,6 +37,7 @@ export default function OnboardingProfilePage() {
   const [weightKg, setWeightKg] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   // Kiem tra tai cho: nguoi dung biet ngay thay vi bam Luu roi moi nhan 422.
   const chieuCao = kiemTraChieuCao(heightCm);
   const canNang = kiemTraCanNang(weightKg);
@@ -51,14 +48,46 @@ export default function OnboardingProfilePage() {
       router.replace("/login");
       return;
     }
-    if (user.profile_completed) {
-      router.replace("/patient");
+    if (!accessToken) {
+      router.replace("/login");
+      return;
     }
-  }, [loading, user, router]);
+
+    let cancelled = false;
+    void getMyPatientProfile(accessToken)
+      .then((profile) => {
+        if (cancelled) return;
+        if (!profile) {
+          setError("Không tìm thấy hồ sơ bệnh nhân.");
+          return;
+        }
+        if (profile.profileCompleted) {
+          updateSession(accessToken, { ...user, profile_completed: true });
+          router.replace("/patient");
+          return;
+        }
+        setDateOfBirth(profile.dateOfBirth ?? "");
+        setPhone(profile.phone ?? "");
+        setAddress(profile.address ?? "");
+        setGender(profile.gender ?? "");
+        setHeightCm(profile.heightCm != null ? String(profile.heightCm) : "");
+        setWeightKg(profile.weightKg != null ? String(profile.weightKg) : "");
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Không tải được hồ sơ.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProfile(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, loading, router, updateSession, user]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!dateOfBirth || !phone.trim() || !address.trim() || !gender) {
+    if (!dateOfBirth || !phone.trim() || !address.trim() || !gender || !heightCm || !weightKg) {
       setError("Vui lòng nhập đầy đủ thông tin bắt buộc.");
       return;
     }
@@ -72,24 +101,16 @@ export default function OnboardingProfilePage() {
     setError("");
     setSubmitting(true);
     try {
-      const res = await fetch("/api/patients/me", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          date_of_birth: dateOfBirth,
-          phone: phone.trim(),
-          address: address.trim(),
-          gender,
-          height_cm: heightCm ? Number(heightCm) : undefined,
-          weight_kg: weightKg ? Number(weightKg) : undefined,
-        }),
+      const profile = await updateMyPatientProfile(accessToken, {
+        date_of_birth: dateOfBirth,
+        phone: phone.trim(),
+        address: address.trim(),
+        gender,
+        height_cm: Number(heightCm),
+        weight_kg: Number(weightKg),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.detail ?? "Lưu thông tin thất bại.");
+      if (!profile.profileCompleted) {
+        throw new Error("Hồ sơ chưa đủ thông tin bắt buộc.");
       }
       if (accessToken && user) {
         updateSession(accessToken, { ...user, profile_completed: true });
@@ -101,7 +122,7 @@ export default function OnboardingProfilePage() {
     }
   };
 
-  if (loading || !user || user.role !== "patient" || user.profile_completed) {
+  if (loading || loadingProfile || !user || user.role !== "patient" || user.profile_completed) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <p className="text-sm text-muted-foreground">Đang tải...</p>
@@ -223,6 +244,7 @@ export default function OnboardingProfilePage() {
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
                   className="pl-9"
+                  required
                 />
               </div>
               {chieuCao.loi && <p className="text-sm text-destructive">{chieuCao.loi}</p>}
@@ -247,6 +269,7 @@ export default function OnboardingProfilePage() {
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}
                   className="pl-9"
+                  required
                 />
               </div>
               {canNang.loi && <p className="text-sm text-destructive">{canNang.loi}</p>}

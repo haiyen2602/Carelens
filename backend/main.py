@@ -25,6 +25,7 @@ from backend.api.drug_request_routes import admin_drug_request_router, drug_requ
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.health_log_routes import health_log_router
+from backend.api.notification_routes import notification_router
 from backend.api.nudge_routes import nudge_router
 from backend.api.patient_routes import patient_router
 from backend.api.photo_routes import photo_router
@@ -34,6 +35,7 @@ from backend.api.rag_monitoring_routes import rag_monitoring_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.reward_routes import reward_router
 from backend.api.routes import router
+from backend.api.telegram_routes import telegram_router
 from backend.api.vlm_monitoring_routes import vlm_monitoring_router
 from backend.config import get_settings
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
@@ -166,6 +168,8 @@ app.include_router(nudge_router, prefix="/api/v1")
 app.include_router(health_log_router, prefix="/api/v1")
 app.include_router(reward_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
+app.include_router(telegram_router, prefix="/api/v1")
+app.include_router(notification_router, prefix="/api/v1")
 
 
 @app.get("/health")

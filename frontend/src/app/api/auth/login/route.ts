@@ -24,11 +24,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ detail: "Thiếu email hoặc mật khẩu" }, { status: 400 });
   }
 
-  const backendResponse = await fetch(`${API_BASE}/api/v1/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let backendResponse: Response;
+  try {
+    backendResponse = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        detail:
+          "Không thể kết nối máy chủ đăng nhập. Hãy khởi động backend local tại localhost:8000.",
+      },
+      { status: 503 },
+    );
+  }
   const data = await backendResponse.json().catch(() => null);
 
   if (!backendResponse.ok) {

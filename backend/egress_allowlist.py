@@ -27,6 +27,9 @@ ALLOWED_EGRESS_MODULES: frozenset[str] = frozenset(
         # BUILD-8: constrained public Vinmec search/fetch. The service itself
         # validates host, scheme and redirects before every request.
         "backend/services/vinmec_web_search.py",
+        # Nhac gio uong thuoc qua Telegram bot - CHI goi api.telegram.org, moi
+        # duong goi deu di qua _goi_bot_api() trong chinh module do.
+        "backend/services/telegram.py",
     }
 )
 
@@ -43,6 +46,9 @@ ALLOWED_EGRESS_MODULES: frozenset[str] = frozenset(
 #      escalate_fn co dinh (chua goi API ngoai that, hien la ghi DB - xem
 #      docstring module do) - khi co tich hop that (SMS/push), THEM vao
 #      ALLOWED_EGRESS_MODULES o tren.
+#   4. Telegram Bot API (api.telegram.org) - nhac gio uong thuoc + nhan
+#      /start de ghep tai khoan, qua backend/services/telegram.py. Endpoint
+#      co dinh trong code, LLM khong dinh dang gi toi duong goi nay.
 #
 # KHONG co: LLM tool-calling mo (function-calling voi URL/endpoint do LLM tu
 # chon), KHONG co eval/ hay script nao trong pham vi quet (chi quet backend/).

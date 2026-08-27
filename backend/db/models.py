@@ -23,6 +23,7 @@ from datetime import UTC, date, datetime, time
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -2197,3 +2198,93 @@ class PatientRewardEvent(Base):
         Index("ix_patient_reward_event_patient_item", "patient_id", "item_id"),
     )
 
+
+
+class TelegramLink(Base):
+    """1 tai khoan Telegram da noi voi 1 benh nhan (THEM 2026-08-27, migration
+    0056) - kenh nhac gio uong thuoc THU HAI ben canh Web Push.
+
+    TAI SAO PHAI CO BANG NAY, khong dung thang so dien thoai benh nhan da co o
+    Patient.phone: Bot API cua Telegram khong gui duoc tin theo so dien thoai
+    hay email, chi theo `chat_id`, va chat_id CHI sinh ra sau khi chinh nguoi
+    dung bam /start voi bot (co che chong spam cua Telegram, khong phai thieu
+    sot API). Vi vay quan he benh nhan <-> chat_id phai luu lai o day sau khi
+    ghep thanh cong 1 lan, dung mai ve sau.
+
+    `account_id` la string tu do, KHONG dat FK that - cung ly do da giai thich
+    o class Patient/PushSubscription."""
+
+    __tablename__ = "telegram_link"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    # KHOA THEO TAI KHOAN, khong theo ho so benh nhan (doi o migration 0059):
+    # nguoi than cung phai nhan duoc canh bao ma ho khong co patient_id - ho
+    # la Account role=caregiver noi qua caregiver_link. "1 tai khoan = 1
+    # Telegram" cung xu ly luon nguoi vua la benh nhan vua la nguoi than cua
+    # vo/chong: 1 dong duy nhat, nhan ca hai loai tin.
+    account_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # BigInteger: xem ghi chu trong migration 0056 (id Telegram vuot 2^31).
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    # False = benh nhan tam tat nhac Telegram nhung VAN giu lien ket, bat lai
+    # chi la 1 cu gat (migration 0057). Khac han viec xoa dong nay - xoa xong
+    # muon nhan lai phai lam lai ca luong ghep tu dau.
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class TelegramLinkToken(Base):
+    """Ma dung 1 lan de ghep "nguoi vua bam /start tren Telegram" voi "benh
+    nhan dang dang nhap tren web" (THEM 2026-08-27, migration 0056).
+
+    Luong: web sinh token -> mo link t.me/<bot>?start=<token> -> Telegram gui
+    "/start <token>" toi bot -> backend doi token lay chat_id -> ghi
+    TelegramLink. Khong co token thi backend nhan duoc chat_id nhung KHONG
+    biet no la cua benh nhan nao.
+
+    `used_at` giu lai dong da dung thay vi xoa - de phan biet "token sai/bia"
+    voi "token dung nhung da xai roi", tra loi duoc dung thong bao cho nguoi
+    dung khi ho bam lai link cu."""
+
+    __tablename__ = "telegram_link_token"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    token: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    account_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class PatientNotificationPref(Base):
+    """Tuy chon thong bao cua 1 benh nhan (THEM 2026-08-27, migration 0058).
+
+    HAI TANG, co y tach roi:
+      - `dose_reminder_enabled` = tang 1, CO muon duoc nhac uong thuoc khong
+      - `web_push_enabled`      = tang 2, nhac qua duong nao
+
+    Tat tang 1 thi khong kenh nao gui, du tung kenh van dang bat - dung thu
+    tu ma nguoi dung mong doi khi nhin man hinh Cai dat.
+
+    Kenh Telegram KHONG o day ma o TelegramLink.enabled: kenh do chi ton tai
+    khi co lien ket, luu chung voi lien ket thi xoa lien ket la sach ca tuy
+    chon, khong de lai dong mo coi.
+
+    KHONG tao san dong cho moi benh nhan: khong co dong = mac dinh bat het
+    (xem lay_tuy_chon trong backend/services/notification_pref.py). Chi ghi
+    khi benh nhan that su doi gi do."""
+
+    __tablename__ = "patient_notification_pref"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    dose_reminder_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    web_push_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
+    )

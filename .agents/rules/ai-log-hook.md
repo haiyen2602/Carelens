@@ -35,3 +35,24 @@ bash scripts/setup_hooks.sh
 # Windows PowerShell
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1
 ```
+
+### Chỉ gửi log phát sinh từ thời điểm cài đặt
+
+Nếu máy đã có `.ai-log/session.jsonl` và **không được phép gửi lịch sử cũ**, cài
+hook với mốc bắt đầu cục bộ:
+
+```bash
+# Linux / macOS / Git Bash
+bash scripts/setup_hooks.sh --start-fresh
+
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 -StartFresh
+```
+
+Lệnh tạo `.ai-log/submit-not-before.json` (đã được Git ignore). `submit_log.py`
+chỉ gửi entry có `ts` từ mốc đó trở đi; entry cũ được chuyển vào archive cục bộ
+và không nằm trong payload HTTP. Chạy setup lại không tự dời mốc đã có, nhằm
+tránh vô tình bỏ qua log mới chưa gửi.
+
+Với Codex, mở `/hooks` sau khi cấu hình mới được tải và trust định nghĩa hook
+của repo. Codex bỏ qua hook chưa được người dùng review/trust.

@@ -179,6 +179,13 @@ bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "What you a
 
 > ⚠️ Chạy `bash scripts/setup_hooks.sh` một lần sau khi clone để cài pre-push hook.
 
+Nếu máy đã có lịch sử trong `.ai-log/session.jsonl` nhưng chỉ muốn gửi log phát
+sinh từ bây giờ, dùng `bash scripts/setup_hooks.sh --start-fresh` hoặc
+`powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 -StartFresh`.
+Mốc này chỉ lưu cục bộ và không làm lịch sử cũ xuất hiện trong payload gửi đi.
+Sau khi thay đổi `.codex/hooks.json`, mở `/hooks` trong Codex để review và trust
+hook của repo.
+
 ## 📖 Đọc Technical Guidebook
 
 **Online (khuyến nghị):** [phoenix.note.transformerlabs.ai/technical-book](https://phoenix.note.transformerlabs.ai/technical-book)

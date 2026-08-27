@@ -8,6 +8,7 @@ Account/Patient rieng, khong phu thuoc seed ben ngoai (self-hosted runner)."""
 
 import sys
 import uuid
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -140,6 +141,108 @@ async def test_patient_update_then_read_own_profile_round_trip(client):
         assert get_body["height_cm"] == 175
         assert get_body["weight_kg"] == 68
         assert get_body["profile_completed"] is True
+    finally:
+        _cleanup(account_id, patient_id)
+
+
+@pytest.mark.asyncio
+async def test_patient_can_complete_onboarding_when_linked_profile_is_missing(client):
+    """The current onboarding session can repair a legacy missing profile."""
+    account_id = f"test-stale-profile-{uuid.uuid4().hex[:8]}"
+    patient_id = f"test-stale-patient-{uuid.uuid4().hex[:8]}"
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id=account_id,
+                full_name="Missing Patient Profile",
+                email=f"{account_id}@example.local",
+                password_hash="not-a-real-hash",
+                role="patient",
+                status="active",
+                patient_id=patient_id,
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
+    try:
+        response = await client.patch(
+            "/api/v1/patients/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "date_of_birth": "1995-06-15",
+                "phone": "0912345678",
+                "address": "123 Test Street",
+                "gender": "nam",
+                "height_cm": 175,
+                "weight_kg": 68,
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["id"] == patient_id
+        assert response.json()["profile_completed"] is True
+    finally:
+        _cleanup(account_id, patient_id)
+
+
+@pytest.mark.asyncio
+async def test_patient_profile_cannot_complete_without_height_and_weight(client):
+    """Onboarding chi hoan tat khi du ca sau truong bat buoc."""
+    account_id, patient_id = _seed_patient_account()
+    token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        response = await client.patch(
+            "/api/v1/patients/me",
+            headers=headers,
+            json={
+                "date_of_birth": "1995-06-15",
+                "phone": "0912345678",
+                "address": "123 Đường Test, Quận 1",
+                "gender": "nam",
+                "height_cm": 175,
+            },
+        )
+        assert response.status_code == 422
+
+        profile = await client.get("/api/v1/patients/me", headers=headers)
+        assert profile.status_code == 200
+        assert profile.json()["profile_completed"] is False
+        assert profile.json()["height_cm"] is None
+    finally:
+        _cleanup(account_id, patient_id)
+
+
+@pytest.mark.asyncio
+async def test_patient_profile_treats_legacy_completed_row_without_metrics_as_incomplete(client):
+    """Cờ cũ không được vượt qua tiêu chí sáu trường bắt buộc mới."""
+    account_id, patient_id = _seed_patient_account()
+    token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    db = SessionLocal()
+    try:
+        patient = db.get(Patient, patient_id)
+        assert patient is not None
+        patient.date_of_birth = date(1995, 6, 15)
+        patient.phone = "0912345678"
+        patient.address = "123 Đường Test, Quận 1"
+        patient.gender = "nam"
+        patient.height_cm = 175
+        patient.weight_kg = None
+        patient.profile_completed = True
+        db.commit()
+    finally:
+        db.close()
+
+    try:
+        response = await client.get("/api/v1/patients/me", headers=headers)
+        assert response.status_code == 200
+        assert response.json()["profile_completed"] is False
     finally:
         _cleanup(account_id, patient_id)
 

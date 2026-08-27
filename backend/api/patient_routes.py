@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.security import CurrentUser, get_current_user, require_role
 from backend.db.base import get_db
-from backend.db.models import Patient
+from backend.db.models import Account, Patient
 from backend.models.schemas import (
     PatientHealthUpdateRequest,
     PatientProfileOut,
@@ -26,6 +26,7 @@ from backend.models.schemas import (
     PatientSummary,
 )
 from backend.services.audit import log_action, patient_label
+from backend.services.patient_profile import ensure_patient_profile, is_patient_profile_complete
 
 patient_router = APIRouter()
 
@@ -41,9 +42,31 @@ def _to_profile(p: Patient) -> PatientProfileOut:
         gender=p.gender,
         height_cm=p.height_cm,
         weight_kg=p.weight_kg,
-        profile_completed=p.profile_completed,
+        profile_completed=is_patient_profile_complete(p),
         photo_capture_enabled=p.photo_capture_enabled,
     )
+
+
+def _get_current_patient(db: Session, current_user: CurrentUser) -> Patient | None:
+    """Return the profile referenced by JWT, repairing only its own stale link."""
+    if not current_user.patient_id:
+        return None
+
+    patient = db.get(Patient, current_user.patient_id)
+    if patient is not None:
+        return patient
+
+    account = db.get(Account, current_user.id)
+    if (
+        account is None
+        or account.role != "patient"
+        or account.patient_id != current_user.patient_id
+        or not ensure_patient_profile(db, account)
+    ):
+        return None
+
+    db.commit()
+    return db.get(Patient, current_user.patient_id)
 
 
 def _to_summary(p: Patient, *, full: bool = True) -> PatientSummary:
@@ -124,7 +147,7 @@ def get_my_patient_profile(
         raise HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN, detail="Tài khoản không gắn với hồ sơ bệnh nhân nào"
         )
-    patient = db.get(Patient, current_user.patient_id)
+    patient = _get_current_patient(db, current_user)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
     return _to_profile(patient)
@@ -150,10 +173,35 @@ def update_my_profile(
     path khong xung dot, nhung van dang truoc "/patients/{patient_id}" (co
     y): neu doi cho, PATCH /patients/me se roi vao update_patient_health voi
     patient_id="me" (403 vi endpoint do chi cho doctor/admin)."""
-    patient = db.get(Patient, current_user.patient_id)
+    patient = _get_current_patient(db, current_user)
     if patient is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Bệnh nhân không tồn tại")
 
+    next_date_of_birth = body.date_of_birth if body.date_of_birth is not None else patient.date_of_birth
+    next_phone = body.phone if body.phone is not None else patient.phone
+    next_address = body.address if body.address is not None else patient.address
+    next_gender = body.gender if body.gender is not None else patient.gender
+    next_height_cm = body.height_cm if body.height_cm is not None else patient.height_cm
+    next_weight_kg = body.weight_kg if body.weight_kg is not None else patient.weight_kg
+
+    profile_after_update = Patient(
+        date_of_birth=next_date_of_birth,
+        phone=next_phone,
+        address=next_address,
+        gender=next_gender,
+        height_cm=next_height_cm,
+        weight_kg=next_weight_kg,
+    )
+    if not is_patient_profile_complete(profile_after_update):
+        raise HTTPException(
+            status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Vui lòng nhập ngày sinh, số điện thoại, địa chỉ, giới tính, chiều cao và cân nặng.",
+        )
+
+    # `photo_capture_enabled` KHONG nam trong `profile_after_update` o tren:
+    # no la tuy chon chup anh xac nhan lieu, khong phai mot truong cua "ho so
+    # da day du chua" - dua vao kiem tra se chan mat nguoi dung chi muon tat
+    # chup anh.
     for field in ("phone", "address", "gender", "height_cm", "weight_kg", "photo_capture_enabled"):
         value = getattr(body, field)
         if value is not None:

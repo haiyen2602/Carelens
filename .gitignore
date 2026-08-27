@@ -61,6 +61,7 @@ logs/
 htmlcov/
 .coverage
 coverage.xml
+.test-tmp/
 
 # Docker
 docker-compose.override.yml
@@ -78,6 +79,7 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+.ai-log/submit-not-before.json
 
 # Crawler resume state — internal checkpoint, not a deliverable
 crawler/**/*.progress.txt

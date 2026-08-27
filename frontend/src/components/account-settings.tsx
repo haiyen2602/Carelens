@@ -1,28 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, Camera, ChevronRight, Globe, Info, KeyRound, UserRound } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Bell,
+  Camera,
+  ChevronRight,
+  Globe,
+  Info,
+  KeyRound,
+  Send,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { EditPersonalInfoDialog } from "@/components/edit-personal-info-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
+import {
+  getNotificationPrefs,
+  type NotificationPrefs,
+  setNotificationPrefs,
+} from "@/lib/notification-prefs";
+import { getNotificationPermission, requestNotificationPermission } from "@/lib/notifications";
 import { updateMyPatientProfile } from "@/lib/patients";
+import { subscribeToPush } from "@/lib/push";
+import { batDauGhepTelegram, datTuyChonTelegram, goKetNoiTelegram } from "@/lib/telegram";
 import { useProto } from "@/lib/proto-store";
 
 export function AccountSettings() {
   const { phone, role } = useProto();
   const { user, accessToken, updateSession } = useAuth();
-  const [reminders, setReminders] = useState(true);
-  const [emergencyAlerts, setEmergencyAlerts] = useState(true);
-  const [weeklySummary, setWeeklySummary] = useState(false);
   const [dangLuuChupAnh, setDangLuuChupAnh] = useState(false);
 
-  // Khac 3 switch "Thong bao" o duoi (chi doi UI, chua luu he thong) - switch
-  // nay goi PATCH /patients/me THAT, vi no doi hanh vi xac nhan lieu thuoc o
-  // tab "Hom nay" (xem app/patient/page.tsx::chupAnhBat), khong phai tuy
-  // chon hien thi don thuan. updateSession() de "Hom nay" thay gia tri MOI
-  // ngay, khong phai doi tai lai trang/dang nhap lai.
+  // GHI CHU 2026-08-28: ba useState `reminders`/`emergencyAlerts`/
+  // `weeklySummary` da bi XOA khi khoi "Thong bao" duoc lam that (luu vao
+  // patient_notification_pref + telegram_link). Chu thich cu o day tung noi
+  // switch chup anh "khac 3 switch chi doi UI" - gio khong con 3 switch gia
+  // nao nua, moi cong tac trong man hinh nay deu ghi xuong he thong.
+  //
+  // Switch nay goi PATCH /patients/me, vi no doi hanh vi xac nhan lieu thuoc
+  // o tab "Hom nay" (xem app/patient/page.tsx::chupAnhBat). updateSession()
+  // de "Hom nay" thay gia tri MOI ngay, khong phai doi tai lai trang.
   const doiChupAnh = async (bat: boolean) => {
     if (!user || !accessToken) return;
     setDangLuuChupAnh(true);
@@ -47,6 +66,122 @@ export function AccountSettings() {
   // thai khac nhau (tai khoan sinh ra tu Google vs tai khoan cu moi lien ket
   // Google sau). Copy ben duoi noi ro dieu do de khong bi hieu la loi hien thi.
   const chuaCoMatKhau = user?.auth_provider === "google";
+
+  // MOT nguon su that cho ca khoi Thong bao (ca tuy chon Telegram) - truoc
+  // day 3 cong tac dau la useState khong luu gi, dat canh 1 cong tac that se
+  // khong ai phan biet duoc cai nao thuc su co tac dung.
+  const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
+  const [dangGhep, setDangGhep] = useState(false);
+  // Quyen Notification cua TRINH DUYET - khac han web_push_enabled o server:
+  // benh nhan co the bat tuy chon nhung tu choi quyen (hoac nguoc lai), va
+  // hai thu do phai hien khac nhau tren man hinh.
+  const [quyenTrinhDuyet, setQuyenTrinhDuyet] = useState(getNotificationPermission());
+
+  const taiTuyChon = useCallback(async () => {
+    if (!accessToken) return;
+    setPrefs(await getNotificationPrefs(accessToken));
+    setQuyenTrinhDuyet(getNotificationPermission());
+  }, [accessToken]);
+
+  useEffect(() => {
+    void taiTuyChon();
+  }, [taiTuyChon]);
+
+  // Tai lai khi nguoi dung quay ve tab: viec ghep Telegram hoan tat o BEN
+  // NGOAI app, nen khong co su kien nao trong trang bao ta biet no da xong.
+  // Khoanh khac ho chuyen ve day la tin hieu duy nhat co that.
+  useEffect(() => {
+    const onFocus = () => void taiTuyChon();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [taiTuyChon]);
+
+  /** Cap nhat lac quan roi moi goi API: cong tac phai nhay NGAY duoi ngon
+   * tay, doi mot vong mang moi nhuc nhich se bi tuong la bam hong. Loi thi
+   * tra lai trang thai cu. */
+  const gat = async (
+    thayDoi: Partial<NotificationPrefs>,
+    luu: () => Promise<boolean>,
+    loiBao: string,
+  ) => {
+    if (!prefs) return;
+    const truoc = prefs;
+    setPrefs({ ...prefs, ...thayDoi });
+    if (!(await luu())) {
+      setPrefs(truoc);
+      toast.error(loiBao);
+    }
+  };
+
+  const doiNhacUongThuoc = (bat: boolean) =>
+    gat(
+      { doseReminderEnabled: bat },
+      async () => {
+        const moi = accessToken
+          ? await setNotificationPrefs(accessToken, { doseReminderEnabled: bat })
+          : null;
+        if (moi) setPrefs(moi);
+        return moi !== null;
+      },
+      "Chưa lưu được, bạn thử lại giúp mình nhé",
+    );
+
+  const doiWebPush = async (bat: boolean) => {
+    if (!accessToken || !prefs) return;
+
+    // Bat len ma trinh duyet chua cho quyen thi phai xin quyen TRUOC, khong
+    // thi tuy chon o server bat nhung may van im lang - benh nhan se tuong
+    // he thong hong chu khong nghi la thieu quyen.
+    if (bat && quyenTrinhDuyet !== "granted") {
+      if (quyenTrinhDuyet === "denied") {
+        toast("Bạn đã chặn thông báo — mở cài đặt trình duyệt để bật lại");
+        return;
+      }
+      const ketQua = await requestNotificationPermission();
+      setQuyenTrinhDuyet(ketQua);
+      if (ketQua !== "granted") return;
+      await subscribeToPush(accessToken);
+    }
+
+    await gat(
+      { webPushEnabled: bat },
+      async () => {
+        const moi = await setNotificationPrefs(accessToken, { webPushEnabled: bat });
+        if (moi) setPrefs(moi);
+        return moi !== null;
+      },
+      "Chưa lưu được, bạn thử lại giúp mình nhé",
+    );
+  };
+
+  const doiTelegram = (bat: boolean) =>
+    gat(
+      { telegramEnabled: bat },
+      () => datTuyChonTelegram(accessToken ?? "", bat),
+      "Chưa lưu được, bạn thử lại giúp mình nhé",
+    );
+
+  const ketNoiTelegram = async () => {
+    if (!accessToken) return;
+    setDangGhep(true);
+    const ok = await batDauGhepTelegram(accessToken);
+    setDangGhep(false);
+    if (ok) {
+      toast("Bấm nút Start trong Telegram để hoàn tất, rồi quay lại đây");
+    } else {
+      toast.error("Chưa mở được Telegram, bạn thử lại giúp mình nhé");
+    }
+  };
+
+  const huyKetNoiTelegram = async () => {
+    if (!accessToken) return;
+    if (await goKetNoiTelegram(accessToken)) {
+      toast("Đã ngắt kết nối Telegram");
+      await taiTuyChon();
+    } else {
+      toast.error("Chưa ngắt được, bạn thử lại giúp mình nhé");
+    }
+  };
 
   const soon = () => toast("Tính năng đang được phát triển");
 
@@ -92,7 +227,9 @@ export function AccountSettings() {
               <UserRound className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-semibold">{phone || "Chưa có số điện thoại"}</span>
+              <span className="block truncate font-semibold">
+                {phone || "Chưa có số điện thoại"}
+              </span>
               <span className="block truncate text-xs text-muted-foreground">
                 {role === "family" ? "Người thân" : "Bác sĩ"} · Bấm để đổi thông tin cá nhân
               </span>
@@ -106,40 +243,138 @@ export function AccountSettings() {
         <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
           <Bell className="h-4 w-4" /> Thông báo
         </h2>
-        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          Các tuỳ chọn dưới đây hiện chỉ đổi trên màn hình này, chưa được lưu vào hệ thống.
-        </p>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-medium">Nhắc uống thuốc</p>
-            <p className="text-xs text-muted-foreground">Nhắc theo đúng khung giờ trong phác đồ</p>
+
+        {/* TANG 1 - co muon duoc nhac khong. Tat cai nay thi khong kenh nao
+            gui, du tung kenh ben duoi van bat.
+
+            An voi NGUOI THAN: ho khong co lich uong thuoc, chi nhan canh bao
+            khi benh nhan ho theo doi co van de. Hien mot cong tac ho khong
+            the tat duoc gi chi lam ho hoang mang. */}
+        {prefs?.isPatient ? (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium">Nhắc uống thuốc</p>
+              <p className="text-xs text-muted-foreground">
+                Nhắc theo đúng khung giờ trong phác đồ
+              </p>
+            </div>
+            <Switch
+              aria-label="Nhắc uống thuốc"
+              checked={prefs.doseReminderEnabled}
+              onCheckedChange={doiNhacUongThuoc}
+            />
           </div>
-          <Switch aria-label="Nhắc uống thuốc" checked={reminders} onCheckedChange={setReminders} />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-medium">Cảnh báo khẩn cấp</p>
-            <p className="text-xs text-muted-foreground">
-              Báo ngay khi phát hiện dấu hiệu nguy hiểm
-            </p>
+        ) : null}
+
+        {/* TANG 2 - nhac qua duong nao. LONG VAO BEN TRONG tang 1 (thut le +
+            vach doc) chu khong xep ngang hang: quan he "tat tang 1 thi ca hai
+            kenh im" phai nhin ra duoc ngay, khong can doc chu giai thich. */}
+        {/* Hien khoi kenh khi: la benh nhan VA dang bat nhac uong thuoc, HOAC
+            la nguoi than (luon can kenh de nhan canh bao - canh bao khong tat
+            duoc nen kenh cung phai luon co). Mot nguoi co the thoa ca hai. */}
+        {prefs && ((prefs.isPatient && prefs.doseReminderEnabled) || prefs.isCaregiver) ? (
+          <div
+            className={
+              prefs.isPatient && prefs.doseReminderEnabled
+                ? "ml-1 space-y-4 border-l-2 border-border pl-4"
+                : "space-y-4"
+            }
+          >
+            {/* Chi thut le + hien nhan "Kenh nhan" khi no THAT SU long trong
+                muc nhac uong thuoc. Voi nguoi than thuan tuy thi khoi nay
+                dung doc lap, thut le se nhin nhu con cua mot muc bi thieu. */}
+            {prefs.isPatient && prefs.doseReminderEnabled ? (
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Kênh nhận</p>
+            ) : null}
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium">Thông báo trên máy</p>
+                <p className="text-xs text-muted-foreground">
+                  {quyenTrinhDuyet === "denied"
+                    ? "Bạn đã chặn thông báo trong trình duyệt"
+                    : quyenTrinhDuyet === "unsupported"
+                      ? "Trình duyệt này không hỗ trợ"
+                      : "Hiện ngay trên máy, kể cả khi đã đóng app"}
+                </p>
+              </div>
+              <Switch
+                aria-label="Thông báo trên máy"
+                checked={prefs.webPushEnabled && quyenTrinhDuyet === "granted"}
+                disabled={quyenTrinhDuyet === "unsupported" || quyenTrinhDuyet === "denied"}
+                onCheckedChange={doiWebPush}
+              />
+            </div>
+
+            {/* An HAN khi server chua cau hinh bot: mot nut bam duoc nhung
+                luon bao loi con kho hieu hon la khong co nut. */}
+            {prefs.telegramConfigured ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-medium">
+                    <Send className="h-4 w-4" /> Telegram
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {prefs.telegramLinked
+                      ? `Đã kết nối${prefs.telegramUsername ? ` với @${prefs.telegramUsername}` : ""}`
+                      : prefs.isPatient && prefs.isCaregiver
+                        ? "Nhận nhắc uống thuốc và cảnh báo về người bạn đang theo dõi"
+                        : prefs.isPatient
+                          ? "Nhận nhắc qua Telegram, kể cả khi đã đóng app"
+                          : "Nhận cảnh báo về người thân bạn đang theo dõi"}
+                  </p>
+                  {/* Ngat ket noi la hanh dong HIEM (doi tai khoan Telegram,
+                      cho nguoi khac muon may) - de nho o duoi, khong canh
+                      tranh voi cong tac von la thu dung hang ngay. */}
+                  {prefs.telegramLinked ? (
+                    <button
+                      type="button"
+                      onClick={huyKetNoiTelegram}
+                      className="mt-1 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    >
+                      Ngắt kết nối
+                    </button>
+                  ) : null}
+                </div>
+                {prefs.telegramLinked ? (
+                  <Switch
+                    aria-label="Nhắc qua Telegram"
+                    checked={prefs.telegramEnabled}
+                    onCheckedChange={doiTelegram}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={ketNoiTelegram}
+                    disabled={dangGhep}
+                    className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                  >
+                    {dangGhep ? "Đang mở…" : "Kết nối"}
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
-          <Switch
-            aria-label="Cảnh báo khẩn cấp"
-            checked={emergencyAlerts}
-            onCheckedChange={setEmergencyAlerts}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-medium">Tổng kết tuần</p>
-            <p className="text-xs text-muted-foreground">Gửi báo cáo tuân thủ hằng tuần</p>
+        ) : null}
+
+        {/* Canh bao khan cap CO Y khong phai cong tac. Day la luoi an toan
+            cho nguoi than, khong phai tien nghi cua benh nhan: nguoi muon tat
+            no nhat - benh nhan khong muon con chau biet minh quen thuoc - lai
+            dung la nguoi no sinh ra de bao ve. Khop voi backend, cho
+            tao_canh_bao_cho_nguoi_than() nam NGOAI moi kiem tra tuy chon
+            (backend/services/dose_push_reminder.py). */}
+        {prefs?.isPatient ? (
+          <div className="flex items-start gap-3 border-t border-border pt-4">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0">
+              <p className="font-medium">Cảnh báo khẩn cấp — luôn bật</p>
+              <p className="text-xs text-muted-foreground">
+                Khi phát hiện dấu hiệu nguy hiểm hoặc bạn bỏ liều nhiều lần, người thân sẽ được báo
+                ngay. Mục này không tắt được để đảm bảo an toàn cho bạn.
+              </p>
+            </div>
           </div>
-          <Switch
-            aria-label="Tổng kết tuần"
-            checked={weeklySummary}
-            onCheckedChange={setWeeklySummary}
-          />
-        </div>
+        ) : null}
       </section>
 
       {role === "patient" && (

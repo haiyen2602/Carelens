@@ -9,18 +9,20 @@ After a successful submit, the live log is rotated:
 
 If the POST fails, the pending file is restored so nothing is lost.
 """
+
 import json
 import os
 import shutil
 import sys
 import time
-import urllib.request
 import urllib.error
-from datetime import datetime, timezone
+import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -30,6 +32,7 @@ API_KEY = os.environ.get("AI_LOG_API_KEY", "")
 LOG_DIR = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
 LOG_FILE = LOG_DIR / "session.jsonl"
 ARCHIVE_DIR = LOG_DIR / "archive"
+CUTOFF_FILE = LOG_DIR / "submit-not-before.json"
 
 # Match server-side MAX_BATCH_ENTRIES so we never get a 422.
 # If the local file has more than this, we submit the oldest BATCH_LIMIT
@@ -37,15 +40,54 @@ ARCHIVE_DIR = LOG_DIR / "archive"
 BATCH_LIMIT = 500
 
 
-def _archive(pending: Path) -> None:
-    """Append pending file to today's archive. Never overwrites existing data."""
-    if not pending.exists() or pending.stat().st_size == 0:
+class CutoffError(ValueError):
+    """Raised when a configured submission cutoff cannot be trusted."""
+
+
+def _parse_timestamp(value: str) -> datetime:
+    """Parse an ISO-8601 timestamp and normalize it to UTC."""
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise CutoffError("timestamp must include a timezone")
+    return parsed.astimezone(UTC)
+
+
+def _load_cutoff() -> datetime | None:
+    """Load the local opt-in boundary; fail closed if the marker is invalid."""
+    if not CUTOFF_FILE.exists():
+        return None
+    try:
+        payload = json.loads(CUTOFF_FILE.read_text(encoding="utf-8"))
+        value = payload["not_before"]
+        if not isinstance(value, str) or not value.strip():
+            raise CutoffError("not_before must be a non-empty string")
+        return _parse_timestamp(value)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise CutoffError(f"invalid cutoff file {CUTOFF_FILE}: {exc}") from exc
+
+
+def _eligible_for_submission(entry: dict, cutoff: datetime | None) -> bool:
+    """Return whether an entry is new enough to leave the local machine."""
+    if cutoff is None:
+        return True
+    timestamp = entry.get("ts")
+    if not isinstance(timestamp, str):
+        return False
+    try:
+        return _parse_timestamp(timestamp) >= cutoff
+    except (TypeError, ValueError):
+        return False
+
+
+def _archive_lines(lines: list[str]) -> None:
+    """Append selected raw lines to today's archive without overwriting data."""
+    if not lines:
         return
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     archive_file = ARCHIVE_DIR / f"{today}.jsonl"
-    with open(pending, "rb") as src, open(archive_file, "ab") as dst:
-        shutil.copyfileobj(src, dst)
+    with open(archive_file, "a", encoding="utf-8") as destination:
+        destination.writelines(lines)
 
 
 def _restore_pending(pending: Path) -> None:
@@ -76,6 +118,12 @@ def main():
         print("[ai-log] No logs to submit.", file=sys.stderr)
         sys.exit(0)
 
+    try:
+        cutoff = _load_cutoff()
+    except CutoffError as exc:
+        print(f"[ai-log] {exc} — submission skipped; logs kept locally.", file=sys.stderr)
+        sys.exit(0)
+
     # Atomic rename closes the race window: hook writes that arrive after this
     # land in a fresh LOG_FILE, not in the batch we're about to POST.
     pending = LOG_FILE.with_name(f"session.pending.{int(time.time())}.jsonl")
@@ -87,24 +135,36 @@ def main():
 
     entries = []
     leftover_lines = []
+    archive_lines = []
+    excluded_count = 0
     with open(pending, encoding="utf-8") as f:
         for line in f:
             stripped = line.strip()
             if not stripped:
                 continue
+            try:
+                entry = json.loads(stripped)
+            except json.JSONDecodeError:
+                archive_lines.append(line)
+                continue
+            if not isinstance(entry, dict) or not _eligible_for_submission(entry, cutoff):
+                excluded_count += 1
+                archive_lines.append(line)
+                continue
             if len(entries) >= BATCH_LIMIT:
                 leftover_lines.append(line)
                 continue
-            try:
-                entries.append(json.loads(stripped))
-            except json.JSONDecodeError:
-                pass  # drop unparseable line
+            entries.append(entry)
+            archive_lines.append(line)
 
     if not entries:
-        # Nothing to send; archive whatever was there (probably junk) and bail.
-        _archive(pending)
+        # Old or malformed entries stay local in archive and never reach the server.
+        _archive_lines(archive_lines)
         pending.unlink()
-        print("[ai-log] No valid entries to submit.", file=sys.stderr)
+        print(
+            f"[ai-log] No eligible logs to submit; archived {excluded_count} older entries locally.",
+            file=sys.stderr,
+        )
         sys.exit(0)
 
     payload = json.dumps({"entries": entries}, ensure_ascii=False).encode("utf-8")
@@ -127,8 +187,8 @@ def main():
         print(f"[ai-log] Submit failed: {e} — logs kept locally.", file=sys.stderr)
         sys.exit(0)  # Don't block push on server error
 
-    # Success: archive the submitted batch, then handle any leftover.
-    _archive(pending)
+    # Success: archive submitted and excluded lines, then handle eligible leftovers.
+    _archive_lines(archive_lines)
     pending.unlink()
 
     if leftover_lines:
