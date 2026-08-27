@@ -21,9 +21,21 @@ import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from backend.db.base import SessionLocal  # noqa: E402
-from backend.db.models import Account, AgentFeedbackTicket, AgentRun, AgentSafetyEvent  # noqa: E402
+from backend.db.models import (  # noqa: E402
+    Account,
+    AgentFeedbackTicket,
+    AgentRun,
+    AgentSafetyEvent,
+    DoctorReviewRequest,
+)
 from backend.main import app  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
+from backend.services.doctor_handoff import (  # noqa: E402
+    HandoffCreateCommand,
+    VerifiedContextRef,
+    VerifiedContextSource,
+    create_doctor_review_request,
+)
 
 _MONITORING_ROUTES = (
     "/api/v1/admin/monitoring/overview",
@@ -36,6 +48,7 @@ _MONITORING_ROUTES = (
     "/api/v1/admin/monitoring/golden",
     "/api/v1/admin/monitoring/versions/filters",
     "/api/v1/admin/monitoring/traces",
+    "/api/v1/admin/monitoring/doctor-queue",
 )
 
 
@@ -193,6 +206,123 @@ async def test_admin_trace_detail_real_correlation_through_http(account_client, 
     assert body["safety"]["reason_code"] == "ACUTE_DANGER_DETECTED"
     assert body["ticket"] is not None
     assert body["ticket"]["ticket_id"] == ticket.id
+
+
+# ---------------------------------------------------------------------------
+# BUILD-44 SS21/SS22: doctor-queue metrics -- expected-count (delta) check
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_doctor_queue_metrics_counts_seeded_handoffs_by_status_and_type(account_client):
+    """Seeds 1 SAFETY-shaped + 1 UNCERTAINTY + 1 USER_REQUEST PENDING row via
+    the real domain function, then asserts the BEFORE/AFTER delta on the
+    real HTTP endpoint matches exactly -- not just HTTP 200 (spec's own
+    explicit instruction), and specifically that UNCERTAINTY/USER_REQUEST
+    land in their own buckets, never folded into SAFETY."""
+    admin = await account_client("admin")
+
+    before = (await admin.get("/api/v1/admin/monitoring/doctor-queue")).json()
+    assert before["available"] is True
+
+    db = SessionLocal()
+    created_ids: list[str] = []
+    try:
+        for suffix, reason_code, risk_disposition in (
+            ("safety", "ACUTE_DANGER_DETECTED", "HANDOFF_REQUIRED"),
+            ("uncertainty", "REPEATED_CLARIFICATION", "UNCERTAINTY_HANDOFF"),
+            ("user-request", "EXPLICIT_DOCTOR_REQUEST", "UNCERTAINTY_HANDOFF"),
+        ):
+            result = create_doctor_review_request(
+                db,
+                command=HandoffCreateCommand(
+                    patient_id=f"build44-metrics-patient-{suffix}",
+                    actor_id="build44-metrics-actor",
+                    patient_question="q",
+                    reason_code=reason_code,
+                    risk_disposition=risk_disposition,
+                    idempotency_key=f"build44-metrics-{suffix}-{uuid.uuid4().hex[:8]}",
+                    verified_context_refs=(VerifiedContextRef(VerifiedContextSource.ANSWERABILITY_GATE, "r", "p"),),
+                ),
+                created_at=datetime.datetime.now(datetime.UTC),
+            )
+            db.commit()
+            created_ids.append(result.request.id)
+
+        after = (await admin.get("/api/v1/admin/monitoring/doctor-queue")).json()
+        assert after["available"] is True
+        assert after["status_counts"]["PENDING"] - before["status_counts"]["PENDING"] == 3
+        assert after["handoff_type_counts"]["SAFETY"] - before["handoff_type_counts"]["SAFETY"] == 1
+        assert after["handoff_type_counts"]["UNCERTAINTY"] - before["handoff_type_counts"]["UNCERTAINTY"] == 1
+        assert after["handoff_type_counts"]["USER_REQUEST"] - before["handoff_type_counts"]["USER_REQUEST"] == 1
+    finally:
+        db.query(DoctorReviewRequest).filter(DoctorReviewRequest.id.in_(created_ids)).delete(synchronize_session=False)
+        db.commit()
+        db.close()
+
+
+@pytest.mark.asyncio
+async def test_doctor_queue_metrics_time_to_claim_and_resolve_from_real_workflow(account_client):
+    """A real claim -> activate -> resolve pass (same domain functions the
+    HTTP workflow uses) with known, spaced timestamps must produce a real
+    time_to_claim/time_to_activate/time_to_resolve average -- AVAILABLE
+    with the right value, not NOT_APPLICABLE, and not silently 0."""
+    from backend.services.doctor_handoff import (
+        activate_doctor_review_request,
+        claim_doctor_review_request,
+        resolve_doctor_review_request,
+    )
+
+    admin = await account_client("admin")
+    db = SessionLocal()
+    # Anchored in the past (not "today"), deliberately: this endpoint has no
+    # patient_id filter, so a `date_from`/`date_to` window anywhere near
+    # real test-execution time risks averaging in leftover rows other real
+    # local runs create on the same day (found via this test's own first
+    # run -- 10.02s instead of the expected 60.0s, diluted by unrelated
+    # same-day E2E-script rows, not a bug in doctor_queue_metrics itself).
+    created_at = datetime.datetime(2020, 1, 1, 8, 0, tzinfo=datetime.UTC)
+    doctor_id = f"build44-metrics-doc-{uuid.uuid4().hex[:8]}"
+    try:
+        result = create_doctor_review_request(
+            db,
+            command=HandoffCreateCommand(
+                patient_id="build44-metrics-patient-timing",
+                actor_id="build44-metrics-actor",
+                patient_question="q",
+                reason_code="REPEATED_CLARIFICATION",
+                risk_disposition="UNCERTAINTY_HANDOFF",
+                idempotency_key=f"build44-metrics-timing-{uuid.uuid4().hex[:8]}",
+                verified_context_refs=(VerifiedContextRef(VerifiedContextSource.ANSWERABILITY_GATE, "r", "p"),),
+            ),
+            created_at=created_at,
+        )
+        db.commit()
+        handoff_id = result.request.id
+
+        claim_doctor_review_request(db, request_id=handoff_id, doctor_id=doctor_id, claimed_at=created_at + datetime.timedelta(seconds=60))
+        db.commit()
+        activate_doctor_review_request(db, request_id=handoff_id, doctor_id=doctor_id, activated_at=created_at + datetime.timedelta(seconds=120))
+        db.commit()
+        resolve_doctor_review_request(db, request_id=handoff_id, doctor_id=doctor_id, resolved_at=created_at + datetime.timedelta(seconds=720))
+        db.commit()
+
+        resp = await admin.get(
+            "/api/v1/admin/monitoring/doctor-queue",
+            params={"date_from": created_at.isoformat(), "date_to": (created_at + datetime.timedelta(hours=1)).isoformat()},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["time_to_claim_avg_seconds"]["status"] == "AVAILABLE"
+        assert body["time_to_claim_avg_seconds"]["value"] == pytest.approx(60.0)
+        assert body["time_to_activate_avg_seconds"]["status"] == "AVAILABLE"
+        assert body["time_to_activate_avg_seconds"]["value"] == pytest.approx(60.0)
+        assert body["time_to_resolve_avg_seconds"]["status"] == "AVAILABLE"
+        assert body["time_to_resolve_avg_seconds"]["value"] == pytest.approx(600.0)
+    finally:
+        db.query(DoctorReviewRequest).filter(DoctorReviewRequest.patient_id == "build44-metrics-patient-timing").delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 @pytest.mark.asyncio

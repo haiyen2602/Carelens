@@ -53,7 +53,17 @@ _DEFAULT_SEVERITY = "MEDIUM"  # never LOW by default -- an unrecognized reason_c
 # 100% of traffic" eligibility spirit).
 _ACTIONABLE_OUTCOMES = frozenset({"SAFETY_BLOCKED", "HANDOFF_REQUIRED"})
 
-_HANDOFF_RESOLVED_STATUSES = frozenset({"ANSWERED", "CANCELLED"})
+# BUILD-44: "RESOLVED" added -- the new claim/activate/message/resolve
+# doctor workflow's own terminal state (backend/services/doctor_handoff.py),
+# reachable for a SAFETY-type handoff exactly the same as an UNCERTAINTY/
+# USER_REQUEST one (see doctor_review_routes.py's shared queue). Found via
+# audit before writing this build's report: without this addition, a SAFETY
+# handoff a doctor fully resolved through the new workflow would show here
+# as permanently unresolved (a real regression this build would otherwise
+# introduce into pre-existing Admin Monitoring, not merely an unfinished
+# extension) -- ANSWERED/CANCELLED (the pre-existing quick-answer path,
+# untouched) are unaffected.
+_HANDOFF_RESOLVED_STATUSES = frozenset({"ANSWERED", "CANCELLED", "RESOLVED"})
 
 
 def classify_severity(*, reason_code: str, risk_level: str | None) -> tuple[str, str]:
@@ -166,7 +176,11 @@ def _compute_live_status(request: DoctorReviewRequest, *, created_at: datetime |
     and batched lookups below share, so there is only one place that knows
     how to compute ``resolved``/``time_to_review_seconds``."""
 
-    resolved_at = request.answered_at or request.cancelled_at
+    # BUILD-44: `resolved_at` (the new column) added to this fallback chain
+    # for the same reason as `_HANDOFF_RESOLVED_STATUSES` above -- a
+    # SAFETY-type handoff resolved through the new doctor workflow has
+    # `answered_at`/`cancelled_at` both NULL but a real `resolved_at`.
+    resolved_at = request.answered_at or request.cancelled_at or request.resolved_at
     ttr = None
     if resolved_at is not None and created_at is not None:
         ttr = max(0.0, (resolved_at - created_at).total_seconds())

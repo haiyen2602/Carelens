@@ -25,7 +25,21 @@ from backend.services.doctor_handoff import (
 # below) -- the pre-existing Safety-Domain-sourced path has no such
 # cross-run dedup today (per-agent-run idempotency only, see
 # ``doctor_handoff.py``) and this build does not change that.
-_ACTIVE_HANDOFF_STATUSES = ("PENDING", "ASSIGNED")
+#
+# BUILD-44: "ACTIVE" added defensively. In the current production route
+# (agent_v2_routes.py::run_agent_orchestration) this branch can never
+# actually be reached while a handoff is ACTIVE -- the active-takeover
+# check runs, and returns, before orchestration (and therefore this
+# adapter) is ever invoked at all (see the BUILD-44 report SS7). Without
+# "ACTIVE" here, though, this dedup check would be silently incomplete on
+# its own terms: if it were ever reached anyway (a future refactor, a
+# second call site), it would create a SECOND DoctorReviewRequest for a
+# patient a doctor is already actively handling, rather than reusing the
+# existing one -- exactly the duplicate-handoff outcome this whole check
+# exists to prevent. Cheap, structural defense in depth; RESOLVED/
+# CANCELLED/ANSWERED are deliberately still excluded -- a closed episode
+# must not block a genuinely new escalation.
+_ACTIVE_HANDOFF_STATUSES = ("PENDING", "ASSIGNED", "ACTIVE")
 
 
 class AuthorizedDoctorHandoffAdapter:

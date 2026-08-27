@@ -16,6 +16,7 @@ from backend.api.audit_routes import audit_router, my_audit_router
 from backend.api.auth_routes import auth_router
 from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
+from backend.api.doctor_review_routes import doctor_review_router, patient_handoff_router
 from backend.api.dose_routes import dose_router
 from backend.api.drug_request_routes import admin_drug_request_router, drug_request_router
 from backend.api.drug_routes import drug_router
@@ -128,6 +129,8 @@ app.include_router(audit_router, prefix="/api/v1")
 app.include_router(my_audit_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(agent_v2_router, prefix="/api/v1")
+app.include_router(doctor_review_router, prefix="/api/v1")
+app.include_router(patient_handoff_router, prefix="/api/v1")
 app.include_router(agent_feedback_router, prefix="/api/v1")
 app.include_router(admin_feedback_router, prefix="/api/v1")
 app.include_router(admin_safety_router, prefix="/api/v1")
