@@ -14,6 +14,7 @@ export function ChatMessage({
   conversationId,
   accessToken,
   onSelectAction,
+  onConfirmDrugCandidate,
   actionsDisabled = false,
 }: {
   message: StoredChatMessage;
@@ -24,6 +25,7 @@ export function ChatMessage({
   conversationId?: string;
   accessToken?: string | null;
   onSelectAction?: (action: SuggestedAction) => void;
+  onConfirmDrugCandidate?: (attemptId: string, actionId: string, label: string) => void;
   actionsDisabled?: boolean;
 }) {
   const isUser = message.role === "user";
@@ -43,6 +45,23 @@ export function ChatMessage({
       {at && <p className="font-mono m-0 mt-1 px-1 text-[10px] text-[#62708A]">{at}</p>}
       {!isUser && conversationId && (
         <>
+          {message.drugImage && message.drugImage.candidates.length > 0 && (
+            <div className="mt-2 flex max-w-[82%] flex-col gap-2" aria-label="Các thuốc cần xác nhận">
+              {message.drugImage.candidates.map((candidate) => (
+                <button
+                  key={candidate.action_id}
+                  type="button"
+                  disabled={actionsDisabled}
+                  onClick={() => onConfirmDrugCandidate?.(message.drugImage!.attemptId, candidate.action_id, candidate.product_display_name)}
+                  className="min-h-10 rounded-lg border border-[#B7C2D6] bg-white px-3 py-2 text-left text-[13px] font-medium text-[#16386E] transition-colors hover:bg-[#F4F7FC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className="block">{candidate.product_display_name}</span>
+                  {candidate.strength_text && <span className="block text-xs font-normal text-[#62708A]">{candidate.strength_text}</span>}
+                  <span className="mt-1 block">Đúng thuốc này</span>
+                </button>
+              ))}
+            </div>
+          )}
           {message.suggestedActions && message.suggestedActions.length > 0 && (
             <div className="mt-2 flex max-w-[82%] flex-wrap gap-2" aria-label="Gợi ý câu hỏi tiếp theo">
               {message.suggestedActions.map((action) => (

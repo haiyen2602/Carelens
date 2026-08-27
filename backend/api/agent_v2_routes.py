@@ -919,7 +919,11 @@ def run_agent_orchestration(
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
                 resolved_query=input_resolution.query if input_resolution.used else None,
-                active_entity_id=active_entity_for_request.id if active_entity_for_request else None,
+                active_entity_id=(
+                    active_entity_for_request.legacy_drug_id or active_entity_for_request.id
+                    if active_entity_for_request
+                    else None
+                ),
                 active_entity_name=active_entity_for_request.canonical_name if active_entity_for_request else None,
                 # The semantic value stays in state; the bound tool receives
                 # the server-authored human query/label, never a client id.
@@ -939,7 +943,9 @@ def run_agent_orchestration(
                 prior_active_topic=conversation_state.active_topic.canonical_name
                 if conversation_state.active_topic
                 else None,
-                prior_active_entity_id=conversation_state.active_entity.id
+                prior_active_entity_id=(
+                    conversation_state.active_entity.legacy_drug_id or conversation_state.active_entity.id
+                )
                 if conversation_state.active_entity
                 else None,
                 prior_active_entity_name=conversation_state.active_entity.canonical_name

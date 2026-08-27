@@ -5,6 +5,8 @@ import type {
   ChatResponse,
   FeedbackReportRequest,
   FeedbackReportResponse,
+  DrugImageConfirmResponse,
+  DrugImageRecognitionResponse,
 } from "@/types/chat";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -57,6 +59,50 @@ export async function sendChatMessage(
     throw new ApiError(body?.detail ?? `API error: ${response.status}`, response.status);
   }
 
+  return response.json();
+}
+
+export async function recognizeDrugImage(
+  payload: { patientId: string; conversationId: string; message: string; file: File },
+  accessToken?: string | null,
+): Promise<DrugImageRecognitionResponse> {
+  const form = new FormData();
+  form.set("patient_id", payload.patientId);
+  form.set("conversation_id", payload.conversationId);
+  form.set("message", payload.message);
+  form.set("file", payload.file);
+  const response = await fetch("/api/drug-images/recognize", {
+    method: "POST",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    body: form,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+  }
+  return response.json();
+}
+
+export async function confirmDrugImageCandidate(
+  payload: { patientId: string; conversationId: string; attemptId: string; actionId: string },
+  accessToken?: string | null,
+): Promise<DrugImageConfirmResponse> {
+  const response = await fetch("/api/drug-images/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    body: JSON.stringify({
+      patient_id: payload.patientId,
+      conversation_id: payload.conversationId,
+      recognition_attempt_id: payload.attemptId,
+      action_id: payload.actionId,
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+  }
   return response.json();
 }
 

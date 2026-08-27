@@ -195,6 +195,20 @@ class Settings(BaseSettings):
     # from uploaded dose-verification photos, while reusing local-volume
     # storage conventions until a reviewed storage backend is introduced.
     drug_image_storage_dir: str = "./data/drug_images"
+    # B-07 patient package images are PHI-adjacent input, never catalog media.
+    # They are processed synchronously and removed immediately after B-05; the
+    # directory is deliberately a separate private working area.
+    drug_image_chat_temp_dir: str = "./data/drug_image_chat_tmp"
+    # During an ACTIVE BUILD-44 takeover only, the original upload is retained
+    # in a separate private doctor-review area so the assigned doctor can see
+    # the patient's attachment. It is never part of catalog or chat history.
+    drug_image_chat_doctor_storage_dir: str = "./data/drug_image_chat_doctor_private"
+    drug_image_chat_max_upload_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    drug_image_chat_max_dimension_px: int = Field(default=4096, gt=0)
+    drug_image_chat_max_pixels: int = Field(default=16_000_000, gt=0)
+    drug_image_chat_confirmation_ttl_seconds: int = Field(default=900, gt=0)
+    drug_image_chat_doctor_attachment_ttl_seconds: int = Field(default=86_400, gt=0)
+    drug_image_chat_recognition_timeout_seconds: int = Field(default=30, gt=0)
     # Canh dai nhat sau khi resize + chat luong nen JPEG - dong bo voi
     # max_edge=1600, jpeg_quality=90 da tune tren golden dataset trong
     # backend/vlm_demthuoc/vlm_client.py::encode_frame, khong bia so moi.

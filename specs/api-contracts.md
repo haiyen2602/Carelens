@@ -386,6 +386,32 @@ or applied. Invalid or stale actions are treated as ordinary user text.
 Safety and deterministic medication-time routing inspect the raw message
 first; client `entity_id` and `topic` never authorize lookup or access.
 
+### B-07 package-image candidates (additive)
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| POST | `/api/v1/agent/v2/drug-images/recognize` | authorized patient context | Multipart package-image validation and B-05 candidates only |
+| POST | `/api/v1/agent/v2/drug-images/confirm` | authorized patient context | Confirm one opaque server-issued candidate action |
+
+`recognize` accepts multipart `patient_id`, `conversation_id`, optional
+`message`, and `file`. Only JPEG/PNG/WebP are accepted after MIME, decoder
+format, byte-size and image-bound validation. Its response contains only an
+opaque `recognition_attempt_id`, bounded patient-safe candidate fields
+(`action_id`, `product_display_name`, `strength_text`, `rank`) and a safe
+reply. It never returns a product ID, score, OCR text, storage path or source.
+
+`confirm` accepts `patient_id`, `conversation_id`, `recognition_attempt_id`
+and opaque `action_id`. The server binds the action to the latest unexpired
+attempt for the authenticated actor/patient/conversation, maps it to canonical
+`drug_product_id`, then may call the existing verified Drug Tool. A client
+provided/arbitrary product ID is not a confirmation input. Foreign, forged,
+superseded or expired actions are rejected; a retry of the same confirmed
+action is idempotent.
+
+Before confirmation, no candidate mutates `ConversationState.active_entity`
+and no Drug Tool or Main Model is called for candidate presentation. Acute
+safety and ACTIVE doctor takeover suppress recognition.
+
 ## 5. `photo-api`
 
 | Method | Path | Role | Mô tả |
@@ -641,6 +667,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
 | 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 | 2026-08-26 | `dose-api` (§3), `drug-image-delivery-api` (mới, §3a) | B-06 thêm metadata ảnh catalog an toàn vào `expected_items[]` và route bytes xác thực. Không breaking: field là additive; ảnh thiếu trả `NO_IMAGE`/`url: null`; không lộ storage/provenance. | `[chờ Architect/Frontend review]` |
+| 2026-08-27 | `chat-api` (§4, B-07 additive) | Thêm upload ảnh gói thuốc multipart và confirmation action do server phát hành. Candidate không phải drug canonical; chỉ sau confirm mới bind `drug_product_id` và dùng Drug Tool. Không breaking với text chat hiện hữu. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

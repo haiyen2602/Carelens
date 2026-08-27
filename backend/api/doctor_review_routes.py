@@ -17,15 +17,18 @@ exclusively from the authenticated principal, never from the request body.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.agents.v2.answerability import handoff_type_for
 from backend.api.security import CurrentUser, get_current_user, require_role
+from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import DoctorReviewMessage, DoctorReviewRequest, Patient
+from backend.db.models import DoctorReviewImageAttachment, DoctorReviewMessage, DoctorReviewRequest, Patient
 from backend.models.schemas import (
     DoctorReviewDetailOut,
     DoctorReviewMessageOut,
@@ -49,6 +52,7 @@ from backend.services.doctor_handoff import (
     resolve_doctor_review_request,
     send_active_doctor_message,
 )
+from backend.services.drug_image_chat import private_takeover_upload_path
 
 doctor_review_router = APIRouter(prefix="/doctor/reviews", tags=["doctor-review"])
 patient_handoff_router = APIRouter(tags=["agent-v2-handoff-status"])
@@ -93,6 +97,12 @@ def _queue_item(db: Session, row: DoctorReviewRequest) -> DoctorReviewQueueItemO
 
 def _detail(db: Session, row: DoctorReviewRequest) -> DoctorReviewDetailOut:
     messages = list_doctor_review_messages(db, handoff_id=row.id)
+    attachments = {
+        item.message_id: item.id
+        for item in db.scalars(
+            select(DoctorReviewImageAttachment).where(DoctorReviewImageAttachment.handoff_id == row.id)
+        )
+    }
     return DoctorReviewDetailOut(
         handoff_id=row.id,
         patient_id=row.patient_id,
@@ -111,7 +121,12 @@ def _detail(db: Session, row: DoctorReviewRequest) -> DoctorReviewDetailOut:
         resolved_by_doctor_id=row.resolved_by_doctor_id,
         messages=[
             DoctorReviewMessageOut(
-                id=m.id, sender_role=m.sender_role, actor_id=m.actor_id, content=m.content, created_at=m.created_at
+                id=m.id,
+                sender_role=m.sender_role,
+                actor_id=m.actor_id,
+                content=m.content,
+                created_at=m.created_at,
+                image_attachment_id=attachments.get(m.id),
             )
             for m in messages
         ],
@@ -166,6 +181,32 @@ def get_review_detail(
     require_active_doctor(db, actor)
     row = _get_or_404(db, handoff_id)
     return _detail(db, row)
+
+
+@doctor_review_router.get("/{handoff_id}/image-attachments/{attachment_id}")
+def get_private_image_attachment(
+    handoff_id: str,
+    attachment_id: str,
+    db: Session = Depends(get_db),
+    actor: CurrentUser = Depends(_require_doctor),
+) -> FileResponse:
+    """Serve a B-07 image only to the real doctor assigned to this handoff."""
+
+    doctor_id = require_active_doctor(db, actor)
+    handoff = _get_or_404(db, handoff_id)
+    if handoff.assigned_doctor_id != doctor_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Khong co quyen tren tep rieng tu nay")
+    attachment = db.get(DoctorReviewImageAttachment, attachment_id)
+    if attachment is None or attachment.handoff_id != handoff_id or attachment.patient_id != handoff.patient_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay tep rieng tu")
+    if attachment.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Tep rieng tu da het han")
+    path = private_takeover_upload_path(
+        storage_dir=Path(get_settings().drug_image_chat_doctor_storage_dir), storage_key=attachment.storage_key
+    )
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay tep rieng tu")
+    return FileResponse(path, media_type=attachment.mime_type, filename="patient-package-image")
 
 
 @doctor_review_router.post("/{handoff_id}/claim", response_model=DoctorReviewDetailOut)
