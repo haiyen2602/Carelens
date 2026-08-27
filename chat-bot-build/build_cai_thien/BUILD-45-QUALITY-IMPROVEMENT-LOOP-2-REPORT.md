@@ -481,3 +481,64 @@ Branch: `feature/build-45-quality-loop-2`, based on `main` at `fb563dc4`
 (post PR #136 merge). Commit and PR opened per standing process; **STOP**
 after PR is opened — no merge, no deploy, no BUILD-46, no handoff-dedup
 fix, no Track B changes, per explicit instruction.
+
+## 19. Code review response (round 1, post-push)
+
+Two automated findings on PR #141, both verified against the real code
+(not assumed true or false) before acting.
+
+**Finding 1 — `search_catalog_unique_match` scoring/sorting discrepancy.**
+The quoted snippet was accurate to the real code. The specific framing
+("a 'unique match' might not actually be the top result returned by a
+standard search") does not hold under the current scoring model —
+`strong_matches` only ever has length 1 when exactly one item scores
+`>= 0.90` and every other item scores strictly lower, so that item is by
+construction the single highest-scoring item in the whole catalog for
+that query, i.e. always `search_catalog`'s own top-ranked result too; no
+sort-order disagreement is possible. The real, underlying finding was
+correct, however: `search_catalog_unique_match` ran its **own separate**
+`self._name_score(...)` loop over `self.catalog_items` instead of reusing
+`_ranked_catalog_matches`, and that function's own docstring falsely
+claimed both methods read from it — a genuine documentation/duplication
+defect. **Fixed**: extracted `_scored_catalog_items(query)` (the raw,
+unsorted, unfiltered `_name_score` list) as the one real shared source
+both `_ranked_catalog_matches`'s normal-length-query branch and
+`search_catalog_unique_match` now read from; corrected both docstrings to
+state the true relationship (they share the score computation, not each
+other's filter/sort, which are intentionally different — 0.20-floor+full
+sort vs. 0.90-floor+no sort, the latter safe by construction as explained
+above). The short-single-token prefix branch (a different, non-
+`_name_score` scheme) was confirmed to never have been part of either
+docstring's claimed sharing and stays untouched. Full regression re-run
+after the change: identical 1129 passed / 11 pre-existing-unrelated
+failed / 7 skipped; both real local E2E scripts re-run end-to-end,
+unchanged results.
+
+**Finding 2 — function-local import in `_explicit_topic` (circular-
+dependency fragility).** Confirmed as a real architectural fragility,
+though not a live bug: the deferred/function-local import safely avoids
+today's circularity (no top-level call site exists that would trigger it
+mid-initialization), but the reviewer's hypothetical — a future refactor
+introducing a top-level call from inside `orchestrator.py`'s own module
+initialization — could still break it, since a lazy import only defers
+*when* a failure would surface, not the underlying fragility. **Fixed by
+removing the fragility class entirely, not by defending it further**:
+`_DISPLAY_TOPIC_PATTERNS`, `_DRUG_ATTRIBUTE_QUESTION_KEYWORDS`,
+`_TRAILING_LA_GI_TAIL`, and `_display_topic_from_raw` were moved from
+`orchestrator.py` into `follow_up.py` — the module `orchestrator.py`
+already imports several other names from at its own module level, with
+no circularity, since `follow_up.py` has zero dependency on
+`orchestrator.py` in either direction. `orchestrator.py` now imports
+`_display_topic_from_raw` from `follow_up.py` at module level (the same
+already-safe direction as its other imports from that module);
+`_explicit_topic` now references `_DISPLAY_TOPIC_PATTERNS` directly, in
+the same module, with no import at all. Verified the move is a pure
+relocation, not a behavior change: `orchestrator._display_topic_from_raw
+is follow_up._display_topic_from_raw` (identity, not a copy), full
+regression re-run identical (1129/11/7, same as before the move), both
+real local E2E scripts re-run end-to-end unchanged. `ruff check` clean
+after both fixes (one auto-fixable import-order finding from the moved
+import, applied via `ruff check --fix`).
+
+Both fixes pushed as a follow-up commit on the same branch/PR; no merge,
+no deploy — same STOP condition as §18.

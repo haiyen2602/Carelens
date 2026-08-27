@@ -1025,7 +1025,7 @@ def run_agent_orchestration(
     # string built for embedding/lexical search (e.g. "cong dung cua thuoc
     # long huyet") -- it was never meant to be a display-safe state value.
     # `semantic.display_topic` is the one field this build added specifically
-    # to be state-write-safe (`_display_topic_from_raw`, orchestrator.py: only
+    # to be state-write-safe (`_display_topic_from_raw`, follow_up.py: only
     # an explicit disease/topic shape, rejected outright for anything that
     # looks like a drug-attribute question). Falling back to `semantic.topic`
     # whenever `display_topic` is intentionally None (a drug-attribute

@@ -325,13 +325,39 @@ class V2AgentKnowledgeService:
         product = self.products_by_legacy.get(legacy_drug_id)
         return self._to_catalog_item(product) if product else None
 
+    def _scored_catalog_items(self, query: str) -> list[tuple[float, DrugCatalogItem]]:
+        """Real ``_name_score`` for every catalog item against ``query`` --
+        unsorted, unfiltered. A real code-review finding (BUILD-45 PR
+        #141): ``_ranked_catalog_matches``'s own "normal-length query"
+        branch and ``search_catalog_unique_match`` used to each run their
+        OWN separate ``self._name_score(query, item.ten_thuoc)`` loop over
+        the same ``self.catalog_items`` -- correct only because both
+        happened to call the identical scorer, but genuine duplicated
+        logic with no single source of truth, and a docstring on
+        ``_ranked_catalog_matches`` that claimed a sharing relationship
+        that didn't actually exist in code. This is that single source
+        now. Deliberately excludes the short-single-token PREFIX special
+        case both callers already handle before ever reaching here --
+        that branch uses a different, looser (non-``_name_score``)
+        matching scheme neither caller treats the same way
+        (``_ranked_catalog_matches`` returns prefix-matched items with no
+        score at all; ``search_catalog_unique_match`` refuses to promote
+        an identity from it at all), so it was never a shared computation
+        to begin with and stays out of this helper."""
+        return [(self._name_score(query, item.ten_thuoc), item) for item in self.catalog_items]
+
     def _ranked_catalog_matches(self, query: str) -> list[DrugCatalogItem]:
         """Full ranked match list, before any caller-supplied ``limit``
-        truncates it. The one place both ``search_catalog`` and
-        ``search_catalog_unique_match`` (BUILD-45) read from, so a query's
-        TRUE candidate count is never re-derived from an already-truncated
-        list (which would conflate "the caller only asked for N" with "there
-        is genuinely only one match")."""
+        truncates it -- so a query's TRUE candidate count is never
+        re-derived from an already-truncated list (which would conflate
+        "the caller only asked for N" with "there is genuinely only one
+        match"). ``search_catalog`` reads from this directly;
+        ``search_catalog_unique_match`` (BUILD-45) reads from the lower-
+        level ``_scored_catalog_items`` this function also calls, not from
+        this function itself -- the two apply different filters/sorts to
+        the same underlying scores (0.20 floor + full sort here vs. a much
+        stricter 0.90 floor + no sort there, since uniqueness is enforced
+        by count, not by rank)."""
         query = (query or "").strip()
         if not query:
             return []
@@ -355,11 +381,7 @@ class V2AgentKnowledgeService:
             ]
             ranked_prefixes.sort(key=lambda item: (-item[0], normalize_text(item[1].ten_thuoc), item[1].drug_id))
             return [item for _, item in ranked_prefixes]
-        ranked = [
-            (self._name_score(query, item.ten_thuoc), item)
-            for item in self.catalog_items
-        ]
-        ranked = [item for item in ranked if item[0] >= 0.20]
+        ranked = [item for item in self._scored_catalog_items(query) if item[0] >= 0.20]
         ranked.sort(key=lambda item: (-item[0], normalize_text(item[1].ten_thuoc), item[1].drug_id))
         return [item for _, item in ranked]
 
@@ -394,14 +416,26 @@ class V2AgentKnowledgeService:
         scheme not safe to treat as an identity signal at all). Never a
         "top-1-of-many" fuzzy guess. This is the deterministic evidence
         ``_resolved_drug_entity`` (agent_v2_routes.py) promotes an
-        ``active_entity`` from without requiring a ``get_drug_info`` call."""
+        ``active_entity`` from without requiring a ``get_drug_info`` call.
+
+        Reads the same ``_scored_catalog_items`` scores
+        ``_ranked_catalog_matches`` does (BUILD-45 PR #141 review response
+        -- previously ran its own separate, duplicated scoring loop over
+        ``self.catalog_items``). No sort is needed here: filtering to
+        ``score >= _UNIQUE_MATCH_SCORE_FLOOR`` and requiring the result set
+        be a single item already guarantees that item is the strictly
+        highest-scoring one in the whole catalog for this query (every
+        other item is, by construction, below the floor) -- so it is
+        always ``search_catalog``'s own top-ranked result too, never a
+        result that could disagree with a standard search's own ordering.
+        """
         query = (query or "").strip()
         if not query:
             return None
         query_tokens = normalize_text(query).split()
         if len(query_tokens) == 1 and len(query_tokens[0]) <= 3:
             return None
-        strong_matches = [item for item in self.catalog_items if self._name_score(query, item.ten_thuoc) >= self._UNIQUE_MATCH_SCORE_FLOOR]
+        strong_matches = [item for score, item in self._scored_catalog_items(query) if score >= self._UNIQUE_MATCH_SCORE_FLOOR]
         return strong_matches[0] if len(strong_matches) == 1 else None
 
     def search_identity_candidates(self, query: str, limit: int = 5) -> list[DrugIdentityCandidate]:

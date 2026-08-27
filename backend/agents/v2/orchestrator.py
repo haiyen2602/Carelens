@@ -91,9 +91,9 @@ from backend.agents.v2.checkpoint import (
 )
 from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextManager
 from backend.agents.v2.follow_up import (
-    _PRONOUN_ONLY_WORDS,
     FollowUpCategory,
     FollowUpDecision,
+    _display_topic_from_raw,
     classify_follow_up,
 )
 from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, DoctorHandoffRequest
@@ -967,144 +967,6 @@ def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     if compact != raw_query:
         return SemanticMedicalQuery(raw_query, compact, None, None, display_topic)
     return SemanticMedicalQuery(raw_query, raw_query, None, None, display_topic)
-
-
-_DISPLAY_TOPIC_PATTERNS = (
-    # BUILD-45 Candidate B: this tuple is the ONE canonical source
-    # follow_up.py::_explicit_topic calls through to (via a function-local
-    # import, to avoid a circular import -- orchestrator.py already imports
-    # FROM follow_up.py, not the other direction) -- it must never again be
-    # independently re-defined in a second file. Found via real code audit,
-    # not assumed: the two copies had already drifted (this file's own copy
-    # once had a "con X thi sao" shape follow_up.py's own separate copy
-    # lacked).
-    #
-    # Cause-shaped, checked FIRST and deliberately BEFORE the generic
-    # "X la gi" catch-all below: "Nguyen nhan dau dau la gi?" (no gay/cua/
-    # dan den connector, but WITH a trailing "la gi") would otherwise also
-    # match that generic pattern and wrongly capture "Nguyen nhan dau dau"
-    # (the words "nguyen nhan" leaking into the topic) instead of "dau
-    # dau" -- a real, confirmed corrupted-extraction bug, not just a
-    # missed match, found via this build's own local reproduction against
-    # the exact example the spec named.
-    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+?)(?:\s+là\s+gì)?$", re.IGNORECASE),
-    re.compile(r"^nguyen\s+nhan\s+(?:gay|cua|dan\s+den)\s+(.+?)(?:\s+la\s+gi)?$", re.IGNORECASE),
-    re.compile(r"^nguyên\s+nhân\s+(.+?)\s+là\s+gì$", re.IGNORECASE),
-    re.compile(r"^nguyen\s+nhan\s+(.+?)\s+la\s+gi$", re.IGNORECASE),
-    # "X do dau"/"tai sao bi/mac X" -- entirely missing before this build
-    # (spec's own explicit example, "Dau dau do dau?" -> None), mirroring
-    # the shape the WIDER retrieval-side _CAUSE_PATTERNS family already
-    # covers -- kept as its own, separately-maintained pattern set here
-    # (not literally sharing the retrieval family's tuple objects) so this
-    # fix stays scoped to topic PERSISTENCE only, never touching retrieval
-    # query construction (a different candidate, deliberately deferred).
-    re.compile(r"^(.+?)\s+do\s+đâu$", re.IGNORECASE),
-    re.compile(r"^(.+?)\s+do\s+dau$", re.IGNORECASE),
-    re.compile(r"^tại\s+sao\s+(?:bị|mắc)\s+(.+)$", re.IGNORECASE),
-    re.compile(r"^tai\s+sao\s+(?:bi|mac)\s+(.+)$", re.IGNORECASE),
-    # Symptom-shaped -- ascii-folded variant added (was accented-only).
-    re.compile(r"^(?:triệu\s+chứng|dấu\s+hiệu)\s+(?:của\s+)?(.+)$", re.IGNORECASE),
-    re.compile(r"^(?:trieu\s+chung|dau\s+hieu)\s+(?:cua\s+)?(.+)$", re.IGNORECASE),
-    # Danger-shaped -- ascii-folded variant added.
-    re.compile(r"^(.+?)\s+có\s+nguy\s+hiểm\s+không$", re.IGNORECASE),
-    re.compile(r"^(.+?)\s+co\s+nguy\s+hiem\s+khong$", re.IGNORECASE),
-    # Prevention-shaped -- ascii-folded variant added.
-    re.compile(r"^(?:cách\s+)?(?:phòng\s+ngừa|phòng\s+tránh)\s+(.+)$", re.IGNORECASE),
-    re.compile(r"^(?:cach\s+)?(?:phong\s+ngua|phong\s+tranh)\s+(.+)$", re.IGNORECASE),
-    # Definition-shaped, checked LAST among the "named topic" shapes (most
-    # generic catch-all -- everything more specific above gets first
-    # refusal). Widened to accept "la (can) benh gi" as well as the
-    # original "la gi" (spec's own example: "Viem gan B la benh gi?" used
-    # to return None -- the old pattern only had an OPTIONAL LEADING
-    # "benh " prefix, which is a different sentence shape than "benh"
-    # appearing inside the trailing "la ... gi").
-    re.compile(r"^(?:bệnh\s+)?(.+?)\s+(?:là\s+(?:căn\s+)?bệnh\s+gì|là\s+gì|la\s+(?:can\s+)?benh\s+gi|la\s+gi)$", re.IGNORECASE),
-    # Continuation-shaped ("con X thi sao?"). The trailing "thi sao"/"thi
-    # sao" alternation was already inline; the LEADING "con"/"còn" was not
-    # -- an accent-only optional prefix, so a fully-folded message ("con
-    # viem gan B thi sao") fell through to the non-greedy capture instead
-    # of being stripped, leaking "con " into the extracted topic. Found via
-    # this build's own verification pass, fixed the same way as every
-    # other pattern above.
-    re.compile(r"^(?:(?:còn|con)\s+)?(.+?)\s+(?:thì\s+sao|thi\s+sao)$", re.IGNORECASE),
-)
-
-# BUILD-29D.3 fix (found via real local E2E, 2026-08-23): a bare pattern match
-# above also captures a drug-attribute question with no disease/topic shape at
-# all -- "Cong dung cua thuoc Long Huyet la gi" matches the first pattern and
-# extracts "Cong dung cua thuoc Long Huyet" as if it were a general medical
-# topic name, corrupting active_topic with the same drug-not-a-topic
-# confusion this build exists to eliminate (see fix_bug_01.md section 7 --
-# "Do not turn 'cong dung cua Long Huyet' into a new entity name", which
-# applies equally to state.active_topic). A genuine disease/condition name in
-# this product's own vocabulary (drug knowledge_search topics, symptom/cause
-# patterns above) never contains the word "thuoc" (drug/medication) or one of
-# the fixed drug-attribute labels this backend already asks about elsewhere
-# (backend/agents/v2/suggested_actions.py::_DRUG_LABELS,
-# backend/agents/v2/conversation_state.py::_typed_aliases) -- narrow,
-# deterministic keyword rejection, the same style as _GENERAL_MEDICAL_KEYWORDS
-# and _DISPLAY_TOPIC_PATTERNS themselves, not an attempt to solve entity
-# resolution generally.
-_DRUG_ATTRIBUTE_QUESTION_KEYWORDS = (
-    "thuốc", "thuoc",
-    "công dụng", "cong dung", "chỉ định", "chi dinh",
-    "liều dùng", "lieu dung", "cách dùng", "cach dung",
-    "tác dụng phụ", "tac dung phu", "chống chỉ định", "chong chi dinh",
-    "tương tác", "tuong tac", "thành phần", "thanh phan",
-)
-
-# BUILD-45 Candidate B (found via this build's own real local E2E, not a
-# synthetic test -- "Trieu chung cua no la gi?" against a real model):
-# the cause/definition patterns above deliberately EXCLUDE a trailing "la
-# gi" tail from their own capture group (either via an explicit optional
-# non-capturing suffix, or because it's part of the fixed pattern shape
-# outside the capture group). The symptom/danger/prevention/continuation
-# patterns do NOT -- their captures use a bare ".+"/".+?" with no such
-# exclusion, so a compound sentence combining one of THOSE shapes with an
-# ADDITIONAL "la gi" tail (e.g. "trieu chung cua X la gi") leaks "la gi"
-# into the captured topic. For "X" = a bare pronoun ("no"), this is worse
-# than a cosmetic leak: "no la gi" (pronoun + filler) does not equal any
-# single entry in _PRONOUN_ONLY_WORDS, so the existing bare-pronoun
-# rejection below silently failed to catch it, and "nó là gì" was
-# persisted as active_topic -- a real corrupted-state bug. Stripping this
-# trailing filler from EVERY pattern's capture (not just the ones whose
-# own regex already excludes it) is idempotent where it's already
-# excluded and fixes this whole class of bug for the patterns where it
-# isn't -- applied BEFORE the pronoun check so "trieu chung cua no la
-# gi" now correctly reduces to "no" and is rejected the same as a bare
-# "no" would be.
-_TRAILING_LA_GI_TAIL = re.compile(
-    r"\s+(?:là\s+(?:căn\s+)?bệnh\s+gì|là\s+gì|la\s+(?:can\s+)?benh\s+gi|la\s+gi)$",
-    re.IGNORECASE,
-)
-
-
-def _display_topic_from_raw(message: str) -> str | None:
-    """Extract only an explicit, display-preserving topic for state writes."""
-    candidate = message.strip(" ?!.,;:")
-    for pattern in _DISPLAY_TOPIC_PATTERNS:
-        match = pattern.match(candidate)
-        if match is None:
-            continue
-        topic = match.group(1).strip(" ?!.,;:")
-        topic = _TRAILING_LA_GI_TAIL.sub("", topic).strip(" ?!.,;:")
-        if len(topic) < 2:
-            continue
-        lowered = topic.casefold()
-        if any(keyword in lowered for keyword in _DRUG_ATTRIBUTE_QUESTION_KEYWORDS):
-            return None
-        # BUILD-45 Candidate B: a bare pronoun/demonstrative captured as the
-        # "topic" (e.g. "Nó có nguy hiểm không?" -> "Nó") is a deictic
-        # reference, never a genuine new subject -- follow_up.py's own
-        # _explicit_topic already guards against exactly this for the
-        # follow-up-classification path (BUILD-43); this function had no
-        # equivalent guard of its own, even though it feeds the SAME
-        # active_topic state write for every turn, not just follow-ups.
-        # Reuses follow_up.py's own set rather than inventing a second one.
-        if _ascii_fold(topic) in _PRONOUN_ONLY_WORDS:
-            return None
-        return topic[:80]
-    return None
 
 
 def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -> str | None:
