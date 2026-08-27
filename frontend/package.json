@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test:admin-drugs": "node tests/admin-drugs.test.mjs",
+    "test:drug-image-ui": "node tests/drug-image-ui.test.mjs",
     "format": "prettier --write .",
     "deploy": "railway up"
   },
