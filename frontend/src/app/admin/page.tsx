@@ -94,7 +94,7 @@ export default function AdminDashboard() {
 
   const roleCounts = {
     patient: accounts.filter((a) => a.role === "patient").length,
-    caregiver: accounts.filter((a) => a.role === "caregiver").length,
+    doctor: accounts.filter((a) => a.role === "doctor").length,
     admin: accounts.filter((a) => a.role === "admin").length,
     superAdmin: accounts.filter((a) => (a.role as string) === "super_admin").length,
   };
@@ -107,10 +107,10 @@ export default function AdminDashboard() {
       pct: pctOf(roleCounts.patient),
     },
     {
-      label: "Người thân",
-      sub: `${roleCounts.caregiver} tài khoản`,
-      color: "var(--warning)",
-      pct: pctOf(roleCounts.caregiver),
+      label: "Bác sĩ",
+      sub: `${roleCounts.doctor} tài khoản`,
+      color: "var(--success)",
+      pct: pctOf(roleCounts.doctor),
     },
     {
       label: "Quản trị",
