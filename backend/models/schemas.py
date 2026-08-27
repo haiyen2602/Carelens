@@ -613,7 +613,13 @@ class DrugImageCandidateOut(BaseModel):
 
 
 class DrugImageRecognitionOut(BaseModel):
-    status: Literal["CANDIDATES", "INSUFFICIENT_EVIDENCE", "SAFETY_DEFERRED", "DOCTOR_ACTIVE"]
+    status: Literal[
+        "CANDIDATES",
+        "INSUFFICIENT_EVIDENCE",
+        "SAFETY_DEFERRED",
+        "DOCTOR_ACTIVE",
+        "RECOGNITION_UNAVAILABLE",
+    ]
     reply: str
     recognition_attempt_id: str | None = None
     outcome: str | None = None

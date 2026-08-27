@@ -31,7 +31,12 @@ export type DrugImageCandidate = {
 };
 
 export type DrugImageRecognitionResponse = {
-  status: "CANDIDATES" | "INSUFFICIENT_EVIDENCE" | "SAFETY_DEFERRED" | "DOCTOR_ACTIVE";
+  status:
+    | "CANDIDATES"
+    | "INSUFFICIENT_EVIDENCE"
+    | "SAFETY_DEFERRED"
+    | "DOCTOR_ACTIVE"
+    | "RECOGNITION_UNAVAILABLE";
   reply: string;
   recognition_attempt_id: string | null;
   outcome: string | null;
