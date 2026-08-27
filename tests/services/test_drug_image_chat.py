@@ -98,6 +98,31 @@ def _png_bytes() -> bytes:
         image.close()
 
 
+def _image_bytes(image_format: str) -> bytes:
+    image = Image.new("RGB", (100, 100), "red")
+    try:
+        buffer = io.BytesIO()
+        image.save(buffer, format=image_format)
+        return buffer.getvalue()
+    finally:
+        image.close()
+
+
+@pytest.mark.parametrize(
+    ("image_format", "content_type"),
+    (("JPEG", "image/jpeg"), ("PNG", "image/png"), ("WEBP", "image/webp")),
+)
+def test_upload_validation_accepts_each_supported_image_format(image_format: str, content_type: str) -> None:
+    upload = validate_upload(
+        _image_bytes(image_format),
+        claimed_mime_type=content_type,
+        max_upload_bytes=1024 * 1024,
+        max_dimension_px=200,
+        max_pixels=40_000,
+    )
+    assert upload.mime_type == content_type
+
+
 def test_upload_validation_uses_decoder_format_not_filename_or_claimed_mime() -> None:
     upload = validate_upload(
         _png_bytes(),

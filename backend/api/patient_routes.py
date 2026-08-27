@@ -43,6 +43,7 @@ def _to_profile(p: Patient) -> PatientProfileOut:
         height_cm=p.height_cm,
         weight_kg=p.weight_kg,
         profile_completed=is_patient_profile_complete(p),
+        photo_capture_enabled=p.photo_capture_enabled,
     )
 
 
@@ -197,7 +198,11 @@ def update_my_profile(
             detail="Vui lòng nhập ngày sinh, số điện thoại, địa chỉ, giới tính, chiều cao và cân nặng.",
         )
 
-    for field in ("phone", "address", "gender", "height_cm", "weight_kg"):
+    # `photo_capture_enabled` KHONG nam trong `profile_after_update` o tren:
+    # no la tuy chon chup anh xac nhan lieu, khong phai mot truong cua "ho so
+    # da day du chua" - dua vao kiem tra se chan mat nguoi dung chi muon tat
+    # chup anh.
+    for field in ("phone", "address", "gender", "height_cm", "weight_kg", "photo_capture_enabled"):
         value = getattr(body, field)
         if value is not None:
             setattr(patient, field, value)

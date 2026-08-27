@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,7 +19,7 @@ from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
 from backend.api.doctor_review_routes import doctor_review_router, patient_handoff_router
 from backend.api.dose_routes import dose_router
-from backend.api.drug_image_chat_routes import drug_image_chat_router
+from backend.api.drug_image_chat_routes import drug_image_chat_router, get_drug_image_recognizer
 from backend.api.drug_image_routes import drug_image_router
 from backend.api.drug_request_routes import admin_drug_request_router, drug_request_router
 from backend.api.drug_routes import drug_router
@@ -64,6 +65,18 @@ async def lifespan(app: FastAPI):
             "[INFO] Drug Knowledge V2 warmup complete: "
             f"products={warmup['products']} chunks={warmup['chunks']} duration_ms={warmup['duration_ms']:.2f}"
         )
+
+    # B-08 production enablement (2026-08-28): get_drug_image_recognizer()
+    # co @lru_cache(maxsize=1) - lan goi dau tien tai model OpenCLIP tu dia
+    # (do that o local: request dau tien qua timeout, request thu 2 tro di
+    # ~0.3s vi da cache). Neu khong warm o day, NGUOI DUNG THAT dau tien sau
+    # moi lan container khoi dong lai se nhan RECOGNITION_TIMEOUT thay vi ket
+    # qua nhan dien - warm truoc luc khoi dong de khong ai la nguoi "boc tham"
+    # phai chiu do tre nay.
+    if settings.drug_image_chat_recognition_enabled:
+        warmup_started_at = time.monotonic()
+        get_drug_image_recognizer()
+        print(f"[INFO] Drug image recognition warmup complete: duration_ms={(time.monotonic() - warmup_started_at) * 1000:.2f}")
 
     # Vong 2, muc 13 (chatbot-rag-design.md) - scheduler nhac lai escalation.
     # SQLAlchemyJobStore (khong in-memory) - xem docstring escalation_scheduler.py.

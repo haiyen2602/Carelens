@@ -17,16 +17,16 @@ An toan khi chay: tinh nang chua len production, chi co du lieu thu o may
 dev. Van backfill dang hoang thay vi xoa trang - ai da ghep thu o local
 khong bi mat lien ket.
 
-Revision ID: 0059
-Revises: 0058
+Revision ID: 0060
+Revises: 0059
 Create Date: 2026-08-28
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0059"
-down_revision = "0058"
+revision = "0060"
+down_revision = "0059"
 branch_labels = None
 depends_on = None
 

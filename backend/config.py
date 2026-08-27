@@ -209,6 +209,10 @@ class Settings(BaseSettings):
     drug_image_chat_confirmation_ttl_seconds: int = Field(default=900, gt=0)
     drug_image_chat_doctor_attachment_ttl_seconds: int = Field(default=86_400, gt=0)
     drug_image_chat_recognition_timeout_seconds: int = Field(default=30, gt=0)
+    # B-08 has not approved production recognition. Keep the potentially
+    # heavy B-05 runtime opt-in so this endpoint can return a bounded,
+    # patient-safe availability response rather than attempting startup.
+    drug_image_chat_recognition_enabled: bool = False
     # Canh dai nhat sau khi resize + chat luong nen JPEG - dong bo voi
     # max_edge=1600, jpeg_quality=90 da tune tren golden dataset trong
     # backend/vlm_demthuoc/vlm_client.py::encode_frame, khong bia so moi.

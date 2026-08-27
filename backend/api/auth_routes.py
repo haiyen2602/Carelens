@@ -533,12 +533,18 @@ def me(
     # sang /onboarding/profile hay khong. Chi tra gia tri khi role=patient
     # (con lai None - chua co onboarding tuong tu cho role khac).
     profile_completed: bool | None = None
+    photo_capture_enabled: bool | None = None
     if ensure_patient_profile(db, account):
         db.commit()
         db.refresh(account)
     if account.role == "patient" and account.patient_id:
         patient = db.query(Patient).filter(Patient.id == account.patient_id).first()
+        # `is_patient_profile_complete()` thay vi doc thang cot
+        # `patient.profile_completed`: cot do co the con FALSE o cac ho so tao
+        # truoc onboarding, trong khi du lieu that da day du - xem
+        # backend/services/patient_profile.py.
         profile_completed = is_patient_profile_complete(patient) if patient is not None else False
+        photo_capture_enabled = patient.photo_capture_enabled if patient is not None else True
 
     return MeResponse(
         id=account.id,
@@ -550,6 +556,7 @@ def me(
         doctor_id=account.doctor_id,
         profile_completed=profile_completed,
         auth_provider=account.auth_provider,
+        photo_capture_enabled=photo_capture_enabled,
     )
 
 

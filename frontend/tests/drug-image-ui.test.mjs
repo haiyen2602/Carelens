@@ -9,6 +9,10 @@ const assistantPage = await readFile(
   new URL("../src/app/patient/assistant/page.tsx", import.meta.url),
   "utf8",
 );
+const recognitionProxy = await readFile(
+  new URL("../src/app/api/drug-images/recognize/route.ts", import.meta.url),
+  "utf8",
+);
 
 // A catalog photo stays bound to the exact B-06 availability response; the
 // new preview must not make a name-based or public-image fallback possible.
@@ -26,6 +30,21 @@ assert.match(assistantPage, /aria-label="Tải ảnh thuốc lên"/);
 assert.match(assistantPage, /imageInputRef\.current\?\.click\(\)/);
 assert.match(assistantPage, /<CameraCapture/);
 assert.match(assistantPage, /recognizeDrugImage\(/);
+assert.match(assistantPage, /URL\.createObjectURL\(selectedImage\)/);
+assert.match(assistantPage, /Đang phân tích ảnh\.\.\./);
+assert.ok(
+  assistantPage.indexOf("await recognizeDrugImage(") <
+    assistantPage.indexOf('appendMessage(activeId, "user", text || `Đã gửi ảnh:'),
+  "the UI must not persist a successful upload bubble before the request is accepted",
+);
 assert.doesNotMatch(assistantPage, /Paperclip|Đính kèm ảnh gói thuốc|chưa nối API/);
+
+// The proxy forwards genuine multipart form data and authorization. It must
+// not stringify the image or set a multipart boundary itself.
+assert.match(recognitionProxy, /form = await request\.formData\(\)/);
+assert.match(recognitionProxy, /Authorization: authorization/);
+assert.match(recognitionProxy, /body: form/);
+assert.doesNotMatch(recognitionProxy, /Content-Type.*multipart\/form-data/);
+assert.match(recognitionProxy, /RECOGNITION_UPSTREAM_UNAVAILABLE/);
 
 console.log("drug-image UI contract checks passed");

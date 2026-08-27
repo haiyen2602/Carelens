@@ -61,3 +61,17 @@ httpx>=0.28.0
 
 # Web Push (VAPID) cho nhac gio uong thuoc khi app da dong - backend/services/push.py
 pywebpush>=2.0.0
+
+# B-08 production enablement (2026-08-28): runtime nhan dien anh thuoc cho
+# backend/api/drug_image_chat_routes.py. Truoc day co chu dich KHONG nam
+# trong requirements.txt (xem requirements-drug-image-vision.txt) - gio dua
+# vao day vi DRUG_IMAGE_CHAT_RECOGNITION_ENABLED se duoc bat that qua bien
+# moi truong Railway (mac dinh trong code van la false). Pin dung phien ban
+# CPU-only da test o B-04/B-05. KHONG kem pytesseract/Tesseract binary - OCR
+# van la NOT_READY (khong co Tesseract tieng Viet duoc duyet), nen moi ket
+# qua nhan dien deu dung o AMBIGUOUS_MATCH (bat buoc nguoi dung xac nhan),
+# khong bao gio tu dong HIGH_EVIDENCE_MATCH - xem OptionalTesseractOcrExtractor.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
+open_clip_torch==2.26.1

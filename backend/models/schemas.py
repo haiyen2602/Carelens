@@ -234,6 +234,11 @@ class MeResponse(BaseModel):
     # khẩu" (POST /auth/set-password) thay vi "Đổi mật khẩu" (doi mat khau cu
     # ma nguoi dung khong the co). Xem components/account-settings.tsx.
     auth_provider: str = "password"
+    # THEM (migration 0052) - cung logic voi profile_completed o tren: chi co
+    # y nghia khi role=patient (None cho role khac). Frontend doc gia tri nay
+    # ngay tu /auth/me de trang "Hom nay" biet co bat buoc chup anh hay khong
+    # ma khong can goi them API rieng.
+    photo_capture_enabled: bool | None = None
 
 
 
@@ -613,7 +618,13 @@ class DrugImageCandidateOut(BaseModel):
 
 
 class DrugImageRecognitionOut(BaseModel):
-    status: Literal["CANDIDATES", "INSUFFICIENT_EVIDENCE", "SAFETY_DEFERRED", "DOCTOR_ACTIVE"]
+    status: Literal[
+        "CANDIDATES",
+        "INSUFFICIENT_EVIDENCE",
+        "SAFETY_DEFERRED",
+        "DOCTOR_ACTIVE",
+        "RECOGNITION_UNAVAILABLE",
+    ]
     reply: str
     recognition_attempt_id: str | None = None
     outcome: str | None = None
@@ -1125,6 +1136,9 @@ class PatientProfileUpdateRequest(BaseModel):
     gender: str | None = None
     height_cm: ChieuCaoCm | None = None
     weight_kg: CanNangKg | None = None
+    # THEM (migration 0052) - man hinh Cai dat cho benh nhan tu bat/tat yeu
+    # cau chup anh khi xac nhan uong thuoc, xem Patient.photo_capture_enabled.
+    photo_capture_enabled: bool | None = None
 
 
 class PatientProfileOut(BaseModel):
@@ -1140,6 +1154,7 @@ class PatientProfileOut(BaseModel):
     height_cm: float | None = None
     weight_kg: float | None = None
     profile_completed: bool = False
+    photo_capture_enabled: bool = True
 
 
 class EscalationOut(BaseModel):

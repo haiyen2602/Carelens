@@ -47,6 +47,7 @@ export default function AssistantPage() {
   const [plusOpen, setPlusOpen] = useState(false);
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
   const [imagePending, setImagePending] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const lastQuestion = useRef("");
@@ -73,6 +74,16 @@ export default function AssistantPage() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (!selectedImage) {
+      setSelectedImagePreviewUrl(null);
+      return;
+    }
+    const previewUrl = URL.createObjectURL(selectedImage);
+    setSelectedImagePreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedImage]);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
@@ -183,14 +194,16 @@ export default function AssistantPage() {
     const image = selectedImage;
     const text = input.trim();
     setImagePending(true);
-    appendMessage(activeId, "user", text || `Đã gửi ảnh: ${image.name}`);
-    setInput("");
-    setSelectedImage(null);
     try {
       const data = await recognizeDrugImage(
         { patientId: user?.patient_id ?? "", conversationId: activeId, message: text, file: image },
         accessToken,
       );
+      // A File object is only a local selection. Persist a chat turn after
+      // the server accepts the multipart request, never at selection time.
+      appendMessage(activeId, "user", text || `Đã gửi ảnh: ${image.name}`);
+      setInput("");
+      setSelectedImage(null);
       appendMessage(activeId, "assistant", data.reply, {
         drugImage: data.recognition_attempt_id
           ? { attemptId: data.recognition_attempt_id, candidates: data.candidates }
@@ -201,6 +214,20 @@ export default function AssistantPage() {
     } finally {
       setImagePending(false);
     }
+  };
+
+  // B-08 enablement: khong co goi y nao dung. Khong goi API xac nhan (khong
+  // co gi de "huy" phia server - attempt chua confirm se tu het han theo
+  // TTL cua no); chi ghi nhan trong lich su hoi thoai va huong dan nguoi
+  // dung go ten thuoc, tranh viec ho buoc phai chon dai 1 goi y sai.
+  const rejectCandidates = (_attemptId: string) => {
+    if (!activeId || imagePending || isPending) return;
+    appendMessage(activeId, "user", "Không phải thuốc nào ở trên.");
+    appendMessage(
+      activeId,
+      "assistant",
+      "Được, bạn hãy nhập tên thuốc hoặc mô tả (ví dụ: tên trên hộp, công dụng) để mình tìm giúp nhé.",
+    );
   };
 
   const confirmCandidate = async (attemptId: string, actionId: string, label: string) => {
@@ -275,6 +302,7 @@ export default function AssistantPage() {
             accessToken={accessToken}
             actionsDisabled={isPending || imagePending}
             onConfirmDrugCandidate={confirmCandidate}
+            onRejectDrugCandidates={rejectCandidates}
             onSelectAction={(action) => {
               const { label: _label, ...selectedAction } = action;
               submit(action.label, selectedAction);
@@ -287,7 +315,7 @@ export default function AssistantPage() {
             className="font-mono self-start px-[15px] py-[13px] text-[13px]"
             style={{ background: "#E4DDFB", color: "#4B3E86", borderRadius: "20px 20px 20px 6px" }}
           >
-            Capy đang xử lý…
+            {imagePending ? "Đang phân tích ảnh..." : "Capy đang xử lý…"}
           </div>
         )}
 
@@ -303,7 +331,16 @@ export default function AssistantPage() {
       <div className="mt-auto flex shrink-0 flex-col gap-3">
         {selectedImage && (
           <div className="flex items-center justify-between rounded-xl border border-[#E3E8F1] bg-white px-3 py-2 text-sm text-[#1B2A44]">
-            <span className="truncate">Ảnh đã chọn: {selectedImage.name}</span>
+            <div className="flex min-w-0 items-center gap-2">
+              {selectedImagePreviewUrl && (
+                <img
+                  src={selectedImagePreviewUrl}
+                  alt="Xem trước ảnh thuốc đã chọn"
+                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                />
+              )}
+              <span className="truncate">Ảnh đã chọn: {selectedImage.name}</span>
+            </div>
             <button type="button" onClick={() => setSelectedImage(null)} aria-label="Bỏ ảnh đã chọn" className="ml-2 text-[#16386E]">
               Bỏ ảnh
             </button>

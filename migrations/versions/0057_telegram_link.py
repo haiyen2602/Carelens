@@ -10,16 +10,16 @@ backend/services/telegram.py), nen chat_id chi xuat hien khi chinh benh nhan
 bam /start voi bot. Token la thu duy nhat noi duoc "nguoi vua bam /start" voi
 "benh nhan dang dang nhap tren web".
 
-Revision ID: 0056
-Revises: 0055
+Revision ID: 0057
+Revises: 0056
 Create Date: 2026-08-27
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0056"
-down_revision = "0055"
+revision = "0057"
+down_revision = "0056"
 branch_labels = None
 depends_on = None
 
