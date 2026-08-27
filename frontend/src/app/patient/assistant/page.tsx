@@ -9,7 +9,7 @@
 // van la mo hinh that tra loi, nen khong co cau tra loi dung san nao.
 
 import { useEffect, useRef, useState } from "react";
-import { History, Plus, X } from "lucide-react";
+import { History, Paperclip, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
@@ -18,6 +18,7 @@ import { useChatMessage } from "@/hooks/use-chat";
 import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
+import { confirmDrugImageCandidate, recognizeDrugImage } from "@/lib/api";
 import {
   type Conversation,
   createConversation,
@@ -44,7 +45,10 @@ export default function AssistantPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePending, setImagePending] = useState(false);
   const lastQuestion = useRef("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user, accessToken } = useAuth();
@@ -85,6 +89,7 @@ export default function AssistantPage() {
       agentRunId?: string;
       userMessage?: string;
       suggestedActions?: SuggestedAction[];
+      drugImage?: { attemptId: string; candidates: import("@/types/chat").DrugImageCandidate[] };
     },
   ) => {
     const now = new Date().toISOString();
@@ -166,6 +171,48 @@ export default function AssistantPage() {
     }
   };
 
+  const submitImage = async () => {
+    if (!selectedImage || !activeId || imagePending || isPending) return;
+    const image = selectedImage;
+    const text = input.trim();
+    setImagePending(true);
+    appendMessage(activeId, "user", text || `Đã gửi ảnh: ${image.name}`);
+    setInput("");
+    setSelectedImage(null);
+    try {
+      const data = await recognizeDrugImage(
+        { patientId: user?.patient_id ?? "", conversationId: activeId, message: text, file: image },
+        accessToken,
+      );
+      appendMessage(activeId, "assistant", data.reply, {
+        drugImage: data.recognition_attempt_id
+          ? { attemptId: data.recognition_attempt_id, candidates: data.candidates }
+          : undefined,
+      });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Không thể gửi ảnh. Bạn vẫn có thể tiếp tục nhắn tin.");
+    } finally {
+      setImagePending(false);
+    }
+  };
+
+  const confirmCandidate = async (attemptId: string, actionId: string, label: string) => {
+    if (!activeId || imagePending || isPending) return;
+    setImagePending(true);
+    appendMessage(activeId, "user", `Đúng, đây là ${label}.`);
+    try {
+      const data = await confirmDrugImageCandidate(
+        { patientId: user?.patient_id ?? "", conversationId: activeId, attemptId, actionId },
+        accessToken,
+      );
+      appendMessage(activeId, "assistant", data.reply);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.");
+    } finally {
+      setImagePending(false);
+    }
+  };
+
   const newConversation = () => {
     if (active && active.messages.length === 0) {
       setHistoryOpen(false);
@@ -219,7 +266,8 @@ export default function AssistantPage() {
             at={formatMessageTime(m.at)}
             conversationId={activeId ?? undefined}
             accessToken={accessToken}
-            actionsDisabled={isPending}
+            actionsDisabled={isPending || imagePending}
+            onConfirmDrugCandidate={confirmCandidate}
             onSelectAction={(action) => {
               const { label: _label, ...selectedAction } = action;
               submit(action.label, selectedAction);
@@ -227,12 +275,12 @@ export default function AssistantPage() {
           />
         ))}
 
-        {isPending && (
+        {(isPending || imagePending) && (
           <div
             className="font-mono self-start px-[15px] py-[13px] text-[13px]"
             style={{ background: "#E4DDFB", color: "#4B3E86", borderRadius: "20px 20px 20px 6px" }}
           >
-            Capy đang xem lịch của bạn…
+            Capy đang xử lý…
           </div>
         )}
 
@@ -246,6 +294,14 @@ export default function AssistantPage() {
 
       {/* Khoi day: goi y + o nhap + dong luu y */}
       <div className="mt-auto flex shrink-0 flex-col gap-3">
+        {selectedImage && (
+          <div className="flex items-center justify-between rounded-xl border border-[#E3E8F1] bg-white px-3 py-2 text-sm text-[#1B2A44]">
+            <span className="truncate">Ảnh đã chọn: {selectedImage.name}</span>
+            <button type="button" onClick={() => setSelectedImage(null)} aria-label="Bỏ ảnh đã chọn" className="ml-2 text-[#16386E]">
+              Bỏ ảnh
+            </button>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {SUGGESTED_PROMPTS.map((p) => (
@@ -261,6 +317,13 @@ export default function AssistantPage() {
         )}
 
         <div className="relative flex items-end gap-2.5">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => setSelectedImage(event.target.files?.[0] ?? null)}
+          />
           {plusOpen && (
             <div className="absolute bottom-[60px] left-0 flex gap-2 rounded-[20px] bg-white p-2 shadow-[0_10px_30px_rgba(22,56,110,.14)]">
               {[
@@ -294,21 +357,30 @@ export default function AssistantPage() {
           >
             +
           </button>
+          <button
+            type="button"
+            aria-label="Đính kèm ảnh gói thuốc"
+            disabled={isPending || imagePending}
+            onClick={() => imageInputRef.current?.click()}
+            className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] bg-[#EDF0F6] text-[#1B2A44] disabled:opacity-50"
+          >
+            <Paperclip className="h-5 w-5" aria-hidden="true" />
+          </button>
           <input
             value={input}
             placeholder="Hỏi Capy..."
             aria-label="Nhập câu hỏi cho trợ lý AI"
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isPending}
+            disabled={isPending || imagePending}
             className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
           />
           <button
             aria-label="Gửi câu hỏi"
-            disabled={isPending || !input.trim()}
-            onClick={() => submit(input)}
+            disabled={isPending || imagePending || (!input.trim() && !selectedImage)}
+            onClick={() => (selectedImage ? submitImage() : submit(input))}
             className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
-            style={{ background: input.trim() ? "#16386E" : "#B7C2D6" }}
+            style={{ background: input.trim() || selectedImage ? "#16386E" : "#B7C2D6" }}
           >
             ↑
           </button>

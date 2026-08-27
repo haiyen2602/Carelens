@@ -44,6 +44,10 @@ class ActiveEntity:
     canonical_name: str
     display_name: str | None = None
     normalized_key: str | None = None
+    # B-07 keeps the canonical V2 product ID in ``id``. Agent V2's existing
+    # Drug Tool still uses a legacy lookup key during the V1/V2 transition, so
+    # the server-owned mapping is carried separately and is never client input.
+    legacy_drug_id: str | None = None
 
     def __post_init__(self) -> None:
         """Never replace a canonical drug name with its normalized lookup key."""
@@ -113,7 +117,7 @@ class ConversationState:
 
     def as_dict(self, *, actor_id: str, patient_id: str) -> dict[str, object]:
         return {
-            "version": 4,
+            "version": 5,
             "actor_id": actor_id,
             "patient_id": patient_id,
             "conversation_id": self.conversation_id,
@@ -133,6 +137,7 @@ class ConversationState:
                 "canonical_name": self.active_entity.canonical_name,
                 "display_name": self.active_entity.display_name,
                 "normalized_key": self.active_entity.normalized_key,
+                "legacy_drug_id": self.active_entity.legacy_drug_id,
             },
             "last_intent": self.last_intent,
             "requested_attribute": self.requested_attribute,
@@ -191,6 +196,7 @@ class ConversationState:
                     str(entity["canonical_name"]),
                     str(entity["display_name"]) if entity.get("display_name") else None,
                     str(entity["normalized_key"]) if entity.get("normalized_key") else None,
+                    str(entity["legacy_drug_id"]) if entity.get("legacy_drug_id") else None,
                 )
                 if isinstance(entity, dict)
                 else None,

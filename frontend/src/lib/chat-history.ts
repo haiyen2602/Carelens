@@ -14,6 +14,10 @@ export type StoredChatMessage = {
   agentRunId?: string;
   userMessage?: string;
   suggestedActions?: import("@/types/chat").SuggestedAction[];
+  drugImage?: {
+    attemptId: string;
+    candidates: import("@/types/chat").DrugImageCandidate[];
+  };
 };
 
 export type Conversation = {

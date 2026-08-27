@@ -18,6 +18,7 @@ from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
 from backend.api.doctor_review_routes import doctor_review_router, patient_handoff_router
 from backend.api.dose_routes import dose_router
+from backend.api.drug_image_chat_routes import drug_image_chat_router
 from backend.api.drug_image_routes import drug_image_router
 from backend.api.drug_request_routes import admin_drug_request_router, drug_request_router
 from backend.api.drug_routes import drug_router
@@ -139,6 +140,7 @@ app.include_router(admin_monitoring_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(drug_image_router, prefix="/api/v1")
+app.include_router(drug_image_chat_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")
 app.include_router(prescription_router, prefix="/api/v1")
 app.include_router(photo_router, prefix="/api/v1")

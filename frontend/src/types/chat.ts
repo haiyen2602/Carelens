@@ -23,6 +23,32 @@ export type ChatRequest = {
   selected_action?: SelectedAction;
 };
 
+export type DrugImageCandidate = {
+  action_id: string;
+  product_display_name: string;
+  strength_text: string | null;
+  rank: number;
+};
+
+export type DrugImageRecognitionResponse = {
+  status: "CANDIDATES" | "INSUFFICIENT_EVIDENCE" | "SAFETY_DEFERRED" | "DOCTOR_ACTIVE";
+  reply: string;
+  recognition_attempt_id: string | null;
+  outcome: string | null;
+  recognition_version: string | null;
+  candidates: DrugImageCandidate[];
+  requested_attribute: string | null;
+};
+
+export type DrugImageConfirmResponse = {
+  status: "CONFIRMED";
+  reply: string;
+  recognition_attempt_id: string;
+  canonical_drug_product_id: string;
+  requested_attribute: string | null;
+  tools: string[];
+};
+
 export type SuggestedAction = {
   action_id: string;
   type: "topic_followup" | "drug_followup" | "schedule_followup";

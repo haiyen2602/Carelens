@@ -603,6 +603,41 @@ class AgentV2OrchestrateResponse(BaseModel):
     suggested_actions: list[SuggestedActionOut] = Field(default_factory=list)
 
 
+class DrugImageCandidateOut(BaseModel):
+    """Patient-safe B-07 visual candidate; no score/OCR/provenance leaks."""
+
+    action_id: str = Field(min_length=1, max_length=200)
+    product_display_name: str = Field(min_length=1, max_length=300)
+    strength_text: str | None = Field(default=None, max_length=160)
+    rank: int = Field(ge=1, le=3)
+
+
+class DrugImageRecognitionOut(BaseModel):
+    status: Literal["CANDIDATES", "INSUFFICIENT_EVIDENCE", "SAFETY_DEFERRED", "DOCTOR_ACTIVE"]
+    reply: str
+    recognition_attempt_id: str | None = None
+    outcome: str | None = None
+    recognition_version: str | None = None
+    candidates: list[DrugImageCandidateOut] = Field(default_factory=list)
+    requested_attribute: str | None = None
+
+
+class DrugImageConfirmRequest(BaseModel):
+    patient_id: str = Field(min_length=1)
+    conversation_id: str = Field(min_length=1, max_length=200)
+    recognition_attempt_id: str = Field(min_length=1, max_length=200)
+    action_id: str = Field(min_length=1, max_length=200)
+
+
+class DrugImageConfirmOut(BaseModel):
+    status: Literal["CONFIRMED"]
+    reply: str
+    recognition_attempt_id: str
+    canonical_drug_product_id: str
+    requested_attribute: str | None = None
+    tools: list[str] = Field(default_factory=list)
+
+
 # BUILD-29: user feedback ticket + session/trace issue tracking. See
 # backend/services/agent_feedback.py for the authorization/idempotency/
 # auto-classification logic these schemas are the wire contract for.
@@ -1384,6 +1419,7 @@ class DoctorReviewMessageOut(BaseModel):
     actor_id: str | None = None
     content: str
     created_at: datetime
+    image_attachment_id: str | None = None
 
 
 class DoctorReviewDetailOut(BaseModel):

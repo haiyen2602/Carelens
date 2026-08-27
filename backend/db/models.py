@@ -526,6 +526,70 @@ class DrugImageEmbedding(Base):
     )
 
 
+class DrugRecognitionAttempt(Base):
+    """Server-owned B-07 candidate lifecycle; never stores raw image/OCR/vector.
+
+    The candidate snapshot maps an opaque action ID to the exact canonical
+    product selected by B-05.  It is intentionally separate from
+    ``ConversationState.active_entity``: only a successful confirmation may
+    promote one of these candidates into trusted conversational context.
+    """
+
+    __tablename__ = "drug_recognition_attempt"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    actor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    recognition_version: Mapped[str] = mapped_column(String, nullable=False)
+    outcome: Mapped[str] = mapped_column(String, nullable=False)
+    candidates_json: Mapped[list] = mapped_column("candidates", JSON, nullable=False, default=list)
+    requested_attribute: Mapped[str | None] = mapped_column(String, nullable=True)
+    selected_drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_drug_recognition_attempt_scope_status", "conversation_id", "patient_id", "actor_id", "status"),
+        CheckConstraint(
+            "status IN ('AWAITING_CONFIRMATION', 'INSUFFICIENT_EVIDENCE', 'CONFIRMED', 'SUPERSEDED', 'EXPIRED', 'FAILED')",
+            name="ck_drug_recognition_attempt_status",
+        ),
+    )
+
+
+class DoctorReviewImageAttachment(Base):
+    """B-07 private image reference for an ACTIVE doctor-takeover message.
+
+    This intentionally is not a general chat attachment: it is scoped to a
+    single handoff and may be served only to that handoff's assigned doctor.
+    The database stores an opaque storage key, never a client path or bytes.
+    """
+
+    __tablename__ = "doctor_review_image_attachment"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    handoff_id: Mapped[str] = mapped_column(ForeignKey("doctor_review_request.id"), nullable=False, index=True)
+    message_id: Mapped[str] = mapped_column(ForeignKey("doctor_review_message.id"), nullable=False, unique=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    storage_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    mime_type: Mapped[str] = mapped_column(String, nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+    __table_args__ = (
+        CheckConstraint("file_size > 0", name="ck_doctor_review_image_attachment_file_size"),
+        CheckConstraint(
+            "mime_type IN ('image/jpeg', 'image/png', 'image/webp')",
+            name="ck_doctor_review_image_attachment_mime_type",
+        ),
+    )
+
+
 class Ingredient(Base):
     """Canonical ingredient identity imported from Drug Knowledge V2 later."""
 
