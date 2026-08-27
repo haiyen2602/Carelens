@@ -503,3 +503,33 @@ and the accompanying PR complete everything through PR-opened. **STOP
 here** — no merge, no deploy, no BUILD-47, no unrelated fixes. Merge,
 deploy, and the production-validation follow-up are for the release
 owner / a separate explicitly-requested task.
+
+## 24. Code review response (round 1, post-push)
+
+One automated finding on PR #144, verified against the real code before
+acting.
+
+**Finding ("Potential Race Condition")** — the label doesn't quite fit:
+the Patient-row lock already serializes concurrent creates correctly
+(confirmed by both the pre-existing and this build's own new
+different-type concurrency test, §13, both passing). The underlying
+technical observation was accurate, though: Fix B's reuse query changed
+from a SQL-bounded `.first()` (`LIMIT 1`) to an unbounded `.all()` —
+required for the new type-aware filtering (which needs to see more than
+just the single most recent row), but with no SQL limit at all, so a
+pathological per-patient active-handoff count would hold the Patient-row
+lock over an unbounded scan.
+
+**Fixed**: added `_MAX_REUSE_CANDIDATES = 20` as a SQL `LIMIT` on the
+same query — generous headroom over any realistic per-patient count of
+simultaneously open handoffs (a personal escalation queue, not a shared
+table), so it changes no real outcome. A genuinely pathological patient
+beyond the bound degrades to "create a fresh row" — still correct, still
+strictly safer than the pre-fix behavior (never a type-incompatible
+reuse), just no longer an unbounded scan.
+
+Re-verified after the change: unit tests (30 passed), real-Postgres
+concurrency tests (2 passed, unchanged), real local E2E
+(`build46_handoff_type_isolation_local_e2e.py`, ALL CHECKS PASSED,
+unchanged results), `ruff check` clean. Pushed as commit `20f039a` on
+the same branch/PR; no merge, no deploy — same STOP condition as §23.
