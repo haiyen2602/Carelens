@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime, time
 
 import pytest
 
+from backend.api.security import INTERNAL_SECRET_HEADER
 from backend.config import get_settings
 from backend.db.base import SessionLocal
 from backend.db.models import (
@@ -83,9 +84,12 @@ async def test_v2_dose_adapter_keeps_grouped_dto_and_uses_state_domain(client, m
             )
         db.commit()
         token = create_access_token(sub=account_id, role="patient", patient_id=patient_id)
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            INTERNAL_SECRET_HEADER: get_settings().internal_auth_secret,
+        }
 
-        listed = await client.get("/api/v1/doses", params={"patient_id": patient_id})
+        listed = await client.get("/api/v1/doses", params={"patient_id": patient_id}, headers=headers)
         assert listed.status_code == 200
         groups = listed.json()
         assert len(groups) == 1

@@ -25,6 +25,11 @@ from backend.db.base import get_db
 from backend.db.models import CaregiverLink, DoseEvent, Patient
 from backend.models.schemas import DoseStatusUpdateRequest, DoseSummary
 from backend.services import reward_ledger
+from backend.services.drug_images import (
+    drug_image_presentation,
+    get_active_drug_product_ids_for_legacy_ids,
+    get_primary_drug_images,
+)
 from backend.services.prescription.errors import VmecError
 from backend.services.scheduling.runtime_adapter import (
     DoseRuntimeGroup,
@@ -47,24 +52,21 @@ def list_doses(
 ) -> list[DoseSummary]:
     if get_settings().dose_runtime_mode == "v2":
         return [_v2_dose_summary(group) for group in list_v2_dose_groups(db, patient_id=patient_id)]
-    rows = db.execute(
-        select(DoseEvent).where(DoseEvent.patient_id == patient_id).order_by(DoseEvent.scheduled_at)
-    ).scalars().all()
-    return [
-        DoseSummary(
-            id=r.id,
-            prescription_id=r.prescription_id,
-            scheduled_at=r.scheduled_at.isoformat(),
-            window_start=r.window_start.isoformat(),
-            window_end=r.window_end.isoformat(),
-            status=r.status,
-            expected_items=r.expected_items,
-        )
-        for r in rows
-    ]
+    rows = (
+        db.execute(select(DoseEvent).where(DoseEvent.patient_id == patient_id).order_by(DoseEvent.scheduled_at))
+        .scalars()
+        .all()
+    )
+    enriched_items = _legacy_expected_items_with_images(db, rows)
+    return [_dose_summary(row, expected_items=enriched_items[row.id]) for row in rows]
 
 
-def _dose_summary(r: DoseEvent, *, points_awarded: int = 0) -> DoseSummary:
+def _dose_summary(
+    r: DoseEvent,
+    *,
+    points_awarded: int = 0,
+    expected_items: list[dict] | None = None,
+) -> DoseSummary:
     return DoseSummary(
         id=r.id,
         prescription_id=r.prescription_id,
@@ -72,12 +74,51 @@ def _dose_summary(r: DoseEvent, *, points_awarded: int = 0) -> DoseSummary:
         window_start=r.window_start.isoformat(),
         window_end=r.window_end.isoformat(),
         status=r.status,
-        expected_items=r.expected_items,
+        expected_items=r.expected_items if expected_items is None else expected_items,
         # >0 chi khi PATCH nay VUA cong diem (xem _thuong_diem_neu_uong_du
         # ben duoi) - GET /doses (danh sach) khong truyen tham so nay nen
         # luon la 0, dung nhu y muon (khong phai "tong diem cua lieu").
         points_awarded=points_awarded,
     )
+
+
+def _legacy_expected_items_with_images(db: Session, doses: list[DoseEvent]) -> dict[str, list[dict]]:
+    """Add presentation-safe images with two batched queries, never name matching."""
+
+    raw_items = [item for dose in doses for item in dose.expected_items if isinstance(item, dict)]
+    product_ids = {value for item in raw_items if isinstance(value := item.get("drug_product_id"), str) and value}
+    legacy_ids = {
+        value
+        for item in raw_items
+        if not item.get("drug_product_id") and isinstance(value := item.get("drug_id"), str) and value
+    }
+    legacy_products = get_active_drug_product_ids_for_legacy_ids(db, legacy_ids)
+    images = get_primary_drug_images(db, (*product_ids, *legacy_products.values()))
+    enriched: dict[str, list[dict]] = {}
+    for dose in doses:
+        items: list[dict] = []
+        for raw in dose.expected_items:
+            if not isinstance(raw, dict):
+                continue
+            item = dict(raw)
+            raw_product_id = item.get("drug_product_id")
+            product_id = raw_product_id if isinstance(raw_product_id, str) and raw_product_id else None
+            if product_id is None:
+                legacy_id = item.get("drug_id")
+                product_id = legacy_products.get(legacy_id) if isinstance(legacy_id, str) else None
+            lookup = images.get(product_id) if product_id else None
+            display_name = item.get("ten_thuoc") if isinstance(item.get("ten_thuoc"), str) else ""
+            presentation = drug_image_presentation(lookup, display_name=display_name)
+            item["drug_product_id"] = product_id
+            item["image"] = {
+                "status": presentation.status,
+                "url": presentation.url,
+                "alt": presentation.alt,
+                "view_type": presentation.view_type,
+            }
+            items.append(item)
+        enriched[dose.id] = items
+    return enriched
 
 
 def _v2_dose_summary(group: DoseRuntimeGroup) -> DoseSummary:
@@ -147,7 +188,11 @@ def update_dose_status(
     diem = _thuong_diem_neu_uong_du(db, patient_id=dose.patient_id, scheduled_at=dose.scheduled_at)
     db.commit()
     db.refresh(dose)
-    return _dose_summary(dose, points_awarded=diem)
+    return _dose_summary(
+        dose,
+        points_awarded=diem,
+        expected_items=_legacy_expected_items_with_images(db, [dose])[dose.id],
+    )
 
 
 def _thuong_diem_neu_uong_du(db: Session, *, patient_id: str, scheduled_at: datetime) -> int:

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraCapture } from "@/components/camera-capture";
+import { MedicationImage } from "@/components/medication-image";
 import {
   CHIP,
   CHIP_THEO_TRANG_THAI,
@@ -407,6 +408,17 @@ export default function PatientToday() {
               {tenThuoc(next)}
             </p>
             <p className="m-0 mt-0.5 text-[14px] font-semibold text-[#2F5488]">{lieuLuong(next)}</p>
+            <div className="mt-3 flex flex-wrap gap-2" aria-label="Hình ảnh thuốc trong liều này">
+              {next.expectedItems.map((item) => (
+                <MedicationImage
+                  key={`${next.id}:${item.drugId}:${item.drugProductId ?? "unmapped"}`}
+                  image={item.image}
+                  accessToken={accessToken}
+                  drugName={item.tenThuoc}
+                  size="md"
+                />
+              ))}
+            </div>
             {cuaSo && <p className="font-mono m-0 mt-2.5 text-[11px] text-[#5B7098]">{cuaSo}</p>}
           </div>
 
@@ -561,10 +573,21 @@ export default function PatientToday() {
               return (
                 <div
                   key={d.id}
-                  className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-[22px] bg-white px-4 py-3.5"
+                  className="grid grid-cols-[52px_auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[22px] bg-white px-4 py-3.5"
                 >
                   <span className="font-display text-[15px] font-bold text-[#16386E]">
                     {gioHienThi(d.scheduledAt)}
+                  </span>
+                  <span className="flex -space-x-2" aria-label={`Hình ảnh thuốc: ${tenThuoc(d)}`}>
+                    {d.expectedItems.map((item) => (
+                      <MedicationImage
+                        key={`${d.id}:${item.drugId}:${item.drugProductId ?? "unmapped"}`}
+                        image={item.image}
+                        accessToken={accessToken}
+                        drugName={item.tenThuoc}
+                        size="sm"
+                      />
+                    ))}
                   </span>
                   <span className="block min-w-0">
                     <span

@@ -2,12 +2,21 @@
 // va /api/photo-verifications (route noi bo cua chinh FE, giu X-Internal-Secret
 // an toan phia server - cung mau voi lib/prescriptions.ts).
 
+export type MedicationImage = {
+  status: "AVAILABLE" | "NO_IMAGE";
+  url: string | null;
+  alt: string;
+  viewType: string | null;
+};
+
 export type DoseItem = {
   drugId: string;
+  drugProductId: string | null;
   tenThuoc: string;
   soVien: number;
   dangThuoc?: string;
   duongDung?: string;
+  image: MedicationImage;
 };
 
 export type Dose = {
@@ -62,10 +71,17 @@ type DoseApiItem = {
   status: string;
   expected_items: {
     drug_id: string;
+    drug_product_id?: string | null;
     ten_thuoc: string;
     so_vien?: number;
     dang_thuoc?: string;
     duong_dung?: string;
+    image?: {
+      status: "AVAILABLE" | "NO_IMAGE";
+      url: string | null;
+      alt: string;
+      view_type: string | null;
+    };
   }[];
   points_awarded?: number;
 };
@@ -136,10 +152,17 @@ function toDose(d: DoseApiItem): Dose {
     status: d.status,
     expectedItems: (d.expected_items ?? []).map((it) => ({
       drugId: it.drug_id,
+      drugProductId: it.drug_product_id ?? null,
       tenThuoc: it.ten_thuoc,
       soVien: it.so_vien ?? 0,
       dangThuoc: it.dang_thuoc,
       duongDung: it.duong_dung,
+      image: {
+        status: it.image?.status ?? "NO_IMAGE",
+        url: it.image?.url ?? null,
+        alt: it.image?.alt ?? "Chưa có hình ảnh thuốc",
+        viewType: it.image?.view_type ?? null,
+      },
     })),
     pointsAwarded: d.points_awarded ?? 0,
   };
