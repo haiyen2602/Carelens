@@ -43,7 +43,7 @@ Only after confirmation is the canonical `drug_product_id` promoted into `Conver
 
 Normal recognition writes only to `drug_image_chat_temp_dir` and unlinks its private temp file in `finally`, on both success and failure. No raw media is placed in AgentRun metadata, browser chat persistence, telemetry, logs, Judge input or catalog/dose-photo storage.
 
-During an ACTIVE BUILD-44 takeover, B-05, OCR, Agent V2 model/tool flow and normal chat state are skipped. The upload is MIME/decoder-validated and stored only as an opaque key in the new `DoctorReviewImageAttachment` table, linked to a patient `DoctorReviewMessage`. The binary is in the separate `drug_image_chat_doctor_storage_dir`, expires after 24 hours by default, and is deleted during subsequent private-upload cleanup. Only the real active doctor assigned to that handoff can retrieve it through the doctor-review attachment endpoint. Patient handoff status does not expose its attachment ID.
+During an ACTIVE BUILD-44 takeover, B-05, OCR, Agent V2 model/tool flow and normal chat state are skipped. The upload is MIME/decoder-validated and stored only as an opaque key in the new `DoctorReviewImageAttachment` table, linked to a patient `DoctorReviewMessage`. The binary is in the separate `drug_image_chat_doctor_storage_dir`, expires after 24 hours by default, and is deleted by a daily scheduler job (as well as opportunistically on later private uploads). Only the real active doctor assigned to that handoff can retrieve it through the doctor-review attachment endpoint. Patient handoff status does not expose its attachment ID.
 
 ## Frontend and contract
 
@@ -90,4 +90,4 @@ Performance pilot (50 synthetic 100x100 PNG validations on this Windows worktree
 | B-08 ready | NO (not started) |
 | Ready for PR review | YES |
 
-Known limitation: expiry cleanup runs on subsequent private takeover uploads; operations should schedule the same private-cleanup routine before a production enablement decision. The response deadline cannot forcibly interrupt a third-party synchronous GPU/CPU call, but it prevents a late result from creating a confirmation attempt and bounded admission prevents an in-process backlog.
+Known limitation: the response deadline cannot forcibly interrupt a third-party synchronous GPU/CPU call, but it prevents a late result from creating a confirmation attempt and admission is acquired before reading the request payload, preventing an in-process backlog of max-size image buffers.

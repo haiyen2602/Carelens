@@ -49,9 +49,8 @@ from backend.services.drug_image_retrieval import OpenClipImageEmbedder
 
 drug_image_chat_router = APIRouter(prefix="/agent/v2/drug-images", tags=["agent-v2-drug-image"])
 logger = logging.getLogger(__name__)
-# B-05 is CPU/GPU-heavy. Admission is deliberately bounded per worker rather
-# than queueing unbounded package uploads in memory. The request's response
-# deadline below prevents an overrun from creating a confirmation attempt.
+# B-05 is CPU/GPU-heavy. Acquire this before reading bytes so a worker never
+# admits an unbounded number of max-size payloads into process memory.
 _recognition_slot = BoundedSemaphore(value=1)
 
 
@@ -96,8 +95,14 @@ async def recognize_drug_image(
             reply=safety_response.reply,
         )
     settings = get_settings()
-    raw = await file.read(settings.drug_image_chat_max_upload_bytes + 1)
+    if not _recognition_slot.acquire(blocking=False):
+        logger.info("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=RECOGNITION_BUSY", conversation_id)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="He thong dang xu ly mot anh khac. Hay thu lai sau it phut.",
+        )
     try:
+        raw = await file.read(settings.drug_image_chat_max_upload_bytes + 1)
         upload = validate_upload(
             raw,
             claimed_mime_type=file.content_type,
@@ -105,13 +110,23 @@ async def recognize_drug_image(
             max_dimension_px=settings.drug_image_chat_max_dimension_px,
             max_pixels=settings.drug_image_chat_max_pixels,
         )
+        del raw
     except DrugImageChatError as exc:
+        _recognition_slot.release()
         logger.info("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=%s", conversation_id, exc.code)
         raise _safe_error(exc) from exc
+    except OSError as exc:
+        _recognition_slot.release()
+        logger.warning("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=UPLOAD_READ_FAILED", conversation_id)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Khong the doc anh luc nay. Hay thu lai sau.") from exc
 
     # Recheck after validation to close the policy boundary immediately before
     # B-05. This branch never invokes recognition, OCR, tools or Agent V2.
-    active_takeover = get_active_takeover(db, patient_id=patient_id)
+    try:
+        active_takeover = get_active_takeover(db, patient_id=patient_id)
+    except Exception:
+        _recognition_slot.release()
+        raise
     if active_takeover is not None:
         attachment = None
         doctor_storage_dir = Path(settings.drug_image_chat_doctor_storage_dir)
@@ -131,11 +146,13 @@ async def recognize_drug_image(
             db.rollback()
             if attachment is not None:
                 remove_takeover_upload(storage_dir=doctor_storage_dir, storage_key=attachment.storage_key)
+            _recognition_slot.release()
             logger.warning("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=DOCTOR_DELIVERY_FAILED", conversation_id)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Khong the chuyen anh den bac si luc nay. Hay thu lai sau.",
             ) from exc
+        _recognition_slot.release()
         logger.info("DRUG_IMAGE_UPLOAD_ACCEPTED conversation_id=%s outcome=DOCTOR_ACTIVE", conversation_id)
         return DrugImageRecognitionOut(
             status="DOCTOR_ACTIVE",
@@ -143,22 +160,17 @@ async def recognize_drug_image(
         )
 
     temp_dir = Path(settings.drug_image_chat_temp_dir)
-    temp_dir.mkdir(parents=True, exist_ok=True)
     path: Path | None = None
-    if not _recognition_slot.acquire(blocking=False):
-        logger.info("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=RECOGNITION_BUSY", conversation_id)
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="He thong dang xu ly mot anh khac. Hay thu lai sau it phut.",
-        )
     started = time.monotonic()
     logger.info("DRUG_IMAGE_UPLOAD_ACCEPTED conversation_id=%s", conversation_id)
     logger.info("DRUG_RECOGNITION_STARTED conversation_id=%s", conversation_id)
     try:
+        temp_dir.mkdir(parents=True, exist_ok=True)
         descriptor, temp_name = tempfile.mkstemp(prefix="drug-image-chat-", suffix=".upload", dir=temp_dir)
         path = Path(temp_name)
         with os.fdopen(descriptor, "wb") as handle:
             handle.write(upload.payload)
+        del upload
         with Image.open(path) as image:
             result = recognizer.recognize(db, image)
         if time.monotonic() - started > settings.drug_image_chat_recognition_timeout_seconds:

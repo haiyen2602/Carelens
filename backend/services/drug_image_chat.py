@@ -120,16 +120,18 @@ def persist_takeover_upload(
     """Persist an ACTIVE-takeover image as a private doctor-only artifact."""
 
     created_at = now or datetime.now(UTC)
-    _cleanup_expired_takeover_attachments(session, storage_dir=storage_dir, now=created_at)
+    cleanup_expired_takeover_uploads(session, storage_dir=storage_dir, now=created_at)
     storage_dir.mkdir(parents=True, exist_ok=True)
     storage_key = f"takeover-{secrets.token_urlsafe(24)}.image"
     destination = _private_storage_path(storage_dir, storage_key)
     descriptor, temporary_name = tempfile.mkstemp(prefix=".takeover-", suffix=".tmp", dir=storage_dir)
     temporary_path = Path(temporary_name)
+    promoted = False
     try:
         with os.fdopen(descriptor, "wb") as handle:
             handle.write(upload.payload)
         temporary_path.replace(destination)
+        promoted = True
         review_message = record_doctor_review_message(
             session,
             handoff_id=handoff_id,
@@ -156,7 +158,8 @@ def persist_takeover_upload(
         destination.unlink(missing_ok=True)
         raise
     finally:
-        temporary_path.unlink(missing_ok=True)
+        if not promoted:
+            temporary_path.unlink(missing_ok=True)
 
 
 def remove_takeover_upload(*, storage_dir: Path, storage_key: str) -> None:
@@ -171,13 +174,28 @@ def private_takeover_upload_path(*, storage_dir: Path, storage_key: str) -> Path
     return _private_storage_path(storage_dir, storage_key)
 
 
-def _cleanup_expired_takeover_attachments(session: Session, *, storage_dir: Path, now: datetime) -> None:
+def cleanup_expired_takeover_uploads(
+    session: Session,
+    *,
+    storage_dir: Path,
+    now: datetime | None = None,
+) -> int:
+    """Remove expired private artifacts and their no-longer-usable references."""
+
+    timestamp = now or datetime.now(UTC)
     expired = session.scalars(
-        select(DoctorReviewImageAttachment).where(DoctorReviewImageAttachment.expires_at <= now)
+        select(DoctorReviewImageAttachment).where(DoctorReviewImageAttachment.expires_at <= timestamp)
     ).all()
+    removed = 0
     for attachment in expired:
-        _private_storage_path(storage_dir, attachment.storage_key).unlink(missing_ok=True)
+        try:
+            _private_storage_path(storage_dir, attachment.storage_key).unlink(missing_ok=True)
+        except OSError:
+            logger.warning("DRUG_IMAGE_UPLOAD_REJECTED error_code=PRIVATE_CLEANUP_FAILED")
+            continue
         session.delete(attachment)
+        removed += 1
+    return removed
 
 
 def _private_storage_path(storage_dir: Path, storage_key: str) -> Path:
@@ -440,6 +458,7 @@ __all__ = [
     "RecognitionAttemptPresentation",
     "RecognitionRunner",
     "confirm_attempt",
+    "cleanup_expired_takeover_uploads",
     "create_attempt",
     "persist_takeover_upload",
     "private_takeover_upload_path",

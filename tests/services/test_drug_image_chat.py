@@ -289,6 +289,7 @@ def test_takeover_attachment_is_private_opaque_and_expired_files_are_cleaned(tmp
     session.commit()
     path = private_takeover_upload_path(storage_dir=tmp_path, storage_key=attachment.storage_key)
     assert path.is_file()
+    assert not list(tmp_path.glob("*.tmp"))
     assert str(path) not in attachment.storage_key
     replacement = persist_takeover_upload(
         session,
