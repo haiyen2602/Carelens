@@ -34,10 +34,41 @@ def main() -> int:
     parser.add_argument("--storage-root", type=Path)
     parser.add_argument("--database-url")
     parser.add_argument("--dry-run", action="store_true")
+    # Drug-image production import task: the pre-existing local-only
+    # fail-safe (assert_local_postgres_url, unchanged above) stays the
+    # DEFAULT behavior for every existing caller -- nothing about the
+    # non-production path below changes. `--production` is a new,
+    # explicit opt-in that is required before a non-local DATABASE_URL is
+    # ever accepted at all, and even then requires picking exactly one of
+    # `--dry-run` / `--execute` -- there is no default that silently
+    # writes to production. `--database-url` must also be passed
+    # explicitly in production mode (never falls back to
+    # `settings.database_url`, which could be a stale/cached local
+    # default) so the real target is always visible in the invoking
+    # command, not implicit.
+    parser.add_argument(
+        "--production",
+        action="store_true",
+        help="Opt in to a non-local target. Requires --database-url and exactly one of --dry-run/--execute.",
+    )
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Production mode only: perform the real write. Mutually exclusive with --dry-run.",
+    )
     args = parser.parse_args()
     settings = get_settings()
-    database_url = args.database_url or settings.database_url
-    assert_local_postgres_url(database_url)
+    if args.production:
+        if not args.database_url:
+            parser.error("--production requires --database-url to be passed explicitly")
+        if args.dry_run == args.execute:
+            parser.error("--production requires exactly one of --dry-run or --execute")
+        database_url = args.database_url
+    else:
+        if args.execute:
+            parser.error("--execute is only meaningful with --production")
+        database_url = args.database_url or settings.database_url
+        assert_local_postgres_url(database_url)
     storage_root = args.storage_root or Path(settings.drug_image_storage_dir)
     engine = sa.create_engine(database_url)
     with Session(engine) as session:
