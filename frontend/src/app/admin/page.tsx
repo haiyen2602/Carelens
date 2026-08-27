@@ -94,9 +94,9 @@ export default function AdminDashboard() {
 
   const roleCounts = {
     patient: accounts.filter((a) => a.role === "patient").length,
-    doctor: accounts.filter((a) => a.role === "doctor").length,
     caregiver: accounts.filter((a) => a.role === "caregiver").length,
-    admin: accounts.filter((a) => a.role === "admin" || (a.role as string) === "super_admin").length,
+    admin: accounts.filter((a) => a.role === "admin").length,
+    superAdmin: accounts.filter((a) => (a.role as string) === "super_admin").length,
   };
   const pctOf = (n: number) => (total > 0 ? (n / total) * 100 : 0);
   const donut = [
@@ -107,12 +107,6 @@ export default function AdminDashboard() {
       pct: pctOf(roleCounts.patient),
     },
     {
-      label: "Bác sĩ",
-      sub: `${roleCounts.doctor} tài khoản`,
-      color: "var(--success)",
-      pct: pctOf(roleCounts.doctor),
-    },
-    {
       label: "Người thân",
       sub: `${roleCounts.caregiver} tài khoản`,
       color: "var(--warning)",
@@ -121,8 +115,14 @@ export default function AdminDashboard() {
     {
       label: "Quản trị",
       sub: `${roleCounts.admin} tài khoản`,
-      color: "var(--muted-foreground)",
+      color: "var(--accent-foreground)",
       pct: pctOf(roleCounts.admin),
+    },
+    {
+      label: "Quản trị cấp cao",
+      sub: `${roleCounts.superAdmin} tài khoản`,
+      color: "oklch(0.55 0.22 295)",
+      pct: pctOf(roleCounts.superAdmin),
     },
   ];
 
