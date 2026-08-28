@@ -11,8 +11,11 @@ import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
 
+from backend.agents.v2.conversation_state import ConversationState
 from backend.agents.v2.orchestrator import OrchestrationIntent
 from backend.api import drug_image_chat_routes as routes
+from backend.models.schemas import DrugImageConfirmRequest
+from backend.services.drug_image_chat import ConfirmedCandidate
 
 
 def _upload() -> UploadFile:
@@ -144,3 +147,62 @@ def test_enabled_model_load_failure_returns_safe_503_and_releases_slot(
     assert error.value.status_code == 503
     assert routes._recognition_slot.acquire(blocking=False) is True
     routes._recognition_slot.release()
+
+
+def test_confirmation_binds_canonical_entity_and_queries_verified_drug_tool(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    saved: dict[str, object] = {}
+    tool_call: dict[str, str] = {}
+
+    class FakeStore:
+        def load(self, _db, *, actor_id: str, patient_id: str, conversation_id: str):
+            return ConversationState.empty(conversation_id)
+
+        def save(self, _db, *, agent_run_id: str, actor_id: str, patient_id: str, state) -> None:
+            saved["state"] = state
+
+    class FakeTools:
+        def __init__(self, _db) -> None:
+            pass
+
+        def get_drug_info(self, *, legacy_drug_id: str, query: str):
+            tool_call.update(legacy_drug_id=legacy_drug_id, query=query)
+            return {"results": [{"content": "Nội dung đã xác minh."}]}
+
+    database = SimpleNamespace(add=lambda _row: None, flush=lambda: None, commit=lambda: None, rollback=lambda: None)
+    monkeypatch.setattr(routes, "require_agent_patient_access", lambda _db, _actor, patient_id: patient_id)
+    monkeypatch.setattr(
+        routes,
+        "confirm_attempt",
+        lambda *_args, **_kwargs: ConfirmedCandidate(
+            attempt_id="attempt-a",
+            drug_product_id="canonical-product-a",
+            legacy_drug_id="legacy-a",
+            display_name="Thuốc A 500 mg",
+            requested_attribute=None,
+            already_confirmed=False,
+        ),
+    )
+    monkeypatch.setattr(routes, "AgentConversationStateStore", lambda: FakeStore())
+    monkeypatch.setattr(routes, "AgentRun", lambda **_kwargs: SimpleNamespace(id="run-a"))
+    monkeypatch.setattr(routes, "AgentReadOnlyDomainTools", FakeTools)
+
+    response = routes.confirm_drug_image_candidate(
+        DrugImageConfirmRequest(
+            patient_id="patient-a",
+            conversation_id="conversation-a",
+            recognition_attempt_id="attempt-a",
+            action_id="opaque-action-a",
+        ),
+        db=database,
+        actor=SimpleNamespace(id="actor-a"),
+    )
+
+    state = saved["state"]
+    assert state.active_entity.type == "drug"
+    assert state.active_entity.id == "canonical-product-a"
+    assert state.active_entity.legacy_drug_id == "legacy-a"
+    assert tool_call["legacy_drug_id"] == "legacy-a"
+    assert "Thông tin chi tiết đã xác minh" in tool_call["query"]
+    assert response.tools == ["get_drug_info"]

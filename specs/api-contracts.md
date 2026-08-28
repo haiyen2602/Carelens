@@ -405,16 +405,21 @@ constructing a vision runtime or creating a recognition attempt. This is not
 a candidate and never changes the active entity.
 
 `confirm` accepts `patient_id`, `conversation_id`, `recognition_attempt_id`
-and opaque `action_id`. The server binds the action to the latest unexpired
+and opaque `action_id`; `decision` is optional and defaults to `CONFIRMED`.
+`REJECTED` is an explicit refusal of that exact server-issued action: it
+invalidates the attempt and never changes the active entity or invokes a Drug
+Tool. For `CONFIRMED`, the server binds the action to the latest unexpired
 attempt for the authenticated actor/patient/conversation, maps it to canonical
-`drug_product_id`, then may call the existing verified Drug Tool. A client
+`drug_product_id`, then calls the existing verified Drug Tool. A client
 provided/arbitrary product ID is not a confirmation input. Foreign, forged,
 superseded or expired actions are rejected; a retry of the same confirmed
 action is idempotent.
 
 Before confirmation, no candidate mutates `ConversationState.active_entity`
-and no Drug Tool or Main Model is called for candidate presentation. Acute
-safety and ACTIVE doctor takeover suppress recognition.
+and no Drug Tool or Main Model is called for candidate presentation. Only a
+`HIGH_EVIDENCE_MATCH` response may expose one candidate; ambiguous or
+insufficient outcomes expose no product name or action. Acute safety and
+ACTIVE doctor takeover suppress recognition.
 
 ## 5. `photo-api`
 

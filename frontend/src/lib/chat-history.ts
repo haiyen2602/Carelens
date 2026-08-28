@@ -16,7 +16,14 @@ export type StoredChatMessage = {
   suggestedActions?: import("@/types/chat").SuggestedAction[];
   drugImage?: {
     attemptId: string;
+    outcome: string | null;
     candidates: import("@/types/chat").DrugImageCandidate[];
+  };
+  imageAttachment?: {
+    fileName: string;
+    // A Blob/Object URL is intentionally in-memory only. It is not a durable
+    // image store and never contains base64/binary image data.
+    previewUrl?: string;
   };
 };
 
@@ -43,7 +50,18 @@ export function loadConversations(): Conversation[] {
 
 export function saveConversations(conversations: Conversation[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  // Blob URLs die at page unload. Persist only a filename, never bytes, a
+  // base64 payload, or a stale object URL that might be mistaken for a real
+  // server-side attachment after reload.
+  const serializable = conversations.map((conversation) => ({
+    ...conversation,
+    messages: conversation.messages.map((message) =>
+      message.imageAttachment
+        ? { ...message, imageAttachment: { fileName: message.imageAttachment.fileName } }
+        : message,
+    ),
+  }));
+  window.localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(serializable));
 }
 
 export function loadActiveId(): string | null {

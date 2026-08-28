@@ -638,13 +638,14 @@ class DrugImageConfirmRequest(BaseModel):
     conversation_id: str = Field(min_length=1, max_length=200)
     recognition_attempt_id: str = Field(min_length=1, max_length=200)
     action_id: str = Field(min_length=1, max_length=200)
+    decision: Literal["CONFIRMED", "REJECTED"] = "CONFIRMED"
 
 
 class DrugImageConfirmOut(BaseModel):
-    status: Literal["CONFIRMED"]
+    status: Literal["CONFIRMED", "REJECTED"]
     reply: str
     recognition_attempt_id: str
-    canonical_drug_product_id: str
+    canonical_drug_product_id: str | None = None
     requested_attribute: str | None = None
     tools: list[str] = Field(default_factory=list)
 

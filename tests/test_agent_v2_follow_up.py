@@ -49,6 +49,12 @@ def test_b_true_followup_attribute_only_inherits_entity():
     assert d.inherited_topic is False
 
 
+def test_b2_confirmed_drug_detail_request_inherits_entity():
+    d = classify_follow_up("Thông tin chi tiết thuốc", prior_topic=None, prior_entity_name="Snapcef 16mg/10ml")
+    assert d.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert d.inherited_entity is True
+
+
 # ---------------------------------------------------------------------------
 # C. Pronoun/deictic follow-up.
 # ---------------------------------------------------------------------------

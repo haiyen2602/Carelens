@@ -133,7 +133,7 @@ def _resolved_drug_entity(tool_results, *, known_entity: ActiveEntity | None = N
             for candidate in item.data.get("items", []):
                 if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
                     return ActiveEntity("drug", drug_id, str(candidate["name"]))
-        if known_entity is not None and known_entity.id == drug_id:
+        if known_entity is not None and (known_entity.id == drug_id or known_entity.legacy_drug_id == drug_id):
             return known_entity
         return ActiveEntity("drug", drug_id, drug_id)
 

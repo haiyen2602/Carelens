@@ -54,6 +54,7 @@ export default function AssistantPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const objectUrls = useRef(new Set<string>());
   const { user, accessToken } = useAuth();
   const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
 
@@ -75,15 +76,13 @@ export default function AssistantPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!selectedImage) {
-      setSelectedImagePreviewUrl(null);
-      return;
-    }
-    const previewUrl = URL.createObjectURL(selectedImage);
-    setSelectedImagePreviewUrl(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [selectedImage]);
+  useEffect(
+    () => () => {
+      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.current.clear();
+    },
+    [],
+  );
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
@@ -102,7 +101,12 @@ export default function AssistantPage() {
       agentRunId?: string;
       userMessage?: string;
       suggestedActions?: SuggestedAction[];
-      drugImage?: { attemptId: string; candidates: import("@/types/chat").DrugImageCandidate[] };
+      drugImage?: {
+        attemptId: string;
+        outcome: string | null;
+        candidates: import("@/types/chat").DrugImageCandidate[];
+      };
+      imageAttachment?: { fileName: string; previewUrl?: string };
     },
   ) => {
     const now = new Date().toISOString();
@@ -186,13 +190,30 @@ export default function AssistantPage() {
 
   const selectImage = (file: File | null) => {
     if (!file) return;
+    if (selectedImagePreviewUrl) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+      objectUrls.current.delete(selectedImagePreviewUrl);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    objectUrls.current.add(previewUrl);
     setSelectedImage(file);
+    setSelectedImagePreviewUrl(previewUrl);
+  };
+
+  const discardSelectedImage = () => {
+    if (selectedImagePreviewUrl) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+      objectUrls.current.delete(selectedImagePreviewUrl);
+    }
+    setSelectedImage(null);
+    setSelectedImagePreviewUrl(null);
   };
 
   const submitImage = async () => {
     if (!selectedImage || !activeId || imagePending || isPending) return;
     const image = selectedImage;
     const text = input.trim();
+    const previewUrl = selectedImagePreviewUrl ?? undefined;
     setImagePending(true);
     try {
       const data = await recognizeDrugImage(
@@ -201,33 +222,55 @@ export default function AssistantPage() {
       );
       // A File object is only a local selection. Persist a chat turn after
       // the server accepts the multipart request, never at selection time.
-      appendMessage(activeId, "user", text || `Đã gửi ảnh: ${image.name}`);
+      appendMessage(activeId, "user", text || "Đã gửi ảnh thuốc.", {
+        imageAttachment: { fileName: image.name, previewUrl },
+      });
       setInput("");
       setSelectedImage(null);
+      setSelectedImagePreviewUrl(null);
       appendMessage(activeId, "assistant", data.reply, {
         drugImage: data.recognition_attempt_id
-          ? { attemptId: data.recognition_attempt_id, candidates: data.candidates }
+          ? {
+              attemptId: data.recognition_attempt_id,
+              outcome: data.outcome,
+              candidates: data.candidates,
+            }
           : undefined,
       });
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Không thể gửi ảnh. Bạn vẫn có thể tiếp tục nhắn tin.");
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Không thể gửi ảnh. Bạn vẫn có thể tiếp tục nhắn tin.",
+      );
     } finally {
       setImagePending(false);
     }
   };
 
-  // B-08 enablement: khong co goi y nao dung. Khong goi API xac nhan (khong
-  // co gi de "huy" phia server - attempt chua confirm se tu het han theo
-  // TTL cua no); chi ghi nhan trong lich su hoi thoai va huong dan nguoi
-  // dung go ten thuoc, tranh viec ho buoc phai chon dai 1 goi y sai.
-  const rejectCandidates = (_attemptId: string) => {
+  const rejectCandidates = async (attemptId: string, actionId: string) => {
     if (!activeId || imagePending || isPending) return;
+    setImagePending(true);
     appendMessage(activeId, "user", "Không phải thuốc nào ở trên.");
-    appendMessage(
-      activeId,
-      "assistant",
-      "Được, bạn hãy nhập tên thuốc hoặc mô tả (ví dụ: tên trên hộp, công dụng) để mình tìm giúp nhé.",
-    );
+    try {
+      const data = await confirmDrugImageCandidate(
+        {
+          patientId: user?.patient_id ?? "",
+          conversationId: activeId,
+          attemptId,
+          actionId,
+          decision: "REJECTED",
+        },
+        accessToken,
+      );
+      appendMessage(activeId, "assistant", data.reply);
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.",
+      );
+    } finally {
+      setImagePending(false);
+    }
   };
 
   const confirmCandidate = async (attemptId: string, actionId: string, label: string) => {
@@ -241,7 +284,9 @@ export default function AssistantPage() {
       );
       appendMessage(activeId, "assistant", data.reply);
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.");
+      toast(
+        error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.",
+      );
     } finally {
       setImagePending(false);
     }
@@ -341,7 +386,12 @@ export default function AssistantPage() {
               )}
               <span className="truncate">Ảnh đã chọn: {selectedImage.name}</span>
             </div>
-            <button type="button" onClick={() => setSelectedImage(null)} aria-label="Bỏ ảnh đã chọn" className="ml-2 text-[#16386E]">
+            <button
+              type="button"
+              onClick={discardSelectedImage}
+              aria-label="Bỏ ảnh đã chọn"
+              className="ml-2 text-[#16386E]"
+            >
               Bỏ ảnh
             </button>
           </div>

@@ -105,6 +105,13 @@ class ConfirmedCandidate:
     already_confirmed: bool
 
 
+@dataclass(frozen=True)
+class RejectedCandidate:
+    """A server-validated rejection that can never promote an active entity."""
+
+    attempt_id: str
+
+
 def persist_takeover_upload(
     session: Session,
     *,
@@ -276,14 +283,18 @@ def create_attempt(
         )
         .values(status=ATTEMPT_SUPERSEDED, superseded_at=created_at)
     )
-    if result.outcome == INSUFFICIENT_EVIDENCE or not result.candidates:
+    # Only a HIGH_EVIDENCE_MATCH may offer a product for confirmation.  An
+    # ambiguous visual result is useful telemetry, but it is not evidence that
+    # a patient should choose between catalog products.  Keep it durable for
+    # audit while exposing no product name/action to the client.
+    if result.outcome != HIGH_EVIDENCE_MATCH or not result.candidates:
         attempt = DrugRecognitionAttempt(
             actor_id=actor_id,
             patient_id=patient_id,
             conversation_id=conversation_id,
             status=ATTEMPT_INSUFFICIENT_EVIDENCE,
             recognition_version=result.recognition_version,
-            outcome=INSUFFICIENT_EVIDENCE,
+            outcome=result.outcome if result.outcome == AMBIGUOUS_MATCH else INSUFFICIENT_EVIDENCE,
             candidates_json=[],
             requested_attribute=requested_attribute,
             created_at=created_at,
@@ -292,8 +303,13 @@ def create_attempt(
         session.flush()
         return RecognitionAttemptPresentation(
             attempt_id=attempt.id,
-            outcome=INSUFFICIENT_EVIDENCE,
-            reply="Tôi chưa tìm được kết quả đủ đáng tin cậy. Hãy chụp rõ mặt trước hộp thuốc hoặc nhập tên thuốc.",
+            outcome=attempt.outcome,
+            reply=(
+                "Tôi chưa thể xác định chắc chắn thuốc trong ảnh. Hãy chụp rõ mặt trước hộp thuốc, "
+                "thử lại với ánh sáng tốt hơn hoặc nhập tên thuốc."
+                if attempt.outcome == AMBIGUOUS_MATCH
+                else "Tôi chưa tìm được kết quả đủ đáng tin cậy. Hãy chụp rõ mặt trước hộp thuốc hoặc nhập tên thuốc."
+            ),
             candidates=(),
             requested_attribute=requested_attribute,
             recognition_version=result.recognition_version,
@@ -301,7 +317,7 @@ def create_attempt(
 
     candidates = []
     presentations = []
-    for candidate in result.candidates[:3]:
+    for candidate in result.candidates[:1]:
         action_id = secrets.token_urlsafe(18)
         product = session.get(DrugProduct, candidate.drug_product_id)
         if product is None:
@@ -348,7 +364,7 @@ def create_attempt(
         conversation_id=conversation_id,
         status=ATTEMPT_AWAITING_CONFIRMATION,
         recognition_version=result.recognition_version,
-        outcome=result.outcome if result.outcome in {HIGH_EVIDENCE_MATCH, AMBIGUOUS_MATCH} else AMBIGUOUS_MATCH,
+        outcome=HIGH_EVIDENCE_MATCH,
         candidates_json=candidates,
         requested_attribute=requested_attribute,
         created_at=created_at,
@@ -356,10 +372,7 @@ def create_attempt(
     )
     session.add(attempt)
     session.flush()
-    if result.outcome == HIGH_EVIDENCE_MATCH:
-        reply = "Ảnh có vẻ phù hợp nhất với lựa chọn đầu tiên. Bạn hãy xác nhận trước khi tôi tra cứu thông tin thuốc."
-    else:
-        reply = "Tôi tìm thấy một số thuốc có thể phù hợp. Hãy chọn đúng thuốc trước khi tôi tra cứu thông tin."
+    reply = "Ảnh có vẻ khớp với thuốc dưới đây. Bạn hãy xác nhận trước khi tôi tra cứu thông tin thuốc."
     return RecognitionAttemptPresentation(
         attempt_id=attempt.id,
         outcome=attempt.outcome,
@@ -419,6 +432,50 @@ def confirm_attempt(
     return _confirmed(attempt, selected, already_confirmed=False)
 
 
+def reject_attempt(
+    session: Session,
+    *,
+    attempt_id: str,
+    action_id: str,
+    actor_id: str,
+    patient_id: str,
+    conversation_id: str,
+    now: datetime | None = None,
+) -> RejectedCandidate:
+    """Invalidate one current server-issued candidate without binding state.
+
+    ``SUPERSEDED`` is an existing terminal, database-constrained lifecycle
+    state. Reusing it keeps the rejection durable without widening the
+    production schema, and makes any later confirm call fail closed as stale.
+    """
+
+    timestamp = now or datetime.now(UTC)
+    attempt = session.get(DrugRecognitionAttempt, attempt_id)
+    if (
+        attempt is None
+        or attempt.actor_id != actor_id
+        or attempt.patient_id != patient_id
+        or attempt.conversation_id != conversation_id
+    ):
+        raise DrugImageChatError("CONFIRMATION_FORBIDDEN", "Lựa chọn xác nhận không hợp lệ.")
+    if attempt.status == ATTEMPT_SUPERSEDED:
+        raise DrugImageChatError("CONFIRMATION_STALE", "Ảnh này đã không còn hiệu lực. Hãy gửi lại ảnh để thử lại.")
+    if attempt.status != ATTEMPT_AWAITING_CONFIRMATION:
+        raise DrugImageChatError("CONFIRMATION_NOT_AVAILABLE", "Lựa chọn này không còn hiệu lực.")
+    expires_at = _as_utc(attempt.expires_at) if attempt.expires_at is not None else None
+    if expires_at is not None and expires_at <= _as_utc(timestamp):
+        attempt.status = ATTEMPT_EXPIRED
+        raise DrugImageChatError("CONFIRMATION_EXPIRED", "Lựa chọn đã hết hạn. Hãy gửi lại ảnh để thử lại.")
+    selected = next(
+        (item for item in attempt.candidates_json if isinstance(item, dict) and item.get("action_id") == action_id), None
+    )
+    if selected is None:
+        raise DrugImageChatError("CONFIRMATION_FORGED", "Lựa chọn xác nhận không hợp lệ.")
+    attempt.status = ATTEMPT_SUPERSEDED
+    attempt.superseded_at = timestamp
+    return RejectedCandidate(attempt_id=attempt.id)
+
+
 def _candidate_for_selected(attempt: DrugRecognitionAttempt) -> dict | None:
     return next(
         (
@@ -462,6 +519,8 @@ __all__ = [
     "create_attempt",
     "persist_takeover_upload",
     "private_takeover_upload_path",
+    "reject_attempt",
+    "RejectedCandidate",
     "remove_takeover_upload",
     "requested_attribute_for",
     "validate_upload",
