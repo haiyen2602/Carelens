@@ -184,6 +184,41 @@ class OptionalTesseractOcrExtractor:
         runtime, runtime_status = self._resolve_runtime()
         if runtime is None:
             return OcrObservation(text="", status=runtime_status)
+
+        # PR #166 follow-up (real production finding): a real LONG Huyet
+        # PH photo test found Tesseract's own color-image binarization
+        # badly garbles bold title text on a saturated background (e.g.
+        # gold-on-red) even though the SAME photo reads perfectly once
+        # explicitly converted to grayscale first -- direct A/B evidence,
+        # not a guess: 3 of 6 real LONG Huyet photos went from unreadable
+        # to a clean "LONG HUYET PH" read this way. But grayscale-only is
+        # NOT a strict improvement -- it measurably regressed one already-
+        # working real Snapcef photo (a single letter misread, "SNAPCEF"
+        # -> "SNAPUEF", losing that photo's single-token match). Running
+        # BOTH passes and unioning their text keeps everything the
+        # original color pass already found while adding whatever the
+        # grayscale pass additionally recovers -- verified on the real
+        # photo set: 0 regressions, LONG Huyet HIGH_EVIDENCE_MATCH 0->3/6,
+        # Snapcef HIGH_EVIDENCE_MATCH 1->2/8 (the one working case kept,
+        # plus one newly fixed). Costs ~0.5s extra Tesseract time per
+        # recognition (measured on real photos: ~500ms/pass); the
+        # existing per-call timeout budget doubles in the worst case
+        # (both passes time out) but that failure path already degrades
+        # to OCR_FAILED gracefully.
+        color_text, color_status = self._run_pass(runtime, image)
+        if color_status == OCR_UNAVAILABLE:
+            return OcrObservation(text="", status=OCR_UNAVAILABLE)
+        gray_text, gray_status = self._run_pass(runtime, image.convert("L"))
+        if color_status == OCR_FAILED and gray_status == OCR_FAILED:
+            return OcrObservation(text="", status=OCR_FAILED)
+        combined = "\n".join(text for text in (color_text, gray_text) if text)
+        return OcrObservation(text=combined, status=OCR_AVAILABLE)
+
+    def _run_pass(self, runtime: Any, image: Image.Image) -> tuple[str, str]:
+        """One Tesseract call; returns (text, status) for extract() to
+        combine. Isolated so a failure on one pass (e.g. a timeout) does
+        not prevent the other pass from still contributing text."""
+
         try:
             text = runtime.image_to_string(
                 image,
@@ -193,10 +228,10 @@ class OptionalTesseractOcrExtractor:
         except runtime.TesseractNotFoundError:
             self._runtime = None
             self._runtime_status = OCR_UNAVAILABLE
-            return OcrObservation(text="", status=OCR_UNAVAILABLE)
+            return "", OCR_UNAVAILABLE
         except (OSError, RuntimeError, runtime.TesseractError):
-            return OcrObservation(text="", status=OCR_FAILED)
-        return OcrObservation(text=text, status=OCR_AVAILABLE)
+            return "", OCR_FAILED
+        return text, OCR_AVAILABLE
 
 
 class NoopOcrExtractor:
