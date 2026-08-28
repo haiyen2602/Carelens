@@ -11,6 +11,7 @@ import {
   Send,
   ShieldCheck,
   UserRound,
+  Volume2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordDialog } from "@/components/change-password-dialog";
@@ -27,11 +28,23 @@ import { updateMyPatientProfile } from "@/lib/patients";
 import { subscribeToPush } from "@/lib/push";
 import { batDauGhepTelegram, datTuyChonTelegram, goKetNoiTelegram } from "@/lib/telegram";
 import { useProto } from "@/lib/proto-store";
+import { loadVoiceOutputEnabled, saveVoiceOutputEnabled } from "@/lib/voice-settings";
 
 export function AccountSettings() {
   const { phone, role } = useProto();
   const { user, accessToken, updateSession } = useAuth();
   const [dangLuuChupAnh, setDangLuuChupAnh] = useState(false);
+  // Doc localStorage o effect (khong phai o useState initializer) - trang
+  // nay render ca server (SSR) truoc khi hydrate, localStorage chi co tren
+  // trinh duyet nen phai doi den sau mount de tranh lech hydration.
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
+  useEffect(() => {
+    setVoiceOutputEnabled(loadVoiceOutputEnabled());
+  }, []);
+  const doiVoiceOutput = (bat: boolean) => {
+    setVoiceOutputEnabled(bat);
+    saveVoiceOutputEnabled(bat);
+  };
 
   // GHI CHU 2026-08-28: ba useState `reminders`/`emergencyAlerts`/
   // `weeklySummary` da bi XOA khi khoi "Thong bao" duoc lam that (luu vao
@@ -395,6 +408,27 @@ export function AccountSettings() {
               checked={user?.photo_capture_enabled ?? true}
               disabled={dangLuuChupAnh}
               onCheckedChange={doiChupAnh}
+            />
+          </div>
+        </section>
+      )}
+
+      {role === "patient" && (
+        <section className="surface-card space-y-4 p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
+            <Volume2 className="h-4 w-4" /> Trợ lý giọng nói
+          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium">Trợ lý đọc to câu trả lời</p>
+              <p className="text-xs text-muted-foreground">
+                Khi bật, Capy sẽ đọc to câu trả lời sau mỗi lần bạn ghi âm hoặc nhắn tin.
+              </p>
+            </div>
+            <Switch
+              aria-label="Trợ lý đọc to câu trả lời"
+              checked={voiceOutputEnabled}
+              onCheckedChange={doiVoiceOutput}
             />
           </div>
         </section>

@@ -650,6 +650,24 @@ class DrugImageConfirmOut(BaseModel):
     tools: list[str] = Field(default_factory=list)
 
 
+class VoiceTranscribeOut(BaseModel):
+    """One-shot STT result. Pure format conversion -- carries no safety/intent
+    disposition of its own; the transcript is fed unchanged into a separate
+    /agent/v2/orchestrate call, which owns that classification."""
+
+    status: Literal["OK"]
+    text: str
+
+
+class VoiceSpeakRequest(BaseModel):
+    """Turn a chat reply into audio. The upper bound on `text` lives in
+    settings.voice_max_reply_chars and is enforced by the route, not here --
+    this module stays free of config imports."""
+
+    patient_id: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1)
+
+
 # BUILD-29: user feedback ticket + session/trace issue tracking. See
 # backend/services/agent_feedback.py for the authorization/idempotency/
 # auto-classification logic these schemas are the wire contract for.

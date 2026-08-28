@@ -9,17 +9,20 @@
 // van la mo hinh that tra loi, nen khong co cau tra loi dung san nao.
 
 import { useEffect, useRef, useState } from "react";
-import { History, Plus, X } from "lucide-react";
+import { History, Mic, Plus, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/camera-capture";
 import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { useVoicePlayback } from "@/hooks/use-voice-playback";
 import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
-import { confirmDrugImageCandidate, recognizeDrugImage } from "@/lib/api";
+import { confirmDrugImageCandidate, recognizeDrugImage, synthesizeVoice, transcribeVoice } from "@/lib/api";
+import { loadVoiceOutputEnabled } from "@/lib/voice-settings";
 import {
   type Conversation,
   createConversation,
@@ -50,6 +53,7 @@ export default function AssistantPage() {
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
   const [imagePending, setImagePending] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [voicePending, setVoicePending] = useState(false);
   const lastQuestion = useRef("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
@@ -57,6 +61,8 @@ export default function AssistantPage() {
   const objectUrls = useRef(new Set<string>());
   const { user, accessToken } = useAuth();
   const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
+  const voiceRecorder = useVoiceRecorder();
+  const voicePlayback = useVoicePlayback();
 
   useEffect(() => {
     const stored = loadConversations();
@@ -173,6 +179,23 @@ export default function AssistantPage() {
             userMessage: content,
             suggestedActions: data.suggested_actions,
           });
+          // Doc to cau tra loi neu tuy chon dang bat (Cai dat > Trợ lý giọng
+          // nói). Fire-and-forget: text reply o tren da hien thi XONG truoc
+          // khi doan nay chay, nen bat ky loi TTS nao cung KHONG duoc phep
+          // che/xoa bubble da hien - toi da chi hien 1 toast nhe.
+          if (loadVoiceOutputEnabled()) {
+            synthesizeVoice({ patientId: user?.patient_id ?? "", text: data.reply }, accessToken)
+              .then((blob) =>
+                // Tach RIENG loi phat khoi loi goi API: trinh duyet chan
+                // autoplay la truong hop hay gap nhat va nguoi dung SUA duoc
+                // (bam vao trang roi hoi lai), nen phai noi dung nguyen nhan
+                // thay vi gop chung vao "khong doc to duoc".
+                voicePlayback.play(blob).catch(() => {
+                  toast("Trình duyệt đang chặn tự động phát. Hãy bấm vào trang rồi hỏi lại.");
+                }),
+              )
+              .catch(() => toast("Không thể đọc to câu trả lời lúc này."));
+          }
         },
         onSettled: () => {
           submitInFlight.current = false;
@@ -246,6 +269,44 @@ export default function AssistantPage() {
     } finally {
       setImagePending(false);
     }
+  };
+
+  useEffect(() => {
+    if (voiceRecorder.error) toast(voiceRecorder.error);
+  }, [voiceRecorder.error]);
+
+  // Mo che do ghi am tu menu "+" (khong con nut mic rieng canh o nhap) -
+  // trong luc state === "recording" thi ca hang soan tin doi sang thanh ghi
+  // am ben duoi, nen 3 ham nay tach roi thay vi mot toggle duy nhat.
+  const startVoiceRecording = () => {
+    if (isPending || imagePending || voicePending) return;
+    voiceRecorder.start();
+  };
+
+  const finishVoiceRecording = async () => {
+    const blob = await voiceRecorder.stop();
+    if (!blob || !activeId) return;
+    setVoicePending(true);
+    try {
+      const { text } = await transcribeVoice(
+        { patientId: user?.patient_id ?? "", conversationId: activeId, file: blob, filename: "voice.webm" },
+        accessToken,
+      );
+      // Cung mot ham submit() dung cho tin nhan go tay - pipeline gui
+      // (useChatMessage -> /api/chat -> /api/v1/agent/v2/orchestrate)
+      // khong doi gi ca, transcript chi la mot cau text nhu bao cau khac.
+      submit(text);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Không nhận diện được giọng nói. Bạn có thể nhập tin nhắn.");
+    } finally {
+      setVoicePending(false);
+    }
+  };
+
+  // Huy: van phai stop() de tra micro ve he thong (hook tu tat cac track),
+  // chi khac la BO blob thu duoc, khong goi STT -> khong ton tien API.
+  const cancelVoiceRecording = async () => {
+    await voiceRecorder.stop();
   };
 
   const rejectCandidates = async (attemptId: string, actionId: string) => {
@@ -447,38 +508,81 @@ export default function AssistantPage() {
               >
                 🖼️
               </button>
+              <button
+                type="button"
+                aria-label="Ghi âm câu hỏi"
+                disabled={isPending || imagePending || voicePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  startVoiceRecording();
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[#1B2A44] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                <Mic className="h-[18px] w-[18px]" />
+              </button>
             </div>
           )}
-          <button
-            aria-label="Thêm"
-            onClick={() => setPlusOpen((v) => !v)}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[20px] font-bold transition-colors"
-            style={
-              plusOpen
-                ? { background: "#16386E", color: "#FFFFFF" }
-                : { background: "#EDF0F6", color: "#1B2A44" }
-            }
-          >
-            +
-          </button>
-          <input
-            value={input}
-            placeholder="Hỏi Capy..."
-            aria-label="Nhập câu hỏi cho trợ lý AI"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isPending || imagePending}
-            className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
-          />
-          <button
-            aria-label="Gửi câu hỏi"
-            disabled={isPending || imagePending || (!input.trim() && !selectedImage)}
-            onClick={() => (selectedImage ? submitImage() : submit(input))}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
-            style={{ background: input.trim() || selectedImage ? "#16386E" : "#B7C2D6" }}
-          >
-            ↑
-          </button>
+          {voiceRecorder.state === "recording" ? (
+            // Che do ghi am: thay HANG soan tin (khong phai de nut mic canh o
+            // nhap nhu truoc), vi dang ghi am thi go phim khong con y nghia -
+            // chi con 2 lua chon huy hoac gui.
+            <>
+              <button
+                type="button"
+                aria-label="Hủy ghi âm"
+                onClick={cancelVoiceRecording}
+                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] bg-[#EDF0F6] text-[#1B2A44] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex h-[52px] min-w-0 flex-1 items-center gap-2.5 rounded-[20px] border border-[#F0C9C9] bg-[#FDF3F3] px-4">
+                <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#D64545]" />
+                <span className="truncate text-[14px] text-[#1B2A44]">Đang ghi âm... Nói xong hãy bấm gửi.</span>
+              </div>
+              <button
+                type="button"
+                aria-label="Dừng và gửi ghi âm"
+                onClick={finishVoiceRecording}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
+                style={{ background: "#D64545" }}
+              >
+                <Square className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                aria-label="Thêm"
+                onClick={() => setPlusOpen((v) => !v)}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[20px] font-bold transition-colors"
+                style={
+                  plusOpen
+                    ? { background: "#16386E", color: "#FFFFFF" }
+                    : { background: "#EDF0F6", color: "#1B2A44" }
+                }
+              >
+                +
+              </button>
+              <input
+                value={input}
+                placeholder={voicePending ? "Đang nhận diện giọng nói..." : "Hỏi Capy..."}
+                aria-label="Nhập câu hỏi cho trợ lý AI"
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isPending || imagePending || voicePending}
+                className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
+              />
+              <button
+                aria-label="Gửi câu hỏi"
+                disabled={isPending || imagePending || voicePending || (!input.trim() && !selectedImage)}
+                onClick={() => (selectedImage ? submitImage() : submit(input))}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
+                style={{ background: input.trim() || selectedImage ? "#16386E" : "#B7C2D6" }}
+              >
+                ↑
+              </button>
+            </>
+          )}
         </div>
       </div>
 

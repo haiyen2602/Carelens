@@ -7,6 +7,7 @@ import type {
   FeedbackReportResponse,
   DrugImageConfirmResponse,
   DrugImageRecognitionResponse,
+  VoiceTranscribeResponse,
 } from "@/types/chat";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -120,6 +121,53 @@ export async function confirmDrugImageCandidate(
     );
   }
   return response.json();
+}
+
+// Ghi am -> text, cung mau multipart voi recognizeDrugImage o tren. Transcript
+// tra ve duoc goi noi (assistant/page.tsx) dua thang vao submit()/sendChatMessage
+// - endpoint nay KHONG tu goi orchestrate, chi chuyen doi dinh dang.
+export async function transcribeVoice(
+  payload: { patientId: string; conversationId: string; file: Blob; filename: string },
+  accessToken?: string | null,
+): Promise<VoiceTranscribeResponse> {
+  const form = new FormData();
+  form.set("patient_id", payload.patientId);
+  form.set("conversation_id", payload.conversationId);
+  form.set("file", payload.file, payload.filename);
+  const response = await fetch("/api/voice/transcribe", {
+    method: "POST",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    body: form,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+  }
+  return response.json();
+}
+
+// Text -> audio (doc to cau tra loi cua tro ly). Tra ve Blob, khong phai
+// JSON - loi o day KHONG duoc chan bubble text da hien thi (xem goi noi
+// trong assistant/page.tsx).
+export async function synthesizeVoice(
+  payload: { patientId: string; text: string },
+  accessToken?: string | null,
+): Promise<Blob> {
+  const response = await fetch("/api/voice/speak", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({ patient_id: payload.patientId, text: payload.text }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+  }
+  return response.blob();
 }
 
 export function getAgentStatus(): Promise<AgentStatus> {

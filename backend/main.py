@@ -37,6 +37,7 @@ from backend.api.reward_routes import reward_router
 from backend.api.routes import router
 from backend.api.telegram_routes import telegram_router
 from backend.api.vlm_monitoring_routes import vlm_monitoring_router
+from backend.api.voice_routes import voice_router
 from backend.config import get_settings
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
@@ -168,6 +169,7 @@ app.include_router(nudge_router, prefix="/api/v1")
 app.include_router(health_log_router, prefix="/api/v1")
 app.include_router(reward_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
+app.include_router(voice_router, prefix="/api/v1")
 app.include_router(telegram_router, prefix="/api/v1")
 app.include_router(notification_router, prefix="/api/v1")
 

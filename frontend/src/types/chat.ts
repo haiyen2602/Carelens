@@ -166,3 +166,12 @@ export type ActivityResponse = {
   available: boolean;
   activities: ActivityItem[];
 };
+
+// Voice I/O -- turn-based STT/TTS adapter around the chat pipeline above (see
+// frontend/src/hooks/use-voice-recorder.ts, use-voice-playback.ts). The
+// transcript below is fed unchanged into sendChatMessage() -- Agent V2 does
+// 100% of the reasoning, same as a typed message.
+export type VoiceTranscribeResponse = {
+  status: "OK";
+  text: string;
+};

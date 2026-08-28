@@ -53,6 +53,50 @@ class Settings(BaseSettings):
     agent_fallback_model: str = "gpt-5.4"
     agent_embedding_model: str = "text-embedding-3-small"
     rag_judge_model: str = "gpt-4o"
+
+    # Voice I/O -- turn-based STT/TTS adapter WRAPPED AROUND Agent V2, not a
+    # replacement for it (backend/api/voice_routes.py,
+    # backend/agents/v2/speech_gateway.py). One-shot Whisper/gpt-4o-transcribe
+    # + one-shot TTS REST calls only -- NOT the Realtime WebSocket API: the
+    # patient's transcript is always fed back into the unchanged
+    # /agent/v2/orchestrate call, so Agent V2 keeps doing 100% of the
+    # reasoning. Same fallback-to-OPENAI_API_KEY idiom as the workload keys
+    # above (see build_model_workloads).
+    openai_speech_api_key: str = ""
+    voice_stt_model: str = "gpt-4o-transcribe"
+    # Pinning the language is the single highest-impact STT setting here, not a
+    # micro-optimisation: left unset the model re-detects the language on every
+    # clip, and a one-second utterance carries too little signal to detect from.
+    # Measured against this project's own key -- "Alo" transcribed as "Hello"
+    # with no language, correctly as "Alo" with "vi". Empty = let OpenAI detect.
+    voice_stt_language: str = "vi"
+    # Vocabulary/context bias, NOT an instruction -- the transcription endpoint
+    # ignores commands placed here (verified: a "translate this to English"
+    # prompt changed nothing). Naming the words this app actually hears is what
+    # helps: it is what turns the mis-heard "Liệu tiếp theo" into "Liều tiếp
+    # theo", and "liều" is the single most load-bearing word in a medication
+    # assistant. Empty = send no prompt at all.
+    voice_stt_prompt: str = (
+        "Hội thoại tiếng Việt giữa bệnh nhân và trợ lý nhắc uống thuốc. "
+        "Từ thường gặp: liều, liều tiếp theo, uống thuốc, đơn thuốc, bác sĩ, "
+        "sáng, trưa, chiều, tối, trước ăn, sau ăn."
+    )
+    voice_tts_model: str = "gpt-4o-mini-tts"
+    voice_tts_voice: str = "alloy"
+    # ~10MB bounds STT cost per call before any OpenAI request is made (mirrors
+    # drug_image_chat_max_upload_bytes's role for B-05 below).
+    voice_max_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    # Enforced by speak_voice() before any OpenAI call -- bounds TTS cost per
+    # call (VoiceSpeakRequest itself carries no upper bound).
+    voice_max_reply_chars: int = Field(default=2000, gt=0)
+    voice_request_timeout_seconds: float = Field(default=20.0, gt=0, le=60.0)
+    # [CHUA CHOT] placeholder, same caveat as rate_limit_* below -- separate
+    # budget from ordinary chat since each call costs real OpenAI audio usage.
+    voice_rate_limit_max_requests: int = Field(
+        default=10, description="[CHUA CHOT] so request toi da/patient_id trong 1 window cho voice STT/TTS"
+    )
+    voice_rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit cho voice (giay)")
+
     # BUILD-13: JSON price catalog by exact model name. Prices are deliberately
     # not hard-coded because provider pricing/version contracts can change.
     # Example: {"gpt-5.4-mini":{"input_per_million":0.0,"cached_input_per_million":0.0,"output_per_million":0.0}}
