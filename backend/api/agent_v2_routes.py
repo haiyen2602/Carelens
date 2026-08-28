@@ -83,7 +83,6 @@ from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
 from backend.services.agent_safety_monitoring import persist_safety_event
-from backend.services.monitoring_events import broadcast_monitoring_event
 from backend.services.doctor_handoff import MessageSenderRole, record_doctor_review_message
 from backend.services.evaluators import LLMJudgeEvaluator
 from backend.services.telemetry import get_telemetry_service
@@ -769,16 +768,6 @@ def _respond_with_doctor_takeover_active(
     )
     db.add(run)
     db.commit()
-    try:
-        broadcast_monitoring_event("agent_run_completed", {
-            "agent_run_id": run.id,
-            "trace_id": trace_id,
-            "status": "DOCTOR_ACTIVE",
-            "patient_id": patient_id,
-            "conversation_id": conversation_id,
-        })
-    except Exception:
-        pass
     handoff_type = handoff_type_for(reason_code=handoff.reason_code, risk_disposition=handoff.risk_disposition).value
     return AgentV2OrchestrateResponse(
         status="DOCTOR_ACTIVE",
@@ -1236,15 +1225,5 @@ def run_agent_orchestration(
     # already-computed `result` -- never influences Safety/Handoff runtime
     # behavior (BUILD-34 §12). Fully self-contained, safe to call directly.
     persist_safety_event(db, result=result, conversation_id=conversation_id, patient_id=patient_id, actor_id=actor.id)
-    try:
-        broadcast_monitoring_event("agent_run_completed", {
-            "agent_run_id": getattr(result, "agent_run_id", None),
-            "trace_id": getattr(result, "trace_id", None),
-            "status": getattr(getattr(result, "status", None), "value", str(getattr(result, "status", "UNKNOWN"))),
-            "patient_id": patient_id,
-            "conversation_id": conversation_id,
-        })
-    except Exception:
-        pass
 
     return response
