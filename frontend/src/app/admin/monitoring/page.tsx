@@ -13,6 +13,7 @@ import {
   ChevronUp,
   Database,
   DollarSign,
+  ExternalLink,
   FileSearch,
   Filter,
   Gauge,
@@ -23,6 +24,7 @@ import {
   RefreshCw,
   ScrollText,
   Search,
+  Server,
   ShieldAlert,
   Sparkles,
   Trophy,
@@ -88,16 +90,16 @@ type TabId =
 
 const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
   { id: "overview", label: "Tổng quan", icon: Activity },
-  { id: "quality", label: "Chất lượng", icon: Sparkles },
-  { id: "retrieval", label: "Retrieval", icon: ScrollText },
+  { id: "quality", label: "Chất lượng AI & RAG", icon: Sparkles },
+  { id: "retrieval", label: "Truy xuất (Retrieval)", icon: ScrollText },
   { id: "safety", label: "An toàn & Chuyển bác sĩ", icon: ShieldAlert },
-  { id: "performance", label: "Hiệu năng", icon: Gauge },
+  { id: "performance", label: "Hiệu năng & Độ trễ", icon: Gauge },
   { id: "cost", label: "Token & Chi phí", icon: DollarSign },
-  { id: "errors", label: "Lỗi", icon: AlertCircle },
-  { id: "judge", label: "Judge", icon: ListChecks },
-  { id: "golden", label: "Golden Evaluation", icon: Trophy },
-  { id: "rag_chatbot", label: "RAG Chatbot", icon: Bot },
-  { id: "versions", label: "So sánh Version", icon: Zap },
+  { id: "errors", label: "Phân tích lỗi", icon: AlertCircle },
+  { id: "judge", label: "Đánh giá tự động (Judge)", icon: ListChecks },
+  { id: "golden", label: "Bộ dữ liệu chuẩn (Golden Set)", icon: Trophy },
+  { id: "rag_chatbot", label: "Chatbot RAG chuyên sâu", icon: Bot },
+  { id: "versions", label: "So sánh phiên bản", icon: Zap },
 ];
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
@@ -144,6 +146,30 @@ function metricColor(
   return "text-emerald-600";
 }
 
+// ─── Human-friendly note mapper ───────────────────────────────────────────────
+
+const TECHNICAL_NOTE_MAP: Record<string, string> = {
+  in_memory_ring_buffer_current_process_only: "Bộ nhớ đệm (phiên chạy hiện tại)",
+  in_memory_ring_buffer_current_process_only_never_made_durable: "Bộ nhớ đệm tạm thời",
+  NOT_APPLICABLE: "Chưa áp dụng cho phiên này",
+  NOT_AVAILABLE: "Chưa có dữ liệu ghi nhận",
+  NO_RUN_PERSISTED_YET: "Chưa có lượt đánh giá nào được lưu",
+  no_stable_retrieval_id_contract_see_build_31_and_build_35: "Chưa hỗ trợ ID truy xuất cố định",
+  grounding_failure_spans_multiple_intents_not_isolable_to_rag_only_today_see_grounding_failure_rate:
+    "Xem tỷ lệ Grounding Failure bên cạnh",
+  never_emitted_by_current_runtime_no_per_tool_or_per_retrieval_deadline_distinct_from_run_timeout:
+    "Chưa ghi nhận trong phiên bản hiện tại",
+};
+
+function formatHumanNote(raw?: string | null): string | null {
+  if (!raw) return null;
+  if (TECHNICAL_NOTE_MAP[raw]) return TECHNICAL_NOTE_MAP[raw];
+  if (raw.includes("in_memory_ring_buffer")) return "Bộ nhớ đệm (phiên hiện tại)";
+  if (raw.includes("no_stable_retrieval_id")) return "Chưa hỗ trợ ID truy xuất cố định";
+  if (raw.includes("grounding_failure")) return "Xem tỷ lệ Grounding Failure";
+  return raw;
+}
+
 // ─── Small shared components ──────────────────────────────────────────────────
 
 function MetricTypeBadge({ type }: { type?: MetricValue["metric_type"] }) {
@@ -163,7 +189,13 @@ function MetricTypeBadge({ type }: { type?: MetricValue["metric_type"] }) {
 }
 
 function MetricCard({
-  label, metric, percent, suffix, help, sub, thresholdKey,
+  label,
+  metric,
+  percent,
+  suffix,
+  help,
+  sub,
+  thresholdKey,
 }: {
   label: string;
   metric?: MetricValue;
@@ -176,6 +208,8 @@ function MetricCard({
   const display = formatMetric(metric, { percent, suffix });
   const numVal = metric?.status === "AVAILABLE" && typeof metric.value === "number" ? metric.value : null;
   const colorClass = thresholdKey && numVal !== null ? metricColor(thresholdKey, numVal) : "text-foreground";
+  const noteText = formatHumanNote(metric?.scope ?? metric?.scope_note ?? metric?.note);
+  const reasonOrStatus = formatHumanNote(metric?.reason ?? metric?.status);
 
   return (
     <div className="surface-card p-4" title={help}>
@@ -190,11 +224,11 @@ function MetricCard({
           {metric.sample_count != null ? ` (n=${metric.sample_count})` : ""}
         </p>
       ) : metric && metric.status !== "AVAILABLE" ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">{metric.reason ?? metric.status}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{reasonOrStatus}</p>
       ) : null}
-      {(metric?.scope || metric?.scope_note || metric?.note) && (
+      {noteText && (
         <p className="mt-1 text-[10px] italic text-muted-foreground">
-          {metric.scope ?? metric.scope_note ?? metric.note}
+          {noteText}
         </p>
       )}
       {sub && <p className="mt-1 text-[11px] text-muted-foreground">{sub}</p>}
@@ -238,7 +272,13 @@ function DisabledMetricCard({
 
 /** Warning banner shown when a metric is below threshold */
 function WarningBanner({
-  label, value, target, unit = "%", drillTab, drillLabel,
+  label,
+  value,
+  target,
+  unit = "%",
+  drillLabel,
+  onDrill,
+  href,
 }: {
   label: string;
   value: number;
@@ -247,6 +287,7 @@ function WarningBanner({
   drillTab?: TabId;
   drillLabel?: string;
   onDrill?: () => void;
+  href?: string;
 }) {
   const pct = unit === "%" ? (value * 100).toFixed(1) : value.toFixed(0);
   const targetPct = unit === "%" ? (target * 100).toFixed(0) : target.toFixed(0);
@@ -258,11 +299,26 @@ function WarningBanner({
         <span className="font-bold">{pct}{unit}</span>, dưới mục tiêu{" "}
         <span className="font-semibold">{targetPct}{unit}</span>.
       </div>
-      {drillTab && drillLabel && (
-        <span className="text-xs font-medium text-amber-700 underline cursor-pointer whitespace-nowrap">
+      {href ? (
+        <Link
+          href={href}
+          className="text-xs font-semibold text-amber-800 underline hover:text-amber-950 cursor-pointer whitespace-nowrap"
+        >
+          {drillLabel || "Xem chi tiết"} →
+        </Link>
+      ) : onDrill && drillLabel ? (
+        <button
+          type="button"
+          onClick={onDrill}
+          className="text-xs font-semibold text-amber-800 underline hover:text-amber-950 cursor-pointer whitespace-nowrap bg-transparent border-0 p-0"
+        >
           {drillLabel} →
+        </button>
+      ) : drillLabel ? (
+        <span className="text-xs font-medium text-amber-700 whitespace-nowrap">
+          {drillLabel}
         </span>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -284,9 +340,10 @@ function ErrorState({ message }: { message: string }) {
 }
 
 function UnavailableState({ reason }: { reason?: string }) {
+  const formattedReason = formatHumanNote(reason);
   return (
     <div className="surface-card p-4 text-sm text-muted-foreground">
-      Dữ liệu hiện không khả dụng{reason ? ` (${reason})` : ""}. Không phải 0 — xem lại sau.
+      Dữ liệu hiện không khả dụng{formattedReason ? ` (${formattedReason})` : ""}. Không phải 0 — xem lại sau.
     </div>
   );
 }
@@ -496,12 +553,16 @@ function HorizontalBarChart({
 
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
+// ─── Tab: Overview ────────────────────────────────────────────────────────────
+
 function OverviewTab({
   data,
   safety,
+  onNavigateTab,
 }: {
   data: OverviewOut;
   safety: SafetySummary | null;
+  onNavigateTab: (tab: TabId) => void;
 }) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
 
@@ -530,64 +591,82 @@ function OverviewTab({
       {/* Warnings */}
       <div className="space-y-2">
         {successVal !== null && successVal < THRESHOLDS.success_rate.warn && (
-          <WarningBanner label="Tỷ lệ thành công" value={successVal} target={THRESHOLDS.success_rate.target} drillTab="errors" drillLabel="Xem phân tích lỗi" />
+          <WarningBanner
+            label="Tỷ lệ thành công"
+            value={successVal}
+            target={THRESHOLDS.success_rate.target}
+            drillTab="errors"
+            drillLabel="Xem phân tích lỗi"
+            onDrill={() => onNavigateTab("errors")}
+          />
         )}
         {errorVal !== null && errorVal > THRESHOLDS.error_rate.warn && (
-          <WarningBanner label="Tỷ lệ lỗi" value={errorVal} target={THRESHOLDS.error_rate.target} drillTab="errors" drillLabel="Tìm hiểu lỗi" />
+          <WarningBanner
+            label="Tỷ lệ lỗi"
+            value={errorVal}
+            target={THRESHOLDS.error_rate.target}
+            drillTab="errors"
+            drillLabel="Tìm hiểu lỗi"
+            onDrill={() => onNavigateTab("errors")}
+          />
         )}
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Tổng số request" metric={{ value: total, status: "AVAILABLE" }} />
+        <MetricCard label="Tổng lượt yêu cầu (Requests)" metric={{ value: total, status: "AVAILABLE" }} />
         <MetricCard label="Tỷ lệ thành công" metric={data.success_rate} percent thresholdKey="success_rate" />
-        <MetricCard label="Tỷ lệ fallback" metric={data.fallback_rate} percent />
-        <MetricCard label="Tỷ lệ lỗi" metric={data.error_rate} percent thresholdKey="error_rate" />
-        <MetricCard label="Tỷ lệ timeout" metric={data.timeout_rate} percent />
-        <MetricCard label="Tỷ lệ trả lời rỗng" metric={data.empty_reply_rate} percent />
-        <MetricCard label="P50 latency" metric={data.latency_p50_ms} suffix="ms" />
-        <MetricCard label="P95 latency" metric={data.latency_p95_ms} suffix="ms" />
-        <MetricCard label="Token/query" metric={data.tokens_per_query} />
-        <MetricCard label="Cost/query (USD)" metric={data.cost_per_query_usd} />
-        <MetricCard label="Cost hôm nay (USD)" metric={data.daily_cost_usd} />
-        <MetricCard label="Tỷ lệ ticket" metric={data.ticket_rate} percent />
+        <MetricCard label="Tỷ lệ phản hồi dự phòng (Fallback)" metric={data.fallback_rate} percent />
+        <MetricCard label="Tỷ lệ phát sinh lỗi (Error Rate)" metric={data.error_rate} percent thresholdKey="error_rate" />
+        <MetricCard label="Tỷ lệ quá thời gian (Timeout)" metric={data.timeout_rate} percent />
+        <MetricCard label="Tỷ lệ phản hồi rỗng (Empty Reply)" metric={data.empty_reply_rate} percent />
+        <MetricCard label="Độ trễ trung vị P50 (Latency)" metric={data.latency_p50_ms} suffix="ms" />
+        <MetricCard label="Độ trễ phân vị P95 (Latency)" metric={data.latency_p95_ms} suffix="ms" />
+        <MetricCard label="Lượng Token / lượt yêu cầu" metric={data.tokens_per_query} />
+        <MetricCard label="Chi phí trung bình / lượt (USD)" metric={data.cost_per_query_usd} />
+        <MetricCard label="Tổng chi phí hôm nay (USD)" metric={data.daily_cost_usd} />
+        <MetricCard label="Tỷ lệ tạo báo cáo (Ticket)" metric={data.ticket_rate} percent />
         <MetricCard
-          label="Tỷ lệ safety trigger"
+          label="Tỷ lệ kích hoạt an toàn (Safety)"
           metric={data.safety_trigger_rate}
           percent
           help="Chỉ lọc theo khoảng ngày, không theo model/prompt_version nếu filter đang bật"
         />
-        <MetricCard label="Tỷ lệ handoff" metric={data.handoff_rate} percent />
-        <MetricCard label="Tỷ lệ được Judge chấm" metric={data.judged_rate} percent />
+        <MetricCard label="Tỷ lệ chuyển bác sĩ (Handoff)" metric={data.handoff_rate} percent />
+        <MetricCard label="Tỷ lệ qua Judge đánh giá" metric={data.judged_rate} percent />
       </div>
 
       {/* Charts row */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="surface-card p-5">
-          <DonutChart data={donutData} title="Phân bổ kết quả request" />
+          <DonutChart data={donutData} title="Phân bổ trạng thái phản hồi" />
         </div>
         {safety && (
           <div className="surface-card p-5 space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-500" /> An toàn (tóm tắt)
+              <ShieldAlert className="h-4 w-4 text-rose-500" /> An toàn & Chuyển tiếp bác sĩ (Tóm tắt)
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground">Safety triggers</p>
+                <p className="text-xs text-muted-foreground">Kích hoạt cảnh báo an toàn</p>
                 <p className="text-2xl font-bold text-rose-600">{safety.safety_trigger_count ?? 0}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground">Handoff yêu cầu</p>
+                <p className="text-xs text-muted-foreground">Yêu cầu chuyển bác sĩ</p>
                 <p className="text-2xl font-bold text-amber-600">{safety.handoff_required_count ?? 0}</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-3 text-center col-span-2">
-                <p className="text-xs text-muted-foreground">Tổng runs (cơ sở tính tỷ lệ)</p>
+                <p className="text-xs text-muted-foreground">Tổng số lượt chạy (Cơ sở tính)</p>
                 <p className="text-xl font-semibold">{safety.denominator_agent_v2_total_runs ?? 0}</p>
               </div>
             </div>
-            <Link href="/admin/monitoring" onClick={() => {}} className="text-xs text-primary underline">
-              Xem chi tiết An toàn →
-            </Link>
+            <button
+              type="button"
+              onClick={() => onNavigateTab("safety")}
+              className="text-xs text-primary underline bg-transparent border-none p-0 cursor-pointer font-medium"
+            >
+              Xem chi tiết An toàn & Chuyển bác sĩ →
+            </button>
           </div>
         )}
       </div>
@@ -602,11 +681,13 @@ function QualityTab({
   trend,
   trendDays,
   setTrendDays,
+  onNavigateTab,
 }: {
   data: QualityOut;
   trend: TrendOut | null;
   trendDays: number;
   setTrendDays: (d: number) => void;
+  onNavigateTab: (tab: TabId) => void;
 }) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
 
@@ -623,20 +704,21 @@ function QualityTab({
       <div className="space-y-2">
         {faithVal !== null && faithVal < THRESHOLDS.faithfulness.warn && (
           <WarningBanner
-            label="RAG Faithfulness"
+            label="Độ trung thực (Faithfulness)"
             value={faithVal}
             target={THRESHOLDS.faithfulness.target}
             drillTab="rag_chatbot"
             drillLabel="Xem Worst Queries trong RAG Chatbot"
+            onDrill={() => onNavigateTab("rag_chatbot")}
           />
         )}
         {relVal !== null && relVal < THRESHOLDS.answer_relevance.warn && (
           <WarningBanner
-            label="Answer Relevance"
+            label="Độ phù hợp câu trả lời (Answer Relevance)"
             value={relVal}
             target={THRESHOLDS.answer_relevance.target}
-            drillTab="rag_chatbot"
             drillLabel="Xem Trace Explorer"
+            href="/admin/monitoring/traces"
           />
         )}
       </div>
@@ -644,41 +726,41 @@ function QualityTab({
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <MetricCard
-          label="RAG Faithfulness"
+          label="Độ trung thực (Faithfulness)"
           metric={data.rag_faithfulness}
           thresholdKey="faithfulness"
-          help="Tính trên trace trong buffer hiện tại (ring buffer)"
+          help="Tính trên trace trong bộ nhớ đệm hiện tại (Ring Buffer)"
         />
         <MetricCard
-          label="RAG Answer Relevance"
+          label="Độ phù hợp (Answer Relevance)"
           metric={data.rag_answer_relevance}
           thresholdKey="answer_relevance"
-          help="Tính trên trace trong buffer hiện tại (ring buffer)"
+          help="Tính trên trace trong bộ nhớ đệm hiện tại (Ring Buffer)"
         />
         <DisabledMetricCard
-          label="Golden HitRate@10"
+          label="Tỷ lệ tìm thấy Top 10 (HitRate@10)"
           reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: retrieval_id không được persist durably. Cần migration để enable."
+          technicalNote="BUILD-31/35: retrieval_id không được lưu dài hạn vào DB. Cần migration để kích hoạt."
         />
         <DisabledMetricCard
-          label="Golden MRR@10"
+          label="Thứ hạng đảo trung bình (MRR@10)"
           reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: xem golden evaluation tab để theo dõi pass/fail."
+          technicalNote="BUILD-31/35: Xem tab Đánh giá chuẩn (Golden Set) để theo dõi đạt/không đạt."
         />
         <DisabledMetricCard
-          label="Golden NDCG@10"
+          label="Độ chuẩn tích lũy chiết khấu (NDCG@10)"
           reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: xem golden evaluation tab để theo dõi pass/fail."
+          technicalNote="BUILD-31/35: Xem tab Đánh giá chuẩn (Golden Set) để theo dõi đạt/không đạt."
         />
-        <MetricCard label="Judge Overall Score" metric={data.judge_overall_score} help="Tín hiệu chất lượng phụ dựa trên LLM. Không phải xác nhận y khoa tuyệt đối." />
+        <MetricCard label="Điểm đánh giá tổng thể (Judge Score)" metric={data.judge_overall_score} help="Tín hiệu đánh giá chất lượng tự động bằng LLM. Không phải xác nhận chuyên môn y khoa tuyệt đối." />
         <MetricCard
-          label="Golden Pass Rate"
+          label="Tỷ lệ đạt chuẩn (Golden Pass Rate)"
           metric={data.golden_pass_rate}
           percent
-          sub={data.golden_pass_rate?.run_id ? `run ${data.golden_pass_rate.run_id.slice(0, 8)}` : undefined}
+          sub={data.golden_pass_rate?.run_id ? `Lượt kiểm thử: ${data.golden_pass_rate.run_id.slice(0, 8)}` : undefined}
         />
         <MetricCard
-          label="Regression Gate"
+          label="Cổng kiểm thử hồi quy (Regression Gate)"
           metric={{ ...(data.regression_gate_status as MetricValue ?? {}), value: data.regression_gate_status?.value ?? null } as MetricValue}
         />
       </div>
@@ -688,7 +770,7 @@ function QualityTab({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
-            Xu hướng Chất lượng ({trendDays} ngày qua)
+            Xu hướng chất lượng phản hồi ({trendDays} ngày gần nhất)
           </h3>
           <div className="flex gap-1">
             {[7, 14, 30].map((d) => (
@@ -698,7 +780,7 @@ function QualityTab({
                 onClick={() => setTrendDays(d)}
                 className={`rounded px-2.5 py-1 text-xs font-medium ${trendDays === d ? "bg-primary text-primary-foreground" : "border hover:bg-accent"}`}
               >
-                {d}d
+                {d} ngày
               </button>
             ))}
           </div>
@@ -711,66 +793,73 @@ function QualityTab({
 
 // ─── Tab: Retrieval ───────────────────────────────────────────────────────────
 
-function RetrievalTab({ data }: { data: RetrievalOut }) {
+function RetrievalTab({
+  data,
+  onNavigateTab,
+}: {
+  data: RetrievalOut;
+  onNavigateTab: (tab: TabId) => void;
+}) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
 
   const gfVal = data.grounding_failure_rate?.status === "AVAILABLE" && typeof data.grounding_failure_rate.value === "number"
     ? data.grounding_failure_rate.value : null;
 
   const donutData = [
-    { name: "Thành công RAG", value: data.rag_query_volume ?? 0, color: "#10b981" },
-    { name: "Grounding failure", value: data.grounding_failure_rate?.numerator ?? 0, color: "#ef4444" },
+    { name: "Truy vấn RAG thành công", value: data.rag_query_volume ?? 0, color: "#10b981" },
+    { name: "Lỗi thiếu căn cứ (Grounding Failure)", value: data.grounding_failure_rate?.numerator ?? 0, color: "#ef4444" },
   ];
 
   return (
     <div className="space-y-6">
       {gfVal !== null && gfVal > THRESHOLDS.grounding_failure_rate.warn && (
         <WarningBanner
-          label="Grounding Failure Rate"
+          label="Tỷ lệ lỗi thiếu căn cứ (Grounding Failure)"
           value={gfVal}
           target={THRESHOLDS.grounding_failure_rate.target}
           drillTab="errors"
-          drillLabel="Xem Errors tab"
+          drillLabel="Xem phân tích lỗi chi tiết"
+          onDrill={() => onNavigateTab("errors")}
         />
       )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="RAG query volume" metric={{ value: data.rag_query_volume ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Retrieval latency P50" metric={data.retrieval_latency_p50_ms} suffix="ms" />
-        <MetricCard label="Retrieval latency P95" metric={data.retrieval_latency_p95_ms} suffix="ms" />
+        <MetricCard label="Số lượt truy vấn RAG (Query Volume)" metric={{ value: data.rag_query_volume ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Độ trễ truy xuất P50 (Retrieval)" metric={data.retrieval_latency_p50_ms} suffix="ms" />
+        <MetricCard label="Độ trễ truy xuất P95 (Retrieval)" metric={data.retrieval_latency_p95_ms} suffix="ms" />
         <MetricCard
-          label="Grounding failure rate"
+          label="Tỷ lệ lỗi thiếu căn cứ (Grounding Failure)"
           metric={data.grounding_failure_rate}
           percent
           thresholdKey="grounding_failure_rate"
-          help="Tỷ lệ lỗi khi agent yêu cầu grounding nhưng không có tài liệu liên quan. KHÔNG isolable sang RAG riêng."
+          help="Tỷ lệ yêu cầu cần căn cứ tài liệu y khoa nhưng không tìm thấy thông tin phù hợp."
         />
         <DisabledMetricCard
-          label="Empty retrieval rate"
-          reason="Không đo được riêng cho RAG: GROUNDING_FAILURE bao nhiều intent (drug, prescription, dose), không thể tách RAG."
-          technicalNote="Dùng grounding_failure_rate ở trên làm proxy."
+          label="Tỷ lệ truy xuất rỗng (Empty Retrieval)"
+          reason="Không thể bóc tách riêng cho RAG: GROUNDING_FAILURE bao gồm nhiều intent (tra cứu thuốc, đơn thuốc, liều lượng)."
+          technicalNote="Sử dụng chỉ số Grounding Failure Rate ở trên làm đối trọng."
         />
         <DisabledMetricCard
-          label="Golden HitRate@10"
-          reason="Không có stable retrieval_id contract (BUILD-31/35)"
-          technicalNote="Cần persist retrieval_id trong AgentRunSpan để enable."
+          label="Tỷ lệ tìm thấy Top 10 (HitRate@10)"
+          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
+          technicalNote="Cần lưu retrieval_id vào bảng AgentRunSpan để kích hoạt."
         />
         <DisabledMetricCard
-          label="Golden MRR@10"
-          reason="Không có stable retrieval_id contract (BUILD-31/35)"
+          label="Thứ hạng đảo trung bình (MRR@10)"
+          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
         />
         <DisabledMetricCard
-          label="Golden NDCG@10"
-          reason="Không có stable retrieval_id contract (BUILD-31/35)"
+          label="Độ chuẩn tích lũy chiết khấu (NDCG@10)"
+          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
         />
         <DisabledMetricCard
-          label="Golden Precision@10"
-          reason="Không có stable retrieval_id contract (BUILD-31/35)"
+          label="Độ chính xác Top 10 (Precision@10)"
+          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
         />
       </div>
 
       <div className="surface-card p-5">
-        <DonutChart data={donutData} title="RAG volume vs Grounding failures" />
+        <DonutChart data={donutData} title="Tỷ lệ truy vấn RAG so với lỗi Grounding" />
       </div>
     </div>
   );
@@ -786,49 +875,52 @@ function PerformanceTab({ data }: { data: PerformanceOut }) {
 
   const stepBarData = data.per_step
     ? Object.entries(data.per_step)
-        .map(([step, v]) => ({
-          label: step,
-          value: typeof v[95]?.value === "number" ? v[95].value : 0,
-        }))
-        .filter((d) => d.value > 0)
-        .sort((a, b) => b.value - a.value)
+      .map(([step, v]) => ({
+        label: step,
+        value: typeof v[95]?.value === "number" ? v[95].value : 0,
+      }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value)
     : [];
 
   return (
     <div className="space-y-6">
       {p95Val !== null && p95Val > THRESHOLDS.p95_latency_ms.warn && (
         <WarningBanner
-          label="P95 Latency"
+          label="Độ trễ toàn trình P95 (End-to-End)"
           value={p95Val / 1000}
           target={THRESHOLDS.p95_latency_ms.target / 1000}
           unit="s"
-          drillTab="performance"
-          drillLabel="Xem latency theo bước"
+          drillLabel="Xem độ trễ chi tiết từng giai đoạn"
+          onDrill={() => {
+            const el = document.getElementById("step-latency-table");
+            el?.scrollIntoView({ behavior: "smooth" });
+          }}
         />
       )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="End-to-end P50" metric={data.end_to_end_p50_ms} suffix="ms" />
-        <MetricCard label="End-to-end P95" metric={data.end_to_end_p95_ms} suffix="ms" />
-        <MetricCard label="End-to-end P99" metric={data.end_to_end_p99_ms} suffix="ms" />
-        <MetricCard label="Tỷ lệ timeout" metric={data.timeout_rate} percent />
+        <MetricCard label="Độ trễ toàn trình P50 (End-to-End)" metric={data.end_to_end_p50_ms} suffix="ms" />
+        <MetricCard label="Độ trễ toàn trình P95 (End-to-End)" metric={data.end_to_end_p95_ms} suffix="ms" />
+        <MetricCard label="Độ trễ toàn trình P99 (End-to-End)" metric={data.end_to_end_p99_ms} suffix="ms" />
+        <MetricCard label="Tỷ lệ quá thời gian (Timeout)" metric={data.timeout_rate} percent />
       </div>
 
       {stepBarData.length > 0 && (
         <HorizontalBarChart
           data={stepBarData}
-          title="Latency P95 theo từng bước pipeline (ms)"
+          title="Độ trễ P95 theo từng giai đoạn xử lý (ms)"
           valueFormatter={(v) => `${v}ms`}
         />
       )}
 
       {data.per_step && (
-        <div className="surface-card overflow-x-auto p-4">
-          <p className="mb-2 text-sm font-semibold">Chi tiết latency từng bước (span thật)</p>
+        <div id="step-latency-table" className="surface-card overflow-x-auto p-4">
+          <p className="mb-2 text-sm font-semibold">Bảng phân rã độ trễ chi tiết theo từng span</p>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
-                <th className="py-1">Bước</th><th>P50 (ms)</th><th>P95 (ms)</th><th>n</th>
+                <th className="py-1">Giai đoạn (Span)</th><th>P50 (ms)</th><th>P95 (ms)</th><th>Số mẫu (n)</th>
               </tr>
             </thead>
             <tbody>
@@ -855,27 +947,27 @@ function CostTab({ data }: { data: CostOut }) {
 
   const modelBarData = data.by_model_usd
     ? Object.entries(data.by_model_usd)
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => b.value - a.value)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
     : [];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Agent Cost (USD)" metric={data.agent_cost_usd} />
-        <MetricCard label="Judge Cost (USD)" metric={data.judge_cost_usd} />
-        <MetricCard label="Total Cost (USD)" metric={data.total_cost_usd} />
-        <MetricCard label="Cost/query (USD)" metric={data.cost_per_query_usd} />
-        <MetricCard label="Input tokens" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Output tokens" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Total tokens" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Token/query" metric={data.tokens_per_query} />
+        <MetricCard label="Chi phí mô hình Agent (USD)" metric={data.agent_cost_usd} />
+        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
+        <MetricCard label="Tổng chi phí sử dụng (USD)" metric={data.total_cost_usd} />
+        <MetricCard label="Chi phí trung bình / lượt (USD)" metric={data.cost_per_query_usd} />
+        <MetricCard label="Token đầu vào (Input Tokens)" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Token đầu ra (Output Tokens)" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Tổng lượng Token tiêu thụ" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Lượng Token / lượt yêu cầu" metric={data.tokens_per_query} />
       </div>
 
       {modelBarData.length > 0 && (
         <HorizontalBarChart
           data={modelBarData}
-          title="Chi phí theo Model (USD)"
+          title="Phân bổ chi phí theo Model AI (USD)"
           valueFormatter={(v) => `$${v.toFixed(4)}`}
         />
       )}
@@ -906,17 +998,17 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
     <div className="space-y-6">
       {pieData.length > 0 && (
         <div className="surface-card p-5">
-          <DonutChart data={pieData} title="Phân bổ lỗi theo loại" />
+          <DonutChart data={pieData} title="Phân bổ nguyên nhân phát sinh lỗi" />
         </div>
       )}
       <div className="surface-card overflow-x-auto p-4">
         <p className="mb-2 text-sm text-muted-foreground">
-          Tổng số request: {data.total_requests ?? "N/A"}. Bấm 1 mã lỗi để lọc trace.
+          Tổng số lượt yêu cầu: {data.total_requests ?? "N/A"}. (Nhấp vào một mã lỗi để lọc danh sách trace tương ứng)
         </p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="py-1">error_code</th><th>Tỷ lệ</th><th>Số lượng</th><th>Ghi chú</th>
+              <th className="py-1">Mã lỗi (Error Code)</th><th>Tỷ lệ phát sinh</th><th>Số lượng ca</th><th>Ghi chú kỹ thuật</th>
             </tr>
           </thead>
           <tbody>
@@ -932,7 +1024,7 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
                   <td className="py-1 font-mono text-xs">{code}</td>
                   <td>{formatMetric(m, { percent: true })}</td>
                   <td className={count > 0 ? "font-semibold text-rose-600" : ""}>{m?.numerator ?? "N/A"}</td>
-                  <td className="text-[11px] italic text-muted-foreground">{m?.note ?? ""}</td>
+                  <td className="text-[11px] italic text-muted-foreground">{formatHumanNote(m?.note) ?? ""}</td>
                 </tr>
               );
             })}
@@ -940,7 +1032,7 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
         </table>
         {data.unrecognized_error_codes && data.unrecognized_error_codes.length > 0 && (
           <p className="mt-2 text-xs text-amber-600">
-            Mã lỗi chưa nằm trong danh sách chuẩn: {data.unrecognized_error_codes.join(", ")}
+            Mã lỗi chưa nằm trong danh mục chuẩn: {data.unrecognized_error_codes.join(", ")}
           </p>
         )}
       </div>
@@ -950,32 +1042,34 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
 
 // ─── Tab: Judge ───────────────────────────────────────────────────────────────
 
+// ─── Tab: Judge ───────────────────────────────────────────────────────────────
+
 function JudgeTab({ data }: { data: JudgeOut }) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
 
   const distData = data.overall_score_distribution
     ? Object.entries(data.overall_score_distribution).map(([name, value], idx) => ({
-        name,
-        value,
-        color: CHART_COLORS[idx % CHART_COLORS.length],
-      }))
+      name,
+      value,
+      color: CHART_COLORS[idx % CHART_COLORS.length],
+    }))
     : [];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Tổng số đã enqueue" metric={{ value: data.total_judged ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="PENDING" metric={{ value: data.judged_pending ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="COMPLETED" metric={{ value: data.judged_completed ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="FAILED" metric={{ value: data.judged_failed ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Judge Cost (USD)" metric={data.judge_cost_usd} />
-        <MetricCard label="Judge input tokens" metric={{ value: data.judge_input_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Judge output tokens" metric={{ value: data.judge_output_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Tổng lượt đưa vào chấm điểm" metric={{ value: data.total_judged ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Đang chờ chấm (Pending)" metric={{ value: data.judged_pending ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Đã chấm xong (Completed)" metric={{ value: data.judged_completed ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Chấm điểm thất bại (Failed)" metric={{ value: data.judged_failed ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
+        <MetricCard label="Token đầu vào Judge (Input Tokens)" metric={{ value: data.judge_input_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Token đầu ra Judge (Output Tokens)" metric={{ value: data.judge_output_tokens ?? null, status: "AVAILABLE" }} />
       </div>
 
       {distData.length > 0 && (
         <div className="surface-card p-5">
-          <DonutChart data={distData} title="Phân bổ điểm Judge (score distribution)" />
+          <DonutChart data={distData} title="Phân bổ thang điểm của Judge (0.0 - 1.0)" />
         </div>
       )}
 
@@ -983,11 +1077,11 @@ function JudgeTab({ data }: { data: JudgeOut }) {
 
       {data.low_score_cases && data.low_score_cases.length > 0 && (
         <div className="surface-card overflow-x-auto p-4">
-          <p className="mb-2 text-sm font-semibold">Case điểm thấp (&lt; 0.5)</p>
+          <p className="mb-2 text-sm font-semibold">Các lượt xử lý đạt điểm thấp (&lt; 0.5)</p>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
-                <th>Trace</th><th>Path</th><th>Điểm</th>
+                <th>Mã Trace (Trace ID)</th><th>Đường dẫn xử lý (Execution Path)</th><th>Điểm số</th>
               </tr>
             </thead>
             <tbody>
@@ -1017,11 +1111,11 @@ function GoldenTab({ data }: { data: GoldenOut }) {
   if (!data.has_run || !data.latest_run) {
     return (
       <div className="surface-card p-4 text-sm text-muted-foreground">
-        Chưa có golden run nào được persist. Chạy{" "}
+        Chưa có lượt đánh giá chuẩn nào được lưu. Chạy{" "}
         <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
           run_golden_evaluation.py --persist
         </code>{" "}
-        để có dữ liệu.
+        để cập nhật dữ liệu.
       </div>
     );
   }
@@ -1029,28 +1123,28 @@ function GoldenTab({ data }: { data: GoldenOut }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Golden set version" metric={{ value: run.golden_set_version, status: "AVAILABLE" }} />
+        <MetricCard label="Phiên bản bộ dữ liệu chuẩn" metric={{ value: run.golden_set_version, status: "AVAILABLE" }} />
         <MetricCard
-          label="Pass rate"
+          label="Tỷ lệ ca đạt chuẩn (Pass Rate)"
           metric={{ value: run.pass_rate, status: run.pass_rate !== null ? "AVAILABLE" : "NOT_APPLICABLE" }}
           percent
         />
         <MetricCard
-          label="Regression gate"
-          metric={{ value: run.regression_gate_passed ? "PASS" : "FAIL", status: "AVAILABLE" }}
+          label="Cổng kiểm thử hồi quy (Regression Gate)"
+          metric={{ value: run.regression_gate_passed ? "ĐẠT (PASS)" : "KHÔNG ĐẠT (FAIL)", status: "AVAILABLE" }}
         />
         <MetricCard
-          label="Số case"
+          label="Số ca kiểm thử (Đạt / Tổng)"
           metric={{ value: `${run.passed_cases}/${run.total_cases}`, status: "AVAILABLE" }}
         />
       </div>
       <div className="surface-card p-4">
-        <p className="mb-2 text-sm font-semibold">Theo category</p>
+        <p className="mb-2 text-sm font-semibold">Kết quả kiểm thử theo phân loại (Category)</p>
         <table className="w-full text-sm">
           <tbody>
             {Object.entries(run.by_category).map(([cat, v]) => (
               <tr key={cat} className="border-t">
-                <td className="py-1">{cat}</td>
+                <td className="py-1 font-medium">{cat}</td>
                 <td className="font-semibold">{v.passed}/{v.total}</td>
                 <td>
                   <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
@@ -1068,12 +1162,12 @@ function GoldenTab({ data }: { data: GoldenOut }) {
       {run.failed_case_ids.length > 0 && (
         <div className="surface-card p-4">
           <p className="mb-1 text-sm font-semibold text-destructive">
-            Case fail: {run.failed_case_ids.join(", ")}
+            Các ca kiểm thử không đạt: {run.failed_case_ids.join(", ")}
           </p>
         </div>
       )}
       <p className="text-xs italic text-muted-foreground">
-        Lưu ý: category FALLBACK chưa có case E2E thật — xem BUILD-35 report.
+        Lưu ý: Phân loại FALLBACK chưa có ca kiểm thử toàn trình thực tế.
       </p>
     </div>
   );
@@ -1081,13 +1175,39 @@ function GoldenTab({ data }: { data: GoldenOut }) {
 
 // ─── Tab: Versions ────────────────────────────────────────────────────────────
 
-function VersionsTab({ accessToken }: { accessToken: string | null | undefined }) {
+function VersionsTab({
+  accessToken,
+  versionOptions,
+}: {
+  accessToken: string | null | undefined;
+  versionOptions?: VersionFiltersOut | null;
+}) {
   const [section, setSection] = useState("overview");
   const [before, setBefore] = useState<MonitoringFiltersInput>({});
   const [after, setAfter] = useState<MonitoringFiltersInput>({});
   const [result, setResult] = useState<CompareOut | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const SECTION_LABELS: Record<string, string> = {
+    overview: "Tổng quan (Overview)",
+    quality: "Chất lượng (Quality)",
+    retrieval: "Truy xuất (Retrieval)",
+    performance: "Hiệu năng (Performance)",
+    cost: "Chi phí (Cost)",
+    errors: "Phân tích lỗi (Errors)",
+    judge: "Đánh giá (Judge)",
+  };
+
+  const INPUT_LABELS: Record<string, string> = {
+    "Before model": "Model ban đầu (Before)",
+    "Before prompt_version": "Prompt Version ban đầu",
+    "After model": "Model sau (After)",
+    "After prompt_version": "Prompt Version sau",
+  };
+
+  const availableModels = versionOptions?.model ?? [];
+  const availablePromptVersions = versionOptions?.prompt_version ?? [];
 
   const run = useCallback(async () => {
     setLoading(true);
@@ -1103,29 +1223,45 @@ function VersionsTab({ accessToken }: { accessToken: string | null | undefined }
 
   return (
     <div className="space-y-4">
+      {/* Datalists for quick suggestions */}
+      <datalist id="compare-models-list">
+        {availableModels.map((m) => (
+          <option key={m} value={m} />
+        ))}
+      </datalist>
+      <datalist id="compare-prompts-list">
+        {availablePromptVersions.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
+
       <div className="surface-card flex flex-wrap items-end gap-3 p-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Section</label>
+          <label className="text-xs text-muted-foreground">Hạng mục so sánh</label>
           <select
-            className="rounded border bg-background px-2 py-1 text-sm"
+            className="rounded border bg-background px-2 py-1 text-sm h-8"
             value={section}
             onChange={(e) => setSection(e.target.value)}
           >
-            {["overview", "quality", "retrieval", "performance", "cost", "errors", "judge"].map((s) => (
-              <option key={s} value={s}>{s}</option>
+            {Object.entries(SECTION_LABELS).map(([k, label]) => (
+              <option key={k} value={k}>{label}</option>
             ))}
           </select>
         </div>
         {(["Before model", "Before prompt_version", "After model", "After prompt_version"] as const).map((lbl) => {
           const isBefore = lbl.startsWith("Before");
-          const field = lbl.includes("model") ? "model" : "promptVersion";
+          const isModel = lbl.includes("model");
+          const field = isModel ? "model" : "promptVersion";
+          const listId = isModel ? "compare-models-list" : "compare-prompts-list";
           const cur = isBefore ? before : after;
           const set = isBefore ? setBefore : setAfter;
           return (
             <div key={lbl} className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">{lbl}</label>
+              <label className="text-xs text-muted-foreground">{INPUT_LABELS[lbl] ?? lbl}</label>
               <input
-                className="rounded border bg-background px-2 py-1 text-sm"
+                list={listId}
+                placeholder={isModel ? "Chọn / nhập model..." : "Chọn / nhập prompt..."}
+                className="rounded border bg-background px-2.5 py-1 text-sm h-8 min-w-[160px]"
                 value={(cur as Record<string, string | undefined>)[field] ?? ""}
                 onChange={(e) => set({ ...cur, [field]: e.target.value || undefined })}
               />
@@ -1134,10 +1270,10 @@ function VersionsTab({ accessToken }: { accessToken: string | null | undefined }
         })}
         <button
           type="button"
-          className="rounded bg-primary px-3 py-1.5 text-xs text-primary-foreground"
+          className="rounded bg-primary px-3 py-1.5 text-xs text-primary-foreground font-medium h-8 flex items-center"
           onClick={run}
         >
-          So sánh
+          Bắt đầu so sánh
         </button>
       </div>
       {loading && <LoadingState />}
@@ -1261,12 +1397,12 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
   const metricPct = (v: NumericMetric | undefined) => typeof v === "number" ? `${safePct(v)}%` : "N/A";
 
   const RAG_TABS: { id: RagActiveTab; label: string }[] = [
-    { id: "overview", label: "Tổng quan & Health" },
-    { id: "retrieval", label: "Retrieval Quality" },
-    { id: "generation", label: "Generation & Faithfulness" },
-    { id: "safety", label: "An toàn & Sự cố Thuốc" },
+    { id: "overview", label: "Tổng quan & Sức khỏe hệ thống" },
+    { id: "retrieval", label: "Chất lượng truy xuất (Retrieval)" },
+    { id: "generation", label: "Chất lượng sinh phản hồi (Generation)" },
+    { id: "safety", label: "An toàn & Sự cố thuốc" },
     { id: "system", label: "Độ trễ & Pipeline" },
-    { id: "traces", label: "Trace Explorer" },
+    { id: "traces", label: "Nhật ký Trace thực tế" },
   ];
 
   return (
@@ -1278,7 +1414,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
         </span>
         <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-          Live Real-time (10s)
+          Giám sát trực tiếp (10s)
         </span>
         <button
           type="button"
@@ -1298,9 +1434,9 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
           onChange={(e) => setChatbotFilter(e.target.value)}
           className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium"
         >
-          <option value="all">Chatbot Version: Tất cả</option>
+          <option value="all">Phiên bản Chatbot: Tất cả</option>
           {filterOptions.chatbot_versions.map((v) => (
-            <option key={v.value} value={v.value}>Chatbot Version: {v.label}</option>
+            <option key={v.value} value={v.value}>Phiên bản: {v.label}</option>
           ))}
         </select>
         <select
@@ -1308,12 +1444,12 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
           onChange={(e) => setModelFilter(e.target.value)}
           className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium"
         >
-          <option value="all">Model: Tất cả</option>
+          <option value="all">Model AI: Tất cả</option>
           {filterOptions.models.map((m) => <option key={m} value={m}>Model: {m}</option>)}
         </select>
         <div className="ml-auto flex items-center gap-2 text-xs">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span className="text-muted-foreground">RAG Status:</span>
+          <span className="text-muted-foreground">Trạng thái RAG:</span>
           <span className="font-semibold text-emerald-600">{healthData?.status || "Live"}</span>
         </div>
       </div>
@@ -1339,10 +1475,10 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Faithfulness", value: metricPct(kpis.faithfulness), target: "≥ 85%", color: "emerald" },
-              { label: "Answer Relevance", value: metricPct(kpis.answer_relevance), target: "≥ 80%", color: "blue" },
-              { label: "P95 Latency", value: `${kpis.p95_latency_ms || 0}ms`, target: "E2E", color: "slate" },
-              { label: "Sự cố An toàn", value: `${safetyData?.critical_safety_failures ?? 0} sự cố`, target: "Critical Gate", color: "emerald" },
+              { label: "Độ trung thực (Faithfulness)", value: metricPct(kpis.faithfulness), target: "Mục tiêu ≥ 85%", color: "emerald" },
+              { label: "Độ phù hợp (Answer Relevance)", value: metricPct(kpis.answer_relevance), target: "Mục tiêu ≥ 80%", color: "blue" },
+              { label: "Độ trễ toàn trình P95", value: `${kpis.p95_latency_ms || 0}ms`, target: "End-to-End", color: "slate" },
+              { label: "Sự cố an toàn y tế", value: `${safetyData?.critical_safety_failures ?? 0} sự cố`, target: "Ngưỡng chặn nghiêm ngặt", color: "emerald" },
             ].map((card) => (
               <div key={card.label} className="surface-card p-5">
                 <div className="flex items-center justify-between">
@@ -1360,7 +1496,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
             <div className="surface-card p-5">
               <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-primary" />
-                Xu hướng Chất lượng RAG (7 ngày)
+                Xu hướng chất lượng RAG (7 ngày gần nhất)
               </h3>
               <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1389,10 +1525,10 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-4">
             {[
-              { label: "HitRate@10", val: retrievalData?.metrics?.hit_rate_10, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
-              { label: "MRR@10", val: retrievalData?.metrics?.mrr_10, fmt: (v: number) => v.toFixed(2) },
-              { label: "NDCG@10", val: retrievalData?.metrics?.ndcg_10, fmt: (v: number) => v.toFixed(2) },
-              { label: "Tổng Chunks", val: retrievalData?.metrics?.total_indexed_chunks, fmt: (v: number) => String(v) },
+              { label: "Tỷ lệ tìm thấy Top 10 (HitRate@10)", val: retrievalData?.metrics?.hit_rate_10, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
+              { label: "Thứ hạng đảo trung bình (MRR@10)", val: retrievalData?.metrics?.mrr_10, fmt: (v: number) => v.toFixed(2) },
+              { label: "Độ chuẩn tích lũy chiết khấu (NDCG@10)", val: retrievalData?.metrics?.ndcg_10, fmt: (v: number) => v.toFixed(2) },
+              { label: "Tổng số đoạn tài liệu (Chunks)", val: retrievalData?.metrics?.total_indexed_chunks, fmt: (v: number) => String(v) },
             ].map(({ label, val, fmt }) => (
               <div key={label} className="surface-card p-5">
                 <span className="text-xs font-semibold text-muted-foreground uppercase">{label}</span>
@@ -1400,7 +1536,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
                   {typeof val === "number" ? fmt(val) : "N/A"}
                 </p>
                 {typeof val !== "number" && (
-                  <p className="mt-1 text-[10px] text-muted-foreground italic">Cần đủ trace để tính</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground italic">Cần đủ dữ liệu trace để tính</p>
                 )}
               </div>
             ))}
@@ -1409,7 +1545,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
             <div className="surface-card p-5">
               <h3 className="font-bold flex items-center gap-2 mb-3">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Worst Queries (Retrieval thấp nhất)
+                Truy vấn đạt kết quả thấp nhất (Worst Queries)
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm text-left">
@@ -1418,9 +1554,9 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
                       <th className="py-2 px-3">Câu truy vấn</th>
                       <th className="py-2 px-3">Lượt</th>
                       <th className="py-2 px-3">Top-1</th>
-                      <th className="py-2 px-3">Precision</th>
-                      <th className="py-2 px-3">Recall</th>
-                      <th className="py-2 px-3">Faithfulness</th>
+                      <th className="py-2 px-3">Độ chính xác (Precision)</th>
+                      <th className="py-2 px-3">Độ bao phủ (Recall)</th>
+                      <th className="py-2 px-3">Độ trung thực (Faithfulness)</th>
                       <th className="py-2 px-3">Lần cuối</th>
                     </tr>
                   </thead>
@@ -1447,12 +1583,12 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
       {!loading && ragTab === "generation" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="surface-card p-5 space-y-3">
-            <h3 className="font-bold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Chất lượng Generation</h3>
+            <h3 className="font-bold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Chất lượng sinh phản hồi (Generation)</h3>
             {[
-              { label: "Faithfulness", val: generationData?.metrics?.faithfulness },
-              { label: "Answer Relevance", val: generationData?.metrics?.answer_relevance },
-              { label: "Hallucination Rate", val: generationData?.metrics?.hallucination_rate },
-              { label: "Abstention Accuracy", val: generationData?.metrics?.abstention_accuracy },
+              { label: "Độ trung thực (Faithfulness)", val: generationData?.metrics?.faithfulness },
+              { label: "Độ phù hợp câu trả lời (Answer Relevance)", val: generationData?.metrics?.answer_relevance },
+              { label: "Tỷ lệ thông tin suy diễn / ảo giác (Hallucination)", val: generationData?.metrics?.hallucination_rate },
+              { label: "Độ chính xác khi từ chối trả lời (Abstention)", val: generationData?.metrics?.abstention_accuracy },
             ].map(({ label, val }) => (
               <div key={label} className="flex justify-between py-2 border-b border-border last:border-0 text-sm">
                 <span className="text-muted-foreground">{label}</span>
@@ -1461,7 +1597,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
             ))}
           </div>
           <div className="surface-card p-5 space-y-3">
-            <h3 className="font-bold">Phân bổ theo Model</h3>
+            <h3 className="font-bold">Phân bổ hiệu quả theo Model AI</h3>
             {(generationData?.breakdown_by_model ?? []).map((m, i) => (
               <div key={i} className="p-3 bg-muted/40 rounded-lg">
                 <div className="flex justify-between font-semibold text-sm">
@@ -1482,9 +1618,9 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
           </h3>
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { label: "Lỗi Liều lượng / Tần suất", val: safetyData?.dosage_consistency_failures ?? 0 },
-              { label: "Tương tác thuốc nguy hiểm", val: safetyData?.interaction_unsupported_claims ?? 0 },
-              { label: "Tổng Escalation trong DB", val: (safetyData?.incidents ?? []).length },
+              { label: "Lỗi liều lượng / tần suất", val: safetyData?.dosage_consistency_failures ?? 0 },
+              { label: "Tuyên bố tương tác thuốc thiếu căn cứ", val: safetyData?.interaction_unsupported_claims ?? 0 },
+              { label: "Tổng số ca chuyển tiếp bác sĩ", val: (safetyData?.incidents ?? []).length },
             ].map(({ label, val }) => (
               <div key={label} className="surface-card p-4 bg-muted/30">
                 <span className="text-xs text-muted-foreground font-semibold uppercase">{label}</span>
@@ -1524,7 +1660,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
         <div className="surface-card overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
             <h3 className="font-bold">Nhật ký Trace thực tế</h3>
-            <span className="text-xs text-muted-foreground">{traces.length} records</span>
+            <span className="text-xs text-muted-foreground">{traces.length} bản ghi</span>
           </div>
           {traces.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">Chưa có trace nào.</p>
@@ -1537,8 +1673,8 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
                     <th className="py-3 px-4">Thời gian</th>
                     <th className="py-3 px-4">Câu hỏi</th>
                     <th className="py-3 px-4">Độ trễ</th>
-                    <th className="py-3 px-4">Faithfulness</th>
-                    <th className="py-3 px-4">Relevance</th>
+                    <th className="py-3 px-4">Độ trung thực (Faithfulness)</th>
+                    <th className="py-3 px-4">Độ phù hợp (Relevance)</th>
                     <th className="py-3 px-4">Trạng thái</th>
                   </tr>
                 </thead>
@@ -1555,7 +1691,7 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
                       <td className="py-3 px-4 font-semibold text-primary">{t.relevance ?? "—"}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
-                          {t.status}
+                          {t.status === "success" ? "Thành công" : t.status}
                         </span>
                       </td>
                     </tr>
@@ -1570,7 +1706,333 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
   );
 }
 
+// ─── Tab: Safety ─────────────────────────────────────────────────────────────
+
+interface SafetyEventItem {
+  id: string;
+  agent_run_id: string | null;
+  trace_id: string | null;
+  conversation_id: string | null;
+  outcome: string;
+  reason_code: string;
+  severity: string;
+  severity_source: string;
+  handoff_required: boolean;
+  handoff_created: boolean;
+  handoff_id: string | null;
+  handoff_status_live: string | null;
+  handoff_resolved: boolean;
+  handoff_resolved_at: string | null;
+  time_to_review_seconds: number | null;
+  error_code: string | null;
+  created_at: string | null;
+}
+
+interface SafetySummaryFull {
+  available?: boolean;
+  safety_trigger_count?: number;
+  safety_trigger_rate?: number | null;
+  handoff_required_count?: number;
+  handoff_required_rate?: number | null;
+  handoff_created_count?: number;
+  handoff_created_rate?: number | null;
+  handoff_failure_count?: number;
+  handoff_failure_rate?: number | null;
+  unresolved_handoff_count?: number;
+  time_to_review_avg_seconds?: number | null;
+  time_to_review_sample_count?: number;
+  denominator_agent_v2_total_runs?: number;
+  severity_distribution?: Record<string, number>;
+  reason_code_distribution?: Record<string, number>;
+  handoff_status_distribution?: Record<string, number>;
+  legacy_escalation_count?: number;
+}
+
+function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const [summary, setSummary] = useState<SafetySummaryFull | null>(null);
+  const [events, setEvents] = useState<SafetyEventItem[]>([]);
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const fetchSafety = useCallback(async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      const [sumRes, evRes] = await Promise.all([
+        fetch(`${apiBase}/api/v1/admin/safety/summary`, { headers }),
+        fetch(`${apiBase}/api/v1/admin/safety/events?limit=50`, { headers }),
+      ]);
+      if (sumRes.ok) {
+        setSummary(await sumRes.json());
+      }
+      if (evRes.ok) {
+        const evData = await evRes.json();
+        setEvents(evData.items ?? []);
+        setTotalEvents(evData.total ?? 0);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi khi tải dữ liệu an toàn");
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, apiBase]);
+
+  useEffect(() => {
+    fetchSafety();
+  }, [fetchSafety]);
+
+  const severityPie = summary?.severity_distribution
+    ? Object.entries(summary.severity_distribution)
+      .map(([name, value], idx) => ({
+        name,
+        value,
+        color: name === "CRITICAL" ? "#ef4444" : name === "HIGH" ? "#f97316" : name === "MEDIUM" ? "#f59e0b" : "#10b981",
+      }))
+      .filter((d) => d.value > 0)
+    : [];
+
+  const reasonPie = summary?.reason_code_distribution
+    ? Object.entries(summary.reason_code_distribution)
+      .map(([name, value], idx) => ({
+        name: formatHumanNote(name) ?? name,
+        value,
+        color: CHART_COLORS[idx % CHART_COLORS.length],
+      }))
+      .filter((d) => d.value > 0)
+    : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Backend API Info Box */}
+      <div className="surface-card p-4 text-xs space-y-2 border-l-4 border-indigo-500 bg-indigo-50/20">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 font-semibold text-indigo-900 dark:text-indigo-200">
+            <Server className="h-4 w-4 text-indigo-600" />
+            <span>Địa chỉ Backend API Giám sát An toàn (BUILD-34)</span>
+          </div>
+          <span className="font-mono text-[11px] px-2 py-0.5 bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded">
+            API Base: {apiBase}
+          </span>
+        </div>
+        <p className="text-muted-foreground">
+          Dữ liệu được truy xuất trực tiếp từ máy chủ Backend thông qua token xác thực quản trị viên (Admin JWT Bearer Token):
+        </p>
+        <div className="flex flex-wrap gap-2 pt-1 font-mono text-[11px]">
+          <a
+            href={`${apiBase}/api/v1/admin/safety/summary`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded bg-background px-2.5 py-1 border hover:bg-accent text-primary flex items-center gap-1.5"
+          >
+            <span>GET {apiBase}/api/v1/admin/safety/summary</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href={`${apiBase}/api/v1/admin/safety/events`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded bg-background px-2.5 py-1 border hover:bg-accent text-primary flex items-center gap-1.5"
+          >
+            <span>GET {apiBase}/api/v1/admin/safety/events</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </div>
+
+      {loading && <LoadingState />}
+      {error && <ErrorState message={error} />}
+
+      {summary && (
+        <>
+          {/* KPI Grid */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MetricCard
+              label="Kích hoạt cảnh báo an toàn"
+              metric={{ value: summary.safety_trigger_count ?? 0, status: "AVAILABLE" }}
+              sub={summary.safety_trigger_rate !== null && summary.safety_trigger_rate !== undefined ? `Tỷ lệ: ${(summary.safety_trigger_rate * 100).toFixed(2)}%` : undefined}
+            />
+            <MetricCard
+              label="Yêu cầu chuyển bác sĩ (Handoff)"
+              metric={{ value: summary.handoff_required_count ?? 0, status: "AVAILABLE" }}
+              sub={summary.handoff_required_rate !== null && summary.handoff_required_rate !== undefined ? `Tỷ lệ: ${(summary.handoff_required_rate * 100).toFixed(2)}%` : undefined}
+            />
+            <MetricCard
+              label="Đã tạo yêu cầu chuyển tiếp"
+              metric={{ value: summary.handoff_created_count ?? 0, status: "AVAILABLE" }}
+              sub={summary.handoff_created_rate !== null && summary.handoff_created_rate !== undefined ? `Tỷ lệ thành công: ${(summary.handoff_created_rate * 100).toFixed(1)}%` : undefined}
+            />
+            <MetricCard
+              label="Chuyển tiếp bác sĩ thất bại"
+              metric={{ value: summary.handoff_failure_count ?? 0, status: "AVAILABLE" }}
+            />
+            <MetricCard
+              label="Yêu cầu chưa xử lý xong"
+              metric={{ value: summary.unresolved_handoff_count ?? 0, status: "AVAILABLE" }}
+            />
+            <MetricCard
+              label="Thời gian duyệt trung bình"
+              metric={{ value: summary.time_to_review_avg_seconds ? `${Math.round(summary.time_to_review_avg_seconds)}s` : "Chưa có", status: "AVAILABLE" }}
+              sub={summary.time_to_review_sample_count ? `${summary.time_to_review_sample_count} ca đã duyệt` : undefined}
+            />
+            <MetricCard
+              label="Tổng lượt chạy Agent V2"
+              metric={{ value: summary.denominator_agent_v2_total_runs ?? 0, status: "AVAILABLE" }}
+              help="Cơ sở mẫu chuẩn (Denominator) dùng để tính tỷ lệ an toàn."
+            />
+            <MetricCard
+              label="Ca chuyển tiếp cũ (Legacy)"
+              metric={{ value: summary.legacy_escalation_count ?? 0, status: "AVAILABLE" }}
+              help="Dữ liệu từ bảng Escalation cũ, không tính trùng vào Agent V2."
+            />
+          </div>
+
+          {/* Charts */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {severityPie.length > 0 ? (
+              <div className="surface-card p-5">
+                <DonutChart data={severityPie} title="Phân bổ mức độ nghiêm trọng (Severity)" />
+              </div>
+            ) : (
+              <div className="surface-card p-5 flex items-center justify-center text-xs text-muted-foreground">
+                Chưa có sự kiện phân loại mức độ nghiêm trọng
+              </div>
+            )}
+            {reasonPie.length > 0 ? (
+              <div className="surface-card p-5">
+                <DonutChart data={reasonPie} title="Phân bổ nguyên nhân an toàn (Reason Codes)" />
+              </div>
+            ) : (
+              <div className="surface-card p-5 flex items-center justify-center text-xs text-muted-foreground">
+                Chưa có sự kiện phân loại mã lý do
+              </div>
+            )}
+          </div>
+
+          {/* Safety Events Table */}
+          <div className="surface-card overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="font-bold flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-rose-500" />
+                  Danh sách sự kiện an toàn & Chuyển bác sĩ thực tế
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Tổng số: {totalEvents} sự kiện (hiển thị 50 sự kiện gần nhất)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchSafety}
+                className="flex items-center gap-1.5 rounded border px-3 py-1 text-xs hover:bg-accent"
+              >
+                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                Làm mới
+              </button>
+            </div>
+            {events.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Hệ thống chưa ghi nhận sự kiện an toàn nào cần xử lý.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-sm text-left">
+                  <thead>
+                    <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                      <th className="py-3 px-4">Mã sự kiện (Event ID)</th>
+                      <th className="py-3 px-4">Mã Trace</th>
+                      <th className="py-3 px-4">Mức độ</th>
+                      <th className="py-3 px-4">Nguyên nhân (Reason Code)</th>
+                      <th className="py-3 px-4">Handoff Bác sĩ</th>
+                      <th className="py-3 px-4">Trạng thái Handoff</th>
+                      <th className="py-3 px-4">Thời gian</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {events.map((ev) => {
+                      const sevColor =
+                        ev.severity === "CRITICAL"
+                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                          : ev.severity === "HIGH"
+                            ? "bg-orange-50 text-orange-700 border-orange-200"
+                            : ev.severity === "MEDIUM"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+                      return (
+                        <tr key={ev.id} className="hover:bg-muted/30">
+                          <td className="py-3 px-4 font-mono text-xs font-semibold">{ev.id.slice(0, 8)}</td>
+                          <td className="py-3 px-4 font-mono text-xs">
+                            {ev.trace_id ? (
+                              <Link
+                                className="text-primary underline font-semibold"
+                                href={`/admin/monitoring/traces/${ev.trace_id}`}
+                              >
+                                {ev.trace_id.slice(0, 8)}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${sevColor}`}>
+                              {ev.severity}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-xs font-medium">
+                            {formatHumanNote(ev.reason_code) ?? ev.reason_code}
+                          </td>
+                          <td className="py-3 px-4 text-xs">
+                            {ev.handoff_created ? (
+                              <span className="text-emerald-600 font-semibold">Đã tạo yêu cầu</span>
+                            ) : ev.handoff_required ? (
+                              <span className="text-rose-600 font-semibold">Cần tạo</span>
+                            ) : (
+                              <span className="text-muted-foreground">Không yêu cầu</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs">
+                            {ev.handoff_status_live ? (
+                              <span className="rounded bg-muted px-2 py-0.5 font-mono text-[11px]">
+                                {ev.handoff_status_live}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-muted-foreground">
+                            {ev.created_at
+                              ? new Date(ev.created_at).toLocaleString("vi-VN", {
+                                timeZone: "Asia/Ho_Chi_Minh",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                              : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Safety Summary type ──────────────────────────────────────────────────────
+
 
 interface SafetySummary {
   safety_trigger_count?: number;
@@ -1604,12 +2066,12 @@ export default function AdminMonitoringPage() {
 
   useEffect(() => {
     if (!accessToken) return;
-    getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
+    getVersionFilters(accessToken).then(setVersionOptions).catch(() => { });
     // Fetch safety summary for Overview card
     fetch(`${apiBase}/api/v1/admin/safety/summary`, { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => d && setSafety(d))
-      .catch(() => {});
+      .catch(() => { });
   }, [accessToken, apiBase]);
 
   // Fetch trend whenever trendDays or filters change (and quality tab is active)
@@ -1652,9 +2114,6 @@ export default function AdminMonitoringPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">Giám sát RAG & AI — Dashboard Thống nhất</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Dữ liệu durable từ BUILD-32/33/34/35/36. Tất cả chỉ số N/A đều có lý do rõ ràng — không để trống.
-          </p>
         </div>
         <button
           type="button"
@@ -1681,11 +2140,10 @@ export default function AdminMonitoringPage() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm whitespace-nowrap ${
-                isActive
+              className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm whitespace-nowrap ${isActive
                   ? "border-primary font-semibold text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -1702,58 +2160,40 @@ export default function AdminMonitoringPage() {
 
       {/* Tab content */}
       {activeTab === "safety" ? (
-        <div className="surface-card p-4 text-sm space-y-2">
-          <h2 className="font-semibold flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-rose-500" /> An toàn & Chuyển bác sĩ
-          </h2>
-          <p>
-            Dữ liệu Safety & Handoff dùng chung API đã có từ BUILD-34:{" "}
-            <a className="text-primary underline" href="/api/v1/admin/safety/summary" target="_blank" rel="noreferrer">
-              /admin/safety/summary
-            </a>
-            . Chi tiết từng event:{" "}
-            <a className="text-primary underline" href="/api/v1/admin/safety/events" target="_blank" rel="noreferrer">
-              /admin/safety/events
-            </a>.
-          </p>
-          {safety && (
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-xs text-muted-foreground">Safety triggers</p>
-                <p className="text-2xl font-bold text-rose-600">{safety.safety_trigger_count ?? 0}</p>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-xs text-muted-foreground">Handoff yêu cầu</p>
-                <p className="text-2xl font-bold text-amber-600">{safety.handoff_required_count ?? 0}</p>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-xs text-muted-foreground">Tổng Agent V2 runs</p>
-                <p className="text-2xl font-bold">{safety.denominator_agent_v2_total_runs ?? 0}</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <SafetyTab accessToken={accessToken} />
       ) : activeTab === "rag_chatbot" ? (
         <RagChatbotTab accessToken={accessToken} />
       ) : activeTab === "versions" ? (
-        <VersionsTab accessToken={accessToken} />
+        <VersionsTab accessToken={accessToken} versionOptions={versionOptions} />
       ) : loading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} />
       ) : (
         <>
-          {activeTab === "overview" && overview && <OverviewTab data={overview} safety={safety} />}
-          {activeTab === "quality" && quality && (
-            <QualityTab data={quality} trend={trend} trendDays={trendDays} setTrendDays={setTrendDays} />
+          {activeTab === "overview" && overview && (
+            <OverviewTab data={overview} safety={safety} onNavigateTab={setActiveTab} />
           )}
-          {activeTab === "retrieval" && retrieval && <RetrievalTab data={retrieval} />}
+          {activeTab === "quality" && quality && (
+            <QualityTab
+              data={quality}
+              trend={trend}
+              trendDays={trendDays}
+              setTrendDays={setTrendDays}
+              onNavigateTab={setActiveTab}
+            />
+          )}
+          {activeTab === "retrieval" && retrieval && (
+            <RetrievalTab data={retrieval} onNavigateTab={setActiveTab} />
+          )}
           {activeTab === "performance" && performance && <PerformanceTab data={performance} />}
           {activeTab === "cost" && cost && <CostTab data={cost} />}
           {activeTab === "errors" && errors && (
             <ErrorsTab
               data={errors}
-              onDrill={(code) => setFilters({ ...filters, errorCode: code })}
+              onDrill={(code) => {
+                setFilters({ ...filters, errorCode: code });
+              }}
             />
           )}
           {activeTab === "judge" && judge && <JudgeTab data={judge} />}

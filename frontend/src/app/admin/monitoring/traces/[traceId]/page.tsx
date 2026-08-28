@@ -7,15 +7,16 @@
 // it is not (see BUILD-36 report's own audit on this architectural limit).
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, LayoutDashboard, Loader2, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { getTraceDetail, type TraceDetailOut } from "@/lib/admin-monitoring";
 
 export default function TraceDetailPage() {
   const params = useParams<{ traceId: string }>();
+  const router = useRouter();
   const { accessToken } = useAuth();
   const [detail, setDetail] = useState<TraceDetailOut | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,23 +34,60 @@ export default function TraceDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải...
+        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải thông tin trace...
       </div>
     );
   }
   if (error || !detail) {
     return (
-      <div className="surface-card flex items-center gap-2 border-destructive/40 p-4 text-sm text-destructive">
-        <AlertCircle className="h-4 w-4" /> {error ?? "Không tìm thấy trace"}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Quay lại
+          </Button>
+          <Link href="/admin/monitoring/traces">
+            <Button variant="ghost" size="sm">
+              <ListFilter className="mr-1 h-4 w-4" /> Về Trace Explorer
+            </Button>
+          </Link>
+        </div>
+        <div className="surface-card flex items-center gap-2 border-destructive/40 p-4 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" /> {error ?? "Không tìm thấy trace"}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Link href="/admin/monitoring/traces">
-        <Button variant="ghost" size="sm"><ArrowLeft className="mr-1 h-4 w-4" /> Quay lại Trace Explorer</Button>
-      </Link>
+      {/* Navigation bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/admin/monitoring/traces");
+              }
+            }}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" /> Quay lại trang trước
+          </Button>
+          <Link href="/admin/monitoring/traces">
+            <Button variant="ghost" size="sm">
+              <ListFilter className="mr-1 h-4 w-4" /> Danh sách Trace
+            </Button>
+          </Link>
+        </div>
+        <Link href="/admin/monitoring">
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <LayoutDashboard className="mr-1 h-4 w-4" /> Bảng điều khiển Giám sát
+          </Button>
+        </Link>
+      </div>
 
       <div className="surface-card grid grid-cols-2 gap-3 p-4 text-sm md:grid-cols-4">
         <Field label="Trace ID" value={detail.trace_id} mono />

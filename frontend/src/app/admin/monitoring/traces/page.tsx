@@ -5,8 +5,10 @@
 // hardcoded ring-buffer caps (see BUILD-36 report's own audit).
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { AlertCircle, ArrowLeft, LayoutDashboard, Loader2, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { listTraces, type MonitoringFiltersInput, type TraceListOut } from "@/lib/admin-monitoring";
 
@@ -14,24 +16,60 @@ const PAGE_SIZE = 50;
 
 export default function TraceExplorerPage() {
   const { accessToken } = useAuth();
-  const [filters, setFilters] = useState<MonitoringFiltersInput>({});
-  const [page, setPage] = useState(0);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const urlStatus = searchParams.get("status") || undefined;
+  const urlErrorCode = searchParams.get("error_code") || undefined;
+  const urlPageStr = searchParams.get("page");
+  const urlPage = urlPageStr ? Math.max(0, parseInt(urlPageStr, 10) - 1) : 0;
+
+  const [status, setStatus] = useState<string | undefined>(urlStatus);
+  const [errorCode, setErrorCode] = useState<string | undefined>(urlErrorCode);
+  const [page, setPage] = useState<number>(urlPage);
+
   const [data, setData] = useState<TraceListOut | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync state from URL changes (when clicking browser back/forward)
+  useEffect(() => {
+    setStatus(urlStatus);
+    setErrorCode(urlErrorCode);
+    setPage(urlPage);
+  }, [urlStatus, urlErrorCode, urlPage]);
+
+  const updateUrl = useCallback(
+    (newStatus?: string, newErrorCode?: string, newPage: number = 0) => {
+      const sp = new URLSearchParams();
+      if (newStatus && newStatus !== "all") sp.set("status", newStatus);
+      if (newErrorCode && newErrorCode.trim()) sp.set("error_code", newErrorCode.trim());
+      if (newPage > 0) sp.set("page", String(newPage + 1));
+      const query = sp.toString() ? `?${sp.toString()}` : "";
+      startTransition(() => {
+        router.push(`/admin/monitoring/traces${query}`);
+      });
+    },
+    [router]
+  );
 
   const fetchData = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
     try {
-      setData(await listTraces(filters, { limit: PAGE_SIZE, offset: page * PAGE_SIZE, accessToken }));
+      const filterInput: MonitoringFiltersInput = {
+        status: status && status !== "all" ? status : undefined,
+        errorCode: errorCode && errorCode.trim() ? errorCode.trim() : undefined,
+      };
+      setData(await listTraces(filterInput, { limit: PAGE_SIZE, offset: page * PAGE_SIZE, accessToken }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Lỗi không xác định");
     } finally {
       setLoading(false);
     }
-  }, [filters, page, accessToken]);
+  }, [status, errorCode, page, accessToken]);
 
   useEffect(() => {
     fetchData();
@@ -39,25 +77,87 @@ export default function TraceExplorerPage() {
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
+  const handleStatusChange = (newStatus: string) => {
+    const s = newStatus === "all" ? undefined : newStatus;
+    setStatus(s);
+    setPage(0);
+    updateUrl(s, errorCode, 0);
+  };
+
+  const handleErrorCodeChange = (newCode: string) => {
+    const c = newCode || undefined;
+    setErrorCode(c);
+    setPage(0);
+    updateUrl(status, c, 0);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateUrl(status, errorCode, newPage);
+  };
+
+  const resetFilters = () => {
+    setStatus(undefined);
+    setErrorCode(undefined);
+    setPage(0);
+    updateUrl(undefined, undefined, 0);
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Trace Explorer</h1>
-        <p className="text-sm text-muted-foreground">Nguồn dữ liệu durable (agent_run) -- luôn có metric thật kể cả sau restart; nội dung câu hỏi/trả lời chỉ có khi trace còn trong buffer 200 mục gần nhất.</p>
+      {/* Header & Back to dashboard */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Link href="/admin/monitoring">
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Bảng điều khiển Giám sát
+              </Button>
+            </Link>
+            <h1 className="text-xl font-semibold">Trace Explorer</h1>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nguồn dữ liệu durable (agent_run) -- luôn có metric thật kể cả sau restart; nội dung câu hỏi/trả lời chỉ có khi trace còn trong buffer 200 mục gần nhất.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchData}
+          className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent h-8"
+        >
+          <RotateCcw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          Làm mới
+        </button>
       </div>
 
       <div className="surface-card flex flex-wrap items-end gap-3 p-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Status</label>
-          <select className="rounded border bg-background px-2 py-1 text-sm" value={filters.status ?? "all"} onChange={(e) => { setPage(0); setFilters({ ...filters, status: e.target.value === "all" ? undefined : e.target.value }); }}>
-            <option value="all">Tất cả</option>
-            {["COMPLETED", "FAILED", "TIMEOUT", "BUDGET_EXCEEDED", "SAFETY_BLOCKED", "HANDOFF_REQUIRED", "HANDOFF_CREATED", "CANCELLED"].map((s) => <option key={s} value={s}>{s}</option>)}
+          <label className="text-xs text-muted-foreground">Trạng thái (Status)</label>
+          <select
+            className="rounded border bg-background px-2.5 py-1 text-sm h-8"
+            value={status ?? "all"}
+            onChange={(e) => handleStatusChange(e.target.value)}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            {["COMPLETED", "FAILED", "TIMEOUT", "BUDGET_EXCEEDED", "SAFETY_BLOCKED", "HANDOFF_REQUIRED", "HANDOFF_CREATED", "CANCELLED"].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Error code</label>
-          <input className="rounded border bg-background px-2 py-1 text-sm" value={filters.errorCode ?? ""} onChange={(e) => { setPage(0); setFilters({ ...filters, errorCode: e.target.value || undefined }); }} />
+          <label className="text-xs text-muted-foreground">Mã lỗi (Error Code)</label>
+          <input
+            placeholder="Lọc theo mã lỗi..."
+            className="rounded border bg-background px-2.5 py-1 text-sm h-8 min-w-[180px]"
+            value={errorCode ?? ""}
+            onChange={(e) => handleErrorCodeChange(e.target.value)}
+          />
         </div>
+        {(status || errorCode || page > 0) && (
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs text-muted-foreground">
+            Đặt lại bộ lọc
+          </Button>
+        )}
       </div>
 
       {loading && (
@@ -110,8 +210,22 @@ export default function TraceExplorerPage() {
           <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
             <span>{data.total} trace -- trang {page + 1}/{totalPages}</span>
             <div className="flex gap-2">
-              <button type="button" disabled={page === 0} className="rounded border px-2 py-1 disabled:opacity-40" onClick={() => setPage((p) => Math.max(0, p - 1))}>Trước</button>
-              <button type="button" disabled={page + 1 >= totalPages} className="rounded border px-2 py-1 disabled:opacity-40" onClick={() => setPage((p) => p + 1)}>Sau</button>
+              <button
+                type="button"
+                disabled={page === 0}
+                className="rounded border px-2.5 py-1 disabled:opacity-40 hover:bg-accent"
+                onClick={() => handlePageChange(Math.max(0, page - 1))}
+              >
+                Trước
+              </button>
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages}
+                className="rounded border px-2.5 py-1 disabled:opacity-40 hover:bg-accent"
+                onClick={() => handlePageChange(page + 1)}
+              >
+                Sau
+              </button>
             </div>
           </div>
         </div>
