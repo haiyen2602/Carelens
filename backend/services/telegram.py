@@ -300,12 +300,25 @@ def xu_ly_mot_update(db: Session, upd: dict) -> bool:
     noi_dung = msg.get("text")
     if not noi_dung:
         return False
-    return xu_ly_start(
-        db,
-        chat_id=chat["id"],
-        username=(msg.get("from") or {}).get("username"),
-        text=noi_dung,
-    )
+
+    chat_id = chat["id"]
+    if noi_dung.strip().split(maxsplit=1)[:1] == ["/start"]:
+        return xu_ly_start(
+            db,
+            chat_id=chat_id,
+            username=(msg.get("from") or {}).get("username"),
+            text=noi_dung,
+        )
+
+    # Import tai cho: telegram_chat goi nguoc lai _goi_bot_api cua module nay,
+    # import o dau file se tao vong lap.
+    from backend.services.telegram_chat import xu_ly_tin_chat
+
+    xu_ly_tin_chat(db, chat_id=chat_id, text=noi_dung)
+    # Tra ve False: gia tri nay dem SO TAI KHOAN VUA GHEP cho log cua job
+    # poll, khong phai "da xu ly hay chua". Tra loi mot cau hoi khong phai
+    # mot lan ghep.
+    return False
 
 
 def quet_update_moi(db: Session) -> int:
