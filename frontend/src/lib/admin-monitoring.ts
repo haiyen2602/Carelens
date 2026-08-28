@@ -305,6 +305,23 @@ export type CompareOut = {
   comparison?: Record<string, unknown>;
 };
 
+export type TrendPoint = {
+  date: string;
+  requests: number;
+  p95_latency_ms: number | null;
+  faithfulness: number | null;
+  faithfulness_n: number;
+  relevance: number | null;
+  relevance_n: number;
+};
+
+export type TrendOut = {
+  available: boolean;
+  reason?: string;
+  trend: TrendPoint[];
+  days: number;
+};
+
 export async function getOverview(filters: MonitoringFiltersInput, accessToken?: string | null, signal?: AbortSignal) {
   return getSection<OverviewOut>("overview", filters, accessToken, signal);
 }
@@ -325,6 +342,21 @@ export async function getErrors(filters: MonitoringFiltersInput, accessToken?: s
 }
 export async function getJudge(filters: MonitoringFiltersInput, accessToken?: string | null, signal?: AbortSignal) {
   return getSection<JudgeOut>("judge", filters, accessToken, signal);
+}
+
+export async function getTrend(
+  filters: MonitoringFiltersInput,
+  days: number = 7,
+  accessToken?: string | null,
+  signal?: AbortSignal,
+): Promise<TrendOut> {
+  const params = filtersToParams(filters);
+  params.set("days", String(days));
+  const response = await fetch(`${API_BASE}/api/v1/admin/monitoring/trend?${params}`, {
+    headers: authHeaders(accessToken),
+    signal,
+  });
+  return parseOrThrow<TrendOut>(response, "Không thể tải dữ liệu trend");
 }
 
 export async function getGolden(goldenSetVersion: string | undefined, accessToken?: string | null): Promise<GoldenOut> {

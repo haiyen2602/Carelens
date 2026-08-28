@@ -961,3 +961,111 @@ def trace_detail(db: Session, trace_id: str) -> dict[str, Any] | None:
         "tool_names": [o.name for o in buffered.observations if getattr(o, "name", None)] if buffered else [],
         "citations": buffered.metadata.get("citations") if buffered and isinstance(buffered.metadata, dict) else None,
     }
+
+
+# ---------------------------------------------------------------------------
+# Trend -- daily time-series of request volume, latency P95, and (where the
+# ring-buffer heuristic scores happen to be durable via AgentRunEvaluation's
+# metrics_json) faithfulness and answer_relevance.
+#
+# The heuristic scores are NOT reliably durable today (see quality_metrics
+# docstring / BUILD-36 report) -- this function reads whatever IS durable
+# (the per-run metrics_json disposition + the ring-buffer score, when the
+# run is still in the buffer) and honestly labels each day's score with its
+# sample_count so the frontend can show "n=X". Days with 0 runs are omitted.
+# ---------------------------------------------------------------------------
+
+
+def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> dict[str, Any]:
+    """Daily trend over the last `days` calendar days (or filtered range).
+
+    Each entry: {date, requests, p95_latency_ms, faithfulness, relevance}
+    where faithfulness/relevance are averages over runs whose AgentRunEvaluation
+    metrics_json contains AVAILABLE scores (from the heuristic evaluator).
+    """
+    try:
+        from datetime import date, timedelta
+        from sqlalchemy import cast, Date as SADate
+
+        base = _apply_agent_run_filters(select(AgentRun), filters)
+
+        # If no explicit date range, default to last `days` calendar days.
+        if filters.date_from is None and filters.date_to is None:
+            from datetime import datetime, timezone
+            cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
+            base = base.where(AgentRun.started_at >= cutoff)
+
+        runs = db.execute(
+            base.order_by(AgentRun.started_at.asc()).with_only_columns(
+                AgentRun.id,
+                AgentRun.started_at,
+                AgentRun.duration_ms,
+            )
+        ).all()
+
+        if not runs:
+            return {"available": True, "trend": [], "days": days}
+
+        run_ids = [r.id for r in runs]
+
+        # Load AgentRunEvaluation metrics_json for all matching runs (durable,
+        # but the *score* inside it was only written when the heuristic
+        # evaluator produced an AVAILABLE result -- see evaluators.py).
+        eval_rows = db.execute(
+            select(AgentRunEvaluation.agent_run_id, AgentRunEvaluation.metrics_json)
+            .where(AgentRunEvaluation.agent_run_id.in_(run_ids))
+        ).all()
+        eval_by_run_id: dict[str, dict] = {r.agent_run_id: (r.metrics_json or {}) for r in eval_rows}
+
+        # Supplement with ring-buffer scores where available (same logic as
+        # _heuristic_quality_scores, but keyed by run_id so we can attach
+        # to the right calendar day).
+        from backend.services.telemetry import get_local_traces
+        ring_faith: dict[str, float] = {}
+        ring_rel: dict[str, float] = {}
+        for trace in get_local_traces():
+            eval_v2 = trace.metadata.get("evaluation_v2") if isinstance(trace.metadata, dict) else None
+            if not isinstance(eval_v2, dict):
+                continue
+            run_id = eval_v2.get("agent_run_id")
+            if not run_id:
+                continue
+            metrics = eval_v2.get("metrics", {})
+            if isinstance(metrics.get("faithfulness"), dict) and metrics["faithfulness"].get("status") == "AVAILABLE":
+                score = trace.scores.get("answer_faithfulness")
+                if isinstance(score, (int, float)):
+                    ring_faith[run_id] = float(score)
+            if isinstance(metrics.get("answer_relevance"), dict) and metrics["answer_relevance"].get("status") == "AVAILABLE":
+                score = trace.scores.get("answer_relevance")
+                if isinstance(score, (int, float)):
+                    ring_rel[run_id] = float(score)
+
+        # Group by calendar day.
+        from collections import defaultdict
+        day_runs: dict[str, list] = defaultdict(list)
+        for r in runs:
+            day_key = r.started_at.strftime("%Y-%m-%d") if r.started_at else "unknown"
+            day_runs[day_key].append(r)
+
+        trend = []
+        for day_str in sorted(day_runs.keys()):
+            day_batch = day_runs[day_str]
+            latencies = [r.duration_ms for r in day_batch if r.duration_ms is not None]
+            p95 = _percentiles(latencies, points=(95,))[95]
+
+            faith_scores = [ring_faith[r.id] for r in day_batch if r.id in ring_faith]
+            rel_scores = [ring_rel[r.id] for r in day_batch if r.id in ring_rel]
+
+            trend.append({
+                "date": day_str,
+                "requests": len(day_batch),
+                "p95_latency_ms": p95["value"],
+                "faithfulness": round(sum(faith_scores) / len(faith_scores), 4) if faith_scores else None,
+                "faithfulness_n": len(faith_scores),
+                "relevance": round(sum(rel_scores) / len(rel_scores), 4) if rel_scores else None,
+                "relevance_n": len(rel_scores),
+            })
+
+        return {"available": True, "trend": trend, "days": days}
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "reason": str(exc)}
