@@ -161,6 +161,7 @@ def add_reference(
     vector_index: int,
     display_name: str,
     strength: str | None = None,
+    ingredient: str | None = None,
 ) -> None:
     session.add(
         DrugProduct(
@@ -173,6 +174,12 @@ def add_reference(
             updated_at=datetime.now(UTC),
         )
     )
+    if ingredient:
+        ingredient_id = f"ingredient-{product_id}"
+        session.add(
+            Ingredient(id=ingredient_id, name=ingredient, created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+        )
+        session.add(DrugProductIngredient(drug_product_id=product_id, ingredient_id=ingredient_id))
     session.add(
         DrugImage(
             id=image_id,
@@ -370,3 +377,115 @@ def test_g_descriptive_mismatch_does_not_block_an_otherwise_unique_corroborated_
     assert result.outcome == HIGH_EVIDENCE_MATCH
     assert "OCR_HARD_CONFLICT" not in result.decision_reason_codes
     assert "DESCRIPTION_IGNORED_FOR_IDENTITY" in result.decision_reason_codes
+
+
+# ==================================================================
+# Group 3: partial-match tier (PR #165 review response -- real
+# production finding, not the original task scope). A real LONG Huyet PH
+# photo hit visual Top-1 correctly but OCR read only 2 of its 3 identity
+# tokens in production, missing the >=75% bar by exactly one token. See
+# _name_match's partial-match tier and _matched_subset_collides_with_
+# other_identity for the design and the real catalog audit backing it
+# (5.5% of 3+-token products, 39/704, have a genuine collision risk this
+# tier must not create false HIGH_EVIDENCE for).
+# ==================================================================
+
+
+def test_partial_match_reaches_high_evidence_with_ingredient_corroboration(monkeypatch) -> None:
+    _reset_uniqueness_index_cache(monkeypatch)
+    session = session_with_schema()
+    add_reference(
+        session, product_id="zentacare", image_id="img-zc", vector_index=8,
+        display_name="Zentacare Plus Forte 3x10", ingredient="Ibuprofen",
+    )
+
+    # Missing "Forte" (2 of 3 identity tokens read), but ingredient corroborates.
+    result = _recognize(session, "ZENTACARE PLUS\nIbuprofen")
+
+    assert result.outcome == HIGH_EVIDENCE_MATCH
+    assert "PARTIAL_TOKEN_NAME_MATCH" in result.decision_reason_codes
+    assert "INGREDIENT_MATCH" in result.decision_reason_codes
+
+
+def test_partial_match_without_corroboration_stays_ambiguous(monkeypatch) -> None:
+    _reset_uniqueness_index_cache(monkeypatch)
+    session = session_with_schema()
+    add_reference(
+        session, product_id="zentacare", image_id="img-zc", vector_index=8,
+        display_name="Zentacare Plus Forte 3x10",
+    )
+
+    result = _recognize(session, "ZENTACARE PLUS")  # missing "Forte", no strength/ingredient at all
+
+    assert result.outcome != HIGH_EVIDENCE_MATCH
+    assert result.outcome == AMBIGUOUS_MATCH
+    assert "PARTIAL_TOKEN_NEEDS_CORROBORATION" in result.decision_reason_codes
+
+
+def test_partial_match_blocked_by_subset_collision_even_with_corroboration(monkeypatch) -> None:
+    """Mirrors the real catalog risk this task's own audit found:
+    "Clazic SR United" dropping "SR" collides with a real "...United"-only
+    identity elsewhere in the catalog. Even with strong corroboration
+    (ingredient match), the missing token might be genuinely
+    distinguishing, not OCR noise -- must not reach HIGH_EVIDENCE."""
+
+    _reset_uniqueness_index_cache(monkeypatch)
+    session = session_with_schema()
+    add_reference(
+        session, product_id="clazic-sr", image_id="img-sr", vector_index=8,
+        display_name="Clazic SR United 10x10", ingredient="Clopidogrel",
+    )
+    add_reference(
+        session, product_id="clazic-plain", image_id="img-plain", vector_index=3,
+        display_name="Clazic United 5x10",
+    )
+
+    # Visual Top-1 is the SR variant, OCR misses "SR" but ingredient corroborates.
+    result = _recognize(session, "CLAZIC UNITED\nClopidogrel", image_index=8)
+
+    assert result.outcome != HIGH_EVIDENCE_MATCH
+    assert "PARTIAL_MATCH_SUBSET_AMBIGUOUS" in result.decision_reason_codes
+
+
+def test_two_token_identity_missing_one_token_gets_no_partial_tier() -> None:
+    """The partial-match tier is deliberately scoped to identities with
+    >=3 tokens (see _name_match's own docstring) -- a 2-token identity
+    dropping to 1 match is indistinguishable from the single-token shape,
+    which this project already treats as high-risk for a documented
+    reason (the Forte/Plus/XR/SR/CR hard-negative case)."""
+
+    score, count, matched = recognition_module._name_match("Pruzena Forte 10mg", "pruzena")
+
+    assert score == 0.0
+    assert count == 2
+    assert matched == frozenset({"pruzena"})
+
+
+def test_long_huyet_real_production_gap_partial_match_alone_insufficient(monkeypatch) -> None:
+    """Real production finding (post-PR-#165 review, from a live user
+    test): even with the partial-match tier, THIS specific real product
+    cannot reach HIGH_EVIDENCE_MATCH when OCR misses one token, because
+    the real catalog row has no strength_text and no registered
+    ingredient data (confirmed directly against production:
+    strength_text=None, ingredient=None for this exact product) -- there
+    is no corroboration signal available at all. This is an honest,
+    current limitation (a catalog-data gap, not a code bug) --
+    AMBIGUOUS_MATCH with the real product still offered as a candidate
+    remains the correct, safe outcome until the catalog gains structured
+    strength/ingredient data for it. Locked in as a test so this
+    limitation is never silently "fixed" by accident without deliberate
+    catalog-data work."""
+
+    _reset_uniqueness_index_cache(monkeypatch)
+    session = session_with_schema()
+    add_reference(
+        session, product_id="long-huyet", image_id="img-long", vector_index=8,
+        display_name="LONG Huyết PH 2x12 - TAN BẦM TÍM GIẢM PHÙ NỀ",
+    )
+
+    result = _recognize(session, "LONG HUYET")  # missing "PH", no strength/ingredient text at all
+
+    assert result.outcome == AMBIGUOUS_MATCH
+    assert "PARTIAL_TOKEN_NEEDS_CORROBORATION" in result.decision_reason_codes
+    assert result.candidates
+    assert result.candidates[0].drug_product_id == "long-huyet"

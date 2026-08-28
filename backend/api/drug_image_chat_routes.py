@@ -236,7 +236,7 @@ async def recognize_drug_image(
         "quality_status=%s quality_reasons=%s ocr_status=%s ocr_signal_count=%s "
         "internal_top1_drug_product_id=%s internal_top1_visual_score=%s "
         "internal_top2_visual_score=%s top1_top2_margin=%s ocr_name_match=%s "
-        "ocr_single_token_name_match=%s ocr_strength_match=%s ocr_conflict=%s "
+        "ocr_single_token_name_match=%s ocr_partial_token_name_match=%s ocr_strength_match=%s ocr_conflict=%s "
         "parsed_identity_token_count=%s pack_detected=%s description_suffix_detected=%s "
         "identity_unique=%s identity_strength_unique=%s decision_reason_codes=%s "
         "recognizer_outcome=%s persisted_outcome=%s api_outcome=%s",
@@ -252,6 +252,7 @@ async def recognize_drug_image(
         evidence.top1_top2_margin,
         evidence.ocr_name_match,
         evidence.ocr_single_token_name_match,
+        evidence.ocr_partial_token_name_match,
         evidence.ocr_strength_match,
         evidence.ocr_conflict,
         evidence.parsed_identity_token_count,
