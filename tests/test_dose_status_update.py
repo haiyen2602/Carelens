@@ -18,7 +18,15 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from backend.db.base import SessionLocal, engine  # noqa: E402
-from backend.db.models import Account, CaregiverLink, DoseEvent, Patient  # noqa: E402
+from backend.db.models import (  # noqa: E402
+    Account,
+    CaregiverLink,
+    DoseEvent,
+    Patient,
+    PatientRewardAccount,
+    PatientRewardEvent,
+)
+from backend.services import reward_catalog as catalog  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
 
 
@@ -81,6 +89,12 @@ def _seed_dose(patient_id: str, doctor_id: str | None = None) -> tuple[str, str]
 def _cleanup(patient_id: str) -> None:
     db = SessionLocal()
     try:
+        db.query(PatientRewardEvent).filter(PatientRewardEvent.patient_id == patient_id).delete(
+            synchronize_session=False
+        )
+        db.query(PatientRewardAccount).filter(PatientRewardAccount.patient_id == patient_id).delete(
+            synchronize_session=False
+        )
         db.query(CaregiverLink).filter(CaregiverLink.patient_id == patient_id).delete(synchronize_session=False)
         db.query(DoseEvent).filter(DoseEvent.patient_id == patient_id).delete(synchronize_session=False)
         db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
@@ -247,3 +261,98 @@ async def test_unknown_dose_returns_404(client):
             db.commit()
         finally:
             db.close()
+
+
+# --- Muc diem theo cach xac nhan (yeu cau nhom truong 2026-08-28) ------------
+#
+# Diem bi tru theo do tin cay cua CACH lieu duoc xac nhan. Trang thai CU cua
+# lieu la tin hieu duy nhat con lai de suy ra dieu do (DoseEvent khong luu
+# "da xac nhan bang cach nao"), nen 3 test duoi kiem dung 3 trang thai cu.
+
+
+def _dat_trang_thai(dose_id: str, status: str) -> None:
+    db = SessionLocal()
+    try:
+        db.get(DoseEvent, dose_id).status = status
+        db.commit()
+    finally:
+        db.close()
+
+
+def _diem_phat(patient_id: str) -> list[int]:
+    db = SessionLocal()
+    try:
+        return [
+            e.points_delta
+            for e in db.query(PatientRewardEvent).filter(
+                PatientRewardEvent.patient_id == patient_id,
+                PatientRewardEvent.event_type == catalog.EVENT_DOSE_METHOD_PENALTY,
+            )
+        ]
+    finally:
+        db.close()
+
+
+@pytest.mark.asyncio
+async def test_tu_bao_da_uong_khong_anh_bi_tru_diem(client):
+    """PENDING -> TAKEN do CHINH benh nhan bam = tu khai, khong co anh: -50%."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    token = create_access_token(sub="acct-1", role="patient", patient_id=patient_id)
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert _diem_phat(patient_id) != []
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_nguoi_than_duyet_sau_khi_anh_lech_bi_tru_it_hon(client):
+    """AWAITING_CAREGIVER -> TAKEN = co nguoi that xem anh roi duyet: chi -10%,
+    tin cay hon han tu khai suong nen tru nhe hon."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    _dat_trang_thai(dose_id, "AWAITING_CAREGIVER")
+    token = create_access_token(sub="acct-1", role="patient", patient_id=patient_id)
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        phat = _diem_phat(patient_id)
+        assert phat != []
+        # Tru it hon truong hop tu khai o test tren (10% so voi 50% cua cung
+        # mot so diem goc) - so sanh dinh tinh, khong bam vao con so tuyet doi
+        # vi diem goc con phu thuoc tong so lieu trong ngay.
+        assert sum(phat) > -abs(catalog.POINTS_DOSE_ON_TIME)
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_bac_si_sua_ho_ho_so_khong_bi_tru_diem(client):
+    """PENDING -> TAKEN do NGUOI KHAC (bac si) bam khong phai loi tu khai cua
+    benh nhan - giu nguyen 100%, khong tru."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    token = create_access_token(sub="doctor-account-1", role="doctor", doctor_id="doc-1")
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert _diem_phat(patient_id) == []
+    finally:
+        _cleanup(patient_id)

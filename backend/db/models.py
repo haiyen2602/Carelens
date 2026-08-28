@@ -2130,6 +2130,13 @@ class PatientRewardAccount(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
 
+# Dieu kien loc cua 2 index duy nhat mot phan tren patient_reward_event (xem
+# __table_args__ ben duoi + migration 0061). Tach ra hang so de chuoi SQL
+# khong bi viet lech giua postgresql_where va sqlite_where.
+_LOC_KHOA_THEO_NGAY = "event_type NOT IN ('DOSE_ON_TIME', 'DOSE_METHOD_PENALTY')"
+_LOC_KHOA_PHAT = "event_type = 'DOSE_METHOD_PENALTY'"
+
+
 class PatientRewardEvent(Base):
     """Ledger append-only: MOI lan cong/tru diem la 1 dong (THEM 2026-08-25,
     migration 0049). Vua la lich su hien cho benh nhan xem, vua la co che
@@ -2159,16 +2166,25 @@ class PatientRewardEvent(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    # DOSE_ON_TIME | DAILY_SURVEY | WEEKLY_STREAK | MONTHLY_STREAK | REDEEM
+    # DOSE_ON_TIME | DOSE_METHOD_PENALTY | DAILY_SURVEY | WEEKLY_STREAK
+    # | MONTHLY_STREAK | REDEEM
     event_type: Mapped[str] = mapped_column(String, nullable=False)
     points_delta: Mapped[int] = mapped_column(Integer, nullable=False)
     # NULL voi REDEEM (xem docstring) - co gia tri voi cac loai cong theo ngay.
     occurred_on: Mapped[date | None] = mapped_column(Date, nullable=True)
-    # Chi co gia tri voi REDEEM: slug mon qua trong reward_catalog.py.
+    # REDEEM: slug mon qua trong reward_catalog.py.
+    # DOSE_METHOD_PENALTY: id cua dose_event bi tru diem (migration 0061)
+    # - la thu chan tru trung cho tung lieu. NULL voi cac loai con lai.
     item_id: Mapped[str | None] = mapped_column(String, nullable=True)
     # Nhan hien thi tren lich su, chot lai TAI THOI DIEM ghi (vd ten mon qua)
     # - gia/ten trong catalog co the doi ve sau, lich su cu phai giu nguyen.
     label: Mapped[str] = mapped_column(String, nullable=False)
+    # Chi co gia tri voi DOSE_METHOD_PENALTY (migration 0062): % diem GIU LAI
+    # cua lieu do. KHONG phai de hien thi - de TINH LAI duoc tong phat chinh
+    # xac cua ca ngay o moi lan goi. Neu chi luu so diem da tru, khong the
+    # khoi phuc duoc phan le da bi lam tron, nen sai so se cong don qua tung
+    # lieu (xem reward_ledger::apply_confirmation_method_penalty).
+    method_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
     __table_args__ = (
@@ -2191,8 +2207,25 @@ class PatientRewardEvent(Base):
             # co postgresql_where, SQLAlchemy bo qua no tren SQLite va tao
             # index unique TOAN PHAN -> chan mat dong DOSE_ON_TIME thu hai
             # trong ngay, test do nhung prod xanh (hoac nguoc lai).
-            postgresql_where=text("event_type <> 'DOSE_ON_TIME'"),
-            sqlite_where=text("event_type <> 'DOSE_ON_TIME'"),
+            #
+            # LOAI TRU THEM DOSE_METHOD_PENALTY (migration 0061): moi lieu bi
+            # tru diem la 1 dong rieng nen cung nhieu dong/ngay. Loai nay
+            # chong trung bang index ngay ben duoi (theo item_id) chu khong
+            # phai theo ngay.
+            postgresql_where=text(_LOC_KHOA_THEO_NGAY),
+            sqlite_where=text(_LOC_KHOA_THEO_NGAY),
+        ),
+        # Moi lieu chi bi tru diem DUNG 1 LAN, du ham co bi goi lai (job xac
+        # minh anh chay lai, nguoi than bam duyet hai lan...). Khong dung
+        # duoc khoa theo ngay o tren vi 1 ngay co the co nhieu lieu bi tru.
+        Index(
+            "uq_patient_reward_event_method_penalty",
+            "patient_id",
+            "event_type",
+            "item_id",
+            unique=True,
+            postgresql_where=text(_LOC_KHOA_PHAT),
+            sqlite_where=text(_LOC_KHOA_PHAT),
         ),
         Index("ix_patient_reward_event_patient_created", "patient_id", "created_at"),
         Index("ix_patient_reward_event_patient_item", "patient_id", "item_id"),

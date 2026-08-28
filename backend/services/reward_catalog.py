@@ -57,7 +57,19 @@ POINTS_DAILY_SURVEY = 10
 POINTS_WEEKLY_STREAK = 50
 POINTS_MONTHLY_STREAK = 100
 
+# PHAN TRAM GIU LAI cua diem uong thuoc, theo do tin cay cua CACH xac nhan
+# (yeu cau nhom truong 2026-08-28). Anh chup khop don thuoc la bang chung
+# manh nhat nen giu tron 100%; cac duong con lai deu la loi TU KHAI nen bi
+# tru bot - tru cang nhieu khi cang it nguoi kiem chung duoc.
+#
+# Ghi la % GIU LAI chu khong phai % TRU: phep tinh o reward_ledger
+# ::apply_confirmation_method_penalty() nhan truc tiep so nay.
+PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL = 90  # -10%: co nguoi than xem anh roi duyet
+PCT_NO_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL = 70  # -30%: khong ai kiem chung duoc
+PCT_SELF_REPORT_NO_PHOTO = 50  # -50%: hoan toan tu khai, khong co anh
+
 EVENT_DOSE_ON_TIME = "DOSE_ON_TIME"
+EVENT_DOSE_METHOD_PENALTY = "DOSE_METHOD_PENALTY"
 EVENT_DAILY_SURVEY = "DAILY_SURVEY"
 EVENT_WEEKLY_STREAK = "WEEKLY_STREAK"
 EVENT_MONTHLY_STREAK = "MONTHLY_STREAK"
@@ -65,6 +77,7 @@ EVENT_REDEEM = "REDEEM"
 
 EVENT_LABELS: dict[str, str] = {
     EVENT_DOSE_ON_TIME: "Uống thuốc đúng giờ",
+    EVENT_DOSE_METHOD_PENALTY: "Chưa xác minh bằng ảnh",
     EVENT_DAILY_SURVEY: "Khảo sát sức khoẻ",
     EVENT_WEEKLY_STREAK: "Thưởng chuỗi tuần",
     EVENT_MONTHLY_STREAK: "Thưởng chuỗi tháng",

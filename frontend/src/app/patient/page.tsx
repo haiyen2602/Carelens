@@ -321,15 +321,21 @@ export default function PatientToday() {
     }
   };
 
-  // Tu bao "da uong" KHONG kem anh - chi mo duoc khi qua gio/da hoan.
-  // KHONG ghi thang TAKEN: chuyen sang AWAITING_CAREGIVER de nguoi than
-  // duyet that o /patient/family/[id].
+  // Tu bao "da uong" KHONG kem anh - mo duoc khi tat chup anh trong Cai dat,
+  // hoac lieu da qua gio/da hoan (xem `khongCanAnh`).
+  //
+  // SUA 2026-08-28: truoc day chuyen sang AWAITING_CAREGIVER de cho nguoi than
+  // duyet. Nhung benh nhan KHONG co nguoi than thi ket vinh vien o do - khong
+  // job nao quet trang thai nay, va no cung nam ngoai vong nhac lai (chi lay
+  // status "PENDING", xem backend/services/dose_push_reminder.py). Gio chap
+  // nhan loi tu khai va chot ngay, danh doi bang diem thap hon (-50%, tinh o
+  // backend/api/dose_routes.py::_xac_dinh_ty_le_thuong).
   const xacNhanKhongAnh = async () => {
     if (!next) return;
     setDangXuLy(true);
     try {
-      await updateDoseStatus(next.id, "AWAITING_CAREGIVER", accessToken);
-      toast.success("Đã gửi cho người thân xác nhận giúp bạn");
+      await updateDoseStatus(next.id, "TAKEN", accessToken);
+      toast.success("Đã ghi nhận bạn uống thuốc (điểm thấp hơn vì không có ảnh)");
       setSheet(null);
       await taiLaiDoses();
     } catch (err) {
