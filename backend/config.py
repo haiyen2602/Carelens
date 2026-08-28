@@ -253,6 +253,7 @@ class Settings(BaseSettings):
     drug_image_chat_confirmation_ttl_seconds: int = Field(default=900, gt=0)
     drug_image_chat_doctor_attachment_ttl_seconds: int = Field(default=86_400, gt=0)
     drug_image_chat_recognition_timeout_seconds: int = Field(default=30, gt=0)
+    drug_image_chat_ocr_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
     # B-08 has not approved production recognition. Keep the potentially
     # heavy B-05 runtime opt-in so this endpoint can return a bounded,
     # patient-safe availability response rather than attempting startup.

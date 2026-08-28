@@ -281,7 +281,7 @@ def test_duplicate_content_without_text_remains_ambiguous_not_forced_top_one() -
     finally:
         image.close()
     assert result.outcome == AMBIGUOUS_MATCH
-    assert "DUPLICATE_REFERENCE_CONTENT_REQUIRES_CONFIRMATION" in result.evidence_summary
+    assert "DUPLICATE_CONTENT_AMBIGUITY" in result.evidence_summary
     assert result.confirmation_required is True
 
 
@@ -302,8 +302,8 @@ def test_unknown_text_and_bad_quality_fail_safely_without_medical_facts_or_persi
         image.close()
     assert result.outcome == INSUFFICIENT_EVIDENCE
     assert {
-        "VISIBLE_TEXT_DOES_NOT_CORROBORATE_CATALOG_CANDIDATES",
-        "TOP_CANDIDATE_HAS_HARD_CONFLICT",
+        "INSUFFICIENT_VISUAL_EVIDENCE",
+        "OCR_HARD_CONFLICT",
     } & set(result.evidence_summary)
     assert not hasattr(result, "medical_facts")
     assert session.query(DrugImageEmbedding).count() == 1
@@ -315,7 +315,7 @@ def test_unknown_text_and_bad_quality_fail_safely_without_medical_facts_or_persi
         blank.close()
     assert retake.outcome == INSUFFICIENT_EVIDENCE
     assert retake.quality_gate.status != "PASS"
-    assert "QUALITY_GATE_RETAKE_RECOMMENDED" in retake.evidence_summary
+    assert "QUALITY_FAILED" in retake.evidence_summary
 
 
 def test_recognition_result_is_deterministic_and_contains_version_without_generating_calls() -> None:

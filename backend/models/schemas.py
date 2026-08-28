@@ -620,6 +620,7 @@ class DrugImageCandidateOut(BaseModel):
 class DrugImageRecognitionOut(BaseModel):
     status: Literal[
         "CANDIDATES",
+        "AMBIGUOUS_MATCH",
         "INSUFFICIENT_EVIDENCE",
         "SAFETY_DEFERRED",
         "DOCTOR_ACTIVE",
