@@ -151,6 +151,10 @@ export default function AssistantPage() {
 
   const submit = (content: string, selectedAction?: SelectedAction) => {
     if (!content.trim() || isPending || submitInFlight.current || !activeId) return;
+    // Mo khoa the audio NGAY tai cu cham nay. Cau tra loi con phai doi Agent V2
+    // roi doi TTS (tong vai giay) moi phat duoc - luc do quyen tu cu cham da
+    // het han va Safari iPhone se chan. Xem use-voice-playback.ts::moKhoa.
+    voicePlayback.moKhoa();
     submitInFlight.current = true;
     lastQuestion.current = content;
     appendMessage(activeId, "user", content);
@@ -281,10 +285,13 @@ export default function AssistantPage() {
   // am ben duoi, nen 3 ham nay tach roi thay vi mot toggle duy nhat.
   const startVoiceRecording = () => {
     if (isPending || imagePending || voicePending) return;
+    voicePlayback.moKhoa();
     voiceRecorder.start();
   };
 
   const finishVoiceRecording = async () => {
+    // TRUOC await dau tien: sau await thi khong con nam trong cu cham nua.
+    voicePlayback.moKhoa();
     const blob = await voiceRecorder.stop();
     if (!blob || !activeId) return;
     setVoicePending(true);
