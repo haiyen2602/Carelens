@@ -24,10 +24,12 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from backend.api.security import require_role
 from backend.db.base import get_db
+from backend.services.monitoring_events import monitoring_broadcaster
 from backend.services.agent_doctor_handoff_metrics import doctor_queue_metrics
 from backend.services.agent_feedback import session_messages
 from backend.services.agent_monitoring_metrics import (
@@ -247,6 +249,23 @@ def get_session_detail(
     except Exception as durable_err:  # noqa: BLE001
         _logger.warning("BUILD-36 session detail read failed for conversation_id=%s: %s", conversation_id, durable_err)
         return {"available": False, "items": [], "total": 0, "limit": limit, "offset": offset}
+
+
+@admin_monitoring_router.get("/stream")
+async def get_monitoring_stream(
+    _admin=Depends(_require_admin),
+) -> StreamingResponse:
+    """Server-Sent Events (SSE) stream for realtime monitoring updates."""
+    queue = monitoring_broadcaster.subscribe()
+    return StreamingResponse(
+        monitoring_broadcaster.stream_events(queue),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 __all__ = ["admin_monitoring_router"]

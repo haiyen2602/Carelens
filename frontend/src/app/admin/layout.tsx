@@ -164,9 +164,9 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     "/admin/medicines": "Dữ liệu thuốc (RAG)",
     "/admin/drug-requests": "Yêu cầu bổ sung thuốc",
     "/admin/tickets": "Báo cáo chatbot",
-    "/admin/monitoring": "Admin Monitoring Dashboard V2",
-    "/admin/monitoring/traces": "Trace Explorer",
-    "/admin/audit": "Log hệ thống",
+    "/admin/monitoring": "Giám sát quản trị",
+    "/admin/monitoring/traces": "Trình khám phá dấu vết",
+    "/admin/audit": "Nhật ký hệ thống",
     "/admin/profile": "Hồ sơ cá nhân",
     "/admin/settings": "Cài đặt",
   };

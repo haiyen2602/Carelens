@@ -10,9 +10,21 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { AlertCircle, ArrowLeft, LayoutDashboard, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { listTraces, type MonitoringFiltersInput, type TraceListOut } from "@/lib/admin-monitoring";
+import { useMonitoringRealtime } from "@/hooks/use-monitoring-realtime";
+import { getVersionFilters, listTraces, type MonitoringFiltersInput, type TraceListOut, type VersionFiltersOut } from "@/lib/admin-monitoring";
 
 const PAGE_SIZE = 50;
+
+const STANDARD_ERROR_CODES = [
+  "GROUNDING_FAILURE",
+  "BUDGET_EXCEEDED",
+  "TIMEOUT",
+  "SAFETY_BLOCKED",
+  "RETRIEVAL_EMPTY",
+  "TOOL_EXECUTION_ERROR",
+  "LLM_API_ERROR",
+  "INTERNAL_ERROR",
+];
 
 export default function TraceExplorerPage() {
   const { accessToken } = useAuth();
@@ -28,10 +40,16 @@ export default function TraceExplorerPage() {
   const [status, setStatus] = useState<string | undefined>(urlStatus);
   const [errorCode, setErrorCode] = useState<string | undefined>(urlErrorCode);
   const [page, setPage] = useState<number>(urlPage);
+  const [versionOptions, setVersionOptions] = useState<VersionFiltersOut | null>(null);
 
   const [data, setData] = useState<TraceListOut | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
+  }, [accessToken]);
 
   // Sync state from URL changes (when clicking browser back/forward)
   useEffect(() => {
@@ -103,18 +121,72 @@ export default function TraceExplorerPage() {
     updateUrl(undefined, undefined, 0);
   };
 
+  const availableErrorCodes = Array.from(
+    new Set([
+      ...STANDARD_ERROR_CODES,
+      ...(versionOptions?.error_code ?? []),
+      ...(errorCode ? [errorCode] : []),
+    ])
+  );
+
+  const { isLive, toggleLive, status: realtimeStatus, lastEventAt } = useMonitoringRealtime({
+    accessToken,
+    enabled: true,
+    debounceMs: 1500,
+    onUpdate: () => {
+      fetchData();
+      if (accessToken) {
+        getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
+      }
+    },
+  });
+
   return (
     <div className="space-y-4">
       {/* Header & Back to dashboard */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link href="/admin/monitoring">
               <Button variant="outline" size="sm" className="h-8 text-xs">
                 <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Bảng điều khiển Giám sát
               </Button>
             </Link>
             <h1 className="text-xl font-semibold">Trace Explorer</h1>
+            <div className="flex items-center gap-2 ml-2">
+              <button
+                type="button"
+                onClick={toggleLive}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
+                  isLive
+                    ? realtimeStatus === "connected"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "border-muted bg-muted/30 text-muted-foreground"
+                }`}
+                title={isLive ? "Bấm để tắt chế độ tự động cập nhật Realtime (SSE)" : "Bấm để bật chế độ tự động cập nhật Realtime (SSE)"}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    isLive
+                      ? realtimeStatus === "connected"
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-amber-500 animate-ping"
+                      : "bg-muted-foreground/50"
+                  }`}
+                />
+                {isLive
+                  ? realtimeStatus === "connected"
+                    ? "Live Realtime"
+                    : "Đang kết nối lại..."
+                  : "Live: Tắt"}
+              </button>
+              {lastEventAt && isLive && (
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  (Cập nhật {lastEventAt.toLocaleTimeString()})
+                </span>
+              )}
+            </div>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Nguồn dữ liệu durable (agent_run) -- luôn có metric thật kể cả sau restart; nội dung câu hỏi/trả lời chỉ có khi trace còn trong buffer 200 mục gần nhất.
@@ -146,12 +218,16 @@ export default function TraceExplorerPage() {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">Mã lỗi (Error Code)</label>
-          <input
-            placeholder="Lọc theo mã lỗi..."
+          <select
             className="rounded border bg-background px-2.5 py-1 text-sm h-8 min-w-[180px]"
-            value={errorCode ?? ""}
-            onChange={(e) => handleErrorCodeChange(e.target.value)}
-          />
+            value={errorCode ?? "all"}
+            onChange={(e) => handleErrorCodeChange(e.target.value === "all" ? "" : e.target.value)}
+          >
+            <option value="all">Tất cả mã lỗi</option>
+            {availableErrorCodes.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
         {(status || errorCode || page > 0) && (
           <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs text-muted-foreground">

@@ -46,6 +46,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useAuth } from "@/lib/auth";
+import { useMonitoringRealtime } from "@/hooks/use-monitoring-realtime";
 import {
   compareVersions,
   getCost,
@@ -1223,18 +1224,6 @@ function VersionsTab({
 
   return (
     <div className="space-y-4">
-      {/* Datalists for quick suggestions */}
-      <datalist id="compare-models-list">
-        {availableModels.map((m) => (
-          <option key={m} value={m} />
-        ))}
-      </datalist>
-      <datalist id="compare-prompts-list">
-        {availablePromptVersions.map((p) => (
-          <option key={p} value={p} />
-        ))}
-      </datalist>
-
       <div className="surface-card flex flex-wrap items-end gap-3 p-4">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">Hạng mục so sánh</label>
@@ -1252,19 +1241,27 @@ function VersionsTab({
           const isBefore = lbl.startsWith("Before");
           const isModel = lbl.includes("model");
           const field = isModel ? "model" : "promptVersion";
-          const listId = isModel ? "compare-models-list" : "compare-prompts-list";
+          const rawOptions = isModel ? availableModels : availablePromptVersions;
           const cur = isBefore ? before : after;
           const set = isBefore ? setBefore : setAfter;
+          const currentValue = (cur as Record<string, string | undefined>)[field] ?? "";
+          const optionsList = Array.from(new Set(currentValue ? [currentValue, ...rawOptions] : rawOptions));
+
           return (
             <div key={lbl} className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground">{INPUT_LABELS[lbl] ?? lbl}</label>
-              <input
-                list={listId}
-                placeholder={isModel ? "Chọn / nhập model..." : "Chọn / nhập prompt..."}
+              <select
                 className="rounded border bg-background px-2.5 py-1 text-sm h-8 min-w-[160px]"
-                value={(cur as Record<string, string | undefined>)[field] ?? ""}
+                value={currentValue}
                 onChange={(e) => set({ ...cur, [field]: e.target.value || undefined })}
-              />
+              >
+                <option value="">{isModel ? "Chọn model..." : "Chọn prompt version..."}</option>
+                {optionsList.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
           );
         })}
@@ -1808,41 +1805,6 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
 
   return (
     <div className="space-y-6">
-      {/* Backend API Info Box */}
-      <div className="surface-card p-4 text-xs space-y-2 border-l-4 border-indigo-500 bg-indigo-50/20">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2 font-semibold text-indigo-900 dark:text-indigo-200">
-            <Server className="h-4 w-4 text-indigo-600" />
-            <span>Địa chỉ Backend API Giám sát An toàn (BUILD-34)</span>
-          </div>
-          <span className="font-mono text-[11px] px-2 py-0.5 bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded">
-            API Base: {apiBase}
-          </span>
-        </div>
-        <p className="text-muted-foreground">
-          Dữ liệu được truy xuất trực tiếp từ máy chủ Backend thông qua token xác thực quản trị viên (Admin JWT Bearer Token):
-        </p>
-        <div className="flex flex-wrap gap-2 pt-1 font-mono text-[11px]">
-          <a
-            href={`${apiBase}/api/v1/admin/safety/summary`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded bg-background px-2.5 py-1 border hover:bg-accent text-primary flex items-center gap-1.5"
-          >
-            <span>GET {apiBase}/api/v1/admin/safety/summary</span>
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <a
-            href={`${apiBase}/api/v1/admin/safety/events`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded bg-background px-2.5 py-1 border hover:bg-accent text-primary flex items-center gap-1.5"
-          >
-            <span>GET {apiBase}/api/v1/admin/safety/events</span>
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-      </div>
 
       {loading && <LoadingState />}
       {error && <ErrorState message={error} />}
@@ -2102,27 +2064,73 @@ export default function AdminMonitoringPage() {
     }
   }, [activeTab, filters, accessToken]);
 
-  useEffect(() => {
-    fetchTab();
-  }, [fetchTab]);
+  const { isLive, toggleLive, status: realtimeStatus, lastEventAt } = useMonitoringRealtime({
+    accessToken,
+    enabled: true,
+    debounceMs: 1500,
+    onUpdate: () => {
+      fetchTab();
+      if (accessToken) {
+        getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
+      }
+    },
+  });
 
   const TABS_WITHOUT_FILTER: TabId[] = ["safety", "golden", "rag_chatbot", "versions"];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold">Giám sát RAG & AI — Dashboard Thống nhất</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-semibold">Giám sát RAG & AI — Dashboard Thống nhất</h1>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleLive}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
+                  isLive
+                    ? realtimeStatus === "connected"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "border-muted bg-muted/30 text-muted-foreground"
+                }`}
+                title={isLive ? "Bấm để tắt chế độ tự động cập nhật Realtime (SSE)" : "Bấm để bật chế độ tự động cập nhật Realtime (SSE)"}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    isLive
+                      ? realtimeStatus === "connected"
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-amber-500 animate-ping"
+                      : "bg-muted-foreground/50"
+                  }`}
+                />
+                {isLive
+                  ? realtimeStatus === "connected"
+                    ? "Live Realtime"
+                    : "Đang kết nối lại..."
+                  : "Live: Tắt"}
+              </button>
+              {lastEventAt && isLive && (
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  (Cập nhật {lastEventAt.toLocaleTimeString()})
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent"
-          onClick={fetchTab}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent"
+            onClick={fetchTab}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {/* Filter bar — hidden for tabs that don't need it */}
@@ -2141,8 +2149,8 @@ export default function AdminMonitoringPage() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm whitespace-nowrap ${isActive
-                  ? "border-primary font-semibold text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "border-primary font-semibold text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
             >
               <Icon className="h-4 w-4" />
