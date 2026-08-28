@@ -4,8 +4,11 @@ catalog, see the report's own audit) must never be sufficient ALONE for
 HIGH_EVIDENCE_MATCH -- it needs an additional real corroborating signal
 (strength_match or ingredient_match, both already computed elsewhere) and
 the catalog itself must not show >=1 other product sharing the exact
-(token, strength) pair. The catalog-uniqueness index is a module-level,
-process-lifetime cache (see drug_image_recognition._single_token_strength_index)
+(identity, strength) pair. Fix_drug_OCR_3.md section 8 generalized the
+catalog-uniqueness check from single-token-only to any parsed identity
+token count; the underlying single-token behavior asserted below is
+unchanged. The catalog-uniqueness index is a module-level, process-
+lifetime cache (see drug_image_recognition._identity_uniqueness_index)
 -- every test here resets it first so it is always computed fresh against
 THAT test's own in-memory catalog, never leaked in from another test.
 """
@@ -132,7 +135,8 @@ def query_image(index: int) -> Image.Image:
 
 
 def _reset_uniqueness_index_cache(monkeypatch) -> None:
-    monkeypatch.setattr(recognition_module, "_SINGLE_TOKEN_STRENGTH_INDEX", None)
+    monkeypatch.setattr(recognition_module, "_IDENTITY_COUNT_INDEX", None)
+    monkeypatch.setattr(recognition_module, "_IDENTITY_STRENGTH_COUNT_INDEX", None)
 
 
 def _recognize(session: Session, ocr_text: str, image_index: int = 8):
@@ -175,8 +179,8 @@ def test_duplicated_single_token_same_strength_stays_ambiguous_not_high_evidence
 
     assert result.outcome != HIGH_EVIDENCE_MATCH
     assert result.outcome == AMBIGUOUS_MATCH
-    assert "NON_UNIQUE_SINGLE_TOKEN" in result.decision_reason_codes
-    assert result.candidates[0].single_token_non_unique is True
+    assert "CATALOG_IDENTITY_NON_UNIQUE" in result.decision_reason_codes
+    assert result.candidates[0].identity_non_unique is True
 
 
 # --- 3. Same brand, different strength: STRENGTH_CONFLICT, never HIGH_EVIDENCE ---
@@ -291,14 +295,47 @@ def test_single_token_match_with_ingredient_corroboration_reaches_high_evidence(
 # --- Uniqueness index correctness (unit-level, not through the full recognizer) ---
 
 
-def test_single_token_strength_index_is_catalog_derived_not_a_keyword_list(monkeypatch) -> None:
+def test_identity_uniqueness_index_is_catalog_derived_not_a_keyword_list(monkeypatch) -> None:
     _reset_uniqueness_index_cache(monkeypatch)
     session = session_with_schema()
+    # "Stella 10x5"/"Stella 5x5" are pack suffixes, stripped by the
+    # leftmost-cut parser (Fix_drug_OCR_3.md section 3) -- both rows
+    # parse to the identical single-token identity ("acyclovir").
     add_reference(session, product_id="a", image_id="img-a", vector_index=8, display_name="Acyclovir 200mg Stella 10x5")
     add_reference(session, product_id="b", image_id="img-b", vector_index=1, display_name="Acyclovir 200mg Stella 5x5")
     add_reference(session, product_id="c", image_id="img-c", vector_index=2, display_name="Acyclovir 400mg Stella 10x5")
 
-    assert recognition_module._is_single_token_non_unique(session, "acyclovir", {"200 mg"}) is True
-    assert recognition_module._is_single_token_non_unique(session, "acyclovir", {"400 mg"}) is False
-    assert recognition_module._is_single_token_non_unique(session, "acyclovir", set()) is False
-    assert recognition_module._is_single_token_non_unique(session, "unknown-brand", {"200 mg"}) is False
+    assert recognition_module._is_identity_non_unique(session, ("acyclovir",), {"200 mg"}) is True
+    assert recognition_module._is_identity_non_unique(session, ("acyclovir",), {"400 mg"}) is False
+    # Fix_drug_OCR_3.md section 8 deliberately strengthens this one case
+    # past Fix_drug_OCR_2.md's original single-token-only behavior: with NO
+    # strength read at all, 3 real catalog products still share "acyclovir"
+    # -- that collision cannot be waved through as "unique enough" just
+    # because OCR read no strength. (For a single-token match this makes no
+    # observable difference: _decide()'s separate corroboration requirement
+    # already blocks a no-strength/no-ingredient single-token match either
+    # way. For a MULTI-token match -- which has no such separate
+    # corroboration requirement when unique -- this is the fix that closes
+    # section 8's real gap: a colliding multi-token identity with zero OCR
+    # strength signal must not slip through uncaught.)
+    assert recognition_module._is_identity_non_unique(session, ("acyclovir",), set()) is True
+    assert recognition_module._is_identity_non_unique(session, ("unknown-brand",), {"200 mg"}) is False
+
+
+def test_identity_uniqueness_index_covers_multi_token_identities_too(monkeypatch) -> None:
+    """Fix_drug_OCR_3.md section 8: the generalized index must gate a
+    robust-looking MULTI-token identity match too, not just single-token
+    ones -- the real risk the catalog collision audit found (e.g. three
+    "B Complex C Vidipha" pack-size SKUs collapsing to one multi-token
+    identity under the new leftmost-cut parser)."""
+
+    _reset_uniqueness_index_cache(monkeypatch)
+    session = session_with_schema()
+    add_reference(session, product_id="a", image_id="img-a", vector_index=8, display_name="B Complex C Vidipha 2x10")
+    add_reference(session, product_id="b", image_id="img-b", vector_index=1, display_name="B Complex C Vidipha 3x10")
+
+    # "B"/"C" are dropped by the 3-char minimum (_meaningful_tokens) --
+    # the parsed identity is ("complex", "vidipha").
+    identity = ("complex", "vidipha")
+    assert recognition_module._is_identity_non_unique(session, identity, set()) is True
+    assert recognition_module._is_identity_non_unique(session, ("unrelated", "identity"), set()) is False

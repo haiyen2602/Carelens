@@ -40,7 +40,7 @@ from backend.api.vlm_monitoring_routes import vlm_monitoring_router
 from backend.api.voice_routes import voice_router
 from backend.config import get_settings
 from backend.db.base import SessionLocal
-from backend.services.drug_image_recognition import _single_token_strength_index
+from backend.services.drug_image_recognition import _identity_uniqueness_index
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
 
@@ -80,26 +80,30 @@ async def lifespan(app: FastAPI):
         warmup_started_at = time.monotonic()
         get_drug_image_recognizer()
         print(f"[INFO] Drug image recognition warmup complete: duration_ms={(time.monotonic() - warmup_started_at) * 1000:.2f}")
-        # PR #160 review: _single_token_strength_index (catalog-derived OCR
-        # single-token uniqueness check) is a module-level, process-lifetime
+        # PR #160 review, generalized by Fix_drug_OCR_3.md section 8:
+        # _identity_uniqueness_index (catalog-derived identity uniqueness
+        # check, now covering identities of any parsed token count, not
+        # just single-token ones) is a module-level, process-lifetime
         # cache -- same convention as get_drug_image_recognizer() just
         # above, so the same reasoning applies: warm it here rather than
-        # paying it inline on whichever real request first hits a
-        # single-token OCR name match. Real local cost: 219ms for the
-        # current ~3556-row catalog (measured directly, not estimated) --
-        # small next to the OpenCLIP/OCR warmup above, but free to remove
-        # from the request-latency path entirely at essentially no
-        # additional startup cost. This process runs a single uvicorn
-        # worker (Dockerfile CMD has no --workers flag) so there is only
-        # ever one such cache to warm; if that ever changes to multiple
-        # workers, this same startup hook already warms each worker's own
-        # copy independently, exactly like the two warmups above it.
-        single_token_index_started_at = time.monotonic()
+        # paying it inline on whichever real request first hits a name
+        # match. Real local cost: ~220ms for the current ~3556-row catalog
+        # (measured directly for its single-token-only predecessor, same
+        # single full-table scan shape) -- small next to the OpenCLIP/OCR
+        # warmup above, but free to remove from the request-latency path
+        # entirely at essentially no additional startup cost. This process
+        # runs a single uvicorn worker (Dockerfile CMD has no --workers
+        # flag) so there is only ever one such cache to warm; if that ever
+        # changes to multiple workers, this same startup hook already warms
+        # each worker's own copy independently, exactly like the two
+        # warmups above it.
+        identity_index_started_at = time.monotonic()
         with SessionLocal() as warmup_session:
-            single_token_index_size = len(_single_token_strength_index(warmup_session))
+            identity_count_index, _identity_strength_index = _identity_uniqueness_index(warmup_session)
+            identity_index_size = len(identity_count_index)
         print(
-            "[INFO] OCR single-token uniqueness index warmup complete: "
-            f"keys={single_token_index_size} duration_ms={(time.monotonic() - single_token_index_started_at) * 1000:.2f}"
+            "[INFO] OCR catalog identity uniqueness index warmup complete: "
+            f"keys={identity_index_size} duration_ms={(time.monotonic() - identity_index_started_at) * 1000:.2f}"
         )
 
     # Vong 2, muc 13 (chatbot-rag-design.md) - scheduler nhac lai escalation.
