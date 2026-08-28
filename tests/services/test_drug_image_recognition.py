@@ -259,7 +259,8 @@ def test_conflict_free_candidate_outranks_hard_conflict_regardless_of_visual_sco
         TextSignal("strength_candidate", "500 mg", "500 mg"),
     )
 
-    candidates = _rerank(visual, metadata, signals)
+    session = session_with_schema()
+    candidates = _rerank(session, visual, metadata, signals)
 
     assert candidates[0].drug_product_id == "product-b"
     assert candidates[0].conflicts == ()

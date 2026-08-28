@@ -174,6 +174,14 @@ class RecognitionCandidate:
     fused_score: float
     text_evidence: tuple[TextSignal, ...]
     conflicts: tuple[str, ...]
+    # Fix_drug_OCR_2.md Part A: True only when this candidate's OCR name
+    # match came from a single-token identity segment (~52.5% of the
+    # catalog -- e.g. "Snapcef" alone before "16mg") AND the catalog
+    # itself shows >=1 OTHER product sharing that exact (token, strength)
+    # pair. A single generic brand token is not independently reliable
+    # identity evidence when the catalog cannot tell which of 2+ real
+    # products it actually names -- see _decide()'s SINGLE_TOKEN_* gate.
+    single_token_non_unique: bool = False
 
 
 @dataclass(frozen=True)
@@ -217,6 +225,13 @@ class RecognitionObservability:
     internal_top2_visual_score: float | None
     top1_top2_margin: float | None
     ocr_name_match: bool
+    # Fix_drug_OCR_2.md Part A: True only when the name match came from a
+    # single-token identity segment (~52.5% of the catalog) -- a weaker
+    # signal that alone never reaches HIGH_EVIDENCE_MATCH; see decision_reason_codes
+    # for whether it was actually corroborated (SINGLE_TOKEN_NAME_MATCH +
+    # HIGH_EVIDENCE_CONFIRMED) or degraded (SINGLE_TOKEN_NEEDS_CORROBORATION).
+    ocr_single_token_name_match: bool
+    ocr_single_token_non_unique: bool
     ocr_strength_match: bool
     ocr_conflict: bool
     decision_reason_codes: tuple[str, ...]
@@ -242,7 +257,10 @@ def recognition_observability(result: RecognitionResult) -> RecognitionObservabi
         internal_top1_visual_score=top1_score,
         internal_top2_visual_score=top2_score,
         top1_top2_margin=(top1_score - top2_score) if top1_score is not None and top2_score is not None else None,
-        ocr_name_match="product_name_match" in evidence_fields,
+        ocr_name_match="product_name_match" in evidence_fields
+        or "product_name_match_single_token" in evidence_fields,
+        ocr_single_token_name_match="product_name_match_single_token" in evidence_fields,
+        ocr_single_token_non_unique=bool(decision_top and decision_top.single_token_non_unique),
         ocr_strength_match="strength_match" in evidence_fields,
         ocr_conflict=bool(decision_top and decision_top.conflicts),
         decision_reason_codes=result.decision_reason_codes,
@@ -393,7 +411,7 @@ class DrugImageRecognizer:
             top_k=self._top_k,
         )
         metadata = _load_product_metadata(session, (item.drug_product_id for item in visual))
-        candidates = _rerank(visual, metadata, signals)
+        candidates = _rerank(session, visual, metadata, signals)
         duplicate_ambiguous = _has_unresolved_duplicate_ambiguity(session, candidates)
         outcome, reasons = _decide(candidates, signals, duplicate_ambiguous, quality.status)
         availability_reasons = (
@@ -438,7 +456,10 @@ def _load_product_metadata(session: Session, product_ids: Iterable[str]) -> dict
 
 
 def _rerank(
-    visual: Sequence[DrugImageSearchResult], metadata: dict[str, ProductMetadata], signals: Sequence[TextSignal]
+    session: Session,
+    visual: Sequence[DrugImageSearchResult],
+    metadata: dict[str, ProductMetadata],
+    signals: Sequence[TextSignal],
 ) -> list[RecognitionCandidate]:
     """Apply documented baseline heuristics; every contribution remains visible."""
 
@@ -449,7 +470,7 @@ def _rerank(
         for item in visual
         if item.drug_product_id in metadata
     }
-    any_name_match = any(score >= 1.0 for score in name_matches.values())
+    any_name_match = any(score >= 1.0 for score, _tokens in name_matches.values())
     prepared: list[RecognitionCandidate] = []
     for item in visual:
         product = metadata.get(item.drug_product_id)
@@ -457,11 +478,31 @@ def _rerank(
             continue
         text_evidence: list[TextSignal] = []
         conflicts: list[str] = []
-        name_match = name_matches.get(item.drug_product_id, 0.0)
+        name_match, identity_token_count = name_matches.get(item.drug_product_id, (0.0, 0))
+        # Fix_drug_OCR_2.md Part A: a single-token identity match (~52.5% of
+        # the catalog) is a materially weaker signal than a multi-token
+        # one -- surfaced as its own text_evidence field so _decide() can
+        # require additional corroboration before it may contribute to
+        # HIGH_EVIDENCE_MATCH, instead of treating it the same as a robust
+        # multi-token brand match.
+        single_token_non_unique = False
         if name_match >= 1.0:
-            text_evidence.append(
-                TextSignal("product_name_match", product.display_name, normalize_for_match(product.display_name))
-            )
+            if identity_token_count == 1:
+                text_evidence.append(
+                    TextSignal(
+                        "product_name_match_single_token",
+                        product.display_name,
+                        normalize_for_match(product.display_name),
+                    )
+                )
+                identity_tokens = _identity_segment_tokens(product.display_name)
+                single_token_non_unique = _is_single_token_non_unique(
+                    session, identity_tokens[0], observed_strengths
+                )
+            else:
+                text_evidence.append(
+                    TextSignal("product_name_match", product.display_name, normalize_for_match(product.display_name))
+                )
         elif any_name_match:
             conflicts.append("NAME_CONFLICT")
         product_strengths = _strengths_for_product(product)
@@ -503,6 +544,7 @@ def _rerank(
                 fused_score=fused,
                 text_evidence=tuple(text_evidence),
                 conflicts=tuple(conflicts),
+                single_token_non_unique=single_token_non_unique,
             )
         )
     ordered = sorted(
@@ -518,26 +560,38 @@ def _rerank(
     return [RecognitionCandidate(**{**item.__dict__, "rank": index}) for index, item in enumerate(ordered, start=1)]
 
 
-def _name_match(display_name: str, observed_text: str) -> float:
-    if not observed_text:
-        return 0.0
+def _identity_segment_tokens(display_name: str) -> tuple[str, ...]:
+    """The pre-strength brand/name tokens _name_match compares OCR text
+    against. Shared with the catalog-uniqueness audit (Fix_drug_OCR_2.md
+    Part A section 1/5) so both use the exact same extraction."""
+
+    strength = _STRENGTH_PATTERN.search(display_name)
+    identity_segment = display_name[: strength.start()] if strength else display_name
+    return _meaningful_tokens(identity_segment)
+
+
+def _name_match(display_name: str, observed_text: str) -> tuple[float, int]:
+    """Return (score, identity_token_count). Score is 1.0 for a match, 0.0
+    otherwise; the token count lets the caller (_rerank) tell a robust
+    multi-token match apart from a single-token one, which ~52.5% of the
+    catalog reduces to (Fix_drug_OCR_2.md section 1) and which alone is
+    not independently reliable identity evidence -- see _decide()."""
+
+    candidate = _identity_segment_tokens(display_name)
+    if not observed_text or not candidate:
+        return 0.0, len(candidate)
     # Catalog display names append manufacturer and pack-size text after the
     # branded name. The package front may legitimately show only that branded
     # name, so compare the OCR text with the pre-strength identity segment.
     # OCR remains corroboration only: _decide still requires visual Top-1 and
     # rejects strength/name conflicts before HIGH_EVIDENCE_MATCH.
-    strength = _STRENGTH_PATTERN.search(display_name)
-    identity_segment = display_name[: strength.start()] if strength else display_name
-    candidate = _meaningful_tokens(identity_segment)
     observed = set(observed_text.split())
-    if not candidate:
-        return 0.0
     matched = sum(token in observed for token in candidate)
     if matched == len(candidate):
-        return 1.0
+        return 1.0, len(candidate)
     if len(candidate) >= 2 and matched / len(candidate) >= 0.75:
-        return 1.0
-    return 0.0
+        return 1.0, len(candidate)
+    return 0.0, len(candidate)
 
 
 def _meaningful_tokens(value: str) -> tuple[str, ...]:
@@ -560,6 +614,52 @@ def _ingredient_match(ingredients: Sequence[str], observed_text: str) -> str | N
     return None
 
 
+# Fix_drug_OCR_2.md Part A section 5 (catalog-derived uniqueness, not a
+# hand-maintained keyword blacklist). Maps (single identity token,
+# normalized strength) -> how many DISTINCT real catalog products share
+# that exact pair. Computed once by scanning the whole `drug_product`
+# table (~3556 rows, sub-second) and cached process-wide for the process
+# lifetime -- the same "pay once, not per request" convention already
+# used for the OpenCLIP embedder and the OCR runtime probe in this
+# module. A catalog change only takes effect after a process restart,
+# same as those two.
+_SINGLE_TOKEN_STRENGTH_INDEX: dict[tuple[str, str], int] | None = None
+
+
+def _single_token_strength_index(session: Session) -> dict[tuple[str, str], int]:
+    global _SINGLE_TOKEN_STRENGTH_INDEX
+    if _SINGLE_TOKEN_STRENGTH_INDEX is not None:
+        return _SINGLE_TOKEN_STRENGTH_INDEX
+    index: dict[tuple[str, str], int] = {}
+    for product in session.scalars(select(DrugProduct)).all():
+        tokens = _identity_segment_tokens(product.display_name)
+        if len(tokens) != 1:
+            continue
+        source = " ".join(part for part in (product.strength_text, product.display_name) if part)
+        for signal in extract_structured_signals(source):
+            if signal.field != "strength_candidate":
+                continue
+            key = (tokens[0], signal.normalized_value)
+            index[key] = index.get(key, 0) + 1
+    _SINGLE_TOKEN_STRENGTH_INDEX = index
+    return index
+
+
+def _is_single_token_non_unique(session: Session, token: str, strengths: set[str]) -> bool:
+    """True when the catalog itself shows >=1 OTHER real product sharing
+    this exact (single identity token, strength) pair -- the shape this
+    task's own catalog audit found for 165 tokens (e.g. two different
+    "Acyclovir 200mg" pack-size SKUs). In that case OCR reading the brand
+    word plus a matching strength cannot tell the recognizer WHICH of the
+    real candidates it actually names, so it must not count as
+    independently reliable identity evidence on its own."""
+
+    if not strengths:
+        return False
+    index = _single_token_strength_index(session)
+    return any(index.get((token, strength), 0) > 1 for strength in strengths)
+
+
 def _has_unresolved_duplicate_ambiguity(session: Session, candidates: Sequence[RecognitionCandidate]) -> bool:
     if not candidates:
         return False
@@ -575,7 +675,8 @@ def _has_unresolved_duplicate_ambiguity(session: Session, candidates: Sequence[R
         return False
     top = candidates[0]
     return not any(
-        signal.field in {"product_name_match", "strength_match", "ingredient_match"} for signal in top.text_evidence
+        signal.field in {"product_name_match", "product_name_match_single_token", "strength_match", "ingredient_match"}
+        for signal in top.text_evidence
     )
 
 
@@ -593,20 +694,42 @@ def _decide(
     if top.conflicts:
         return INSUFFICIENT_EVIDENCE, ("OCR_HARD_CONFLICT", *top.conflicts)
     strong_text = any(signal.field == "product_name_match" for signal in top.text_evidence)
+    # Fix_drug_OCR_2.md Part A: a single-token identity match (~52.5% of the
+    # catalog reduces to exactly one meaningful token before its strength,
+    # e.g. "Snapcef") is NOT independently reliable identity evidence on its
+    # own -- it must be joined by at least one other real, already-computed
+    # corroborating signal (strength_match or ingredient_match; no new
+    # fuzzy/display-name fallback was added) AND the catalog must not show
+    # >=1 OTHER real product sharing that exact (token, strength) pair.
+    single_token_text = any(signal.field == "product_name_match_single_token" for signal in top.text_evidence)
+    strength_matched = any(signal.field == "strength_match" for signal in top.text_evidence)
+    ingredient_matched = any(signal.field == "ingredient_match" for signal in top.text_evidence)
+    single_token_corroborated = single_token_text and (strength_matched or ingredient_matched) and not top.single_token_non_unique
     has_any_catalog_match = any(candidate.text_evidence for candidate in candidates)
     # No cosine threshold is used.  High evidence remains bounded to the visual
     # Top-1 plus independent text corroboration; reranking a lower visual result
     # cannot silently turn a visual/text disagreement into a high-confidence claim.
-    if strong_text and top.visual_rank == 1 and not duplicate_ambiguous:
-        reasons = ["OCR_NAME_MATCH"]
-        if any(signal.field == "strength_match" for signal in top.text_evidence):
+    if (strong_text or single_token_corroborated) and top.visual_rank == 1 and not duplicate_ambiguous:
+        reasons = ["SINGLE_TOKEN_NAME_MATCH"] if single_token_text else ["OCR_NAME_MATCH"]
+        if strength_matched:
             reasons.append("OCR_STRENGTH_MATCH")
+        if single_token_text and ingredient_matched:
+            reasons.append("INGREDIENT_MATCH")
         reasons.append("HIGH_EVIDENCE_CONFIRMED")
         return HIGH_EVIDENCE_MATCH, tuple(reasons)
     if signals and not has_any_catalog_match:
         return INSUFFICIENT_EVIDENCE, ("INSUFFICIENT_VISUAL_EVIDENCE",)
     if duplicate_ambiguous:
         return AMBIGUOUS_MATCH, ("DUPLICATE_CONTENT_AMBIGUITY",)
+    if single_token_text and not single_token_corroborated:
+        # Real text evidence exists (the brand token matched) but it is
+        # deliberately not enough alone -- degrade to AMBIGUOUS_MATCH
+        # rather than inventing confidence (task's own explicit rule),
+        # never silently indistinguishable from a plain no-signal case.
+        reasons = ["SINGLE_TOKEN_NEEDS_CORROBORATION"]
+        if top.single_token_non_unique:
+            reasons.append("NON_UNIQUE_SINGLE_TOKEN")
+        return AMBIGUOUS_MATCH, tuple(reasons)
     return AMBIGUOUS_MATCH, ("AMBIGUOUS_VISUAL_ONLY",)
 
 

@@ -1495,18 +1495,34 @@ def _compose_evidence_text(
     retrieval_ids: set[str],
     web_ids: set[str],
     memory_ids: set[str],
+    bound_tool_ids: set[str] = frozenset(),
 ) -> str:
-    """Render admitted context in the fixed precedence order Retrieval > Web > Memory.
+    """Render admitted context in the fixed precedence order
+    Verified drug lookup > Retrieval > Web > Memory.
 
     Admission/trimming itself is still decided by the shared Context Manager
     (BUILD-4), which never drops Policy/System context and always prefers
     authoritative clinical sources; this only fixes *display* order for the
     items that survived budget trimming.
+
+    Fix_drug_OCR_2.md Part B: a server-bound exact GET_DRUG_INFO lookup
+    (run() -- either a clicked suggested-action button or a TRUE_FOLLOWUP
+    that inherited the canonical prior drug entity) used a context_id of
+    its own ("bound-drug:<id>") that matched none of the three id-sets this
+    function used to accept. The item legitimately survived Context Manager
+    admission but this function's own label loop never had a bucket to put
+    it in, so it was silently omitted from every rendered prompt -- the
+    Main Model saw the raw question plus, at most, unrelated conversation
+    memory, never the verified answer that had already been fetched.
+    Ranked first: it is a deterministic, exact, server-verified match for
+    the CURRENT question's own bound entity, strictly more specific than a
+    similarity-based retrieval result.
     """
 
     by_id = {selection.item.id: selection for selection in build_result.included}
     sections: list[str] = []
     for label, ids in (
+        ("verified drug information", bound_tool_ids),
         ("retrieval evidence", retrieval_ids),
         ("vinmec web evidence", web_ids),
         ("conversation memory - not authoritative", memory_ids),
@@ -1891,6 +1907,21 @@ class AgentOrchestrator:
         bound_tool_results: list = []
         retrieval_ids: set[str] = set()
         web_ids: set[str] = set()
+        # Fix_drug_OCR_2.md Part B real root cause: _compose_evidence_text's
+        # display loop only ever knew about retrieval/web/memory ids -- a
+        # bound tool lookup's context_id matched none of those sets and was
+        # silently dropped from the rendered prompt even though it had
+        # already survived Context Manager admission. Confirmed live: the
+        # bound GET_DRUG_INFO call genuinely ran and returned a real result,
+        # augmented_message length changed, but the actual injected section
+        # was only "[conversation memory - not authoritative]" -- the
+        # verified drug answer text itself never reached the Main Model,
+        # which is why it asked "which drug?" despite a correct entity
+        # binding. This affects BOTH origins identically (a clicked
+        # suggested-action button also sets effective_entity_id/
+        # effective_requested_attribute through this exact same path, see
+        # lines 1597-1598) -- not something specific to image confirmation.
+        bound_tool_ids: set[str] = set()
         if not needs_handoff and not is_safety_blocked:
             gathered = self._gather_evidence(decision, request, query=router_message, trace=trace)
             if isinstance(gathered, str):
@@ -1912,9 +1943,11 @@ class AgentOrchestrator:
                 except ToolExecutionError:
                     return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token, started)
                 bound_tool_results.append(bound)
-                evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{effective_entity_id}"))
+                bound_context_id = f"bound-drug:{effective_entity_id}"
+                evidence_items.append(bound.to_context_item(context_id=bound_context_id))
+                bound_tool_ids.add(bound_context_id)
 
-        augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids)
+        augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids, bound_tool_ids)
         if decision.use_vinmec_web and not web_ids:
             # BUILD-24B: make the negative Vinmec result explicit to the
             # model *before* it answers -- see _NO_VINMEC_EVIDENCE_NOTE.
@@ -2367,14 +2400,22 @@ class AgentOrchestrator:
         return items, retrieval_ids, web_ids, citations
 
     def _compose_message(
-        self, message: str, memory_items: list[ContextItem], evidence_items: list[ContextItem], retrieval_ids: set[str], web_ids: set[str]
+        self,
+        message: str,
+        memory_items: list[ContextItem],
+        evidence_items: list[ContextItem],
+        retrieval_ids: set[str],
+        web_ids: set[str],
+        bound_tool_ids: set[str] = frozenset(),
     ) -> str:
         all_items = [*memory_items, *evidence_items]
         if not all_items:
             return message
         build_result = self._context_manager.build(all_items)
         memory_ids = {item.id for item in memory_items}
-        evidence_text = _compose_evidence_text(build_result, retrieval_ids=retrieval_ids, web_ids=web_ids, memory_ids=memory_ids)
+        evidence_text = _compose_evidence_text(
+            build_result, retrieval_ids=retrieval_ids, web_ids=web_ids, memory_ids=memory_ids, bound_tool_ids=bound_tool_ids
+        )
         if not evidence_text:
             return message
         return f"{message}\n\n{_EVIDENCE_PREAMBLE}\n{evidence_text}"

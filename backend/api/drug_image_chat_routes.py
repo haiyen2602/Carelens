@@ -236,6 +236,7 @@ async def recognize_drug_image(
         "quality_status=%s quality_reasons=%s ocr_status=%s ocr_signal_count=%s "
         "internal_top1_drug_product_id=%s internal_top1_visual_score=%s "
         "internal_top2_visual_score=%s top1_top2_margin=%s ocr_name_match=%s "
+        "ocr_single_token_name_match=%s ocr_single_token_non_unique=%s "
         "ocr_strength_match=%s ocr_conflict=%s decision_reason_codes=%s "
         "recognizer_outcome=%s persisted_outcome=%s api_outcome=%s",
         conversation_id,
@@ -249,6 +250,8 @@ async def recognize_drug_image(
         evidence.internal_top2_visual_score,
         evidence.top1_top2_margin,
         evidence.ocr_name_match,
+        evidence.ocr_single_token_name_match,
+        evidence.ocr_single_token_non_unique,
         evidence.ocr_strength_match,
         evidence.ocr_conflict,
         ",".join(evidence.decision_reason_codes) or "NONE",

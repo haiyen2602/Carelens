@@ -39,6 +39,8 @@ from backend.api.telegram_routes import telegram_router
 from backend.api.vlm_monitoring_routes import vlm_monitoring_router
 from backend.api.voice_routes import voice_router
 from backend.config import get_settings
+from backend.db.base import SessionLocal
+from backend.services.drug_image_recognition import _single_token_strength_index
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
 
@@ -78,6 +80,27 @@ async def lifespan(app: FastAPI):
         warmup_started_at = time.monotonic()
         get_drug_image_recognizer()
         print(f"[INFO] Drug image recognition warmup complete: duration_ms={(time.monotonic() - warmup_started_at) * 1000:.2f}")
+        # PR #160 review: _single_token_strength_index (catalog-derived OCR
+        # single-token uniqueness check) is a module-level, process-lifetime
+        # cache -- same convention as get_drug_image_recognizer() just
+        # above, so the same reasoning applies: warm it here rather than
+        # paying it inline on whichever real request first hits a
+        # single-token OCR name match. Real local cost: 219ms for the
+        # current ~3556-row catalog (measured directly, not estimated) --
+        # small next to the OpenCLIP/OCR warmup above, but free to remove
+        # from the request-latency path entirely at essentially no
+        # additional startup cost. This process runs a single uvicorn
+        # worker (Dockerfile CMD has no --workers flag) so there is only
+        # ever one such cache to warm; if that ever changes to multiple
+        # workers, this same startup hook already warms each worker's own
+        # copy independently, exactly like the two warmups above it.
+        single_token_index_started_at = time.monotonic()
+        with SessionLocal() as warmup_session:
+            single_token_index_size = len(_single_token_strength_index(warmup_session))
+        print(
+            "[INFO] OCR single-token uniqueness index warmup complete: "
+            f"keys={single_token_index_size} duration_ms={(time.monotonic() - single_token_index_started_at) * 1000:.2f}"
+        )
 
     # Vong 2, muc 13 (chatbot-rag-design.md) - scheduler nhac lai escalation.
     # SQLAlchemyJobStore (khong in-memory) - xem docstring escalation_scheduler.py.
