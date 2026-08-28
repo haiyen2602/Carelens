@@ -585,27 +585,3 @@ def test_trace_detail_content_available_keys_on_trace_id_not_agent_run_id(db):
     assert detail["query_preview"] == "Hôm nay tôi uống thuốc gì?"
     assert detail["response_preview"] == "Bạn chưa có lịch uống thuốc hôm nay."
 
-
-@pytest.mark.asyncio
-async def test_monitoring_event_broadcaster_and_stream() -> None:
-    from backend.services.monitoring_events import MonitoringEventBroadcaster
-
-    broadcaster = MonitoringEventBroadcaster()
-    queue = broadcaster.subscribe()
-
-    stream = broadcaster.stream_events(queue)
-    # First message is connected event
-    first_chunk = await anext(stream)
-    assert "event: connected" in first_chunk
-    assert "ok" in first_chunk
-
-    # Broadcast an agent_run_completed event
-    broadcaster.broadcast("agent_run_completed", {"agent_run_id": "run-test-123", "status": "COMPLETED"})
-
-    second_chunk = await anext(stream)
-    assert "event: agent_run_completed" in second_chunk
-    assert "run-test-123" in second_chunk
-
-    broadcaster.unsubscribe(queue)
-    assert queue not in broadcaster._subscribers
-

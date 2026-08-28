@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { AlertCircle, ArrowLeft, LayoutDashboard, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { useMonitoringRealtime } from "@/hooks/use-monitoring-realtime";
+import { useMonitoringPolling, POLLING_OPTIONS, type PollingIntervalOption } from "@/hooks/use-monitoring-polling";
 import { getVersionFilters, listTraces, type MonitoringFiltersInput, type TraceListOut, type VersionFiltersOut } from "@/lib/admin-monitoring";
 
 const PAGE_SIZE = 50;
@@ -129,10 +129,8 @@ export default function TraceExplorerPage() {
     ])
   );
 
-  const { isLive, toggleLive, status: realtimeStatus, lastEventAt } = useMonitoringRealtime({
-    accessToken,
-    enabled: true,
-    debounceMs: 1500,
+  const { intervalMs, setIntervalMs, lastRefreshedAt, isPollingActive, triggerUpdate } = useMonitoringPolling({
+    defaultIntervalMs: 10000,
     onUpdate: () => {
       fetchData();
       if (accessToken) {
@@ -154,36 +152,28 @@ export default function TraceExplorerPage() {
             </Link>
             <h1 className="text-xl font-semibold">Trace Explorer</h1>
             <div className="flex items-center gap-2 ml-2">
-              <button
-                type="button"
-                onClick={toggleLive}
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
-                  isLive
-                    ? realtimeStatus === "connected"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : "border-muted bg-muted/30 text-muted-foreground"
-                }`}
-                title={isLive ? "Bấm để tắt chế độ tự động cập nhật Realtime (SSE)" : "Bấm để bật chế độ tự động cập nhật Realtime (SSE)"}
-              >
+              <div className="flex items-center gap-1.5 rounded border bg-background px-2 py-1 text-xs">
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    isLive
-                      ? realtimeStatus === "connected"
-                        ? "bg-emerald-500 animate-pulse"
-                        : "bg-amber-500 animate-ping"
-                      : "bg-muted-foreground/50"
+                    isPollingActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"
                   }`}
                 />
-                {isLive
-                  ? realtimeStatus === "connected"
-                    ? "Live Realtime"
-                    : "Đang kết nối lại..."
-                  : "Live: Tắt"}
-              </button>
-              {lastEventAt && isLive && (
+                <select
+                  value={intervalMs}
+                  onChange={(e) => setIntervalMs(Number(e.target.value) as PollingIntervalOption)}
+                  className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
+                  title="Tần suất tự động làm mới dữ liệu"
+                >
+                  {POLLING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {isPollingActive && (
                 <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                  (Cập nhật {lastEventAt.toLocaleTimeString()})
+                  (Cập nhật {lastRefreshedAt.toLocaleTimeString()})
                 </span>
               )}
             </div>
@@ -194,7 +184,7 @@ export default function TraceExplorerPage() {
         </div>
         <button
           type="button"
-          onClick={fetchData}
+          onClick={triggerUpdate}
           className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent h-8"
         >
           <RotateCcw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
