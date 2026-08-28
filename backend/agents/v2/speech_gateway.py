@@ -93,7 +93,11 @@ class SpeechGateway:
             options["prompt"] = self._transcribe_prompt
         result = client.audio.transcriptions.create(
             model=self._transcribe_model,
-            file=(filename or "audio.webm", audio_bytes, mime_type or "application/octet-stream"),
+            # Mac dinh KHONG duoi thay vi "audio.webm": OpenAI doc dinh dang theo
+            # DUOI ten file, nen dat bua .webm cho mot file khong phai webm se
+            # hong chac chan ("Audio file might be corrupted or unsupported").
+            # Khong duoi thi no tu do noi dung va van nhan dung (da do thuc te).
+            file=(filename or "audio", audio_bytes, mime_type or "application/octet-stream"),
             **options,
         )
         text = str(getattr(result, "text", "") or "").strip()

@@ -151,3 +151,28 @@ def test_speak_sends_model_voice_and_mp3_format() -> None:
     assert sent["model"] == "gpt-4o-mini-tts"
     assert sent["voice"] == "alloy"
     assert sent["response_format"] == "mp3"
+
+def test_transcribe_passes_the_callers_filename_through_unchanged() -> None:
+    # Duoi ten file la thu OpenAI dung de doan dinh dang - do thuc te bang mot
+    # file mp3 duy nhat: ten "voice.mp3" nhan dung, ten "voice.webm" tra ve
+    # "Audio file might be corrupted or unsupported". Gateway KHONG duoc tu
+    # sua ten, vi chi phia trinh duyet moi biet no vua ghi ra dinh dang gi.
+    gateway, made = _gateway()
+
+    gateway.transcribe(audio_bytes=b"audio", filename="voice.mp4", mime_type="audio/mp4")
+
+    sent = made[0].audio.transcriptions.calls[0]
+    assert sent["file"][0] == "voice.mp4"
+
+
+def test_transcribe_defaults_to_a_name_without_an_extension() -> None:
+    # Mac dinh cu la "audio.webm" - mot phong doan, va la phong doan SAI cho
+    # bat ky client nao khong ghi webm (Safari iOS ghi MP4). Khong duoi thi
+    # OpenAI tu do noi dung, an toan hon la doan nham.
+    gateway, made = _gateway()
+
+    gateway.transcribe(audio_bytes=b"audio", filename="", mime_type=None)
+
+    sent = made[0].audio.transcriptions.calls[0]
+    assert sent["file"][0] == "audio"
+    assert "." not in sent["file"][0]

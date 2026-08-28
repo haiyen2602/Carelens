@@ -7,6 +7,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { UU_TIEN_MIME } from "@/lib/voice-format";
+
 export type VoiceRecorderState = "idle" | "recording";
 
 function moTaLoiMic(err: unknown): string {
@@ -32,7 +34,7 @@ export function useVoiceRecorder() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const mimeType = UU_TIEN_MIME.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       chunksRef.current = [];
       recorder.ondataavailable = (event) => {

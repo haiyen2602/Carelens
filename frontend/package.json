@@ -12,6 +12,7 @@
     "test:onboarding-profile": "node tests/onboarding-profile.test.mjs",
     "test:auth-login-proxy": "node tests/auth-login-proxy.test.mjs",
     "test:drug-image-ui": "node tests/drug-image-ui.test.mjs",
+    "test:voice-format": "node --experimental-strip-types tests/voice-format.test.mts",
     "format": "prettier --write .",
     "deploy": "railway up"
   },

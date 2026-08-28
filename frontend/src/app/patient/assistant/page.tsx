@@ -22,6 +22,7 @@ import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
 import { confirmDrugImageCandidate, recognizeDrugImage, synthesizeVoice, transcribeVoice } from "@/lib/api";
+import { tenFileGhiAm } from "@/lib/voice-format";
 import { loadVoiceOutputEnabled } from "@/lib/voice-settings";
 import {
   type Conversation,
@@ -289,7 +290,16 @@ export default function AssistantPage() {
     setVoicePending(true);
     try {
       const { text } = await transcribeVoice(
-        { patientId: user?.patient_id ?? "", conversationId: activeId, file: blob, filename: "voice.webm" },
+        {
+          patientId: user?.patient_id ?? "",
+          conversationId: activeId,
+          file: blob,
+          // Duoi PHAI khop dinh dang that trinh duyet vua ghi. Truoc day
+          // hard-code "voice.webm" nen iPhone (Safari ghi ra MP4, khong ho
+          // tro webm) hong 100% so lan voi loi "Audio file might be
+          // corrupted or unsupported" tu OpenAI.
+          filename: tenFileGhiAm(blob.type),
+        },
         accessToken,
       );
       // Cung mot ham submit() dung cho tin nhan go tay - pipeline gui

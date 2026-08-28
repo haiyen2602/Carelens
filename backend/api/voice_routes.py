@@ -98,7 +98,7 @@ async def transcribe_voice(
 
     started = time.monotonic()
     try:
-        text = gateway.transcribe(audio_bytes=raw, filename=file.filename or "audio.webm", mime_type=file.content_type)
+        text = gateway.transcribe(audio_bytes=raw, filename=file.filename or "audio", mime_type=file.content_type)
     except EmptyTranscriptionError:
         logger.info("VOICE_TRANSCRIBE_REJECTED conversation_id=%s error_code=EMPTY_TRANSCRIPT", conversation_id)
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=_UNCLEAR_MESSAGE) from None
