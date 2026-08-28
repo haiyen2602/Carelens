@@ -434,6 +434,57 @@ production for real-traffic false-HIGH_EVIDENCE occurrences and
 and revisit with a larger, multi-product real-phone sample before calling
 this broadly production-approved.
 
+## 17a. Review response: two PR findings, verified against real code/data
+
+**Finding — OCR timeout under concurrent load.** Verified via code read:
+`_recognition_slot.acquire(blocking=False)`
+(`backend/api/drug_image_chat_routes.py`) means a second concurrent
+recognize request never waits — it fails immediately with HTTP 429
+(`RECOGNITION_BUSY`). The finding's stated mechanism ("multiple requests
+… might exceed the 30-second total recognition timeout") does not occur:
+no request ever queues behind another long enough to interact with its
+own timeout budget. **Real gap this finding did surface**: this report's
+§3 latency/memory numbers (cold init 1.2s, warm 734–906ms) were measured
+on the local Windows dev machine, not on actual Railway production
+hardware — genuine worst-case single-request latency on Railway's real
+CPU tier remains unmeasured. Recorded here rather than silently accepted;
+worth a real production measurement pass before wider rollout, tracked
+via the same `DRUG_RECOGNITION_EVIDENCE` log line this task added.
+
+**Finding — OCR name-matching false positives from brand-prefix sharing.**
+Verified via code read and a real catalog query. `STRENGTH_CONFLICT` is
+computed independently of `_name_match` (`observed_strengths &
+product_strengths` in `_rerank`) and is a hard conflict that blocks
+`HIGH_EVIDENCE_MATCH` regardless of name-match text — a strength mismatch
+between two same-brand-prefix products is already caught. The narrower,
+real risk is specific to `_name_match`'s own threshold logic
+(`_meaningful_tokens`/`_name_match`, lines ~521–540): a candidate whose
+pre-strength identity segment reduces to a **single token** is matched
+with `matched == len(candidate)` (exact 1-of-1), not the stricter
+`≥ 0.75` rule that applies once `len(candidate) >= 2`. Queried the real
+production catalog: **1867 of 3556 products (52.5%) have a single-token
+identity segment** (e.g. `"Pentasa 1g 4x7"`, `"Doniwell 25mg 10x10"` — and
+`"Snapcef 16mg/10ml…"`, this task's own real HIGH_EVIDENCE example, is
+itself in this group). For two same-strength products both reducing to a
+single, different brand token, this scale means the theoretical
+false-positive path the finding describes is a real, non-rare shape in
+this catalog — **not** a rare edge case.
+
+**Important scope clarification**: this is **not a regression introduced
+by this task**. The single-token leniency rule itself
+(`matched == len(candidate)`) is unchanged — it already existed exactly
+this way before this task, applied against the *full* `display_name`
+instead of the new pre-strength identity segment. This task's own change
+(§6) only moved *what text* is compared, not the matching threshold. The
+identity-segment change made a real correct match reachable for the first
+time (§10's HIGH_EVIDENCE_MATCH result) without changing this pre-existing
+threshold behavior. Tightening the single-token leniency (e.g. requiring
+an additional corroborating signal such as `ingredient_match` when the
+identity segment is exactly one token) is a real, worthwhile hardening —
+deliberately **left out of this PR's scope** per its own §4/§5 instruction
+not to change confidence-threshold policy beyond what was explicitly
+asked, and flagged here for a dedicated follow-up task instead.
+
 ## 17. Release gate — see §18 below (verbatim structure requested)
 
 ## 18. Final gate
