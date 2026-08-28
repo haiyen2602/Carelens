@@ -305,10 +305,11 @@ def create_attempt(
             attempt_id=attempt.id,
             outcome=attempt.outcome,
             reply=(
-                "Tôi chưa thể xác định chắc chắn thuốc trong ảnh. Hãy chụp rõ mặt trước hộp thuốc, "
-                "thử lại với ánh sáng tốt hơn hoặc nhập tên thuốc."
+                "Tôi đã tìm thấy một vài khả năng nhưng chưa đủ chắc chắn để xác định thuốc. "
+                "Hãy chụp rõ mặt trước hộp thuốc hoặc nhập tên thuốc."
                 if attempt.outcome == AMBIGUOUS_MATCH
-                else "Tôi chưa tìm được kết quả đủ đáng tin cậy. Hãy chụp rõ mặt trước hộp thuốc hoặc nhập tên thuốc."
+                else "Ảnh hiện tại chưa đủ thông tin để nhận diện thuốc. "
+                "Hãy chụp lại rõ tên và hàm lượng thuốc."
             ),
             candidates=(),
             requested_attribute=requested_attribute,

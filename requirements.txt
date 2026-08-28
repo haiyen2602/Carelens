@@ -67,11 +67,11 @@ pywebpush>=2.0.0
 # trong requirements.txt (xem requirements-drug-image-vision.txt) - gio dua
 # vao day vi DRUG_IMAGE_CHAT_RECOGNITION_ENABLED se duoc bat that qua bien
 # moi truong Railway (mac dinh trong code van la false). Pin dung phien ban
-# CPU-only da test o B-04/B-05. KHONG kem pytesseract/Tesseract binary - OCR
-# van la NOT_READY (khong co Tesseract tieng Viet duoc duyet), nen moi ket
-# qua nhan dien deu dung o AMBIGUOUS_MATCH (bat buoc nguoi dung xac nhan),
-# khong bao gio tu dong HIGH_EVIDENCE_MATCH - xem OptionalTesseractOcrExtractor.
+# CPU-only da test o B-04/B-05. pytesseract la adapter Python; Tesseract va
+# cac language pack vie+eng duoc cai trong production stage cua Dockerfile.
+# OCR chi corroborate visual Top-1 va khong tu dong xac nhan thuoc.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.5.1+cpu
 torchvision==0.20.1+cpu
 open_clip_torch==2.26.1
+pytesseract==0.3.13

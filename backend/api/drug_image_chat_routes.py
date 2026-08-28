@@ -45,7 +45,12 @@ from backend.services.drug_image_chat import (
     requested_attribute_for,
     validate_upload,
 )
-from backend.services.drug_image_recognition import DrugImageRecognizer, OptionalTesseractOcrExtractor
+from backend.services.drug_image_recognition import (
+    AMBIGUOUS_MATCH,
+    DrugImageRecognizer,
+    OptionalTesseractOcrExtractor,
+    recognition_observability,
+)
 from backend.services.drug_image_retrieval import OpenClipImageEmbedder
 
 drug_image_chat_router = APIRouter(prefix="/agent/v2/drug-images", tags=["agent-v2-drug-image"])
@@ -59,7 +64,11 @@ _recognition_slot = BoundedSemaphore(value=1)
 def get_drug_image_recognizer() -> RecognitionRunner:
     """Lazy B-05 runtime construction; tests replace this dependency."""
 
-    return DrugImageRecognizer(OpenClipImageEmbedder(), ocr=OptionalTesseractOcrExtractor())
+    settings = get_settings()
+    return DrugImageRecognizer(
+        OpenClipImageEmbedder(),
+        ocr=OptionalTesseractOcrExtractor(timeout_seconds=settings.drug_image_chat_ocr_timeout_seconds),
+    )
 
 
 def _safe_error(exc: DrugImageChatError) -> HTTPException:
@@ -214,6 +223,39 @@ async def recognize_drug_image(
                 logger.warning("DRUG_IMAGE_UPLOAD_REJECTED conversation_id=%s error_code=CLEANUP_FAILED", conversation_id)
 
     latency_ms = round((time.monotonic() - started) * 1000, 2)
+    api_status = (
+        "AMBIGUOUS_MATCH"
+        if presentation.outcome == AMBIGUOUS_MATCH
+        else "CANDIDATES"
+        if presentation.candidates
+        else "INSUFFICIENT_EVIDENCE"
+    )
+    evidence = recognition_observability(result)
+    logger.info(
+        "DRUG_RECOGNITION_EVIDENCE conversation_id=%s recognition_attempt_id=%s "
+        "quality_status=%s quality_reasons=%s ocr_status=%s ocr_signal_count=%s "
+        "internal_top1_drug_product_id=%s internal_top1_visual_score=%s "
+        "internal_top2_visual_score=%s top1_top2_margin=%s ocr_name_match=%s "
+        "ocr_strength_match=%s ocr_conflict=%s decision_reason_codes=%s "
+        "recognizer_outcome=%s persisted_outcome=%s api_outcome=%s",
+        conversation_id,
+        presentation.attempt_id,
+        evidence.quality_status,
+        ",".join(evidence.quality_reasons) or "NONE",
+        evidence.ocr_status,
+        evidence.ocr_signal_count,
+        evidence.internal_top1_drug_product_id,
+        evidence.internal_top1_visual_score,
+        evidence.internal_top2_visual_score,
+        evidence.top1_top2_margin,
+        evidence.ocr_name_match,
+        evidence.ocr_strength_match,
+        evidence.ocr_conflict,
+        ",".join(evidence.decision_reason_codes) or "NONE",
+        evidence.recognizer_outcome,
+        presentation.outcome,
+        api_status,
+    )
     logger.info(
         "DRUG_RECOGNITION_RESULT conversation_id=%s recognition_attempt_id=%s outcome=%s candidate_count=%s recognition_version=%s latency_ms=%s",
         conversation_id,
@@ -224,7 +266,7 @@ async def recognize_drug_image(
         latency_ms,
     )
     return DrugImageRecognitionOut(
-        status="CANDIDATES" if presentation.candidates else "INSUFFICIENT_EVIDENCE",
+        status=api_status,
         reply=presentation.reply,
         recognition_attempt_id=presentation.attempt_id,
         outcome=presentation.outcome,

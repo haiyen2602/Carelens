@@ -421,6 +421,14 @@ and no Drug Tool or Main Model is called for candidate presentation. Only a
 insufficient outcomes expose no product name or action. Acute safety and
 ACTIVE doctor takeover suppress recognition.
 
+The response preserves the recognizer decision boundary without exposing
+internal candidates. `HIGH_EVIDENCE_MATCH` is represented by
+`status=CANDIDATES` with exactly one explicitly confirmable candidate;
+`AMBIGUOUS_MATCH` is represented by `status=AMBIGUOUS_MATCH` with an empty
+candidate list and retake/name-entry guidance; `INSUFFICIENT_EVIDENCE` is
+represented by `status=INSUFFICIENT_EVIDENCE` with an empty candidate list.
+OCR is corroborating evidence only and cannot confirm a medicine by itself.
+
 ## 5. `photo-api`
 
 | Method | Path | Role | Mô tả |

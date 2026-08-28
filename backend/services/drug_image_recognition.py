@@ -8,11 +8,12 @@ it is intentionally independent from FastAPI, Agent V2, and the Drug Tool.
 from __future__ import annotations
 
 import re
+import shutil
 import statistics
 import unicodedata
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from PIL import Image, ImageChops, ImageOps, ImageStat
 from sqlalchemy import select
@@ -30,6 +31,10 @@ HIGH_EVIDENCE_MATCH = "HIGH_EVIDENCE_MATCH"
 AMBIGUOUS_MATCH = "AMBIGUOUS_MATCH"
 INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
 OCR_SOURCE = "OCR"
+OCR_AVAILABLE = "OCR_AVAILABLE"
+OCR_UNAVAILABLE = "OCR_UNAVAILABLE"
+OCR_FAILED = "OCR_FAILED"
+OCR_NOT_RUN = "OCR_NOT_RUN"
 RERANKING_POLICY = "deterministic-baseline-heuristic-v1"
 
 _STRENGTH_PATTERN = re.compile(r"(?<![\w.])(\d+(?:[.,]\d+)?)\s*(mcg|µg|ug|mg|ml|g|%)(?!\w)", re.IGNORECASE)
@@ -69,6 +74,14 @@ class OcrExtractor(Protocol):
     def extract(self, image: Image.Image) -> OcrObservation: ...
 
 
+def _load_pytesseract() -> Any:
+    """Import the optional adapter only when an image actually needs OCR."""
+
+    import pytesseract
+
+    return pytesseract
+
+
 class OptionalTesseractOcrExtractor:
     """Local/offline Tesseract adapter, intentionally optional at runtime.
 
@@ -77,26 +90,68 @@ class OptionalTesseractOcrExtractor:
     installed; in that case text is an absent/weak signal rather than truth.
     """
 
-    def __init__(self, *, languages: str = "vie+eng") -> None:
+    def __init__(self, *, languages: str = "vie+eng", timeout_seconds: float = 5.0) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("OCR timeout must be positive")
         self._languages = languages
+        self._required_languages = frozenset(part for part in languages.split("+") if part)
+        self._timeout_seconds = timeout_seconds
+        self._runtime: Any | None = None
+        self._runtime_status: str | None = None
+
+    def _resolve_runtime(self) -> tuple[Any | None, str]:
+        if self._runtime_status is not None:
+            return self._runtime, self._runtime_status
+        try:
+            runtime = _load_pytesseract()
+        except ImportError:
+            self._runtime_status = OCR_UNAVAILABLE
+            return None, self._runtime_status
+
+        command = str(getattr(runtime.pytesseract, "tesseract_cmd", "tesseract"))
+        if shutil.which(command) is None:
+            self._runtime_status = OCR_UNAVAILABLE
+            return None, self._runtime_status
+        try:
+            installed_languages = frozenset(runtime.get_languages(config=""))
+        except runtime.TesseractNotFoundError:
+            self._runtime_status = OCR_UNAVAILABLE
+            return None, self._runtime_status
+        except (OSError, RuntimeError, runtime.TesseractError):
+            self._runtime_status = OCR_FAILED
+            return None, self._runtime_status
+        if not self._required_languages.issubset(installed_languages):
+            self._runtime_status = OCR_UNAVAILABLE
+            return None, self._runtime_status
+
+        self._runtime = runtime
+        self._runtime_status = OCR_AVAILABLE
+        return self._runtime, self._runtime_status
 
     def extract(self, image: Image.Image) -> OcrObservation:
+        runtime, runtime_status = self._resolve_runtime()
+        if runtime is None:
+            return OcrObservation(text="", status=runtime_status)
         try:
-            import pytesseract
-        except ImportError:
-            return OcrObservation(text="", status="OCR_UNAVAILABLE")
-        try:
-            text = pytesseract.image_to_string(image, lang=self._languages)
-        except (OSError, RuntimeError, pytesseract.TesseractError, pytesseract.TesseractNotFoundError):
-            return OcrObservation(text="", status="OCR_UNAVAILABLE")
-        return OcrObservation(text=text, status="OCR_OK")
+            text = runtime.image_to_string(
+                image,
+                lang=self._languages,
+                timeout=self._timeout_seconds,
+            )
+        except runtime.TesseractNotFoundError:
+            self._runtime = None
+            self._runtime_status = OCR_UNAVAILABLE
+            return OcrObservation(text="", status=OCR_UNAVAILABLE)
+        except (OSError, RuntimeError, runtime.TesseractError):
+            return OcrObservation(text="", status=OCR_FAILED)
+        return OcrObservation(text=text, status=OCR_AVAILABLE)
 
 
 class NoopOcrExtractor:
     """Explicit no-text adapter for tests and environments without OCR."""
 
     def extract(self, image: Image.Image) -> OcrObservation:  # noqa: ARG002 - protocol boundary
-        return OcrObservation(text="", status="OCR_NOT_CONFIGURED")
+        return OcrObservation(text="", status=OCR_UNAVAILABLE)
 
 
 @dataclass(frozen=True)
@@ -130,6 +185,9 @@ class RecognitionResult:
     model_version: str
     recognition_version: str = RECOGNITION_VERSION
     confirmation_required: bool = True
+    ocr_status: str = OCR_NOT_RUN
+    ocr_signal_count: int = 0
+    decision_reason_codes: tuple[str, ...] = ()
 
     def confirmation_prompt(self) -> str:
         """Return user-safe candidate wording, never a medicine assertion."""
@@ -144,6 +202,52 @@ class RecognitionResult:
             options = "\n".join(f"- {item.product_display_name}" for item in self.candidates[:3])
             return f"Ảnh có thể là một trong các thuốc sau:\n{options}\nHãy chọn thuốc đúng."
         return "Tôi chưa xác định đủ chắc chắn. Hãy chụp lại rõ mặt trước của hộp thuốc hoặc nhập tên thuốc."
+
+
+@dataclass(frozen=True)
+class RecognitionObservability:
+    """Safe structured evidence for logs/traces; raw OCR and vectors stay absent."""
+
+    quality_status: str
+    quality_reasons: tuple[str, ...]
+    ocr_status: str
+    ocr_signal_count: int
+    internal_top1_drug_product_id: str | None
+    internal_top1_visual_score: float | None
+    internal_top2_visual_score: float | None
+    top1_top2_margin: float | None
+    ocr_name_match: bool
+    ocr_strength_match: bool
+    ocr_conflict: bool
+    decision_reason_codes: tuple[str, ...]
+    recognizer_outcome: str
+
+
+def recognition_observability(result: RecognitionResult) -> RecognitionObservability:
+    """Project a recognition result into bounded, non-patient-readable telemetry."""
+
+    visual_order = sorted(result.candidates, key=lambda candidate: candidate.visual_rank)
+    top1 = visual_order[0] if visual_order else None
+    top2 = visual_order[1] if len(visual_order) > 1 else None
+    decision_top = result.candidates[0] if result.candidates else None
+    evidence_fields = {signal.field for signal in decision_top.text_evidence} if decision_top else set()
+    top1_score = top1.visual_score if top1 else None
+    top2_score = top2.visual_score if top2 else None
+    return RecognitionObservability(
+        quality_status=result.quality_gate.status,
+        quality_reasons=result.quality_gate.reason_codes,
+        ocr_status=result.ocr_status,
+        ocr_signal_count=result.ocr_signal_count,
+        internal_top1_drug_product_id=top1.drug_product_id if top1 else None,
+        internal_top1_visual_score=top1_score,
+        internal_top2_visual_score=top2_score,
+        top1_top2_margin=(top1_score - top2_score) if top1_score is not None and top2_score is not None else None,
+        ocr_name_match="product_name_match" in evidence_fields,
+        ocr_strength_match="strength_match" in evidence_fields,
+        ocr_conflict=bool(decision_top and decision_top.conflicts),
+        decision_reason_codes=result.decision_reason_codes,
+        recognizer_outcome=result.outcome,
+    )
 
 
 def normalize_visible_text(value: str) -> str:
@@ -265,12 +369,15 @@ class DrugImageRecognizer:
     def recognize(self, session: Session, image: Image.Image) -> RecognitionResult:
         quality = inspect_image_quality(image)
         if quality.status == QUALITY_REJECT:
+            reasons = ("QUALITY_FAILED", *quality.reason_codes)
             return RecognitionResult(
                 outcome=INSUFFICIENT_EVIDENCE,
                 candidates=(),
-                evidence_summary=("QUALITY_GATE_BLOCKED_RETRIEVAL", *quality.reason_codes),
+                evidence_summary=reasons,
                 quality_gate=quality,
                 model_version=self._embedder.embedding_version,
+                ocr_status=OCR_NOT_RUN,
+                decision_reason_codes=reasons,
             )
         try:
             observation = self._ocr.extract(image)
@@ -289,12 +396,19 @@ class DrugImageRecognizer:
         candidates = _rerank(visual, metadata, signals)
         duplicate_ambiguous = _has_unresolved_duplicate_ambiguity(session, candidates)
         outcome, reasons = _decide(candidates, signals, duplicate_ambiguous, quality.status)
+        availability_reasons = (
+            (observation.status,) if observation.status in {OCR_UNAVAILABLE, OCR_FAILED} else ()
+        )
+        decision_reasons = tuple(dict.fromkeys((*availability_reasons, *reasons)))
         return RecognitionResult(
             outcome=outcome,
             candidates=tuple(candidates),
             evidence_summary=(f"OCR_STATUS:{observation.status}", *reasons),
             quality_gate=quality,
             model_version=self._embedder.embedding_version,
+            ocr_status=observation.status,
+            ocr_signal_count=len(signals),
+            decision_reason_codes=decision_reasons,
         )
 
 
@@ -407,7 +521,14 @@ def _rerank(
 def _name_match(display_name: str, observed_text: str) -> float:
     if not observed_text:
         return 0.0
-    candidate = _meaningful_tokens(display_name)
+    # Catalog display names append manufacturer and pack-size text after the
+    # branded name. The package front may legitimately show only that branded
+    # name, so compare the OCR text with the pre-strength identity segment.
+    # OCR remains corroboration only: _decide still requires visual Top-1 and
+    # rejects strength/name conflicts before HIGH_EVIDENCE_MATCH.
+    strength = _STRENGTH_PATTERN.search(display_name)
+    identity_segment = display_name[: strength.start()] if strength else display_name
+    candidate = _meaningful_tokens(identity_segment)
     observed = set(observed_text.split())
     if not candidate:
         return 0.0
@@ -465,24 +586,28 @@ def _decide(
     quality_status: str,
 ) -> tuple[str, tuple[str, ...]]:
     if quality_status != QUALITY_PASS:
-        return INSUFFICIENT_EVIDENCE, ("QUALITY_GATE_RETAKE_RECOMMENDED",)
+        return INSUFFICIENT_EVIDENCE, ("QUALITY_FAILED",)
     if not candidates:
-        return INSUFFICIENT_EVIDENCE, ("NO_VISUAL_CANDIDATES",)
+        return INSUFFICIENT_EVIDENCE, ("INSUFFICIENT_VISUAL_EVIDENCE",)
     top = candidates[0]
     if top.conflicts:
-        return INSUFFICIENT_EVIDENCE, ("TOP_CANDIDATE_HAS_HARD_CONFLICT", *top.conflicts)
+        return INSUFFICIENT_EVIDENCE, ("OCR_HARD_CONFLICT", *top.conflicts)
     strong_text = any(signal.field == "product_name_match" for signal in top.text_evidence)
     has_any_catalog_match = any(candidate.text_evidence for candidate in candidates)
     # No cosine threshold is used.  High evidence remains bounded to the visual
     # Top-1 plus independent text corroboration; reranking a lower visual result
     # cannot silently turn a visual/text disagreement into a high-confidence claim.
     if strong_text and top.visual_rank == 1 and not duplicate_ambiguous:
-        return HIGH_EVIDENCE_MATCH, ("TEXT_CORROBORATED_TOP_VISUAL_CANDIDATE", RERANKING_POLICY)
+        reasons = ["OCR_NAME_MATCH"]
+        if any(signal.field == "strength_match" for signal in top.text_evidence):
+            reasons.append("OCR_STRENGTH_MATCH")
+        reasons.append("HIGH_EVIDENCE_CONFIRMED")
+        return HIGH_EVIDENCE_MATCH, tuple(reasons)
     if signals and not has_any_catalog_match:
-        return INSUFFICIENT_EVIDENCE, ("VISIBLE_TEXT_DOES_NOT_CORROBORATE_CATALOG_CANDIDATES",)
+        return INSUFFICIENT_EVIDENCE, ("INSUFFICIENT_VISUAL_EVIDENCE",)
     if duplicate_ambiguous:
-        return AMBIGUOUS_MATCH, ("DUPLICATE_REFERENCE_CONTENT_REQUIRES_CONFIRMATION",)
-    return AMBIGUOUS_MATCH, ("CANDIDATE_REQUIRES_USER_CONFIRMATION",)
+        return AMBIGUOUS_MATCH, ("DUPLICATE_CONTENT_AMBIGUITY",)
+    return AMBIGUOUS_MATCH, ("AMBIGUOUS_VISUAL_ONLY",)
 
 
 def percentile(values: Sequence[float], percentile_value: int) -> float | None:

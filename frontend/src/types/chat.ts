@@ -33,6 +33,7 @@ export type DrugImageCandidate = {
 export type DrugImageRecognitionResponse = {
   status:
     | "CANDIDATES"
+    | "AMBIGUOUS_MATCH"
     | "INSUFFICIENT_EVIDENCE"
     | "SAFETY_DEFERRED"
     | "DOCTOR_ACTIVE"
