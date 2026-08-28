@@ -55,8 +55,24 @@ _PACK_UNIT_WORDS = (
     "vỉ", "vi", "gói", "goi", "tuýp", "tuyp", "liều", "lieu",
 )
 _PACK_UNIT_ALT = "|".join(_PACK_UNIT_WORDS)
+# PR #165 review: the first alternative originally had TWO independent
+# `\s*` quantifiers straddling an optional (possibly-empty) unit-word
+# group -- `\d+\s*(?:UNIT|v)?\s*[xX]`. Once that group matches empty, the
+# two `\s*`s become adjacent and can trade off consuming the SAME run of
+# whitespace in any split, and when the eventual `[xX]` never matches
+# (e.g. a digit followed by a very long whitespace run and no "x"), the
+# engine explores every split before giving up -- confirmed empirically
+# (not just theoretically) as real O(n^2) backtracking: ~61s for a
+# 100,000-char adversarial string, scaling test showed time/n^2 constant
+# across n=500..8000. Not reachable by attacker input TODAY (this pattern
+# only ever runs against short, trusted catalog `display_name` values,
+# never raw OCR text -- confirmed by grep), but a real latent bug is
+# still a real bug. Fixed by folding the leading whitespace INTO the
+# optional group so there is only ever one independent `\s*` per gap
+# (`(?:\s*(?:UNIT|v))?` is tried as a single atomic optional unit, not
+# two separately-backtrackable quantifiers).
 _PACK_PATTERN = re.compile(
-    r"\b\d+\s*(?:" + _PACK_UNIT_ALT + r"|v)?\s*[xX]\s*\d+\s*(?:ml|mg|g|" + _PACK_UNIT_ALT + r"|v)?\b"
+    r"\b\d+(?:\s*(?:" + _PACK_UNIT_ALT + r"|v))?\s*[xX]\s*\d+(?:\s*(?:ml|mg|g|" + _PACK_UNIT_ALT + r"|v))?\b"
     r"|\b(?:" + _PACK_UNIT_ALT + r")\s+\d+\s*(?:ml|mg|g|" + _PACK_UNIT_ALT + r")?\b"
     r"|\b\d+\s*(?:" + _PACK_UNIT_ALT + r"|v)\b",
     re.IGNORECASE,
@@ -727,9 +743,24 @@ def parse_catalog_identity(display_name: str) -> CatalogIdentity:
 def _identity_segment_tokens(display_name: str) -> tuple[str, ...]:
     """The parsed-identity tokens _name_match compares OCR text against.
     Shared with the catalog-uniqueness index (section 8) so both use the
-    exact same extraction."""
+    exact same extraction.
 
-    return _meaningful_tokens(parse_catalog_identity(display_name).identity_text)
+    PR #165 review: parse_catalog_identity()'s leftmost-cut can fall back
+    to the WHOLE display_name as identity_text when the earliest
+    structural marker starts at position 0 (cut_at == 0) or when no
+    marker is found at all -- not currently hit by any real catalog row
+    (checked directly against all 3556), but real for a hypothetical
+    product like "2x12 Some Brand". _meaningful_tokens already re-strips
+    a stray _STRENGTH_PATTERN match from that fallback text as a side
+    effect of its own strength-stripping; pack had no equivalent
+    protection, so a pack token (e.g. "2x12") could leak into identity
+    comparison in that fallback case. Stripped here, scoped to identity-
+    token extraction only, so it does not affect _pack_match's own
+    direct _meaningful_tokens(pack_text) call on a real pack_text string
+    (which would otherwise always reduce to zero tokens)."""
+
+    identity = parse_catalog_identity(display_name)
+    return _meaningful_tokens(_PACK_PATTERN.sub(" ", identity.identity_text))
 
 
 def _name_match(display_name: str, observed_text: str) -> tuple[float, int]:

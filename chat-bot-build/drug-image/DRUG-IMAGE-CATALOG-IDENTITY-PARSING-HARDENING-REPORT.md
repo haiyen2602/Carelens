@@ -4,6 +4,8 @@ Task: `chat-bot-build/drug-image/Fix_drug_OCR_3.md`
 Branch: `fix/drug-image-catalog-identity-parsing` (based directly on `origin/main`, not stacked on another PR branch — see the PR-stacking lesson from the previous task)
 Worktree: `H:\Vin AI\P-067-catalog-identity-parsing`
 
+**Update (post-PR-#165-review)**: two real findings from the automated PR review were verified and fixed — see section 5a and section 6a below. All numbers in this report reflect the fixed code; the original collision counts (computed against a scratchpad prototype file that went stale after the fix) have been corrected (389→**420** groups / 972→**1036** products, not 419/1034 as first reported — see section 5a).
+
 ---
 
 ## 1. LONG HUYẾT reproduction
@@ -82,11 +84,29 @@ Full-catalog comparison, OLD vs. NEW identity parsing, all 3556 products (§12's
 | | Collision groups | Products involved |
 |---|---|---|
 | OLD | 389 | 972 |
-| **NEW** | **419** | **1034** |
-| Newly-colliding (collide under NEW, did not under OLD) | 30 groups | — |
+| **NEW** | **420** | **1036** |
+| Newly-colliding (collide under NEW, did not under OLD) | 31 groups | — |
 | Newly-separated (collided under OLD, no longer under NEW) | 2 | — |
 
-This is a **real, expected increase**, not a defect: most of the 30 newly-colliding groups are the same real brand collapsing correctly across pack-size variants that previously looked like different identities only because unrelated pack/manufacturer text leaked into the old comparison (e.g. `"B Complex C Vidipha 2x10"` / `"...3x10"` / `"...100v"`, `"Fluotin 20 Stella 10x10"` / `"...2x10"`, `"Nasrix DAVI 4x7"` / `"...6x10"`). This is exactly the semantic improvement section 3 asks for — but it does mean multi-token identity matches, which previously had **no** catalog-uniqueness gate at all, now need one too (section 8, below).
+(Corrected after PR review — see section 5a: the first pass of this audit imported the NEW side from a frozen scratchpad prototype file, not the shipped module, and went stale by 1 group/2 products once section 5a's regex fix was applied to the real module. Re-run directly against `backend.services.drug_image_recognition._identity_segment_tokens` for these final numbers.)
+
+This is a **real, expected increase**, not a defect: most of the 31 newly-colliding groups are the same real brand collapsing correctly across pack-size variants that previously looked like different identities only because unrelated pack/manufacturer text leaked into the old comparison (e.g. `"B Complex C Vidipha 2x10"` / `"...3x10"` / `"...100v"`, `"Fluotin 20 Stella 10x10"` / `"...2x10"`, `"Nasrix DAVI 4x7"` / `"...6x10"`). This is exactly the semantic improvement section 3 asks for — but it does mean multi-token identity matches, which previously had **no** catalog-uniqueness gate at all, now need one too (section 8, below).
+
+## 5a. PR #165 review fixes (real findings, both confirmed and fixed)
+
+Two findings from the automated PR review were independently verified with direct evidence, not assumed correct or dismissed on inspection alone:
+
+**1. `_PACK_PATTERN` had a real, confirmed O(n²) backtracking blowup.** The review flagged possible backtracking risk from the pattern's alternations. Verified empirically (not just theoretically): a scaling test (n = 500 → 8000, adversarial input = one digit + n spaces + a non-matching character) showed `time / n²` roughly constant (~6.7–8.5), and a 100,000-character version of the same input took **61 seconds**. Root cause: the first alternative had two independent `\s*` quantifiers straddling an optional (possibly-empty) unit-word group — `\d+\s*(?:UNIT|v)?\s*[xX]` — which become adjacent and mutually ambiguous once that group matches empty, letting the engine try every split of a whitespace run before giving up. Fixed by folding the leading whitespace into the optional group so there's only ever one independent `\s*` per gap. Re-verified after the fix: the same 100,000-char case dropped to **32ms**, and a 1,000,000-char version ran in 315ms — confirmed linear.
+
+The review's framing ("used in `normalize_for_match`... raw OCR text") was not quite accurate — `_PACK_PATTERN` is only ever called from `parse_catalog_identity()`, on `product.display_name` (short, trusted catalog data, never raw OCR text; confirmed by checking every call site). So this was not exploitable by an attacker *today*, but it was still a real, confirmed, trivially-fixable landmine worth closing rather than leaving in shipped code.
+
+Fixing the pattern shifted a small number of match spans (18 products, all just a trailing-space difference in the raw regex match that `pack_text.strip()` already normalized away) and, as a side effect, corrected the collision-count numbers in section 5 above (the audit script had been importing the NEW side from a stale scratchpad copy of the pre-fix pattern).
+
+**2. Identity-parsing fallback could theoretically leak a pack token into identity.** The review noted that when the earliest structural marker starts at position 0, `identity_text` falls back to the whole `display_name`, and asked whether that's fragile. Checked directly against all 3556 real catalog products: **0 currently hit this** (verified by testing both the "marker starts at index 0" condition and "name starts with `(`"). Constructed synthetic cases to check the actual fallback behavior anyway:
+- A name starting with a strength pattern (e.g. `"500mg Paracetamol Stella"`) is already safe: `_meaningful_tokens()` re-strips any `_STRENGTH_PATTERN` match as an existing side effect of its own strength-stripping, so the fallback string still tokenizes correctly (`('paracetamol', 'stella')`).
+- A name starting with a pack pattern (e.g. `"2x12 Some Weird Name"`) was **not** safe — there was no equivalent stripping for pack, so `"2x12"` would leak into the identity token set, wrongly requiring OCR to read a pack number as part of the brand identity. Fixed by stripping `_PACK_PATTERN` matches from `identity_text` inside `_identity_segment_tokens()` specifically (not inside the shared `_meaningful_tokens()`, which would have broken `_pack_match()`'s own direct tokenization of a real `pack_text` string).
+
+Both fixes verified: full drug-image test suite (80 tests) + the 253-test combined regression + the Snapcef 8-photo real-image regression all pass unchanged after the fixes; `ruff check` clean.
 
 One genuine parsing imperfection found by this same audit and **not fixed** (documented per section 12's "risky shortened identities" + section 16's "report catalog-data errors separately," not silently patched with a special case): `"Magnesi - b6 Khapharco 10x10"` / `"Magnesi - b6 Stella Tablet 10x10"` — the real identity-relevant qualifier `"b6"` sits right after a whitespace-hyphen, so the general descriptive-suffix rule (correctly, in the common case — see `"BAR Pharmedic 180v - Thuốc LỢI GAN MẬT"` right below it in the same audit output, a genuine positive split) also swallows it here, reducing this pair's identity to just `("magnesi",)`. **Safety is not compromised** — this collision is caught by the same section 8 uniqueness gate as any other (needs corroboration, cannot alone reach `HIGH_EVIDENCE_MATCH`) — but match quality for this specific product pair is reduced versus a hypothetical smarter split. Not fixed in this task: fixing it generically (distinguishing "real manufacturer/pack text after a hyphen" from "real marketing description after a hyphen") is a nontrivial, separately-scoped linguistic heuristic, and the task's own stop rule forbids product-specific hacks.
 
@@ -192,10 +212,10 @@ OLD IDENTITY COLLISIONS:
 389 groups / 972 products
 
 NEW IDENTITY COLLISIONS:
-419 groups / 1034 products
+420 groups / 1036 products
 
 UNSAFE NEW COLLISIONS:
-0 / 30 (all 30 newly-colliding groups gated by the generalized
+0 / 31 (all 31 newly-colliding groups gated by the generalized
         catalog-uniqueness check; cases B and F directly test this)
 
 SINGLE-TOKEN HARDENING PRESERVED:
