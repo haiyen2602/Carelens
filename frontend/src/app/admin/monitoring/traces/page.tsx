@@ -44,6 +44,7 @@ export default function TraceExplorerPage() {
 
   const [data, setData] = useState<TraceListOut | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,9 +73,10 @@ export default function TraceExplorerPage() {
     [router]
   );
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isBackground: boolean = false) => {
     if (!accessToken) return;
-    setLoading(true);
+    if (!isBackground && !data) setLoading(true);
+    setIsRefreshing(true);
     setError(null);
     try {
       const filterInput: MonitoringFiltersInput = {
@@ -83,11 +85,14 @@ export default function TraceExplorerPage() {
       };
       setData(await listTraces(filterInput, { limit: PAGE_SIZE, offset: page * PAGE_SIZE, accessToken }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định");
+      if (!data) {
+        setError(e instanceof Error ? e.message : "Lỗi không xác định");
+      }
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
-  }, [status, errorCode, page, accessToken]);
+  }, [status, errorCode, page, accessToken, data]);
 
   useEffect(() => {
     fetchData();
@@ -132,7 +137,7 @@ export default function TraceExplorerPage() {
   const { intervalMs, setIntervalMs, lastRefreshedAt, isPollingActive, triggerUpdate } = useMonitoringPolling({
     defaultIntervalMs: 10000,
     onUpdate: () => {
-      fetchData();
+      fetchData(true);
       if (accessToken) {
         getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
       }
@@ -184,10 +189,10 @@ export default function TraceExplorerPage() {
         </div>
         <button
           type="button"
-          onClick={triggerUpdate}
+          onClick={() => fetchData(false)}
           className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent h-8"
         >
-          <RotateCcw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          <RotateCcw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
           Làm mới
         </button>
       </div>
@@ -226,17 +231,17 @@ export default function TraceExplorerPage() {
         )}
       </div>
 
-      {loading && (
+      {loading && !data && (
         <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Đang tải...
         </div>
       )}
-      {error && (
+      {error && !data && (
         <div className="surface-card flex items-center gap-2 border-destructive/40 p-4 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" /> {error}
         </div>
       )}
-      {!loading && !error && data && (
+      {data && (
         <div className="surface-card overflow-x-auto p-4">
           {data.items.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Chưa có trace nào khớp bộ lọc.</p>
