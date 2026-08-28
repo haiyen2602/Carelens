@@ -321,6 +321,48 @@ not investigated further as out of scope.
 **No new model calls. No new tool calls added for classification** — the
 fix only changed which already-fetched evidence gets rendered.
 
+## 15a. Review response: catalog-index warmup
+
+**Finding**: `_SINGLE_TOKEN_STRENGTH_INDEX` is a module-level cache built
+on first use; in a multi-worker deployment this happens once per worker,
+a latency spike for the first user hitting each worker.
+
+**Verified, not just asserted**:
+
+- The stated mechanism does not currently apply to this deployment:
+  `Dockerfile`'s `CMD` (`exec uvicorn backend.main:app --host 0.0.0.0
+  --port ${PORT:-8000}`) has no `--workers` flag, so uvicorn runs a
+  single worker process — confirmed by reading the real Dockerfile, not
+  assumed.
+- The underlying architectural observation is correct in general — a
+  module-level global is per-process — and is the exact same pattern
+  already used in this file for `get_drug_image_recognizer()`
+  (`@lru_cache(maxsize=1)`, the OpenCLIP embedder + OCR runtime probe),
+  which pays a much larger real cost (15.4s measured at startup, see
+  below) the same way.
+- Real measured cost of the index build itself: 219ms standalone, 2.4s
+  when run immediately after the other two startup warmups in the same
+  process (DB connection/query-plan warm-up contention) — small next to
+  the 15.4s embedder warmup, but not zero.
+
+**Fixed rather than only documented**, since it was cheap and directly
+addressed the concern for any future multi-worker deployment too:
+`backend/main.py`'s existing startup warmup block now also warms
+`_single_token_strength_index` right after the embedder/OCR warmup,
+guarded by the same `drug_image_chat_recognition_enabled` flag. Real
+startup log after the change:
+
+```
+[INFO] Drug Knowledge V2 warmup complete: products=3556 chunks=42588 duration_ms=13157.00
+[INFO] Drug image recognition warmup complete: duration_ms=15375.00
+[INFO] OCR single-token uniqueness index warmup complete: keys=1969 duration_ms=2421.00
+```
+
+No request now pays this cost inline — if this app is ever moved to a
+multi-worker `uvicorn --workers N` configuration, this same startup hook
+already warms each worker's own copy independently, exactly like the two
+warmups above it. Full test suite re-run after this change: 77/77 passed.
+
 ## 16. Final gate
 
 ```
