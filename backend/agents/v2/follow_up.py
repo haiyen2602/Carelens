@@ -102,6 +102,7 @@ _ATTRIBUTE_KEYWORDS = (
     "chong chi dinh", "luu y", "canh bao", "tuong tac", "di kham",
     "kham ngay", "cap cuu", "thanh phan", "di vien", "nang khong", "tranh",
     "do dau", "tai sao", "truoc an", "sau an", "uong truoc", "uong sau",
+    "thong tin chi tiet thuoc", "thong tin chi tiet", "thong tin thuoc",
 )
 
 # Question particles / fillers / pure function words with no subject content

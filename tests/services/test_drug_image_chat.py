@@ -27,9 +27,11 @@ from backend.services.drug_image_chat import (
     create_attempt,
     persist_takeover_upload,
     private_takeover_upload_path,
+    reject_attempt,
     validate_upload,
 )
 from backend.services.drug_image_recognition import (
+    AMBIGUOUS_MATCH,
     HIGH_EVIDENCE_MATCH,
     INSUFFICIENT_EVIDENCE,
     ImageQuality,
@@ -273,6 +275,60 @@ def test_confirmation_rejects_cross_patient_and_expired_actions() -> None:
             now=now + timedelta(seconds=2),
         )
     assert expired.value.code == "CONFIRMATION_EXPIRED"
+
+
+def test_ambiguous_result_never_exposes_or_persists_confirmable_candidates() -> None:
+    session = _session()
+    presentation = create_attempt(
+        session,
+        actor_id="actor-a",
+        patient_id="patient-a",
+        conversation_id="conversation-a",
+        result=_result(outcome=AMBIGUOUS_MATCH),
+        requested_attribute=None,
+        ttl_seconds=900,
+    )
+
+    row = session.get(DrugRecognitionAttempt, presentation.attempt_id)
+    assert presentation.outcome == AMBIGUOUS_MATCH
+    assert presentation.candidates == ()
+    assert row is not None
+    assert row.status == "INSUFFICIENT_EVIDENCE"
+    assert row.candidates_json == []
+
+
+def test_rejected_candidate_is_invalidated_and_can_never_be_confirmed() -> None:
+    session = _session()
+    presentation = create_attempt(
+        session,
+        actor_id="actor-a",
+        patient_id="patient-a",
+        conversation_id="conversation-a",
+        result=_result(),
+        requested_attribute=None,
+        ttl_seconds=900,
+    )
+
+    rejected = reject_attempt(
+        session,
+        attempt_id=presentation.attempt_id,
+        action_id=presentation.candidates[0].action_id,
+        actor_id="actor-a",
+        patient_id="patient-a",
+        conversation_id="conversation-a",
+    )
+    assert rejected.attempt_id == presentation.attempt_id
+    assert session.get(DrugRecognitionAttempt, presentation.attempt_id).status == ATTEMPT_SUPERSEDED
+    with pytest.raises(DrugImageChatError) as stale:
+        confirm_attempt(
+            session,
+            attempt_id=presentation.attempt_id,
+            action_id=presentation.candidates[0].action_id,
+            actor_id="actor-a",
+            patient_id="patient-a",
+            conversation_id="conversation-a",
+        )
+    assert stale.value.code == "CONFIRMATION_STALE"
 
 
 def test_takeover_attachment_is_private_opaque_and_expired_files_are_cleaned(tmp_path: Path) -> None:

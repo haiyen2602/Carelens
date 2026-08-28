@@ -807,6 +807,7 @@ _FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
 # is a smaller, message-text-facing detector only) so a resolved aspect
 # reads identically to what a clicked suggestion button would have asked.
 _DRUG_ASPECT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "drug_details": ("thông tin chi tiết", "thong tin chi tiet", "thông tin thuốc", "thong tin thuoc"),
     "side_effects": ("tác dụng phụ", "tac dung phu"),
     "dosage": ("liều dùng", "lieu dung", "liều lượng", "lieu luong"),
     "administration": ("cách dùng", "cach dung", "cách uống", "cach uong", "uống trước hay sau ăn", "uong truoc hay sau an"),
@@ -816,6 +817,7 @@ _DRUG_ASPECT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "drug_uses": ("công dụng", "cong dung", "chỉ định", "chi dinh", "dùng để làm gì", "dung de lam gi"),
 }
 _DRUG_ASPECT_LABELS: dict[str, str] = {
+    "drug_details": "Thông tin đã xác minh về {entity}",
     "drug_uses": "Công dụng của {entity}",
     "dosage": "Liều dùng {entity}",
     "administration": "Cách dùng {entity}",

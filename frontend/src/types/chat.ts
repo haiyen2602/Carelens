@@ -46,10 +46,10 @@ export type DrugImageRecognitionResponse = {
 };
 
 export type DrugImageConfirmResponse = {
-  status: "CONFIRMED";
+  status: "CONFIRMED" | "REJECTED";
   reply: string;
   recognition_attempt_id: string;
-  canonical_drug_product_id: string;
+  canonical_drug_product_id: string | null;
   requested_attribute: string | null;
   tools: string[];
 };

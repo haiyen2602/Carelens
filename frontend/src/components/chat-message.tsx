@@ -27,10 +27,9 @@ export function ChatMessage({
   accessToken?: string | null;
   onSelectAction?: (action: SuggestedAction) => void;
   onConfirmDrugCandidate?: (attemptId: string, actionId: string, label: string) => void;
-  // B-08 enablement: candidate list co the khong chua dung thuoc (anh chup
-  // lech goc/nguoc sang/mo). Nut nay la loi thoat ro rang, tranh nguoi dung
-  // buoc phai chon dai 1 trong cac goi y sai.
-  onRejectDrugCandidates?: (attemptId: string) => void;
+  // Only the one server-issued high-evidence action reaches this callback;
+  // rejecting it invalidates that opaque action without binding drug state.
+  onRejectDrugCandidates?: (attemptId: string, actionId: string) => void;
   actionsDisabled?: boolean;
 }) {
   const isUser = message.role === "user";
@@ -45,38 +44,82 @@ export function ChatMessage({
             : { background: "#E4DDFB", color: "#2E2456", borderRadius: "20px 20px 20px 6px" }
         }
       >
+        {isUser && message.imageAttachment && (
+          <div className="mb-2">
+            {message.imageAttachment.previewUrl ? (
+              <img
+                src={message.imageAttachment.previewUrl}
+                alt={`Ảnh thuốc đã gửi: ${message.imageAttachment.fileName}`}
+                className="max-h-52 w-full rounded-xl bg-white/10 object-contain"
+              />
+            ) : (
+              <p className="m-0 text-xs text-white/80">Ảnh thuốc đã gửi</p>
+            )}
+            <p className="m-0 mt-1 truncate text-xs text-white/80">
+              {message.imageAttachment.fileName}
+            </p>
+          </div>
+        )}
         <MarkdownRenderer content={message.content} />
       </div>
       {at && <p className="font-mono m-0 mt-1 px-1 text-[10px] text-[#62708A]">{at}</p>}
       {!isUser && conversationId && (
         <>
-          {message.drugImage && message.drugImage.candidates.length > 0 && (
-            <div className="mt-2 flex max-w-[82%] flex-col gap-2" aria-label="Các thuốc cần xác nhận">
-              {message.drugImage.candidates.map((candidate) => (
-                <button
-                  key={candidate.action_id}
-                  type="button"
-                  disabled={actionsDisabled}
-                  onClick={() => onConfirmDrugCandidate?.(message.drugImage!.attemptId, candidate.action_id, candidate.product_display_name)}
-                  className="min-h-10 rounded-lg border border-[#B7C2D6] bg-white px-3 py-2 text-left text-[13px] font-medium text-[#16386E] transition-colors hover:bg-[#F4F7FC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <span className="block">{candidate.product_display_name}</span>
-                  {candidate.strength_text && <span className="block text-xs font-normal text-[#62708A]">{candidate.strength_text}</span>}
-                  <span className="mt-1 block">Đúng thuốc này</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                disabled={actionsDisabled}
-                onClick={() => onRejectDrugCandidates?.(message.drugImage!.attemptId)}
-                className="min-h-10 rounded-lg border border-dashed border-[#B7C2D6] bg-transparent px-3 py-2 text-left text-[13px] font-medium text-[#62708A] transition-colors hover:bg-[#F4F7FC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
+          {message.drugImage?.outcome === "HIGH_EVIDENCE_MATCH" &&
+            message.drugImage.candidates.length === 1 && (
+              <div
+                className="mt-2 flex max-w-[82%] flex-col gap-2"
+                aria-label="Xác nhận thuốc nhận diện được"
               >
-                Không phải thuốc nào ở trên — nhập tên thuốc
-              </button>
-            </div>
-          )}
+                {message.drugImage.candidates.map((candidate) => (
+                  <div
+                    key={candidate.action_id}
+                    className="rounded-lg border border-[#B7C2D6] bg-white px-3 py-2 text-[13px] text-[#16386E]"
+                  >
+                    <span className="block font-medium">{candidate.product_display_name}</span>
+                    {candidate.strength_text && (
+                      <span className="block text-xs text-[#62708A]">
+                        {candidate.strength_text}
+                      </span>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={actionsDisabled}
+                        onClick={() =>
+                          onConfirmDrugCandidate?.(
+                            message.drugImage!.attemptId,
+                            candidate.action_id,
+                            candidate.product_display_name,
+                          )
+                        }
+                        className="min-h-10 rounded-lg bg-[#16386E] px-3 py-2 font-medium text-white transition-colors hover:bg-[#112D59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Đúng thuốc này
+                      </button>
+                      <button
+                        type="button"
+                        disabled={actionsDisabled}
+                        onClick={() =>
+                          onRejectDrugCandidates?.(
+                            message.drugImage!.attemptId,
+                            candidate.action_id,
+                          )
+                        }
+                        className="min-h-10 rounded-lg border border-[#B7C2D6] bg-white px-3 py-2 font-medium text-[#62708A] transition-colors hover:bg-[#F4F7FC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16386E] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Không đúng
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           {message.suggestedActions && message.suggestedActions.length > 0 && (
-            <div className="mt-2 flex max-w-[82%] flex-wrap gap-2" aria-label="Gợi ý câu hỏi tiếp theo">
+            <div
+              className="mt-2 flex max-w-[82%] flex-wrap gap-2"
+              aria-label="Gợi ý câu hỏi tiếp theo"
+            >
               {message.suggestedActions.map((action) => (
                 <button
                   key={action.action_id}

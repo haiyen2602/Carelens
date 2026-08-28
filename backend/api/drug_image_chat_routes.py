@@ -40,6 +40,7 @@ from backend.services.drug_image_chat import (
     confirm_attempt,
     create_attempt,
     persist_takeover_upload,
+    reject_attempt,
     remove_takeover_upload,
     requested_attribute_for,
     validate_upload,
@@ -251,6 +252,26 @@ def confirm_drug_image_candidate(
 
     patient_id = require_agent_patient_access(db, actor, request.patient_id)
     try:
+        if request.decision == "REJECTED":
+            rejected = reject_attempt(
+                db,
+                attempt_id=request.recognition_attempt_id,
+                action_id=request.action_id,
+                actor_id=actor.id,
+                patient_id=patient_id,
+                conversation_id=request.conversation_id,
+            )
+            db.commit()
+            logger.info(
+                "DRUG_CANDIDATE_REJECTED conversation_id=%s recognition_attempt_id=%s outcome=REJECTED",
+                request.conversation_id,
+                rejected.attempt_id,
+            )
+            return DrugImageConfirmOut(
+                status="REJECTED",
+                reply="Được, hãy chụp lại ảnh rõ hơn hoặc nhập tên thuốc để tôi tra cứu.",
+                recognition_attempt_id=rejected.attempt_id,
+            )
         confirmed = confirm_attempt(
             db,
             attempt_id=request.recognition_attempt_id,
@@ -277,7 +298,7 @@ def confirm_drug_image_candidate(
         db.add(run)
         db.flush()
         canonical_entity = ActiveEntity(
-            "drug_product",
+            "drug",
             confirmed.drug_product_id,
             confirmed.display_name,
             legacy_drug_id=confirmed.legacy_drug_id,
@@ -299,21 +320,24 @@ def confirm_drug_image_candidate(
         )
         reply = f"Bạn đã xác nhận {confirmed.display_name}."
         tools: list[str] = []
-        if confirmed.legacy_drug_id and confirmed.requested_attribute:
+        if confirmed.legacy_drug_id:
+            query = (
+                confirmed.requested_attribute
+                if confirmed.requested_attribute
+                else f"Thông tin chi tiết đã xác minh về {confirmed.display_name}"
+            )
             tool_data = AgentReadOnlyDomainTools(db).get_drug_info(
                 legacy_drug_id=confirmed.legacy_drug_id,
-                query=confirmed.requested_attribute,
+                query=query,
             )
             contents = [item["content"] for item in tool_data["results"] if item.get("content")]
             if contents:
-                reply = f"{reply} {contents[0]}"
+                reply = f"{reply} {' '.join(contents[:3])}"
                 tools.append("get_drug_info")
             else:
-                reply = f"{reply} Tôi chưa có thông tin đã xác minh cho nội dung bạn hỏi."
-        elif confirmed.requested_attribute:
-            reply = f"{reply} Tôi chưa có thông tin đã xác minh cho nội dung bạn hỏi."
+                reply = f"{reply} Tôi chưa có thông tin đã xác minh hiện có cho thuốc này."
         else:
-            reply = f"{reply} Bạn muốn biết công dụng, cách dùng hay tác dụng phụ của thuốc này?"
+            reply = f"{reply} Tôi chưa có thông tin đã xác minh hiện có cho thuốc này."
         db.commit()
     except DrugImageChatError as exc:
         db.rollback()

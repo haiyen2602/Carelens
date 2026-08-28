@@ -79,29 +79,45 @@ export async function recognizeDrugImage(
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const detail = body?.detail;
-    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+    throw new ApiError(
+      typeof detail === "object" ? detail.message : (detail ?? `API error: ${response.status}`),
+      response.status,
+    );
   }
   return response.json();
 }
 
 export async function confirmDrugImageCandidate(
-  payload: { patientId: string; conversationId: string; attemptId: string; actionId: string },
+  payload: {
+    patientId: string;
+    conversationId: string;
+    attemptId: string;
+    actionId: string;
+    decision?: "CONFIRMED" | "REJECTED";
+  },
   accessToken?: string | null,
 ): Promise<DrugImageConfirmResponse> {
   const response = await fetch("/api/drug-images/confirm", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({
       patient_id: payload.patientId,
       conversation_id: payload.conversationId,
       recognition_attempt_id: payload.attemptId,
       action_id: payload.actionId,
+      decision: payload.decision ?? "CONFIRMED",
     }),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const detail = body?.detail;
-    throw new ApiError(typeof detail === "object" ? detail.message : detail ?? `API error: ${response.status}`, response.status);
+    throw new ApiError(
+      typeof detail === "object" ? detail.message : (detail ?? `API error: ${response.status}`),
+      response.status,
+    );
   }
   return response.json();
 }

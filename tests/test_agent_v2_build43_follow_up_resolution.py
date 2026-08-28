@@ -73,6 +73,22 @@ def test_c_explicit_aspect_follow_up_binds_inherited_entity_deterministically():
     assert not any(call[0] == "search_drug" for call in domain.calls)
 
 
+def test_c2_confirmed_drug_detail_follow_up_uses_bound_drug_tool():
+    domain = _DomainTools()
+    orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="Nội dung đã xác minh.")))
+    result = orchestrator.run(
+        _request(
+            "Thông tin chi tiết thuốc",
+            prior_active_entity_id="legacy-snapcef",
+            prior_active_entity_name="Snapcef 16mg/10ml",
+        ),
+        tools=_tools(domain),
+    )
+    assert result.follow_up_decision.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert ("get_drug_info", "legacy-snapcef") in domain.calls
+    assert not any(call[0] == "search_drug" for call in domain.calls)
+
+
 # ---------------------------------------------------------------------------
 # D. Pronoun/deictic follow-up ("Thuốc này...").
 # ---------------------------------------------------------------------------
