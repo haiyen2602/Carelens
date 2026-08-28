@@ -16,16 +16,23 @@ def require_agent_patient_access(db: Session, actor: CurrentUser, patient_id: st
     if actor.role == "patient" and actor.patient_id == patient_id:
         return patient_id
 
-    if actor.role == "caregiver":
-        link = db.execute(
-            select(CaregiverLink.id).where(
-                CaregiverLink.caregiver_account_id == actor.id,
-                CaregiverLink.patient_id == patient_id,
-                CaregiverLink.status == "accepted",
-            )
-        ).scalar_one_or_none()
-        if link is not None:
-            return patient_id
+    # KHONG gate bang `actor.role == "caregiver"` (SUA 2026-08-28): `role` chi
+    # giu duoc MOT gia tri, trong khi mot nguoi vua la benh nhan cua chinh
+    # minh vua cham bo/me la chuyen binh thuong. Gate theo role khien nguoi
+    # con (role="patient") bi 403 khi hoi ve me du co CaregiverLink hop le.
+    # Su that nam o BANG LIEN KET, khong o cot role.
+    #
+    # Chi tinh `accepted`: dong "pending" la loi moi chua duoc dong y - cho
+    # doc du lieu y te tu do se bien viec gui loi moi thanh cach lay thong tin.
+    link = db.execute(
+        select(CaregiverLink.id).where(
+            CaregiverLink.caregiver_account_id == actor.id,
+            CaregiverLink.patient_id == patient_id,
+            CaregiverLink.status == "accepted",
+        )
+    ).scalar_one_or_none()
+    if link is not None:
+        return patient_id
 
     if actor.role == "doctor" and actor.doctor_id:
         watch = db.execute(

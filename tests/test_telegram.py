@@ -698,3 +698,105 @@ def test_loi_moi_pending_khong_tinh_la_nguoi_than(boi_canh):
         assert dang_theo_doi_ai(db, cg) is False
     finally:
         db.close()
+
+
+# --- Dot 1: webhook + phan quyen dual-role ---------------------------------
+
+def test_xu_ly_mot_update_bo_qua_tin_nhom(bot_gia):
+    """Bot bi them vao nhom - KHONG duoc ghep ho so y te hay tra loi o do."""
+    upd = {
+        "update_id": 1,
+        "message": {"chat": {"id": -100, "type": "group"}, "text": "/start abc"},
+    }
+    assert tg.xu_ly_mot_update(None, upd) is False
+    assert bot_gia == []
+
+
+def test_xu_ly_mot_update_bo_qua_tin_khong_co_text(bot_gia):
+    """Anh/sticker o Dot 1 chua xu ly - khong duoc no vi thieu key 'text'."""
+    upd = {"update_id": 2, "message": {"chat": {"id": 1, "type": "private"}}}
+    assert tg.xu_ly_mot_update(None, upd) is False
+    assert bot_gia == []
+
+
+def test_xu_ly_mot_update_bo_qua_update_rong(bot_gia):
+    """Telegram co nhieu loai update (edited_message, callback_query...) -
+    loai chua xu ly khong duoc lam no ham."""
+    assert tg.xu_ly_mot_update(None, {"update_id": 3}) is False
+    assert bot_gia == []
+
+
+@db_required
+def test_nguoi_vua_la_benh_nhan_vua_cham_me_duoc_hoi_ve_me(boi_canh):
+    """Lỗi dual-role o require_agent_patient_access: gate bang
+    `actor.role == "caregiver"` khien nguoi con (role="patient") bi 403 khi
+    hoi ve me, du CaregiverLink hop le. Su that nam o BANG LIEN KET."""
+    from backend.api.security import CurrentUser
+    from backend.services.agent_authorization import require_agent_patient_access
+
+    db = SessionLocal()
+    try:
+        me_id, _ = _tao_benh_nhan(db, boi_canh, ten="Mẹ Sáu")
+        con_patient_id, con_account_id = _tao_benh_nhan(db, boi_canh, ten="Chị Ba")
+        db.add(
+            CaregiverLink(
+                caregiver_account_id=con_account_id,
+                patient_id=me_id,
+                relationship="Con gái",
+                status="accepted",
+            )
+        )
+        db.commit()
+
+        # role="patient" - truoc khi sua se raise 403 o day.
+        actor = CurrentUser(id=con_account_id, role="patient", patient_id=con_patient_id, doctor_id=None)
+        assert require_agent_patient_access(db, actor, me_id) == me_id
+        assert require_agent_patient_access(db, actor, con_patient_id) == con_patient_id
+    finally:
+        db.close()
+
+
+@db_required
+def test_khong_co_lien_ket_thi_van_bi_tu_choi(boi_canh):
+    """Sua dual-role KHONG duoc noi long phan quyen: nguoi la van phai 403."""
+    import pytest as _pytest
+    from fastapi import HTTPException
+
+    from backend.api.security import CurrentUser
+    from backend.services.agent_authorization import require_agent_patient_access
+
+    db = SessionLocal()
+    try:
+        nguoi_la_id, _ = _tao_benh_nhan(db, boi_canh)
+        _, ke_khac_account = _tao_benh_nhan(db, boi_canh)
+        db.commit()
+
+        actor = CurrentUser(id=ke_khac_account, role="patient", patient_id=None, doctor_id=None)
+        with _pytest.raises(HTTPException) as exc:
+            require_agent_patient_access(db, actor, nguoi_la_id)
+        assert exc.value.status_code == 403
+    finally:
+        db.close()
+
+
+@db_required
+def test_lien_ket_pending_van_bi_tu_choi(boi_canh):
+    """Loi moi chua chap nhan khong duoc mo duong doc du lieu y te."""
+    import pytest as _pytest
+    from fastapi import HTTPException
+
+    from backend.api.security import CurrentUser
+    from backend.services.agent_authorization import require_agent_patient_access
+
+    db = SessionLocal()
+    try:
+        me_id, _ = _tao_benh_nhan(db, boi_canh)
+        cg = _tao_nguoi_than(db, boi_canh, me_id, status="pending")
+        db.commit()
+
+        actor = CurrentUser(id=cg, role="caregiver", patient_id=None, doctor_id=None)
+        with _pytest.raises(HTTPException) as exc:
+            require_agent_patient_access(db, actor, me_id)
+        assert exc.value.status_code == 403
+    finally:
+        db.close()

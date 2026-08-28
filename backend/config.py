@@ -615,6 +615,34 @@ class Settings(BaseSettings):
         default=7, description="Lech gio so voi UTC khi hien gio trong tin Telegram (VN = 7)"
     )
 
+    # CACH NHAN TIN TU TELEGRAM - hai che do LOAI TRU NHAU, khong chay song
+    # song duoc: Telegram tra 409 cho getUpdates khi bot da dat webhook.
+    #
+    #   "polling"  - job dinh ky goi getUpdates. Chay duoc tren may dev khong
+    #                co domain public. MAC DINH vi do la moi truong cua ca
+    #                nhom; production phai bat webhook TUONG MINH.
+    #   "webhook"  - Telegram day update sang POST /api/v1/telegram/webhook
+    #                ngay khi co tin. Bat buoc cho chatbot: doi 1 nhip poll
+    #                moi tra loi la trai nghiem khong dung duoc.
+    #
+    # Dung chung mot bot cho ca hai moi truong se lam hai ben TRANH nhau tin
+    # nhan - moi moi truong mot bot rieng (xem docs/DEPLOY.md).
+    telegram_update_mode: Literal["polling", "webhook"] = Field(
+        default="polling", description="Cach nhan update tu Telegram: polling (dev) hay webhook (prod)"
+    )
+    # Chi co y nghia o che do polling. 3 giay du nhanh de chat duoc ma khong
+    # goi Telegram qua day; che do webhook bo qua gia tri nay.
+    telegram_poll_interval_seconds: float = Field(
+        default=3.0, description="Tan suat goi getUpdates o che do polling (giay)"
+    )
+    # Telegram gui lai chuoi nay trong header X-Telegram-Bot-Api-Secret-Token
+    # o MOI update. Rong = tu choi moi request toi webhook: route nay nam tren
+    # Internet cong khai, khong co secret thi bat ky ai cung gia duoc tin nhan
+    # cua benh nhan.
+    telegram_webhook_secret: str = Field(
+        default="", description="Secret xac thuc webhook Telegram. Rong = tu choi moi request."
+    )
+
 
 
 @lru_cache
