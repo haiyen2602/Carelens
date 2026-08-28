@@ -71,11 +71,20 @@ def test_c_explicit_aspect_follow_up_binds_inherited_entity_deterministically():
     # ambiguous re-search of a name the model was never given).
     assert ("get_drug_info", "drug-1") in domain.calls
     assert not any(call[0] == "search_drug" for call in domain.calls)
+    # Fix_drug_OCR_2.md Part B real root cause this guards: get_drug_info
+    # being CALLED is not proof its answer ever reached the Main Model.
+    # _compose_evidence_text used to only recognize retrieval/web/memory
+    # ids -- a bound-tool context_id matched none of them and its content
+    # was silently dropped from the composed prompt even though the tool
+    # call itself succeeded. _DomainTools.get_drug_info's fixed fake
+    # content ("Ha sot, giam dau") must actually appear in what the Main
+    # Model was given, not just in the tool-call log.
+    assert "ha sot, giam dau" in gateway.calls[-1]["message"].casefold()
 
 
 def test_c2_confirmed_drug_detail_follow_up_uses_bound_drug_tool():
     domain = _DomainTools()
-    orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="Nội dung đã xác minh.")))
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="Nội dung đã xác minh.")))
     result = orchestrator.run(
         _request(
             "Thông tin chi tiết thuốc",
@@ -87,6 +96,9 @@ def test_c2_confirmed_drug_detail_follow_up_uses_bound_drug_tool():
     assert result.follow_up_decision.category is FollowUpCategory.TRUE_FOLLOWUP
     assert ("get_drug_info", "legacy-snapcef") in domain.calls
     assert not any(call[0] == "search_drug" for call in domain.calls)
+    # Same real regression guard as test_c above, for the "thông tin chi
+    # tiết thuốc" phrasing PR #155's own report separately claimed to fix.
+    assert "ha sot, giam dau" in gateway.calls[-1]["message"].casefold()
 
 
 # ---------------------------------------------------------------------------
