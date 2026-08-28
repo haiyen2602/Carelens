@@ -2009,7 +2009,7 @@ export default function AdminMonitoringPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [filters, setFilters] = useState<MonitoringFiltersInput>({});
   const [versionOptions, setVersionOptions] = useState<VersionFiltersOut | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [trendDays, setTrendDays] = useState(7);
 
@@ -2025,6 +2025,19 @@ export default function AdminMonitoringPage() {
   const [safety, setSafety] = useState<SafetySummary | null>(null);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  const TABS_WITHOUT_FILTER: TabId[] = ["safety", "golden", "rag_chatbot", "versions"];
+
+  const currentTabHasData =
+    (activeTab === "overview" && overview !== null) ||
+    (activeTab === "quality" && quality !== null) ||
+    (activeTab === "retrieval" && retrieval !== null) ||
+    (activeTab === "performance" && performance !== null) ||
+    (activeTab === "cost" && cost !== null) ||
+    (activeTab === "errors" && errors !== null) ||
+    (activeTab === "judge" && judge !== null) ||
+    (activeTab === "golden" && golden !== null) ||
+    TABS_WITHOUT_FILTER.includes(activeTab);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -2044,37 +2057,55 @@ export default function AdminMonitoringPage() {
       .catch(() => setTrend(null));
   }, [accessToken, activeTab, filters, trendDays]);
 
-  const fetchTab = useCallback(async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    setError(null);
-    try {
-      if (activeTab === "overview") setOverview(await getOverview(filters, accessToken));
-      else if (activeTab === "quality") setQuality(await getQuality(filters, accessToken));
-      else if (activeTab === "retrieval") setRetrieval(await getRetrieval(filters, accessToken));
-      else if (activeTab === "performance") setPerformance(await getPerformance(filters, accessToken));
-      else if (activeTab === "cost") setCost(await getCost(filters, accessToken));
-      else if (activeTab === "errors") setErrors(await getErrors(filters, accessToken));
-      else if (activeTab === "judge") setJudge(await getJudge(filters, accessToken));
-      else if (activeTab === "golden") setGolden(await getGolden(undefined, accessToken));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, filters, accessToken]);
+  const fetchTab = useCallback(
+    async (isBackground: boolean = false) => {
+      if (!accessToken) return;
+      setIsRefreshing(true);
+      setError(null);
+      try {
+        if (activeTab === "overview") setOverview(await getOverview(filters, accessToken));
+        else if (activeTab === "quality") setQuality(await getQuality(filters, accessToken));
+        else if (activeTab === "retrieval") setRetrieval(await getRetrieval(filters, accessToken));
+        else if (activeTab === "performance") setPerformance(await getPerformance(filters, accessToken));
+        else if (activeTab === "cost") setCost(await getCost(filters, accessToken));
+        else if (activeTab === "errors") setErrors(await getErrors(filters, accessToken));
+        else if (activeTab === "judge") setJudge(await getJudge(filters, accessToken));
+        else if (activeTab === "golden") setGolden(await getGolden(undefined, accessToken));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Lỗi không xác định");
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [activeTab, filters, accessToken]
+  );
+
+  useEffect(() => {
+    fetchTab(false);
+  }, [fetchTab]);
+
+  const handleFiltersChange = (newFilters: MonitoringFiltersInput) => {
+    setFilters(newFilters);
+    // Invalidate other tabs cache so they fetch fresh data with the new filter
+    setOverview(null);
+    setQuality(null);
+    setRetrieval(null);
+    setPerformance(null);
+    setCost(null);
+    setErrors(null);
+    setJudge(null);
+    setGolden(null);
+  };
 
   const { intervalMs, setIntervalMs, lastRefreshedAt, isPollingActive, triggerUpdate } = useMonitoringPolling({
     defaultIntervalMs: 10000,
     onUpdate: () => {
-      fetchTab();
+      fetchTab(true);
       if (accessToken) {
         getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
       }
     },
   });
-
-  const TABS_WITHOUT_FILTER: TabId[] = ["safety", "golden", "rag_chatbot", "versions"];
 
   return (
     <div className="space-y-6">
@@ -2115,9 +2146,9 @@ export default function AdminMonitoringPage() {
           <button
             type="button"
             className="flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs hover:bg-accent"
-            onClick={triggerUpdate}
+            onClick={() => fetchTab(false)}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             Làm mới
           </button>
         </div>
@@ -2125,7 +2156,7 @@ export default function AdminMonitoringPage() {
 
       {/* Filter bar — hidden for tabs that don't need it */}
       {!TABS_WITHOUT_FILTER.includes(activeTab) && (
-        <FilterBar filters={filters} setFilters={setFilters} options={versionOptions} />
+        <FilterBar filters={filters} setFilters={handleFiltersChange} options={versionOptions} />
       )}
 
       {/* Tab navigation */}
@@ -2163,10 +2194,12 @@ export default function AdminMonitoringPage() {
         <RagChatbotTab accessToken={accessToken} />
       ) : activeTab === "versions" ? (
         <VersionsTab accessToken={accessToken} versionOptions={versionOptions} />
-      ) : loading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} />
+      ) : !currentTabHasData ? (
+        error ? (
+          <ErrorState message={error} />
+        ) : (
+          <LoadingState />
+        )
       ) : (
         <>
           {activeTab === "overview" && overview && (
