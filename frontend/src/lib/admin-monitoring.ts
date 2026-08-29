@@ -312,6 +312,26 @@ export type CompareOut = {
   comparison?: Record<string, unknown>;
 };
 
+export type SafetySummaryOut = {
+  available?: boolean;
+  safety_trigger_count?: number;
+  safety_trigger_rate?: number | null;
+  handoff_required_count?: number;
+  handoff_required_rate?: number | null;
+  handoff_created_count?: number;
+  handoff_created_rate?: number | null;
+  handoff_failure_count?: number;
+  handoff_failure_rate?: number | null;
+  unresolved_handoff_count?: number;
+  time_to_review_avg_seconds?: number | null;
+  time_to_review_sample_count?: number;
+  denominator_agent_v2_total_runs?: number;
+  severity_distribution?: Record<string, number>;
+  reason_code_distribution?: Record<string, number>;
+  handoff_status_distribution?: Record<string, number>;
+  legacy_escalation_count?: number;
+};
+
 export type TrendPoint = {
   date: string;
   requests: number;
@@ -351,6 +371,33 @@ export async function getErrors(filters: MonitoringFiltersInput, accessToken?: s
 }
 export async function getJudge(filters: MonitoringFiltersInput, accessToken?: string | null, signal?: AbortSignal) {
   return getSection<JudgeOut>("judge", filters, accessToken, signal);
+}
+
+export async function getSafetySummary(
+  filters: MonitoringFiltersInput,
+  accessToken?: string | null,
+  signal?: AbortSignal,
+): Promise<SafetySummaryOut> {
+  const params = filtersToParams(filters);
+  const response = await fetch(`${API_BASE}/api/v1/admin/safety/summary?${params}`, {
+    headers: authHeaders(accessToken),
+    signal,
+  });
+  return parseOrThrow<SafetySummaryOut>(response, "Không thể tải dữ liệu an toàn");
+}
+
+export async function getSafetyEvents(
+  filters: MonitoringFiltersInput,
+  options: { limit?: number; offset?: number; accessToken?: string | null; signal?: AbortSignal } = {},
+): Promise<{ items: unknown[]; total: number }> {
+  const params = filtersToParams(filters);
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  if (options.offset !== undefined) params.set("offset", String(options.offset));
+  const response = await fetch(`${API_BASE}/api/v1/admin/safety/events?${params}`, {
+    headers: authHeaders(options.accessToken),
+    signal: options.signal,
+  });
+  return parseOrThrow<{ items: unknown[]; total: number }>(response, "Không thể tải danh sách sự kiện an toàn");
 }
 
 export async function getTrend(
