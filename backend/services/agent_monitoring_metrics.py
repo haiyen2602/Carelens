@@ -1157,44 +1157,60 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
     metrics_json contains AVAILABLE scores (from the heuristic evaluator).
     """
     try:
-        from datetime import date, timedelta
-        from sqlalchemy import cast, Date as SADate
+        from collections import defaultdict
+        from datetime import datetime, timezone, timedelta
 
         base = _apply_agent_run_filters(select(AgentRun), filters)
 
-        # If no explicit date range, default to last `days` calendar days.
+        now_dt = datetime.now(tz=timezone.utc)
         if filters.date_from is None and filters.date_to is None:
-            from datetime import datetime, timezone
-            cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
-            base = base.where(AgentRun.started_at >= cutoff)
+            cutoff = now_dt - timedelta(days=days)
+            recent_runs = db.execute(
+                base.where(AgentRun.started_at >= cutoff)
+                .order_by(AgentRun.started_at.asc())
+                .with_only_columns(
+                    AgentRun.id,
+                    AgentRun.started_at,
+                    AgentRun.duration_ms,
+                    AgentRun.status,
+                )
+            ).all()
+            if recent_runs:
+                runs = recent_runs
+            else:
+                # If no runs strictly within cutoff, load all matching runs so historical/seed data is visible
+                runs = db.execute(
+                    base.order_by(AgentRun.started_at.asc())
+                    .with_only_columns(
+                        AgentRun.id,
+                        AgentRun.started_at,
+                        AgentRun.duration_ms,
+                        AgentRun.status,
+                    )
+                ).all()
+        else:
+            runs = db.execute(
+                base.order_by(AgentRun.started_at.asc())
+                .with_only_columns(
+                    AgentRun.id,
+                    AgentRun.started_at,
+                    AgentRun.duration_ms,
+                    AgentRun.status,
+                )
+            ).all()
 
-        runs = db.execute(
-            base.order_by(AgentRun.started_at.asc()).with_only_columns(
-                AgentRun.id,
-                AgentRun.started_at,
-                AgentRun.duration_ms,
-                AgentRun.status,
-            )
-        ).all()
+        run_ids = [r.id for r in runs] if runs else []
 
-        if not runs:
-            return {"available": True, "trend": [], "days": days}
+        # Load AgentRunEvaluation metrics_json
+        eval_by_run_id: dict[str, dict] = {}
+        if run_ids:
+            eval_rows = db.execute(
+                select(AgentRunEvaluation.agent_run_id, AgentRunEvaluation.metrics_json)
+                .where(AgentRunEvaluation.agent_run_id.in_(run_ids))
+            ).all()
+            eval_by_run_id = {r.agent_run_id: (r.metrics_json or {}) for r in eval_rows}
 
-        run_ids = [r.id for r in runs]
-
-        # Load AgentRunEvaluation metrics_json for all matching runs (durable,
-        # but the *score* inside it was only written when the heuristic
-        # evaluator produced an AVAILABLE result -- see evaluators.py).
-        eval_rows = db.execute(
-            select(AgentRunEvaluation.agent_run_id, AgentRunEvaluation.metrics_json)
-            .where(AgentRunEvaluation.agent_run_id.in_(run_ids))
-        ).all()
-        eval_by_run_id: dict[str, dict] = {r.agent_run_id: (r.metrics_json or {}) for r in eval_rows}
-
-        # Supplement with ring-buffer scores where available (same logic as
-        # _heuristic_quality_scores, but keyed by run_id so we can attach
-        # to the right calendar day).
-        from datetime import datetime, timezone
+        # Supplement with ring-buffer scores
         from backend.services.telemetry import get_local_traces
         ring_faith: dict[str, float] = {}
         ring_rel: dict[str, float] = {}
@@ -1250,17 +1266,25 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
                         day_rel_scores[trace_day].append(float(score))
 
         # Group by calendar day.
-        from collections import defaultdict
         day_runs: dict[str, list] = defaultdict(list)
         for r in runs:
             day_key = r.started_at.strftime("%Y-%m-%d") if r.started_at else "unknown"
             day_runs[day_key].append(r)
 
+        # Ensure continuous timeline of calendar dates for the requested `days` window
+        all_day_keys = set(day_runs.keys())
+        if filters.date_from is None and filters.date_to is None:
+            for i in range(days - 1, -1, -1):
+                d_str = (now_dt - timedelta(days=i)).strftime("%Y-%m-%d")
+                all_day_keys.add(d_str)
+
         trend = []
-        for day_str in sorted(day_runs.keys()):
-            day_batch = day_runs[day_str]
+        for day_str in sorted(all_day_keys):
+            if day_str == "unknown":
+                continue
+            day_batch = day_runs.get(day_str, [])
             latencies = [r.duration_ms for r in day_batch if r.duration_ms is not None]
-            p95 = _percentiles(latencies, points=(95,))[95]
+            p95 = _percentiles(latencies, points=(95,))[95] if latencies else {"value": None}
 
             faith_scores = [ring_faith[r.id] for r in day_batch if r.id in ring_faith]
             if not faith_scores and day_str in day_faith_scores:
@@ -1276,7 +1300,7 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
             trend.append({
                 "date": day_str,
                 "requests": len(day_batch),
-                "p95_latency_ms": p95["value"],
+                "p95_latency_ms": p95.get("value"),
                 "task_completion": task_completion_rate,
                 "task_completion_n": len(day_batch),
                 "faithfulness": round(sum(faith_scores) / len(faith_scores), 4) if faith_scores else None,
