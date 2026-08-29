@@ -120,6 +120,9 @@ function formatMetric(
 ): string {
   if (!m || m.value === null || m.value === undefined || m.status !== "AVAILABLE")
     return "N/A";
+  if (typeof m.value === "string" && Number.isNaN(Number(m.value))) {
+    return `${m.value}${opts.suffix ?? ""}`;
+  }
   const v = typeof m.value === "number" ? m.value : Number(m.value);
   if (Number.isNaN(v)) return "N/A";
   if (opts.percent) return `${(v * 100).toFixed(1)}%`;
@@ -655,6 +658,8 @@ function TrendChart({ data }: { data: TrendOut }) {
             strokeWidth={2}
             fill="url(#gTask)"
             connectNulls
+            dot={{ r: 3, fill: "#2563eb" }}
+            activeDot={{ r: 5 }}
           />
           <Area
             type="monotone"
@@ -664,6 +669,8 @@ function TrendChart({ data }: { data: TrendOut }) {
             strokeWidth={2}
             fill="url(#gFaith)"
             connectNulls
+            dot={{ r: 3, fill: "#10b981" }}
+            activeDot={{ r: 5 }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -857,19 +864,19 @@ function OverviewTab({
   const errorVal = data.error_rate?.status === "AVAILABLE" && typeof data.error_rate.value === "number"
     ? data.error_rate.value : null;
 
-  // Format latency P95 (e.g., 24s p95 or 5233ms p95)
+  // Format latency P95 (e.g., 5.2s p95 or 850ms p95)
   const p95Val = data.latency_p95_ms?.status === "AVAILABLE" && typeof data.latency_p95_ms.value === "number"
     ? data.latency_p95_ms.value
     : null;
   const latencyDisplay = p95Val !== null
-    ? (p95Val >= 1000 ? `${(p95Val / 1000).toFixed(0)}s p95` : `${Math.round(p95Val)}ms p95`)
+    ? (p95Val >= 1000 ? `${(p95Val / 1000).toFixed(1)}s p95` : `${Math.round(p95Val)}ms p95`)
     : "N/A";
 
-  // Format cost per task (e.g., $0.185)
+  // Format cost per task (e.g., $0.0012 or $0.185)
   const costVal = data.cost_per_query_usd?.status === "AVAILABLE" && typeof data.cost_per_query_usd.value === "number"
     ? data.cost_per_query_usd.value
     : null;
-  const costDisplay = costVal !== null ? `$${costVal < 0.01 ? costVal.toFixed(3) : costVal.toFixed(3)}` : "N/A";
+  const costDisplay = costVal !== null ? (costVal < 0.0001 && costVal > 0 ? "< $0.0001" : `$${costVal.toFixed(costVal < 0.01 ? 4 : 3)}`) : "N/A";
 
   // 5-bucket distribution for Judge scores (0.0-0.2, 0.2-0.4, 0.4-0.6, 0.6-0.8, 0.8-1.0)
   const judgeScoreDist = judgeData?.overall_score_distribution
@@ -2319,9 +2326,11 @@ function SafetyTab({
             <MetricCard
               label="Thời gian duyệt trung bình"
               metric={{
-                value: summary.time_to_review_avg_seconds != null ? `${Math.round(summary.time_to_review_avg_seconds)}s` : "Chưa có",
-                status: "AVAILABLE",
+                value: summary.time_to_review_avg_seconds != null ? Math.round(summary.time_to_review_avg_seconds) : null,
+                status: summary.time_to_review_avg_seconds != null ? "AVAILABLE" : "NOT_APPLICABLE",
               }}
+              suffix="s"
+              integer
               sub={summary.time_to_review_sample_count ? `${summary.time_to_review_sample_count} ca đã duyệt` : undefined}
             />
             <MetricCard
