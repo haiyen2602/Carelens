@@ -103,6 +103,11 @@ export type OverviewOut = {
   safety_trigger_rate?: MetricValue;
   handoff_rate?: MetricValue;
   judged_rate?: MetricValue;
+  // Core failure mode evaluation metrics
+  task_completion?: MetricValue;
+  tool_correctness?: MetricValue;
+  contextual_precision?: MetricValue;
+  faithfulness?: MetricValue;
 };
 
 export type QualityOut = {
@@ -311,6 +316,8 @@ export type TrendPoint = {
   date: string;
   requests: number;
   p95_latency_ms: number | null;
+  task_completion?: number | null;
+  task_completion_n?: number;
   faithfulness: number | null;
   faithfulness_n: number;
   relevance: number | null;

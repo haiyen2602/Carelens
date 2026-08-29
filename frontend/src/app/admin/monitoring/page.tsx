@@ -236,6 +236,55 @@ function MetricCard({
   );
 }
 
+function AgentEvaluationCard({
+  title,
+  subtitle,
+  metric,
+  percent,
+  suffix,
+  valueOverride,
+  colorScheme,
+  thresholdKey,
+}: {
+  title: string;
+  subtitle: string;
+  metric?: MetricValue;
+  percent?: boolean;
+  suffix?: string;
+  valueOverride?: string;
+  colorScheme?: "emerald" | "rose" | "sky" | "amber";
+  thresholdKey?: keyof typeof THRESHOLDS;
+}) {
+  const display = valueOverride ?? formatMetric(metric, { percent, suffix });
+  const numVal = metric?.status === "AVAILABLE" && typeof metric.value === "number" ? metric.value : null;
+
+  let valueColor = "text-emerald-600";
+  if (colorScheme === "rose") valueColor = "text-rose-600";
+  else if (colorScheme === "sky") valueColor = "text-sky-600";
+  else if (colorScheme === "amber") valueColor = "text-amber-600";
+  else if (thresholdKey && numVal !== null) {
+    valueColor = metricColor(thresholdKey, numVal);
+  }
+
+  return (
+    <div className="surface-card p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div>
+        <h4 className="text-sm font-bold text-foreground tracking-tight">{title}</h4>
+        <p className="text-xs text-muted-foreground mt-1 leading-snug">{subtitle}</p>
+      </div>
+      <div className="mt-4">
+        <p className={`text-3xl font-extrabold tracking-tight ${valueColor}`}>{display}</p>
+        {metric && metric.status === "AVAILABLE" && metric.numerator != null && metric.denominator != null && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {metric.numerator} / {metric.denominator}
+            {metric.sample_count != null ? ` (n=${metric.sample_count})` : ""}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Card for metrics that are permanently N/A due to architectural limits */
 function DisabledMetricCard({
   label, reason, technicalNote,
@@ -543,8 +592,10 @@ function TrendChart({ data }: { data: TrendOut }) {
   }
   const chartData = data.trend.map((p) => ({
     date: p.date.slice(5), // MM-DD
+    task_completion: p.task_completion !== null && p.task_completion !== undefined ? Math.round(p.task_completion * 100) : null,
     faithfulness: p.faithfulness !== null ? Math.round(p.faithfulness * 100) : null,
     relevance: p.relevance !== null ? Math.round(p.relevance * 100) : null,
+    task_n: p.task_completion_n ?? p.requests,
     faith_n: p.faithfulness_n,
     rel_n: p.relevance_n,
     requests: p.requests,
@@ -554,13 +605,13 @@ function TrendChart({ data }: { data: TrendOut }) {
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <defs>
+            <linearGradient id="gTask" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+            </linearGradient>
             <linearGradient id="gFaith" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
               <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="gRel" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -579,15 +630,24 @@ function TrendChart({ data }: { data: TrendOut }) {
               fontSize: "12px",
             }}
             formatter={(val, name, props) => {
-              const isFaith = name === "faithfulness" || String(name).includes("Faithfulness");
-              const n = isFaith ? props.payload.faith_n : props.payload.rel_n;
-              const label = isFaith
-                ? "Độ trung thực (Faithfulness)"
-                : "Độ phù hợp (Answer Relevance)";
+              const isTask = name === "task_completion" || String(name).includes("Task Completion");
+              const n = isTask ? props.payload.task_n : props.payload.faith_n;
+              const label = isTask
+                ? "Tỷ lệ hoàn thành (Task Completion)"
+                : "Độ trung thực (Faithfulness)";
               return [`${val}% (n=${n})`, label];
             }}
           />
           <Legend />
+          <Area
+            type="monotone"
+            dataKey="task_completion"
+            name="Tỷ lệ hoàn thành (Task Completion)"
+            stroke="#2563eb"
+            strokeWidth={2}
+            fill="url(#gTask)"
+            connectNulls
+          />
           <Area
             type="monotone"
             dataKey="faithfulness"
@@ -595,15 +655,6 @@ function TrendChart({ data }: { data: TrendOut }) {
             stroke="#10b981"
             strokeWidth={2}
             fill="url(#gFaith)"
-            connectNulls
-          />
-          <Area
-            type="monotone"
-            dataKey="relevance"
-            name="Độ phù hợp (Answer Relevance)"
-            stroke="#2563eb"
-            strokeWidth={2}
-            fill="url(#gRel)"
             connectNulls
           />
         </AreaChart>
@@ -776,10 +827,18 @@ function CostTimelineChart({
 
 function OverviewTab({
   data,
+  trend,
+  trendDays,
+  setTrendDays,
+  judgeData,
   safety,
   onNavigateTab,
 }: {
   data: OverviewOut;
+  trend: TrendOut | null;
+  trendDays: number;
+  setTrendDays: (d: number) => void;
+  judgeData: JudgeOut | null;
   safety: SafetySummary | null;
   onNavigateTab: (tab: TabId) => void;
 }) {
@@ -789,21 +848,35 @@ function OverviewTab({
     ? data.success_rate.value : null;
   const errorVal = data.error_rate?.status === "AVAILABLE" && typeof data.error_rate.value === "number"
     ? data.error_rate.value : null;
-  const fallbackVal = data.fallback_rate?.status === "AVAILABLE" && typeof data.fallback_rate.value === "number"
-    ? data.fallback_rate.value : null;
 
-  const total = data.total_requests ?? 0;
-  const successN = successVal !== null ? Math.round(successVal * total) : 0;
-  const errorN = errorVal !== null ? Math.round(errorVal * total) : 0;
-  const fallbackN = fallbackVal !== null ? Math.round(fallbackVal * total) : 0;
-  const otherN = Math.max(0, total - successN - errorN - fallbackN);
+  // Format latency P95 (e.g., 24s p95 or 5233ms p95)
+  const p95Val = data.latency_p95_ms?.status === "AVAILABLE" && typeof data.latency_p95_ms.value === "number"
+    ? data.latency_p95_ms.value
+    : null;
+  const latencyDisplay = p95Val !== null
+    ? (p95Val >= 1000 ? `${(p95Val / 1000).toFixed(0)}s p95` : `${Math.round(p95Val)}ms p95`)
+    : "N/A";
 
-  const donutData = [
-    { name: "Thành công", value: successN, color: "#10b981" },
-    { name: "Lỗi", value: errorN, color: "#ef4444" },
-    { name: "Fallback", value: fallbackN, color: "#f59e0b" },
-    ...(otherN > 0 ? [{ name: "Khác", value: otherN, color: "#94a3b8" }] : []),
-  ];
+  // Format cost per task (e.g., $0.185)
+  const costVal = data.cost_per_query_usd?.status === "AVAILABLE" && typeof data.cost_per_query_usd.value === "number"
+    ? data.cost_per_query_usd.value
+    : null;
+  const costDisplay = costVal !== null ? `$${costVal < 0.01 ? costVal.toFixed(3) : costVal.toFixed(3)}` : "N/A";
+
+  // 5-bucket distribution for Judge scores (0.0-0.2, 0.2-0.4, 0.4-0.6, 0.6-0.8, 0.8-1.0)
+  const judgeScoreDist = judgeData?.overall_score_distribution
+    ? Object.entries(judgeData.overall_score_distribution).map(([name, value], idx) => ({
+      name,
+      value,
+      color: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][idx % 5],
+    }))
+    : [
+      { name: "0.0–0.2", value: 0, color: "#3b82f6" },
+      { name: "0.2–0.4", value: 0, color: "#10b981" },
+      { name: "0.4–0.6", value: 0, color: "#f59e0b" },
+      { name: "0.6–0.8", value: 0, color: "#ef4444" },
+      { name: "0.8–1.0", value: 0, color: "#8b5cf6" },
+    ];
 
   return (
     <div className="space-y-6">
@@ -811,7 +884,7 @@ function OverviewTab({
       <div className="space-y-2">
         {successVal !== null && successVal < THRESHOLDS.success_rate.warn && (
           <WarningBanner
-            label="Tỷ lệ thành công"
+            label="Tỷ lệ hoàn thành tác vụ (Task Completion)"
             value={successVal}
             target={THRESHOLDS.success_rate.target}
             drillTab="errors"
@@ -821,7 +894,7 @@ function OverviewTab({
         )}
         {errorVal !== null && errorVal > THRESHOLDS.error_rate.warn && (
           <WarningBanner
-            label="Tỷ lệ lỗi"
+            label="Tỷ lệ lỗi hệ thống"
             value={errorVal}
             target={THRESHOLDS.error_rate.target}
             drillTab="errors"
@@ -831,63 +904,144 @@ function OverviewTab({
         )}
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Tổng lượt yêu cầu (Requests)" metric={{ value: total, status: "AVAILABLE" }} />
-        <MetricCard label="Tỷ lệ thành công" metric={data.success_rate} percent thresholdKey="success_rate" />
-        <MetricCard label="Tỷ lệ phản hồi dự phòng (Fallback)" metric={data.fallback_rate} percent />
-        <MetricCard label="Tỷ lệ phát sinh lỗi (Error Rate)" metric={data.error_rate} percent thresholdKey="error_rate" />
-        <MetricCard label="Tỷ lệ quá thời gian (Timeout)" metric={data.timeout_rate} percent />
-        <MetricCard label="Tỷ lệ phản hồi rỗng (Empty Reply)" metric={data.empty_reply_rate} percent />
-        <MetricCard label="Độ trễ trung vị P50 (Latency)" metric={data.latency_p50_ms} suffix="ms" />
-        <MetricCard label="Độ trễ phân vị P95 (Latency)" metric={data.latency_p95_ms} suffix="ms" />
-        <MetricCard label="Lượng Token / lượt yêu cầu" metric={data.tokens_per_query} />
-        <MetricCard label="Chi phí trung bình / lượt (USD)" metric={data.cost_per_query_usd} />
-        <MetricCard label="Tổng chi phí hôm nay (USD)" metric={data.daily_cost_usd} />
-        <MetricCard label="Tỷ lệ tạo báo cáo (Ticket)" metric={data.ticket_rate} percent />
-        <MetricCard
-          label="Tỷ lệ kích hoạt an toàn (Safety)"
-          metric={data.safety_trigger_rate}
-          percent
-          help="Chỉ lọc theo khoảng ngày, không theo model/prompt_version nếu filter đang bật"
-        />
-        <MetricCard label="Tỷ lệ chuyển bác sĩ (Handoff)" metric={data.handoff_rate} percent />
-        <MetricCard label="Tỷ lệ qua Judge đánh giá" metric={data.judged_rate} percent />
+      {/* Header section tagline */}
+      <div className="flex items-center justify-between pb-1">
+        <div>
+          <span className="text-[11px] font-bold tracking-widest text-emerald-600 uppercase">
+            02 · What to measure
+          </span>
+          <h2 className="text-xl font-bold tracking-tight text-foreground mt-0.5">
+            Measure by failure mode, not by checklist
+          </h2>
+        </div>
       </div>
 
-      {/* Charts row */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="surface-card p-5">
-          <DonutChart data={donutData} title="Phân bổ trạng thái phản hồi" />
-        </div>
-        {safety && (
-          <div className="surface-card p-5 space-y-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-500" /> An toàn & Chuyển tiếp bác sĩ (Tóm tắt)
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground">Kích hoạt cảnh báo an toàn</p>
-                <p className="text-2xl font-bold text-rose-600">{safety.safety_trigger_count ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground">Yêu cầu chuyển bác sĩ</p>
-                <p className="text-2xl font-bold text-amber-600">{safety.handoff_required_count ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-muted/40 p-3 text-center col-span-2">
-                <p className="text-xs text-muted-foreground">Tổng số lượt chạy (Cơ sở tính)</p>
-                <p className="text-xl font-semibold">{safety.denominator_agent_v2_total_runs ?? 0}</p>
-              </div>
+      {/* 6 Core Failure Mode KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <AgentEvaluationCard
+          title="Task Completion"
+          subtitle="Did the agent reach the goal?"
+          metric={data.task_completion ?? data.success_rate}
+          percent
+          thresholdKey="success_rate"
+        />
+        <AgentEvaluationCard
+          title="Tool Correctness"
+          subtitle="Right tool, right arguments, right order?"
+          metric={data.tool_correctness}
+          percent
+          colorScheme="emerald"
+        />
+        <AgentEvaluationCard
+          title="Contextual Precision"
+          subtitle="Is the relevant chunk ranked high?"
+          metric={data.contextual_precision}
+          percent
+          colorScheme="rose"
+        />
+        <AgentEvaluationCard
+          title="Faithfulness"
+          subtitle="Is the answer grounded in what it fetched?"
+          metric={data.faithfulness}
+          percent
+          colorScheme="emerald"
+        />
+        <AgentEvaluationCard
+          title="Latency / task"
+          subtitle="End to end, every tool call included"
+          valueOverride={latencyDisplay}
+          colorScheme="sky"
+        />
+        <AgentEvaluationCard
+          title="Cost / task"
+          subtitle="Total tokens × price across the run"
+          valueOverride={costDisplay}
+          colorScheme="amber"
+        />
+      </div>
+
+      {/* Charts row: Time Series (Task Completion & Faithfulness) + Judge Score Distribution Donut */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Time Series Trend Chart */}
+        <div className="surface-card p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-emerald-600" />
+                Xu hướng theo thời gian (Time Series)
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Task Completion (Tỷ lệ hoàn thành) & Faithfulness (Độ trung thực)
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => onNavigateTab("safety")}
-              className="text-xs text-primary underline bg-transparent border-none p-0 cursor-pointer font-medium"
-            >
-              Xem chi tiết An toàn & Chuyển bác sĩ →
-            </button>
+            <div className="flex items-center gap-1 rounded-lg border bg-background p-1 text-xs">
+              {[7, 14, 30].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setTrendDays(d)}
+                  className={`rounded px-2.5 py-1 font-medium transition-colors ${
+                    trendDays === d ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {d} ngày
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+          {trend ? (
+            <TrendChart data={trend} />
+          ) : (
+            <div className="h-64 flex items-center justify-center text-xs text-muted-foreground">
+              Đang tải dữ liệu chuỗi thời gian...
+            </div>
+          )}
+        </div>
+
+        {/* Judge Score Distribution Donut Chart */}
+        <div className="surface-card p-5 space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-primary" />
+                Phân bố thang điểm của Judge (0.0 – 1.0)
+              </h3>
+              <button
+                type="button"
+                onClick={() => onNavigateTab("quality")}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Chi tiết đánh giá →
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Phổ điểm đánh giá tự động từ mô hình LLM Judge theo 5 dải điểm chuẩn
+            </p>
+          </div>
+
+          <div className="py-2">
+            <DonutChart data={judgeScoreDist} title="" />
+          </div>
+
+          {safety && (
+            <div className="border-t pt-3 flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
+                Cảnh báo an toàn: <strong className="text-foreground">{safety.safety_trigger_count ?? 0}</strong>
+              </span>
+              <span>
+                Chuyển bác sĩ: <strong className="text-foreground">{safety.handoff_required_count ?? 0}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigateTab("safety")}
+                className="text-primary hover:underline font-medium"
+              >
+                Xem An toàn →
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -2335,7 +2489,7 @@ export default function AdminMonitoringUnifiedDashboard() {
   }, [accessToken, apiBase]);
 
   useEffect(() => {
-    if (!accessToken || activeTab !== "quality") return;
+    if (!accessToken || (activeTab !== "quality" && activeTab !== "overview")) return;
     getTrend(filters, trendDays, accessToken)
       .then(setTrend)
       .catch(() => setTrend(null));
@@ -2347,7 +2501,14 @@ export default function AdminMonitoringUnifiedDashboard() {
       setIsRefreshing(true);
       setError(null);
       try {
-        if (activeTab === "overview") setOverview(await getOverview(filters, accessToken));
+        if (activeTab === "overview") {
+          const [ovData, jData] = await Promise.all([
+            getOverview(filters, accessToken),
+            getJudge(filters, accessToken),
+          ]);
+          setOverview(ovData);
+          setJudge(jData);
+        }
         else if (activeTab === "quality") {
           const [qData, jData] = await Promise.all([
             getQuality(filters, accessToken),
@@ -2496,7 +2657,15 @@ export default function AdminMonitoringUnifiedDashboard() {
       ) : (
         <>
           {activeTab === "overview" && overview && (
-            <OverviewTab data={overview} safety={safety} onNavigateTab={setActiveTab} />
+            <OverviewTab
+              data={overview}
+              trend={trend}
+              trendDays={trendDays}
+              setTrendDays={setTrendDays}
+              judgeData={judge}
+              safety={safety}
+              onNavigateTab={setActiveTab}
+            />
           )}
           {activeTab === "quality" && quality && (
             <QualityTab
