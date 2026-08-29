@@ -662,7 +662,7 @@ def judge_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             "judge_cost_usd": {"value": round(sum(float(c) for c in cost_rows), 4) if cost_rows else None, "status": "AVAILABLE" if cost_rows else "NOT_AVAILABLE"},
             "judge_input_tokens": sum(int(t or 0) for t in token_in),
             "judge_output_tokens": sum(int(t or 0) for t in token_out),
-            "disclaimer": "LLM-based secondary quality signal. Not a deterministic medical correctness guarantee.",
+            "disclaimer": "Tín hiệu chất lượng bổ sung dựa trên LLM. Không phải là sự đảm bảo mang tính xác định về độ chính xác y khoa.",
         }
     except Exception as exc:  # noqa: BLE001
         return {"available": False, "reason": str(exc)}

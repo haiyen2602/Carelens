@@ -45,6 +45,165 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { getTraceDetail, type TraceDetailOut } from "@/lib/admin-monitoring";
 
+// ─── Metadata Dictionaries ───────────────────────────────────────────────────
+
+const EXECUTION_PATH_METADATA: Record<string, { label: string; description: string }> = {
+  DRUG_LOOKUP: {
+    label: "Tra cứu thông tin thuốc",
+    description: "Tra cứu chi tiết chỉ định, liều dùng, tác dụng phụ và chống chỉ định từ cơ sở dữ liệu dược học.",
+  },
+  DETERMINISTIC_TOOL: {
+    label: "Công cụ tính toán nghiệp vụ",
+    description: "Thực thi công cụ quy chuẩn xác định (tính liều lượng, lịch nhắc uống thuốc, chuyển đổi đơn vị).",
+  },
+  DETERMINISTIC_SCHEDULE: {
+    label: "Lập lịch uống thuốc",
+    description: "Xử lý và thiết lập lịch nhắc uống thuốc tự động theo phác đồ điều trị.",
+  },
+  GENERAL_MODEL: {
+    label: "Mô hình ngôn ngữ tổng quát",
+    description: "Xử lý hội thoại tự nhiên, giải thích thông tin y tế thông thường không cần gọi công cụ đặc thù.",
+  },
+  RAG: {
+    label: "Truy xuất tài liệu y khoa (RAG)",
+    description: "Tìm kiếm và tổng hợp thông tin từ cơ sở tri thức y dược và tài liệu chuyên môn.",
+  },
+  TRIAGE: {
+    label: "Phân loại triệu chứng",
+    description: "Đánh giá mức độ khẩn cấp của triệu chứng và đưa ra hướng xử trí ban đầu.",
+  },
+  MEDICATION_DOSE_SAFETY: {
+    label: "Kiểm tra an toàn liều lượng",
+    description: "Kiểm tra an toàn liều dùng, tương tác thuốc và cảnh báo nguy cơ vượt liều.",
+  },
+  SAFETY: {
+    label: "Bộ lọc an toàn y khoa",
+    description: "Kích hoạt quy tắc an toàn bảo vệ bệnh nhân và chặn các nội dung vi phạm tiêu chuẩn y tế.",
+  },
+  HANDOFF: {
+    label: "Chuyển tiếp bác sĩ",
+    description: "Tạo phiếu hỗ trợ và chuyển giao ca bệnh phức tạp sang hàng đợi bác sĩ chuyên môn.",
+  },
+  FALLBACK: {
+    label: "Phản hồi dự phòng",
+    description: "Kích hoạt phản hồi an toàn dự phòng khi hệ thống gặp ngoại lệ hoặc sự cố kết nối.",
+  },
+  OUT_OF_SCOPE: {
+    label: "Ngoài phạm vi hỗ trợ",
+    description: "Yêu cầu nằm ngoài phạm vi tư vấn y tế hoặc năng lực phục vụ của hệ thống.",
+  },
+};
+
+const INTENT_METADATA: Record<string, { label: string; description: string }> = {
+  MISSED_DOSE: {
+    label: "Xử lý quên liều thuốc",
+    description: "Hướng dẫn người bệnh cách xử lý khi quên uống hoặc uống trễ một liều thuốc.",
+  },
+  DRUG_INFORMATION: {
+    label: "Tra cứu thông tin thuốc",
+    description: "Hỏi về công dụng, chỉ định, tác dụng phụ hoặc cách sử dụng thuốc.",
+  },
+  MEDICATION_SCHEDULE: {
+    label: "Lập lịch uống thuốc",
+    description: "Tạo hoặc điều chỉnh thời gian biểu uống thuốc trong ngày.",
+  },
+  SYMPTOM_CHECK: {
+    label: "Tư vấn triệu chứng",
+    description: "Kiểm tra và phân loại mức độ của các triệu chứng bất thường.",
+  },
+  GENERAL_CHAT: {
+    label: "Trò chuyện thông thường",
+    description: "Hội thoại chào hỏi hoặc câu hỏi chăm sóc sức khỏe thông thường.",
+  },
+  UNKNOWN_OR_AMBIGUOUS: {
+    label: "Yêu cầu chưa rõ ràng / chung",
+    description: "Câu hỏi tổng quát hoặc chưa xác định rõ ý định y khoa cụ thể.",
+  },
+  SAFETY_CRITICAL: {
+    label: "Tình huống y tế nguy cấp",
+    description: "Yêu cầu chứa từ khóa hoặc tình trạng cấp cứu, nguy hiểm.",
+  },
+};
+
+const TRACE_STATUS_METADATA: Record<string, { label: string; bgClass: string }> = {
+  COMPLETED: { label: "Thành công", bgClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" },
+  SUCCESS: { label: "Thành công", bgClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" },
+  HANDOFF_CREATED: { label: "Đã tạo chuyển tiếp bác sĩ", bgClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" },
+  HANDOFF_REQUIRED: { label: "Cần chuyển bác sĩ", bgClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" },
+  SAFETY_TRIGGERED: { label: "Kích hoạt an toàn", bgClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" },
+  SAFETY_BLOCKED: { label: "Chặn vi phạm an toàn", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" },
+  BUDGET_EXCEEDED: { label: "Vượt ngân sách", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" },
+  TIMEOUT: { label: "Hết thời gian chờ", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" },
+  FAILED: { label: "Thất bại", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" },
+  CANCELLED: { label: "Đã hủy", bgClass: "bg-muted text-muted-foreground border" },
+};
+
+const SPAN_TYPE_MAP: Record<string, string> = {
+  llm: "Mô hình AI",
+  tool: "Công cụ nghiệp vụ",
+  retrieval: "Truy xuất tài liệu",
+  safety: "Kiểm tra an toàn",
+  guardrail: "Kiểm duyệt",
+  triage: "Phân loại triệu chứng",
+  orchestration: "Điều phối luồng",
+};
+
+const SEVERITY_METADATA: Record<string, { label: string; color: string; bgClass: string }> = {
+  CRITICAL: { label: "Khẩn cấp", color: "#ef4444", bgClass: "bg-rose-600 text-white" },
+  HIGH: { label: "Cao", color: "#f97316", bgClass: "bg-orange-500 text-white" },
+  MEDIUM: { label: "Trung bình", color: "#f59e0b", bgClass: "bg-amber-500 text-white" },
+  LOW: { label: "Thấp", color: "#10b981", bgClass: "bg-emerald-500 text-white" },
+};
+
+const SAFETY_REASON_METADATA: Record<string, { label: string; description: string }> = {
+  ACUTE_DANGER_DETECTED: {
+    label: "Phát hiện nguy hiểm cấp tính",
+    description: "Phát hiện dấu hiệu cấp cứu hoặc triệu chứng nguy hiểm đe dọa tính mạng cần can thiệp y tế ngay.",
+  },
+  DOSE_UNRESOLVED: {
+    label: "Chưa xác định được liều lượng",
+    description: "Không đủ thông tin an toàn để tính toán hoặc khuyến cáo liều dùng chính xác.",
+  },
+  DRUG_INTERACTION: {
+    label: "Tương tác thuốc nguy hiểm",
+    description: "Phát hiện nguy cơ tương tác bất lợi giữa các loại thuốc trong đơn hoặc tiền sử.",
+  },
+  CONTRAINDICATION: {
+    label: "Chống chỉ định dùng thuốc",
+    description: "Thuốc bị chống chỉ định đối với tình trạng bệnh lý hoặc tiền sử dị ứng của bệnh nhân.",
+  },
+  SPECIAL_POPULATION: {
+    label: "Đối tượng nguy cơ đặc biệt",
+    description: "Bệnh nhân thuộc nhóm đặc biệt (phụ nữ mang thai, cho con bú, trẻ nhỏ, suy gan/thận).",
+  },
+  HIGH_RISK_SYMPTOM: {
+    label: "Triệu chứng nguy cơ cao",
+    description: "Triệu chứng bất thường kéo dài hoặc trở nặng cần bác sĩ chuyên khoa thăm khám trực tiếp.",
+  },
+  SAFETY_ANOMALY: {
+    label: "Bất thường về an toàn",
+    description: "Hệ thống phát hiện tín hiệu bất thường trong câu trả lời cần kiểm tra an toàn.",
+  },
+};
+
+const DIMENSION_NAME_MAP: Record<string, string> = {
+  faithfulness: "Độ trung thực",
+  relevance: "Độ phù hợp",
+  answer_relevance: "Độ phù hợp câu trả lời",
+  safety: "Độ an toàn",
+  coherence: "Tính mạch lạc",
+  instruction_following: "Tuân thủ chỉ dẫn",
+  conciseness: "Tính cô đọng",
+};
+
+const JUDGE_REASON_METADATA: Record<string, string> = {
+  SAFETY_ANOMALY: "Bất thường về an toàn y tế",
+  RANDOM_SAMPLE: "Lấy mẫu ngẫu nhiên",
+  LOW_CONFIDENCE: "Độ tin cậy thấp",
+  FALLBACK_TRIGGERED: "Kích hoạt phản hồi dự phòng",
+  MANUAL_EVALUATION: "Yêu cầu đánh giá thủ công",
+};
+
 function cleanPreviewText(raw: string | null | undefined): string {
   if (!raw) return "N/A";
   const trimmed = raw.trim();
@@ -113,6 +272,18 @@ export default function TraceDetailPage() {
   const cleanQuery = cleanPreviewText(detail.query_preview);
   const cleanResponse = cleanPreviewText(detail.response_preview);
 
+  const statusMeta = TRACE_STATUS_METADATA[detail.status] ?? {
+    label: detail.status,
+    bgClass: detail.status.includes("FAILED") || detail.status.includes("TIMEOUT") || detail.status.includes("EXCEEDED")
+      ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+      : detail.status.includes("HANDOFF") || detail.status.includes("SAFETY")
+      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+      : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+  };
+
+  const pathMeta = EXECUTION_PATH_METADATA[detail.execution_path ?? ""];
+  const intentMeta = INTENT_METADATA[detail.intent ?? ""];
+
   return (
     <div className="space-y-6 pb-12">
       {/* Navigation bar */}
@@ -152,46 +323,67 @@ export default function TraceDetailPage() {
             <h2 className="text-base font-semibold">Thông tin tổng quan Trace</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                detail.status.includes("FAILED") || detail.status.includes("TIMEOUT") || detail.status.includes("EXCEEDED")
-                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                  : detail.status.includes("HANDOFF") || detail.status.includes("SAFETY")
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              }`}
-            >
-              {detail.status}
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.bgClass}`}>
+              {statusMeta.label}
             </span>
             {detail.error_code && (
               <span className="inline-flex items-center rounded bg-destructive/10 px-2 py-0.5 text-xs font-mono text-destructive">
-                Error: {detail.error_code}
+                Mã lỗi: {detail.error_code}
               </span>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-          <Field label="Trace ID" value={detail.trace_id} mono copyable />
-          <Field label="Agent Run ID" value={detail.agent_run_id} mono copyable />
+          <Field label="Mã Trace" value={detail.trace_id} mono copyable />
+          <Field label="Mã Agent Run" value={detail.agent_run_id} mono copyable />
           <Field
-            label="Hội thoại (Conversation)"
+            label="Hội thoại"
             value={detail.conversation_id}
             mono
             link={detail.conversation_id ? `/admin/monitoring/sessions/${detail.conversation_id}` : undefined}
           />
-          <Field label="Execution Path" value={detail.execution_path} badge />
-          <Field label="Ý định (Intent)" value={detail.intent} />
-          <Field label="Model sử dụng" value={detail.model} mono />
-          <Field label="Thời điểm bắt đầu" value={detail.started_at ? new Date(detail.started_at).toLocaleString("vi-VN") : null} />
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Đường dẫn xử lý</p>
+            <div className="flex flex-col" title={pathMeta?.description}>
+              <span className="font-medium text-foreground text-xs">{pathMeta?.label ?? detail.execution_path ?? "N/A"}</span>
+              {detail.execution_path && (
+                <span className="font-mono text-[11px] text-muted-foreground">{detail.execution_path}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Ý định yêu cầu</p>
+            <div className="flex flex-col" title={intentMeta?.description}>
+              <span className="font-medium text-foreground text-xs">{intentMeta?.label ?? detail.intent ?? "N/A"}</span>
+              {detail.intent && (
+                <span className="font-mono text-[11px] text-muted-foreground">{detail.intent}</span>
+              )}
+            </div>
+          </div>
+
+          <Field label="Mô hình AI" value={detail.model} mono />
+          <Field
+            label="Thời điểm bắt đầu"
+            value={detail.started_at ? new Date(detail.started_at).toLocaleString("vi-VN", {
+              timeZone: "Asia/Ho_Chi_Minh",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }) : null}
+          />
           <Field
             label="Thời gian thực thi"
-            value={detail.duration_ms !== null ? `${detail.duration_ms.toFixed(1)} ms` : null}
+            value={detail.duration_ms !== null ? `${Math.round(detail.duration_ms)} ms` : null}
           />
-          <Field label="Số lượt gọi Model" value={String(detail.model_calls)} />
-          <Field label="Prompt Version" value={detail.prompt_version} mono />
-          <Field label="Retrieval Version" value={detail.retrieval_version} mono />
-          <Field label="Timeout" value={detail.timeout ? "Bị Timeout" : "Không"} />
+          <Field label="Số lượt gọi mô hình" value={`${detail.model_calls} lượt`} />
+          <Field label="Phiên bản Prompt" value={detail.prompt_version} mono />
+          <Field label="Phiên bản Truy xuất" value={detail.retrieval_version} mono />
+          <Field label="Trạng thái Timeout" value={detail.timeout ? "Bị Timeout" : "Không"} />
         </div>
       </div>
 
@@ -203,9 +395,9 @@ export default function TraceDetailPage() {
             <h2 className="text-base font-semibold">Token & Chi phí</h2>
           </div>
           <span
-            className={`text-xs px-2 py-0.5 rounded font-medium ${
+            className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
               detail.cost.status === "AVAILABLE"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                 : "bg-muted text-muted-foreground"
             }`}
           >
@@ -223,20 +415,20 @@ export default function TraceDetailPage() {
             </span>
           </div>
           <div className="rounded-lg border bg-card p-3.5 flex flex-col justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Input Tokens</span>
-            <span className="text-lg font-semibold mt-1">{detail.tokens.input.toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground font-medium">Token đầu vào</span>
+            <span className="text-lg font-semibold mt-1">{detail.tokens.input.toLocaleString("vi-VN")}</span>
           </div>
           <div className="rounded-lg border bg-card p-3.5 flex flex-col justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Cached Input</span>
-            <span className="text-lg font-semibold mt-1">{detail.tokens.cached_input.toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground font-medium">Token bộ nhớ đệm</span>
+            <span className="text-lg font-semibold mt-1">{detail.tokens.cached_input.toLocaleString("vi-VN")}</span>
           </div>
           <div className="rounded-lg border bg-card p-3.5 flex flex-col justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Output Tokens</span>
-            <span className="text-lg font-semibold mt-1">{detail.tokens.output.toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground font-medium">Token đầu ra</span>
+            <span className="text-lg font-semibold mt-1">{detail.tokens.output.toLocaleString("vi-VN")}</span>
           </div>
           <div className="rounded-lg border bg-card p-3.5 flex flex-col justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Tổng Tokens</span>
-            <span className="text-lg font-bold text-foreground mt-1">{detail.tokens.total.toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground font-medium">Tổng số Token</span>
+            <span className="text-lg font-bold text-foreground mt-1">{detail.tokens.total.toLocaleString("vi-VN")}</span>
           </div>
         </div>
       </div>
@@ -257,11 +449,11 @@ export default function TraceDetailPage() {
           >
             {detail.content_available ? (
               <>
-                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Còn trong buffer 200 mục gần nhất
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Còn trong bộ nhớ tạm 200 mục gần nhất
               </>
             ) : (
               <>
-                <Info className="h-3 w-3" /> Đã hết hạn bộ nhớ tạm (Dữ liệu metric bền vững vẫn đầy đủ)
+                <Info className="h-3 w-3" /> Đã hết hạn bộ nhớ tạm (Dữ liệu đo lường bền vững vẫn đầy đủ)
               </>
             )}
           </span>
@@ -271,7 +463,7 @@ export default function TraceDetailPage() {
           <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground bg-muted/20">
             <p className="font-medium text-foreground mb-1">Nội dung câu hỏi/trả lời không còn được lưu tạm</p>
             <p className="text-xs">
-              Trace đã vượt quá giới hạn 200 mục trong buffer gần nhất hoặc tiến trình đã khởi động lại. Tất cả chỉ số đo lường, thời gian thực thi, chi phí và sự kiện an toàn ở trên vẫn được lưu trữ bền vững.
+              Trace đã vượt quá giới hạn 200 mục trong bộ nhớ tạm gần nhất hoặc tiến trình đã khởi động lại. Tất cả chỉ số đo lường, thời gian thực thi, chi phí và sự kiện an toàn ở trên vẫn được lưu trữ bền vững trong cơ sở dữ liệu.
             </p>
           </div>
         ) : (
@@ -310,7 +502,7 @@ export default function TraceDetailPage() {
             {detail.tool_names && detail.tool_names.length > 0 && (
               <div className="pt-2 flex items-center gap-2 flex-wrap text-xs">
                 <span className="flex items-center gap-1 font-medium text-muted-foreground">
-                  <Wrench className="h-3.5 w-3.5" /> Công cụ đã gọi:
+                  <Wrench className="h-3.5 w-3.5" /> Công cụ đã kích hoạt:
                 </span>
                 {detail.tool_names.map((tool) => (
                   <span key={tool} className="rounded-md border bg-background px-2 py-0.5 font-mono text-[11px] text-foreground">
@@ -340,13 +532,17 @@ export default function TraceDetailPage() {
                   : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
               }`}
             >
-              {detail.judge.judge_status}
+              {detail.judge.judge_status === "JUDGE_COMPLETED"
+                ? "Đã hoàn tất chấm điểm"
+                : detail.judge.judge_status === "JUDGE_FAILED"
+                ? "Chấm điểm thất bại"
+                : "Đang chờ chấm điểm"}
             </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-lg border bg-card p-4 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Điểm số tổng thể (Score)</span>
+              <span className="text-xs text-muted-foreground font-medium">Điểm số tổng thể</span>
               <div className="mt-2 flex items-baseline gap-1">
                 <span
                   className={`text-2xl font-bold ${
@@ -369,11 +565,11 @@ export default function TraceDetailPage() {
               <span className="text-xs text-muted-foreground font-medium">Cấu hình Judge</span>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Model:</span>
+                  <span className="text-muted-foreground">Model AI:</span>
                   <span className="font-mono font-medium">{detail.judge.judge_model}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rubric:</span>
+                  <span className="text-muted-foreground">Tiêu chí (Rubric):</span>
                   <span className="font-mono font-medium">{detail.judge.rubric_version}</span>
                 </div>
               </div>
@@ -382,7 +578,7 @@ export default function TraceDetailPage() {
             <div className="rounded-lg border bg-card p-4 space-y-2">
               <span className="text-xs text-muted-foreground font-medium">Lý do đánh giá</span>
               <p className="text-xs text-foreground font-medium">
-                {detail.judge.eligibility_reason || "Đủ điều kiện đánh giá tự động"}
+                {JUDGE_REASON_METADATA[detail.judge.eligibility_reason ?? ""] ?? detail.judge.eligibility_reason ?? "Đủ điều kiện đánh giá tự động"}
               </p>
               {detail.judge.flags && detail.judge.flags.length > 0 && (
                 <div className="flex gap-1 flex-wrap pt-1">
@@ -398,11 +594,11 @@ export default function TraceDetailPage() {
 
           {detail.judge.dimension_scores && Object.keys(detail.judge.dimension_scores).length > 0 && (
             <div className="pt-2">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Chi tiết các tiêu chí (Dimension Scores):</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Chi tiết các tiêu chí chất lượng:</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {Object.entries(detail.judge.dimension_scores).map(([dim, score]) => (
                   <div key={dim} className="rounded border bg-background px-3 py-2 text-xs flex justify-between items-center">
-                    <span className="text-muted-foreground capitalize">{dim.replace(/_/g, " ")}:</span>
+                    <span className="text-muted-foreground">{DIMENSION_NAME_MAP[dim] ?? dim.replace(/_/g, " ")}:</span>
                     <span className="font-bold text-foreground">{typeof score === "number" ? score.toFixed(2) : score}</span>
                   </div>
                 ))}
@@ -429,7 +625,7 @@ export default function TraceDetailPage() {
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
               )}
               <h2 className={`text-base font-semibold ${isSafetyTriggered ? "text-rose-600" : ""}`}>
-                An toàn & Chuyển giao Bác sĩ (Safety / Handoff)
+                An toàn Y tế & Chuyển tiếp Bác sĩ
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -440,36 +636,42 @@ export default function TraceDetailPage() {
                     : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                 }`}
               >
-                {detail.safety.outcome}
+                {detail.safety.outcome === "SAFE" ? "An toàn" : "Cảnh báo an toàn"}
               </span>
               {detail.safety.severity && (
                 <span
                   className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${
-                    detail.safety.severity === "CRITICAL"
-                      ? "bg-rose-600 text-white"
-                      : detail.safety.severity === "HIGH"
-                      ? "bg-amber-500 text-white"
-                      : "bg-muted text-muted-foreground"
+                    SEVERITY_METADATA[detail.safety.severity]?.bgClass ?? "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {detail.safety.severity}
+                  {SEVERITY_METADATA[detail.safety.severity]?.label ?? detail.safety.severity}
                 </span>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-            <Field label="Mã lý do (Reason Code)" value={detail.safety.reason_code} mono />
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Nguyên nhân kích hoạt</p>
+              <div className="flex flex-col" title={SAFETY_REASON_METADATA[detail.safety.reason_code ?? ""]?.description}>
+                <span className="font-medium text-foreground text-xs">
+                  {SAFETY_REASON_METADATA[detail.safety.reason_code ?? ""]?.label ?? detail.safety.reason_code ?? "Không có"}
+                </span>
+                {detail.safety.reason_code && (
+                  <span className="font-mono text-[11px] text-muted-foreground">{detail.safety.reason_code}</span>
+                )}
+              </div>
+            </div>
             <Field
               label="Yêu cầu chuyển bác sĩ"
               value={detail.safety.handoff_required ? "Có (Bắt buộc)" : "Không"}
             />
             <Field
-              label="Trạng thái tạo ca (Handoff)"
-              value={detail.safety.handoff_created ? "Đã tạo ca chuyển giao" : "Chưa tạo"}
+              label="Trạng thái chuyển tiếp"
+              value={detail.safety.handoff_created ? "Đã tạo ca chuyển tiếp" : "Chưa tạo"}
             />
             <Field
-              label="Handoff ID"
+              label="Mã chuyển tiếp (Handoff ID)"
               value={detail.safety.handoff_id}
               mono
               copyable
@@ -516,7 +718,7 @@ export default function TraceDetailPage() {
           <div className="flex items-center justify-between border-b pb-3">
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">Dòng thời gian các bước thực thi (Span Timeline)</h2>
+              <h2 className="text-base font-semibold">Dòng thời gian các bước thực thi</h2>
             </div>
             <span className="text-xs text-muted-foreground">{detail.spans.length} bước</span>
           </div>
@@ -534,15 +736,15 @@ export default function TraceDetailPage() {
                 {detail.spans.map((s, i) => (
                   <tr key={i} className="hover:bg-muted/30">
                     <td className="py-2.5 font-mono text-xs font-medium">{s.span_name}</td>
-                    <td className="py-2.5 text-xs text-muted-foreground">{s.span_type}</td>
+                    <td className="py-2.5 text-xs text-muted-foreground">{SPAN_TYPE_MAP[s.span_type] ?? s.span_type}</td>
                     <td className="py-2.5 text-xs">
-                      <span className={`inline-flex rounded px-1.5 py-0.5 text-[11px] font-semibold ${
-                        s.status === "OK" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                      <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-semibold ${
+                        s.status === "OK" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
                       }`}>
-                        {s.status}
+                        {s.status === "OK" ? "Hoàn tất" : s.status}
                       </span>
                     </td>
-                    <td className="py-2.5 text-right font-mono text-xs">{s.duration_ms.toFixed(2)} ms</td>
+                    <td className="py-2.5 text-right font-mono text-xs">{s.duration_ms.toFixed(1)} ms</td>
                   </tr>
                 ))}
               </tbody>
@@ -557,7 +759,7 @@ export default function TraceDetailPage() {
           <summary className="flex items-center justify-between font-semibold text-base list-none focus:outline-none">
             <div className="flex items-center gap-2">
               <FileCode className="h-5 w-5 text-indigo-500" />
-              <span>Dữ liệu đánh giá chi tiết (Evaluation V2)</span>
+              <span>Dữ liệu đánh giá chi tiết (Evaluation)</span>
             </div>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
           </summary>

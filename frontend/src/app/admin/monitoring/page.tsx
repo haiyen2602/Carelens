@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Activity,
   AlertCircle,
@@ -22,6 +23,7 @@ import {
   ListChecks,
   Loader2,
   RefreshCw,
+  RotateCcw,
   ScrollText,
   Search,
   Server,
@@ -85,24 +87,16 @@ type TabId =
   | "safety"
   | "performance"
   | "cost"
-  | "errors"
-  | "judge"
-  | "golden"
-  | "rag_chatbot"
-  | "versions";
+  | "errors";
 
 const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
   { id: "overview", label: "Tổng quan", icon: Activity },
   { id: "quality", label: "Chất lượng AI & RAG", icon: Sparkles },
-  { id: "retrieval", label: "Truy xuất (Retrieval)", icon: ScrollText },
+  { id: "retrieval", label: "Truy xuất", icon: ScrollText },
   { id: "safety", label: "An toàn & Chuyển bác sĩ", icon: ShieldAlert },
   { id: "performance", label: "Hiệu năng & Độ trễ", icon: Gauge },
   { id: "cost", label: "Token & Chi phí", icon: DollarSign },
   { id: "errors", label: "Phân tích lỗi", icon: AlertCircle },
-  { id: "judge", label: "Đánh giá tự động (Judge)", icon: ListChecks },
-  { id: "golden", label: "Bộ dữ liệu chuẩn (Golden Set)", icon: Trophy },
-  { id: "rag_chatbot", label: "Chatbot RAG chuyên sâu", icon: Bot },
-  { id: "versions", label: "So sánh phiên bản", icon: Zap },
 ];
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
@@ -120,13 +114,14 @@ const THRESHOLDS = {
 
 function formatMetric(
   m: MetricValue | undefined,
-  opts: { percent?: boolean; suffix?: string } = {}
+  opts: { percent?: boolean; suffix?: string; integer?: boolean } = {}
 ): string {
   if (!m || m.value === null || m.value === undefined || m.status !== "AVAILABLE")
     return "N/A";
   const v = typeof m.value === "number" ? m.value : Number(m.value);
   if (Number.isNaN(v)) return "N/A";
   if (opts.percent) return `${(v * 100).toFixed(1)}%`;
+  if (opts.integer) return `${Math.round(v).toLocaleString("vi-VN")}${opts.suffix ?? ""}`;
   return `${v.toFixed(v < 10 ? 3 : 2)}${opts.suffix ?? ""}`;
 }
 
@@ -196,6 +191,7 @@ function MetricCard({
   metric,
   percent,
   suffix,
+  integer,
   help,
   sub,
   thresholdKey,
@@ -204,11 +200,12 @@ function MetricCard({
   metric?: MetricValue;
   percent?: boolean;
   suffix?: string;
+  integer?: boolean;
   help?: string;
   sub?: string;
   thresholdKey?: keyof typeof THRESHOLDS;
 }) {
-  const display = formatMetric(metric, { percent, suffix });
+  const display = formatMetric(metric, { percent, suffix, integer });
   const numVal = metric?.status === "AVAILABLE" && typeof metric.value === "number" ? metric.value : null;
   const colorClass = thresholdKey && numVal !== null ? metricColor(thresholdKey, numVal) : "text-foreground";
   const noteText = formatHumanNote(metric?.scope ?? metric?.scope_note ?? metric?.note);
@@ -351,6 +348,69 @@ function UnavailableState({ reason }: { reason?: string }) {
   );
 }
 
+const ERROR_CODE_METADATA: Record<string, { label: string; description: string }> = {
+  BUDGET_EXCEEDED: {
+    label: "Vượt giới hạn Token / Chi phí",
+    description: "Số lượng token hoặc số bước gọi mô hình/công cụ vượt quá giới hạn ngân sách an toàn cho mỗi lượt xử lý.",
+  },
+  GROUNDING_FAILURE: {
+    label: "Lỗi kiểm chứng thông tin (Grounding)",
+    description: "Câu trả lời của AI không đủ bằng chứng đối chiếu từ tài liệu y khoa được truy xuất (chặn nguy cơ ảo giác/hallucination).",
+  },
+  TOOL_ERROR: {
+    label: "Lỗi thực thi công cụ",
+    description: "Công cụ nghiệp vụ (tra cứu phác đồ, tính liều, lịch uống) gặp ngoại lệ hoặc trả về dữ liệu sai cấu trúc.",
+  },
+  TOOL_TIMEOUT: {
+    label: "Quá thời gian chờ công cụ",
+    description: "Thời gian thực thi công cụ vượt quá ngưỡng timeout cho phép (chưa ghi nhận phát sinh trong phiên bản hiện tại).",
+  },
+  MODEL_ERROR: {
+    label: "Lỗi phản hồi mô hình AI",
+    description: "Mô hình AI trả về lỗi API (HTTP 5xx, rate limit 429 hoặc lỗi dịch vụ từ nhà cung cấp LLM).",
+  },
+  MODEL_TIMEOUT: {
+    label: "Quá thời gian chờ mô hình AI",
+    description: "Thời gian phản hồi từ mô hình AI vượt quá ngưỡng timeout cấu hình.",
+  },
+  RETRIEVAL_ERROR: {
+    label: "Lỗi truy xuất tài liệu (RAG)",
+    description: "Quá trình tìm kiếm vector/full-text trên cơ sở dữ liệu dược học gặp sự cố kết nối hoặc lỗi truy vấn.",
+  },
+  RETRIEVAL_TIMEOUT: {
+    label: "Quá thời gian truy xuất tài liệu",
+    description: "Quá trình tìm kiếm tài liệu tham khảo vượt quá thời gian phản hồi cho phép (chưa ghi nhận phát sinh trong phiên bản hiện tại).",
+  },
+  REQUEST_TIMEOUT: {
+    label: "Quá thời gian toàn trình",
+    description: "Toàn bộ quy trình xử lý chuỗi tác vụ của yêu cầu vượt quá ngưỡng thời gian tối đa.",
+  },
+  EMPTY_REPLY: {
+    label: "Phản hồi rỗng",
+    description: "Mô hình AI hoàn thành phiên xử lý nhưng không trả về bất kỳ nội dung văn bản nào.",
+  },
+  HANDOFF_FAILURE: {
+    label: "Lỗi chuyển giao bác sĩ",
+    description: "Quá trình tạo phiếu chuyển tiếp hoặc gửi ca sang hàng đợi bác sĩ chuyên môn gặp sự cố.",
+  },
+  INTERNAL_ERROR: {
+    label: "Lỗi hệ thống nội bộ",
+    description: "Lỗi ngoại lệ không xác định phát sinh trong luồng xử lý runtime của hệ thống.",
+  },
+  SAFETY_BLOCKED: {
+    label: "Bị chặn bởi bộ lọc an toàn",
+    description: "Yêu cầu bị chặn do vi phạm quy tắc an toàn y tế hoặc chứa nội dung không an toàn.",
+  },
+  RETRIEVAL_EMPTY: {
+    label: "Truy xuất không có kết quả",
+    description: "Không tìm thấy đoạn tài liệu y khoa nào phù hợp với câu hỏi trong cơ sở dữ liệu.",
+  },
+  TIMEOUT: {
+    label: "Hết thời gian chờ (Timeout)",
+    description: "Yêu cầu xử lý vượt quá thời gian timeout quy định.",
+  },
+};
+
 function FilterBar({
   filters, setFilters, options,
 }: {
@@ -359,58 +419,111 @@ function FilterBar({
   options: VersionFiltersOut | null;
 }) {
   const set = (patch: Partial<MonitoringFiltersInput>) => setFilters({ ...filters, ...patch });
+  const activeCount = [
+    filters.dateFrom,
+    filters.dateTo,
+    filters.model,
+    filters.promptVersion,
+    filters.retrievalVersion,
+    filters.executionPath,
+    filters.errorCode,
+    filters.judgeModel,
+  ].filter(Boolean).length;
+
   return (
-    <div className="surface-card flex flex-wrap items-end gap-3 p-4">
+    <div className="surface-card flex flex-wrap items-end gap-3 p-4 border border-border/70 shadow-sm rounded-xl">
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-muted-foreground">Từ ngày</label>
+        <label className="text-xs font-medium text-muted-foreground">Từ ngày</label>
         <input
           type="date"
-          className="rounded border bg-background px-2 py-1 text-sm"
+          className="rounded-lg border bg-background px-2.5 py-1 text-sm h-8 focus:ring-1 focus:ring-primary focus:outline-none"
           value={filters.dateFrom ?? ""}
           onChange={(e) => set({ dateFrom: e.target.value || undefined })}
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-muted-foreground">Đến ngày</label>
+        <label className="text-xs font-medium text-muted-foreground">Đến ngày</label>
         <input
           type="date"
-          className="rounded border bg-background px-2 py-1 text-sm"
+          className="rounded-lg border bg-background px-2.5 py-1 text-sm h-8 focus:ring-1 focus:ring-primary focus:outline-none"
           value={filters.dateTo ?? ""}
           onChange={(e) => set({ dateTo: e.target.value || undefined })}
         />
       </div>
-      <FilterSelect label="Model" value={filters.model} options={options?.model ?? []} onChange={(v) => set({ model: v })} />
-      <FilterSelect label="Prompt version" value={filters.promptVersion} options={options?.prompt_version ?? []} onChange={(v) => set({ promptVersion: v })} />
-      <FilterSelect label="Retrieval version" value={filters.retrievalVersion} options={options?.retrieval_version ?? []} onChange={(v) => set({ retrievalVersion: v })} />
-      <FilterSelect label="Execution path" value={filters.executionPath} options={options?.execution_path ?? []} onChange={(v) => set({ executionPath: v })} />
-      <FilterSelect label="Error code" value={filters.errorCode} options={options?.error_code ?? []} onChange={(v) => set({ errorCode: v })} />
-      <FilterSelect label="Judge model" value={filters.judgeModel} options={options?.judge_model ?? []} onChange={(v) => set({ judgeModel: v })} />
-      <button
-        type="button"
-        className="ml-auto inline-flex items-center gap-1 rounded border px-3 py-1.5 text-xs hover:bg-accent"
-        onClick={() => setFilters({})}
-      >
-        <RefreshCw className="h-3 w-3" /> Xoá bộ lọc
-      </button>
+      <FilterSelect
+        label="Mô hình AI"
+        value={filters.model}
+        options={options?.model ?? []}
+        onChange={(v) => set({ model: v })}
+      />
+      <FilterSelect
+        label="Phiên bản Prompt"
+        value={filters.promptVersion}
+        options={options?.prompt_version ?? []}
+        onChange={(v) => set({ promptVersion: v })}
+      />
+      <FilterSelect
+        label="Phiên bản Truy xuất"
+        value={filters.retrievalVersion}
+        options={options?.retrieval_version ?? []}
+        onChange={(v) => set({ retrievalVersion: v })}
+      />
+      <FilterSelect
+        label="Đường dẫn xử lý"
+        value={filters.executionPath}
+        options={options?.execution_path ?? []}
+        displayMapper={(val) => EXECUTION_PATH_METADATA[val]?.label ? `${EXECUTION_PATH_METADATA[val].label} (${val})` : val}
+        onChange={(v) => set({ executionPath: v })}
+      />
+      <FilterSelect
+        label="Mã lỗi"
+        value={filters.errorCode}
+        options={options?.error_code ?? []}
+        displayMapper={(val) => ERROR_CODE_METADATA[val]?.label ? `${ERROR_CODE_METADATA[val].label} (${val})` : val}
+        onChange={(v) => set({ errorCode: v })}
+      />
+      <FilterSelect
+        label="Mô hình Đánh giá (Judge)"
+        value={filters.judgeModel}
+        options={options?.judge_model ?? []}
+        onChange={(v) => set({ judgeModel: v })}
+      />
+      {activeCount > 0 && (
+        <button
+          type="button"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-sm h-8"
+          onClick={() => setFilters({})}
+        >
+          <RotateCcw className="h-3 w-3" /> Đặt lại bộ lọc ({activeCount})
+        </button>
+      )}
     </div>
   );
 }
 
 function FilterSelect({
-  label, value, options, onChange,
+  label, value, options, displayMapper, onChange,
 }: {
-  label: string; value?: string; options: string[]; onChange: (v: string | undefined) => void;
+  label: string;
+  value?: string;
+  options: string[];
+  displayMapper?: (val: string) => string;
+  onChange: (v: string | undefined) => void;
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-muted-foreground">{label}</label>
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
       <select
-        className="rounded border bg-background px-2 py-1 text-sm"
+        className="rounded-lg border bg-background px-2.5 py-1 text-sm h-8 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
         value={value ?? "all"}
         onChange={(e) => onChange(e.target.value === "all" ? undefined : e.target.value)}
       >
         <option value="all">Tất cả</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {displayMapper ? displayMapper(o) : o}
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -466,13 +579,33 @@ function TrendChart({ data }: { data: TrendOut }) {
               fontSize: "12px",
             }}
             formatter={(val, name, props) => {
-              const n = name === "faithfulness" ? props.payload.faith_n : props.payload.rel_n;
-              return [`${val}% (n=${n})`, name === "faithfulness" ? "Faithfulness" : "Answer Relevance"];
+              const isFaith = name === "faithfulness" || String(name).includes("Faithfulness");
+              const n = isFaith ? props.payload.faith_n : props.payload.rel_n;
+              const label = isFaith
+                ? "Độ trung thực (Faithfulness)"
+                : "Độ phù hợp (Answer Relevance)";
+              return [`${val}% (n=${n})`, label];
             }}
           />
           <Legend />
-          <Area type="monotone" dataKey="faithfulness" name="Faithfulness" stroke="#10b981" strokeWidth={2} fill="url(#gFaith)" connectNulls />
-          <Area type="monotone" dataKey="relevance" name="Answer Relevance" stroke="#2563eb" strokeWidth={2} fill="url(#gRel)" connectNulls />
+          <Area
+            type="monotone"
+            dataKey="faithfulness"
+            name="Độ trung thực (Faithfulness)"
+            stroke="#10b981"
+            strokeWidth={2}
+            fill="url(#gFaith)"
+            connectNulls
+          />
+          <Area
+            type="monotone"
+            dataKey="relevance"
+            name="Độ phù hợp (Answer Relevance)"
+            stroke="#2563eb"
+            strokeWidth={2}
+            fill="url(#gRel)"
+            connectNulls
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -559,7 +692,7 @@ function CostTimelineChart({
   models,
   title,
 }: {
-  timeline: Array<{ timestamp: string; [model: string]: number | string }>;
+  timeline: Array<{ timestamp: string;[model: string]: number | string }>;
   models: string[];
   title: string;
 }) {
@@ -760,6 +893,141 @@ function OverviewTab({
   );
 }
 
+// ─── Execution Path Metadata ───────────────────────────────────────────────────
+
+const EXECUTION_PATH_METADATA: Record<string, { label: string; description: string }> = {
+  DRUG_LOOKUP: {
+    label: "Tra cứu thông tin thuốc",
+    description: "Tra cứu chi tiết chỉ định, liều dùng, tác dụng phụ và chống chỉ định từ cơ sở dữ liệu dược học.",
+  },
+  DETERMINISTIC_TOOL: {
+    label: "Công cụ tính toán nghiệp vụ",
+    description: "Thực thi công cụ quy chuẩn xác định (tính liều lượng, lịch nhắc uống thuốc, chuyển đổi đơn vị).",
+  },
+  DETERMINISTIC_SCHEDULE: {
+    label: "Lập lịch uống thuốc",
+    description: "Xử lý và thiết lập lịch nhắc uống thuốc tự động theo phác đồ điều trị.",
+  },
+  GENERAL_MODEL: {
+    label: "Mô hình ngôn ngữ tổng quát",
+    description: "Xử lý hội thoại tự nhiên, giải thích thông tin y tế thông thường không cần gọi công cụ đặc thù.",
+  },
+  RAG: {
+    label: "Truy xuất tài liệu y khoa (RAG)",
+    description: "Tìm kiếm và tổng hợp thông tin từ cơ sở tri thức y dược và tài liệu chuyên môn.",
+  },
+  TRIAGE: {
+    label: "Phân loại triệu chứng",
+    description: "Đánh giá mức độ khẩn cấp của triệu chứng và đưa ra hướng xử trí ban đầu.",
+  },
+  MEDICATION_DOSE_SAFETY: {
+    label: "Kiểm tra an toàn liều lượng",
+    description: "Kiểm tra an toàn liều dùng, tương tác thuốc và cảnh báo nguy cơ vượt liều.",
+  },
+  SAFETY: {
+    label: "Bộ lọc an toàn y khoa",
+    description: "Kích hoạt quy tắc an toàn bảo vệ bệnh nhân và chặn các nội dung vi phạm tiêu chuẩn y tế.",
+  },
+  HANDOFF: {
+    label: "Chuyển tiếp bác sĩ",
+    description: "Tạo phiếu hỗ trợ và chuyển giao ca bệnh phức tạp sang hàng đợi bác sĩ chuyên môn.",
+  },
+  FALLBACK: {
+    label: "Phản hồi dự phòng",
+    description: "Kích hoạt phản hồi an toàn dự phòng khi hệ thống gặp ngoại lệ hoặc sự cố kết nối.",
+  },
+  OUT_OF_SCOPE: {
+    label: "Ngoài phạm vi hỗ trợ",
+    description: "Yêu cầu nằm ngoài phạm vi tư vấn y tế hoặc năng lực phục vụ của hệ thống.",
+  },
+};
+
+// ─── Section: Judge ───────────────────────────────────────────────────────────
+
+function JudgeSection({ data }: { data: JudgeOut | null }) {
+  if (!data) return <LoadingState />;
+  if (!data.available) return <UnavailableState reason={data.reason} />;
+
+  const distData = data.overall_score_distribution
+    ? Object.entries(data.overall_score_distribution).map(([name, value], idx) => ({
+      name,
+      value,
+      color: CHART_COLORS[idx % CHART_COLORS.length],
+    }))
+    : [];
+
+  return (
+    <div className="space-y-6 pt-4 border-t">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold flex items-center gap-2">
+          <ListChecks className="h-5 w-5 text-primary" />
+          Đánh giá tự động chất lượng bằng mô hình AI (LLM Judge)
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <MetricCard label="Tổng lượt đưa vào chấm điểm" metric={{ value: data.total_judged ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Đang chờ chấm" metric={{ value: data.judged_pending ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Đã chấm xong" metric={{ value: data.judged_completed ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Chấm điểm thất bại" metric={{ value: data.judged_failed ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
+        <MetricCard label="Token đầu vào Judge" metric={{ value: data.judge_input_tokens ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Token đầu ra Judge" metric={{ value: data.judge_output_tokens ?? null, status: "AVAILABLE" }} integer />
+      </div>
+
+      {distData.length > 0 && (
+        <div className="surface-card p-5">
+          <DonutChart data={distData} title="Phân bổ thang điểm của Judge (0.0 - 1.0)" />
+        </div>
+      )}
+
+      {data.disclaimer && <p className="text-xs italic text-muted-foreground">{data.disclaimer}</p>}
+
+      {data.low_score_cases && data.low_score_cases.length > 0 && (
+        <div className="surface-card overflow-x-auto p-4">
+          <p className="mb-2 text-sm font-semibold">Các lượt xử lý đạt điểm thấp (&lt; 0.5)</p>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-muted-foreground">
+                <th>Mã Trace (Trace ID)</th>
+                <th>Đường dẫn xử lý (Execution Path) & Ý nghĩa</th>
+                <th>Điểm số</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.low_score_cases.map((c) => {
+                const pathKey = c.execution_path ?? "";
+                const meta = EXECUTION_PATH_METADATA[pathKey];
+                return (
+                  <tr key={c.judge_id} className="border-t hover:bg-accent/40">
+                    <td className="py-2.5">
+                      <Link className="text-primary underline font-mono text-xs font-semibold" href={`/admin/monitoring/traces/${c.trace_id}`}>
+                        {c.trace_id?.slice(0, 8)}
+                      </Link>
+                    </td>
+                    <td className="py-2.5">
+                      <div className="flex flex-col" title={meta?.description}>
+                        <div className="font-medium text-foreground">{meta?.label ?? pathKey}</div>
+                        {pathKey && <div className="font-mono text-xs text-muted-foreground">{pathKey}</div>}
+                        {meta?.description && (
+                          <div className="text-xs text-muted-foreground leading-relaxed max-w-lg mt-0.5">
+                            {meta.description}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="font-semibold text-rose-600 py-2.5">{c.score.toFixed(2)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Tab: Quality ─────────────────────────────────────────────────────────────
 
 function QualityTab({
@@ -767,12 +1035,14 @@ function QualityTab({
   trend,
   trendDays,
   setTrendDays,
+  judgeData,
   onNavigateTab,
 }: {
   data: QualityOut;
   trend: TrendOut | null;
   trendDays: number;
   setTrendDays: (d: number) => void;
+  judgeData: JudgeOut | null;
   onNavigateTab: (tab: TabId) => void;
 }) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
@@ -790,12 +1060,11 @@ function QualityTab({
       <div className="space-y-2">
         {faithVal !== null && faithVal < THRESHOLDS.faithfulness.warn && (
           <WarningBanner
-            label="Độ trung thực (Faithfulness)"
+            label="Độ trung thực câu trả lời (Faithfulness)"
             value={faithVal}
             target={THRESHOLDS.faithfulness.target}
-            drillTab="rag_chatbot"
-            drillLabel="Xem Worst Queries trong RAG Chatbot"
-            onDrill={() => onNavigateTab("rag_chatbot")}
+            drillLabel="Xem Trace Explorer"
+            href="/admin/monitoring/traces"
           />
         )}
         {relVal !== null && relVal < THRESHOLDS.answer_relevance.warn && (
@@ -809,8 +1078,8 @@ function QualityTab({
         )}
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* KPI cards: 3 primary cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
         <MetricCard
           label="Độ trung thực (Faithfulness)"
           metric={data.rag_faithfulness}
@@ -823,31 +1092,10 @@ function QualityTab({
           thresholdKey="answer_relevance"
           help="Tính trên trace trong bộ nhớ đệm hiện tại (Ring Buffer)"
         />
-        <DisabledMetricCard
-          label="Tỷ lệ tìm thấy Top 10 (HitRate@10)"
-          reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: retrieval_id không được lưu dài hạn vào DB. Cần migration để kích hoạt."
-        />
-        <DisabledMetricCard
-          label="Thứ hạng đảo trung bình (MRR@10)"
-          reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: Xem tab Đánh giá chuẩn (Golden Set) để theo dõi đạt/không đạt."
-        />
-        <DisabledMetricCard
-          label="Độ chuẩn tích lũy chiết khấu (NDCG@10)"
-          reason="Chưa hỗ trợ phiên này — không có stable retrieval_id contract"
-          technicalNote="BUILD-31/35: Xem tab Đánh giá chuẩn (Golden Set) để theo dõi đạt/không đạt."
-        />
-        <MetricCard label="Điểm đánh giá tổng thể (Judge Score)" metric={data.judge_overall_score} help="Tín hiệu đánh giá chất lượng tự động bằng LLM. Không phải xác nhận chuyên môn y khoa tuyệt đối." />
         <MetricCard
-          label="Tỷ lệ đạt chuẩn (Golden Pass Rate)"
-          metric={data.golden_pass_rate}
-          percent
-          sub={data.golden_pass_rate?.run_id ? `Lượt kiểm thử: ${data.golden_pass_rate.run_id.slice(0, 8)}` : undefined}
-        />
-        <MetricCard
-          label="Cổng kiểm thử hồi quy (Regression Gate)"
-          metric={{ ...(data.regression_gate_status as MetricValue ?? {}), value: data.regression_gate_status?.value ?? null } as MetricValue}
+          label="Điểm đánh giá tổng thể (Judge Score)"
+          metric={data.judge_overall_score}
+          help="Tín hiệu đánh giá chất lượng tự động bằng LLM. Không phải xác nhận chuyên môn y khoa tuyệt đối."
         />
       </div>
 
@@ -873,6 +1121,9 @@ function QualityTab({
         </div>
         {trend ? <TrendChart data={trend} /> : <LoadingState />}
       </div>
+
+      {/* Judge Section */}
+      <JudgeSection data={judgeData} />
     </div>
   );
 }
@@ -893,14 +1144,14 @@ function RetrievalTab({
 
   const donutData = [
     { name: "Truy vấn RAG thành công", value: data.rag_query_volume ?? 0, color: "#10b981" },
-    { name: "Lỗi thiếu căn cứ (Grounding Failure)", value: data.grounding_failure_rate?.numerator ?? 0, color: "#ef4444" },
+    { name: "Lỗi thiếu căn cứ", value: data.grounding_failure_rate?.numerator ?? 0, color: "#ef4444" },
   ];
 
   return (
     <div className="space-y-6">
       {gfVal !== null && gfVal > THRESHOLDS.grounding_failure_rate.warn && (
         <WarningBanner
-          label="Tỷ lệ lỗi thiếu căn cứ (Grounding Failure)"
+          label="Tỷ lệ lỗi thiếu căn cứ"
           value={gfVal}
           target={THRESHOLDS.grounding_failure_rate.target}
           drillTab="errors"
@@ -909,43 +1160,35 @@ function RetrievalTab({
         />
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Số lượt truy vấn RAG (Query Volume)" metric={{ value: data.rag_query_volume ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Độ trễ truy xuất P50 (Retrieval)" metric={data.retrieval_latency_p50_ms} suffix="ms" />
-        <MetricCard label="Độ trễ truy xuất P95 (Retrieval)" metric={data.retrieval_latency_p95_ms} suffix="ms" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <MetricCard
-          label="Tỷ lệ lỗi thiếu căn cứ (Grounding Failure)"
+          label="Số lượt truy vấn RAG"
+          metric={{ value: data.rag_query_volume ?? null, status: "AVAILABLE" }}
+          integer
+        />
+        <MetricCard
+          label="Độ trễ truy xuất P50"
+          metric={data.retrieval_latency_p50_ms}
+          suffix=" ms"
+          integer
+        />
+        <MetricCard
+          label="Độ trễ truy xuất P95"
+          metric={data.retrieval_latency_p95_ms}
+          suffix=" ms"
+          integer
+        />
+        <MetricCard
+          label="Tỷ lệ lỗi thiếu căn cứ"
           metric={data.grounding_failure_rate}
           percent
           thresholdKey="grounding_failure_rate"
           help="Tỷ lệ yêu cầu cần căn cứ tài liệu y khoa nhưng không tìm thấy thông tin phù hợp."
         />
-        <DisabledMetricCard
-          label="Tỷ lệ truy xuất rỗng (Empty Retrieval)"
-          reason="Không thể bóc tách riêng cho RAG: GROUNDING_FAILURE bao gồm nhiều intent (tra cứu thuốc, đơn thuốc, liều lượng)."
-          technicalNote="Sử dụng chỉ số Grounding Failure Rate ở trên làm đối trọng."
-        />
-        <DisabledMetricCard
-          label="Tỷ lệ tìm thấy Top 10 (HitRate@10)"
-          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
-          technicalNote="Cần lưu retrieval_id vào bảng AgentRunSpan để kích hoạt."
-        />
-        <DisabledMetricCard
-          label="Thứ hạng đảo trung bình (MRR@10)"
-          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
-        />
-        <DisabledMetricCard
-          label="Độ chuẩn tích lũy chiết khấu (NDCG@10)"
-          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
-        />
-        <DisabledMetricCard
-          label="Độ chính xác Top 10 (Precision@10)"
-          reason="Chưa hỗ trợ ID truy xuất cố định (BUILD-31/35)"
-        />
       </div>
 
       <div className="surface-card p-5">
-        <DonutChart data={donutData} title="Tỷ lệ truy vấn RAG so với lỗi Grounding" />
+        <DonutChart data={donutData} title="Tỷ lệ truy vấn RAG so với lỗi thiếu căn cứ" />
       </div>
     </div>
   );
@@ -1037,14 +1280,10 @@ function CostTab({ data }: { data: CostOut }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Chi phí mô hình Agent (USD)" metric={data.agent_cost_usd} />
-        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
-        <MetricCard label="Tổng chi phí sử dụng (USD)" metric={data.total_cost_usd} />
-        <MetricCard label="Chi phí trung bình / lượt (USD)" metric={data.cost_per_query_usd} />
-        <MetricCard label="Token đầu vào (Input Tokens)" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Token đầu ra (Output Tokens)" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Tổng lượng Token tiêu thụ" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Lượng Token / lượt yêu cầu" metric={data.tokens_per_query} />
+        <MetricCard label="Token đầu vào" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Token đầu ra" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Tổng Token tiêu thụ" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} />
+        <MetricCard label="Token/lượt yêu cầu" metric={data.tokens_per_query} />
       </div>
 
       <CostTimelineChart
@@ -1069,7 +1308,7 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
 
   const pieData = KNOWN_ERROR_CODES_ORDER
     .map((code, idx) => ({
-      name: code,
+      name: ERROR_CODE_METADATA[code]?.label ?? code,
       value: data.breakdown?.[code]?.numerator ?? 0,
       color: CHART_COLORS[idx % CHART_COLORS.length],
     }))
@@ -1089,23 +1328,38 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="py-1">Mã lỗi (Error Code)</th><th>Tỷ lệ phát sinh</th><th>Số lượng ca</th><th>Ghi chú kỹ thuật</th>
+              <th className="py-2">Nguyên nhân & Mã lỗi</th>
+              <th>Tỷ lệ phát sinh</th>
+              <th>Số lượng ca</th>
+              <th>Ghi chú kỹ thuật & Ý nghĩa</th>
             </tr>
           </thead>
           <tbody>
             {KNOWN_ERROR_CODES_ORDER.map((code) => {
               const m = data.breakdown?.[code];
               const count = m?.numerator ?? 0;
+              const meta = ERROR_CODE_METADATA[code];
+              const backendNote = formatHumanNote(m?.note);
               return (
                 <tr
                   key={code}
-                  className={`cursor-pointer border-t hover:bg-accent/50 ${count > 0 ? "" : "opacity-50"}`}
+                  className={`cursor-pointer border-t hover:bg-accent/50 ${count > 0 ? "" : "opacity-60"}`}
                   onClick={() => onDrill(code)}
                 >
-                  <td className="py-1 font-mono text-xs">{code}</td>
+                  <td className="py-2.5">
+                    <div className="font-medium text-foreground">{meta?.label ?? code}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{code}</div>
+                  </td>
                   <td>{formatMetric(m, { percent: true })}</td>
                   <td className={count > 0 ? "font-semibold text-rose-600" : ""}>{m?.numerator ?? "N/A"}</td>
-                  <td className="text-[11px] italic text-muted-foreground">{formatHumanNote(m?.note) ?? ""}</td>
+                  <td className="text-xs text-muted-foreground leading-relaxed max-w-md">
+                    <div>{meta?.description ?? ""}</div>
+                    {backendNote && (
+                      <div className="mt-0.5 text-[11px] italic text-amber-700 dark:text-amber-400">
+                        {backendNote}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -1121,69 +1375,7 @@ function ErrorsTab({ data, onDrill }: { data: ErrorsOut; onDrill: (code: string)
   );
 }
 
-// ─── Tab: Judge ───────────────────────────────────────────────────────────────
 
-// ─── Tab: Judge ───────────────────────────────────────────────────────────────
-
-function JudgeTab({ data }: { data: JudgeOut }) {
-  if (!data.available) return <UnavailableState reason={data.reason} />;
-
-  const distData = data.overall_score_distribution
-    ? Object.entries(data.overall_score_distribution).map(([name, value], idx) => ({
-      name,
-      value,
-      color: CHART_COLORS[idx % CHART_COLORS.length],
-    }))
-    : [];
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Tổng lượt đưa vào chấm điểm" metric={{ value: data.total_judged ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Đang chờ chấm (Pending)" metric={{ value: data.judged_pending ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Đã chấm xong (Completed)" metric={{ value: data.judged_completed ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Chấm điểm thất bại (Failed)" metric={{ value: data.judged_failed ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
-        <MetricCard label="Token đầu vào Judge (Input Tokens)" metric={{ value: data.judge_input_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Token đầu ra Judge (Output Tokens)" metric={{ value: data.judge_output_tokens ?? null, status: "AVAILABLE" }} />
-      </div>
-
-      {distData.length > 0 && (
-        <div className="surface-card p-5">
-          <DonutChart data={distData} title="Phân bổ thang điểm của Judge (0.0 - 1.0)" />
-        </div>
-      )}
-
-      {data.disclaimer && <p className="text-xs italic text-muted-foreground">{data.disclaimer}</p>}
-
-      {data.low_score_cases && data.low_score_cases.length > 0 && (
-        <div className="surface-card overflow-x-auto p-4">
-          <p className="mb-2 text-sm font-semibold">Các lượt xử lý đạt điểm thấp (&lt; 0.5)</p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th>Mã Trace (Trace ID)</th><th>Đường dẫn xử lý (Execution Path)</th><th>Điểm số</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.low_score_cases.map((c) => (
-                <tr key={c.judge_id} className="border-t">
-                  <td className="py-1">
-                    <Link className="text-primary underline" href={`/admin/monitoring/traces/${c.trace_id}`}>
-                      {c.trace_id?.slice(0, 8)}
-                    </Link>
-                  </td>
-                  <td>{c.execution_path ?? "N/A"}</td>
-                  <td className="font-semibold text-rose-600">{c.score.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Tab: Golden ──────────────────────────────────────────────────────────────
 
@@ -1783,6 +1975,53 @@ function RagChatbotTab({ accessToken }: { accessToken: string | null | undefined
   );
 }
 
+// ─── Safety Metadata ─────────────────────────────────────────────────────────
+
+const SEVERITY_METADATA: Record<string, { label: string; color: string; bgClass: string }> = {
+  CRITICAL: { label: "Khẩn cấp", color: "#ef4444", bgClass: "bg-rose-500/10 text-rose-600 border-rose-500/20" },
+  HIGH: { label: "Cao", color: "#f97316", bgClass: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+  MEDIUM: { label: "Trung bình", color: "#f59e0b", bgClass: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  LOW: { label: "Thấp", color: "#10b981", bgClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+};
+
+const SAFETY_REASON_METADATA: Record<string, { label: string; description: string }> = {
+  ACUTE_DANGER_DETECTED: {
+    label: "Phát hiện nguy hiểm cấp tính",
+    description: "Phát hiện dấu hiệu cấp cứu hoặc triệu chứng nguy hiểm đe dọa tính mạng cần can thiệp y tế ngay.",
+  },
+  DOSE_UNRESOLVED: {
+    label: "Chưa xác định được liều lượng",
+    description: "Không đủ thông tin an toàn để tính toán hoặc khuyến cáo liều dùng chính xác.",
+  },
+  DRUG_INTERACTION: {
+    label: "Tương tác thuốc nguy hiểm",
+    description: "Phát hiện nguy cơ tương tác bất lợi giữa các loại thuốc trong đơn hoặc tiền sử.",
+  },
+  CONTRAINDICATION: {
+    label: "Chống chỉ định dùng thuốc",
+    description: "Thuốc bị chống chỉ định đối với tình trạng bệnh lý hoặc tiền sử dị ứng của bệnh nhân.",
+  },
+  SPECIAL_POPULATION: {
+    label: "Đối tượng nguy cơ đặc biệt",
+    description: "Bệnh nhân thuộc nhóm đặc biệt (phụ nữ mang thai, cho con bú, trẻ nhỏ, suy gan/thận).",
+  },
+  HIGH_RISK_SYMPTOM: {
+    label: "Triệu chứng nguy cơ cao",
+    description: "Triệu chứng bất thường kéo dài hoặc trở nặng cần bác sĩ chuyên khoa thăm khám trực tiếp.",
+  },
+  SAFETY_ANOMALY: {
+    label: "Bất thường về an toàn",
+    description: "Hệ thống phát hiện tín hiệu bất thường trong câu trả lời cần kiểm tra an toàn.",
+  },
+};
+
+const HANDOFF_STATUS_METADATA: Record<string, { label: string; bgClass: string }> = {
+  PENDING: { label: "Đang chờ xử lý", bgClass: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  ASSIGNED: { label: "Đang xử lý", bgClass: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
+  RESOLVED: { label: "Đã hoàn tất", bgClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+  FAILED: { label: "Thất bại", bgClass: "bg-rose-500/10 text-rose-600 border-rose-500/20" },
+};
+
 // ─── Tab: Safety ─────────────────────────────────────────────────────────────
 
 interface SafetyEventItem {
@@ -1825,6 +2064,12 @@ interface SafetySummaryFull {
   legacy_escalation_count?: number;
 }
 
+interface SafetySummary {
+  safety_trigger_count?: number;
+  handoff_required_count?: number;
+  denominator_agent_v2_total_runs?: number;
+}
+
 function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) {
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   const [summary, setSummary] = useState<SafetySummaryFull | null>(null);
@@ -1832,7 +2077,6 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const fetchSafety = useCallback(async () => {
     if (!accessToken) return;
@@ -1865,27 +2109,32 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
 
   const severityPie = summary?.severity_distribution
     ? Object.entries(summary.severity_distribution)
-      .map(([name, value], idx) => ({
-        name,
-        value,
-        color: name === "CRITICAL" ? "#ef4444" : name === "HIGH" ? "#f97316" : name === "MEDIUM" ? "#f59e0b" : "#10b981",
-      }))
+      .map(([name, value]) => {
+        const meta = SEVERITY_METADATA[name];
+        return {
+          name: meta?.label ?? name,
+          value,
+          color: meta?.color ?? "#10b981",
+        };
+      })
       .filter((d) => d.value > 0)
     : [];
 
   const reasonPie = summary?.reason_code_distribution
     ? Object.entries(summary.reason_code_distribution)
-      .map(([name, value], idx) => ({
-        name: formatHumanNote(name) ?? name,
-        value,
-        color: CHART_COLORS[idx % CHART_COLORS.length],
-      }))
+      .map(([name, value], idx) => {
+        const meta = SAFETY_REASON_METADATA[name];
+        return {
+          name: meta?.label ?? formatHumanNote(name) ?? name,
+          value,
+          color: CHART_COLORS[idx % CHART_COLORS.length],
+        };
+      })
       .filter((d) => d.value > 0)
     : [];
 
   return (
     <div className="space-y-6">
-
       {loading && <LoadingState />}
       {error && <ErrorState message={error} />}
 
@@ -1896,25 +2145,14 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
             <MetricCard
               label="Kích hoạt cảnh báo an toàn"
               metric={{ value: summary.safety_trigger_count ?? 0, status: "AVAILABLE" }}
+              integer
               sub={summary.safety_trigger_rate !== null && summary.safety_trigger_rate !== undefined ? `Tỷ lệ: ${(summary.safety_trigger_rate * 100).toFixed(2)}%` : undefined}
             />
             <MetricCard
-              label="Yêu cầu chuyển bác sĩ (Handoff)"
+              label="Yêu cầu chuyển bác sĩ"
               metric={{ value: summary.handoff_required_count ?? 0, status: "AVAILABLE" }}
+              integer
               sub={summary.handoff_required_rate !== null && summary.handoff_required_rate !== undefined ? `Tỷ lệ: ${(summary.handoff_required_rate * 100).toFixed(2)}%` : undefined}
-            />
-            <MetricCard
-              label="Đã tạo yêu cầu chuyển tiếp"
-              metric={{ value: summary.handoff_created_count ?? 0, status: "AVAILABLE" }}
-              sub={summary.handoff_created_rate !== null && summary.handoff_created_rate !== undefined ? `Tỷ lệ thành công: ${(summary.handoff_created_rate * 100).toFixed(1)}%` : undefined}
-            />
-            <MetricCard
-              label="Chuyển tiếp bác sĩ thất bại"
-              metric={{ value: summary.handoff_failure_count ?? 0, status: "AVAILABLE" }}
-            />
-            <MetricCard
-              label="Yêu cầu chưa xử lý xong"
-              metric={{ value: summary.unresolved_handoff_count ?? 0, status: "AVAILABLE" }}
             />
             <MetricCard
               label="Thời gian duyệt trung bình"
@@ -1922,14 +2160,9 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
               sub={summary.time_to_review_sample_count ? `${summary.time_to_review_sample_count} ca đã duyệt` : undefined}
             />
             <MetricCard
-              label="Tổng lượt chạy Agent V2"
-              metric={{ value: summary.denominator_agent_v2_total_runs ?? 0, status: "AVAILABLE" }}
-              help="Cơ sở mẫu chuẩn (Denominator) dùng để tính tỷ lệ an toàn."
-            />
-            <MetricCard
-              label="Ca chuyển tiếp cũ (Legacy)"
-              metric={{ value: summary.legacy_escalation_count ?? 0, status: "AVAILABLE" }}
-              help="Dữ liệu từ bảng Escalation cũ, không tính trùng vào Agent V2."
+              label="Chuyển tiếp bác sĩ thất bại"
+              metric={{ value: summary.handoff_failure_count ?? 0, status: "AVAILABLE" }}
+              integer
             />
           </div>
 
@@ -1937,7 +2170,7 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
           <div className="grid gap-4 md:grid-cols-2">
             {severityPie.length > 0 ? (
               <div className="surface-card p-5">
-                <DonutChart data={severityPie} title="Phân bổ mức độ nghiêm trọng (Severity)" />
+                <DonutChart data={severityPie} title="Phân bổ mức độ nghiêm trọng" />
               </div>
             ) : (
               <div className="surface-card p-5 flex items-center justify-center text-xs text-muted-foreground">
@@ -1946,125 +2179,110 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
             )}
             {reasonPie.length > 0 ? (
               <div className="surface-card p-5">
-                <DonutChart data={reasonPie} title="Phân bổ nguyên nhân an toàn (Reason Codes)" />
+                <DonutChart data={reasonPie} title="Phân bổ nguyên nhân an toàn" />
               </div>
             ) : (
               <div className="surface-card p-5 flex items-center justify-center text-xs text-muted-foreground">
-                Chưa có sự kiện phân loại mã lý do
+                Chưa có dữ liệu nguyên nhân an toàn
               </div>
             )}
           </div>
 
-          {/* Safety Events Table */}
-          <div className="surface-card overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between flex-wrap gap-2">
+          {/* Events table */}
+          <div className="surface-card overflow-x-auto p-4">
+            <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="font-bold flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-rose-500" />
-                  Danh sách sự kiện an toàn & Chuyển bác sĩ thực tế
-                </h3>
+                <h3 className="font-semibold text-sm">Danh sách sự kiện an toàn & Chuyển bác sĩ</h3>
                 <p className="text-xs text-muted-foreground">
-                  Tổng số: {totalEvents} sự kiện (hiển thị 50 sự kiện gần nhất)
+                  Ghi nhận {totalEvents.toLocaleString("vi-VN")} sự kiện (hiển thị 50 sự kiện gần nhất)
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={fetchSafety}
-                className="flex items-center gap-1.5 rounded border px-3 py-1 text-xs hover:bg-accent"
-              >
-                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-                Làm mới
-              </button>
             </div>
             {events.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                Hệ thống chưa ghi nhận sự kiện an toàn nào cần xử lý.
-              </p>
+              <p className="py-6 text-center text-sm text-muted-foreground">Chưa có sự kiện an toàn nào</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-sm text-left">
-                  <thead>
-                    <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                      <th className="py-3 px-4">Mã sự kiện (Event ID)</th>
-                      <th className="py-3 px-4">Mã Trace</th>
-                      <th className="py-3 px-4">Mức độ</th>
-                      <th className="py-3 px-4">Nguyên nhân (Reason Code)</th>
-                      <th className="py-3 px-4">Handoff Bác sĩ</th>
-                      <th className="py-3 px-4">Trạng thái Handoff</th>
-                      <th className="py-3 px-4">Thời gian</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {events.map((ev) => {
-                      const sevColor =
-                        ev.severity === "CRITICAL"
-                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                          : ev.severity === "HIGH"
-                            ? "bg-orange-50 text-orange-700 border-orange-200"
-                            : ev.severity === "MEDIUM"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-200";
-
-                      return (
-                        <tr key={ev.id} className="hover:bg-muted/30">
-                          <td className="py-3 px-4 font-mono text-xs font-semibold">{ev.id.slice(0, 8)}</td>
-                          <td className="py-3 px-4 font-mono text-xs">
-                            {ev.trace_id ? (
-                              <Link
-                                className="text-primary underline font-semibold"
-                                href={`/admin/monitoring/traces/${ev.trace_id}`}
-                              >
-                                {ev.trace_id.slice(0, 8)}
-                              </Link>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${sevColor}`}>
-                              {ev.severity}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground border-b">
+                    <th className="pb-2">Trace ID</th>
+                    <th className="pb-2">Mức độ</th>
+                    <th className="pb-2">Nguyên nhân & Ý nghĩa</th>
+                    <th className="pb-2">Chuyển tiếp</th>
+                    <th className="pb-2">Trạng thái Xử lý</th>
+                    <th className="pb-2">Thời gian tạo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {events.map((ev) => {
+                    const sevMeta = SEVERITY_METADATA[ev.severity];
+                    const reasonMeta = SAFETY_REASON_METADATA[ev.reason_code];
+                    const statusMeta = ev.handoff_status_live ? HANDOFF_STATUS_METADATA[ev.handoff_status_live] : null;
+                    return (
+                      <tr key={ev.id} className="hover:bg-accent/40">
+                        <td className="py-2.5 font-mono text-xs">
+                          {ev.trace_id ? (
+                            <Link href={`/admin/monitoring/traces/${ev.trace_id}`} className="text-primary underline">
+                              {ev.trace_id.slice(0, 8)}
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">N/A</span>
+                          )}
+                        </td>
+                        <td className="py-2.5">
+                          <span
+                            className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${
+                              sevMeta?.bgClass ?? "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {sevMeta?.label ?? ev.severity}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-xs max-w-xs">
+                          <div className="font-medium text-foreground">{reasonMeta?.label ?? formatHumanNote(ev.reason_code) ?? ev.reason_code}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground">{ev.reason_code}</div>
+                          {reasonMeta?.description && (
+                            <div className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-1" title={reasonMeta.description}>
+                              {reasonMeta.description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2.5 text-xs">
+                          {ev.handoff_created ? (
+                            <span className="inline-flex rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-600 font-medium">
+                              Đã tạo
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-xs font-medium">
-                            {formatHumanNote(ev.reason_code) ?? ev.reason_code}
-                          </td>
-                          <td className="py-3 px-4 text-xs">
-                            {ev.handoff_created ? (
-                              <span className="text-emerald-600 font-semibold">Đã tạo yêu cầu</span>
-                            ) : ev.handoff_required ? (
-                              <span className="text-rose-600 font-semibold">Cần tạo</span>
-                            ) : (
-                              <span className="text-muted-foreground">Không yêu cầu</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-xs">
-                            {ev.handoff_status_live ? (
-                              <span className="rounded bg-muted px-2 py-0.5 font-mono text-[11px]">
-                                {ev.handoff_status_live}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-xs text-muted-foreground">
-                            {ev.created_at
-                              ? new Date(ev.created_at).toLocaleString("vi-VN", {
-                                timeZone: "Asia/Ho_Chi_Minh",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })
-                              : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          ) : ev.handoff_required ? (
+                            <span className="inline-flex rounded bg-rose-500/10 px-2 py-0.5 text-rose-600 font-medium">
+                              Bắt buộc
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Không</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 text-xs">
+                          {statusMeta ? (
+                            <span className={`inline-flex rounded px-2 py-0.5 font-medium ${statusMeta.bgClass}`}>
+                              {statusMeta.label}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">{ev.handoff_status_live ?? "—"}</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 text-xs text-muted-foreground">
+                          {ev.created_at ? new Date(ev.created_at).toLocaleString("vi-VN", {
+                            timeZone: "Asia/Ho_Chi_Minh",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }) : "N/A"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
         </>
@@ -2073,63 +2291,49 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
   );
 }
 
-// ─── Safety Summary type ──────────────────────────────────────────────────────
-
-
-interface SafetySummary {
-  safety_trigger_count?: number;
-  handoff_required_count?: number;
-  denominator_agent_v2_total_runs?: number;
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-export default function AdminMonitoringPage() {
+export default function AdminMonitoringUnifiedDashboard() {
   const { accessToken } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const tabFromUrl = searchParams.get("tab") as TabId | null;
+  const initialTab = tabFromUrl && TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : "overview";
+
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [filters, setFilters] = useState<MonitoringFiltersInput>({});
   const [versionOptions, setVersionOptions] = useState<VersionFiltersOut | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [trendDays, setTrendDays] = useState(7);
 
   const [overview, setOverview] = useState<OverviewOut | null>(null);
   const [quality, setQuality] = useState<QualityOut | null>(null);
+  const [judge, setJudge] = useState<JudgeOut | null>(null);
   const [retrieval, setRetrieval] = useState<RetrievalOut | null>(null);
   const [performance, setPerformance] = useState<PerformanceOut | null>(null);
   const [cost, setCost] = useState<CostOut | null>(null);
   const [errors, setErrors] = useState<ErrorsOut | null>(null);
-  const [judge, setJudge] = useState<JudgeOut | null>(null);
-  const [golden, setGolden] = useState<GoldenOut | null>(null);
-  const [trend, setTrend] = useState<TrendOut | null>(null);
   const [safety, setSafety] = useState<SafetySummary | null>(null);
+  const [trend, setTrend] = useState<TrendOut | null>(null);
+  const [trendDays, setTrendDays] = useState(7);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-  const TABS_WITHOUT_FILTER: TabId[] = ["safety", "golden", "rag_chatbot", "versions"];
-
-  const currentTabHasData =
-    (activeTab === "overview" && overview !== null) ||
-    (activeTab === "quality" && quality !== null) ||
-    (activeTab === "retrieval" && retrieval !== null) ||
-    (activeTab === "performance" && performance !== null) ||
-    (activeTab === "cost" && cost !== null) ||
-    (activeTab === "errors" && errors !== null) ||
-    (activeTab === "judge" && judge !== null) ||
-    (activeTab === "golden" && golden !== null) ||
-    TABS_WITHOUT_FILTER.includes(activeTab);
 
   useEffect(() => {
     if (!accessToken) return;
     getVersionFilters(accessToken).then(setVersionOptions).catch(() => { });
-    // Fetch safety summary for Overview card
-    fetch(`${apiBase}/api/v1/admin/safety/summary`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch(`${apiBase}/api/v1/admin/monitoring/safety-summary`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => d && setSafety(d))
       .catch(() => { });
   }, [accessToken, apiBase]);
 
-  // Fetch trend whenever trendDays or filters change (and quality tab is active)
   useEffect(() => {
     if (!accessToken || activeTab !== "quality") return;
     getTrend(filters, trendDays, accessToken)
@@ -2144,13 +2348,18 @@ export default function AdminMonitoringPage() {
       setError(null);
       try {
         if (activeTab === "overview") setOverview(await getOverview(filters, accessToken));
-        else if (activeTab === "quality") setQuality(await getQuality(filters, accessToken));
+        else if (activeTab === "quality") {
+          const [qData, jData] = await Promise.all([
+            getQuality(filters, accessToken),
+            getJudge(filters, accessToken),
+          ]);
+          setQuality(qData);
+          setJudge(jData);
+        }
         else if (activeTab === "retrieval") setRetrieval(await getRetrieval(filters, accessToken));
         else if (activeTab === "performance") setPerformance(await getPerformance(filters, accessToken));
         else if (activeTab === "cost") setCost(await getCost(filters, accessToken));
         else if (activeTab === "errors") setErrors(await getErrors(filters, accessToken));
-        else if (activeTab === "judge") setJudge(await getJudge(filters, accessToken));
-        else if (activeTab === "golden") setGolden(await getGolden(undefined, accessToken));
       } catch (e) {
         setError(e instanceof Error ? e.message : "Lỗi không xác định");
       } finally {
@@ -2173,16 +2382,25 @@ export default function AdminMonitoringPage() {
     setPerformance(null);
     setCost(null);
     setErrors(null);
-    setJudge(null);
-    setGolden(null);
   };
+
+  const TABS_WITHOUT_FILTER: TabId[] = ["safety"];
+
+  const currentTabHasData =
+    (activeTab === "overview" && overview !== null) ||
+    (activeTab === "quality" && quality !== null) ||
+    (activeTab === "retrieval" && retrieval !== null) ||
+    (activeTab === "performance" && performance !== null) ||
+    (activeTab === "cost" && cost !== null) ||
+    (activeTab === "errors" && errors !== null) ||
+    TABS_WITHOUT_FILTER.includes(activeTab);
 
   const { intervalMs, setIntervalMs, lastRefreshedAt, isPollingActive, triggerUpdate } = useMonitoringPolling({
     defaultIntervalMs: 10000,
     onUpdate: () => {
       fetchTab(true);
       if (accessToken) {
-        getVersionFilters(accessToken).then(setVersionOptions).catch(() => {});
+        getVersionFilters(accessToken).then(setVersionOptions).catch(() => { });
       }
     },
   });
@@ -2197,9 +2415,8 @@ export default function AdminMonitoringPage() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 rounded border bg-background px-2 py-1 text-xs">
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    isPollingActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"
-                  }`}
+                  className={`h-2 w-2 rounded-full ${isPollingActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"
+                    }`}
                 />
                 <select
                   value={intervalMs}
@@ -2261,19 +2478,15 @@ export default function AdminMonitoringPage() {
         })}
         <Link
           href="/admin/monitoring/traces"
-          className="ml-auto flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+          className="ml-auto flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary hover:underline"
         >
-          Trace Explorer →
+          Trình khám phá dấu vết →
         </Link>
       </div>
 
       {/* Tab content */}
       {activeTab === "safety" ? (
         <SafetyTab accessToken={accessToken} />
-      ) : activeTab === "rag_chatbot" ? (
-        <RagChatbotTab accessToken={accessToken} />
-      ) : activeTab === "versions" ? (
-        <VersionsTab accessToken={accessToken} versionOptions={versionOptions} />
       ) : !currentTabHasData ? (
         error ? (
           <ErrorState message={error} />
@@ -2291,6 +2504,7 @@ export default function AdminMonitoringPage() {
               trend={trend}
               trendDays={trendDays}
               setTrendDays={setTrendDays}
+              judgeData={judge}
               onNavigateTab={setActiveTab}
             />
           )}
@@ -2307,8 +2521,6 @@ export default function AdminMonitoringPage() {
               }}
             />
           )}
-          {activeTab === "judge" && judge && <JudgeTab data={judge} />}
-          {activeTab === "golden" && golden && <GoldenTab data={golden} />}
         </>
       )}
     </div>
