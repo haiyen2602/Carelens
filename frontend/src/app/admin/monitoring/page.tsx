@@ -61,6 +61,8 @@ import {
   getPerformance,
   getQuality,
   getRetrieval,
+  getSafetyEvents,
+  getSafetySummary,
   getTrend,
   getVersionFilters,
   type CompareOut,
@@ -114,7 +116,7 @@ const THRESHOLDS = {
 
 function formatMetric(
   m: MetricValue | undefined,
-  opts: { percent?: boolean; suffix?: string; integer?: boolean } = {}
+  opts: { percent?: boolean; suffix?: string; integer?: boolean; currency?: boolean } = {}
 ): string {
   if (!m || m.value === null || m.value === undefined || m.status !== "AVAILABLE")
     return "N/A";
@@ -122,6 +124,10 @@ function formatMetric(
   if (Number.isNaN(v)) return "N/A";
   if (opts.percent) return `${(v * 100).toFixed(1)}%`;
   if (opts.integer) return `${Math.round(v).toLocaleString("vi-VN")}${opts.suffix ?? ""}`;
+  if (opts.currency) {
+    const formatted = v < 0.0001 && v > 0 ? "< $0.0001" : `$${v.toFixed(v < 0.01 ? 4 : 3)}`;
+    return `${formatted}${opts.suffix ?? ""}`;
+  }
   return `${v.toFixed(v < 10 ? 3 : 2)}${opts.suffix ?? ""}`;
 }
 
@@ -192,6 +198,7 @@ function MetricCard({
   percent,
   suffix,
   integer,
+  currency,
   help,
   sub,
   thresholdKey,
@@ -201,11 +208,12 @@ function MetricCard({
   percent?: boolean;
   suffix?: string;
   integer?: boolean;
+  currency?: boolean;
   help?: string;
   sub?: string;
   thresholdKey?: keyof typeof THRESHOLDS;
 }) {
-  const display = formatMetric(metric, { percent, suffix, integer });
+  const display = formatMetric(metric, { percent, suffix, integer, currency });
   const numVal = metric?.status === "AVAILABLE" && typeof metric.value === "number" ? metric.value : null;
   const colorClass = thresholdKey && numVal !== null ? metricColor(thresholdKey, numVal) : "text-foreground";
   const noteText = formatHumanNote(metric?.scope ?? metric?.scope_note ?? metric?.note);
@@ -1112,7 +1120,7 @@ function JudgeSection({ data }: { data: JudgeOut | null }) {
         <MetricCard label="Đang chờ chấm" metric={{ value: data.judged_pending ?? null, status: "AVAILABLE" }} integer />
         <MetricCard label="Đã chấm xong" metric={{ value: data.judged_completed ?? null, status: "AVAILABLE" }} integer />
         <MetricCard label="Chấm điểm thất bại" metric={{ value: data.judged_failed ?? null, status: "AVAILABLE" }} integer />
-        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} />
+        <MetricCard label="Chi phí mô hình Judge (USD)" metric={data.judge_cost_usd} currency />
         <MetricCard label="Token đầu vào Judge" metric={{ value: data.judge_input_tokens ?? null, status: "AVAILABLE" }} integer />
         <MetricCard label="Token đầu ra Judge" metric={{ value: data.judge_output_tokens ?? null, status: "AVAILABLE" }} integer />
       </div>
@@ -1284,9 +1292,13 @@ function RetrievalTab({
   const gfVal = data.grounding_failure_rate?.status === "AVAILABLE" && typeof data.grounding_failure_rate.value === "number"
     ? data.grounding_failure_rate.value : null;
 
+  const totalRag = data.rag_query_volume ?? 0;
+  const gfCount = data.grounding_failure_rate?.numerator ?? 0;
+  const ragSuccess = Math.max(0, totalRag - gfCount);
+
   const donutData = [
-    { name: "Truy vấn RAG thành công", value: data.rag_query_volume ?? 0, color: "#10b981" },
-    { name: "Lỗi thiếu căn cứ", value: data.grounding_failure_rate?.numerator ?? 0, color: "#ef4444" },
+    { name: "RAG có căn cứ thành công", value: ragSuccess, color: "#10b981" },
+    { name: "Lỗi thiếu căn cứ (Grounding Failure)", value: gfCount, color: "#ef4444" },
   ];
 
   return (
@@ -1330,7 +1342,7 @@ function RetrievalTab({
       </div>
 
       <div className="surface-card p-5">
-        <DonutChart data={donutData} title="Tỷ lệ truy vấn RAG so với lỗi thiếu căn cứ" />
+        <DonutChart data={donutData} title="Phân bổ kết quả truy xuất RAG (Thành công vs Thiếu căn cứ)" />
       </div>
     </div>
   );
@@ -1421,11 +1433,20 @@ function CostTab({ data }: { data: CostOut }) {
 
   return (
     <div className="space-y-6">
+      {/* 4 Cost summary KPI cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Token đầu vào" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Token đầu ra" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Tổng Token tiêu thụ" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} />
-        <MetricCard label="Token/lượt yêu cầu" metric={data.tokens_per_query} />
+        <MetricCard label="Chi phí Agent (USD)" metric={data.agent_cost_usd} currency />
+        <MetricCard label="Chi phí Judge (USD)" metric={data.judge_cost_usd} currency />
+        <MetricCard label="Tổng chi phí (USD)" metric={data.total_cost_usd} currency />
+        <MetricCard label="Chi phí / lượt yêu cầu" metric={data.cost_per_query_usd} currency />
+      </div>
+
+      {/* 4 Token KPI cards */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <MetricCard label="Token đầu vào" metric={{ value: data.input_tokens ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Token đầu ra" metric={{ value: data.output_tokens ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Tổng Token tiêu thụ" metric={{ value: data.total_tokens ?? null, status: "AVAILABLE" }} integer />
+        <MetricCard label="Token / lượt yêu cầu" metric={data.tokens_per_query} />
       </div>
 
       <CostTimelineChart
@@ -2212,8 +2233,13 @@ interface SafetySummary {
   denominator_agent_v2_total_runs?: number;
 }
 
-function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+function SafetyTab({
+  accessToken,
+  filters,
+}: {
+  accessToken: string | null | undefined;
+  filters: MonitoringFiltersInput;
+}) {
   const [summary, setSummary] = useState<SafetySummaryFull | null>(null);
   const [events, setEvents] = useState<SafetyEventItem[]>([]);
   const [totalEvents, setTotalEvents] = useState(0);
@@ -2225,25 +2251,19 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
     setLoading(true);
     setError(null);
     try {
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const [sumRes, evRes] = await Promise.all([
-        fetch(`${apiBase}/api/v1/admin/safety/summary`, { headers }),
-        fetch(`${apiBase}/api/v1/admin/safety/events?limit=50`, { headers }),
+      const [sumData, evData] = await Promise.all([
+        getSafetySummary(filters, accessToken),
+        getSafetyEvents(filters, { limit: 50, accessToken }),
       ]);
-      if (sumRes.ok) {
-        setSummary(await sumRes.json());
-      }
-      if (evRes.ok) {
-        const evData = await evRes.json();
-        setEvents(evData.items ?? []);
-        setTotalEvents(evData.total ?? 0);
-      }
+      setSummary(sumData as SafetySummaryFull);
+      setEvents((evData.items as SafetyEventItem[]) ?? []);
+      setTotalEvents(evData.total ?? 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Lỗi khi tải dữ liệu an toàn");
     } finally {
       setLoading(false);
     }
-  }, [accessToken, apiBase]);
+  }, [accessToken, filters]);
 
   useEffect(() => {
     fetchSafety();
@@ -2298,7 +2318,10 @@ function SafetyTab({ accessToken }: { accessToken: string | null | undefined }) 
             />
             <MetricCard
               label="Thời gian duyệt trung bình"
-              metric={{ value: summary.time_to_review_avg_seconds ? `${Math.round(summary.time_to_review_avg_seconds)}s` : "Chưa có", status: "AVAILABLE" }}
+              metric={{
+                value: summary.time_to_review_avg_seconds != null ? `${Math.round(summary.time_to_review_avg_seconds)}s` : "Chưa có",
+                status: "AVAILABLE",
+              }}
               sub={summary.time_to_review_sample_count ? `${summary.time_to_review_sample_count} ca đã duyệt` : undefined}
             />
             <MetricCard
@@ -2468,13 +2491,10 @@ export default function AdminMonitoringUnifiedDashboard() {
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch(`${apiBase}/api/v1/admin/monitoring/safety-summary`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => r.ok ? r.json() : null)
+    getSafetySummary(filters, accessToken)
       .then((d) => d && setSafety(d))
       .catch(() => { });
-  }, [accessToken, apiBase]);
+  }, [accessToken, filters]);
 
   useEffect(() => {
     if (!accessToken || (activeTab !== "quality" && activeTab !== "overview")) return;
@@ -2533,7 +2553,7 @@ export default function AdminMonitoringUnifiedDashboard() {
     setErrors(null);
   };
 
-  const TABS_WITHOUT_FILTER: TabId[] = ["safety"];
+  const TABS_WITHOUT_FILTER: TabId[] = [];
 
   const currentTabHasData =
     (activeTab === "overview" && overview !== null) ||
@@ -2635,7 +2655,7 @@ export default function AdminMonitoringUnifiedDashboard() {
 
       {/* Tab content */}
       {activeTab === "safety" ? (
-        <SafetyTab accessToken={accessToken} />
+        <SafetyTab accessToken={accessToken} filters={filters} />
       ) : !currentTabHasData ? (
         error ? (
           <ErrorState message={error} />

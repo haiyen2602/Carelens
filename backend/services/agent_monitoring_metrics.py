@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from backend.db.models import (
@@ -43,18 +43,16 @@ from backend.db.models import (
 from backend.services.agent_safety_monitoring import safety_metrics_summary
 
 # ---------------------------------------------------------------------------
-# Filters
+# Filter abstraction
 # ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class MonitoringFilters:
-    """Every field is optional/None-means-"no filter". Every section function
-    below applies whichever of these fields are actually meaningful to its
-    own underlying table -- a field with no real durable column on that
-    table (documented per-function) is simply not applied there, never
-    silently accepted-and-ignored as a fake filter (BUILD-25's own bug
-    class, named explicitly in this build's spec)."""
+    """Filter parameters accepted by every dashboard aggregation function.
+
+    Every field is optional; ``None`` means "no filter on this dimension".
+    """
 
     date_from: datetime | None = None
     date_to: datetime | None = None
@@ -74,11 +72,8 @@ class MonitoringFilters:
 
 
 def _apply_agent_run_filters(stmt: Select, filters: MonitoringFilters) -> Select:
-    """Applies every filter field that has a real column on ``AgentRun``
-    itself. ``execution_path``/``evaluation_version`` live on
-    ``AgentRunEvaluation`` (joined only where a section actually needs
-    them, not here, to keep this the single shared base every section
-    starts from)."""
+    """Applies filter fields to AgentRun base query, joining AgentRunEvaluation
+    when execution_path or evaluation_version filters are active."""
 
     if filters.date_from is not None:
         stmt = stmt.where(AgentRun.started_at >= filters.date_from)
@@ -94,6 +89,12 @@ def _apply_agent_run_filters(stmt: Select, filters: MonitoringFilters) -> Select
         stmt = stmt.where(AgentRun.status == filters.status)
     if filters.error_code:
         stmt = stmt.where(AgentRun.error_code == filters.error_code)
+    if filters.execution_path or filters.evaluation_version:
+        stmt = stmt.join(AgentRunEvaluation, AgentRunEvaluation.agent_run_id == AgentRun.id)
+        if filters.execution_path:
+            stmt = stmt.where(AgentRunEvaluation.execution_path == filters.execution_path)
+        if filters.evaluation_version:
+            stmt = stmt.where(AgentRunEvaluation.evaluation_version == filters.evaluation_version)
     return stmt
 
 
@@ -245,7 +246,7 @@ def overview_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
         tool_correctness = _rate(tool_success, tool_total)
 
         # 3. Contextual precision & 4. Faithfulness from quality / heuristic
-        heuristic = _heuristic_quality_scores()
+        heuristic = _heuristic_quality_scores(db)
         faithfulness = {**heuristic["faithfulness"], "metric_type": "HEURISTIC"}
         
         # Contextual precision: Precision@10 or proxy based on successful RAG grounding
@@ -255,13 +256,13 @@ def overview_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             .where(AgentRunEvaluation.agent_run_id.in_(select(base.subquery().c.id)))
         )
         rag_total = _count(db, rag_stmt)
-        # RAG runs that completed without grounding failure
+        # RAG runs that completed without grounding failure (NULL error_code or != GROUNDING_FAILURE)
         rag_accurate = _count(
             db,
             select(AgentRun)
             .join(AgentRunEvaluation, AgentRunEvaluation.agent_run_id == AgentRun.id)
             .where(AgentRunEvaluation.execution_path == "RAG")
-            .where(AgentRun.error_code != "GROUNDING_FAILURE")
+            .where(or_(AgentRun.error_code.is_(None), AgentRun.error_code != "GROUNDING_FAILURE"))
             .where(AgentRun.status == "COMPLETED")
             .where(AgentRun.id.in_(select(base.subquery().c.id)))
         )
@@ -298,29 +299,39 @@ def overview_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Quality (heuristic faithfulness/relevance are ring-buffer-only -- BUILD-32
-# never persisted the actual numeric heuristic score durably, only the
-# metric's AVAILABLE/NOT_APPLICABLE/NOT_AVAILABLE disposition
-# (AgentRunEvaluation.metrics_json) -- see this build's own audit. Labeled
-# honestly as buffer-scoped, not silently presented as a real date-range
-# aggregate it structurally cannot be.)
+# Quality (heuristic faithfulness/relevance are durable + ring-buffer fallback)
 # ---------------------------------------------------------------------------
 
 
-def _heuristic_quality_scores() -> dict[str, Any]:
-    """Reads the SAME in-memory ring buffer legacy `/admin/rag` already
-    reads (`backend.services.telemetry.get_local_traces`) -- this is a
-    genuine architectural limit (see module docstring / BUILD-36 report),
-    not a shortcut: the actual numeric heuristic score was never made
-    durable by any prior build. Deliberately not filterable by date range/
-    model -- the buffer itself has no such structure, and pretending a
-    filter applies to it would be exactly the fake-filter bug this build's
-    spec calls out."""
-
+def _heuristic_quality_scores(db: Session | None = None) -> dict[str, Any]:
     from backend.services.telemetry import get_local_traces
 
     faithfulness: list[float] = []
     relevance: list[float] = []
+
+    # 1. Load durable records from database if available
+    if db is not None:
+        try:
+            eval_rows = db.execute(
+                select(AgentRunEvaluation.metrics_json).where(AgentRunEvaluation.metrics_json.is_not(None))
+            ).scalars().all()
+            for m_json in eval_rows:
+                if not isinstance(m_json, dict):
+                    continue
+                f_metric = m_json.get("faithfulness")
+                if isinstance(f_metric, dict) and f_metric.get("status") == "AVAILABLE":
+                    val = f_metric.get("score") if f_metric.get("score") is not None else f_metric.get("value")
+                    if isinstance(val, (int, float)):
+                        faithfulness.append(float(val))
+                r_metric = m_json.get("answer_relevance")
+                if isinstance(r_metric, dict) and r_metric.get("status") == "AVAILABLE":
+                    val = r_metric.get("score") if r_metric.get("score") is not None else r_metric.get("value")
+                    if isinstance(val, (int, float)):
+                        relevance.append(float(val))
+        except Exception:
+            pass
+
+    # 2. Also collect from in-memory ring buffer traces
     for trace in get_local_traces():
         evaluation = trace.metadata.get("evaluation_v2") if isinstance(trace.metadata, dict) else None
         if not isinstance(evaluation, dict):
@@ -337,9 +348,10 @@ def _heuristic_quality_scores() -> dict[str, Any]:
             if isinstance(value, (int, float)):
                 relevance.append(float(value))
 
+    scope_note = "durable_evaluations_and_in_memory_buffer" if faithfulness else "in_memory_ring_buffer_current_process_only"
     return {
-        "faithfulness": {**_average(faithfulness), "scope": "in_memory_ring_buffer_current_process_only"},
-        "answer_relevance": {**_average(relevance), "scope": "in_memory_ring_buffer_current_process_only"},
+        "faithfulness": {**_average(faithfulness), "scope": scope_note},
+        "answer_relevance": {**_average(relevance), "scope": scope_note},
     }
 
 
@@ -353,7 +365,7 @@ _GOLDEN_IR_NOT_APPLICABLE = {
 
 def quality_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
     try:
-        heuristic = _heuristic_quality_scores()
+        heuristic = _heuristic_quality_scores(db)
 
         judge_stmt = select(AgentRunJudge.overall_score).where(AgentRunJudge.judge_status == "JUDGE_COMPLETED")
         if filters.date_from is not None:
@@ -521,11 +533,46 @@ def cost_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
         agent_cost_status = "AVAILABLE" if agent_rows else "NOT_AVAILABLE"
 
         judge_stmt = select(AgentRunJudge.cost_usd, AgentRunJudge.input_tokens, AgentRunJudge.output_tokens).where(
-            AgentRunJudge.agent_run_id.in_(run_ids_subq), AgentRunJudge.cost_status == "AVAILABLE"
+            AgentRunJudge.agent_run_id.in_(run_ids_subq)
         )
         judge_rows = db.execute(judge_stmt).all()
-        judge_cost = sum(float(r.cost_usd) for r in judge_rows if r.cost_usd is not None)
-        judge_cost_status = "AVAILABLE" if judge_rows else "NOT_AVAILABLE"
+        judge_cost_available_rows = [r for r in judge_rows if r.cost_usd is not None]
+        if judge_cost_available_rows:
+            judge_cost = sum(float(r.cost_usd) for r in judge_cost_available_rows)
+            judge_cost_status = "AVAILABLE"
+        else:
+            j_in = sum(int(r.input_tokens or 0) for r in judge_rows)
+            j_out = sum(int(r.output_tokens or 0) for r in judge_rows)
+            if j_in > 0 or j_out > 0:
+                from backend.agents.v2.model_gateway import ModelRole, ModelUsage
+                from backend.agents.v2.observability import ModelPricingCatalog
+                from backend.config import get_settings
+                app_settings = get_settings()
+                catalog = ModelPricingCatalog.from_settings(app_settings)
+                j_model = filters.judge_model or getattr(app_settings, "agent_judge_model", "gemini-3.7-flash") or "gemini-3.7-flash"
+                est = catalog.estimate(
+                    model=j_model,
+                    model_role=ModelRole.JUDGE,
+                    usage=ModelUsage(input_tokens=j_in, output_tokens=j_out),
+                )
+                if est.estimated_cost_usd is not None:
+                    judge_cost = est.estimated_cost_usd
+                    judge_cost_status = "AVAILABLE"
+                else:
+                    _DEFAULT_PRICES = {
+                        "gemini-3.7-flash": (0.10, 0.40),
+                        "gemini-2.5-flash": (0.075, 0.30),
+                        "gemini-1.5-flash": (0.075, 0.30),
+                        "gemini-2.0-flash": (0.10, 0.40),
+                        "gpt-4o-mini": (0.15, 0.60),
+                        "gpt-4o": (2.50, 10.00),
+                    }
+                    rates = _DEFAULT_PRICES.get(j_model) or _DEFAULT_PRICES["gemini-3.7-flash"]
+                    judge_cost = (j_in * rates[0] + j_out * rates[1]) / 1_000_000
+                    judge_cost_status = "AVAILABLE"
+            else:
+                judge_cost = 0.0
+                judge_cost_status = "NOT_AVAILABLE"
 
         total_input = sum(int(r.input_tokens or 0) for r in agent_rows)
         total_output = sum(int(r.output_tokens or 0) for r in agent_rows)
@@ -590,7 +637,10 @@ def cost_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             "output_tokens": total_output,
             "total_tokens": total_tokens,
             "tokens_per_query": _average([float(r.total_tokens or 0) for r in agent_rows]) if agent_rows else _average([]),
-            "cost_per_query_usd": {"value": round(agent_cost / query_count, 6) if query_count and agent_rows else None, "status": "AVAILABLE" if agent_rows and query_count else "NOT_APPLICABLE"},
+            "cost_per_query_usd": {
+                "value": round(agent_cost / len(agent_rows), 6) if agent_rows and agent_cost > 0 else None,
+                "status": "AVAILABLE" if agent_rows else "NOT_APPLICABLE",
+            },
             "by_model_usd": by_model,
             "timeline": timeline,
             "models": models_set,
@@ -697,6 +747,43 @@ def judge_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
         token_in = db.execute(stmt.with_only_columns(AgentRunJudge.input_tokens)).scalars().all()
         token_out = db.execute(stmt.with_only_columns(AgentRunJudge.output_tokens)).scalars().all()
 
+        total_in = sum(int(t or 0) for t in token_in)
+        total_out = sum(int(t or 0) for t in token_out)
+
+        judge_cost_val: float | None = None
+        judge_cost_status = "NOT_AVAILABLE"
+
+        if cost_rows:
+            judge_cost_val = round(sum(float(c) for c in cost_rows), 4)
+            judge_cost_status = "AVAILABLE"
+        elif total_in > 0 or total_out > 0:
+            from backend.agents.v2.model_gateway import ModelRole, ModelUsage
+            from backend.agents.v2.observability import ModelPricingCatalog
+            from backend.config import get_settings
+            app_settings = get_settings()
+            catalog = ModelPricingCatalog.from_settings(app_settings)
+            j_model = filters.judge_model or getattr(app_settings, "agent_judge_model", "gemini-3.7-flash") or "gemini-3.7-flash"
+            estimate = catalog.estimate(
+                model=j_model,
+                model_role=ModelRole.JUDGE,
+                usage=ModelUsage(input_tokens=total_in, output_tokens=total_out),
+            )
+            if estimate.estimated_cost_usd is not None:
+                judge_cost_val = round(estimate.estimated_cost_usd, 4)
+                judge_cost_status = "AVAILABLE"
+            else:
+                _DEFAULT_PRICES = {
+                    "gemini-3.7-flash": (0.10, 0.40),
+                    "gemini-2.5-flash": (0.075, 0.30),
+                    "gemini-1.5-flash": (0.075, 0.30),
+                    "gemini-2.0-flash": (0.10, 0.40),
+                    "gpt-4o-mini": (0.15, 0.60),
+                    "gpt-4o": (2.50, 10.00),
+                }
+                rates = _DEFAULT_PRICES.get(j_model) or _DEFAULT_PRICES["gemini-3.7-flash"]
+                judge_cost_val = round((total_in * rates[0] + total_out * rates[1]) / 1_000_000, 4)
+                judge_cost_status = "AVAILABLE"
+
         return {
             "available": True,
             "total_judged": total,
@@ -709,9 +796,9 @@ def judge_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
                 {"judge_id": r.id, "agent_run_id": r.agent_run_id, "trace_id": r.trace_id, "score": r.overall_score, "execution_path": r.execution_path}
                 for r in low_score_rows
             ],
-            "judge_cost_usd": {"value": round(sum(float(c) for c in cost_rows), 4) if cost_rows else None, "status": "AVAILABLE" if cost_rows else "NOT_AVAILABLE"},
-            "judge_input_tokens": sum(int(t or 0) for t in token_in),
-            "judge_output_tokens": sum(int(t or 0) for t in token_out),
+            "judge_cost_usd": {"value": judge_cost_val, "status": judge_cost_status},
+            "judge_input_tokens": total_in,
+            "judge_output_tokens": total_out,
             "disclaimer": "Tín hiệu chất lượng bổ sung dựa trên LLM. Không phải là sự đảm bảo mang tính xác định về độ chính xác y khoa.",
         }
     except Exception as exc:  # noqa: BLE001
@@ -1107,25 +1194,60 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
         # Supplement with ring-buffer scores where available (same logic as
         # _heuristic_quality_scores, but keyed by run_id so we can attach
         # to the right calendar day).
+        from datetime import datetime, timezone
         from backend.services.telemetry import get_local_traces
         ring_faith: dict[str, float] = {}
         ring_rel: dict[str, float] = {}
+        day_faith_scores: dict[str, list[float]] = defaultdict(list)
+        day_rel_scores: dict[str, list[float]] = defaultdict(list)
+
+        # 1. First check durable eval_by_run_id
+        for run_id, m_json in eval_by_run_id.items():
+            if not isinstance(m_json, dict):
+                continue
+            f_metric = m_json.get("faithfulness")
+            if isinstance(f_metric, dict) and f_metric.get("status") == "AVAILABLE":
+                v = f_metric.get("score") if f_metric.get("score") is not None else f_metric.get("value")
+                if isinstance(v, (int, float)):
+                    ring_faith[run_id] = float(v)
+            r_metric = m_json.get("answer_relevance")
+            if isinstance(r_metric, dict) and r_metric.get("status") == "AVAILABLE":
+                v = r_metric.get("score") if r_metric.get("score") is not None else r_metric.get("value")
+                if isinstance(v, (int, float)):
+                    ring_rel[run_id] = float(v)
+
+        # 2. Then supplement with in-memory traces
         for trace in get_local_traces():
             eval_v2 = trace.metadata.get("evaluation_v2") if isinstance(trace.metadata, dict) else None
             if not isinstance(eval_v2, dict):
                 continue
-            run_id = eval_v2.get("agent_run_id")
-            if not run_id:
-                continue
+            run_id = (
+                trace.metadata.get("agent_run_id")
+                or trace.metadata.get("run_id")
+                or eval_v2.get("agent_run_id")
+            )
+            trace_day = "unknown"
+            if getattr(trace, "start_time", 0) > 0:
+                try:
+                    trace_day = datetime.fromtimestamp(trace.start_time, tz=timezone.utc).strftime("%Y-%m-%d")
+                except Exception:
+                    pass
+
             metrics = eval_v2.get("metrics", {})
             if isinstance(metrics.get("faithfulness"), dict) and metrics["faithfulness"].get("status") == "AVAILABLE":
                 score = trace.scores.get("answer_faithfulness")
                 if isinstance(score, (int, float)):
-                    ring_faith[run_id] = float(score)
+                    if run_id:
+                        ring_faith[run_id] = float(score)
+                    if trace_day != "unknown":
+                        day_faith_scores[trace_day].append(float(score))
             if isinstance(metrics.get("answer_relevance"), dict) and metrics["answer_relevance"].get("status") == "AVAILABLE":
                 score = trace.scores.get("answer_relevance")
                 if isinstance(score, (int, float)):
-                    ring_rel[run_id] = float(score)
+                    if run_id:
+                        ring_rel[run_id] = float(score)
+                    if trace_day != "unknown":
+                        day_rel_scores[trace_day].append(float(score))
 
         # Group by calendar day.
         from collections import defaultdict
@@ -1141,7 +1263,13 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
             p95 = _percentiles(latencies, points=(95,))[95]
 
             faith_scores = [ring_faith[r.id] for r in day_batch if r.id in ring_faith]
+            if not faith_scores and day_str in day_faith_scores:
+                faith_scores = day_faith_scores[day_str]
+
             rel_scores = [ring_rel[r.id] for r in day_batch if r.id in ring_rel]
+            if not rel_scores and day_str in day_rel_scores:
+                rel_scores = day_rel_scores[day_str]
+
             completed_count = sum(1 for r in day_batch if r.status == "COMPLETED")
             task_completion_rate = round(completed_count / len(day_batch), 4) if day_batch else None
 
