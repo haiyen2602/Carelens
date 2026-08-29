@@ -38,6 +38,8 @@ import {
   Cell,
   PieChart,
   Pie,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -552,6 +554,89 @@ function HorizontalBarChart({
   );
 }
 
+function CostTimelineChart({
+  timeline,
+  models,
+  title,
+}: {
+  timeline: Array<{ timestamp: string; [model: string]: number | string }>;
+  models: string[];
+  title: string;
+}) {
+  if (!timeline || timeline.length === 0 || !models || models.length === 0) {
+    return (
+      <div className="surface-card p-4 text-sm text-muted-foreground">
+        Không có dữ liệu chuỗi thời gian chi phí cho bộ lọc hiện tại.
+      </div>
+    );
+  }
+
+  const formatTimeTick = (ts: string) => {
+    if (!ts) return "";
+    if (ts.includes(" ")) {
+      const [datePart, timePart] = ts.split(" ");
+      const [, m, d] = datePart.split("-");
+      return `${timePart} ${d}/${m}`;
+    }
+    const [, m, d] = ts.split("-");
+    return `${d}/${m}`;
+  };
+
+  return (
+    <div className="surface-card p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold">{title}</p>
+        <span className="text-xs text-muted-foreground">
+          Trục hoành: Thời gian | Trục tung: Giá tiền ($ USD)
+        </span>
+      </div>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={timeline} margin={{ left: 16, right: 24, top: 10, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
+            <XAxis
+              dataKey="timestamp"
+              fontSize={11}
+              stroke="var(--muted-foreground)"
+              tickFormatter={formatTimeTick}
+            />
+            <YAxis
+              type="number"
+              fontSize={11}
+              stroke="var(--muted-foreground)"
+              tickFormatter={(v) => `$${Number(v).toFixed(4)}`}
+            />
+            <Tooltip
+              formatter={(v, name) => [`$${Number(v ?? 0).toFixed(4)}`, name]}
+              labelFormatter={(label) => `Thời gian: ${label}`}
+              contentStyle={{
+                fontSize: "12px",
+                borderRadius: "8px",
+                backgroundColor: "var(--background)",
+                borderColor: "var(--border)",
+                color: "var(--foreground)",
+              }}
+            />
+            <Legend iconType="circle" iconSize={8} />
+            {models.map((modelName, idx) => (
+              <Line
+                key={modelName}
+                type="monotone"
+                dataKey={modelName}
+                name={modelName}
+                stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
@@ -946,11 +1031,8 @@ function PerformanceTab({ data }: { data: PerformanceOut }) {
 function CostTab({ data }: { data: CostOut }) {
   if (!data.available) return <UnavailableState reason={data.reason} />;
 
-  const modelBarData = data.by_model_usd
-    ? Object.entries(data.by_model_usd)
-      .map(([label, value]) => ({ label, value }))
-      .sort((a, b) => b.value - a.value)
-    : [];
+  const models = data.models ?? (data.by_model_usd ? Object.keys(data.by_model_usd) : []);
+  const timeline = data.timeline ?? [];
 
   return (
     <div className="space-y-6">
@@ -965,13 +1047,11 @@ function CostTab({ data }: { data: CostOut }) {
         <MetricCard label="Lượng Token / lượt yêu cầu" metric={data.tokens_per_query} />
       </div>
 
-      {modelBarData.length > 0 && (
-        <HorizontalBarChart
-          data={modelBarData}
-          title="Phân bổ chi phí theo Model AI (USD)"
-          valueFormatter={(v) => `$${v.toFixed(4)}`}
-        />
-      )}
+      <CostTimelineChart
+        timeline={timeline}
+        models={models}
+        title="Phân bổ chi phí theo Model AI (USD)"
+      />
     </div>
   );
 }

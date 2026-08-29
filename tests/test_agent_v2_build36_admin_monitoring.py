@@ -346,7 +346,7 @@ def test_performance_metrics_per_step_uses_real_spans(db):
 
 
 def test_cost_metrics_agent_and_judge_cost_are_separate_axes(db):
-    _run(db, "run-1", total_cost_usd=0.01, cost_status="AVAILABLE")
+    _run(db, "run-1", total_cost_usd=0.01, cost_status="AVAILABLE", model="gpt-4o")
     db.add(AgentRunJudge(
         id="j1", agent_run_id="run-1", trace_id="t1", judge_status="JUDGE_COMPLETED",
         eligibility_reason="RANDOM_SAMPLE", priority=4, judge_provider="openai", judge_model="gpt-4o",
@@ -358,6 +358,35 @@ def test_cost_metrics_agent_and_judge_cost_are_separate_axes(db):
     assert result["agent_cost_usd"]["value"] == 0.01
     assert result["judge_cost_usd"]["value"] == 0.002
     assert result["total_cost_usd"]["value"] == pytest.approx(0.012)
+    assert "timeline" in result
+    assert len(result["timeline"]) == 1
+    assert result["models"] == ["gpt-4o"]
+    assert result["timeline"][0]["gpt-4o"] == 0.01
+
+
+def test_cost_metrics_timeline_aggregation_hourly_and_daily(db):
+    now = datetime(2026, 8, 29, 10, 0, 0, tzinfo=UTC)
+    _run(db, "run-1", total_cost_usd=0.005, cost_status="AVAILABLE", model="gpt-4o", started_at=now)
+    _run(db, "run-2", total_cost_usd=0.003, cost_status="AVAILABLE", model="claude-3-5-sonnet", started_at=now + timedelta(hours=1))
+    _run(db, "run-3", total_cost_usd=0.002, cost_status="AVAILABLE", model="gpt-4o", started_at=now + timedelta(days=3))
+    db.commit()
+
+    # Query with short date filter (<= 48h) -> hourly format
+    result_hourly = cost_metrics(db, MonitoringFilters(date_from=now, date_to=now + timedelta(hours=2)))
+    assert len(result_hourly["timeline"]) == 2
+    assert result_hourly["timeline"][0]["timestamp"] == "2026-08-29 10:00"
+    assert result_hourly["timeline"][0]["gpt-4o"] == 0.005
+    assert result_hourly["timeline"][1]["timestamp"] == "2026-08-29 11:00"
+    assert result_hourly["timeline"][1]["claude-3-5-sonnet"] == 0.003
+
+    # Query with long date filter (> 48h) -> daily format
+    result_daily = cost_metrics(db, MonitoringFilters(date_from=now, date_to=now + timedelta(days=5)))
+    assert len(result_daily["timeline"]) == 2
+    assert result_daily["timeline"][0]["timestamp"] == "2026-08-29"
+    assert result_daily["timeline"][0]["gpt-4o"] == 0.005
+    assert result_daily["timeline"][0]["claude-3-5-sonnet"] == 0.003
+    assert result_daily["timeline"][1]["timestamp"] == "2026-09-01"
+    assert result_daily["timeline"][1]["gpt-4o"] == 0.002
 
 
 def test_cost_metrics_unavailable_pricing_is_not_available_not_zero(db):
