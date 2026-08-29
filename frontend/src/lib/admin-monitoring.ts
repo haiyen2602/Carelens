@@ -155,6 +155,8 @@ export type CostOut = {
   tokens_per_query?: MetricValue;
   cost_per_query_usd?: MetricValue;
   by_model_usd?: Record<string, number>;
+  timeline?: Array<{ timestamp: string; [model: string]: number | string }>;
+  models?: string[];
 };
 
 export type ErrorsOut = {

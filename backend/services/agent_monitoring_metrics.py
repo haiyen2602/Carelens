@@ -482,17 +482,51 @@ def cost_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
         total_tokens = sum(int(r.total_tokens or 0) for r in agent_rows)
         query_count = _count(db, base)
 
-        # Breakdown by model (Agent cost only -- Judge cost is a separate
+        # Breakdown by model and time series (Agent cost only -- Judge cost is a separate
         # axis with its own model, tracked in the judge section, not mixed
         # into this per-agent-model breakdown).
         model_rows = db.execute(
             base.where(AgentRun.cost_status == "AVAILABLE")
-            .with_only_columns(AgentRun.model, AgentRun.total_cost_usd)
+            .with_only_columns(AgentRun.model, AgentRun.total_cost_usd, AgentRun.started_at)
+            .order_by(AgentRun.started_at.asc())
         ).all()
         by_model: dict[str, float] = {}
+        models_set: list[str] = []
+
+        min_time = filters.date_from
+        max_time = filters.date_to
+        if not min_time and model_rows:
+            min_time = model_rows[0].started_at
+        if not max_time and model_rows:
+            max_time = model_rows[-1].started_at
+
+        use_hourly = False
+        if min_time and max_time:
+            delta = max_time - min_time
+            if delta.total_seconds() <= 48 * 3600:
+                use_hourly = True
+
+        timeline_buckets: dict[str, dict[str, float]] = {}
+
         for r in model_rows:
             key = r.model or "unknown"
-            by_model[key] = round(by_model.get(key, 0.0) + float(r.total_cost_usd or 0.0), 4)
+            if key not in models_set:
+                models_set.append(key)
+            cost_val = float(r.total_cost_usd or 0.0)
+            by_model[key] = round(by_model.get(key, 0.0) + cost_val, 4)
+
+            if r.started_at:
+                ts_str = r.started_at.strftime("%Y-%m-%d %H:00" if use_hourly else "%Y-%m-%d")
+                if ts_str not in timeline_buckets:
+                    timeline_buckets[ts_str] = {}
+                timeline_buckets[ts_str][key] = round(timeline_buckets[ts_str].get(key, 0.0) + cost_val, 4)
+
+        timeline = []
+        for ts_key in sorted(timeline_buckets.keys()):
+            entry: dict[str, Any] = {"timestamp": ts_key}
+            for m in models_set:
+                entry[m] = timeline_buckets[ts_key].get(m, 0.0)
+            timeline.append(entry)
 
         return {
             "available": True,
@@ -508,6 +542,8 @@ def cost_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             "tokens_per_query": _average([float(r.total_tokens or 0) for r in agent_rows]) if agent_rows else _average([]),
             "cost_per_query_usd": {"value": round(agent_cost / query_count, 6) if query_count and agent_rows else None, "status": "AVAILABLE" if agent_rows and query_count else "NOT_APPLICABLE"},
             "by_model_usd": by_model,
+            "timeline": timeline,
+            "models": models_set,
         }
     except Exception as exc:  # noqa: BLE001
         return {"available": False, "reason": str(exc)}
