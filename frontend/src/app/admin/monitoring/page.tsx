@@ -904,57 +904,45 @@ function OverviewTab({
         )}
       </div>
 
-      {/* Header section tagline */}
-      <div className="flex items-center justify-between pb-1">
-        <div>
-          <span className="text-[11px] font-bold tracking-widest text-emerald-600 uppercase">
-            02 · What to measure
-          </span>
-          <h2 className="text-xl font-bold tracking-tight text-foreground mt-0.5">
-            Measure by failure mode, not by checklist
-          </h2>
-        </div>
-      </div>
-
-      {/* 6 Core Failure Mode KPI Cards */}
+      {/* 6 Thẻ chỉ số đo lường chính (Agent Evaluation KPIs) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <AgentEvaluationCard
-          title="Task Completion"
-          subtitle="Did the agent reach the goal?"
+          title="Tỷ lệ hoàn thành tác vụ"
+          subtitle="Agent có đạt được mục tiêu yêu cầu không?"
           metric={data.task_completion ?? data.success_rate}
           percent
           thresholdKey="success_rate"
         />
         <AgentEvaluationCard
-          title="Tool Correctness"
-          subtitle="Right tool, right arguments, right order?"
+          title="Độ chính xác công cụ"
+          subtitle="Đúng công cụ, đúng tham số, đúng thứ tự?"
           metric={data.tool_correctness}
           percent
           colorScheme="emerald"
         />
         <AgentEvaluationCard
-          title="Contextual Precision"
-          subtitle="Is the relevant chunk ranked high?"
+          title="Độ chuẩn xác ngữ cảnh"
+          subtitle="Đoạn văn bản truy xuất liên quan có xếp thứ hạng cao không?"
           metric={data.contextual_precision}
           percent
           colorScheme="rose"
         />
         <AgentEvaluationCard
-          title="Faithfulness"
-          subtitle="Is the answer grounded in what it fetched?"
+          title="Độ trung thực"
+          subtitle="Câu trả lời có bám sát ngữ cảnh đã truy xuất không?"
           metric={data.faithfulness}
           percent
           colorScheme="emerald"
         />
         <AgentEvaluationCard
-          title="Latency / task"
-          subtitle="End to end, every tool call included"
+          title="Độ trễ / tác vụ"
+          subtitle="Toàn bộ quy trình từ đầu đến cuối, gồm mọi lượt gọi công cụ"
           valueOverride={latencyDisplay}
           colorScheme="sky"
         />
         <AgentEvaluationCard
-          title="Cost / task"
-          subtitle="Total tokens × price across the run"
+          title="Chi phí / tác vụ"
+          subtitle="Tổng token × đơn giá trong suốt phiên xử lý"
           valueOverride={costDisplay}
           colorScheme="amber"
         />
