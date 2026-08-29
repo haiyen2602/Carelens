@@ -222,6 +222,51 @@ def overview_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             safety_trigger_rate = {"value": None, "numerator": 0, "denominator": 0, "sample_count": 0, "status": "NOT_AVAILABLE"}
             handoff_rate = {"value": None, "numerator": 0, "denominator": 0, "sample_count": 0, "status": "NOT_AVAILABLE"}
 
+        # 6 core failure-mode evaluation metrics
+        # 1. Task completion: COMPLETED runs rate
+        task_completion = _rate(success, total)
+        
+        # 2. Tool correctness: completed runs across tool execution paths
+        tool_runs_stmt = (
+            select(AgentRun)
+            .join(AgentRunEvaluation, AgentRunEvaluation.agent_run_id == AgentRun.id)
+            .where(
+                AgentRunEvaluation.execution_path.in_([
+                    "DETERMINISTIC_TOOL",
+                    "DETERMINISTIC_SCHEDULE",
+                    "DRUG_LOOKUP",
+                    "MEDICATION_DOSE_SAFETY",
+                ])
+            )
+            .where(AgentRun.id.in_(select(base.subquery().c.id)))
+        )
+        tool_total = _count(db, tool_runs_stmt)
+        tool_success = _count(db, tool_runs_stmt.where(AgentRun.status == "COMPLETED"))
+        tool_correctness = _rate(tool_success, tool_total)
+
+        # 3. Contextual precision & 4. Faithfulness from quality / heuristic
+        heuristic = _heuristic_quality_scores()
+        faithfulness = {**heuristic["faithfulness"], "metric_type": "HEURISTIC"}
+        
+        # Contextual precision: Precision@10 or proxy based on successful RAG grounding
+        rag_stmt = (
+            select(AgentRunEvaluation)
+            .where(AgentRunEvaluation.execution_path == "RAG")
+            .where(AgentRunEvaluation.agent_run_id.in_(select(base.subquery().c.id)))
+        )
+        rag_total = _count(db, rag_stmt)
+        # RAG runs that completed without grounding failure
+        rag_accurate = _count(
+            db,
+            select(AgentRun)
+            .join(AgentRunEvaluation, AgentRunEvaluation.agent_run_id == AgentRun.id)
+            .where(AgentRunEvaluation.execution_path == "RAG")
+            .where(AgentRun.error_code != "GROUNDING_FAILURE")
+            .where(AgentRun.status == "COMPLETED")
+            .where(AgentRun.id.in_(select(base.subquery().c.id)))
+        )
+        contextual_precision = _rate(rag_accurate, rag_total) if rag_total > 0 else _rate(0, 0)
+
         return {
             "available": True,
             "total_requests": total,
@@ -242,6 +287,11 @@ def overview_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]:
             "safety_trigger_rate": safety_trigger_rate,
             "handoff_rate": handoff_rate,
             "judged_rate": _rate(judged, total),
+            # New failure mode metrics
+            "task_completion": task_completion,
+            "tool_correctness": tool_correctness,
+            "contextual_precision": contextual_precision,
+            "faithfulness": faithfulness,
         }
     except Exception as exc:  # noqa: BLE001 -- one section's failure degrades that section, never the whole dashboard
         return {"available": False, "reason": str(exc)}
@@ -1036,6 +1086,7 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
                 AgentRun.id,
                 AgentRun.started_at,
                 AgentRun.duration_ms,
+                AgentRun.status,
             )
         ).all()
 
@@ -1091,11 +1142,15 @@ def trend_metrics(db: Session, filters: MonitoringFilters, *, days: int = 7) -> 
 
             faith_scores = [ring_faith[r.id] for r in day_batch if r.id in ring_faith]
             rel_scores = [ring_rel[r.id] for r in day_batch if r.id in ring_rel]
+            completed_count = sum(1 for r in day_batch if r.status == "COMPLETED")
+            task_completion_rate = round(completed_count / len(day_batch), 4) if day_batch else None
 
             trend.append({
                 "date": day_str,
                 "requests": len(day_batch),
                 "p95_latency_ms": p95["value"],
+                "task_completion": task_completion_rate,
+                "task_completion_n": len(day_batch),
                 "faithfulness": round(sum(faith_scores) / len(faith_scores), 4) if faith_scores else None,
                 "faithfulness_n": len(faith_scores),
                 "relevance": round(sum(rel_scores) / len(rel_scores), 4) if rel_scores else None,
