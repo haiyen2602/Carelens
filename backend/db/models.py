@@ -1141,6 +1141,18 @@ class AgentRun(Base):
     # column existed -- never backfilled/guessed.
     prompt_version: Mapped[str | None] = mapped_column(String, nullable=True)
     retrieval_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    # BUILD-47: this run's follow-up classification (backend.agents.v2.
+    # follow_up.FollowUpDecision), stamped by the same
+    # `_persist_durable_trace` write point as everything above it. NULL --
+    # never a fabricated category -- for every turn that structurally never
+    # reaches the classifier (schedule/safety/out-of-scope/doctor-review, and
+    # any turn already resolved by a suggested-action button). Written for
+    # direct SQL analysis of how often conversation context is inherited
+    # versus lost; no admin endpoint reads these yet, by design.
+    follow_up_category: Mapped[str | None] = mapped_column(String, nullable=True)
+    follow_up_reason_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    follow_up_inherited_topic: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    follow_up_inherited_entity: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     __table_args__ = (
         Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
@@ -1150,6 +1162,7 @@ class AgentRun(Base):
         Index("ix_agent_run_error_code_created", "error_code", "created_at"),
         Index("ix_agent_run_prompt_version", "prompt_version"),
         Index("ix_agent_run_retrieval_version", "retrieval_version"),
+        Index("ix_agent_run_follow_up_category_created", "follow_up_category", "created_at"),
     )
 
 

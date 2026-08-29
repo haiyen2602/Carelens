@@ -75,6 +75,27 @@ class SuggestedAction:
         return value
 
 
+# BUILD-48: marks a `drug_followup` that offers ONE CANDIDATE PRODUCT to pick
+# from an ambiguous search, rather than an ASPECT of an already-resolved drug.
+# Both share the `drug_followup` type and can both carry `value="drug_uses"`,
+# so `value` cannot tell them apart -- and confusing them would be harmful:
+# an aspect action's label is templated ("Tác dụng phụ của X"), so promoting
+# it as an entity would store that whole phrase as the drug's name. The
+# action_id is server-issued and re-validated against `offered_actions` on
+# every turn, so it is a safe discriminator; raw client input can never forge
+# one that was not offered.
+DRUG_CANDIDATE_ACTION_PREFIX = "drug-candidate-"
+
+
+def is_drug_candidate_action(action: SuggestedAction | None) -> bool:
+    return (
+        action is not None
+        and action.type == "drug_followup"
+        and bool(action.entity_id)
+        and action.action_id.startswith(DRUG_CANDIDATE_ACTION_PREFIX)
+    )
+
+
 def is_allowed_action(action: SuggestedAction) -> bool:
     """Validate the user-safe action vocabulary independently of client input."""
     if action.type == "topic_followup":
@@ -247,6 +268,17 @@ def resolve_state_input(
     if action.type == "drug_followup" and state.active_entity and action.entity_id == state.active_entity.id:
         return StateInputResolution(
             query=f"{action.label} của thuốc {state.active_entity.canonical_name}", selected_action=action, used=True
+        )
+    if is_drug_candidate_action(action):
+        # BUILD-48: picking one product out of an ambiguous search result.
+        # Checked AFTER the aspect branch above so the existing flow (an
+        # action bound to the CURRENT entity) is untouched. `active_entity`
+        # is normally None here -- that ambiguity is precisely why a list was
+        # offered. The label is the server-issued product name, so phrasing
+        # it this way keeps the router classifying this as a drug-information
+        # question rather than an unrecognized fragment.
+        return StateInputResolution(
+            query=f"Công dụng của thuốc {action.label}", selected_action=action, used=True
         )
     return StateInputResolution(query=message)
 

@@ -517,7 +517,16 @@ _ALLOWED_ATTRIBUTE_KEYS = frozenset(
         "error_code",
         "estimated_cost_usd",
         "final_router_intent",
+        # BUILD-47: the follow-up classifier's own decision (BUILD-43,
+        # emitted as `agent_context_resolution.completed`). These were
+        # emitted from day one but never allowlisted, so every one was
+        # dropped here before reaching any sink -- the decision was
+        # unmeasurable in logs and in the DB alike.
+        "follow_up_category",
+        "follow_up_reason_code",
         "handoff_outcome",
+        "inherited_entity",
+        "inherited_topic",
         "input_tokens",
         "latency_ms",
         "model",
@@ -558,7 +567,7 @@ def _sanitize_attributes(values: dict[str, Any]) -> dict[str, str | int | float 
             safe[key] = value
         elif key == "provenance" and isinstance(value, str) and _SAFE_PROVENANCE.fullmatch(value):
             safe[key] = value
-        elif key in {"final_router_intent", "resolution_status"} and isinstance(value, str) and _SAFE_CODE.fullmatch(value):
+        elif key in {"final_router_intent", "resolution_status", "follow_up_category", "follow_up_reason_code"} and isinstance(value, str) and _SAFE_CODE.fullmatch(value):
             safe[key] = value
         elif key == "resolved_topic" and isinstance(value, str):
             safe[key] = value[:80]

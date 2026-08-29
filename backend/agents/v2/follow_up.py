@@ -74,6 +74,15 @@ _DEICTIC_MARKERS = (
     "con", "thi sao", "the nao", "vay", "no", "cua no",
     "cai nay", "cai do", "cai kia", "benh nay", "thuoc nay",
     "loai nay", "loai kia", "loai do",
+    # BUILD-48 round 2: explicit BACK-REFERENCES to an earlier turn ("bệnh mà
+    # mình vừa nói với bạn ý", "thuốc mình vừa đưa cho bạn"). These are
+    # anaphora in the plainest sense -- they point AT the prior subject, so
+    # they can never introduce a new one -- but "vừa"/"nãy" survived
+    # stripping, so the residue read as a brand-new named subject and wiped
+    # the very thing being referred back to.
+    "vua noi", "vua dua", "vua hoi", "vua nhac", "vua ke", "vua gui",
+    "vua roi", "vua xong", "luc nay", "ban nay", "hoi nay",
+    "o tren", "ben tren", "luot truoc", "truoc do",
 )
 
 # Fragment-only words: unlike the compound "loại này/kia/đó" forms above
@@ -103,6 +112,17 @@ _ATTRIBUTE_KEYWORDS = (
     "kham ngay", "cap cuu", "thanh phan", "di vien", "nang khong", "tranh",
     "do dau", "tai sao", "truoc an", "sau an", "uong truoc", "uong sau",
     "thong tin chi tiet thuoc", "thong tin chi tiet", "thong tin thuoc",
+    # BUILD-48: the BARE forms. Only the compounds above were listed, so
+    # "tác dụng của thuốc" / "cho mình xin thông tin" kept a residue that
+    # Case 2 then read as a brand-new subject. Stripping is longest-first
+    # (see _strip_evidence_markers), so "tac dung phu" and "thong tin
+    # thuoc" still win over these -- adding them changes no existing match.
+    "tac dung", "thong tin",
+    # BUILD-48 round 2: "né tránh" is an everyday synonym of the "phòng
+    # tránh" already listed. Only the latter was, so "cách né tránh" left the
+    # bare "ne" behind and switched topic mid-conversation (real session,
+    # 21:20:24).
+    "ne tranh",
 )
 
 # Question particles / fillers / pure function words with no subject content
@@ -119,6 +139,33 @@ _QUESTION_PARTICLES = (
 )
 
 _PRONOUN_ONLY_WORDS = frozenset({"no", "do", "nay", "kia", "cai nay", "cai do", "cai kia"})
+
+# BUILD-48: words that can never BE the subject of a medical question --
+# polite-request framing ("cho mình", "giúp mình", "bạn ơi") and the generic
+# category nouns "thuốc"/"bệnh", which name a CLASS, never a product or a
+# condition. Real evidence: "cho mình thông tin thuốc" left the residue "cho
+# minh", and "tác dụng phụ của thuốc là gì" left the single word "thuoc";
+# Case 2 read each as a new named subject and returned TOPIC_SWITCH, which
+# made the route wipe the drug actually under discussion.
+#
+# Deliberately NOT merged into _QUESTION_PARTICLES: that set is *subtracted*
+# from the remainder token by token, so adding these there would erode real
+# names. "chó cắn" folds to "cho can" and "can" is already a particle, so
+# "cho" as a particle would erase the subject outright. This set is only ever
+# READ (see _has_named_subject) -- the remainder is judged subject-less when
+# EVERY surviving token is one of these, so a real name anywhere in the
+# message always survives.
+_NON_SUBJECT_WORDS = frozenset(
+    {
+        "cho", "minh", "toi", "ban", "em", "giup", "xem", "voi", "oi",
+        "xin", "gui", "noi", "vui", "long", "them",
+        "thuoc", "benh",
+        # BUILD-48 round 2: leftovers of a back-reference once its compound
+        # marker above is stripped ("bệnh mà mình VỪA nói với bạn Ý" ->
+        # "benh minh voi ban y"), plus the bare classifier "cái".
+        "vua", "y", "cai",
+    }
+)
 
 
 def _ascii_fold(value: str) -> str:
@@ -356,6 +403,19 @@ def _strip_evidence_markers(folded: str) -> str:
     return " ".join(tokens)
 
 
+def _has_named_subject(remainder: str) -> bool:
+    """True only when the residue contains a token that could BE a subject.
+
+    BUILD-48: previously this was ``len(remainder) >= 2``, which counted pure
+    request framing ("cho minh") and the generic noun "thuoc" as a named
+    subject. All-or-nothing by design: a single non-filler token is enough to
+    keep the message self-sufficient, so "cho toi thong tin thuoc
+    Paracetamol" still names Paracetamol and still switches topic.
+    """
+    tokens = remainder.split()
+    return any(token not in _NON_SUBJECT_WORDS for token in tokens)
+
+
 def _mentions(folded_haystack: str, needle: str | None) -> bool:
     if not needle:
         return False
@@ -393,7 +453,7 @@ def classify_follow_up(
     explicit_topic = _explicit_topic(message)
     has_deictic = _has_deictic_marker(folded)
     remainder = _strip_evidence_markers(folded)
-    has_named_subject = bool(explicit_topic) or len(remainder) >= 2
+    has_named_subject = bool(explicit_topic) or _has_named_subject(remainder)
 
     # Case 1: the message names its own explicit disease/topic subject.
     if explicit_topic is not None:
@@ -406,6 +466,18 @@ def classify_follow_up(
             return FollowUpDecision(
                 FollowUpCategory.STANDALONE_QUESTION, True, False,
                 FollowUpReasonCode.EXPLICIT_TOPIC_MATCHES_PRIOR, "display_topic_pattern",
+            )
+        # BUILD-48: the prior context may be a drug ENTITY rather than a
+        # topic, and this branch only ever compared against ``prior_topic``
+        # -- so naming the very drug under discussion in an explicit-topic
+        # shape ("An Cung Ngưu Hoàng có nguy hiểm không?") was read as
+        # switching AWAY from it, and the route wiped it. Case 2 below has
+        # always checked both; this mirrors that check rather than inventing
+        # a second notion of "same subject".
+        if _mentions(folded, prior_entity_name):
+            return FollowUpDecision(
+                FollowUpCategory.STANDALONE_QUESTION, False, True,
+                FollowUpReasonCode.NAMED_SUBJECT_MATCHES_PRIOR_ENTITY, "display_topic_pattern",
             )
         return FollowUpDecision(
             FollowUpCategory.TOPIC_SWITCH, False, False,
