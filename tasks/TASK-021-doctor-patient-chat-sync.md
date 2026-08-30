@@ -3,7 +3,7 @@
 **Domain:** `conversation`, `notification`
 **Owner:** Unassigned + AI
 **Sprint:** Unplanned hotfix (không sửa retrospective Sprint 02 đã kết thúc)
-**Status:** In Progress
+**Status:** In Review
 
 ## Mục tiêu (Goal)
 

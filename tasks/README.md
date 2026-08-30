@@ -22,7 +22,7 @@
 
 | Task | Tên | Domain | Owner | Ưu tiên | Status |
 |---|---|---|---|---|---|
-| [`TASK-021`](./TASK-021-doctor-patient-chat-sync.md) | Đồng bộ hội thoại bác sĩ - bệnh nhân | `conversation`, `notification` | Unassigned + AI | **P0** | 🔄 In Progress |
+| [`TASK-021`](./TASK-021-doctor-patient-chat-sync.md) | Đồng bộ hội thoại bác sĩ - bệnh nhân | `conversation`, `notification` | Unassigned + AI | **P0** | 🔎 In Review |
 
 > Sprint 01 diễn ra **trước khi** repo có `/tasks` nên không có file task — xem [`sprint-01.md`](../planning/sprints/sprint-01.md).
 
