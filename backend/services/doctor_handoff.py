@@ -44,6 +44,9 @@ class MessageSenderRole(StrEnum):
     SYSTEM = "SYSTEM"
 
 
+DOCTOR_CONVERSATION_STOP_MESSAGE = "Bác sĩ xin dừng cuộc trò chuyện tại đây"
+
+
 class VerifiedContextSource(StrEnum):
     SAFETY_DOMAIN = "SAFETY_DOMAIN"
     OPERATIONAL_DB = "OPERATIONAL_DB"
@@ -321,6 +324,55 @@ def resolve_doctor_review_request(
     request.status = HandoffStatus.RESOLVED
     request.resolved_at = resolved_at
     request.resolved_by_doctor_id = doctor_id
+    record_doctor_review_message(
+        db,
+        handoff_id=request.id,
+        patient_id=request.patient_id,
+        sender_role=MessageSenderRole.SYSTEM,
+        actor_id=doctor_id,
+        content=DOCTOR_CONVERSATION_STOP_MESSAGE,
+        created_at=resolved_at,
+    )
+    db.flush()
+    return request
+
+
+def stop_active_doctor_review_request(
+    db: Session,
+    *,
+    request_id: str,
+    stopped_at: datetime,
+    patient_id: str | None = None,
+) -> DoctorReviewRequest:
+    """Stop an ACTIVE handoff for its patient or the timeout worker.
+
+    The row lock makes the state transition and the one terminal SYSTEM message
+    atomic. A retry after a successful stop returns the already-resolved row
+    without producing another message.
+    """
+    stopped_at = _utc(stopped_at)
+    request = db.execute(
+        select(DoctorReviewRequest).where(DoctorReviewRequest.id == request_id).with_for_update()
+    ).scalar_one_or_none()
+    if request is None:
+        raise HandoffNotFoundError("doctor handoff was not found")
+    if patient_id is not None and request.patient_id != patient_id:
+        raise DoctorAuthorizationError("patient does not own this handoff")
+    if request.status == HandoffStatus.RESOLVED:
+        return request
+    if request.status != HandoffStatus.ACTIVE:
+        raise InvalidHandoffTransitionError("only active handoffs can be stopped")
+    request.status = HandoffStatus.RESOLVED
+    request.resolved_at = stopped_at
+    record_doctor_review_message(
+        db,
+        handoff_id=request.id,
+        patient_id=request.patient_id,
+        sender_role=MessageSenderRole.SYSTEM,
+        actor_id=None,
+        content=DOCTOR_CONVERSATION_STOP_MESSAGE,
+        created_at=stopped_at,
+    )
     db.flush()
     return request
 
@@ -488,10 +540,12 @@ __all__ = [
     "cancel_doctor_review_request",
     "claim_doctor_review_request",
     "create_doctor_review_request",
+    "DOCTOR_CONVERSATION_STOP_MESSAGE",
     "get_active_takeover",
     "list_doctor_review_messages",
     "record_doctor_review_message",
     "resolve_approved_doctor",
     "resolve_doctor_review_request",
     "send_active_doctor_message",
+    "stop_active_doctor_review_request",
 ]

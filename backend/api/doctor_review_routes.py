@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.agents.tools.chat_history_tool import get_chat_history_for_display
 from backend.agents.v2.answerability import handoff_type_for
 from backend.api.security import CurrentUser, get_current_user, require_role
 from backend.db.base import get_db
@@ -48,6 +49,7 @@ from backend.services.doctor_handoff import (
     list_doctor_review_messages,
     resolve_doctor_review_request,
     send_active_doctor_message,
+    stop_active_doctor_review_request,
 )
 
 doctor_review_router = APIRouter(prefix="/doctor/reviews", tags=["doctor-review"])
@@ -93,6 +95,7 @@ def _queue_item(db: Session, row: DoctorReviewRequest) -> DoctorReviewQueueItemO
 
 def _detail(db: Session, row: DoctorReviewRequest) -> DoctorReviewDetailOut:
     messages = list_doctor_review_messages(db, handoff_id=row.id)
+    chat_history = get_chat_history_for_display(db, row.patient_id)
     return DoctorReviewDetailOut(
         handoff_id=row.id,
         patient_id=row.patient_id,
@@ -115,6 +118,7 @@ def _detail(db: Session, row: DoctorReviewRequest) -> DoctorReviewDetailOut:
             )
             for m in messages
         ],
+        chat_history=chat_history,
     )
 
 
@@ -270,13 +274,17 @@ def get_handoff_status(
     row = get_active_takeover(db, patient_id=resolved_patient_id)
     if row is None:
         return PatientHandoffStatusOut(has_active_handoff=False)
-    messages = db.execute(
+    return _patient_handoff_detail(db, row)
+
+
+def _patient_handoff_detail(db: Session, row: DoctorReviewRequest) -> PatientHandoffStatusOut:
+    row_messages = db.execute(
         select(DoctorReviewMessage)
         .where(DoctorReviewMessage.handoff_id == row.id)
         .order_by(DoctorReviewMessage.created_at, DoctorReviewMessage.id)
     ).scalars().all()
     return PatientHandoffStatusOut(
-        has_active_handoff=True,
+        has_active_handoff=row.status == HandoffStatus.ACTIVE,
         handoff_id=row.id,
         handoff_type=_handoff_type(row),
         status=row.status,
@@ -286,12 +294,36 @@ def get_handoff_status(
             DoctorReviewMessageOut(
                 id=m.id, sender_role=m.sender_role, actor_id=m.actor_id, content=m.content, created_at=m.created_at
             )
-            for m in messages
-            # Patients see PATIENT/DOCTOR messages, never a raw SYSTEM
-            # bookkeeping row if one is ever added later.
-            if m.sender_role in ("PATIENT", "DOCTOR")
+            for m in row_messages
+            if m.sender_role in ("PATIENT", "DOCTOR", "SYSTEM")
         ],
     )
+
+
+@patient_handoff_router.get("/agent/v2/handoffs/{handoff_id}", response_model=PatientHandoffStatusOut)
+def get_patient_handoff_detail(
+    handoff_id: str, db: Session = Depends(get_db), actor: CurrentUser = Depends(get_current_user)
+) -> PatientHandoffStatusOut:
+    row = _get_or_404(db, handoff_id)
+    require_agent_patient_access(db, actor, row.patient_id)
+    return _patient_handoff_detail(db, row)
+
+
+@patient_handoff_router.post("/agent/v2/handoffs/{handoff_id}/stop", response_model=PatientHandoffStatusOut)
+def stop_patient_handoff(
+    handoff_id: str, db: Session = Depends(get_db), actor: CurrentUser = Depends(get_current_user)
+) -> PatientHandoffStatusOut:
+    row = _get_or_404(db, handoff_id)
+    patient_id = require_agent_patient_access(db, actor, row.patient_id)
+    try:
+        row = stop_active_doctor_review_request(
+            db, request_id=handoff_id, patient_id=patient_id, stopped_at=datetime.now(UTC)
+        )
+        db.commit()
+    except DoctorHandoffError as exc:
+        db.rollback()
+        raise _map_domain_error(exc) from exc
+    return _patient_handoff_detail(db, row)
 
 
 __all__ = ["doctor_review_router", "patient_handoff_router"]

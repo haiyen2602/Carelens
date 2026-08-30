@@ -32,6 +32,7 @@ export type DoctorReviewMessage = {
 export type DoctorReviewDetail = DoctorReviewQueueItem & {
   resolvedByDoctorId: string | null;
   messages: DoctorReviewMessage[];
+  chatHistory: Array<{ id: string; role: string; content: string; createdAt: string }>;
 };
 
 type QueueItemApi = {
@@ -62,6 +63,7 @@ type MessageApi = {
 type DetailApi = QueueItemApi & {
   resolved_by_doctor_id: string | null;
   messages: MessageApi[];
+  chat_history: Array<{ id: string; role: string; content: string; created_at: string }>;
 };
 
 function toQueueItem(item: QueueItemApi): DoctorReviewQueueItem {
@@ -98,6 +100,12 @@ function toDetail(d: DetailApi): DoctorReviewDetail {
     ...toQueueItem(d),
     resolvedByDoctorId: d.resolved_by_doctor_id,
     messages: d.messages.map(toMessage),
+    chatHistory: d.chat_history.map((message) => ({
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      createdAt: message.created_at,
+    })),
   };
 }
 

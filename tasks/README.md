@@ -18,6 +18,12 @@
 | [`TASK-009`](./TASK-009-hoan-thien-context-base.md) | Hoàn thiện context base | `docs` | Cả team | P1 | 🔄 In Progress |
 | [`TASK-010`](./TASK-010-build-chatbot.md) | Build chatbot/RAG (VMEC-04) — backend + tích hợp frontend | `drug-knowledge` | Nguyễn Minh Đạt | **P0** | 🔄 In Progress (backend Done) |
 
+## Hotfix được phê duyệt ngoài sprint
+
+| Task | Tên | Domain | Owner | Ưu tiên | Status |
+|---|---|---|---|---|---|
+| [`TASK-021`](./TASK-021-doctor-patient-chat-sync.md) | Đồng bộ hội thoại bác sĩ - bệnh nhân | `conversation`, `notification` | Unassigned + AI | **P0** | 🔄 In Progress |
+
 > Sprint 01 diễn ra **trước khi** repo có `/tasks` nên không có file task — xem [`sprint-01.md`](../planning/sprints/sprint-01.md).
 
 ## Quy ước

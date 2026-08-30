@@ -182,6 +182,23 @@ export default function DoctorReviewDetailPage() {
       </div>
 
       <div className="surface-card p-5">
+        <h2 className="mb-3 font-bold">Lịch sử chat với Capy</h2>
+        <div className="mb-5 max-h-64 space-y-2 overflow-y-auto rounded-lg bg-muted/50 p-3">
+          {detail.chatHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có lịch sử chatbot được lưu.</p>
+          ) : (
+            detail.chatHistory.map((message) => (
+              <div key={message.id} className={`flex ${message.role === "patient" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${message.role === "patient" ? "bg-primary/10" : "bg-background"}`}>
+                  <p className="text-[11px] font-semibold text-muted-foreground">
+                    {message.role === "patient" ? "Bệnh nhân" : "Capy"} · {new Date(message.createdAt).toLocaleString("vi-VN")}
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
         <h2 className="mb-3 font-bold">Tin nhắn</h2>
         <div className="max-h-[28rem] space-y-3 overflow-y-auto">
           {detail.messages.length === 0 && (

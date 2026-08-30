@@ -1403,6 +1403,7 @@ class DoctorReviewDetailOut(BaseModel):
     resolved_at: datetime | None = None
     resolved_by_doctor_id: str | None = None
     messages: list[DoctorReviewMessageOut] = Field(default_factory=list)
+    chat_history: list[ChatMessageOut] = Field(default_factory=list)
 
 
 class DoctorReviewSendMessageRequest(BaseModel):

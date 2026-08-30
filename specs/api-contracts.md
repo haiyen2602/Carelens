@@ -25,6 +25,7 @@
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
 | `drug-image-delivery-api` | REST | `drug-image` | FE bệnh nhân | Draft | §3a |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
+| `doctor-takeover-api` | REST | `conversation` | FE bệnh nhân, FE bác sĩ | Draft | §4a |
 | `photo-api` | REST | `photo-verification` | FE bệnh nhân, FE người thân | Draft | §5 |
 | `escalation-api` | REST | `escalation` | FE người thân, FE bác sĩ | Draft | §6 |
 | `dashboard-api` | REST | `reporting` | FE bác sĩ | Draft | §7 |
@@ -386,6 +387,46 @@ or applied. Invalid or stale actions are treated as ordinary user text.
 Safety and deterministic medication-time routing inspect the raw message
 first; client `entity_id` and `topic` never authorize lookup or access.
 
+### 4a. `doctor-takeover-api`
+
+**Bổ sung 2026-08-30, TASK-021.** Một handoff `ACTIVE` là thread chung có
+thời hạn giữa đúng một bệnh nhân và bác sĩ đã nhận ca. Backend là nguồn sự
+thật của thread; hai frontend polling cùng dữ liệu này, không đồng bộ qua
+`localStorage`.
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| GET | `/api/v1/agent/v2/handoff/status?patient_id=` | `patient` | Trả handoff `ACTIVE` hiện tại và toàn bộ thread `PATIENT`/`DOCTOR`/`SYSTEM` của chính bệnh nhân. |
+| GET | `/api/v1/agent/v2/handoffs/{handoff_id}` | `patient` | Trả thread của handoff đã biết, kể cả vừa kết thúc, để bệnh nhân nhận được thông báo dừng. |
+| POST | `/api/v1/agent/v2/handoffs/{handoff_id}/stop` | `patient` | Bệnh nhân chủ động dừng một handoff `ACTIVE` của chính mình. Idempotent sau khi đã dừng. |
+| GET | `/api/v1/doctor/reviews/{handoff_id}` | `doctor` | Chi tiết handoff, thread chung và `chat_history` (các tin nhắn bệnh nhân ↔ chatbot hiển thị được) của bệnh nhân trong ca. |
+
+`handoff_id` không cấp quyền. Mọi route trên xác thực JWT và kiểm tra quan hệ
+với `patient_id`; caller không có quyền nhận `403` hoặc `404` theo quy ước §10.
+
+```json
+{
+  "handoff_id": "handoff_01",
+  "status": "ACTIVE",
+  "messages": [
+    {"id": "msg_01", "sender_role": "PATIENT", "content": "Bác sĩ ơi", "created_at": "2026-08-30T13:41:00Z"},
+    {"id": "msg_02", "sender_role": "DOCTOR", "content": "Tôi đang theo dõi.", "created_at": "2026-08-30T13:41:28Z"}
+  ]
+}
+```
+
+Khi bác sĩ, bệnh nhân hoặc timeout kết thúc một handoff `ACTIVE`, backend phải
+chuyển nó thành `RESOLVED` và ghi đúng một message `SYSTEM` có nội dung:
+`"Bác sĩ xin dừng cuộc trò chuyện tại đây"`. Scheduler dùng chung quét mỗi
+phút; handoff tự kết thúc khi đã **10 phút** kể từ tin nhắn `PATIENT` gần nhất
+(hoặc từ lúc `activated_at` nếu bệnh nhân chưa gửi tin nào). Retry/tick lặp lại
+không được tạo message SYSTEM thứ hai.
+
+`chat_history` chỉ gồm các tin nhắn patient/assistant không bị ẩn của bệnh nhân
+và chỉ được trả cho bác sĩ xem đúng handoff đó. Agent V2 phải ghi bản hiển thị
+của mỗi lượt patient/assistant vào lịch sử này sau khi đã có response terminal;
+không lưu prompt, chain-of-thought, secret hay output tool thô.
+
 ## 5. `photo-api`
 
 | Method | Path | Role | Mô tả |
@@ -641,6 +682,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
 | 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 | 2026-08-26 | `dose-api` (§3), `drug-image-delivery-api` (mới, §3a) | B-06 thêm metadata ảnh catalog an toàn vào `expected_items[]` và route bytes xác thực. Không breaking: field là additive; ảnh thiếu trả `NO_IMAGE`/`url: null`; không lộ storage/provenance. | `[chờ Architect/Frontend review]` |
+| 2026-08-30 | `doctor-takeover-api` (mới, §4a) | TASK-021 thêm thread chung bệnh nhân/bác sĩ, bệnh nhân dừng, timeout 10 phút và lịch sử chatbot an toàn cho bác sĩ trong handoff. Additive; cần Architect + Frontend review. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.
