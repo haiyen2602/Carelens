@@ -103,6 +103,11 @@ export type OverviewOut = {
   safety_trigger_rate?: MetricValue;
   handoff_rate?: MetricValue;
   judged_rate?: MetricValue;
+  // Core failure mode evaluation metrics
+  task_completion?: MetricValue;
+  tool_correctness?: MetricValue;
+  contextual_precision?: MetricValue;
+  faithfulness?: MetricValue;
 };
 
 export type QualityOut = {
@@ -155,6 +160,8 @@ export type CostOut = {
   tokens_per_query?: MetricValue;
   cost_per_query_usd?: MetricValue;
   by_model_usd?: Record<string, number>;
+  timeline?: Array<{ timestamp: string; [model: string]: number | string }>;
+  models?: string[];
 };
 
 export type ErrorsOut = {
@@ -305,6 +312,45 @@ export type CompareOut = {
   comparison?: Record<string, unknown>;
 };
 
+export type SafetySummaryOut = {
+  available?: boolean;
+  safety_trigger_count?: number;
+  safety_trigger_rate?: number | null;
+  handoff_required_count?: number;
+  handoff_required_rate?: number | null;
+  handoff_created_count?: number;
+  handoff_created_rate?: number | null;
+  handoff_failure_count?: number;
+  handoff_failure_rate?: number | null;
+  unresolved_handoff_count?: number;
+  time_to_review_avg_seconds?: number | null;
+  time_to_review_sample_count?: number;
+  denominator_agent_v2_total_runs?: number;
+  severity_distribution?: Record<string, number>;
+  reason_code_distribution?: Record<string, number>;
+  handoff_status_distribution?: Record<string, number>;
+  legacy_escalation_count?: number;
+};
+
+export type TrendPoint = {
+  date: string;
+  requests: number;
+  p95_latency_ms: number | null;
+  task_completion?: number | null;
+  task_completion_n?: number;
+  faithfulness: number | null;
+  faithfulness_n: number;
+  relevance: number | null;
+  relevance_n: number;
+};
+
+export type TrendOut = {
+  available: boolean;
+  reason?: string;
+  trend: TrendPoint[];
+  days: number;
+};
+
 export async function getOverview(filters: MonitoringFiltersInput, accessToken?: string | null, signal?: AbortSignal) {
   return getSection<OverviewOut>("overview", filters, accessToken, signal);
 }
@@ -325,6 +371,48 @@ export async function getErrors(filters: MonitoringFiltersInput, accessToken?: s
 }
 export async function getJudge(filters: MonitoringFiltersInput, accessToken?: string | null, signal?: AbortSignal) {
   return getSection<JudgeOut>("judge", filters, accessToken, signal);
+}
+
+export async function getSafetySummary(
+  filters: MonitoringFiltersInput,
+  accessToken?: string | null,
+  signal?: AbortSignal,
+): Promise<SafetySummaryOut> {
+  const params = filtersToParams(filters);
+  const response = await fetch(`${API_BASE}/api/v1/admin/safety/summary?${params}`, {
+    headers: authHeaders(accessToken),
+    signal,
+  });
+  return parseOrThrow<SafetySummaryOut>(response, "Không thể tải dữ liệu an toàn");
+}
+
+export async function getSafetyEvents(
+  filters: MonitoringFiltersInput,
+  options: { limit?: number; offset?: number; accessToken?: string | null; signal?: AbortSignal } = {},
+): Promise<{ items: unknown[]; total: number }> {
+  const params = filtersToParams(filters);
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  if (options.offset !== undefined) params.set("offset", String(options.offset));
+  const response = await fetch(`${API_BASE}/api/v1/admin/safety/events?${params}`, {
+    headers: authHeaders(options.accessToken),
+    signal: options.signal,
+  });
+  return parseOrThrow<{ items: unknown[]; total: number }>(response, "Không thể tải danh sách sự kiện an toàn");
+}
+
+export async function getTrend(
+  filters: MonitoringFiltersInput,
+  days: number = 7,
+  accessToken?: string | null,
+  signal?: AbortSignal,
+): Promise<TrendOut> {
+  const params = filtersToParams(filters);
+  params.set("days", String(days));
+  const response = await fetch(`${API_BASE}/api/v1/admin/monitoring/trend?${params}`, {
+    headers: authHeaders(accessToken),
+    signal,
+  });
+  return parseOrThrow<TrendOut>(response, "Không thể tải dữ liệu trend");
 }
 
 export async function getGolden(goldenSetVersion: string | undefined, accessToken?: string | null): Promise<GoldenOut> {

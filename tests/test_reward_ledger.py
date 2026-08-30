@@ -441,3 +441,113 @@ def test_lich_su_ghi_ca_diem_cong_va_diem_tru(db: Session) -> None:
     doi_qua = next(d for d in lich_su if d["event_type"] == catalog.EVENT_REDEEM)
     assert doi_qua["points_delta"] == -10_000
     assert "Hộp chia thuốc thông minh" in doi_qua["label"]
+
+
+# --- Tru diem theo cach xac nhan (yeu cau nhom truong 2026-08-28) ------------
+
+
+def _phat(db: Session, dose_event_id: str, pct: int, ngay: date = NGAY) -> int:
+    return reward_ledger.apply_confirmation_method_penalty(
+        db, patient_id=BENH_NHAN, dose_event_id=dose_event_id, occurred_on=ngay, pct=pct
+    )
+
+
+def test_tru_diem_dung_ty_le_va_tra_ve_so_da_tru(db: Session) -> None:
+    _them_lieu(db, status="TAKEN")
+    tru = _phat(db, "dose-1", catalog.PCT_SELF_REPORT_NO_PHOTO)
+    db.commit()
+
+    assert tru == 10  # -50% cua tran 20 diem, ngay chi co 1 lieu
+    so = db.get(PatientRewardAccount, BENH_NHAN)
+    assert so.spendable_points == -10
+    # Rank KHONG duoc tut vi mot lan tu khai - lifetime_points chi tang khi
+    # duoc thuong (xem _award), giong het co che doi qua.
+    assert so.lifetime_points == 0
+
+
+def test_khong_tru_khi_giu_nguyen_100_phan_tram(db: Session) -> None:
+    _them_lieu(db, status="TAKEN")
+    assert _phat(db, "dose-1", 100) == 0
+    db.commit()
+    assert db.query(PatientRewardEvent).count() == 0
+
+
+def test_khong_tru_khi_ngay_do_khong_co_lieu_nao(db: Session) -> None:
+    """Khong co lieu thi khong co diem de tru - va tuyet doi khong duoc chia
+    cho 0 khi tinh phan diem moi lieu."""
+    assert _phat(db, "dose-1", catalog.PCT_SELF_REPORT_NO_PHOTO) == 0
+    db.commit()
+    assert db.query(PatientRewardEvent).count() == 0
+
+
+def test_moi_lieu_chi_bi_tru_dung_mot_lan(db: Session) -> None:
+    """Job xac minh anh co the chay lai, nguoi than co the bam duyet hai lan."""
+    _them_lieu(db, status="TAKEN")
+    lan_dau = _phat(db, "dose-1", catalog.PCT_SELF_REPORT_NO_PHOTO)
+    lan_hai = _phat(db, "dose-1", catalog.PCT_SELF_REPORT_NO_PHOTO)
+    db.commit()
+
+    assert (lan_dau, lan_hai) == (10, 0)
+    assert db.query(PatientRewardEvent).count() == 1
+    assert db.get(PatientRewardAccount, BENH_NHAN).spendable_points == -10
+
+
+@pytest.mark.parametrize("so_lieu", [1, 2, 3, 4, 5, 6, 7, 8])
+@pytest.mark.parametrize(
+    "pct,ty_le_giu",
+    [
+        (catalog.PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL, 0.9),
+        (catalog.PCT_NO_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL, 0.7),
+        (catalog.PCT_SELF_REPORT_NO_PHOTO, 0.5),
+    ],
+)
+def test_ty_le_dung_chinh_xac_voi_moi_so_lieu_trong_ngay(
+    db: Session, so_lieu: int, pct: int, ty_le_giu: float
+) -> None:
+    """Chong hoi quy cho bug lam tron (migration 0062).
+
+    Truoc khi sua, khoan tru duoc lam tron RIENG tung lieu. Vi tran 20 diem
+    chia cho n lieu nen tu n=4 moi lieu chi con <= 5 diem, va muc -10% ra
+    round(0.5) = 0 - ca bac chinh sach do khong tru gi. Sai ca chieu nguoc
+    lai: n=7 muc -50% thanh -65%. Test nay ep dung so cho MOI n tu 1 den 8.
+    """
+    for i in range(so_lieu):
+        _them_lieu(db, status="TAKEN", gio_vn=6 + i)
+    for i in range(so_lieu):
+        reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY)
+        _phat(db, f"dose-{i}", pct)
+    db.commit()
+
+    thuc_nhan = db.get(PatientRewardAccount, BENH_NHAN).spendable_points
+    assert thuc_nhan == round(catalog.POINTS_DOSE_ON_TIME * ty_le_giu)
+
+
+def test_tron_nhieu_cach_xac_nhan_trong_cung_mot_ngay(db: Session) -> None:
+    """2 lieu chup anh dung (khong phat) + 2 lieu tu khai (-50%): chi mat mot
+    nua phan cua 2 lieu sau, khong dung toi phan cua 2 lieu dau."""
+    for i in range(4):
+        _them_lieu(db, status="TAKEN", gio_vn=6 + i)
+    for i in range(4):
+        reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY)
+        if i >= 2:
+            _phat(db, f"dose-{i}", catalog.PCT_SELF_REPORT_NO_PHOTO)
+    db.commit()
+
+    # 4 lieu -> moi lieu 5 diem; 2 lieu bi tru 50% = mat 5 diem tren tong 20.
+    assert db.get(PatientRewardAccount, BENH_NHAN).spendable_points == 15
+
+
+def test_tru_diem_khong_dung_toi_dong_diem_uong_thuoc(db: Session) -> None:
+    """Khoan tru phai la DONG RIENG. Neu gop vao dong DOSE_ON_TIME thi lieu
+    tiep theo trong ngay se tu dong bu lai phan da tru (award_dose_on_time
+    tinh muc tieu tich luy round(20*k/n)) - khoan phat bien mat."""
+    _them_lieu(db, status="TAKEN")
+    goc = reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY)
+    _phat(db, "dose-1", catalog.PCT_SELF_REPORT_NO_PHOTO)
+    db.commit()
+
+    loai = [d.event_type for d in db.query(PatientRewardEvent).all()]
+    assert loai.count(catalog.EVENT_DOSE_ON_TIME) == 1
+    assert loai.count(catalog.EVENT_DOSE_METHOD_PENALTY) == 1
+    dong_goc = db.query(PatientRewardEvent).filter_by(event_type=catalog.EVENT_DOSE_ON_TIME).one()
+    assert dong_goc.points_delta == goc  # dong goc GIU NGUYEN, khong bi sua

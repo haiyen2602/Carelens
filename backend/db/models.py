@@ -23,6 +23,7 @@ from datetime import UTC, date, datetime, time
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -343,6 +344,11 @@ class Patient(Base):
     # suy tu cac cot khac co NULL hay khong (benh nhan co the chu y bo trong
     # 1 truong nao do sau khi da "hoan tat").
     profile_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # THEM 2026-08-27 (migration 0052) - benh nhan tu bat/tat yeu cau chup
+    # anh khi xac nhan uong thuoc (man hinh Cai dat). Mac dinh True = giu
+    # nguyen hanh vi hien tai (chup anh). Khi False, frontend coi moi lieu la
+    # "khong can anh" - xem frontend/src/app/patient/page.tsx.
+    photo_capture_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # DB Architecture V2 additive columns (DB-4A, WIP - xem
     # docs/data/database_architecture_v2_plan.md). Nullable until backfill and
     # validation gates pass; legacy fields above remain source-compatible.
@@ -523,6 +529,70 @@ class DrugImageEmbedding(Base):
             name="uq_drug_image_embedding_model_version",
         ),
         Index("ix_drug_image_embedding_model_version", "embedding_model", "embedding_version"),
+    )
+
+
+class DrugRecognitionAttempt(Base):
+    """Server-owned B-07 candidate lifecycle; never stores raw image/OCR/vector.
+
+    The candidate snapshot maps an opaque action ID to the exact canonical
+    product selected by B-05.  It is intentionally separate from
+    ``ConversationState.active_entity``: only a successful confirmation may
+    promote one of these candidates into trusted conversational context.
+    """
+
+    __tablename__ = "drug_recognition_attempt"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    actor_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    recognition_version: Mapped[str] = mapped_column(String, nullable=False)
+    outcome: Mapped[str] = mapped_column(String, nullable=False)
+    candidates_json: Mapped[list] = mapped_column("candidates", JSON, nullable=False, default=list)
+    requested_attribute: Mapped[str | None] = mapped_column(String, nullable=True)
+    selected_drug_product_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_drug_recognition_attempt_scope_status", "conversation_id", "patient_id", "actor_id", "status"),
+        CheckConstraint(
+            "status IN ('AWAITING_CONFIRMATION', 'INSUFFICIENT_EVIDENCE', 'CONFIRMED', 'SUPERSEDED', 'EXPIRED', 'FAILED')",
+            name="ck_drug_recognition_attempt_status",
+        ),
+    )
+
+
+class DoctorReviewImageAttachment(Base):
+    """B-07 private image reference for an ACTIVE doctor-takeover message.
+
+    This intentionally is not a general chat attachment: it is scoped to a
+    single handoff and may be served only to that handoff's assigned doctor.
+    The database stores an opaque storage key, never a client path or bytes.
+    """
+
+    __tablename__ = "doctor_review_image_attachment"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    handoff_id: Mapped[str] = mapped_column(ForeignKey("doctor_review_request.id"), nullable=False, index=True)
+    message_id: Mapped[str] = mapped_column(ForeignKey("doctor_review_message.id"), nullable=False, unique=True)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    storage_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    mime_type: Mapped[str] = mapped_column(String, nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+    __table_args__ = (
+        CheckConstraint("file_size > 0", name="ck_doctor_review_image_attachment_file_size"),
+        CheckConstraint(
+            "mime_type IN ('image/jpeg', 'image/png', 'image/webp')",
+            name="ck_doctor_review_image_attachment_mime_type",
+        ),
     )
 
 
@@ -1071,6 +1141,18 @@ class AgentRun(Base):
     # column existed -- never backfilled/guessed.
     prompt_version: Mapped[str | None] = mapped_column(String, nullable=True)
     retrieval_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    # BUILD-47: this run's follow-up classification (backend.agents.v2.
+    # follow_up.FollowUpDecision), stamped by the same
+    # `_persist_durable_trace` write point as everything above it. NULL --
+    # never a fabricated category -- for every turn that structurally never
+    # reaches the classifier (schedule/safety/out-of-scope/doctor-review, and
+    # any turn already resolved by a suggested-action button). Written for
+    # direct SQL analysis of how often conversation context is inherited
+    # versus lost; no admin endpoint reads these yet, by design.
+    follow_up_category: Mapped[str | None] = mapped_column(String, nullable=True)
+    follow_up_reason_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    follow_up_inherited_topic: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    follow_up_inherited_entity: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     __table_args__ = (
         Index("ix_agent_run_conversation_started", "conversation_id", "started_at"),
@@ -1080,6 +1162,7 @@ class AgentRun(Base):
         Index("ix_agent_run_error_code_created", "error_code", "created_at"),
         Index("ix_agent_run_prompt_version", "prompt_version"),
         Index("ix_agent_run_retrieval_version", "retrieval_version"),
+        Index("ix_agent_run_follow_up_category_created", "follow_up_category", "created_at"),
     )
 
 
@@ -2060,6 +2143,13 @@ class PatientRewardAccount(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
 
+# Dieu kien loc cua 2 index duy nhat mot phan tren patient_reward_event (xem
+# __table_args__ ben duoi + migration 0061). Tach ra hang so de chuoi SQL
+# khong bi viet lech giua postgresql_where va sqlite_where.
+_LOC_KHOA_THEO_NGAY = "event_type NOT IN ('DOSE_ON_TIME', 'DOSE_METHOD_PENALTY')"
+_LOC_KHOA_PHAT = "event_type = 'DOSE_METHOD_PENALTY'"
+
+
 class PatientRewardEvent(Base):
     """Ledger append-only: MOI lan cong/tru diem la 1 dong (THEM 2026-08-25,
     migration 0049). Vua la lich su hien cho benh nhan xem, vua la co che
@@ -2089,16 +2179,25 @@ class PatientRewardEvent(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    # DOSE_ON_TIME | DAILY_SURVEY | WEEKLY_STREAK | MONTHLY_STREAK | REDEEM
+    # DOSE_ON_TIME | DOSE_METHOD_PENALTY | DAILY_SURVEY | WEEKLY_STREAK
+    # | MONTHLY_STREAK | REDEEM
     event_type: Mapped[str] = mapped_column(String, nullable=False)
     points_delta: Mapped[int] = mapped_column(Integer, nullable=False)
     # NULL voi REDEEM (xem docstring) - co gia tri voi cac loai cong theo ngay.
     occurred_on: Mapped[date | None] = mapped_column(Date, nullable=True)
-    # Chi co gia tri voi REDEEM: slug mon qua trong reward_catalog.py.
+    # REDEEM: slug mon qua trong reward_catalog.py.
+    # DOSE_METHOD_PENALTY: id cua dose_event bi tru diem (migration 0061)
+    # - la thu chan tru trung cho tung lieu. NULL voi cac loai con lai.
     item_id: Mapped[str | None] = mapped_column(String, nullable=True)
     # Nhan hien thi tren lich su, chot lai TAI THOI DIEM ghi (vd ten mon qua)
     # - gia/ten trong catalog co the doi ve sau, lich su cu phai giu nguyen.
     label: Mapped[str] = mapped_column(String, nullable=False)
+    # Chi co gia tri voi DOSE_METHOD_PENALTY (migration 0062): % diem GIU LAI
+    # cua lieu do. KHONG phai de hien thi - de TINH LAI duoc tong phat chinh
+    # xac cua ca ngay o moi lan goi. Neu chi luu so diem da tru, khong the
+    # khoi phuc duoc phan le da bi lam tron, nen sai so se cong don qua tung
+    # lieu (xem reward_ledger::apply_confirmation_method_penalty).
+    method_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
     __table_args__ = (
@@ -2121,10 +2220,117 @@ class PatientRewardEvent(Base):
             # co postgresql_where, SQLAlchemy bo qua no tren SQLite va tao
             # index unique TOAN PHAN -> chan mat dong DOSE_ON_TIME thu hai
             # trong ngay, test do nhung prod xanh (hoac nguoc lai).
-            postgresql_where=text("event_type <> 'DOSE_ON_TIME'"),
-            sqlite_where=text("event_type <> 'DOSE_ON_TIME'"),
+            #
+            # LOAI TRU THEM DOSE_METHOD_PENALTY (migration 0061): moi lieu bi
+            # tru diem la 1 dong rieng nen cung nhieu dong/ngay. Loai nay
+            # chong trung bang index ngay ben duoi (theo item_id) chu khong
+            # phai theo ngay.
+            postgresql_where=text(_LOC_KHOA_THEO_NGAY),
+            sqlite_where=text(_LOC_KHOA_THEO_NGAY),
+        ),
+        # Moi lieu chi bi tru diem DUNG 1 LAN, du ham co bi goi lai (job xac
+        # minh anh chay lai, nguoi than bam duyet hai lan...). Khong dung
+        # duoc khoa theo ngay o tren vi 1 ngay co the co nhieu lieu bi tru.
+        Index(
+            "uq_patient_reward_event_method_penalty",
+            "patient_id",
+            "event_type",
+            "item_id",
+            unique=True,
+            postgresql_where=text(_LOC_KHOA_PHAT),
+            sqlite_where=text(_LOC_KHOA_PHAT),
         ),
         Index("ix_patient_reward_event_patient_created", "patient_id", "created_at"),
         Index("ix_patient_reward_event_patient_item", "patient_id", "item_id"),
     )
 
+
+
+class TelegramLink(Base):
+    """1 tai khoan Telegram da noi voi 1 benh nhan (THEM 2026-08-27, migration
+    0056) - kenh nhac gio uong thuoc THU HAI ben canh Web Push.
+
+    TAI SAO PHAI CO BANG NAY, khong dung thang so dien thoai benh nhan da co o
+    Patient.phone: Bot API cua Telegram khong gui duoc tin theo so dien thoai
+    hay email, chi theo `chat_id`, va chat_id CHI sinh ra sau khi chinh nguoi
+    dung bam /start voi bot (co che chong spam cua Telegram, khong phai thieu
+    sot API). Vi vay quan he benh nhan <-> chat_id phai luu lai o day sau khi
+    ghep thanh cong 1 lan, dung mai ve sau.
+
+    `account_id` la string tu do, KHONG dat FK that - cung ly do da giai thich
+    o class Patient/PushSubscription."""
+
+    __tablename__ = "telegram_link"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    # KHOA THEO TAI KHOAN, khong theo ho so benh nhan (doi o migration 0059):
+    # nguoi than cung phai nhan duoc canh bao ma ho khong co patient_id - ho
+    # la Account role=caregiver noi qua caregiver_link. "1 tai khoan = 1
+    # Telegram" cung xu ly luon nguoi vua la benh nhan vua la nguoi than cua
+    # vo/chong: 1 dong duy nhat, nhan ca hai loai tin.
+    account_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # BigInteger: xem ghi chu trong migration 0056 (id Telegram vuot 2^31).
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    # False = benh nhan tam tat nhac Telegram nhung VAN giu lien ket, bat lai
+    # chi la 1 cu gat (migration 0057). Khac han viec xoa dong nay - xoa xong
+    # muon nhan lai phai lam lai ca luong ghep tu dau.
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class TelegramLinkToken(Base):
+    """Ma dung 1 lan de ghep "nguoi vua bam /start tren Telegram" voi "benh
+    nhan dang dang nhap tren web" (THEM 2026-08-27, migration 0056).
+
+    Luong: web sinh token -> mo link t.me/<bot>?start=<token> -> Telegram gui
+    "/start <token>" toi bot -> backend doi token lay chat_id -> ghi
+    TelegramLink. Khong co token thi backend nhan duoc chat_id nhung KHONG
+    biet no la cua benh nhan nao.
+
+    `used_at` giu lai dong da dung thay vi xoa - de phan biet "token sai/bia"
+    voi "token dung nhung da xai roi", tra loi duoc dung thong bao cho nguoi
+    dung khi ho bam lai link cu."""
+
+    __tablename__ = "telegram_link_token"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    token: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    account_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+
+class PatientNotificationPref(Base):
+    """Tuy chon thong bao cua 1 benh nhan (THEM 2026-08-27, migration 0058).
+
+    HAI TANG, co y tach roi:
+      - `dose_reminder_enabled` = tang 1, CO muon duoc nhac uong thuoc khong
+      - `web_push_enabled`      = tang 2, nhac qua duong nao
+
+    Tat tang 1 thi khong kenh nao gui, du tung kenh van dang bat - dung thu
+    tu ma nguoi dung mong doi khi nhin man hinh Cai dat.
+
+    Kenh Telegram KHONG o day ma o TelegramLink.enabled: kenh do chi ton tai
+    khi co lien ket, luu chung voi lien ket thi xoa lien ket la sach ca tuy
+    chon, khong de lai dong mo coi.
+
+    KHONG tao san dong cho moi benh nhan: khong co dong = mac dinh bat het
+    (xem lay_tuy_chon trong backend/services/notification_pref.py). Chi ghi
+    khi benh nhan that su doi gi do."""
+
+    __tablename__ = "patient_notification_pref"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    dose_reminder_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    web_push_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
+    )

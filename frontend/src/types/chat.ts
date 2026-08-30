@@ -23,6 +23,38 @@ export type ChatRequest = {
   selected_action?: SelectedAction;
 };
 
+export type DrugImageCandidate = {
+  action_id: string;
+  product_display_name: string;
+  strength_text: string | null;
+  rank: number;
+};
+
+export type DrugImageRecognitionResponse = {
+  status:
+    | "CANDIDATES"
+    | "AMBIGUOUS_MATCH"
+    | "INSUFFICIENT_EVIDENCE"
+    | "SAFETY_DEFERRED"
+    | "DOCTOR_ACTIVE"
+    | "RECOGNITION_UNAVAILABLE";
+  reply: string;
+  recognition_attempt_id: string | null;
+  outcome: string | null;
+  recognition_version: string | null;
+  candidates: DrugImageCandidate[];
+  requested_attribute: string | null;
+};
+
+export type DrugImageConfirmResponse = {
+  status: "CONFIRMED" | "REJECTED";
+  reply: string;
+  recognition_attempt_id: string;
+  canonical_drug_product_id: string | null;
+  requested_attribute: string | null;
+  tools: string[];
+};
+
 export type SuggestedAction = {
   action_id: string;
   type: "topic_followup" | "drug_followup" | "schedule_followup";
@@ -134,4 +166,13 @@ export type ActivityResponse = {
   trace_id: string;
   available: boolean;
   activities: ActivityItem[];
+};
+
+// Voice I/O -- turn-based STT/TTS adapter around the chat pipeline above (see
+// frontend/src/hooks/use-voice-recorder.ts, use-voice-playback.ts). The
+// transcript below is fed unchanged into sendChatMessage() -- Agent V2 does
+// 100% of the reasoning, same as a typed message.
+export type VoiceTranscribeResponse = {
+  status: "OK";
+  text: string;
 };

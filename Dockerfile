@@ -32,7 +32,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # tien trinh, giu nguyen PID 1 va tin hieu SIGTERM - `su` de lai 1 tien trinh
 # trung gian nuot mat tin hieu.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gosu \
+    && apt-get install -y --no-install-recommends \
+        gosu \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        tesseract-ocr-vie \
     && rm -rf /var/lib/apt/lists/*
 
 # Security: run as non-root user

@@ -9,15 +9,21 @@
 // van la mo hinh that tra loi, nen khong co cau tra loi dung san nao.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { History, Plus, X } from "lucide-react";
+import { History, Mic, Plus, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CameraCapture } from "@/components/camera-capture";
 import { toast } from "sonner";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatError } from "@/components/chat-error";
 import { useChatMessage } from "@/hooks/use-chat";
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { useVoicePlayback } from "@/hooks/use-voice-playback";
 import type { SelectedAction, SuggestedAction } from "@/types/chat";
 import { useAuth } from "@/lib/auth";
 import { useProto } from "@/lib/proto-store";
+import { confirmDrugImageCandidate, recognizeDrugImage, synthesizeVoice, transcribeVoice } from "@/lib/api";
+import { tenFileGhiAm } from "@/lib/voice-format";
+import { loadVoiceOutputEnabled } from "@/lib/voice-settings";
 import {
   type Conversation,
   createConversation,
@@ -50,31 +56,22 @@ export default function AssistantPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
+  const [imagePending, setImagePending] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [voicePending, setVoicePending] = useState(false);
   const [handoff, setHandoff] = useState<PatientHandoff | null>(null);
   const [stoppingHandoff, setStoppingHandoff] = useState(false);
   const lastQuestion = useRef("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const objectUrls = useRef(new Set<string>());
   const { user, accessToken } = useAuth();
   const { mutate, isPending, isError, error, reset } = useChatMessage(accessToken);
-
-  const loadHandoff = useCallback(async () => {
-    if (!user?.patient_id) return;
-    try {
-      const next = handoff?.handoffId
-        ? await getPatientHandoffDetail(handoff.handoffId, accessToken)
-        : await getPatientHandoff(user.patient_id, accessToken);
-      setHandoff(next.handoffId ? next : null);
-    } catch {
-      // Chatbot remains usable if this auxiliary polling request is unavailable.
-    }
-  }, [accessToken, handoff?.handoffId, user?.patient_id]);
-
-  useEffect(() => {
-    void loadHandoff();
-    const interval = window.setInterval(() => void loadHandoff(), 5000);
-    return () => window.clearInterval(interval);
-  }, [loadHandoff]);
+  const voiceRecorder = useVoiceRecorder();
+  const voicePlayback = useVoicePlayback();
 
   useEffect(() => {
     const stored = loadConversations();
@@ -94,6 +91,32 @@ export default function AssistantPage() {
     }
   }, []);
 
+  useEffect(
+    () => () => {
+      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.current.clear();
+    },
+    [],
+  );
+
+  const loadHandoff = useCallback(async () => {
+    if (!user?.patient_id) return;
+    try {
+      const next = handoff?.handoffId
+        ? await getPatientHandoffDetail(handoff.handoffId, accessToken)
+        : await getPatientHandoff(user.patient_id, accessToken);
+      setHandoff(next.handoffId ? next : null);
+    } catch {
+      // Chatbot remains usable if this auxiliary polling request is unavailable.
+    }
+  }, [accessToken, handoff?.handoffId, user?.patient_id]);
+
+  useEffect(() => {
+    void loadHandoff();
+    const interval = window.setInterval(() => void loadHandoff(), 5000);
+    return () => window.clearInterval(interval);
+  }, [loadHandoff]);
+
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
 
@@ -111,6 +134,12 @@ export default function AssistantPage() {
       agentRunId?: string;
       userMessage?: string;
       suggestedActions?: SuggestedAction[];
+      drugImage?: {
+        attemptId: string;
+        outcome: string | null;
+        candidates: import("@/types/chat").DrugImageCandidate[];
+      };
+      imageAttachment?: { fileName: string; previewUrl?: string };
     },
   ) => {
     const now = new Date().toISOString();
@@ -148,6 +177,10 @@ export default function AssistantPage() {
 
   const submit = (content: string, selectedAction?: SelectedAction) => {
     if (!content.trim() || isPending || submitInFlight.current || !activeId) return;
+    // Mo khoa the audio NGAY tai cu cham nay. Cau tra loi con phai doi Agent V2
+    // roi doi TTS (tong vai giay) moi phat duoc - luc do quyen tu cu cham da
+    // het han va Safari iPhone se chan. Xem use-voice-playback.ts::moKhoa.
+    voicePlayback.moKhoa();
     submitInFlight.current = true;
     lastQuestion.current = content;
     appendMessage(activeId, "user", content);
@@ -178,6 +211,23 @@ export default function AssistantPage() {
             suggestedActions: data.suggested_actions,
           });
           if (data.status === "DOCTOR_ACTIVE") void loadHandoff();
+          // Doc to cau tra loi neu tuy chon dang bat (Cai dat > Trợ lý giọng
+          // nói). Fire-and-forget: text reply o tren da hien thi XONG truoc
+          // khi doan nay chay, nen bat ky loi TTS nao cung KHONG duoc phep
+          // che/xoa bubble da hien - toi da chi hien 1 toast nhe.
+          if (loadVoiceOutputEnabled()) {
+            synthesizeVoice({ patientId: user?.patient_id ?? "", text: data.reply }, accessToken)
+              .then((blob) =>
+                // Tach RIENG loi phat khoi loi goi API: trinh duyet chan
+                // autoplay la truong hop hay gap nhat va nguoi dung SUA duoc
+                // (bam vao trang roi hoi lai), nen phai noi dung nguyen nhan
+                // thay vi gop chung vao "khong doc to duoc".
+                voicePlayback.play(blob).catch(() => {
+                  toast("Trình duyệt đang chặn tự động phát. Hãy bấm vào trang rồi hỏi lại.");
+                }),
+              )
+              .catch(() => toast("Không thể đọc to câu trả lời lúc này."));
+          }
         },
         onSettled: () => {
           submitInFlight.current = false;
@@ -202,6 +252,160 @@ export default function AssistantPage() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       submit(input);
+    }
+  };
+
+  const selectImage = (file: File | null) => {
+    if (!file) return;
+    if (selectedImagePreviewUrl) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+      objectUrls.current.delete(selectedImagePreviewUrl);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    objectUrls.current.add(previewUrl);
+    setSelectedImage(file);
+    setSelectedImagePreviewUrl(previewUrl);
+  };
+
+  const discardSelectedImage = () => {
+    if (selectedImagePreviewUrl) {
+      URL.revokeObjectURL(selectedImagePreviewUrl);
+      objectUrls.current.delete(selectedImagePreviewUrl);
+    }
+    setSelectedImage(null);
+    setSelectedImagePreviewUrl(null);
+  };
+
+  const submitImage = async () => {
+    if (!selectedImage || !activeId || imagePending || isPending) return;
+    const image = selectedImage;
+    const text = input.trim();
+    const previewUrl = selectedImagePreviewUrl ?? undefined;
+    setImagePending(true);
+    try {
+      const data = await recognizeDrugImage(
+        { patientId: user?.patient_id ?? "", conversationId: activeId, message: text, file: image },
+        accessToken,
+      );
+      // A File object is only a local selection. Persist a chat turn after
+      // the server accepts the multipart request, never at selection time.
+      appendMessage(activeId, "user", text || "Đã gửi ảnh thuốc.", {
+        imageAttachment: { fileName: image.name, previewUrl },
+      });
+      setInput("");
+      setSelectedImage(null);
+      setSelectedImagePreviewUrl(null);
+      appendMessage(activeId, "assistant", data.reply, {
+        drugImage: data.recognition_attempt_id
+          ? {
+              attemptId: data.recognition_attempt_id,
+              outcome: data.outcome,
+              candidates: data.candidates,
+            }
+          : undefined,
+      });
+    } catch (error) {
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Không thể gửi ảnh. Bạn vẫn có thể tiếp tục nhắn tin.",
+      );
+    } finally {
+      setImagePending(false);
+    }
+  };
+
+  useEffect(() => {
+    if (voiceRecorder.error) toast(voiceRecorder.error);
+  }, [voiceRecorder.error]);
+
+  // Mo che do ghi am tu menu "+" (khong con nut mic rieng canh o nhap) -
+  // trong luc state === "recording" thi ca hang soan tin doi sang thanh ghi
+  // am ben duoi, nen 3 ham nay tach roi thay vi mot toggle duy nhat.
+  const startVoiceRecording = () => {
+    if (isPending || imagePending || voicePending) return;
+    voicePlayback.moKhoa();
+    voiceRecorder.start();
+  };
+
+  const finishVoiceRecording = async () => {
+    // TRUOC await dau tien: sau await thi khong con nam trong cu cham nua.
+    voicePlayback.moKhoa();
+    const blob = await voiceRecorder.stop();
+    if (!blob || !activeId) return;
+    setVoicePending(true);
+    try {
+      const { text } = await transcribeVoice(
+        {
+          patientId: user?.patient_id ?? "",
+          conversationId: activeId,
+          file: blob,
+          // Duoi PHAI khop dinh dang that trinh duyet vua ghi. Truoc day
+          // hard-code "voice.webm" nen iPhone (Safari ghi ra MP4, khong ho
+          // tro webm) hong 100% so lan voi loi "Audio file might be
+          // corrupted or unsupported" tu OpenAI.
+          filename: tenFileGhiAm(blob.type),
+        },
+        accessToken,
+      );
+      // Cung mot ham submit() dung cho tin nhan go tay - pipeline gui
+      // (useChatMessage -> /api/chat -> /api/v1/agent/v2/orchestrate)
+      // khong doi gi ca, transcript chi la mot cau text nhu bao cau khac.
+      submit(text);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Không nhận diện được giọng nói. Bạn có thể nhập tin nhắn.");
+    } finally {
+      setVoicePending(false);
+    }
+  };
+
+  // Huy: van phai stop() de tra micro ve he thong (hook tu tat cac track),
+  // chi khac la BO blob thu duoc, khong goi STT -> khong ton tien API.
+  const cancelVoiceRecording = async () => {
+    await voiceRecorder.stop();
+  };
+
+  const rejectCandidates = async (attemptId: string, actionId: string) => {
+    if (!activeId || imagePending || isPending) return;
+    setImagePending(true);
+    appendMessage(activeId, "user", "Không phải thuốc nào ở trên.");
+    try {
+      const data = await confirmDrugImageCandidate(
+        {
+          patientId: user?.patient_id ?? "",
+          conversationId: activeId,
+          attemptId,
+          actionId,
+          decision: "REJECTED",
+        },
+        accessToken,
+      );
+      appendMessage(activeId, "assistant", data.reply);
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.",
+      );
+    } finally {
+      setImagePending(false);
+    }
+  };
+
+  const confirmCandidate = async (attemptId: string, actionId: string, label: string) => {
+    if (!activeId || imagePending || isPending) return;
+    setImagePending(true);
+    appendMessage(activeId, "user", `Đúng, đây là ${label}.`);
+    try {
+      const data = await confirmDrugImageCandidate(
+        { patientId: user?.patient_id ?? "", conversationId: activeId, attemptId, actionId },
+        accessToken,
+      );
+      appendMessage(activeId, "assistant", data.reply);
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Lựa chọn không còn hiệu lực. Hãy gửi lại ảnh.",
+      );
+    } finally {
+      setImagePending(false);
     }
   };
 
@@ -258,7 +462,9 @@ export default function AssistantPage() {
             at={formatMessageTime(m.at)}
             conversationId={activeId ?? undefined}
             accessToken={accessToken}
-            actionsDisabled={isPending}
+            actionsDisabled={isPending || imagePending}
+            onConfirmDrugCandidate={confirmCandidate}
+            onRejectDrugCandidates={rejectCandidates}
             onSelectAction={(action) => {
               const { label: _label, ...selectedAction } = action;
               submit(action.label, selectedAction);
@@ -284,10 +490,7 @@ export default function AssistantPage() {
               )}
             </div>
             {handoff.messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.senderRole === "PATIENT" ? "justify-end" : "justify-start"}`}
-              >
+              <div key={message.id} className={`flex ${message.senderRole === "PATIENT" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[82%] px-3 py-2 text-sm ${
                     message.senderRole === "PATIENT"
@@ -305,12 +508,12 @@ export default function AssistantPage() {
           </section>
         )}
 
-        {isPending && (
+        {(isPending || imagePending) && (
           <div
             className="font-mono self-start px-[15px] py-[13px] text-[13px]"
             style={{ background: "#E4DDFB", color: "#4B3E86", borderRadius: "20px 20px 20px 6px" }}
           >
-            Capy đang xem lịch của bạn…
+            {imagePending ? "Đang phân tích ảnh..." : "Capy đang xử lý…"}
           </div>
         )}
 
@@ -324,6 +527,28 @@ export default function AssistantPage() {
 
       {/* Khoi day: goi y + o nhap + dong luu y */}
       <div className="mt-auto flex shrink-0 flex-col gap-3">
+        {selectedImage && (
+          <div className="flex items-center justify-between rounded-xl border border-[#E3E8F1] bg-white px-3 py-2 text-sm text-[#1B2A44]">
+            <div className="flex min-w-0 items-center gap-2">
+              {selectedImagePreviewUrl && (
+                <img
+                  src={selectedImagePreviewUrl}
+                  alt="Xem trước ảnh thuốc đã chọn"
+                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                />
+              )}
+              <span className="truncate">Ảnh đã chọn: {selectedImage.name}</span>
+            </div>
+            <button
+              type="button"
+              onClick={discardSelectedImage}
+              aria-label="Bỏ ảnh đã chọn"
+              className="ml-2 text-[#16386E]"
+            >
+              Bỏ ảnh
+            </button>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {SUGGESTED_PROMPTS.map((p) => (
@@ -339,59 +564,129 @@ export default function AssistantPage() {
         )}
 
         <div className="relative flex items-end gap-2.5">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => {
+              selectImage(event.target.files?.[0] ?? null);
+              event.currentTarget.value = "";
+            }}
+          />
           {plusOpen && (
             <div className="absolute bottom-[60px] left-0 flex gap-2 rounded-[20px] bg-white p-2 shadow-[0_10px_30px_rgba(22,56,110,.14)]">
-              {[
-                { icon: "📷", label: "Chụp ảnh" },
-                { icon: "🖼️", label: "Tải ảnh lên" },
-                { icon: "🎙️", label: "Nói với Capy" },
-              ].map((b) => (
-                <button
-                  key={b.label}
-                  aria-label={b.label}
-                  onClick={() => {
-                    setPlusOpen(false);
-                    toast(`${b.label} chưa nối API — sắp có`);
-                  }}
-                  className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6]"
-                >
-                  {b.icon}
-                </button>
-              ))}
+              <button
+                type="button"
+                aria-label="Chụp ảnh thuốc"
+                disabled={isPending || imagePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  setCameraOpen(true);
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                📷
+              </button>
+              <button
+                type="button"
+                aria-label="Tải ảnh thuốc lên"
+                disabled={isPending || imagePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  imageInputRef.current?.click();
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[18px] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                🖼️
+              </button>
+              <button
+                type="button"
+                aria-label="Ghi âm câu hỏi"
+                disabled={isPending || imagePending || voicePending}
+                onClick={() => {
+                  setPlusOpen(false);
+                  startVoiceRecording();
+                }}
+                className="grid h-11 w-11 place-items-center rounded-[16px] bg-[#F4F7FC] text-[#1B2A44] transition-colors hover:bg-[#EDF0F6] disabled:opacity-50"
+              >
+                <Mic className="h-[18px] w-[18px]" />
+              </button>
             </div>
           )}
-          <button
-            aria-label="Thêm"
-            onClick={() => setPlusOpen((v) => !v)}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[20px] font-bold transition-colors"
-            style={
-              plusOpen
-                ? { background: "#16386E", color: "#FFFFFF" }
-                : { background: "#EDF0F6", color: "#1B2A44" }
-            }
-          >
-            +
-          </button>
-          <input
-            value={input}
-            placeholder="Hỏi Capy..."
-            aria-label="Nhập câu hỏi cho trợ lý AI"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isPending}
-            className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
-          />
-          <button
-            aria-label="Gửi câu hỏi"
-            disabled={isPending || !input.trim()}
-            onClick={() => submit(input)}
-            className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
-            style={{ background: input.trim() ? "#16386E" : "#B7C2D6" }}
-          >
-            ↑
-          </button>
+          {voiceRecorder.state === "recording" ? (
+            // Che do ghi am: thay HANG soan tin (khong phai de nut mic canh o
+            // nhap nhu truoc), vi dang ghi am thi go phim khong con y nghia -
+            // chi con 2 lua chon huy hoac gui.
+            <>
+              <button
+                type="button"
+                aria-label="Hủy ghi âm"
+                onClick={cancelVoiceRecording}
+                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] bg-[#EDF0F6] text-[#1B2A44] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex h-[52px] min-w-0 flex-1 items-center gap-2.5 rounded-[20px] border border-[#F0C9C9] bg-[#FDF3F3] px-4">
+                <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#D64545]" />
+                <span className="truncate text-[14px] text-[#1B2A44]">Đang ghi âm... Nói xong hãy bấm gửi.</span>
+              </div>
+              <button
+                type="button"
+                aria-label="Dừng và gửi ghi âm"
+                onClick={finishVoiceRecording}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
+                style={{ background: "#D64545" }}
+              >
+                <Square className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                aria-label="Thêm"
+                onClick={() => setPlusOpen((v) => !v)}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[20px] font-bold transition-colors"
+                style={
+                  plusOpen
+                    ? { background: "#16386E", color: "#FFFFFF" }
+                    : { background: "#EDF0F6", color: "#1B2A44" }
+                }
+              >
+                +
+              </button>
+              <input
+                value={input}
+                placeholder={voicePending ? "Đang nhận diện giọng nói..." : "Hỏi Capy..."}
+                aria-label="Nhập câu hỏi cho trợ lý AI"
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isPending || imagePending || voicePending}
+                className="h-[52px] min-w-0 flex-1 rounded-[20px] border border-[#E3E8F1] bg-white px-4 text-[14px] text-[#1B2A44] outline-none transition-colors focus:border-[#16386E] disabled:opacity-60"
+              />
+              <button
+                aria-label="Gửi câu hỏi"
+                disabled={isPending || imagePending || voicePending || (!input.trim() && !selectedImage)}
+                onClick={() => (selectedImage ? submitImage() : submit(input))}
+                className="font-display grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[18px] text-[18px] font-bold text-white transition-colors"
+                style={{ background: input.trim() || selectedImage ? "#16386E" : "#B7C2D6" }}
+              >
+                ↑
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      <CameraCapture
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onCapture={(file) => {
+          setCameraOpen(false);
+          selectImage(file);
+        }}
+        onFallbackToFile={() => imageInputRef.current?.click()}
+      />
 
       {historyOpen && (
         <div className="absolute inset-0 z-50">

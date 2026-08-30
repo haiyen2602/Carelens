@@ -28,7 +28,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.db.base import SessionLocal
-from backend.db.models import DoseEvent, PhotoVerification
+from backend.db.models import CaregiverLink, DoseEvent, PhotoVerification
+from backend.services import reward_catalog as catalog
 from backend.services.escalation import (
     TRIGGER_PHOTO_MISMATCH,
     build_db_escalate_fn,
@@ -40,7 +41,11 @@ from backend.services.photo_verification.matcher import (
     tinh_yeu_cau,
 )
 from backend.services.photo_verification.vlm_bridge import dem_thuoc_trong_anh
-from backend.services.reward_ledger import award_dose_on_time, ngay_vn
+from backend.services.reward_ledger import (
+    apply_confirmation_method_penalty,
+    award_dose_on_time,
+    ngay_vn,
+)
 from backend.services.vlm_telemetry import get_vlm_telemetry_service
 
 logger = logging.getLogger(__name__)
@@ -330,7 +335,44 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
                 db, dose_event.patient_id, ngay_vn(dose_event.scheduled_at)
             )
         elif next_action == NEXT_ACTION_CAREGIVER_REVIEW:
-            dose_event.status = "AWAITING_CAREGIVER"
+            # Chi CHO DUYET khi that su co nguoi de duyet. Truoc 2026-08-28 moi
+            # truong hop deu vao AWAITING_CAREGIVER, nen benh nhan khong co
+            # nguoi than bi ket vinh vien: khong job nao quet trang thai do,
+            # va roi khoi AWAITING_CAREGIVER thi cung roi luon khoi vong quet
+            # nhac lai (dose_push_reminder.py chi lay status == "PENDING").
+            co_nguoi_than = (
+                db.query(CaregiverLink)
+                .filter(
+                    CaregiverLink.patient_id == dose_event.patient_id,
+                    CaregiverLink.status == "accepted",
+                )
+                .first()
+                is not None
+            )
+            if co_nguoi_than:
+                dose_event.status = "AWAITING_CAREGIVER"
+            else:
+                # Khong ai kiem chung duoc -> chap nhan loi tu khai va CHOT
+                # NGAY, danh doi bang diem thap hon thay vi bat benh nhan cho
+                # mot nguoi khong ton tai. Cung tinh than voi duong "tu bao da
+                # uong" o dose_routes.py, chi khac muc tru (-30% vs -50%): o
+                # day benh nhan da thuc su chup anh 3 lan, chi la may khong
+                # doc duoc.
+                dose_event.status = "TAKEN"
+                db.flush()
+                ngay_lieu = ngay_vn(dose_event.scheduled_at)
+                goc = award_dose_on_time(db, dose_event.patient_id, ngay_lieu)
+                tru = apply_confirmation_method_penalty(
+                    db,
+                    patient_id=dose_event.patient_id,
+                    dose_event_id=dose_event.id,
+                    occurred_on=ngay_lieu,
+                    pct=catalog.PCT_NO_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL,
+                )
+                row.points_awarded = goc - tru
+            # Escalate trong CA HAI nhanh: bac si van can biet anh khong khop
+            # sau 3 lan. Khac nhau o cho nhanh tren la mot viec CAN DUYET, con
+            # nhanh duoi chi la ghi nhan (lieu da chot xong).
             _escalate_photo_mismatch(db, dose_event, row)
 
         db.commit()

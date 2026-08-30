@@ -117,6 +117,17 @@ class DrugSearchItem(BaseModel):
 
 class SearchDrugOutput(BaseModel):
     items: list[DrugSearchItem]
+    # BUILD-45 Candidate A: a server-computed structural uniqueness signal
+    # (search_catalog_unique_match, v2_agent.py) -- independent of the
+    # model's own requested `limit`, so this is never re-derived from
+    # `len(items)` alone. Declared here (the real Tool Gateway output
+    # contract `ToolGateway.execute` validates/re-serializes every raw tool
+    # dict against) because an undeclared field is silently dropped by
+    # `output_model.model_validate(...).model_dump(...)` -- found via this
+    # build's own local E2E: the domain tool computed the field correctly,
+    # but it never reached `_resolved_drug_entity` (agent_v2_routes.py)
+    # until this model declared it too.
+    unique_match_legacy_drug_id: str | None = None
 
 
 class DrugInfoField(BaseModel):

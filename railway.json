@@ -2,16 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile",
-    "watchPatterns": [
-      "backend/**",
-      "migrations/**",
-      "scripts/**",
-      "requirements.txt",
-      "alembic.ini",
-      "Dockerfile",
-      "docker-entrypoint.sh"
-    ]
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
     "preDeployCommand": ["python scripts/safe_migrate.py"],

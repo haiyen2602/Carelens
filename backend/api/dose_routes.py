@@ -24,7 +24,7 @@ from backend.config import get_settings
 from backend.db.base import get_db
 from backend.db.models import CaregiverLink, DoseEvent, Patient
 from backend.models.schemas import DoseStatusUpdateRequest, DoseSummary
-from backend.services import reward_ledger
+from backend.services import reward_catalog, reward_ledger
 from backend.services.drug_images import (
     drug_image_presentation,
     get_active_drug_product_ids_for_legacy_ids,
@@ -184,8 +184,20 @@ def update_dose_status(
     if not authorized:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền sửa liều này")
 
+    # Chup lai TRUOC khi gan trang thai moi - muc diem phu thuoc vao cach lieu
+    # nay duoc xac nhan, ma tin hieu duy nhat con lai la trang thai CU.
+    ty_le = _xac_dinh_ty_le_thuong(
+        previous_status=dose.status,
+        is_self_report=current_user.patient_id == dose.patient_id,
+    )
     dose.status = body.status
-    diem = _thuong_diem_neu_uong_du(db, patient_id=dose.patient_id, scheduled_at=dose.scheduled_at)
+    diem = _thuong_diem_neu_uong_du(
+        db,
+        dose_event_id=dose.id,
+        patient_id=dose.patient_id,
+        scheduled_at=dose.scheduled_at,
+        pct=ty_le,
+    )
     db.commit()
     db.refresh(dose)
     return _dose_summary(
@@ -195,7 +207,34 @@ def update_dose_status(
     )
 
 
-def _thuong_diem_neu_uong_du(db: Session, *, patient_id: str, scheduled_at: datetime) -> int:
+def _xac_dinh_ty_le_thuong(*, previous_status: str, is_self_report: bool) -> int:
+    """PHAN TRAM diem GIU LAI, theo do tin cay cua cach xac nhan lieu nay
+    (yeu cau nhom truong 2026-08-28). Xem reward_catalog cho tung muc.
+
+    Chi suy ra tu TRANG THAI CU + ai dang goi, vi DoseEvent khong luu lai
+    "lieu nay da duoc xac nhan bang cach nao":
+      - AWAITING_CAREGIVER: chi co MOT duong dan toi day, la anh khong khop
+        sau 3 lan (verifier.py), va tu 2026-08-28 chi khi benh nhan CO nguoi
+        than - khong con phai kiem tra CaregiverLink lai o day nua.
+      - PENDING + chinh benh nhan bam: tu bao da uong, khong qua anh.
+      - Con lai (nguoi than/bac si tu sua ho ho so): giu nguyen 100%, khong
+        phai loi tu khai cua benh nhan nen khong tru.
+    """
+    if previous_status == "AWAITING_CAREGIVER":
+        return reward_catalog.PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL
+    if previous_status == "PENDING" and is_self_report:
+        return reward_catalog.PCT_SELF_REPORT_NO_PHOTO
+    return 100
+
+
+def _thuong_diem_neu_uong_du(
+    db: Session,
+    *,
+    dose_event_id: str,
+    patient_id: str,
+    scheduled_at: datetime,
+    pct: int = 100,
+) -> int:
     """Cong diem thuong khi benh nhan da uong DU thuoc cua ngay (BUILD-reward).
 
     Goi sau moi lan cap nhat trang thai, KHONG chi khi status=TAKEN: lieu
@@ -216,7 +255,17 @@ def _thuong_diem_neu_uong_du(db: Session, *, patient_id: str, scheduled_at: date
     benh nhan thay ngay "+N diem" ma khong phai mo trang Diem thuong."""
     db.flush()
     ngay_cua_lieu = reward_ledger.ngay_vn(scheduled_at)
-    return reward_ledger.award_dose_on_time(db, patient_id, ngay_cua_lieu)
+    goc = reward_ledger.award_dose_on_time(db, patient_id, ngay_cua_lieu)
+    if pct >= 100:
+        return goc
+    tru = reward_ledger.apply_confirmation_method_penalty(
+        db,
+        patient_id=patient_id,
+        dose_event_id=dose_event_id,
+        occurred_on=ngay_cua_lieu,
+        pct=pct,
+    )
+    return goc - tru
 
 
 def _update_v2_dose_status(

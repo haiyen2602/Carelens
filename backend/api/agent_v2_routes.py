@@ -25,6 +25,7 @@ from backend.agents.v2.conversation_state import (
     ActiveEntity,
     SuggestedAction,
     is_allowed_action,
+    is_drug_candidate_action,
     resolve_state_input,
     transition_state,
 )
@@ -126,18 +127,57 @@ def _resolved_drug_entity(tool_results, *, known_entity: ActiveEntity | None = N
     real local E2E, not assumed.
     """
     info_ids = [item.data.get("legacy_drug_id") for item in tool_results if item.name == "get_drug_info"]
-    if len(info_ids) != 1 or not info_ids[0]:
+    if len(info_ids) == 1 and info_ids[0]:
+        drug_id = str(info_ids[0])
+        for item in tool_results:
+            if item.name != "search_drug":
+                continue
+            for candidate in item.data.get("items", []):
+                if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
+                    return ActiveEntity("drug", drug_id, str(candidate["name"]))
+        if known_entity is not None and (known_entity.id == drug_id or known_entity.legacy_drug_id == drug_id):
+            return known_entity
+        return ActiveEntity("drug", drug_id, drug_id)
+
+    # BUILD-45 Candidate A (cold drug entity binding): no get_drug_info call
+    # happened this turn -- the natural cold-turn shape ("Paracetamol dung
+    # de lam gi?" -> the model often calls only search_drug), previously an
+    # unconditional None here. Promote anyway when search_drug's OWN
+    # server-computed uniqueness signal (search_catalog_unique_match,
+    # v2_agent.py -- the query's full, untruncated ranked result has
+    # exactly one match, never inferred from len(items) alone, which a
+    # caller-chosen `limit` could truncate) says this was genuinely
+    # unambiguous, not a top-1-of-many fuzzy guess. Requires exactly one
+    # search_drug call this turn -- multiple distinct searches in one turn
+    # is rare and itself a form of ambiguity, so it falls through to None
+    # rather than guessing which search "counts". Zero extra model calls:
+    # this reads evidence the run already produced.
+    search_calls = [item for item in tool_results if item.name == "search_drug"]
+    if len(search_calls) == 1:
+        unique_id = search_calls[0].data.get("unique_match_legacy_drug_id")
+        if unique_id:
+            for candidate in search_calls[0].data.get("items", []):
+                if candidate.get("legacy_drug_id") == unique_id and candidate.get("name"):
+                    return ActiveEntity("drug", str(unique_id), str(candidate["name"]))
+    return None
+
+
+def _picked_candidate_entity(selected_action: SuggestedAction | None) -> ActiveEntity | None:
+    """BUILD-48: the product the user explicitly picked from an offered list.
+
+    Authoritative by construction, and the only promotion path that does not
+    depend on the model happening to call a particular tool --
+    ``_resolved_drug_entity`` above needs either a ``get_drug_info`` call or
+    a unique ``search_drug`` match, and an ambiguous/mistyped search yields
+    neither, which is exactly the situation that put a candidate list on
+    screen in the first place. ``_validated_selected_action`` has already
+    matched every field of this action against this conversation's own
+    ``offered_actions``, so both the id and the display name are
+    server-issued; neither can come from raw client input.
+    """
+    if not is_drug_candidate_action(selected_action):
         return None
-    drug_id = str(info_ids[0])
-    for item in tool_results:
-        if item.name != "search_drug":
-            continue
-        for candidate in item.data.get("items", []):
-            if candidate.get("legacy_drug_id") == drug_id and candidate.get("name"):
-                return ActiveEntity("drug", drug_id, str(candidate["name"]))
-    if known_entity is not None and known_entity.id == drug_id:
-        return known_entity
-    return ActiveEntity("drug", drug_id, drug_id)
+    return ActiveEntity("drug", selected_action.entity_id, selected_action.label)
 
 
 def _authoritative_topic_for_turn(
@@ -650,6 +690,16 @@ def _persist_durable_trace(
             # comparison ACROSS deployments, not a per-run varying signal.
             run.prompt_version = str(getattr(settings, "rag_prompt_version", "") or "") or None
             run.retrieval_version = str(getattr(settings, "rag_retriever_version", "") or "") or None
+            # BUILD-47: makes the BUILD-43 follow-up decision durable. Read via
+            # getattr because not every object reaching this best-effort
+            # function is a full OrchestrationResult -- an AttributeError here
+            # would be swallowed by the outer except and silently cost the run
+            # its spans/evaluation/cost row too, not just these four fields.
+            follow_up = getattr(result, "follow_up_decision", None)
+            run.follow_up_category = follow_up.category.value if follow_up is not None else None
+            run.follow_up_reason_code = follow_up.reason_code.value if follow_up is not None else None
+            run.follow_up_inherited_topic = follow_up.inherited_topic if follow_up is not None else None
+            run.follow_up_inherited_entity = follow_up.inherited_entity if follow_up is not None else None
 
         db.commit()
     except Exception as durable_err:  # noqa: BLE001 -- observability must never break the real response
@@ -915,12 +965,29 @@ def run_agent_orchestration(
                 actor_role=actor.role,
                 patient_id=patient_id,
                 conversation_id=conversation_id,
-                session_id=request.session_id or str(uuid.uuid4()),
+                # BUILD-49: falls back to the CONVERSATION, not to a fresh
+                # uuid. `ShortTermMemoryStore` is keyed by (actor,
+                # conversation, session); no client sends `session_id`
+                # (verified across all of frontend/src), so a random value
+                # here minted a brand-new session on every single HTTP
+                # request -- the store wrote the current message and read
+                # back only that same message, which is why the memory layer
+                # had never once carried a previous turn in production.
+                # `conversation_id` is already defaulted to a unique
+                # `one-shot:<uuid>` above when the client sends none, so a
+                # genuinely one-shot request stays just as isolated as
+                # before; isolation across actors and conversations is
+                # untouched, since both remain part of the key.
+                session_id=request.session_id or conversation_id,
                 dose_id=request.dose_id,
                 request_id=request.idempotency_key,
                 agent_run_id=idempotency_claim.agent_run_id if idempotency_claim is not None else None,
                 resolved_query=input_resolution.query if input_resolution.used else None,
-                active_entity_id=active_entity_for_request.id if active_entity_for_request else None,
+                active_entity_id=(
+                    active_entity_for_request.legacy_drug_id or active_entity_for_request.id
+                    if active_entity_for_request
+                    else None
+                ),
                 active_entity_name=active_entity_for_request.canonical_name if active_entity_for_request else None,
                 # The semantic value stays in state; the bound tool receives
                 # the server-authored human query/label, never a client id.
@@ -940,7 +1007,9 @@ def run_agent_orchestration(
                 prior_active_topic=conversation_state.active_topic.canonical_name
                 if conversation_state.active_topic
                 else None,
-                prior_active_entity_id=conversation_state.active_entity.id
+                prior_active_entity_id=(
+                    conversation_state.active_entity.legacy_drug_id or conversation_state.active_entity.id
+                )
                 if conversation_state.active_entity
                 else None,
                 prior_active_entity_name=conversation_state.active_entity.canonical_name
@@ -982,7 +1051,9 @@ def run_agent_orchestration(
         raise
 
     semantic = normalize_semantic_medical_query(input_resolution.query)
-    resolved_entity = _resolved_drug_entity(result.tool_results, known_entity=conversation_state.active_entity)
+    resolved_entity = _resolved_drug_entity(
+        result.tool_results, known_entity=conversation_state.active_entity
+    ) or _picked_candidate_entity(selected_action)
     safety_event = result.intent is OrchestrationIntent.ACUTE_DANGER_ESCALATION or result.safety_decision is not None
     # BUILD-29D.2 fix (found via real local E2E, 2026-08-23): the keyword
     # router (classify_intent) can label a message GENERAL_MEDICAL_INFORMATION
@@ -1005,7 +1076,7 @@ def run_agent_orchestration(
     # string built for embedding/lexical search (e.g. "cong dung cua thuoc
     # long huyet") -- it was never meant to be a display-safe state value.
     # `semantic.display_topic` is the one field this build added specifically
-    # to be state-write-safe (`_display_topic_from_raw`, orchestrator.py: only
+    # to be state-write-safe (`_display_topic_from_raw`, follow_up.py: only
     # an explicit disease/topic shape, rejected outright for anything that
     # looks like a drug-attribute question). Falling back to `semantic.topic`
     # whenever `display_topic` is intentionally None (a drug-attribute

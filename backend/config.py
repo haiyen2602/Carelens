@@ -53,6 +53,50 @@ class Settings(BaseSettings):
     agent_fallback_model: str = "gpt-5.4"
     agent_embedding_model: str = "text-embedding-3-small"
     rag_judge_model: str = "gpt-4o"
+
+    # Voice I/O -- turn-based STT/TTS adapter WRAPPED AROUND Agent V2, not a
+    # replacement for it (backend/api/voice_routes.py,
+    # backend/agents/v2/speech_gateway.py). One-shot Whisper/gpt-4o-transcribe
+    # + one-shot TTS REST calls only -- NOT the Realtime WebSocket API: the
+    # patient's transcript is always fed back into the unchanged
+    # /agent/v2/orchestrate call, so Agent V2 keeps doing 100% of the
+    # reasoning. Same fallback-to-OPENAI_API_KEY idiom as the workload keys
+    # above (see build_model_workloads).
+    openai_speech_api_key: str = ""
+    voice_stt_model: str = "gpt-4o-transcribe"
+    # Pinning the language is the single highest-impact STT setting here, not a
+    # micro-optimisation: left unset the model re-detects the language on every
+    # clip, and a one-second utterance carries too little signal to detect from.
+    # Measured against this project's own key -- "Alo" transcribed as "Hello"
+    # with no language, correctly as "Alo" with "vi". Empty = let OpenAI detect.
+    voice_stt_language: str = "vi"
+    # Vocabulary/context bias, NOT an instruction -- the transcription endpoint
+    # ignores commands placed here (verified: a "translate this to English"
+    # prompt changed nothing). Naming the words this app actually hears is what
+    # helps: it is what turns the mis-heard "Liệu tiếp theo" into "Liều tiếp
+    # theo", and "liều" is the single most load-bearing word in a medication
+    # assistant. Empty = send no prompt at all.
+    voice_stt_prompt: str = (
+        "Hội thoại tiếng Việt giữa bệnh nhân và trợ lý nhắc uống thuốc. "
+        "Từ thường gặp: liều, liều tiếp theo, uống thuốc, đơn thuốc, bác sĩ, "
+        "sáng, trưa, chiều, tối, trước ăn, sau ăn."
+    )
+    voice_tts_model: str = "gpt-4o-mini-tts"
+    voice_tts_voice: str = "alloy"
+    # ~10MB bounds STT cost per call before any OpenAI request is made (mirrors
+    # drug_image_chat_max_upload_bytes's role for B-05 below).
+    voice_max_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    # Enforced by speak_voice() before any OpenAI call -- bounds TTS cost per
+    # call (VoiceSpeakRequest itself carries no upper bound).
+    voice_max_reply_chars: int = Field(default=2000, gt=0)
+    voice_request_timeout_seconds: float = Field(default=20.0, gt=0, le=60.0)
+    # [CHUA CHOT] placeholder, same caveat as rate_limit_* below -- separate
+    # budget from ordinary chat since each call costs real OpenAI audio usage.
+    voice_rate_limit_max_requests: int = Field(
+        default=10, description="[CHUA CHOT] so request toi da/patient_id trong 1 window cho voice STT/TTS"
+    )
+    voice_rate_limit_window_seconds: float = Field(default=60.0, description="Do dai window rate limit cho voice (giay)")
+
     # BUILD-13: JSON price catalog by exact model name. Prices are deliberately
     # not hard-coded because provider pricing/version contracts can change.
     # Example: {"gpt-5.4-mini":{"input_per_million":0.0,"cached_input_per_million":0.0,"output_per_million":0.0}}
@@ -195,6 +239,25 @@ class Settings(BaseSettings):
     # from uploaded dose-verification photos, while reusing local-volume
     # storage conventions until a reviewed storage backend is introduced.
     drug_image_storage_dir: str = "./data/drug_images"
+    # B-07 patient package images are PHI-adjacent input, never catalog media.
+    # They are processed synchronously and removed immediately after B-05; the
+    # directory is deliberately a separate private working area.
+    drug_image_chat_temp_dir: str = "./data/drug_image_chat_tmp"
+    # During an ACTIVE BUILD-44 takeover only, the original upload is retained
+    # in a separate private doctor-review area so the assigned doctor can see
+    # the patient's attachment. It is never part of catalog or chat history.
+    drug_image_chat_doctor_storage_dir: str = "./data/drug_image_chat_doctor_private"
+    drug_image_chat_max_upload_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    drug_image_chat_max_dimension_px: int = Field(default=4096, gt=0)
+    drug_image_chat_max_pixels: int = Field(default=16_000_000, gt=0)
+    drug_image_chat_confirmation_ttl_seconds: int = Field(default=900, gt=0)
+    drug_image_chat_doctor_attachment_ttl_seconds: int = Field(default=86_400, gt=0)
+    drug_image_chat_recognition_timeout_seconds: int = Field(default=30, gt=0)
+    drug_image_chat_ocr_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
+    # B-08 has not approved production recognition. Keep the potentially
+    # heavy B-05 runtime opt-in so this endpoint can return a bounded,
+    # patient-safe availability response rather than attempting startup.
+    drug_image_chat_recognition_enabled: bool = False
     # Canh dai nhat sau khi resize + chat luong nen JPEG - dong bo voi
     # max_edge=1600, jpeg_quality=90 da tune tren golden dataset trong
     # backend/vlm_demthuoc/vlm_client.py::encode_frame, khong bia so moi.
@@ -527,6 +590,30 @@ class Settings(BaseSettings):
     rag_prompt_version: str = Field(default="medication-chat-v1.0", description="RAG answer prompt version")
     rag_retriever_version: str = Field(default="hybrid-rrf-v2", description="Retriever pipeline version")
     rag_index_version: str = Field(default="med-kb-2026-08-20", description="Knowledge base index version")
+
+    # Telegram bot - kenh nhac gio uong thuoc THU HAI ben canh Web Push
+    # (backend/services/telegram.py). Bot API khong gui duoc theo so dien
+    # thoai/email, chi theo chat_id co duoc sau khi benh nhan bam /start.
+    #
+    # CO Y de default RONG va KHONG fail-closed, GIONG HET VAPID o tren va
+    # khac han internal_auth_secret/jwt_secret: thieu token Telegram chi la
+    # "khong co kenh Telegram", nhac o client va Web Push van chay dung. Bat
+    # buoc cau hinh se lam vo moi truong local cua ca nhom vi 1 kenh phu.
+    telegram_bot_token: str = Field(
+        default="", description="Token bot lay tu @BotFather. Rong = tat kenh Telegram."
+    )
+    telegram_bot_username: str = Field(
+        default="", description="Username bot (khong co @) - dung dung link t.me/<username>?start=<token>"
+    )
+    telegram_link_token_ttl_seconds: int = Field(
+        default=600, description="Han dung cua ma ghep tai khoan Telegram (giay)"
+    )
+    # Gio dia phuong dung khi render tin Telegram. Web Push khong can (trinh
+    # duyet tu doi gio may), nhung Telegram gui TEXT THO - khong doi thi benh
+    # nhan doc "hen 14:00" cho lieu 21:00.
+    telegram_display_utc_offset_hours: int = Field(
+        default=7, description="Lech gio so voi UTC khi hien gio trong tin Telegram (VN = 7)"
+    )
 
 
 

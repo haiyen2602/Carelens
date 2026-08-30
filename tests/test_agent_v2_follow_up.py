@@ -49,6 +49,12 @@ def test_b_true_followup_attribute_only_inherits_entity():
     assert d.inherited_topic is False
 
 
+def test_b2_confirmed_drug_detail_request_inherits_entity():
+    d = classify_follow_up("Thông tin chi tiết thuốc", prior_topic=None, prior_entity_name="Snapcef 16mg/10ml")
+    assert d.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert d.inherited_entity is True
+
+
 # ---------------------------------------------------------------------------
 # C. Pronoun/deictic follow-up.
 # ---------------------------------------------------------------------------
@@ -58,6 +64,23 @@ def test_c_deictic_this_drug_inherits_entity():
     d = classify_follow_up("Thuốc này có tác dụng phụ gì?", prior_topic=None, prior_entity_name="Amoxicillin")
     assert d.category is FollowUpCategory.TRUE_FOLLOWUP
     assert d.inherited_entity is True
+
+
+def test_c2_deictic_this_disease_cause_question_inherits_topic_not_a_topic_switch():
+    """BUILD-45 Candidate B regression lock. Widening _DISPLAY_TOPIC_
+    PATTERNS (orchestrator.py, now the single canonical source
+    _explicit_topic reads from) to cover the "X do dau" cause shape
+    exposed a real, pre-existing gap in _explicit_topic's own rejection
+    logic: it only ever rejected a topic that IS WHOLLY a bare pronoun
+    ("no"), never one that merely CONTAINS a deictic word ("Bệnh này" ->
+    "benh nay", already its own _DEICTIC_MARKERS entry). Without the fix,
+    "Bệnh này do đâu?" would misclassify as TOPIC_SWITCH (an explicit new
+    topic "Bệnh này") instead of TRUE_FOLLOWUP correctly inheriting the
+    prior topic -- caught by the pre-existing BUILD-43 orchestrator suite
+    itself, not assumed safe."""
+    d = classify_follow_up("Bệnh này do đâu?", prior_topic="sỏi thận", prior_entity_name=None)
+    assert d.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert d.inherited_topic is True
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +155,19 @@ def test_stale_entity_not_inherited_on_explicit_new_topic():
 def test_no_prior_context_at_all_defaults_standalone_for_named_subject():
     d = classify_follow_up("Vitamin C có tác dụng gì?", prior_topic=None, prior_entity_name=None)
     assert d.category is FollowUpCategory.STANDALONE_QUESTION
+
+
+def test_h_unrelated_short_standalone_question_does_not_inherit_prior_topic():
+    """BUILD-45 §13 false-positive-safety lock: a short, unrelated,
+    self-naming question must not silently inherit a stale prior TOPIC.
+    The entity-side equivalent of this exact case was already covered
+    (test_a4_short_standalone_does_not_inherit_unrelated_prior_drug /
+    test_stale_entity_not_inherited_on_explicit_new_topic) but no test
+    named the TOPIC-side case explicitly, so this closes that gap."""
+    d = classify_follow_up("Cảm cúm là gì?", prior_topic="Tiểu đường", prior_entity_name=None)
+    assert d.category is FollowUpCategory.TOPIC_SWITCH
+    assert d.inherited_topic is False
+    assert d.inherited_entity is False
 
 
 def test_explicit_topic_repeats_same_prior_topic_stays_standalone_inherits_topic():

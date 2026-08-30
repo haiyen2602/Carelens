@@ -33,6 +33,11 @@ export type AuthUser = {
   // (/api/auth/set-password) thay vi "Đổi mật khẩu" - hoi mat khau hien tai
   // cua mot thu khong ton tai thi nguoi dung se ngoi thu lai vo ich.
   auth_provider: string;
+  // THEM (migration 0052) - benh nhan tu bat/tat yeu cau chup anh khi xac
+  // nhan uong thuoc (man hinh Cai dat). Chi co y nghia khi role="patient",
+  // null cho role khac. Xem components/account-settings.tsx va
+  // app/patient/page.tsx.
+  photo_capture_enabled: boolean | null;
 };
 
 // `/auth/login` (UserOut) CO Y chi tra id/full_name/role dung field mau
@@ -44,7 +49,10 @@ export type AuthUser = {
 export async function layLienKet(
   accessToken: string,
 ): Promise<
-  Pick<AuthUser, "patient_id" | "doctor_id" | "profile_completed" | "email" | "auth_provider">
+  Pick<
+    AuthUser,
+    "patient_id" | "doctor_id" | "profile_completed" | "email" | "auth_provider" | "photo_capture_enabled"
+  >
 > {
   const me = await request<{
     email: string;
@@ -52,6 +60,7 @@ export async function layLienKet(
     doctor_id: string | null;
     profile_completed: boolean | null;
     auth_provider: string;
+    photo_capture_enabled: boolean | null;
   }>("/api/v1/auth/me", { headers: { Authorization: `Bearer ${accessToken}` } });
   return {
     email: me.email,
@@ -62,6 +71,10 @@ export async function layLienKet(
     // "password" de UI khong bao gio nham tuong tai khoan thuong la tai khoan
     // Google roi an mat nut doi mat khau cua ho.
     auth_provider: me.auth_provider ?? "password",
+    // Backend cu (chua co migration 0052) khong tra truong nay - mac dinh
+    // True (chup anh) de khop hanh vi hien tai, tranh benh nhan bi tat tinh
+    // nang nay ngoai y muon chi vi backend chua deploy kip.
+    photo_capture_enabled: me.photo_capture_enabled ?? true,
   };
 }
 

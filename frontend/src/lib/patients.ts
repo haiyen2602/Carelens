@@ -54,6 +54,9 @@ export type PatientProfile = {
   heightCm: number | null;
   weightKg: number | null;
   profileCompleted: boolean;
+  // THEM (migration 0052) - man hinh Cai dat cho benh nhan tu bat/tat yeu
+  // cau chup anh khi xac nhan uong thuoc, xem frontend/src/app/patient/page.tsx.
+  photoCaptureEnabled: boolean;
 };
 
 type PatientProfileApiItem = {
@@ -67,6 +70,7 @@ type PatientProfileApiItem = {
   height_cm: number | null;
   weight_kg: number | null;
   profile_completed: boolean;
+  photo_capture_enabled: boolean;
 };
 
 function toProfile(p: PatientProfileApiItem): PatientProfile {
@@ -81,6 +85,7 @@ function toProfile(p: PatientProfileApiItem): PatientProfile {
     heightCm: p.height_cm,
     weightKg: p.weight_kg,
     profileCompleted: p.profile_completed,
+    photoCaptureEnabled: p.photo_capture_enabled,
   };
 }
 
@@ -136,6 +141,7 @@ export async function updateMyPatientProfile(
     gender?: string;
     height_cm?: number;
     weight_kg?: number;
+    photo_capture_enabled?: boolean;
   },
 ): Promise<PatientProfile> {
   const response = await fetch("/api/patients/me", {

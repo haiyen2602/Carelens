@@ -15,6 +15,7 @@ worker thuc su chay job tai 1 thoi diem qua co che lock cua jobstore."""
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -25,9 +26,11 @@ from backend.services.agent_judge_worker import process_pending_judge_batch
 from backend.services.classification import summarize_hourly_conversation
 from backend.services.doctor_takeover_timeout import close_inactive_takeovers
 from backend.services.dose_push_reminder import quet_va_day_nhac
+from backend.services.drug_image_chat import cleanup_expired_takeover_uploads
 from backend.services.escalation_reminder import check_and_send_reminders
 from backend.services.hourly_conversation_summary import create_completed_hour_summaries
 from backend.services.photo_cleanup import xoa_anh_het_han
+from backend.services.telegram import quet_update_moi
 
 logger = logging.getLogger("escalation_scheduler")
 
@@ -72,6 +75,26 @@ async def _run_photo_cleanup() -> None:
         db.close()
 
 
+async def _run_drug_image_chat_cleanup() -> None:
+    """Remove expired B-07 doctor-only package images even without new uploads."""
+
+    db = SessionLocal()
+    try:
+        settings = get_settings()
+        removed = cleanup_expired_takeover_uploads(
+            db,
+            storage_dir=Path(settings.drug_image_chat_doctor_storage_dir),
+        )
+        if removed:
+            db.commit()
+            logger.info("Removed %d expired private doctor image attachments", removed)
+    except Exception:  # noqa: BLE001 - a failed cleanup must not stop the scheduler
+        db.rollback()
+        logger.exception("Failed B-07 private doctor image cleanup")
+    finally:
+        db.close()
+
+
 async def _run_dose_push_reminder() -> None:
     """Quet lieu toi gio roi day Web Push (backend/services/dose_push_reminder.py).
 
@@ -99,6 +122,25 @@ async def _run_doctor_takeover_timeout() -> None:
     except Exception:  # noqa: BLE001 - one failed tick must not stop other jobs
         db.rollback()
         logger.exception("Loi khi quet timeout doctor takeover")
+    finally:
+        db.close()
+
+
+async def _run_telegram_updates() -> None:
+    """Keo tin benh nhan gui toi bot (chi /start <token> de ghep tai khoan).
+
+    Dat chung _scheduler co san vi dung ly do da ghi o _run_dose_push_reminder:
+    SQLAlchemyJobStore dam bao chi 1 worker thuc su chay. Dieu do QUAN TRONG
+    hon o job nay - getUpdates la hang doi TIEU THU MOT LAN, hai worker cung
+    keo se moi ben nhan mot nua so tin, benh nhan bam /start co the roi vao
+    worker khong xu ly."""
+    db = SessionLocal()
+    try:
+        da_ghep = quet_update_moi(db)
+        if da_ghep:
+            logger.info("Da ghep %d tai khoan Telegram moi", da_ghep)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        logger.exception("Loi khi chay Telegram update poller")
     finally:
         db.close()
 
@@ -172,6 +214,23 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         hour=3,
         minute=0,
         id="photo_cleanup",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_drug_image_chat_cleanup,
+        "cron",
+        hour=3,
+        minute=10,
+        id="drug_image_chat_cleanup",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_telegram_updates,
+        "interval",
+        seconds=60,
+        id="telegram_updates",
         replace_existing=True,
         max_instances=1,
     )

@@ -44,6 +44,10 @@ class ActiveEntity:
     canonical_name: str
     display_name: str | None = None
     normalized_key: str | None = None
+    # B-07 keeps the canonical V2 product ID in ``id``. Agent V2's existing
+    # Drug Tool still uses a legacy lookup key during the V1/V2 transition, so
+    # the server-owned mapping is carried separately and is never client input.
+    legacy_drug_id: str | None = None
 
     def __post_init__(self) -> None:
         """Never replace a canonical drug name with its normalized lookup key."""
@@ -69,6 +73,27 @@ class SuggestedAction:
         if self.topic:
             value["topic"] = self.topic
         return value
+
+
+# BUILD-48: marks a `drug_followup` that offers ONE CANDIDATE PRODUCT to pick
+# from an ambiguous search, rather than an ASPECT of an already-resolved drug.
+# Both share the `drug_followup` type and can both carry `value="drug_uses"`,
+# so `value` cannot tell them apart -- and confusing them would be harmful:
+# an aspect action's label is templated ("Tác dụng phụ của X"), so promoting
+# it as an entity would store that whole phrase as the drug's name. The
+# action_id is server-issued and re-validated against `offered_actions` on
+# every turn, so it is a safe discriminator; raw client input can never forge
+# one that was not offered.
+DRUG_CANDIDATE_ACTION_PREFIX = "drug-candidate-"
+
+
+def is_drug_candidate_action(action: SuggestedAction | None) -> bool:
+    return (
+        action is not None
+        and action.type == "drug_followup"
+        and bool(action.entity_id)
+        and action.action_id.startswith(DRUG_CANDIDATE_ACTION_PREFIX)
+    )
 
 
 def is_allowed_action(action: SuggestedAction) -> bool:
@@ -113,7 +138,7 @@ class ConversationState:
 
     def as_dict(self, *, actor_id: str, patient_id: str) -> dict[str, object]:
         return {
-            "version": 4,
+            "version": 5,
             "actor_id": actor_id,
             "patient_id": patient_id,
             "conversation_id": self.conversation_id,
@@ -133,6 +158,7 @@ class ConversationState:
                 "canonical_name": self.active_entity.canonical_name,
                 "display_name": self.active_entity.display_name,
                 "normalized_key": self.active_entity.normalized_key,
+                "legacy_drug_id": self.active_entity.legacy_drug_id,
             },
             "last_intent": self.last_intent,
             "requested_attribute": self.requested_attribute,
@@ -191,6 +217,7 @@ class ConversationState:
                     str(entity["canonical_name"]),
                     str(entity["display_name"]) if entity.get("display_name") else None,
                     str(entity["normalized_key"]) if entity.get("normalized_key") else None,
+                    str(entity["legacy_drug_id"]) if entity.get("legacy_drug_id") else None,
                 )
                 if isinstance(entity, dict)
                 else None,
@@ -241,6 +268,17 @@ def resolve_state_input(
     if action.type == "drug_followup" and state.active_entity and action.entity_id == state.active_entity.id:
         return StateInputResolution(
             query=f"{action.label} của thuốc {state.active_entity.canonical_name}", selected_action=action, used=True
+        )
+    if is_drug_candidate_action(action):
+        # BUILD-48: picking one product out of an ambiguous search result.
+        # Checked AFTER the aspect branch above so the existing flow (an
+        # action bound to the CURRENT entity) is untouched. `active_entity`
+        # is normally None here -- that ambiguity is precisely why a list was
+        # offered. The label is the server-issued product name, so phrasing
+        # it this way keeps the router classifying this as a drug-information
+        # question rather than an unrecognized fragment.
+        return StateInputResolution(
+            query=f"Công dụng của thuốc {action.label}", selected_action=action, used=True
         )
     return StateInputResolution(query=message)
 

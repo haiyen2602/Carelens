@@ -14,11 +14,15 @@ ghi ro trong docstring escalation_reminder.py.
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
 from backend.db.models import Escalation
+from backend.services.telegram import send_telegram_to_caregivers
+
+logger = logging.getLogger("caregiver_escalation")
 
 
 def tao_canh_bao_cho_nguoi_than(
@@ -47,4 +51,24 @@ def tao_canh_bao_cho_nguoi_than(
         last_reminder_at=datetime.now(UTC),
     )
     db.add(row)
+
+    # DAY THAT toi nguoi than, khong chi ghi DB roi cho ho tu mo app (THEM
+    # 2026-08-28). Truoc do `notified=["caregiver"]` o tren la mot loi hua
+    # SUONG: dong Escalation duoc danh dau "da bao" nhung khong co tin nao roi
+    # khoi may chu - nguoi than chi thay neu tu vao tab Gia dinh. Voi canh bao
+    # bo lieu/dau hieu nguy hiem thi do la do tre hang gio.
+    #
+    # KHONG raise khi gui hong: canh bao PHAI duoc ghi vao DB du Telegram co
+    # loi mang hay nguoi than chua ghep tai khoan. Man hinh Gia dinh van la
+    # duong nhan tin cuoi cung, Telegram chi la duong NHANH hon.
+    try:
+        send_telegram_to_caregivers(
+            db,
+            patient_id=patient_id,
+            title="⚠️ Cảnh báo",
+            body=reason,
+        )
+    except Exception:  # noqa: BLE001 - gui hong khong duoc lam mat canh bao
+        logger.exception("Khong gui duoc canh bao Telegram cho nguoi than cua %s", patient_id)
+
     return row

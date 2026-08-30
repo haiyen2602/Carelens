@@ -246,7 +246,12 @@ export default function PatientToday() {
     return "due";
   })();
   const hero = HERO[trangThai];
-  const khongCanAnh = trangThai === "overdue" || trangThai === "waiting";
+  // THEM (migration 0052) - benh nhan tu tat yeu cau chup anh trong Cai dat
+  // (xem components/account-settings.tsx). Khi tat, MOI lieu duoc coi la
+  // "khong can anh" (giong lieu qua gio/da hoan) bat ke khung gio - nut
+  // chinh luon la "Toi da uong"/"Chua uong", khong bao gio mo camera.
+  const chupAnhBat = user?.photo_capture_enabled ?? true;
+  const khongCanAnh = !chupAnhBat || trangThai === "overdue" || trangThai === "waiting";
 
   const cuaSo = (() => {
     if (!next) return "";
@@ -255,7 +260,8 @@ export default function PatientToday() {
       const phut = Math.round((Date.now() - new Date(next.windowEnd).getTime()) / 60000);
       return `quá giờ hẹn ${phut} phút • giờ xác nhận thật sẽ được ghi`;
     }
-    return `khung xác nhận: ${gioHienThi(next.windowStart)} – ${gioHienThi(next.windowEnd)} • cần ảnh`;
+    const hauTo = chupAnhBat ? " • cần ảnh" : "";
+    return `khung xác nhận: ${gioHienThi(next.windowStart)} – ${gioHienThi(next.windowEnd)}${hauTo}`;
   })();
 
   const gioSau = (phut: number) =>
@@ -315,15 +321,21 @@ export default function PatientToday() {
     }
   };
 
-  // Tu bao "da uong" KHONG kem anh - chi mo duoc khi qua gio/da hoan.
-  // KHONG ghi thang TAKEN: chuyen sang AWAITING_CAREGIVER de nguoi than
-  // duyet that o /patient/family/[id].
+  // Tu bao "da uong" KHONG kem anh - mo duoc khi tat chup anh trong Cai dat,
+  // hoac lieu da qua gio/da hoan (xem `khongCanAnh`).
+  //
+  // SUA 2026-08-28: truoc day chuyen sang AWAITING_CAREGIVER de cho nguoi than
+  // duyet. Nhung benh nhan KHONG co nguoi than thi ket vinh vien o do - khong
+  // job nao quet trang thai nay, va no cung nam ngoai vong nhac lai (chi lay
+  // status "PENDING", xem backend/services/dose_push_reminder.py). Gio chap
+  // nhan loi tu khai va chot ngay, danh doi bang diem thap hon (-50%, tinh o
+  // backend/api/dose_routes.py::_xac_dinh_ty_le_thuong).
   const xacNhanKhongAnh = async () => {
     if (!next) return;
     setDangXuLy(true);
     try {
-      await updateDoseStatus(next.id, "AWAITING_CAREGIVER", accessToken);
-      toast.success("Đã gửi cho người thân xác nhận giúp bạn");
+      await updateDoseStatus(next.id, "TAKEN", accessToken);
+      toast.success("Đã ghi nhận bạn uống thuốc (điểm thấp hơn vì không có ảnh)");
       setSheet(null);
       await taiLaiDoses();
     } catch (err) {
@@ -475,7 +487,7 @@ export default function PatientToday() {
             <CapyPrimaryButton
               disabled={dangGui}
               onClick={
-                xacMinhChoLieuNay?.nextAction === "RETAKE" || !khongCanAnh
+                chupAnhBat && (xacMinhChoLieuNay?.nextAction === "RETAKE" || !khongCanAnh)
                   ? () => setCameraOpen(true)
                   : () => setSheet("confirm")
               }
@@ -485,7 +497,13 @@ export default function PatientToday() {
               ) : (
                 <>
                   {!khongCanAnh && <Camera className="h-4 w-4" />}
-                  {xacMinhChoLieuNay?.nextAction === "RETAKE" ? "Chụp lại" : hero.primary}
+                  {(() => {
+                    if (xacMinhChoLieuNay?.nextAction === "RETAKE" && chupAnhBat) return "Chụp lại";
+                    // chupAnhBat=false: nhan luon phai la "Toi da uong", du
+                    // hero.primary (theo trangThai upcoming/due) noi "Chụp &
+                    // xác nhận" - nut o day khong bao gio mo camera nua.
+                    return chupAnhBat ? hero.primary : "Tôi đã uống";
+                  })()}
                 </>
               )}
             </CapyPrimaryButton>
@@ -494,9 +512,11 @@ export default function PatientToday() {
               <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("notyet")}>
                 {hero.secondary}
               </CapySecondaryButton>
-              <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("huongdan")}>
-                Xem hướng dẫn
-              </CapySecondaryButton>
+              {chupAnhBat && (
+                <CapySecondaryButton disabled={dangGui} onClick={() => setSheet("huongdan")}>
+                  Xem hướng dẫn
+                </CapySecondaryButton>
+              )}
             </div>
           </div>
         </div>

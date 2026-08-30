@@ -41,6 +41,7 @@ from backend.services.auth import (
 from backend.services.doctor_watch import auto_watch_new_patient
 from backend.services.email_identity import find_account_by_email
 from backend.services.patient_id import generate_next_patient_id
+from backend.services.patient_profile import ensure_patient_profile, is_patient_profile_complete
 
 auth_router = APIRouter()
 
@@ -489,6 +490,9 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tài khoản chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn.",
         )
+    if ensure_patient_profile(db, account):
+        db.commit()
+        db.refresh(account)
     return _login_response(account)
 
 
@@ -511,6 +515,9 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> LoginRespons
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tài khoản chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn.",
         )
+    if ensure_patient_profile(db, account):
+        db.commit()
+        db.refresh(account)
     return _login_response(account)
 
 
@@ -526,9 +533,18 @@ def me(
     # sang /onboarding/profile hay khong. Chi tra gia tri khi role=patient
     # (con lai None - chua co onboarding tuong tu cho role khac).
     profile_completed: bool | None = None
+    photo_capture_enabled: bool | None = None
+    if ensure_patient_profile(db, account):
+        db.commit()
+        db.refresh(account)
     if account.role == "patient" and account.patient_id:
         patient = db.query(Patient).filter(Patient.id == account.patient_id).first()
-        profile_completed = patient.profile_completed if patient is not None else False
+        # `is_patient_profile_complete()` thay vi doc thang cot
+        # `patient.profile_completed`: cot do co the con FALSE o cac ho so tao
+        # truoc onboarding, trong khi du lieu that da day du - xem
+        # backend/services/patient_profile.py.
+        profile_completed = is_patient_profile_complete(patient) if patient is not None else False
+        photo_capture_enabled = patient.photo_capture_enabled if patient is not None else True
 
     return MeResponse(
         id=account.id,
@@ -540,6 +556,7 @@ def me(
         doctor_id=account.doctor_id,
         profile_completed=profile_completed,
         auth_provider=account.auth_provider,
+        photo_capture_enabled=photo_capture_enabled,
     )
 
 

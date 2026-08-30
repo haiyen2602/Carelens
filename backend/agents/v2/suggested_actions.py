@@ -11,9 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import uuid4
 
-from backend.agents.v2.conversation_state import ActiveEntity, SuggestedAction
+from backend.agents.v2.conversation_state import (
+    DRUG_CANDIDATE_ACTION_PREFIX,
+    ActiveEntity,
+    SuggestedAction,
+)
 from backend.agents.v2.orchestrator import OrchestrationIntent, SemanticMedicalQuery
 from backend.agents.v2.runtime import RunStatus
+
+# BUILD-48: mirrors the cap `transition_state` applies to `offered_actions`,
+# so the list shown is exactly the list that survives into the next turn.
+_MAX_CANDIDATE_ACTIONS = 4
 
 
 @dataclass(frozen=True)
@@ -119,7 +127,88 @@ def build_suggested_actions(
         )
         return _with_reply_offer(reply, actions)
 
+    # BUILD-48: the turn listed several candidate products and resolved NO
+    # single entity. `search_catalog_unique_match` requires exactly one
+    # catalog item scoring >= 0.90 against the QUERY STRING, so an ambiguous
+    # -- or merely mistyped -- drug question yields no unique match and
+    # nothing was ever remembered. Picking one afterwards ("loại 400
+    # Stella") then re-searched the whole catalog and returned unrelated
+    # products. Offering the candidates makes the choice explicit and, once
+    # picked, server-verifiable. Deliberately NOT an automatic top-1 bind:
+    # in a medical app, silently attaching the wrong product would answer
+    # dosage and contraindication questions about a drug the patient never
+    # asked about.
+    #
+    # Placed LAST (round 2, after a real disease turn was hijacked): a
+    # question about an illness whose drug search happened to return one
+    # unrelated product was offered as "Bạn muốn xem loại nào? - Ceelin
+    # United 60ml", and because this branch used to sit above the topic
+    # branch it also SUPPRESSED that turn's real disease follow-ups. A
+    # resolved topic now always wins.
+    if entity is None:
+        candidates = _search_drug_candidates(tool_results)
+        if candidates:
+            actions = tuple(
+                SuggestedAction(
+                    f"{DRUG_CANDIDATE_ACTION_PREFIX}{uuid4()}",
+                    "drug_followup",
+                    name,
+                    "drug_uses",
+                    entity_id=legacy_drug_id,
+                )
+                for legacy_drug_id, name in candidates
+            )
+            offer = "\n\nBạn muốn xem loại nào?\n" + "\n".join(f"- {action.label}" for action in actions)
+            return SuggestedActionBuild(reply=f"{reply.rstrip()}{offer}", actions=actions)
+
     return SuggestedActionBuild(reply=reply, actions=())
+
+
+def _search_drug_candidates(tool_results: tuple[object, ...]) -> tuple[tuple[str, str], ...]:
+    """Return (legacy_drug_id, product name) for a single search's candidates.
+
+    Empty unless EXACTLY ONE ``search_drug`` ran this turn -- two distinct
+    searches in one turn is itself a form of ambiguity, and guessing which
+    one "counts" is the kind of inference this module deliberately avoids
+    (the same reasoning `_resolved_drug_entity` already applies).
+
+    TRUNCATED to the 4 actions ``transition_state`` persists, never
+    discarded for being too long: an earlier cut of this function required
+    ``len(items) <= 4`` and therefore offered nothing at all for the
+    commonest ambiguous query there is -- the live catalog returns 5 items
+    for "paracetamol" -- which is precisely the "nothing was remembered"
+    failure this build exists to remove. The list is already relevance-
+    ranked, and the reply text still names every match, so the buttons are a
+    shortcut for the likeliest picks rather than the only way to choose.
+
+    Defensive about shape for the same reason as ``_has_drug_evidence``: a
+    malformed tool payload must yield no buttons, never an exception.
+    """
+    searches = [result for result in tool_results if getattr(result, "name", None) == "search_drug"]
+    if len(searches) != 1:
+        return ()
+    data = getattr(searches[0], "data", None)
+    if not isinstance(data, dict):
+        return ()
+    items = data.get("items")
+    # At least TWO, because a candidate list exists to DISAMBIGUATE. A lone
+    # hit is not a disambiguation: had it been a confident match,
+    # `unique_match_legacy_drug_id` would already have promoted it via
+    # `_resolved_drug_entity` and this branch would never be reached -- so a
+    # single hit arriving here is by definition a weak one. Offering it as
+    # "did you mean this?" is how a disease question ("bệnh gan nhiễm mỡ")
+    # ended up being answered with an unrelated syrup (real session, 21:17).
+    if not isinstance(items, list) or len(items) < 2:
+        return ()
+    candidates: list[tuple[str, str]] = []
+    for item in items[:_MAX_CANDIDATE_ACTIONS]:
+        if not isinstance(item, dict):
+            return ()
+        legacy_drug_id, name = item.get("legacy_drug_id"), item.get("name")
+        if not legacy_drug_id or not name:
+            return ()
+        candidates.append((str(legacy_drug_id), str(name)))
+    return tuple(candidates)
 
 
 def _has_drug_evidence(tool_results: tuple[object, ...]) -> bool:

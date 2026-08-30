@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ImageOff, Loader2, Pill } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { MedicationImage as MedicationImageData } from "@/lib/doses";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -40,8 +47,11 @@ export function MedicationImage({
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(image.status === "AVAILABLE");
   const [failed, setFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
+    setPreviewOpen(false);
+    setObjectUrl(null);
     if (image.status !== "AVAILABLE" || !image.url || !accessToken) {
       setLoading(false);
       setFailed(image.status === "AVAILABLE");
@@ -97,15 +107,37 @@ export function MedicationImage({
     );
   }
   return (
-    <img
-      src={objectUrl}
-      alt={image.alt || `Hình ảnh bao bì ${drugName}`}
-      width={size === "sm" ? 44 : 80}
-      height={size === "sm" ? 44 : 80}
-      className={`${SIZE[size]} shrink-0 bg-white object-contain p-1`}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-    />
+    <>
+      <button
+        type="button"
+        aria-label={`Xem ảnh thuốc ${drugName}`}
+        onClick={() => setPreviewOpen(true)}
+        className={`${SIZE[size]} shrink-0 overflow-hidden bg-white focus:outline-none focus:ring-2 focus:ring-[#16386E] focus:ring-offset-2`}
+      >
+        <img
+          src={objectUrl}
+          alt={image.alt || `Hình ảnh bao bì ${drugName}`}
+          width={size === "sm" ? 44 : 80}
+          height={size === "sm" ? 44 : 80}
+          className="h-full w-full object-contain p-1"
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+        />
+      </button>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl border-[#E3E8F1] bg-white p-5">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-[#16386E]">Ảnh thuốc: {drugName}</DialogTitle>
+            <DialogDescription>Ảnh bao bì thuốc đã được xác thực cho đơn của bạn.</DialogDescription>
+          </DialogHeader>
+          <img
+            src={objectUrl}
+            alt={image.alt || `Hình ảnh bao bì ${drugName}`}
+            className="max-h-[70vh] w-full rounded-xl bg-[#F4F7FC] object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

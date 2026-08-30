@@ -237,7 +237,29 @@ _READ_ONLY_TOOL_SCHEMAS = (
         "strict": True,
         "parameters": {
             "type": "object",
-            "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
+            # BUILD-46 (Fix A, found live during BUILD-45's own production
+            # validation): these bounds MUST mirror
+            # backend.agents.v2.tools.SearchDrugArguments exactly (the
+            # required invariant: model-visible schema constraints ==
+            # runtime validation constraints). Before this fix, the schema
+            # declared only bare "type" with no bound at all, so a model
+            # that picked limit=0 or limit=50 (or an empty query) passed
+            # schema-shape validation but then failed
+            # ToolGateway.execute()'s own Pydantic input_model.model_validate
+            # with INVALID_TOOL_ARGUMENTS, hard-failing the whole turn --
+            # reproduced live on production. Note (researched, not assumed):
+            # OpenAI's own structured-outputs/strict-mode documentation
+            # states minLength/maxLength/minimum/maximum are NOT enforced by
+            # constrained decoding the way type/enum/required are -- this is
+            # harm reduction (the model sees and typically respects the
+            # declared bound; a real API call with these keys present was
+            # verified to still be accepted, not rejected), not an absolute
+            # guarantee. The Pydantic runtime validation below remains the
+            # actual fail-closed safety net for any residual case.
+            "properties": {
+                "query": {"type": "string", "minLength": 1, "maxLength": 100},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+            },
             "required": ["query", "limit"],
             "additionalProperties": False,
         },
@@ -249,7 +271,14 @@ _READ_ONLY_TOOL_SCHEMAS = (
         "strict": True,
         "parameters": {
             "type": "object",
-            "properties": {"legacy_drug_id": {"type": "string"}, "query": {"type": "string"}},
+            # BUILD-46: same class of gap found+fixed for search_drug above,
+            # audited into this tool too (backend.agents.v2.tools.
+            # GetDrugInfoArguments) -- not observed live, but the same
+            # unstated-bound shape, closed for full contract consistency.
+            "properties": {
+                "legacy_drug_id": {"type": "string", "minLength": 1, "maxLength": 200},
+                "query": {"type": "string", "maxLength": 500},
+            },
             "required": ["legacy_drug_id", "query"],
             "additionalProperties": False,
         },
@@ -282,7 +311,9 @@ _READ_ONLY_TOOL_SCHEMAS = (
         "strict": True,
         "parameters": {
             "type": "object",
-            "properties": {"dose_id": {"type": "string"}},
+            # BUILD-46: same class of gap as search_drug above, audited into
+            # this tool too (backend.agents.v2.tools.GetDoseStatusArguments).
+            "properties": {"dose_id": {"type": "string", "minLength": 1, "maxLength": 200}},
             "required": ["dose_id"],
             "additionalProperties": False,
         },

@@ -234,6 +234,11 @@ class MeResponse(BaseModel):
     # khẩu" (POST /auth/set-password) thay vi "Đổi mật khẩu" (doi mat khau cu
     # ma nguoi dung khong the co). Xem components/account-settings.tsx.
     auth_provider: str = "password"
+    # THEM (migration 0052) - cung logic voi profile_completed o tren: chi co
+    # y nghia khi role=patient (None cho role khac). Frontend doc gia tri nay
+    # ngay tu /auth/me de trang "Hom nay" biet co bat buoc chup anh hay khong
+    # ma khong can goi them API rieng.
+    photo_capture_enabled: bool | None = None
 
 
 
@@ -601,6 +606,67 @@ class AgentV2OrchestrateResponse(BaseModel):
     trace_id: str
     agent_run_id: str
     suggested_actions: list[SuggestedActionOut] = Field(default_factory=list)
+
+
+class DrugImageCandidateOut(BaseModel):
+    """Patient-safe B-07 visual candidate; no score/OCR/provenance leaks."""
+
+    action_id: str = Field(min_length=1, max_length=200)
+    product_display_name: str = Field(min_length=1, max_length=300)
+    strength_text: str | None = Field(default=None, max_length=160)
+    rank: int = Field(ge=1, le=3)
+
+
+class DrugImageRecognitionOut(BaseModel):
+    status: Literal[
+        "CANDIDATES",
+        "AMBIGUOUS_MATCH",
+        "INSUFFICIENT_EVIDENCE",
+        "SAFETY_DEFERRED",
+        "DOCTOR_ACTIVE",
+        "RECOGNITION_UNAVAILABLE",
+    ]
+    reply: str
+    recognition_attempt_id: str | None = None
+    outcome: str | None = None
+    recognition_version: str | None = None
+    candidates: list[DrugImageCandidateOut] = Field(default_factory=list)
+    requested_attribute: str | None = None
+
+
+class DrugImageConfirmRequest(BaseModel):
+    patient_id: str = Field(min_length=1)
+    conversation_id: str = Field(min_length=1, max_length=200)
+    recognition_attempt_id: str = Field(min_length=1, max_length=200)
+    action_id: str = Field(min_length=1, max_length=200)
+    decision: Literal["CONFIRMED", "REJECTED"] = "CONFIRMED"
+
+
+class DrugImageConfirmOut(BaseModel):
+    status: Literal["CONFIRMED", "REJECTED"]
+    reply: str
+    recognition_attempt_id: str
+    canonical_drug_product_id: str | None = None
+    requested_attribute: str | None = None
+    tools: list[str] = Field(default_factory=list)
+
+
+class VoiceTranscribeOut(BaseModel):
+    """One-shot STT result. Pure format conversion -- carries no safety/intent
+    disposition of its own; the transcript is fed unchanged into a separate
+    /agent/v2/orchestrate call, which owns that classification."""
+
+    status: Literal["OK"]
+    text: str
+
+
+class VoiceSpeakRequest(BaseModel):
+    """Turn a chat reply into audio. The upper bound on `text` lives in
+    settings.voice_max_reply_chars and is enforced by the route, not here --
+    this module stays free of config imports."""
+
+    patient_id: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1)
 
 
 # BUILD-29: user feedback ticket + session/trace issue tracking. See
@@ -1081,7 +1147,7 @@ class PatientProfileUpdateRequest(BaseModel):
     """PATCH /api/v1/patients/me - benh nhan tu dien thong tin ca nhan o
     trang onboarding (migration 0022). Tat ca field optional (partial
     update, cung quy uoc voi PatientHealthUpdateRequest o tren) - nhung
-    frontend yeu cau nhap du date_of_birth/phone/address/gender truoc khi
+    frontend yeu cau nhap du date_of_birth/phone/address/gender/height_cm/weight_kg truoc khi
     goi, de lan goi dau tien la lan danh dau profile_completed=True."""
 
     date_of_birth: NgaySinh | None = None
@@ -1090,6 +1156,9 @@ class PatientProfileUpdateRequest(BaseModel):
     gender: str | None = None
     height_cm: ChieuCaoCm | None = None
     weight_kg: CanNangKg | None = None
+    # THEM (migration 0052) - man hinh Cai dat cho benh nhan tu bat/tat yeu
+    # cau chup anh khi xac nhan uong thuoc, xem Patient.photo_capture_enabled.
+    photo_capture_enabled: bool | None = None
 
 
 class PatientProfileOut(BaseModel):
@@ -1105,6 +1174,7 @@ class PatientProfileOut(BaseModel):
     height_cm: float | None = None
     weight_kg: float | None = None
     profile_completed: bool = False
+    photo_capture_enabled: bool = True
 
 
 class EscalationOut(BaseModel):
@@ -1281,6 +1351,68 @@ class PushVapidKeyResponse(BaseModel):
     public_key: str = Field(default="", description="Rong = chua cau hinh VAPID, push tat")
 
 
+class TelegramLinkStartResponse(BaseModel):
+    """POST /api/v1/telegram/link-token - link benh nhan bam de ghep tai khoan.
+
+    Tra ve ca `deep_link` da lap san thay vi de frontend tu noi chuoi: username
+    bot nam o config backend, frontend khong nen giu ban sao thu hai (cung ly
+    do voi VAPID public key o tren)."""
+
+    deep_link: str = Field(..., description="https://t.me/<bot>?start=<token>")
+    expires_in_seconds: int
+
+
+class TelegramStatusResponse(BaseModel):
+    """GET /api/v1/telegram/status - frontend hien nut 'Kết nối' hay 'Đã kết nối'."""
+
+    configured: bool = Field(..., description="False = server chua cau hinh bot, an tinh nang di")
+    linked: bool
+    username: str | None = None
+    # TACH BIET voi `linked`: da noi tai khoan (linked) nhung tam tat nhac
+    # (enabled=False) la trang thai hop le - frontend hien cong tac o vi tri
+    # tat, KHONG hien nut "Kết nối" lai.
+    enabled: bool = False
+
+
+class TelegramPreferenceRequest(BaseModel):
+    """PATCH /api/v1/telegram/link - bat/tat nhac Telegram, GIU lien ket."""
+
+    enabled: bool
+
+
+class NotificationPrefResponse(BaseModel):
+    """GET /api/v1/notifications/preferences - man hinh Cai dat 2 tang.
+
+    Gom CA tuy chon Telegram vao day du no luu o bang khac
+    (telegram_link.enabled): man hinh Cai dat ve 1 khoi thong bao duy nhat,
+    bat frontend goi 2 endpoint roi tu ghep lai chi de lo chi tiet luu tru
+    o dau la viec khong can thiet."""
+
+    # HAI CO KHONG LOAI TRU NHAU - 1 nguoi vua co lich uong thuoc cua chinh
+    # minh vua theo doi bo/me la chuyen binh thuong. Frontend dung 2 co nay
+    # de quyet dinh hien phan nao, KHONG dua vao Account.role (chi giu duoc
+    # 1 gia tri nen se cat mat 1 nua vai tro).
+    is_patient: bool = True
+    is_caregiver: bool = False
+    dose_reminder_enabled: bool
+    web_push_enabled: bool
+    telegram_configured: bool = Field(..., description="False = server chua cau hinh bot, an muc Telegram")
+    telegram_linked: bool
+    telegram_enabled: bool
+    telegram_username: str | None = None
+
+
+class NotificationPrefRequest(BaseModel):
+    """PATCH /api/v1/notifications/preferences.
+
+    MOI truong deu None-able va chi ap dung truong duoc gui: man hinh Cai dat
+    gat 1 cong tac tai 1 thoi diem, gui ca cum se ghi de nham gia tri cong
+    tac kia neu benh nhan dang mo 2 tab."""
+
+    dose_reminder_enabled: bool | None = None
+    web_push_enabled: bool | None = None
+
+
 class OpenEscalationBrief(BaseModel):
     """1 escalation OPEN rut gon, dung trong CaregiverMonitoredPatientOut ben
     duoi - man hinh caregiver chi can biet co canh bao gi dang mo, khong can
@@ -1384,6 +1516,7 @@ class DoctorReviewMessageOut(BaseModel):
     actor_id: str | None = None
     content: str
     created_at: datetime
+    image_attachment_id: str | None = None
 
 
 class DoctorReviewDetailOut(BaseModel):

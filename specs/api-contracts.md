@@ -25,7 +25,6 @@
 | `dose-api` | REST | `scheduling` | FE bệnh nhân, FE bác sĩ | Draft | §3 |
 | `drug-image-delivery-api` | REST | `drug-image` | FE bệnh nhân | Draft | §3a |
 | `chat-api` | REST | `conversation` | FE bệnh nhân | Draft | §4 |
-| `doctor-takeover-api` | REST | `conversation` | FE bệnh nhân, FE bác sĩ | Draft | §4a |
 | `photo-api` | REST | `photo-verification` | FE bệnh nhân, FE người thân | Draft | §5 |
 | `escalation-api` | REST | `escalation` | FE người thân, FE bác sĩ | Draft | §6 |
 | `dashboard-api` | REST | `reporting` | FE bác sĩ | Draft | §7 |
@@ -389,43 +388,68 @@ first; client `entity_id` and `topic` never authorize lookup or access.
 
 ### 4a. `doctor-takeover-api`
 
-**Bổ sung 2026-08-30, TASK-021.** Một handoff `ACTIVE` là thread chung có
-thời hạn giữa đúng một bệnh nhân và bác sĩ đã nhận ca. Backend là nguồn sự
-thật của thread; hai frontend polling cùng dữ liệu này, không đồng bộ qua
-`localStorage`.
+**Bổ sung 2026-08-30, TASK-021.** Handoff `ACTIVE` là thread chung của đúng
+một bệnh nhân và bác sĩ phụ trách; backend là nguồn sự thật, hai giao diện
+poll cùng một dữ liệu.
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| GET | `/api/v1/agent/v2/handoff/status?patient_id=` | `patient` | Trả handoff `ACTIVE` hiện tại và toàn bộ thread `PATIENT`/`DOCTOR`/`SYSTEM` của chính bệnh nhân. |
-| GET | `/api/v1/agent/v2/handoffs/{handoff_id}` | `patient` | Trả thread của handoff đã biết, kể cả vừa kết thúc, để bệnh nhân nhận được thông báo dừng. |
-| POST | `/api/v1/agent/v2/handoffs/{handoff_id}/stop` | `patient` | Bệnh nhân chủ động dừng một handoff `ACTIVE` của chính mình. Idempotent sau khi đã dừng. |
-| GET | `/api/v1/doctor/reviews/{handoff_id}` | `doctor` | Chi tiết handoff, thread chung và `chat_history` (các tin nhắn bệnh nhân ↔ chatbot hiển thị được) của bệnh nhân trong ca. |
+| GET | `/api/v1/agent/v2/handoff/status?patient_id=` | bệnh nhân được xác thực | Lấy handoff ACTIVE hiện tại và messages chung |
+| GET | `/api/v1/agent/v2/handoffs/{handoff_id}` | chủ sở hữu bệnh nhân | Lấy thread, gồm cả handoff đã kết thúc để hiển thị thông báo cuối |
+| POST | `/api/v1/agent/v2/handoffs/{handoff_id}/stop` | chủ sở hữu bệnh nhân | Dừng một ACTIVE handoff, idempotent |
 
-`handoff_id` không cấp quyền. Mọi route trên xác thực JWT và kiểm tra quan hệ
-với `patient_id`; caller không có quyền nhận `403` hoặc `404` theo quy ước §10.
+Doctor review detail trả thêm `chat_history` chỉ gồm lịch sử hiển thị an toàn
+patient/assistant của đúng bệnh nhân. Agent V2 lưu bản hiển thị của các lượt
+terminal mới, không lưu prompt, chain-of-thought, secret hoặc output tool thô.
 
-```json
-{
-  "handoff_id": "handoff_01",
-  "status": "ACTIVE",
-  "messages": [
-    {"id": "msg_01", "sender_role": "PATIENT", "content": "Bác sĩ ơi", "created_at": "2026-08-30T13:41:00Z"},
-    {"id": "msg_02", "sender_role": "DOCTOR", "content": "Tôi đang theo dõi.", "created_at": "2026-08-30T13:41:28Z"}
-  ]
-}
-```
+Handoff tự kết thúc sau 10 phút kể từ tin nhắn PATIENT gần nhất (fallback là
+`activated_at`), được quét mỗi 60 giây. Bác sĩ, bệnh nhân hoặc timeout dùng
+cùng một chuyển trạng thái idempotent và công khai đúng một SYSTEM notice:
+`Bác sĩ xin dừng cuộc trò chuyện tại đây`. SYSTEM note khác là nội bộ và không
+được trả cho bệnh nhân.
 
-Khi bác sĩ, bệnh nhân hoặc timeout kết thúc một handoff `ACTIVE`, backend phải
-chuyển nó thành `RESOLVED` và ghi đúng một message `SYSTEM` có nội dung:
-`"Bác sĩ xin dừng cuộc trò chuyện tại đây"`. Scheduler dùng chung quét mỗi
-phút; handoff tự kết thúc khi đã **10 phút** kể từ tin nhắn `PATIENT` gần nhất
-(hoặc từ lúc `activated_at` nếu bệnh nhân chưa gửi tin nào). Retry/tick lặp lại
-không được tạo message SYSTEM thứ hai.
+### B-07 package-image candidates (additive)
 
-`chat_history` chỉ gồm các tin nhắn patient/assistant không bị ẩn của bệnh nhân
-và chỉ được trả cho bác sĩ xem đúng handoff đó. Agent V2 phải ghi bản hiển thị
-của mỗi lượt patient/assistant vào lịch sử này sau khi đã có response terminal;
-không lưu prompt, chain-of-thought, secret hay output tool thô.
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| POST | `/api/v1/agent/v2/drug-images/recognize` | authorized patient context | Multipart package-image validation and B-05 candidates only |
+| POST | `/api/v1/agent/v2/drug-images/confirm` | authorized patient context | Confirm one opaque server-issued candidate action |
+
+`recognize` accepts multipart `patient_id`, `conversation_id`, optional
+`message`, and `file`. Only JPEG/PNG/WebP are accepted after MIME, decoder
+format, byte-size and image-bound validation. Its response contains only an
+opaque `recognition_attempt_id`, bounded patient-safe candidate fields
+(`action_id`, `product_display_name`, `strength_text`, `rank`) and a safe
+reply. It never returns a product ID, score, OCR text, storage path or source.
+When production recognition is disabled by policy, `recognize` returns the
+bounded `RECOGNITION_UNAVAILABLE` status and a patient-safe reply without
+constructing a vision runtime or creating a recognition attempt. This is not
+a candidate and never changes the active entity.
+
+`confirm` accepts `patient_id`, `conversation_id`, `recognition_attempt_id`
+and opaque `action_id`; `decision` is optional and defaults to `CONFIRMED`.
+`REJECTED` is an explicit refusal of that exact server-issued action: it
+invalidates the attempt and never changes the active entity or invokes a Drug
+Tool. For `CONFIRMED`, the server binds the action to the latest unexpired
+attempt for the authenticated actor/patient/conversation, maps it to canonical
+`drug_product_id`, then calls the existing verified Drug Tool. A client
+provided/arbitrary product ID is not a confirmation input. Foreign, forged,
+superseded or expired actions are rejected; a retry of the same confirmed
+action is idempotent.
+
+Before confirmation, no candidate mutates `ConversationState.active_entity`
+and no Drug Tool or Main Model is called for candidate presentation. Only a
+`HIGH_EVIDENCE_MATCH` response may expose one candidate; ambiguous or
+insufficient outcomes expose no product name or action. Acute safety and
+ACTIVE doctor takeover suppress recognition.
+
+The response preserves the recognizer decision boundary without exposing
+internal candidates. `HIGH_EVIDENCE_MATCH` is represented by
+`status=CANDIDATES` with exactly one explicitly confirmable candidate;
+`AMBIGUOUS_MATCH` is represented by `status=AMBIGUOUS_MATCH` with an empty
+candidate list and retake/name-entry guidance; `INSUFFICIENT_EVIDENCE` is
+represented by `status=INSUFFICIENT_EVIDENCE` with an empty candidate list.
+OCR is corroborating evidence only and cannot confirm a medicine by itself.
 
 ## 5. `photo-api`
 
@@ -682,6 +706,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-19 | `admin-drug-api` (§1d, mới) | Thêm contract read-only cho Admin RAG: list/detail thuốc canonical V2, tìm kiếm/lọc trạng thái mapping, phân trang; không thêm reindex hay mutation endpoint. | `[chờ Architect/PM review]` |
 | 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 | 2026-08-26 | `dose-api` (§3), `drug-image-delivery-api` (mới, §3a) | B-06 thêm metadata ảnh catalog an toàn vào `expected_items[]` và route bytes xác thực. Không breaking: field là additive; ảnh thiếu trả `NO_IMAGE`/`url: null`; không lộ storage/provenance. | `[chờ Architect/Frontend review]` |
+| 2026-08-27 | `chat-api` (§4, B-07 additive) | Thêm upload ảnh gói thuốc multipart và confirmation action do server phát hành. Candidate không phải drug canonical; chỉ sau confirm mới bind `drug_product_id` và dùng Drug Tool. Không breaking với text chat hiện hữu. | `[chờ Architect/Frontend review]` |
 | 2026-08-30 | `doctor-takeover-api` (mới, §4a) | TASK-021 thêm thread chung bệnh nhân/bác sĩ, bệnh nhân dừng, timeout 10 phút và lịch sử chatbot an toàn cho bác sĩ trong handoff. Additive; cần Architect + Frontend review. | `[chờ Architect/Frontend review]` |
 
 ---

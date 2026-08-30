@@ -46,23 +46,27 @@ async def unauthenticated_client():
 def demo_account():
     email = f"test-auth-{uuid.uuid4().hex[:8]}@example.com"
     password = "a-real-test-password-123"
+    patient_id = f"test-auth-patient-{uuid.uuid4().hex[:8]}"
     db = SessionLocal()
     account = Account(
         full_name="Nguyễn Văn Test",
         email=email,
         password_hash=hash_password(password),
         role="patient",
-        patient_id="test-auth-patient-1",
+        patient_id=patient_id,
     )
+    db.add(Patient(id=patient_id, full_name=account.full_name))
     db.add(account)
     db.commit()
     db.refresh(account)
     account_id = account.id
     db.close()
 
-    yield {"id": account_id, "email": email, "password": password}
+    yield {"id": account_id, "email": email, "password": password, "patient_id": patient_id}
 
     db = SessionLocal()
+    db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(synchronize_session=False)
+    db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
     db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
     db.commit()
     db.close()
@@ -80,6 +84,47 @@ async def test_login_with_correct_password_returns_jwt(unauthenticated_client, d
     assert body["refresh_token"]
     assert body["user"]["id"] == demo_account["id"]
     assert body["user"]["role"] == "patient"
+
+
+@pytest.mark.asyncio
+async def test_login_repairs_missing_patient_profile_with_existing_patient_id(unauthenticated_client):
+    """A legacy account can keep an ID after its Patient row is missing."""
+    account_id = f"test-missing-patient-{uuid.uuid4().hex[:8]}"
+    patient_id = f"BNTEST{uuid.uuid4().hex[:8]}"
+    email = f"{account_id}@example.com"
+    password = "a-real-test-password-123"
+    db = SessionLocal()
+    try:
+        db.add(
+            Account(
+                id=account_id,
+                full_name="Missing Patient Profile",
+                email=email,
+                password_hash=hash_password(password),
+                role="patient",
+                patient_id=patient_id,
+                status="active",
+            )
+        )
+        db.commit()
+
+        response = await unauthenticated_client.post(
+            "/api/v1/auth/login", json={"email": email, "password": password}
+        )
+        assert response.status_code == 200
+        assert decode_token(response.json()["access_token"])["patient_id"] == patient_id
+
+        repaired = db.get(Patient, patient_id)
+        assert repaired is not None
+        assert repaired.full_name == "Missing Patient Profile"
+    finally:
+        db.query(DoctorWatch).filter(DoctorWatch.patient_id == patient_id).delete(
+            synchronize_session=False
+        )
+        db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
+        db.query(Account).filter(Account.id == account_id).delete(synchronize_session=False)
+        db.commit()
+        db.close()
 
 
 @pytest.mark.asyncio
@@ -118,7 +163,7 @@ async def test_login_then_me_returns_account_info(unauthenticated_client, demo_a
     body = me_response.json()
     assert body["id"] == demo_account["id"]
     assert body["email"] == demo_account["email"]
-    assert body["patient_id"] == "test-auth-patient-1"
+    assert body["patient_id"] == demo_account["patient_id"]
 
 
 @pytest.mark.asyncio

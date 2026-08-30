@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,11 +19,13 @@ from backend.api.caregiver_routes import caregiver_router
 from backend.api.chat_routes import chat_router
 from backend.api.doctor_review_routes import doctor_review_router, patient_handoff_router
 from backend.api.dose_routes import dose_router
+from backend.api.drug_image_chat_routes import drug_image_chat_router, get_drug_image_recognizer
 from backend.api.drug_image_routes import drug_image_router
 from backend.api.drug_request_routes import admin_drug_request_router, drug_request_router
 from backend.api.drug_routes import drug_router
 from backend.api.escalation_routes import escalation_router
 from backend.api.health_log_routes import health_log_router
+from backend.api.notification_routes import notification_router
 from backend.api.nudge_routes import nudge_router
 from backend.api.patient_routes import patient_router
 from backend.api.photo_routes import photo_router
@@ -32,8 +35,12 @@ from backend.api.rag_monitoring_routes import rag_monitoring_router
 from backend.api.reporting_routes import reporting_router
 from backend.api.reward_routes import reward_router
 from backend.api.routes import router
+from backend.api.telegram_routes import telegram_router
 from backend.api.vlm_monitoring_routes import vlm_monitoring_router
+from backend.api.voice_routes import voice_router
 from backend.config import get_settings
+from backend.db.base import SessionLocal
+from backend.services.drug_image_recognition import _identity_uniqueness_index
 from backend.services.drug_knowledge.v2_agent import warm_v2_agent_knowledge_service
 from backend.services.escalation_scheduler import start_escalation_scheduler, stop_escalation_scheduler
 
@@ -60,6 +67,43 @@ async def lifespan(app: FastAPI):
         print(
             "[INFO] Drug Knowledge V2 warmup complete: "
             f"products={warmup['products']} chunks={warmup['chunks']} duration_ms={warmup['duration_ms']:.2f}"
+        )
+
+    # B-08 production enablement (2026-08-28): get_drug_image_recognizer()
+    # co @lru_cache(maxsize=1) - lan goi dau tien tai model OpenCLIP tu dia
+    # (do that o local: request dau tien qua timeout, request thu 2 tro di
+    # ~0.3s vi da cache). Neu khong warm o day, NGUOI DUNG THAT dau tien sau
+    # moi lan container khoi dong lai se nhan RECOGNITION_TIMEOUT thay vi ket
+    # qua nhan dien - warm truoc luc khoi dong de khong ai la nguoi "boc tham"
+    # phai chiu do tre nay.
+    if settings.drug_image_chat_recognition_enabled:
+        warmup_started_at = time.monotonic()
+        get_drug_image_recognizer()
+        print(f"[INFO] Drug image recognition warmup complete: duration_ms={(time.monotonic() - warmup_started_at) * 1000:.2f}")
+        # PR #160 review, generalized by Fix_drug_OCR_3.md section 8:
+        # _identity_uniqueness_index (catalog-derived identity uniqueness
+        # check, now covering identities of any parsed token count, not
+        # just single-token ones) is a module-level, process-lifetime
+        # cache -- same convention as get_drug_image_recognizer() just
+        # above, so the same reasoning applies: warm it here rather than
+        # paying it inline on whichever real request first hits a name
+        # match. Real local cost: ~220ms for the current ~3556-row catalog
+        # (measured directly for its single-token-only predecessor, same
+        # single full-table scan shape) -- small next to the OpenCLIP/OCR
+        # warmup above, but free to remove from the request-latency path
+        # entirely at essentially no additional startup cost. This process
+        # runs a single uvicorn worker (Dockerfile CMD has no --workers
+        # flag) so there is only ever one such cache to warm; if that ever
+        # changes to multiple workers, this same startup hook already warms
+        # each worker's own copy independently, exactly like the two
+        # warmups above it.
+        identity_index_started_at = time.monotonic()
+        with SessionLocal() as warmup_session:
+            identity_count_index, _identity_strength_index = _identity_uniqueness_index(warmup_session)
+            identity_index_size = len(identity_count_index)
+        print(
+            "[INFO] OCR catalog identity uniqueness index warmup complete: "
+            f"keys={identity_index_size} duration_ms={(time.monotonic() - identity_index_started_at) * 1000:.2f}"
         )
 
     # Vong 2, muc 13 (chatbot-rag-design.md) - scheduler nhac lai escalation.
@@ -139,6 +183,7 @@ app.include_router(admin_monitoring_router, prefix="/api/v1")
 app.include_router(escalation_router, prefix="/api/v1")
 app.include_router(drug_router, prefix="/api/v1")
 app.include_router(drug_image_router, prefix="/api/v1")
+app.include_router(drug_image_chat_router, prefix="/api/v1")
 app.include_router(patient_router, prefix="/api/v1")
 app.include_router(prescription_router, prefix="/api/v1")
 app.include_router(photo_router, prefix="/api/v1")
@@ -151,6 +196,9 @@ app.include_router(nudge_router, prefix="/api/v1")
 app.include_router(health_log_router, prefix="/api/v1")
 app.include_router(reward_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
+app.include_router(voice_router, prefix="/api/v1")
+app.include_router(telegram_router, prefix="/api/v1")
+app.include_router(notification_router, prefix="/api/v1")
 
 
 @app.get("/health")

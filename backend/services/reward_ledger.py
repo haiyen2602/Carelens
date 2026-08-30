@@ -101,6 +101,7 @@ def _award(
     occurred_on: date | None,
     label: str,
     item_id: str | None = None,
+    method_pct: int | None = None,
 ) -> bool:
     """Ghi 1 dong ledger + cap nhat so du. True neu ghi duoc, False neu da
     ton tai dong cho (benh nhan, loai, ngay) nay roi.
@@ -114,6 +115,7 @@ def _award(
         occurred_on=occurred_on,
         item_id=item_id,
         label=label,
+        method_pct=method_pct,
     )
     try:
         with db.begin_nested():
@@ -234,6 +236,95 @@ def award_dose_on_time(db: Session, patient_id: str, ngay: date | None = None) -
     if da_uong == tong_lieu:
         _xet_thuong_chuoi(db, patient_id, hom_nay)
     return chenh
+
+
+def _cac_muc_phat_trong_ngay(db: Session, patient_id: str, ngay: date) -> list[tuple[str, int, int]]:
+    """(item_id, method_pct, points_delta) cua moi lieu DA bi tru trong ngay.
+
+    CHI lay dong co method_pct - dong ghi truoc migration 0062 khong biet
+    duoc muc nao, khong the tham gia phep tinh lai (xem docstring migration).
+    """
+    rows = db.execute(
+        select(
+            PatientRewardEvent.item_id,
+            PatientRewardEvent.method_pct,
+            PatientRewardEvent.points_delta,
+        ).where(
+            PatientRewardEvent.patient_id == patient_id,
+            PatientRewardEvent.event_type == catalog.EVENT_DOSE_METHOD_PENALTY,
+            PatientRewardEvent.occurred_on == ngay,
+            PatientRewardEvent.method_pct.is_not(None),
+        )
+    ).all()
+    return [(r[0], int(r[1]), int(r[2])) for r in rows]
+
+
+def apply_confirmation_method_penalty(
+    db: Session,
+    *,
+    patient_id: str,
+    dose_event_id: str,
+    occurred_on: date,
+    pct: int,
+) -> int:
+    """Tru bot diem cua lieu khong duoc xac minh bang anh khop don thuoc
+    (yeu cau nhom truong 2026-08-28). Tra ve SO DIEM DA TRU o LAN GOI NAY.
+
+    KHONG lam tron theo tung lieu. Tinh tong phat CHINH XAC cua ca ngay,
+    lam tron MOT LAN, roi chi ghi phan chenh so voi da tru - dung khuon voi
+    award_dose_on_time() o tren.
+
+    Ly do bat buoc phai vay (bug phat hien khi review, do bang so that): tran
+    20 diem/ngay chia cho n lieu, nen tu 4 lieu/ngay tro len moi lieu chi con
+    <= 5 diem. Lam tron rieng tung lieu thi muc -10% ra round(0.5) = 0 (Python
+    lam tron 0.5 XUONG), tuc la bac -10% khong tru gi ca. Sai ca chieu nguoc
+    lai: 7 lieu/ngay o muc -50% thanh -65% do sai so cong don. Cach tich luy
+    nay cho dung 90%/70%/50% voi moi n tu 1 den 8.
+
+    Ghi thanh DONG RIENG (event_type=DOSE_METHOD_PENALTY) thay vi giam so diem
+    cua dong DOSE_ON_TIME. Cung bat buoc: award_dose_on_time() tinh muc tieu
+    tich luy cua ca ngay roi chi ghi phan chenh, nen giam ngay tai do se bi
+    lieu TIEP THEO trong ngay tu dong bu lai - khoan phat bien mat. Tach dong
+    rieng con giu nguyen bat bien "ngay hoan hao = 20 diem", khong dung toi
+    chuoi ngay hoan hao (_xet_thuong_chuoi xet theo SO LIEU, khong theo diem),
+    va cho benh nhan thay ca hai con so trong lich su.
+
+    Idempotent qua item_id=dose_event_id (partial unique index, migration
+    0061): moi lieu chi bi tinh dung mot lan, du job xac minh anh chay lai
+    hay nguoi than bam duyet hai lan.
+    """
+    if pct >= 100:
+        return 0
+    _, tong_lieu = _dem_lieu_trong_ngay(db, patient_id, occurred_on)
+    if tong_lieu == 0:
+        return 0
+
+    da_phat = _cac_muc_phat_trong_ngay(db, patient_id, occurred_on)
+    if any(item_id == dose_event_id for item_id, _, _ in da_phat):
+        return 0
+
+    # Phan diem cua MOT lieu, giu dang thap phan - day chinh la cho khong
+    # duoc lam tron. Vd 4 lieu/ngay -> 5.0; 7 lieu/ngay -> 2.857...
+    phan_moi_lieu = catalog.POINTS_DOSE_ON_TIME / tong_lieu
+    thieu_hut = sum((100 - p) / 100 for _, p, _ in da_phat) + (100 - pct) / 100
+    muc_tieu = round(phan_moi_lieu * thieu_hut)
+    da_tru = -sum(delta for _, _, delta in da_phat)  # points_delta am -> doi dau
+    chenh = muc_tieu - da_tru
+
+    # Van GHI DONG ke ca khi chenh = 0: dong nay la thu duy nhat ghi lai lieu
+    # nay da bi phat theo muc nao, cac lan goi sau can no de tinh lai tong.
+    # Bo qua se lam lieu tiep theo tinh thieu va phat sai.
+    duoc = _award(
+        db,
+        patient_id=patient_id,
+        event_type=catalog.EVENT_DOSE_METHOD_PENALTY,
+        points=-chenh,
+        occurred_on=occurred_on,
+        label=catalog.EVENT_LABELS[catalog.EVENT_DOSE_METHOD_PENALTY],
+        item_id=dose_event_id,
+        method_pct=pct,
+    )
+    return chenh if duoc else 0
 
 
 def award_daily_survey(db: Session, patient_id: str, ngay: date | None = None) -> bool:

@@ -90,7 +90,12 @@ from backend.agents.v2.checkpoint import (
     CheckpointedTerminalStateRecorder,
 )
 from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextManager
-from backend.agents.v2.follow_up import FollowUpCategory, FollowUpDecision, classify_follow_up
+from backend.agents.v2.follow_up import (
+    FollowUpCategory,
+    FollowUpDecision,
+    _display_topic_from_raw,
+    classify_follow_up,
+)
 from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, DoctorHandoffRequest
 from backend.agents.v2.observability import AgentTelemetry, TraceComponent, TraceContext
 from backend.agents.v2.retrieval import RetrievalGateway, RetrievalGatewayResult, RetrievalRequest, RetrievalStatus
@@ -802,6 +807,7 @@ _FOLLOW_UP_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
 # is a smaller, message-text-facing detector only) so a resolved aspect
 # reads identically to what a clicked suggestion button would have asked.
 _DRUG_ASPECT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "drug_details": ("thông tin chi tiết", "thong tin chi tiet", "thông tin thuốc", "thong tin thuoc"),
     "side_effects": ("tác dụng phụ", "tac dung phu"),
     "dosage": ("liều dùng", "lieu dung", "liều lượng", "lieu luong"),
     "administration": ("cách dùng", "cach dung", "cách uống", "cach uong", "uống trước hay sau ăn", "uong truoc hay sau an"),
@@ -811,6 +817,7 @@ _DRUG_ASPECT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "drug_uses": ("công dụng", "cong dung", "chỉ định", "chi dinh", "dùng để làm gì", "dung de lam gi"),
 }
 _DRUG_ASPECT_LABELS: dict[str, str] = {
+    "drug_details": "Thông tin đã xác minh về {entity}",
     "drug_uses": "Công dụng của {entity}",
     "dosage": "Liều dùng {entity}",
     "administration": "Cách dùng {entity}",
@@ -962,57 +969,6 @@ def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     if compact != raw_query:
         return SemanticMedicalQuery(raw_query, compact, None, None, display_topic)
     return SemanticMedicalQuery(raw_query, raw_query, None, None, display_topic)
-
-
-_DISPLAY_TOPIC_PATTERNS = (
-    re.compile(r"^(?:bệnh\s+)?(.+?)\s+(?:là\s+gì|la\s+gi)$", re.IGNORECASE),
-    re.compile(r"^nguyên\s+nhân\s+(?:gây|của|dẫn\s+đến)\s+(.+)$", re.IGNORECASE),
-    re.compile(r"^(?:triệu\s+chứng|dấu\s+hiệu)\s+(?:của\s+)?(.+)$", re.IGNORECASE),
-    re.compile(r"^(.+?)\s+có\s+nguy\s+hiểm\s+không$", re.IGNORECASE),
-    re.compile(r"^(?:cách\s+)?(?:phòng\s+ngừa|phòng\s+tránh)\s+(.+)$", re.IGNORECASE),
-    re.compile(r"^(?:còn\s+)?(.+?)\s+(?:thì\s+sao|thi\s+sao)$", re.IGNORECASE),
-)
-
-# BUILD-29D.3 fix (found via real local E2E, 2026-08-23): a bare pattern match
-# above also captures a drug-attribute question with no disease/topic shape at
-# all -- "Cong dung cua thuoc Long Huyet la gi" matches the first pattern and
-# extracts "Cong dung cua thuoc Long Huyet" as if it were a general medical
-# topic name, corrupting active_topic with the same drug-not-a-topic
-# confusion this build exists to eliminate (see fix_bug_01.md section 7 --
-# "Do not turn 'cong dung cua Long Huyet' into a new entity name", which
-# applies equally to state.active_topic). A genuine disease/condition name in
-# this product's own vocabulary (drug knowledge_search topics, symptom/cause
-# patterns above) never contains the word "thuoc" (drug/medication) or one of
-# the fixed drug-attribute labels this backend already asks about elsewhere
-# (backend/agents/v2/suggested_actions.py::_DRUG_LABELS,
-# backend/agents/v2/conversation_state.py::_typed_aliases) -- narrow,
-# deterministic keyword rejection, the same style as _GENERAL_MEDICAL_KEYWORDS
-# and _DISPLAY_TOPIC_PATTERNS themselves, not an attempt to solve entity
-# resolution generally.
-_DRUG_ATTRIBUTE_QUESTION_KEYWORDS = (
-    "thuốc", "thuoc",
-    "công dụng", "cong dung", "chỉ định", "chi dinh",
-    "liều dùng", "lieu dung", "cách dùng", "cach dung",
-    "tác dụng phụ", "tac dung phu", "chống chỉ định", "chong chi dinh",
-    "tương tác", "tuong tac", "thành phần", "thanh phan",
-)
-
-
-def _display_topic_from_raw(message: str) -> str | None:
-    """Extract only an explicit, display-preserving topic for state writes."""
-    candidate = message.strip(" ?!.,;:")
-    for pattern in _DISPLAY_TOPIC_PATTERNS:
-        match = pattern.match(candidate)
-        if match is None:
-            continue
-        topic = match.group(1).strip(" ?!.,;:")
-        if len(topic) < 2:
-            continue
-        lowered = topic.casefold()
-        if any(keyword in lowered for keyword in _DRUG_ATTRIBUTE_QUESTION_KEYWORDS):
-            return None
-        return topic[:80]
-    return None
 
 
 def _match_semantic_topic(message: str, patterns: tuple[re.Pattern[str], ...]) -> str | None:
@@ -1539,18 +1495,34 @@ def _compose_evidence_text(
     retrieval_ids: set[str],
     web_ids: set[str],
     memory_ids: set[str],
+    bound_tool_ids: set[str] = frozenset(),
 ) -> str:
-    """Render admitted context in the fixed precedence order Retrieval > Web > Memory.
+    """Render admitted context in the fixed precedence order
+    Verified drug lookup > Retrieval > Web > Memory.
 
     Admission/trimming itself is still decided by the shared Context Manager
     (BUILD-4), which never drops Policy/System context and always prefers
     authoritative clinical sources; this only fixes *display* order for the
     items that survived budget trimming.
+
+    Fix_drug_OCR_2.md Part B: a server-bound exact GET_DRUG_INFO lookup
+    (run() -- either a clicked suggested-action button or a TRUE_FOLLOWUP
+    that inherited the canonical prior drug entity) used a context_id of
+    its own ("bound-drug:<id>") that matched none of the three id-sets this
+    function used to accept. The item legitimately survived Context Manager
+    admission but this function's own label loop never had a bucket to put
+    it in, so it was silently omitted from every rendered prompt -- the
+    Main Model saw the raw question plus, at most, unrelated conversation
+    memory, never the verified answer that had already been fetched.
+    Ranked first: it is a deterministic, exact, server-verified match for
+    the CURRENT question's own bound entity, strictly more specific than a
+    similarity-based retrieval result.
     """
 
     by_id = {selection.item.id: selection for selection in build_result.included}
     sections: list[str] = []
     for label, ids in (
+        ("verified drug information", bound_tool_ids),
         ("retrieval evidence", retrieval_ids),
         ("vinmec web evidence", web_ids),
         ("conversation memory - not authoritative", memory_ids),
@@ -1935,6 +1907,21 @@ class AgentOrchestrator:
         bound_tool_results: list = []
         retrieval_ids: set[str] = set()
         web_ids: set[str] = set()
+        # Fix_drug_OCR_2.md Part B real root cause: _compose_evidence_text's
+        # display loop only ever knew about retrieval/web/memory ids -- a
+        # bound tool lookup's context_id matched none of those sets and was
+        # silently dropped from the rendered prompt even though it had
+        # already survived Context Manager admission. Confirmed live: the
+        # bound GET_DRUG_INFO call genuinely ran and returned a real result,
+        # augmented_message length changed, but the actual injected section
+        # was only "[conversation memory - not authoritative]" -- the
+        # verified drug answer text itself never reached the Main Model,
+        # which is why it asked "which drug?" despite a correct entity
+        # binding. This affects BOTH origins identically (a clicked
+        # suggested-action button also sets effective_entity_id/
+        # effective_requested_attribute through this exact same path, see
+        # lines 1597-1598) -- not something specific to image confirmation.
+        bound_tool_ids: set[str] = set()
         if not needs_handoff and not is_safety_blocked:
             gathered = self._gather_evidence(decision, request, query=router_message, trace=trace)
             if isinstance(gathered, str):
@@ -1956,9 +1943,11 @@ class AgentOrchestrator:
                 except ToolExecutionError:
                     return self._fail_closed(trace, agent_run_id, decision.intent, "BOUND_DRUG_INFO_UNAVAILABLE", checkpoint_db, lease_token, started)
                 bound_tool_results.append(bound)
-                evidence_items.append(bound.to_context_item(context_id=f"bound-drug:{effective_entity_id}"))
+                bound_context_id = f"bound-drug:{effective_entity_id}"
+                evidence_items.append(bound.to_context_item(context_id=bound_context_id))
+                bound_tool_ids.add(bound_context_id)
 
-        augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids)
+        augmented_message = self._compose_message(router_message, memory_items, evidence_items, retrieval_ids, web_ids, bound_tool_ids)
         if decision.use_vinmec_web and not web_ids:
             # BUILD-24B: make the negative Vinmec result explicit to the
             # model *before* it answers -- see _NO_VINMEC_EVIDENCE_NOTE.
@@ -2411,14 +2400,22 @@ class AgentOrchestrator:
         return items, retrieval_ids, web_ids, citations
 
     def _compose_message(
-        self, message: str, memory_items: list[ContextItem], evidence_items: list[ContextItem], retrieval_ids: set[str], web_ids: set[str]
+        self,
+        message: str,
+        memory_items: list[ContextItem],
+        evidence_items: list[ContextItem],
+        retrieval_ids: set[str],
+        web_ids: set[str],
+        bound_tool_ids: set[str] = frozenset(),
     ) -> str:
         all_items = [*memory_items, *evidence_items]
         if not all_items:
             return message
         build_result = self._context_manager.build(all_items)
         memory_ids = {item.id for item in memory_items}
-        evidence_text = _compose_evidence_text(build_result, retrieval_ids=retrieval_ids, web_ids=web_ids, memory_ids=memory_ids)
+        evidence_text = _compose_evidence_text(
+            build_result, retrieval_ids=retrieval_ids, web_ids=web_ids, memory_ids=memory_ids, bound_tool_ids=bound_tool_ids
+        )
         if not evidence_text:
             return message
         return f"{message}\n\n{_EVIDENCE_PREAMBLE}\n{evidence_text}"

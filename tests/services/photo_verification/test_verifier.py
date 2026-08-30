@@ -16,7 +16,15 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from backend.db.base import SessionLocal, engine
-from backend.db.models import DoseEvent, Escalation, Patient, PhotoVerification
+from backend.db.models import (
+    CaregiverLink,
+    DoseEvent,
+    Escalation,
+    Patient,
+    PatientRewardEvent,
+    PhotoVerification,
+)
+from backend.services import reward_catalog as catalog
 from backend.services.photo_verification import KetQuaDemVlm
 from backend.services.photo_verification.matcher import KetQua
 from backend.services.photo_verification.verifier import (
@@ -67,6 +75,10 @@ def benh_nhan(db):
     db.add(p)
     db.commit()
     yield p
+    db.query(CaregiverLink).filter(CaregiverLink.patient_id == p.id).delete(synchronize_session=False)
+    db.query(PatientRewardEvent).filter(PatientRewardEvent.patient_id == p.id).delete(
+        synchronize_session=False
+    )
     db.query(Escalation).filter(Escalation.patient_id == p.id).delete(synchronize_session=False)
     db.query(PhotoVerification).filter(PhotoVerification.patient_id == p.id).delete(synchronize_session=False)
     db.query(DoseEvent).filter(DoseEvent.patient_id == p.id).delete(synchronize_session=False)
@@ -246,23 +258,62 @@ def test_lech_lan_dau_khong_dung_den_dose_event(db, benh_nhan, monkeypatch, tmp_
 
 
 # ---------------------------------------------------------------------------
-# Hoàn tất — hết lượt: escalate + AWAITING_CAREGIVER
+# Hoàn tất — hết lượt: escalate, và CHỜ hay CHỐT tuỳ vào có người thân không
 # ---------------------------------------------------------------------------
-def test_het_luot_ma_van_lech_thi_escalate_va_cho_nguoi_than(db, benh_nhan, monkeypatch, tmp_path):
-    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+def _het_luot_voi_anh_lech(db, dose, monkeypatch, tmp_path):
     _gia_vlm(monkeypatch, vien_nen=1)  # luôn thiếu 1 viên
-
     for _ in range(MAX_ATTEMPTS):
         xac_minh = khoi_tao_xac_minh(db, dose, _gia_doc_anh(monkeypatch, tmp_path))
         hoan_tat_xac_minh(xac_minh.id)
-
     db.refresh(dose)
-    assert dose.status == "AWAITING_CAREGIVER"
 
+
+def test_het_luot_ma_van_lech_thi_escalate_va_cho_nguoi_than(db, benh_nhan, monkeypatch, tmp_path):
+    """CÓ người thân -> vẫn chờ họ duyệt như trước (hành vi cũ, không đổi)."""
+    db.add(
+        CaregiverLink(
+            caregiver_account_id=f"acc-{uuid.uuid4().hex[:8]}",
+            patient_id=benh_nhan.id,
+            relationship="con",
+            status="accepted",
+        )
+    )
+    db.commit()
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+
+    _het_luot_voi_anh_lech(db, dose, monkeypatch, tmp_path)
+
+    assert dose.status == "AWAITING_CAREGIVER"
     esc = db.query(Escalation).filter(Escalation.dose_event_id == dose.id).one()
     assert esc.trigger == "photo_mismatch"
     assert esc.severity == "MEDIUM"
     assert set(esc.notified) == {"caregiver", "doctor"}
+
+
+def test_het_luot_ma_khong_co_nguoi_than_thi_chot_ngay_va_tru_diem(
+    db, benh_nhan, monkeypatch, tmp_path
+):
+    """KHÔNG có người thân -> không ai duyệt được, nên chốt TAKEN ngay và trừ
+    30% thay vì để liều kẹt vĩnh viễn ở AWAITING_CAREGIVER (SỬA 2026-08-28)."""
+    dose = _lieu_xac_minh_duoc(db, benh_nhan.id)
+
+    _het_luot_voi_anh_lech(db, dose, monkeypatch, tmp_path)
+
+    assert dose.status == "TAKEN"
+    # Vẫn escalate: bác sĩ vẫn cần biết ảnh không khớp sau 3 lần.
+    esc = db.query(Escalation).filter(Escalation.dose_event_id == dose.id).one()
+    assert esc.trigger == "photo_mismatch"
+
+    dong = (
+        db.query(PatientRewardEvent)
+        .filter(
+            PatientRewardEvent.patient_id == benh_nhan.id,
+            PatientRewardEvent.event_type == catalog.EVENT_DOSE_METHOD_PENALTY,
+        )
+        .one()
+    )
+    assert dong.points_delta < 0
+    assert dong.item_id == dose.id
 
 
 # ---------------------------------------------------------------------------

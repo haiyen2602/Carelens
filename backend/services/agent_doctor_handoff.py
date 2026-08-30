@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.agents.v2.answerability import handoff_type_for
 from backend.agents.v2.handoff import AgentHandoffResult, HandoffContextRef
 from backend.agents.v2.handoff import HandoffCreateCommand as AgentHandoffCreateCommand
 from backend.api.security import CurrentUser
@@ -40,6 +41,12 @@ from backend.services.doctor_handoff import (
 # CANCELLED/ANSWERED are deliberately still excluded -- a closed episode
 # must not block a genuinely new escalation.
 _ACTIVE_HANDOFF_STATUSES = ("PENDING", "ASSIGNED", "ACTIVE")
+
+# BUILD-46 Fix B (PR #144 review): bounds the reuse-candidate scan below to
+# a fixed SQL LIMIT -- see that query's own comment for the full reasoning.
+# Generous headroom over any realistic per-patient count of simultaneously
+# OPEN handoffs (a personal escalation queue, not a shared table).
+_MAX_REUSE_CANDIDATES = 20
 
 
 class AuthorizedDoctorHandoffAdapter:
@@ -76,14 +83,71 @@ class AuthorizedDoctorHandoffAdapter:
             # require_agent_patient_access helper itself. No-op contention
             # for any other patient; released at this transaction's commit.
             self._db.execute(select(Patient.id).where(Patient.id == command.patient_id).with_for_update())
-            existing = self._db.execute(
+            # BUILD-46 Fix B (found live during BUILD-44's own production
+            # validation, not fixed there per that task's own out-of-scope
+            # instruction -- see agent-v2-handoff-dedup-type-bug memory):
+            # this "if" guard only ever gates on the INCOMING command's own
+            # risk_disposition ("is this an Answerability-Gate-sourced
+            # command allowed to reuse at all"), but "UNCERTAINTY_HANDOFF"
+            # is the literal, hardcoded risk_disposition BOTH a genuine
+            # UNCERTAINTY handoff AND a USER_REQUEST handoff are created
+            # with (handoff.py::create_for_uncertainty -- USER_REQUEST vs
+            # UNCERTAINTY is a DERIVED display distinction computed from
+            # reason_code via answerability.handoff_type_for, never its own
+            # separately stored disposition value). The query below used to
+            # match candidates by patient_id + open status ALONE, with NO
+            # filter on the EXISTING row's own type -- so it could return
+            # (and silently mislabel) a genuinely open SAFETY handoff
+            # (risk_disposition=e.g. "HANDOFF_REQUIRED", a completely
+            # different type) as the "reused" result for a brand new
+            # USER_REQUEST/UNCERTAINTY trigger. Confirmed live on
+            # production: a USER_REQUEST message reused a real 2-day-old
+            # SAFETY (ACUTE_DANGER_DETECTED) handoff.
+            #
+            # Fix: derive the CANONICAL HandoffType (SAFETY/UNCERTAINTY/
+            # USER_REQUEST) for both the incoming command and every
+            # candidate row using the SAME existing `handoff_type_for`
+            # function already authoritative for this distinction
+            # elsewhere (agent_v2_routes.py's own response-shaping) --
+            # never a second, parallel type-derivation. Reuse only the
+            # most recent candidate whose OWN derived type matches; a more
+            # recent but type-INCOMPATIBLE row is skipped (not returned,
+            # not blocking a fresh create for the new type either).
+            incoming_type = handoff_type_for(reason_code=command.reason_code, risk_disposition=command.risk_disposition)
+            # PR #144 review: the pre-fix query was SQL-bounded to 1 row
+            # (`.first()` -> `LIMIT 1`); filtering by type in Python
+            # requires seeing more than the single most-recent row, but an
+            # UNBOUNDED `.all()` here would hold the Patient-row lock open
+            # over an arbitrarily large table scan if a patient's own
+            # active-handoff count ever balloons (a symptom of a DIFFERENT
+            # bug -- rows genuinely stuck open -- not something this fix
+            # should make worse by scanning without limit while holding a
+            # lock). `_MAX_REUSE_CANDIDATES` bounds the worst case back to a
+            # small, fixed SQL `LIMIT` -- generous headroom over any
+            # realistic per-patient open-handoff count (this is a personal
+            # escalation queue, not a shared table) so it changes no real
+            # outcome; a genuinely pathological patient beyond this bound
+            # degrades to "create a fresh row" (still correct -- strictly
+            # safer than the pre-fix behavior, never a type-incompatible
+            # reuse) rather than an unbounded scan.
+            candidates = self._db.execute(
                 select(DoctorReviewRequest)
                 .where(
                     DoctorReviewRequest.patient_id == command.patient_id,
                     DoctorReviewRequest.status.in_(_ACTIVE_HANDOFF_STATUSES),
                 )
                 .order_by(DoctorReviewRequest.created_at.desc())
-            ).scalars().first()
+                .limit(_MAX_REUSE_CANDIDATES)
+            ).scalars().all()
+            existing = next(
+                (
+                    row
+                    for row in candidates
+                    if handoff_type_for(reason_code=row.reason_code, risk_disposition=row.risk_disposition)
+                    == incoming_type
+                ),
+                None,
+            )
             if existing is not None:
                 return AgentHandoffResult(existing.id, existing.status, existing.assigned_doctor_id, created=False)
         result = create_doctor_review_request(

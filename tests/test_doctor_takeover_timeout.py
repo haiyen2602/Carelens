@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 
 from backend.db.models import DoctorReviewMessage, DoctorReviewRequest
@@ -15,9 +15,9 @@ def _session() -> Session:
     return Session(engine)
 
 
-def _active_handoff(db: Session, *, activated_at: datetime) -> DoctorReviewRequest:
+def _active_handoff(db: Session, *, handoff_id: str = "handoff-1", activated_at: datetime) -> DoctorReviewRequest:
     row = DoctorReviewRequest(
-        id="handoff-1",
+        id=handoff_id,
         patient_id="patient-1",
         created_by_actor_id="account-1",
         reason_code="REPEATED_CLARIFICATION",
@@ -25,7 +25,7 @@ def _active_handoff(db: Session, *, activated_at: datetime) -> DoctorReviewReque
         patient_question="test",
         agent_summary="test",
         status=HandoffStatus.ACTIVE,
-        idempotency_key="timeout-test",
+        idempotency_key=f"timeout-test-{handoff_id}",
         activated_at=activated_at,
     )
     db.add(row)
@@ -74,4 +74,30 @@ def test_timeout_waits_for_ten_minutes_after_latest_patient_message() -> None:
         assert close_inactive_takeovers(db, now=now) == 0
         assert db.get(DoctorReviewRequest, "handoff-1").status == HandoffStatus.ACTIVE
     finally:
+        db.close()
+
+
+def test_timeout_loads_patient_activity_in_one_query_for_all_active_handoffs() -> None:
+    now = datetime(2026, 8, 30, 12, tzinfo=UTC)
+    db = _session()
+    statements: list[str] = []
+
+    def record_statement(_conn, _cursor, statement, _parameters, _context, _executemany) -> None:
+        statements.append(statement)
+
+    try:
+        _active_handoff(db, handoff_id="handoff-1", activated_at=now - timedelta(minutes=10))
+        _active_handoff(db, handoff_id="handoff-2", activated_at=now - timedelta(minutes=10))
+        event.listen(db.bind, "before_cursor_execute", record_statement)
+
+        assert close_inactive_takeovers(db, now=now) == 2
+
+        patient_message_selects = [
+            statement
+            for statement in statements
+            if statement.lstrip().upper().startswith("SELECT") and DoctorReviewMessage.__tablename__ in statement
+        ]
+        assert len(patient_message_selects) == 1
+    finally:
+        event.remove(db.bind, "before_cursor_execute", record_statement)
         db.close()

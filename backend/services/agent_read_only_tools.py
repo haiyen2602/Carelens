@@ -52,7 +52,16 @@ class AgentReadOnlyDomainTools:
         )
 
     def search_drug(self, *, query: str, limit: int) -> dict[str, Any]:
-        items = get_v2_agent_knowledge_service().search_catalog(query, limit=limit)
+        service = get_v2_agent_knowledge_service()
+        items = service.search_catalog(query, limit=limit)
+        # BUILD-45 Candidate A: a server-computed, structural uniqueness
+        # signal -- independent of the model's own requested `limit`, so
+        # `len(items) == 1` here is never confused with "the model only
+        # asked for 1". None when the query is genuinely ambiguous (or
+        # matched nothing); lets the route layer promote a canonical
+        # active_entity from an unambiguous search alone, without an extra
+        # get_drug_info round trip (see _resolved_drug_entity).
+        unique_match = service.search_catalog_unique_match(query)
         return {
             "items": [
                 {
@@ -63,7 +72,8 @@ class AgentReadOnlyDomainTools:
                     "strength": item.ham_luong,
                 }
                 for item in items
-            ]
+            ],
+            "unique_match_legacy_drug_id": unique_match.drug_id if unique_match is not None else None,
         }
 
     def get_drug_info(self, *, legacy_drug_id: str, query: str) -> dict[str, Any]:

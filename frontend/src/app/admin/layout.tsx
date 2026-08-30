@@ -128,8 +128,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
         },
         { to: "/admin/medicines", label: "Dữ liệu thuốc (RAG)", icon: PillBottle },
         { to: "/admin/drug-requests", label: "Yêu cầu bổ sung thuốc", icon: Inbox },
-        { to: "/admin/rag", label: "Giám sát RAG & AI", icon: Activity },
-        { to: "/admin/monitoring", label: "Admin Monitoring V2", icon: LayoutDashboard },
+        // { to: "/admin/rag", label: "Giám sát RAG & AI", icon: Activity },
+        { to: "/admin/monitoring", label: "Giám sát quản trị", icon: LayoutDashboard },
         { to: "/admin/tickets", label: "Báo cáo chatbot", icon: Flag },
         { to: "/admin/audit", label: "Log hệ thống", icon: FileClock },
       ],
@@ -164,9 +164,9 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
     "/admin/medicines": "Dữ liệu thuốc (RAG)",
     "/admin/drug-requests": "Yêu cầu bổ sung thuốc",
     "/admin/tickets": "Báo cáo chatbot",
-    "/admin/monitoring": "Admin Monitoring Dashboard V2",
-    "/admin/monitoring/traces": "Trace Explorer",
-    "/admin/audit": "Log hệ thống",
+    "/admin/monitoring": "Giám sát quản trị",
+    "/admin/monitoring/traces": "Trình khám phá dấu vết",
+    "/admin/audit": "Nhật ký hệ thống",
     "/admin/profile": "Hồ sơ cá nhân",
     "/admin/settings": "Cài đặt",
   };
@@ -185,9 +185,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const sidebar = (
     <div className="flex h-full flex-col bg-sidebar">
       <div
-        className={`flex h-[70px] shrink-0 items-center gap-2.5 border-b border-sidebar-border ${
-          collapsed ? "justify-center px-2" : "px-6"
-        }`}
+        className={`flex h-[70px] shrink-0 items-center gap-2.5 border-b border-sidebar-border ${collapsed ? "justify-center px-2" : "px-6"
+          }`}
       >
         <Image
           src="/logo-capymedi-v2.png"
@@ -235,20 +234,18 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
                           }
                         }}
                         title={item.label}
-                        className={`relative flex cursor-pointer items-center justify-between border-l-[3px] py-2.5 pl-6 pr-4 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 select-none ${
-                          active
-                            ? "border-l-primary bg-primary/5 font-semibold text-primary"
-                            : "border-transparent text-sidebar-foreground/85"
-                        }`}
+                        className={`relative flex cursor-pointer items-center justify-between border-l-[3px] py-2.5 pl-6 pr-4 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 select-none ${active
+                          ? "border-l-primary bg-primary/5 font-semibold text-primary"
+                          : "border-transparent text-sidebar-foreground/85"
+                          }`}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <Icon className="h-[18px] w-[18px] shrink-0" />
                           <span className="truncate">{item.label}</span>
                         </div>
                         <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
-                            isSubOpen ? "rotate-180" : ""
-                          }`}
+                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${isSubOpen ? "rotate-180" : ""
+                            }`}
                         />
                       </div>
                     ) : (
@@ -256,13 +253,11 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
                         href={item.to}
                         onClick={() => setMenuOpen(false)}
                         title={item.label}
-                        className={`relative flex items-center gap-3 border-l-[3px] py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 ${
-                          collapsed ? "justify-center px-2" : "px-6"
-                        } ${
-                          active
+                        className={`relative flex items-center gap-3 border-l-[3px] py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent/60 ${collapsed ? "justify-center px-2" : "px-6"
+                          } ${active
                             ? "border-l-primary bg-primary/10 font-semibold text-primary hover:bg-primary/10"
                             : "border-transparent text-sidebar-foreground/85"
-                        }`}
+                          }`}
                       >
                         <Icon className="h-[18px] w-[18px] shrink-0" />
                         {!collapsed && (
@@ -289,16 +284,14 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
                               key={sub.to}
                               href={sub.to}
                               onClick={() => setMenuOpen(false)}
-                              className={`relative flex items-center gap-2.5 rounded-lg py-2 pl-3.5 pr-2.5 text-xs font-medium transition-colors ${
-                                subActive
-                                  ? "bg-primary/15 font-bold text-primary shadow-xs"
-                                  : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                              }`}
+                              className={`relative flex items-center gap-2.5 rounded-lg py-2 pl-3.5 pr-2.5 text-xs font-medium transition-colors ${subActive
+                                ? "bg-primary/15 font-bold text-primary shadow-xs"
+                                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                }`}
                             >
                               <span
-                                className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
-                                  subActive ? "bg-primary scale-125" : "bg-muted-foreground/40"
-                                }`}
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${subActive ? "bg-primary scale-125" : "bg-muted-foreground/40"
+                                  }`}
                               />
                               {SubIcon && <SubIcon className="h-3.5 w-3.5 shrink-0" />}
                               <span className="truncate">{sub.label}</span>
@@ -318,9 +311,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       <div className="shrink-0 border-t border-sidebar-border p-4">
         <button
           onClick={() => setCollapsed((v) => !v)}
-          className={`flex w-full items-center gap-2 rounded-xl border border-sidebar-border px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/60 ${
-            collapsed ? "justify-center" : ""
-          }`}
+          className={`flex w-full items-center gap-2 rounded-xl border border-sidebar-border px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/60 ${collapsed ? "justify-center" : ""
+            }`}
         >
           <ChevronLeft
             className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`}
@@ -334,9 +326,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <aside
-        className={`hidden shrink-0 border-r border-sidebar-border lg:block ${
-          collapsed ? "w-[76px]" : "w-[270px]"
-        }`}
+        className={`hidden shrink-0 border-r border-sidebar-border lg:block ${collapsed ? "w-[76px]" : "w-[270px]"
+          }`}
       >
         <div className="sticky top-0 h-screen">{sidebar}</div>
       </aside>
@@ -362,11 +353,10 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
           <h2 className="min-w-0 flex-1 truncate text-lg font-bold sm:text-xl">{pageTitle}</h2>
 
           <span
-            className={`hidden shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold sm:flex ${
-              heThongOn === false
-                ? "border-destructive/40 bg-destructive/10 text-destructive"
-                : "border-success/40 bg-success/10 text-success"
-            }`}
+            className={`hidden shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold sm:flex ${heThongOn === false
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-success/40 bg-success/10 text-success"
+              }`}
           >
             {heThongOn === false ? (
               <ShieldAlert className="h-3.5 w-3.5" />
@@ -435,9 +425,8 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 href={item.to}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${
-                  active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground"
-                }`}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground"
+                  }`}
               >
                 {item.label}
               </Link>

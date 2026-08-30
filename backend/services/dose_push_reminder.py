@@ -33,7 +33,9 @@ from sqlalchemy.orm import Session
 
 from backend.db.models import DoseEvent, PushReminderSent
 from backend.services.caregiver_escalation import tao_canh_bao_cho_nguoi_than
+from backend.services.notification_pref import lay_tuy_chon
 from backend.services.push import send_push_to_patient
+from backend.services.telegram import gio_dia_phuong, send_telegram_to_patient
 
 logger = logging.getLogger("dose_push_reminder")
 
@@ -133,12 +135,36 @@ def quet_va_day_nhac(db: Session, *, now: datetime | None = None) -> int:
             title = "CapyMedi"
             body = f"Đến giờ uống {ten_thuoc} rồi nhé"
 
-        send_push_to_patient(db, patient_id, title, body)
+        # TANG 1 - benh nhan co muon duoc nhac khong. Kiem SAU khi da tinh
+        # moc chu khong loc tu cau query o tren: van phai ghi
+        # PushReminderSent ben duoi de moc nay coi nhu da xu ly, neu khong
+        # vong quet moi 60 giay se lam lai het tu dau cho ho.
+        tuy_chon = lay_tuy_chon(db, patient_id)
+
+        # TANG 2 - nhac qua duong nao. Tat tang 1 thi khong kenh nao chay,
+        # du tung kenh van dang bat: dung thu tu nguoi dung mong doi khi nhin
+        # man hinh Cai dat (kenh nam LONG trong muc nhac uong thuoc).
+        #
+        # MOT ban ghi chong trung dung chung cho ca hai kenh - moc nay coi
+        # nhu da xu ly khi ca hai da chay xong.
+        if tuy_chon.dose_reminder_enabled:
+            if tuy_chon.web_push_enabled:
+                send_push_to_patient(db, patient_id, title, body)
+            send_telegram_to_patient(db, patient_id, title, body)
 
         if moc == MOC_GOI:
             # Bao nguoi than ngay o moc nay, khong doi het khung 60 phut -
             # cung hanh vi voi ban client (capy-shell.tsx).
-            gio_hen = slot_at.astimezone(UTC).strftime("%H:%M UTC")
+            #
+            # NAM NGOAI `if tuy_chon.dose_reminder_enabled` mot cach CO Y:
+            # day la luoi an toan cho nguoi than, khong phai tien nghi cua
+            # benh nhan. Nguoi muon tat no nhat - benh nhan khong muon con
+            # chau biet minh quen thuoc - lai dung la nguoi no sinh ra de bao
+            # ve. Muon tat thi phai la quyet dinh cua bac si/nguoi than.
+            # Gio DIA PHUONG, khong phai UTC: canh bao nay di toi nguoi
+            # than duoi dang text tho (Telegram/man hinh caregiver), doc
+            # "hen 14:00 UTC" cho lieu 21:00 la vo nghia voi ho.
+            gio_hen = gio_dia_phuong(slot_at)
             tao_canh_bao_cho_nguoi_than(
                 db,
                 patient_id=patient_id,

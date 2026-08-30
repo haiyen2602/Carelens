@@ -44,6 +44,7 @@ from backend.services.agent_monitoring_metrics import (
     quality_metrics,
     retrieval_metrics,
     trace_detail,
+    trend_metrics,
     version_filter_options,
 )
 
@@ -96,6 +97,20 @@ def get_doctor_queue(
     here but never as an ``AgentSafetyEvent`` (see
     ``agent_doctor_handoff_metrics`` module docstring)."""
     return doctor_queue_metrics(db, date_from=date_from, date_to=date_to)
+
+
+@admin_monitoring_router.get("/trend")
+def get_trend(
+    db: Session = Depends(get_db),
+    _admin=Depends(_require_admin),
+    filters: MonitoringFilters = Depends(_filters),
+    days: int = Query(default=7, ge=1, le=90),
+) -> dict[str, Any]:
+    """Daily time-series trend (requests, P95 latency, faithfulness, relevance)
+    over the last `days` calendar days or within the provided date_from/date_to
+    filter window. Used by Quality tab trend chart on the admin monitoring
+    dashboard (see BUILD-36 redesign plan, Phương án B)."""
+    return trend_metrics(db, filters, days=days)
 
 
 @admin_monitoring_router.get("/quality")
