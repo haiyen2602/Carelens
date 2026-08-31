@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { CapySheet } from "@/components/capy/capy-ui";
 import { DoseCallOverlay } from "@/components/capy/dose-call-overlay";
@@ -91,7 +92,15 @@ export function CapyShell({ children }: { children: ReactNode }) {
   // null = chua tai xong (hoac tai loi) -> khong ve huy hieu, KHONG doan bua
   // Rank Dong: hien nham rank thap hon that su thi te hon la chua hien gi.
   const [reward, setReward] = useState<RewardSummary | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
   const activeBanner = bannerQueue[0] ?? null;
+
+  const handleCopyId = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(true);
+    toast.success(`Đã sao chép: ${text}`);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
 
   useEffect(() => {
     const current = getNotificationPermission();
@@ -350,19 +359,57 @@ export function CapyShell({ children }: { children: ReactNode }) {
                 )}
               </span>
               <span className="block min-w-0 flex-1">
-                <span className="font-display block text-[20px] font-extrabold text-[#16386E]">
-                  {ten}
-                </span>
-                {reward ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-display block text-[20px] font-extrabold text-[#16386E]">
+                    {ten}
+                  </span>
+                  {user?.patient_id && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyId(user.patient_id!)}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-semibold text-[#1D5BD8] transition hover:bg-[#DBEAFE]"
+                      title={`Mã hồ sơ bệnh nhân: ${user.patient_id} (Bấm để sao chép)`}
+                    >
+                      <span>
+                        Mã:{" "}
+                        {user.patient_id.includes("canary")
+                          ? "Canary #1"
+                          : user.patient_id.length === 36
+                          ? `${user.patient_id.slice(0, 8)}...`
+                          : user.patient_id}
+                      </span>
+                      {copiedId ? (
+                        <Check className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5 opacity-60" />
+                      )}
+                    </button>
+                  )}
+                  {user?.role === "doctor" && user.doctor_id && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyId(user.doctor_id!)}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2 py-0.5 text-[11px] font-semibold text-[#137333] transition hover:bg-[#CEEAD6]"
+                      title={`Mã bác sĩ: ${user.doctor_id} (Bấm để sao chép)`}
+                    >
+                      <span>
+                        Mã:{" "}
+                        {user.doctor_id.length === 36
+                          ? `${user.doctor_id.slice(0, 8)}...`
+                          : user.doctor_id}
+                      </span>
+                      {copiedId ? (
+                        <Check className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5 opacity-60" />
+                      )}
+                    </button>
+                  )}
+                </div>
+                {reward && (
                   <span className="mt-0.5 block text-[12px] font-semibold text-[#8A6516]">
                     Rank {reward.rankLabel}
                   </span>
-                ) : (
-                  user?.patient_id && (
-                    <span className="font-mono block text-[11px] text-[#62708A]">
-                      {user.patient_id}
-                    </span>
-                  )
                 )}
               </span>
             </div>
