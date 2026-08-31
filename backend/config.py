@@ -325,6 +325,39 @@ class Settings(BaseSettings):
         default="legacy",
         description="APP-5 safety mode. Shadow persists audited V2 safety/outbox decisions; legacy disables this runtime path.",
     )
+
+    # CapyMedi V3 rollout profile (chat-bot-build/chat-bot-v3/docs/runtime_config_v3.md
+    # SS13.1, SS20). Single rollout source of truth cho toan bo V3 runtime -
+    # KHONG duoc them cac boolean roi rac (kieu V3_ENABLED/V3_PLANNER_SHADOW)
+    # de bypass profile nay, dung y het tinh than agent_rollout_percentage/
+    # agent_canary_allowlist da lam cho V2 o duoi. Bon gia tri hop le duoc
+    # khai bao du (kip theo dung tai lieu contract) de field nay khong can
+    # doi signature khi tung V3 stage lan luot duoc bat, nhung validator ben
+    # duoi CHU DONG fail-closed cho moi gia tri khac "v2_only" cho toi khi
+    # code V3 that su ton tai - tranh tinh huong operator dat nham
+    # CAPYMEDI_RUNTIME_PROFILE=v3_shadow tren Railway ma khong co gi phia
+    # sau no thuc thi (silent no-op, trong khi bien nay chinh la "nut tat"
+    # duy nhat de rollback ve V2 mot khi V3 that su ton tai).
+    capymedi_runtime_profile: Literal["v2_only", "v3_shadow", "v3_canary_read_only", "v3_production"] = Field(
+        default="v2_only",
+        description=(
+            "V3 rollout profile - nguon su that duy nhat cho rollback. v2_only (mac dinh) = "
+            "100% request di qua V2, khong goi bat ky V3 Planner/Generator/Reviewer nao."
+        ),
+    )
+
+    @field_validator("capymedi_runtime_profile")
+    @classmethod
+    def _capymedi_runtime_profile_must_be_v2_only_for_now(cls, value: str) -> str:
+        if value != "v2_only":
+            raise ValueError(
+                f"CAPYMEDI_RUNTIME_PROFILE={value!r} khong hop le luc nay: V3 runtime "
+                "(Planner/Workflow Router/Generator/Reviewer) chua ton tai trong codebase. "
+                "Chi 'v2_only' duoc chap nhan cho toi khi tung V3 stage duoc implement va "
+                "startup validation tuong ung (runtime_config_v3.md SS20) duoc them vao day."
+            )
+        return value
+
     # Agent V2 begins isolated and disabled. BUILD-1 has no write actions.
     agent_runtime_enabled: bool = False
     agent_token_budget: int = Field(default=4096, ge=1, le=100_000)
