@@ -8,15 +8,20 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
+  ArrowUpDown,
   Bot,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Cpu,
   Database,
   DollarSign,
   ExternalLink,
   FileSearch,
   Filter,
+  Flame,
   Gauge,
   Info,
   Layers,
@@ -28,8 +33,10 @@ import {
   Search,
   Server,
   ShieldAlert,
+  SlidersHorizontal,
   Sparkles,
   Trophy,
+  Workflow,
   Zap,
 } from "lucide-react";
 import {
@@ -1355,6 +1362,706 @@ function RetrievalTab({
   );
 }
 
+// ─── Pipeline Latency Breakdown Component ───────────────────────────────────
+
+interface SpanMeta {
+  title: string;
+  category: "Routing" | "RAG" | "LLM" | "Tool" | "Safety" | "System" | "Eval";
+  typeBadge: string;
+  order: number;
+  color: string;
+  bgTone: string;
+  borderTone: string;
+  textTone: string;
+  desc: string;
+}
+
+const SPAN_META_MAP: Record<string, SpanMeta> = {
+  ROUTER: {
+    title: "Phân luồng Intent",
+    category: "Routing",
+    typeBadge: "Định tuyến",
+    order: 1,
+    color: "#0284c7",
+    bgTone: "bg-sky-500/10",
+    borderTone: "border-sky-200 dark:border-sky-800",
+    textTone: "text-sky-700 dark:text-sky-300",
+    desc: "Định tuyến câu hỏi & phân loại ý định người dùng",
+  },
+  RETRIEVAL: {
+    title: "Truy xuất RAG",
+    category: "RAG",
+    typeBadge: "Truy xuất RAG",
+    order: 2,
+    color: "#d97706",
+    bgTone: "bg-amber-500/10",
+    borderTone: "border-amber-200 dark:border-amber-800",
+    textTone: "text-amber-700 dark:text-amber-300",
+    desc: "Tìm kiếm ngữ nghĩa & tài liệu dược thư y khoa từ kho dữ liệu",
+  },
+  TOOL: {
+    title: "Thực thi công cụ",
+    category: "Tool",
+    typeBadge: "Gọi công cụ",
+    order: 3,
+    color: "#059669",
+    bgTone: "bg-emerald-500/10",
+    borderTone: "border-emerald-200 dark:border-emerald-800",
+    textTone: "text-emerald-700 dark:text-emerald-300",
+    desc: "Kiểm tra tương tác thuốc, lịch uống, cảnh báo liều dùng",
+  },
+  TIME_QUERY: {
+    title: "Tính toán thời gian",
+    category: "Tool",
+    typeBadge: "Xử lý thời gian",
+    order: 4,
+    color: "#0d9488",
+    bgTone: "bg-teal-500/10",
+    borderTone: "border-teal-200 dark:border-teal-800",
+    textTone: "text-teal-700 dark:text-teal-300",
+    desc: "Truy vấn và tính toán mốc giờ nhắc thuốc chính xác",
+  },
+  MODEL: {
+    title: "Mô hình LLM",
+    category: "LLM",
+    typeBadge: "Suy luận AI",
+    order: 5,
+    color: "#7c3aed",
+    bgTone: "bg-violet-500/10",
+    borderTone: "border-violet-200 dark:border-violet-800",
+    textTone: "text-violet-700 dark:text-violet-300",
+    desc: "Sinh câu trả lời & tư vấn giải thích y khoa thông minh",
+  },
+  GROUNDING: {
+    title: "Kiểm tra Grounding",
+    category: "Safety",
+    typeBadge: "Kiểm chứng",
+    order: 6,
+    color: "#db2777",
+    bgTone: "bg-pink-500/10",
+    borderTone: "border-pink-200 dark:border-pink-800",
+    textTone: "text-pink-700 dark:text-pink-300",
+    desc: "Xác thực bằng chứng y khoa đối chiếu tránh ảo giác AI",
+  },
+  SAFETY: {
+    title: "Kiểm duyệt an toàn",
+    category: "Safety",
+    typeBadge: "Kiểm duyệt",
+    order: 7,
+    color: "#e11d48",
+    bgTone: "bg-rose-500/10",
+    borderTone: "border-rose-200 dark:border-rose-800",
+    textTone: "text-rose-700 dark:text-rose-300",
+    desc: "Kiểm duyệt triệu chứng khẩn cấp & phòng ngừa rủi ro y tế",
+  },
+  HANDOFF: {
+    title: "Chuyển giao Bác sĩ",
+    category: "Safety",
+    typeBadge: "Chuyển bác sĩ",
+    order: 8,
+    color: "#4f46e5",
+    bgTone: "bg-indigo-500/10",
+    borderTone: "border-indigo-200 dark:border-indigo-800",
+    textTone: "text-indigo-700 dark:text-indigo-300",
+    desc: "Điều hướng ca bệnh phức tạp sang bác sĩ chuyên khoa",
+  },
+  CHECKPOINT: {
+    title: "Lưu trạng thái",
+    category: "System",
+    typeBadge: "Trạng thái",
+    order: 9,
+    color: "#475569",
+    bgTone: "bg-slate-500/10",
+    borderTone: "border-slate-200 dark:border-slate-800",
+    textTone: "text-slate-700 dark:text-slate-300",
+    desc: "Ghi nhận checkpoint trạng thái phiên hội thoại",
+  },
+  GUARDRAIL: {
+    title: "Hàng rào Guardrail",
+    category: "Safety",
+    typeBadge: "Hàng rào bảo vệ",
+    order: 10,
+    color: "#e11d48",
+    bgTone: "bg-rose-500/10",
+    borderTone: "border-rose-200 dark:border-rose-800",
+    textTone: "text-rose-700 dark:text-rose-300",
+    desc: "Bộ lọc quy chuẩn từ ngữ & tiêu chuẩn an toàn y tế",
+  },
+  RUNTIME: {
+    title: "Điều phối Runtime",
+    category: "System",
+    typeBadge: "Điều phối luồng",
+    order: 11,
+    color: "#2563eb",
+    bgTone: "bg-blue-500/10",
+    borderTone: "border-blue-200 dark:border-blue-800",
+    textTone: "text-blue-700 dark:text-blue-300",
+    desc: "Quản lý vòng đời request & khung điều phối luồng xử lý",
+  },
+  EVALUATION: {
+    title: "Đánh giá chất lượng",
+    category: "Eval",
+    typeBadge: "Đánh giá ngầm",
+    order: 12,
+    color: "#0891b2",
+    bgTone: "bg-cyan-500/10",
+    borderTone: "border-cyan-200 dark:border-cyan-800",
+    textTone: "text-cyan-700 dark:text-cyan-300",
+    desc: "Chấm điểm độ tin cậy và phân tích telemetry ngầm",
+  },
+};
+
+function getSpanMeta(step: string): SpanMeta {
+  if (SPAN_META_MAP[step]) return SPAN_META_MAP[step];
+  return {
+    title: step.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase()),
+    category: "System",
+    typeBadge: "Span",
+    order: 99,
+    color: "#64748b",
+    bgTone: "bg-slate-500/10",
+    borderTone: "border-slate-200 dark:border-slate-800",
+    textTone: "text-slate-700 dark:text-slate-300",
+    desc: `Giai đoạn xử lý ${step}`,
+  };
+}
+
+function formatLatencyVal(val: number | null | undefined): string {
+  if (val === null || val === undefined || Number.isNaN(val)) return "N/A";
+  if (val < 1) return `${val.toFixed(2)}ms`;
+  if (val < 10) return `${val.toFixed(2)}ms`;
+  if (val < 1000) return `${val.toFixed(1)}ms`;
+  return `${val.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}ms (${(val / 1000).toFixed(2)}s)`;
+}
+
+function PipelineLatencyBreakdown({
+  perStep,
+  endToEndP95,
+}: {
+  perStep: Record<string, { 50: MetricValue; 95: MetricValue }>;
+  endToEndP95?: number | null;
+}) {
+  const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
+  const [sortBy, setSortBy] = useState<"pipeline" | "p95_desc" | "spread_desc">("pipeline");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [showPipelineGuide, setShowPipelineGuide] = useState<boolean>(false);
+
+  // Parse all span data
+  const spanItems = Object.entries(perStep).map(([stepKey, v]) => {
+    const meta = getSpanMeta(stepKey);
+    const p50Val = typeof v[50]?.value === "number" && v[50]?.status === "AVAILABLE" ? v[50].value : null;
+    const p95Val = typeof v[95]?.value === "number" && v[95]?.status === "AVAILABLE" ? v[95].value : null;
+    const sampleCount = v[50]?.sample_count ?? v[95]?.sample_count ?? null;
+    const spread = p95Val !== null && p50Val !== null ? p95Val - p50Val : 0;
+    const spreadRatio = p95Val !== null && p50Val !== null && p50Val > 0 ? p95Val / p50Val : null;
+
+    return {
+      key: stepKey,
+      meta,
+      p50: p50Val,
+      p95: p95Val,
+      samples: sampleCount,
+      spread,
+      spreadRatio,
+      hasData: (sampleCount ?? 0) > 0 && p95Val !== null,
+    };
+  });
+
+  // Calculate maximums & totals for proportion
+  const validP95Spans = spanItems.filter((d) => d.p95 !== null && d.p95 > 0);
+  const maxP95 = validP95Spans.reduce((max, d) => Math.max(max, d.p95 ?? 0), 1);
+  const sumP95 = validP95Spans.reduce((sum, d) => sum + (d.p95 ?? 0), 0);
+
+  // Identify bottleneck & insights
+  const topBottleneck = [...validP95Spans].sort((a, b) => (b.p95 ?? 0) - (a.p95 ?? 0))[0];
+
+  // Filtering
+  const filteredSpans = spanItems.filter((item) => {
+    const matchesSearch =
+      item.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.meta.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.meta.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "ALL" ||
+      (selectedCategory === "RAG" && item.meta.category === "RAG") ||
+      (selectedCategory === "LLM" && item.meta.category === "LLM") ||
+      (selectedCategory === "TOOL" && item.meta.category === "Tool") ||
+      (selectedCategory === "SAFETY" && item.meta.category === "Safety") ||
+      (selectedCategory === "SYSTEM" && (item.meta.category === "System" || item.meta.category === "Routing" || item.meta.category === "Eval"));
+    return matchesSearch && matchesCategory;
+  });
+
+  // Sorting
+  const sortedSpans = [...filteredSpans].sort((a, b) => {
+    if (sortBy === "pipeline") {
+      return a.meta.order - b.meta.order;
+    }
+    if (sortBy === "p95_desc") {
+      const valA = a.p95 ?? -1;
+      const valB = b.p95 ?? -1;
+      return valB - valA;
+    }
+    if (sortBy === "spread_desc") {
+      return b.spread - a.spread;
+    }
+    return 0;
+  });
+
+  // Categories list
+  const categories = [
+    { id: "ALL", label: "Tất cả giai đoạn" },
+    { id: "RAG", label: "Truy xuất (RAG)" },
+    { id: "LLM", label: "Mô hình (LLM)" },
+    { id: "TOOL", label: "Công cụ (Tool)" },
+    { id: "SAFETY", label: "An toàn & Guardrail" },
+    { id: "SYSTEM", label: "Hệ thống & Luồng" },
+  ];
+
+  return (
+    <div id="step-latency-table" className="surface-card space-y-5 p-5">
+      {/* Header & Subtitle */}
+      <div className="flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <Workflow className="h-5 w-5 text-primary" />
+            <h3 className="text-base font-semibold text-foreground">
+              Phân rã & Giám sát độ trễ Pipeline theo từng giai đoạn
+            </h3>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Đo lường chi tiết P50, P95 và độ biến thiên thời gian thực thi (ms) của từng mắt xích trong chuỗi xử lý.
+          </p>
+        </div>
+
+        {/* View Mode & Glossary Guide Switchers */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPipelineGuide(!showPipelineGuide)}
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              showPipelineGuide
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-background text-muted-foreground hover:text-foreground"
+            }`}
+            title="Xem giải nghĩa chi tiết các giai đoạn trong luồng xử lý"
+          >
+            <Info className="h-3.5 w-3.5" />
+            {showPipelineGuide ? "Ẩn giải nghĩa" : "Giải nghĩa các Span"}
+          </button>
+
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("timeline")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "timeline"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Timeline trực quan
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "table"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              Bảng chi tiết
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Collapsible Pipeline Glossary Guide */}
+      {showPipelineGuide && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4 text-xs space-y-3">
+          <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-foreground">
+                Cẩm nang tra cứu & Luồng hoạt động chuỗi xử lý (Pipeline Flow)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPipelineGuide(false)}
+              className="text-muted-foreground hover:text-foreground text-[11px]"
+            >
+              Đóng ✕
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-sky-600 dark:text-sky-400">1. ROUTER (Phân luồng Intent):</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Tiếp nhận câu hỏi, phân loại ý định (tra cứu thuốc, hỏi tác dụng phụ, lịch uống) và định tuyến tới module phù hợp.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-amber-600 dark:text-amber-400">2. RETRIEVAL (Truy xuất RAG):</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Tìm kiếm vector ngữ nghĩa trong kho tài liệu dược thư chuẩn và phác đồ điều trị để cung cấp tri thức chính xác cho AI.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">3. TOOL & TIME_QUERY:</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Thực thi công cụ kiểm tra tương tác thuốc nguy hiểm, truy vấn database lịch uống và tính toán mốc giờ nhắc nhở.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-violet-600 dark:text-violet-400">4. MODEL (Mô hình LLM):</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Mô hình AI suy luận, kết hợp ngữ cảnh bệnh án và tài liệu y khoa để sinh câu trả lời tư vấn thấu cảm, rõ ràng.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-rose-600 dark:text-rose-400">5. GROUNDING & SAFETY:</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Kiểm chứng đối chiếu trích dẫn nguồn tránh ảo giác AI, phát hiện triệu chứng cấp tính để kích hoạt chuyển tiếp Bác sĩ (HANDOFF).
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background/80 p-2.5">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">6. RUNTIME & EVALUATION:</span>
+              <p className="mt-0.5 text-muted-foreground text-[11px]">
+                Khung điều phối toàn trình, quản lý timeout, bảo toàn trạng thái phiên và ghi nhận telemetry đo lường chất lượng hệ thống.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actionable Optimization Insights Banner */}
+      {topBottleneck && topBottleneck.p95 !== null && topBottleneck.p95 > 2000 && (
+        <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <Flame className="h-5 w-5 animate-pulse" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  Gợi ý tối ưu hóa hiệu năng (Actionable Insights)
+                </span>
+                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 border border-rose-200">
+                  🚨 Điểm nghẽn: {topBottleneck.meta.title} ({formatLatencyVal(topBottleneck.p95)})
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-foreground/90">
+                {topBottleneck.key === "RETRIEVAL" ? (
+                  <>
+                    Giai đoạn <strong>Truy xuất RAG</strong> đang chiếm tỷ trọng lớn nhất ({sumP95 > 0 ? ((topBottleneck.p95 / sumP95) * 100).toFixed(1) : 0}% tổng thời gian Pipeline).
+                    Khuyến nghị: Kích hoạt <strong>Semantic Cache</strong> cho các câu hỏi phổ biến, tinh chỉnh số lượng chunk <code className="rounded bg-muted px-1 py-0.5 text-[11px]">top_k</code> và kiểm tra chỉ mục HNSW trên Vector DB để đưa P95 về dưới 2.000ms.
+                  </>
+                ) : topBottleneck.key === "MODEL" ? (
+                  <>
+                    Giai đoạn <strong>Mô hình LLM</strong> có độ trễ suy luận cao ({formatLatencyVal(topBottleneck.p95)}).
+                    Khuyến nghị: Áp dụng <strong>Streaming Response</strong> (SSE), nén prompt ngữ cảnh y khoa hoặc sử dụng mô hình tối ưu độ trễ cho các phân loại intent đơn giản.
+                  </>
+                ) : topBottleneck.key === "TOOL" || topBottleneck.key === "TIME_QUERY" ? (
+                  <>
+                    Giai đoạn <strong>{topBottleneck.meta.title}</strong> có độ trễ cao ({formatLatencyVal(topBottleneck.p95)}).
+                    Khuyến nghị: Tối ưu hoá truy vấn Database lịch uống thuốc, bổ sung composite index cho các trường thời gian và cache kết quả kiểm tra tương tác thuốc.
+                  </>
+                ) : (
+                  <>
+                    Giai đoạn <strong>{topBottleneck.meta.title}</strong> ghi nhận P95 cao ({formatLatencyVal(topBottleneck.p95)}). Cần kiểm tra profiling chi tiết của span này trong log hệ thống.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter & Sorting Controls */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {/* Category Filter Chips */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                selectedCategory === cat.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search & Sort Dropdown */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-48">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Tìm giai đoạn..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-full rounded-lg border bg-background pl-8 pr-3 text-xs focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ArrowUpDown className="h-3.5 w-3.5 shrink-0" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="h-8 rounded-lg border bg-background px-2 text-xs text-foreground focus:border-primary focus:outline-none"
+            >
+              <option value="pipeline">Theo luồng Pipeline</option>
+              <option value="p95_desc">Top điểm nghẽn (P95 cao nhất)</option>
+              <option value="spread_desc">Độ biến thiên (P95 - P50 cao nhất)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* VIEW 1: Timeline Cards View */}
+      {viewMode === "timeline" ? (
+        <div className="space-y-3">
+          {sortedSpans.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              Không tìm thấy giai đoạn nào phù hợp với bộ lọc.
+            </div>
+          ) : (
+            sortedSpans.map((item, idx) => {
+              const p95 = item.p95;
+              const p50 = item.p50;
+              const hasData = item.hasData;
+
+              // Percentage of max P95 for progress bar width
+              const barPercent = p95 !== null ? Math.min(100, Math.max((p95 / maxP95) * 100, 1.5)) : 0;
+              const shareOfPipeline = p95 !== null && sumP95 > 0 ? ((p95 / sumP95) * 100).toFixed(1) : "0.0";
+
+              // Bottleneck status
+              const isBottleneck = p95 !== null && (p95 >= 5000 || (p95 >= 2000 && Number(shareOfPipeline) >= 30));
+              const isWarning = !isBottleneck && p95 !== null && (p95 >= 1000 || (item.spreadRatio !== null && item.spreadRatio >= 4 && p95 >= 300));
+              const isHealthy = hasData && !isBottleneck && !isWarning;
+
+              return (
+                <div
+                  key={item.key}
+                  className={`group relative rounded-xl border p-3.5 transition-all duration-200 hover:shadow-md ${
+                    isBottleneck
+                      ? "border-rose-500/40 bg-gradient-to-r from-rose-500/[0.06] via-background to-background ring-1 ring-rose-500/20"
+                      : isWarning
+                      ? "border-amber-500/30 bg-amber-500/[0.02]"
+                      : "border-border/70 bg-card/60 hover:border-border"
+                  }`}
+                >
+                  {/* Top Row: Title, Badges & Numbers */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted/80 text-[11px] font-semibold text-muted-foreground">
+                        {idx + 1}
+                      </span>
+                      <span className="font-semibold text-sm text-foreground">
+                        {item.meta.title}
+                      </span>
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        ({item.key})
+                      </span>
+                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${item.meta.bgTone} ${item.meta.borderTone} ${item.meta.textTone}`}>
+                        {item.meta.typeBadge}
+                      </span>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2">
+                      {isBottleneck ? (
+                        <span className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:border-rose-800 dark:text-rose-400">
+                          <AlertTriangle className="h-3 w-3" />
+                          Điểm nghẽn P95
+                        </span>
+                      ) : isWarning ? (
+                        <span className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:border-amber-800 dark:text-amber-400">
+                          <Clock className="h-3 w-3" />
+                          Cần theo dõi
+                        </span>
+                      ) : isHealthy ? (
+                        <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:border-emerald-800 dark:text-emerald-400">
+                          <Check className="h-3 w-3" />
+                          Tối ưu
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                          Chưa có dữ liệu
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Latency Values & Comparison */}
+                  <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <div className="rounded-lg bg-muted/40 p-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Độ trễ P50</p>
+                      <p className="font-semibold text-foreground mt-0.5">
+                        {p50 !== null ? formatLatencyVal(p50) : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Độ trễ P95 (Chỉ số chính)</p>
+                      <p className={`font-semibold mt-0.5 ${isBottleneck ? "text-rose-600 dark:text-rose-400" : isWarning ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
+                        {p95 !== null ? formatLatencyVal(p95) : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Độ biến thiên (Tail Spread)</p>
+                      <p className="font-semibold text-foreground mt-0.5">
+                        {item.spread > 0 ? `+${formatLatencyVal(item.spread)}` : "—"}
+                        {item.spreadRatio && item.spreadRatio > 1.5 && (
+                          <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                            ({item.spreadRatio.toFixed(1)}x)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium">Số mẫu ghi nhận (n)</p>
+                      <p className="font-semibold text-foreground mt-0.5">
+                        {item.samples !== null ? item.samples.toLocaleString("vi-VN") : "0"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Visual Latency Bar */}
+                  {hasData && (
+                    <div className="mt-3 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Tỷ trọng trong Pipeline: <strong>{shareOfPipeline}%</strong></span>
+                        <span>Độ trễ tối đa so với nhóm: {barPercent.toFixed(1)}%</span>
+                      </div>
+                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/60">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${barPercent}%`,
+                            backgroundColor: isBottleneck ? "#f43f5e" : isWarning ? "#f59e0b" : item.meta.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description note */}
+                  <p className="mt-2 text-[11px] text-muted-foreground italic">
+                    {item.meta.desc}
+                  </p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* VIEW 2: Table View */
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr>
+                <th className="py-2.5 px-3 font-semibold">Giai đoạn (Span)</th>
+                <th className="py-2.5 px-3 font-semibold">Phân loại</th>
+                <th className="py-2.5 px-3 font-semibold">P50 (ms)</th>
+                <th className="py-2.5 px-3 font-semibold">P95 (ms)</th>
+                <th className="py-2.5 px-3 font-semibold">Độ biến thiên (P95-P50)</th>
+                <th className="py-2.5 px-3 font-semibold">Tỷ trọng P95</th>
+                <th className="py-2.5 px-3 font-semibold">Số mẫu (n)</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {sortedSpans.map((item) => {
+                const p95 = item.p95;
+                const p50 = item.p50;
+                const shareOfPipeline = p95 !== null && sumP95 > 0 ? ((p95 / sumP95) * 100).toFixed(1) : "0.0";
+                const isBottleneck = p95 !== null && (p95 >= 5000 || (p95 >= 2000 && Number(shareOfPipeline) >= 30));
+                const isWarning = !isBottleneck && p95 !== null && (p95 >= 1000 || (item.spreadRatio !== null && item.spreadRatio >= 4 && p95 >= 300));
+                const barPercent = p95 !== null ? Math.min(100, Math.max((p95 / maxP95) * 100, 2)) : 0;
+
+                return (
+                  <tr key={item.key} className="hover:bg-muted/30 transition-colors">
+                    <td className="py-2.5 px-3 max-w-[260px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-foreground text-xs">{item.meta.title}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">({item.key})</span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">
+                        {item.meta.desc}
+                      </p>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${item.meta.bgTone} ${item.meta.borderTone} ${item.meta.textTone}`}>
+                        {item.meta.typeBadge}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono font-medium">
+                      {p50 !== null ? formatLatencyVal(p50) : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono font-semibold">
+                      <span className={isBottleneck ? "text-rose-600 font-bold" : isWarning ? "text-amber-600 font-bold" : "text-foreground"}>
+                        {p95 !== null ? formatLatencyVal(p95) : "—"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                      {item.spread > 0 ? `+${formatLatencyVal(item.spread)}` : "—"}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${barPercent}%`,
+                              backgroundColor: isBottleneck ? "#f43f5e" : isWarning ? "#f59e0b" : item.meta.color,
+                            }}
+                          />
+                        </div>
+                        <span className="text-[11px] font-medium text-muted-foreground">{shareOfPipeline}%</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground">
+                      {item.samples !== null ? item.samples.toLocaleString("vi-VN") : "0"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {isBottleneck ? (
+                        <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 border border-rose-200">
+                          🚨 Điểm nghẽn
+                        </span>
+                      ) : isWarning ? (
+                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 border border-amber-200">
+                          ⚠️ Theo dõi
+                        </span>
+                      ) : item.hasData ? (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 border border-emerald-200">
+                          ⚡ Tối ưu
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Tab: Performance ─────────────────────────────────────────────────────────
 
 function PerformanceTab({ data }: { data: PerformanceOut }) {
@@ -1362,16 +2069,6 @@ function PerformanceTab({ data }: { data: PerformanceOut }) {
 
   const p95Val = data.end_to_end_p95_ms?.status === "AVAILABLE" && typeof data.end_to_end_p95_ms.value === "number"
     ? data.end_to_end_p95_ms.value : null;
-
-  const stepBarData = data.per_step
-    ? Object.entries(data.per_step)
-      .map(([step, v]) => ({
-        label: step,
-        value: typeof v[95]?.value === "number" ? v[95].value : 0,
-      }))
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value)
-    : [];
 
   return (
     <div className="space-y-6">
@@ -1396,35 +2093,11 @@ function PerformanceTab({ data }: { data: PerformanceOut }) {
         <MetricCard label="Tỷ lệ quá thời gian (Timeout)" metric={data.timeout_rate} percent />
       </div>
 
-      {stepBarData.length > 0 && (
-        <HorizontalBarChart
-          data={stepBarData}
-          title="Độ trễ P95 theo từng giai đoạn xử lý (ms)"
-          valueFormatter={(v) => `${v}ms`}
+      {data.per_step && Object.keys(data.per_step).length > 0 && (
+        <PipelineLatencyBreakdown
+          perStep={data.per_step}
+          endToEndP95={p95Val}
         />
-      )}
-
-      {data.per_step && (
-        <div id="step-latency-table" className="surface-card overflow-x-auto p-4">
-          <p className="mb-2 text-sm font-semibold">Bảng phân rã độ trễ chi tiết theo từng span</p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th className="py-1">Giai đoạn (Span)</th><th>P50 (ms)</th><th>P95 (ms)</th><th>Số mẫu (n)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(data.per_step).map(([step, v]) => (
-                <tr key={step} className="border-t">
-                  <td className="py-1 font-mono text-xs">{step}</td>
-                  <td>{formatMetric(v[50], { suffix: "ms" })}</td>
-                  <td>{formatMetric(v[95], { suffix: "ms" })}</td>
-                  <td className="text-muted-foreground">{v[50]?.sample_count ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       )}
     </div>
   );
