@@ -4,10 +4,16 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
+  CheckCircle2,
+  Clock,
   FileClock,
   Inbox,
   Loader2,
+  Lock,
   PillBottle,
+  ShieldCheck,
+  Stethoscope,
+  Users,
   Users2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -102,24 +108,28 @@ export default function AdminDashboard() {
   const donut = [
     {
       label: "Bệnh nhân",
+      count: roleCounts.patient,
       sub: `${roleCounts.patient} tài khoản`,
       color: "var(--primary)",
       pct: pctOf(roleCounts.patient),
     },
     {
       label: "Bác sĩ",
+      count: roleCounts.doctor,
       sub: `${roleCounts.doctor} tài khoản`,
       color: "var(--success)",
       pct: pctOf(roleCounts.doctor),
     },
     {
       label: "Quản trị",
+      count: roleCounts.admin,
       sub: `${roleCounts.admin} tài khoản`,
       color: "var(--accent-foreground)",
       pct: pctOf(roleCounts.admin),
     },
     {
       label: "Quản trị cấp cao",
+      count: roleCounts.superAdmin,
       sub: `${roleCounts.superAdmin} tài khoản`,
       color: "oklch(0.55 0.22 295)",
       pct: pctOf(roleCounts.superAdmin),
@@ -212,21 +222,29 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="surface-card p-5">
+        <section className="surface-card flex flex-col justify-between p-5 space-y-5">
+          {/* Header */}
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Phân bổ tài khoản theo vai trò</h2>
-            <span className="text-xs text-muted-foreground">{total} tài khoản</span>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Phân bổ tài khoản theo vai trò</h2>
+              <p className="text-xs text-muted-foreground">Tỷ lệ cơ cấu người dùng &amp; tình trạng tài khoản</p>
+            </div>
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {total} tài khoản
+            </span>
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-8">
+
+          {/* Tier 1: Donut & Detailed Legends with Percentage */}
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
             <div
-              className="relative h-44 w-44 rounded-full p-4"
+              className="relative h-40 w-40 shrink-0 rounded-full p-3.5 shadow-sm"
               style={{
                 background: total > 0 ? `conic-gradient(${gradient})` : "var(--muted)",
               }}
               aria-hidden
             >
               <div
-                className="absolute inset-[13px] rounded-full"
+                className="absolute inset-[11px] rounded-full"
                 style={{
                   background:
                     total > 0
@@ -234,34 +252,135 @@ export default function AdminDashboard() {
                       : "color-mix(in srgb, var(--foreground) 6%, transparent)",
                 }}
               />
-              <div className="absolute inset-[26px] grid place-items-center rounded-full bg-card">
+              <div className="absolute inset-[22px] grid place-items-center rounded-full bg-card shadow-inner">
                 <div className="text-center">
-                  <p className="text-3xl font-extrabold leading-none">{total}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Tài khoản</p>
+                  <p className="text-2xl font-extrabold leading-none text-foreground">{total}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground font-medium">Tài khoản</p>
                 </div>
               </div>
             </div>
-            <ul className="min-w-[190px] flex-1 space-y-3">
+
+            <ul className="min-w-[210px] flex-1 space-y-2">
               {donut.map((d) => (
-                <li key={d.label} className="flex gap-2.5">
-                  <span
-                    className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ background: d.color }}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight">{d.label}</p>
-                    <p className="text-xs text-muted-foreground">{d.sub}</p>
+                <li
+                  key={d.label}
+                  className="flex items-center justify-between gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/40"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm"
+                      style={{ background: d.color }}
+                    />
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {d.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 text-right">
+                    <span className="font-bold text-xs text-foreground">{d.count}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      ({d.pct.toFixed(1)}%)
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-          <Link
-            href="/admin/accounts"
-            className="mt-5 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary"
-          >
-            Quản lý tất cả tài khoản <ArrowRight className="h-4 w-4" />
-          </Link>
+
+          {/* Tier 2: Stacked Multi-Color Progress Bar & Account Health Mini Cards */}
+          <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+            {/* Multi-Color Stacked Bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                <span>Cơ cấu phân bổ vai trò</span>
+                <span>100%</span>
+              </div>
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                {donut.map((d) => (
+                  <div
+                    key={d.label}
+                    style={{
+                      width: `${d.pct}%`,
+                      background: d.color,
+                    }}
+                    title={`${d.label}: ${d.count} (${d.pct.toFixed(1)}%)`}
+                    className="h-full transition-all duration-300"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 3 Account Status Mini Cards */}
+            <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  <span>Hoạt động</span>
+                </div>
+                <p className="mt-1 text-base font-bold text-emerald-600 dark:text-emerald-400">
+                  {accounts.filter((a) => a.status === "active").length}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {total > 0 ? Math.round((accounts.filter((a) => a.status === "active").length / total) * 100) : 0}% tổng số
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                  <Clock className="h-3 w-3" />
+                  <span>Chờ kích hoạt</span>
+                </div>
+                <p className="mt-1 text-base font-bold text-amber-600 dark:text-amber-400">
+                  {pending}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Chưa xác thực</p>
+              </div>
+
+              <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-2">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-400">
+                  <Lock className="h-3 w-3" />
+                  <span>Đã khóa</span>
+                </div>
+                <p className="mt-1 text-base font-bold text-rose-600 dark:text-rose-400">
+                  {locked}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Tạm ngưng</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tier 3: Quick Role Jump Pills & Main Link */}
+          <div className="space-y-2.5 pt-1">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
+              <Link
+                href="/admin/accounts?group=patients"
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-primary/20 bg-primary/5 py-1.5 px-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
+              >
+                <Users className="h-3 w-3" />
+                <span>Bệnh nhân ({roleCounts.patient})</span>
+              </Link>
+              <Link
+                href="/admin/accounts?group=doctors"
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 py-1.5 px-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition hover:bg-emerald-500/10"
+              >
+                <Stethoscope className="h-3 w-3" />
+                <span>Bác sĩ ({roleCounts.doctor})</span>
+              </Link>
+              <Link
+                href="/admin/accounts?group=admins"
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 py-1.5 px-2 text-xs font-semibold text-foreground transition hover:bg-muted"
+              >
+                <ShieldCheck className="h-3 w-3" />
+                <span>Admin ({roleCounts.admin + roleCounts.superAdmin})</span>
+              </Link>
+            </div>
+
+            <Link
+              href="/admin/accounts"
+              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
+            >
+              Quản lý tất cả tài khoản <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </section>
 
         <section className="surface-card p-5">

@@ -491,6 +491,7 @@ def _load_drug_extras(
             "packaging": ld.tong_so_luong,
             "category_name": ld.danh_muc,
             "severity": ld.muc_nghiem_trong,
+            "strength_text": ld.ham_luong,
         }
     return extras
 
@@ -547,7 +548,7 @@ def _build_item(
         display_name=product.display_name,
         dosage_form=product.dosage_form,
         route=product.route,
-        strength_text=product.strength_text,
+        strength_text=product.strength_text or extras.get("strength_text"),
         packaging=extras.get("packaging"),
         category_id=product.category_id,
         category_name=extras.get("category_name") or product.category_id,
