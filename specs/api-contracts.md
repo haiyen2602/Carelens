@@ -386,6 +386,28 @@ or applied. Invalid or stale actions are treated as ordinary user text.
 Safety and deterministic medication-time routing inspect the raw message
 first; client `entity_id` and `topic` never authorize lookup or access.
 
+### 4a. `doctor-takeover-api`
+
+**Bổ sung 2026-08-30, TASK-021.** Handoff `ACTIVE` là thread chung của đúng
+một bệnh nhân và bác sĩ phụ trách; backend là nguồn sự thật, hai giao diện
+poll cùng một dữ liệu.
+
+| Method | Path | Role | Mô tả |
+|---|---|---|---|
+| GET | `/api/v1/agent/v2/handoff/status?patient_id=` | bệnh nhân được xác thực | Lấy handoff ACTIVE hiện tại và messages chung |
+| GET | `/api/v1/agent/v2/handoffs/{handoff_id}` | chủ sở hữu bệnh nhân | Lấy thread, gồm cả handoff đã kết thúc để hiển thị thông báo cuối |
+| POST | `/api/v1/agent/v2/handoffs/{handoff_id}/stop` | chủ sở hữu bệnh nhân | Dừng một ACTIVE handoff, idempotent |
+
+Doctor review detail trả thêm `chat_history` chỉ gồm lịch sử hiển thị an toàn
+patient/assistant của đúng bệnh nhân. Agent V2 lưu bản hiển thị của các lượt
+terminal mới, không lưu prompt, chain-of-thought, secret hoặc output tool thô.
+
+Handoff tự kết thúc sau 10 phút kể từ tin nhắn PATIENT gần nhất (fallback là
+`activated_at`), được quét mỗi 60 giây. Bác sĩ, bệnh nhân hoặc timeout dùng
+cùng một chuyển trạng thái idempotent và công khai đúng một SYSTEM notice:
+`Bác sĩ xin dừng cuộc trò chuyện tại đây`. SYSTEM note khác là nội bộ và không
+được trả cho bệnh nhân.
+
 ### B-07 package-image candidates (additive)
 
 | Method | Path | Role | Mô tả |
@@ -685,6 +707,7 @@ Caller không có role `admin` nhận response phân quyền chuẩn (403/401).
 | 2026-08-23 | `admin-rag-monitoring-api` (§1f, proposed) | BUILD-31 quy định provenance, trạng thái N/A và denominator cho metric Evaluation V2; live IR metric không có ground truth trả `null`, không alias hay dùng `0`. | `[chờ Architect/Frontend review]` |
 | 2026-08-26 | `dose-api` (§3), `drug-image-delivery-api` (mới, §3a) | B-06 thêm metadata ảnh catalog an toàn vào `expected_items[]` và route bytes xác thực. Không breaking: field là additive; ảnh thiếu trả `NO_IMAGE`/`url: null`; không lộ storage/provenance. | `[chờ Architect/Frontend review]` |
 | 2026-08-27 | `chat-api` (§4, B-07 additive) | Thêm upload ảnh gói thuốc multipart và confirmation action do server phát hành. Candidate không phải drug canonical; chỉ sau confirm mới bind `drug_product_id` và dùng Drug Tool. Không breaking với text chat hiện hữu. | `[chờ Architect/Frontend review]` |
+| 2026-08-30 | `doctor-takeover-api` (mới, §4a) | TASK-021 thêm thread chung bệnh nhân/bác sĩ, bệnh nhân dừng, timeout 10 phút và lịch sử chatbot an toàn cho bác sĩ trong handoff. Additive; cần Architect + Frontend review. | `[chờ Architect/Frontend review]` |
 
 ---
 **Lưu ý cho AI:** Không tự ý tạo field/endpoint/event mới nằm ngoài file này. Nếu task yêu cầu thay đổi contract, hãy **đề xuất thay đổi rõ ràng ở đây trước** (kèm dòng mới trong bảng "Lịch sử thay đổi") để người phụ trách review, thay vì âm thầm thay đổi trong code.

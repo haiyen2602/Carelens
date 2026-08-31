@@ -18,6 +18,7 @@ from threading import Lock
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.agents.tools.chat_history_tool import save_chat_message
 from backend.agents.v2.answerability import handoff_type_for
 from backend.agents.v2.context import ContextBudget, ContextManager
 from backend.agents.v2.conversation_state import (
@@ -1269,5 +1270,12 @@ def run_agent_orchestration(
     # already-computed `result` -- never influences Safety/Handoff runtime
     # behavior (BUILD-34 §12). Fully self-contained, safe to call directly.
     persist_safety_event(db, result=result, conversation_id=conversation_id, patient_id=patient_id, actor_id=actor.id)
+
+    # TASK-021: Agent V2 is the production chat path. Persist its display-safe
+    # patient/assistant pair just like the legacy route so the treating doctor
+    # can review the patient's chatbot context after a handoff. This stores no
+    # prompt, reasoning, or raw tool payload.
+    save_chat_message(db, patient_id, "patient", request.message)
+    save_chat_message(db, patient_id, "assistant", response.reply)
 
     return response

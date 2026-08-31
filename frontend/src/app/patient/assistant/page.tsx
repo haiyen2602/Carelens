@@ -8,7 +8,7 @@
 // Ban mau tra loi bang regex hard-code ("Tuan nay 23/25 lieu, 92%") - o day
 // van la mo hinh that tra loi, nen khong co cau tra loi dung san nao.
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { History, Mic, Plus, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/camera-capture";
@@ -35,6 +35,12 @@ import {
   saveConversations,
   titleFromMessage,
 } from "@/lib/chat-history";
+import {
+  getPatientHandoff,
+  getPatientHandoffDetail,
+  stopPatientHandoff,
+  type PatientHandoff,
+} from "@/lib/patient-handoff";
 
 const SUGGESTED_PROMPTS = [
   "Liều tiếp theo lúc mấy giờ?",
@@ -55,6 +61,8 @@ export default function AssistantPage() {
   const [imagePending, setImagePending] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [voicePending, setVoicePending] = useState(false);
+  const [handoff, setHandoff] = useState<PatientHandoff | null>(null);
+  const [stoppingHandoff, setStoppingHandoff] = useState(false);
   const lastQuestion = useRef("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
@@ -90,6 +98,24 @@ export default function AssistantPage() {
     },
     [],
   );
+
+  const loadHandoff = useCallback(async () => {
+    if (!user?.patient_id) return;
+    try {
+      const next = handoff?.handoffId
+        ? await getPatientHandoffDetail(handoff.handoffId, accessToken)
+        : await getPatientHandoff(user.patient_id, accessToken);
+      setHandoff(next.handoffId ? next : null);
+    } catch {
+      // Chatbot remains usable if this auxiliary polling request is unavailable.
+    }
+  }, [accessToken, handoff?.handoffId, user?.patient_id]);
+
+  useEffect(() => {
+    void loadHandoff();
+    const interval = window.setInterval(() => void loadHandoff(), 5000);
+    return () => window.clearInterval(interval);
+  }, [loadHandoff]);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
@@ -184,6 +210,7 @@ export default function AssistantPage() {
             userMessage: content,
             suggestedActions: data.suggested_actions,
           });
+          if (data.status === "DOCTOR_ACTIVE") void loadHandoff();
           // Doc to cau tra loi neu tuy chon dang bat (Cai dat > Trợ lý giọng
           // nói). Fire-and-forget: text reply o tren da hien thi XONG truoc
           // khi doan nay chay, nen bat ky loi TTS nao cung KHONG duoc phep
@@ -207,6 +234,18 @@ export default function AssistantPage() {
         },
       },
     );
+  };
+
+  const stopConversation = async () => {
+    if (!handoff?.handoffId) return;
+    setStoppingHandoff(true);
+    try {
+      setHandoff(await stopPatientHandoff(handoff.handoffId, accessToken));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không thể dừng cuộc trò chuyện.");
+    } finally {
+      setStoppingHandoff(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -432,6 +471,42 @@ export default function AssistantPage() {
             }}
           />
         ))}
+
+        {handoff?.handoffId && (
+          <section className="space-y-2 rounded-2xl border border-[#C9D7EC] bg-white p-3" aria-label="Trao đổi với bác sĩ">
+            <div className="flex items-center justify-between gap-3">
+              <p className="m-0 text-xs font-semibold text-[#16386E]">
+                {handoff.status === "ACTIVE" ? "Đang trao đổi với bác sĩ" : "Cuộc trò chuyện với bác sĩ đã kết thúc"}
+              </p>
+              {handoff.status === "ACTIVE" && (
+                <button
+                  type="button"
+                  onClick={stopConversation}
+                  disabled={stoppingHandoff}
+                  className="rounded-lg border border-[#D66A6A] px-2.5 py-1.5 text-xs font-semibold text-[#A63737] disabled:opacity-50"
+                >
+                  Dừng trò chuyện
+                </button>
+              )}
+            </div>
+            {handoff.messages.map((message) => (
+              <div key={message.id} className={`flex ${message.senderRole === "PATIENT" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[82%] px-3 py-2 text-sm ${
+                    message.senderRole === "PATIENT"
+                      ? "rounded-[16px_16px_5px_16px] bg-[#16386E] text-white"
+                      : message.senderRole === "SYSTEM"
+                        ? "rounded-xl bg-[#FFF4D8] text-[#6A4A00]"
+                        : "rounded-[16px_16px_16px_5px] bg-[#E4DDFB] text-[#2E2456]"
+                  }`}
+                >
+                  <p className="m-0 whitespace-pre-wrap">{message.content}</p>
+                  <p className="m-0 mt-1 text-[10px] opacity-70">{formatMessageTime(message.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
 
         {(isPending || imagePending) && (
           <div

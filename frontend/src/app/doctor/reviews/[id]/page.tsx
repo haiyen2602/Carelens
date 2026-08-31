@@ -542,6 +542,29 @@ export default function DoctorReviewDetailPage() {
         </div>
       </section>
 
+      <section className="surface-card p-5">
+        <h2 className="mb-3 font-bold">Lịch sử chat với Capy</h2>
+        <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg bg-muted/50 p-3">
+          {detail.chatHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có lịch sử chatbot được lưu.</p>
+          ) : (
+            detail.chatHistory.map((message) => (
+              <div
+                key={message.id}
+                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                  message.role === "patient"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-background text-foreground"
+                }`}
+              >
+                <p className="m-0 whitespace-pre-wrap">{message.content}</p>
+                <p className="mt-1 text-[10px] opacity-70">{formatDateTime(message.createdAt)}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="surface-card relative overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">

@@ -24,6 +24,7 @@ from backend.config import get_settings
 from backend.db.base import SessionLocal, engine
 from backend.services.agent_judge_worker import process_pending_judge_batch
 from backend.services.classification import summarize_hourly_conversation
+from backend.services.doctor_takeover_timeout import close_inactive_takeovers
 from backend.services.dose_push_reminder import quet_va_day_nhac
 from backend.services.drug_image_chat import cleanup_expired_takeover_uploads
 from backend.services.escalation_reminder import check_and_send_reminders
@@ -112,6 +113,19 @@ async def _run_dose_push_reminder() -> None:
         db.close()
 
 
+async def _run_doctor_takeover_timeout() -> None:
+    db = SessionLocal()
+    try:
+        stopped = close_inactive_takeovers(db)
+        if stopped:
+            logger.info("Da tu dong dung %d doctor takeover khong hoat dong", stopped)
+    except Exception:  # noqa: BLE001 - one failed tick must not stop other jobs
+        db.rollback()
+        logger.exception("Loi khi quet timeout doctor takeover")
+    finally:
+        db.close()
+
+
 async def _run_telegram_updates() -> None:
     """Keo tin benh nhan gui toi bot (chi /start <token> de ghep tai khoan).
 
@@ -183,6 +197,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         "interval",
         seconds=60,
         id="dose_push_reminder",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_doctor_takeover_timeout,
+        "interval",
+        seconds=60,
+        id="doctor_takeover_timeout",
         replace_existing=True,
         max_instances=1,
     )
