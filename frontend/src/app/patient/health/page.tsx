@@ -141,9 +141,21 @@ export default function HealthPage() {
             {user.full_name.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <p className="font-display m-0 truncate text-[19px] font-bold text-[#6B4E0E]">
-              {user.full_name}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-display m-0 truncate text-[19px] font-bold text-[#6B4E0E]">
+                {user.full_name}
+              </p>
+              {patientId && (
+                <span className="inline-flex items-center rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-[#8A6516] shadow-sm">
+                  Mã:{" "}
+                  {patientId.includes("canary")
+                    ? "Canary #1"
+                    : patientId.length === 36
+                    ? `${patientId.slice(0, 8)}...`
+                    : patientId}
+                </span>
+              )}
+            </div>
             <p className="m-0 mt-0.5 text-[13px] font-semibold text-[#7A5A10]">
               {dosesHomNay.length > 0
                 ? `Hôm nay ${daUongHomNay}/${dosesHomNay.length} liều`

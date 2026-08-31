@@ -184,6 +184,10 @@ const SAFETY_REASON_METADATA: Record<string, { label: string; description: strin
     label: "Bất thường về an toàn",
     description: "Hệ thống phát hiện tín hiệu bất thường trong câu trả lời cần kiểm tra an toàn.",
   },
+  DOCTOR_REVIEW_REQUESTED: {
+    label: "Yêu cầu bác sĩ đánh giá",
+    description: "Hệ thống kích hoạt chuyển tiếp để bác sĩ chuyên khoa kiểm duyệt và đánh giá tư vấn trực tiếp.",
+  },
 };
 
 const DIMENSION_NAME_MAP: Record<string, string> = {

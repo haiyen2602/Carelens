@@ -21,7 +21,14 @@ export default function ProfilePage() {
             {(user?.full_name ?? "?").charAt(0)}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-lg font-bold">{user?.full_name ?? "Đang tải…"}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-lg font-bold">{user?.full_name ?? "Đang tải…"}</p>
+              {user?.doctor_id && (
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                  Mã: {user.doctor_id}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">Bác sĩ</p>
           </div>
         </div>

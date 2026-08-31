@@ -1,7 +1,20 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Pencil, Plus, Search, Unlock } from "lucide-react";
+import {
+  Check,
+  Copy,
+  FileText,
+  FlaskConical,
+  Lock,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  Stethoscope,
+  Unlock,
+  Users,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +63,189 @@ const statusTone: Record<AccountStatus, string> = {
   locked: "bg-destructive/12 text-destructive",
   pending: "bg-warning/25 text-warning-foreground",
 };
+
+function AccountLinkedIdentity({ account }: { account: AccountRecord }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (text: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const role = account.role;
+  const patientId = account.patientId?.trim();
+  const doctorId = account.doctorId?.trim();
+
+  // 1. Admin / Super Admin
+  if (role === "super_admin") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Toàn quyền hệ thống
+      </span>
+    );
+  }
+
+  if (role === "admin") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-500/30 bg-slate-500/10 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Quản trị vận hành
+      </span>
+    );
+  }
+
+  // 2. Doctor
+  if (role === "doctor") {
+    if (!doctorId) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
+          <Stethoscope className="h-3.5 w-3.5 opacity-60" />
+          Chưa gán mã BS
+        </span>
+      );
+    }
+
+    const isUUID = doctorId.length === 36 && doctorId.includes("-");
+    const displayDoctorCode = isUUID ? `${doctorId.slice(0, 8)}...` : doctorId;
+
+    return (
+      <div className="group/link inline-flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"
+          title={`Mã bác sĩ: ${doctorId}`}
+        >
+          <Stethoscope className="h-3.5 w-3.5" />
+          <span>Bác sĩ: <strong className="font-semibold">{displayDoctorCode}</strong></span>
+        </span>
+        {isUUID && (
+          <button
+            type="button"
+            onClick={(e) => handleCopy(doctorId, e)}
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
+            title="Sao chép toàn bộ mã UUID bác sĩ"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 3. Caregiver
+  if (role === "caregiver") {
+    if (!patientId) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5 opacity-60" />
+          Chưa liên kết người bệnh
+        </span>
+      );
+    }
+
+    const isUUID = patientId.length === 36 && patientId.includes("-");
+    const displayCode = isUUID ? `${patientId.slice(0, 8)}...` : patientId;
+
+    return (
+      <div className="group/link inline-flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"
+          title={`Chăm sóc bệnh nhân: ${patientId}`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          <span>Chăm sóc: <strong className="font-semibold">{displayCode}</strong></span>
+        </span>
+        {isUUID && (
+          <button
+            type="button"
+            onClick={(e) => handleCopy(patientId, e)}
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
+            title="Sao chép toàn bộ mã UUID bệnh nhân"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 4. Patient
+  if (!patientId) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
+        <FileText className="h-3.5 w-3.5 opacity-60" />
+        Chưa gán hồ sơ
+      </span>
+    );
+  }
+
+  // Check if canary / test account
+  if (patientId.includes("canary") || patientId.includes("test") || patientId.includes("agent-v2")) {
+    const canaryLabel = patientId.includes("canary-patient-1")
+      ? "Canary #1"
+      : patientId.includes("canary-patient-2")
+      ? "Canary #2"
+      : "Kiểm thử";
+
+    return (
+      <div className="group/link inline-flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"
+          title={`Mã kiểm thử đầy đủ: ${patientId}`}
+        >
+          <FlaskConical className="h-3.5 w-3.5" />
+          <span>Kiểm thử: <strong className="font-semibold">{canaryLabel}</strong></span>
+        </span>
+        <button
+          type="button"
+          onClick={(e) => handleCopy(patientId, e)}
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
+          title="Sao chép mã kiểm thử đầy đủ"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    );
+  }
+
+  // Check if UUID
+  const isUUID = patientId.length === 36 && patientId.includes("-");
+  if (isUUID) {
+    const shortUUID = `${patientId.slice(0, 8)}...`;
+    return (
+      <div className="group/link inline-flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-700 dark:text-sky-300"
+          title={`Mã định danh hệ thống (UUID): ${patientId}`}
+        >
+          <FileText className="h-3.5 w-3.5" />
+          <span>Hồ sơ: <strong className="font-mono font-semibold">{shortUUID}</strong></span>
+        </span>
+        <button
+          type="button"
+          onClick={(e) => handleCopy(patientId, e)}
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground opacity-70 hover:opacity-100 transition-opacity"
+          title="Sao chép toàn bộ mã UUID"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    );
+  }
+
+  // Standard code (e.g. BN00082)
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+      title={`Mã hồ sơ bệnh nhân: ${patientId}`}
+    >
+      <FileText className="h-3.5 w-3.5" />
+      <span>Hồ sơ: <strong className="font-semibold">{patientId}</strong></span>
+    </span>
+  );
+}
 
 const emptyForm = {
   email: "",
@@ -407,10 +603,8 @@ function AccountsContent() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{a.email}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {a.patientId && <p>patient: {a.patientId}</p>}
-                  {a.doctorId && <p>doctor: {a.doctorId}</p>}
-                  {!a.patientId && !a.doctorId && "—"}
+                <td className="px-4 py-3">
+                  <AccountLinkedIdentity account={a} />
                 </td>
                 <td className="px-4 py-3">
                   <span
