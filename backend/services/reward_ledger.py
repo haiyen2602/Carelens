@@ -48,12 +48,18 @@ from backend.services import reward_catalog as catalog
 # thuoc chua".
 _GIO_VN = timedelta(hours=7)
 
-# Trang thai coi la "da uong" khi xet cong diem. DELAYED (uong tre nhung van
-# trong ngay) CO tinh la da uong o moi bao cao khac cua he thong (xem
-# reporting_routes._TRANG_THAI_CO_KET_QUA), nhung o day CHI TAKEN moi duoc
-# thuong - phan thuong nay ten la "uong thuoc dung gio", tra cho DELAYED thi
-# mat han y nghia khuyen khich.
-_TRANG_THAI_DUOC_THUONG = ("TAKEN",)
+# TRONG SO cua tung trang thai khi xet cong diem, KHONG phai danh sach
+# "duoc/khong duoc" nhu truoc 2026-08-31. Dung gio an tron phan cua minh; uong
+# tre trong ngay an mot nua (catalog.PCT_LATE_CONFIRMATION) - van thap hon han
+# dung gio nen phan thuong con phan biet duoc hai hanh vi, nhung khong con la
+# 0 khien benh nhan bo luon viec xac nhan muon.
+#
+# Moi trang thai khong co trong bang deu la trong so 0 (PENDING chua xong,
+# MISSED bo lieu, AWAITING_CAREGIVER chua ai duyet).
+_TRONG_SO_THUONG: dict[str, float] = {
+    "TAKEN": 1.0,
+    "DELAYED": catalog.PCT_LATE_CONFIRMATION / 100,
+}
 
 # Cac trang thai da chot ket qua trong ngay. Con PENDING/AWAITING_CAREGIVER
 # nghia la ngay do chua xong, chua xet thuong duoc.
@@ -149,11 +155,20 @@ def da_uong_du_thuoc_trong_ngay(db: Session, patient_id: str, ngay: date) -> boo
     ).all()
     if not trang_thai:
         return False
-    return all(tt in _TRANG_THAI_DUOC_THUONG for tt in trang_thai)
+    # Trong so 1.0 = TAKEN. Lieu uong tre (0.5) khong lam nen mot ngay
+    # "uong du" - cung nguong voi _du_chuoi_hoan_hao() va voi dieu kien
+    # xet chuoi trong award_dose_on_time().
+    return all(_TRONG_SO_THUONG.get(tt, 0.0) >= 1.0 for tt in trang_thai)
 
 
-def _dem_lieu_trong_ngay(db: Session, patient_id: str, ngay: date) -> tuple[int, int]:
-    """(so lieu DA UONG dung gio, tong so lieu) cua ngay do."""
+def _dem_lieu_trong_ngay(db: Session, patient_id: str, ngay: date) -> tuple[float, int, int]:
+    """(tong TRONG SO da uong, so lieu da xac nhan, tong so lieu) cua ngay do.
+
+    Tach trong so khoi so dem vi hai con so phuc vu hai viec khac nhau: trong
+    so quyet dinh SO DIEM (lieu tre chi tinh nua phan), con so dem dung cho
+    NHAN hien thi - benh nhan uong 2 lieu trong do 1 tre can doc "2/3 lieu",
+    khong phai "1.5/3 lieu".
+    """
     dau, cuoi = _khoang_utc_cua_ngay_vn(ngay)
     trang_thai = db.scalars(
         select(DoseEvent.status).where(
@@ -165,8 +180,9 @@ def _dem_lieu_trong_ngay(db: Session, patient_id: str, ngay: date) -> tuple[int,
             DoseEvent.status != "CANCELLED",
         )
     ).all()
-    da_uong = sum(1 for tt in trang_thai if tt in _TRANG_THAI_DUOC_THUONG)
-    return da_uong, len(trang_thai)
+    trong_so = sum(_TRONG_SO_THUONG.get(tt, 0.0) for tt in trang_thai)
+    da_xac_nhan = sum(1 for tt in trang_thai if tt in _TRONG_SO_THUONG)
+    return trong_so, da_xac_nhan, len(trang_thai)
 
 
 def _diem_dose_da_cong(db: Session, patient_id: str, ngay: date) -> int:
@@ -209,11 +225,11 @@ def award_dose_on_time(db: Session, patient_id: str, ngay: date | None = None) -
 
     Tra ve True neu lan goi nay co cong them diem."""
     hom_nay = ngay or ngay_vn()
-    da_uong, tong_lieu = _dem_lieu_trong_ngay(db, patient_id, hom_nay)
-    if tong_lieu == 0 or da_uong == 0:
+    trong_so, da_xac_nhan, tong_lieu = _dem_lieu_trong_ngay(db, patient_id, hom_nay)
+    if tong_lieu == 0 or trong_so == 0:
         return 0
 
-    muc_tieu = round(catalog.POINTS_DOSE_ON_TIME * da_uong / tong_lieu)
+    muc_tieu = round(catalog.POINTS_DOSE_ON_TIME * trong_so / tong_lieu)
     chenh = muc_tieu - _diem_dose_da_cong(db, patient_id, hom_nay)
     if chenh <= 0:
         return 0
@@ -224,7 +240,7 @@ def award_dose_on_time(db: Session, patient_id: str, ngay: date | None = None) -
         event_type=catalog.EVENT_DOSE_ON_TIME,
         points=chenh,
         occurred_on=hom_nay,
-        label=f"{catalog.EVENT_LABELS[catalog.EVENT_DOSE_ON_TIME]} ({da_uong}/{tong_lieu} liều)",
+        label=f"{catalog.EVENT_LABELS[catalog.EVENT_DOSE_ON_TIME]} ({da_xac_nhan}/{tong_lieu} liều)",
     )
     if not duoc:
         # _award() chi tra False neu UniqueConstraint chan (khong ap dung
@@ -233,7 +249,10 @@ def award_dose_on_time(db: Session, patient_id: str, ngay: date | None = None) -
         return 0
     # Thuong chuoi chi xet khi ca ngay da uong du - chuoi la phan thuong
     # cho ngay HOAN HAO, khong phai cho tung lieu le.
-    if da_uong == tong_lieu:
+    # So TRONG SO chu khong phai so dem: mot ngay ma moi lieu deu uong tre co
+    # da_xac_nhan == tong_lieu nhung khong phai ngay HOAN HAO, khong duoc tinh
+    # vao chuoi. Chi khi moi lieu deu TAKEN thi trong so moi bang tong so lieu.
+    if trong_so == tong_lieu:
         _xet_thuong_chuoi(db, patient_id, hom_nay)
     return chenh
 
@@ -295,7 +314,7 @@ def apply_confirmation_method_penalty(
     """
     if pct >= 100:
         return 0
-    _, tong_lieu = _dem_lieu_trong_ngay(db, patient_id, occurred_on)
+    *_, tong_lieu = _dem_lieu_trong_ngay(db, patient_id, occurred_on)
     if tong_lieu == 0:
         return 0
 
@@ -363,7 +382,11 @@ def _du_chuoi_hoan_hao(db: Session, patient_id: str, den_ngay: date, so_ngay: in
 
     ngay_co_lieu: set[date] = set()
     for scheduled_at, status in lieu:
-        if status not in _TRANG_THAI_DUOC_THUONG:
+        # Chuoi la phan thuong cho ngay HOAN HAO: chi trang thai an TRON phan
+        # cua no (TAKEN, trong so 1.0) moi giu duoc chuoi. Lieu uong tre van
+        # co diem (nua phan) nhung lam dut chuoi - cung cach doi xu voi
+        # nguong "trong_so == tong_lieu" o award_dose_on_time().
+        if _TRONG_SO_THUONG.get(status, 0.0) < 1.0:
             return False
         ngay_co_lieu.add(ngay_vn(scheduled_at))
     return len(ngay_co_lieu) >= so_ngay

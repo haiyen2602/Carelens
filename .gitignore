@@ -104,3 +104,7 @@ prototypes/**/missing_drugs_log.jsonl
 # itself (scripts/agent_v2/golden/golden_set_*.json) is NOT covered by this
 # pattern and stays committed.
 scripts/agent_v2/golden/runs/
+
+# Bao cao mot lan cua scripts/backfill_dose_closeout.py - du lieu benh nhan
+# that (danh sach dose_event_id), khong thuoc ve repo.
+scripts/backfill_dose_closeout_report.json

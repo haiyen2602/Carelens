@@ -13,13 +13,7 @@
 // sang Capy AI qua requestSymptomCheck().
 
 import { useEffect, useState } from "react";
-import {
-  CHIP,
-  CapySheet,
-  SectionLabel,
-  PillChip,
-  type ChipStyle,
-} from "@/components/capy/capy-ui";
+import { CHIP, CapySheet, SectionLabel, PillChip, type ChipStyle } from "@/components/capy/capy-ui";
 import { useAuth } from "@/lib/auth";
 import { listDoses, type Dose } from "@/lib/doses";
 import { getMyPatientProfile, type PatientProfile } from "@/lib/patients";
@@ -109,15 +103,29 @@ export default function HealthPage() {
     (d) => d.status === "TAKEN" || d.status === "DELAYED",
   ).length;
 
-  // Ty le tuan thu 7 ngay: chi tinh cac lieu DA CHOT (uong/tre/bo), khong
-  // tinh lieu con PENDING cua tuong lai - neu khong ty le se luon bi thap gia.
+  // Ty le tuan thu 7 ngay. MAU SO = moi lieu DA DEN HAN (cua so xac nhan da
+  // dong), khong phai chi nhung lieu da co ket qua.
+  //
+  // SUA 2026-08-31: truoc day cho nay loc ["TAKEN","DELAYED","MISSED"], nen
+  // lieu benh nhan khong dung toi (con PENDING du da qua han) bien mat khoi
+  // CA tu so lan mau so - im lang duoc thuong thay vi bi tinh la khong tuan
+  // thu. Do tren du lieu that: 88% hien thi trong khi thuc te la 23%.
+  //
+  // Lieu con PENDING CHUA den han van bi loai (khong phai loi cua benh nhan),
+  // gio bang moc `windowEnd` thay vi bang danh sach trang thai. Cung dinh
+  // nghia voi backend/services/reporting/adherence.py va voi man Lich su.
   const tuanThu = (() => {
-    const daChot = doses.filter(
-      (d) => trong7Ngay(d.scheduledAt) && ["TAKEN", "DELAYED", "MISSED"].includes(d.status),
+    const denHan = doses.filter(
+      (d) =>
+        trong7Ngay(d.scheduledAt) &&
+        new Date(d.windowEnd).getTime() <= Date.now() &&
+        // Cho nguoi than duyet / phac do da dung: khong noi len viec benh
+        // nhan co uong hay khong.
+        !["AWAITING_CAREGIVER", "CANCELLED"].includes(d.status),
     );
-    if (daChot.length === 0) return null;
-    const uong = daChot.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
-    return Math.round((uong / daChot.length) * 100);
+    if (denHan.length === 0) return null;
+    const uong = denHan.filter((d) => d.status === "TAKEN" || d.status === "DELAYED").length;
+    return Math.round((uong / denHan.length) * 100);
   })();
 
   // Thuoc con han vs da het han (endDate < hom nay) - thuan tinh o frontend,
@@ -151,8 +159,8 @@ export default function HealthPage() {
                   {patientId.includes("canary")
                     ? "Canary #1"
                     : patientId.length === 36
-                    ? `${patientId.slice(0, 8)}...`
-                    : patientId}
+                      ? `${patientId.slice(0, 8)}...`
+                      : patientId}
                 </span>
               )}
             </div>
@@ -276,7 +284,6 @@ export default function HealthPage() {
           </div>
         </CapySheet>
       )}
-
     </div>
   );
 }

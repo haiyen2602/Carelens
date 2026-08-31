@@ -470,6 +470,12 @@ class DoseSummary(BaseModel):
     # 2026-08-26 de FE bao ngay "+N diem" (yeu cau UX, xem reward_ledger.py
     # ::award_dose_on_time). GET /doses (danh sach) luon tra 0.
     points_awarded: int = 0
+    # True khi lieu nay da tung duoc xac nhan bang anh va anh do VAN con
+    # (photo_cleanup.py xoa file het han roi dat image_path = None, giu lai
+    # dong PhotoVerification lam audit trail). THEM 2026-08-31 de man Lich su
+    # khong phai goi GET /doses/{id}/photo-verifications cho tung lieu mot -
+    # 147 request moi lan mo trang tren du lieu that.
+    has_photo: bool = False
 
 
 class PhotoSubmitResponse(BaseModel):

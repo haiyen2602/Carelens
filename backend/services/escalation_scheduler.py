@@ -25,6 +25,7 @@ from backend.db.base import SessionLocal, engine
 from backend.services.agent_judge_worker import process_pending_judge_batch
 from backend.services.classification import summarize_hourly_conversation
 from backend.services.doctor_takeover_timeout import close_inactive_takeovers
+from backend.services.dose_lifecycle import chot_lieu_qua_han
 from backend.services.dose_push_reminder import quet_va_day_nhac
 from backend.services.drug_image_chat import cleanup_expired_takeover_uploads
 from backend.services.escalation_reminder import check_and_send_reminders
@@ -109,6 +110,27 @@ async def _run_dose_push_reminder() -> None:
             logger.info("Da day push nhac gio uong thuoc cho %d khung gio", da_nhac)
     except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
         logger.exception("Loi khi chay dose push reminder job")
+    finally:
+        db.close()
+
+
+async def _run_dose_closeout() -> None:
+    """Chot lieu con PENDING cua nhung ngay truoc thanh MISSED.
+
+    Chay theo INTERVAL chu khong phai cron sat nua dem gio VN: cron mot lan
+    moi ngay co diem chet that - container restart dung luc do thi ca ngay
+    hom do khong bao gio duoc chot. Ham ben duoi idempotent va tap ung vien
+    chi con nhieu nhat mot ngay lieu ton dong, nen chay lai thuong xuyen gan
+    nhu khong ton gi, doi lai khong phu thuoc vao mui gio cua may chu."""
+    db = SessionLocal()
+    try:
+        da_chot = chot_lieu_qua_han(db)
+        if da_chot:
+            db.commit()
+            logger.info("Da chot %d lieu qua han thanh MISSED", da_chot)
+    except Exception:  # noqa: BLE001 - 1 lan chay job loi khong duoc lam scheduler dung han
+        db.rollback()
+        logger.exception("Loi khi chay dose closeout job")
     finally:
         db.close()
 
@@ -205,6 +227,14 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         "interval",
         seconds=60,
         id="doctor_takeover_timeout",
+        replace_existing=True,
+        max_instances=1,
+    )
+    _scheduler.add_job(
+        _run_dose_closeout,
+        "interval",
+        minutes=15,
+        id="dose_closeout",
         replace_existing=True,
         max_instances=1,
     )

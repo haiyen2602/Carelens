@@ -68,6 +68,17 @@ PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL = 90  # -10%: co nguoi than xem anh roi 
 PCT_NO_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL = 70  # -30%: khong ai kiem chung duoc
 PCT_SELF_REPORT_NO_PHOTO = 50  # -50%: hoan toan tu khai, khong co anh
 
+# PHAN TRAM GIU LAI cua lieu xac nhan SAU window (DELAYED) - quyet dinh san
+# pham 2026-08-31. Day la mot chieu KHAC han 3 muc o tren: 3 muc kia do do TIN
+# CAY cua bang chung, muc nay do THOI DIEM. Mot lieu co the dinh ca hai (vua
+# tu khai vua muon), luc do hai he so NHAN voi nhau.
+#
+# Vi sao khong de 0: truoc day DELAYED duoc 0 diem, nhung hanh vi do chua bao
+# gio thuc su chay vi backend khong bao gio sinh ra DELAYED tu duong tu khai.
+# Khi bat dau chot nhan dung ma van de 0, benh nhan uong tre se thay xac nhan
+# muon "khong duoc gi" va bo luon - mat ca du lieu tuan thu lan lieu thuoc.
+PCT_LATE_CONFIRMATION = 50
+
 EVENT_DOSE_ON_TIME = "DOSE_ON_TIME"
 EVENT_DOSE_METHOD_PENALTY = "DOSE_METHOD_PENALTY"
 EVENT_DAILY_SURVEY = "DAILY_SURVEY"

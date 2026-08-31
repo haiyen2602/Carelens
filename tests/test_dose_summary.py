@@ -393,3 +393,59 @@ async def test_average_is_weighted_by_dose_count_not_mean_of_ratios():
         assert data["current"]["due"] == 10
     finally:
         _cleanup(doctor_ids=(doctor_id,), patient_ids=(it_lieu, nhieu_lieu))
+
+
+@pytest.mark.asyncio
+async def test_lieu_qua_han_con_pending_van_vao_mau_so_tuan_thu():
+    """SUA 2026-08-31. Truy van cua trang nay loc san
+    `status IN (TAKEN, DELAYED, MISSED)`, nen lieu benh nhan KHONG dung toi -
+    con PENDING du da qua han xac nhan - bien mat khoi ca tu so lan mau so.
+    Benh nhan im lang duoc thuong thay vi bi tinh la khong tuan thu.
+
+    Do tren DB that: bac si nhin thay 88% trong khi 84/127 lieu cua ky chi
+    don gian la khong ai dung toi.
+
+    Day cung la dinh nghia ma compute_adherence_pct() (the "% tuan thu" o
+    ngay tren cung trang) van dung tu truoc - truoc khi sua, hai con so canh
+    nhau tren MOT trang tra loi khac nhau."""
+    doctor_id, token = _seed_doctor()
+    patient_id = _seed_patient(doctor_id)
+
+    moc = _da_qua()
+    _seed_dose(patient_id, moc, "TAKEN")
+    _seed_dose(patient_id, moc, "PENDING")  # qua han ma khong ai dung toi
+
+    try:
+        data = await _get(token, days=7)
+        assert data["current"]["due"] == 2, "lieu PENDING qua han van la lieu DA DEN HAN"
+        assert data["current"]["average_adherence_pct"] == 50.0
+
+        bn = next(b for b in data["patients"] if b["patient_id"] == patient_id)
+        assert bn["due"] == 2
+        assert bn["adherence_pct"] == 50.0
+    finally:
+        _cleanup(doctor_ids=(doctor_id,), patient_ids=(patient_id,))
+
+
+@pytest.mark.asyncio
+async def test_lieu_pending_khong_lam_hong_bieu_do_theo_ngay():
+    """Bieu do theo ngay chi co 3 cot TAKEN/DELAYED/MISSED. Cho PENDING vao
+    truy van ma quen chan o cho dem se lam KeyError - va mot lieu chua nga ngu
+    thi cung khong thuoc cot nao trong ba cot do."""
+    doctor_id, token = _seed_doctor()
+    patient_id = _seed_patient(doctor_id)
+
+    moc = _da_qua()
+    _seed_dose(patient_id, moc, "TAKEN")
+    _seed_dose(patient_id, moc, "PENDING")
+
+    try:
+        data = await _get(token, days=7)
+        # Tra dong theo NGAY VN cua chinh lieu, khong lay daily[-1]: chay sau
+        # nua dem gio VN thi moc "2 tieng truoc" roi vao cot HOM QUA.
+        ngay_cua_lieu = (moc + _GIO_VN).strftime("%Y-%m-%d")
+        dong = next(d for d in data["daily"] if d["date"] == ngay_cua_lieu)
+        assert dong["taken"] == 1
+        assert dong["total"] == 1, "PENDING chua thuoc cot ket qua nao"
+    finally:
+        _cleanup(doctor_ids=(doctor_id,), patient_ids=(patient_id,))

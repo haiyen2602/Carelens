@@ -68,11 +68,27 @@ _KHUNG_GIO = (
 )
 _KHUNG_TOI = ("evening", "Tối")
 
-# Chi 3 trang thai nay la "da co ket qua". PENDING/AWAITING_CAREGIVER (chua
-# den han hoac dang cho nguoi than xac nhan) va CANCELLED (phac do da dung)
-# deu khong noi len dieu gi ve viec benh nhan co uong thuoc hay khong - cung
-# nguyen tac voi compute_adherence_pct().
+# Chi 3 trang thai nay la "da co ket qua" - dung cho BIEU DO THEO NGAY, noi
+# moi cot phai la mot ket cuc thuc su.
 _TRANG_THAI_CO_KET_QUA = ("TAKEN", "DELAYED", "MISSED")
+
+# Nhung gi TRUY VAN keo ve. Rong hon _TRANG_THAI_CO_KET_QUA dung mot gia tri:
+# PENDING.
+#
+# SUA 2026-08-31: truoc day truy van loc dung 3 trang thai tren, nen lieu benh
+# nhan KHONG dung toi (con PENDING du da qua han xac nhan) bien mat khoi CA tu
+# so lan mau so - im lang duoc thuong thay vi bi tinh la khong tuan thu. Do
+# tren DB that: 84/127 lieu cua mot benh nhan roi vao dien nay, day con so
+# hien thi tu 23% len 88%.
+#
+# compute_adherence_pct() (the "% tuan thu" o ngay tren cung trang nay) VON
+# da dem moi lieu qua `window_end` bat ke trang thai - truoc khi sua, hai con
+# so canh nhau tren MOT trang tra loi khac nhau.
+#
+# AWAITING_CAREGIVER co y VAN nam ngoai (quyet dinh san pham 2026-08-31):
+# lieu ket o do la vi nguoi than chua duyet, khong phai benh nhan bo thuoc.
+# CANCELLED cung vay - phac do da dung thi khong noi len dieu gi.
+_TRANG_THAI_VAO_MAU_SO = (*_TRANG_THAI_CO_KET_QUA, "PENDING")
 
 _SO_NGAY_MAC_DINH = 7
 _SO_NGAY_TOI_DA = 90
@@ -260,7 +276,7 @@ def get_dose_summary(
             DoseEvent.window_end,
             DoseEvent.status,
         ).where(
-            DoseEvent.status.in_(_TRANG_THAI_CO_KET_QUA),
+            DoseEvent.status.in_(_TRANG_THAI_VAO_MAU_SO),
             or_(
                 DoseEvent.scheduled_at >= moc_dau_utc,
                 DoseEvent.window_end >= moc_dau_ky_truoc_utc,
@@ -274,7 +290,10 @@ def get_dose_summary(
             # gio de khong phu thuoc mui gio cua may chay app.
             luc_vn = scheduled_at.astimezone(UTC) + _GIO_VN
             ngay = luc_vn.strftime("%Y-%m-%d")
-            if ngay in dem_theo_ngay:
+            # `status` co the la PENDING (lieu qua han chua ai dung toi) - no
+            # vao mau so tuan thu ben duoi nhung KHONG thuoc cot nao cua bieu
+            # do theo ngay, vi chua nga ngu thanh mot ket cuc.
+            if ngay in dem_theo_ngay and status in dem_theo_ngay[ngay]:
                 dem_theo_ngay[ngay][status] += 1
 
                 if status == "MISSED":
