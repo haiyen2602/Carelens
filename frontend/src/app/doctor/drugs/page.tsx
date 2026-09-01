@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Plus, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DrugRequestDialog } from "@/components/drug-request-dialog";
 import { HoverSelect } from "@/components/hover-select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -53,6 +54,12 @@ export default function DrugLookupPage() {
   const [detail, setDetail] = useState<DrugDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState("");
+
+  // Thuoc chua co trong danh muc (FB-14) -- cung mot duong "yeu cau bo sung"
+  // da co o trang Ke don thuoc, gan them nut vao day de bac si khong phai
+  // vong qua Ke don chi de gui yeu cau. `null` = dialog dong; chuoi (co the
+  // rong) = dialog mo, dien san bang tu khoa dang go trong o tim kiem.
+  const [xinBoSung, setXinBoSung] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -182,6 +189,15 @@ export default function DrugLookupPage() {
             <X className="mr-1 h-4 w-4" /> Xoá lọc
           </Button>
         )}
+
+        <Button
+          type="button"
+          size="sm"
+          className="ml-auto"
+          onClick={() => setXinBoSung(q.trim())}
+        >
+          <Plus className="mr-1 h-4 w-4" /> Thêm thuốc
+        </Button>
       </header>
 
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
@@ -346,6 +362,12 @@ export default function DrugLookupPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DrugRequestDialog
+        open={xinBoSung !== null}
+        onOpenChange={(open) => setXinBoSung(open ? xinBoSung : null)}
+        tenThuocGoiY={xinBoSung ?? ""}
+      />
     </div>
   );
 }
