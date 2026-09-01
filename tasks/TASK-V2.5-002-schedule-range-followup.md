@@ -465,3 +465,69 @@ Knowledge V2 3556 products/42588 chunks), `GET /health` → `200
 process sau khi xác nhận.
 
 **Kết luận: cả 8 mục CP2 trong `CHECKPOINT.md` đã có bằng chứng đầy đủ.**
+
+## CP3 — soát theo đúng 6 mục trong CHECKPOINT.md (2026-09-01)
+
+- [x] Cập nhật task status/docs/ADR: task file này, `CHECKPOINT.md` (bảng
+  theo dõi + trạng thái khởi động), ADR delta 1.3a trong
+  `CP0-ADR-BASELINE-TASK01.md` — đều đã cập nhật xuyên suốt quá trình, không
+  phải dồn vào cuối.
+- [x] Commit nhỏ theo convention `TASK-V2.5-002: <động từ mô tả ngắn>` —
+  toàn bộ 5 commit (implement, review round 1, review round 2, golden
+  evidence, CP2 completion) đều theo đúng convention.
+- [x] Push branch chỉ sau khi CP2 pass — đúng, và CP2 còn được hoàn thiện
+  đầy đủ (8/8 mục) trước khi coi nhánh sẵn sàng.
+- [~] PR có đủ: linked task ✓, baseline comparison ✓, test evidence ✓,
+  config/flag default ✓, owner/cohort ✓, rollback ✓ — nhưng **thiếu
+  "metric query" và "stop condition" tường minh** trong body PR #183 gốc.
+  Vì PR đã merge, không sửa lại body được — bổ sung chính thức vào đây làm
+  nguồn tham chiếu cho CP4:
+
+  **Metric query (khi CP4 mở canary bật `AGENT_V2_5_FOLLOWUP_ENABLED`):**
+  - Tỷ lệ turn khớp `_is_schedule_range_remainder_followup` có
+    `execution_path=DETERMINISTIC_SCHEDULE` (đúng) so với
+    `MISSING_SCHEDULE_CONTEXT`/NEED_MORE_INFO (không có range — chấp nhận
+    được) so với vẫn rơi về `GENERAL_MEDICAL_INFORMATION`/RAG (bug tái xuất
+    hiện — phải luôn bằng 0 khi flag on). Nguồn: `AgentRun.intent` +
+    `follow_up_category`/reason code (cột đã có từ BUILD-47), join theo
+    `conversation_id`.
+  - Chênh lệch latency/cost giữa nhánh `DETERMINISTIC_SCHEDULE` (gần như
+    miễn phí, xem bảng so sánh CP2) và nhánh RAG cũ — theo dõi cost có giảm
+    đúng kỳ vọng khi canary mở.
+  - Tỷ lệ false-positive của regex nhận diện (turn khớp pattern nhưng ý
+    người dùng thực ra không phải hỏi lại lịch) — cần fixture/feedback thật
+    từ canary vì hiện chỉ có 1 case golden.
+
+  **Stop condition:**
+  - Bất kỳ regression nào ở schedule/dose-status/safety/handoff suite hiện
+    có (73+15+39+24+51 test đã dùng làm baseline ở CP2).
+  - `active_schedule_range` xuất hiện raw text/PHI ở bất kỳ đâu ngoài đúng
+    2 chuỗi ngày ISO (đã audit ở CP2, nhưng cần re-check định kỳ khi có
+    thay đổi liên quan).
+  - Tỷ lệ `MISSING_SCHEDULE_CONTEXT` tăng bất thường so với baseline canary
+    ban đầu (dấu hiệu regex bắt nhầm câu không liên quan tới lịch).
+- [~] Reviewer kiểm tra code/test/privacy/contract compatibility/scope
+  V2.5-V3 — thực hiện qua bot review `phoenix-mentor` (2 vòng, cả hai đều
+  đã phản hồi và sửa/giải thích rõ, xem 2 mục review ở trên) + owner tự
+  merge sau khi xem xét. Không có review viết tay từ một reviewer người
+  khác chỉ định theo `TEAM.md` — ghi nhận đúng thực tế, không tự nhận đã có
+  bước này nếu không có.
+- [ ] **CI chưa thực sự chạy xong.** Cả `lint-and-test` và `golden-smoke`
+  (workflow `CI`, self-hosted runner `[self-hosted, linux, x64, cohort3]`)
+  của **cả PR #183 lẫn PR #184** bị kẹt ở trạng thái `QUEUED` nhiều chục
+  phút, không job nào pickup — dấu hiệu runner pool cohort3 đang offline
+  (đúng vấn đề đã biết, xem `railway-deploy-no-ci.md`/memory: "Runner pool
+  có thể offline hoàn toàn mà không báo"). PR vẫn được merge dựa trên bằng
+  chứng local (pytest/golden/ruff/build tôi tự chạy và owner tự xem xét),
+  **không phải CI pipeline của repo tự xác nhận**. Đây là gap thật, không
+  che giấu: gate "đạt CI trước merge" của CP3 không được thoả bằng chính CI
+  của repo cho cả hai PR. Không tự sửa (không có quyền/không phải phạm vi
+  Task 02 để khởi động lại self-hosted runner) — ghi nhận để owner quyết
+  định có cần chạy lại CI thủ công (`gh run rerun`) khi runner online trở
+  lại hay chấp nhận bằng chứng local là đủ.
+
+**Tổng kết CP3:** 3/6 mục đạt đầy đủ, 2/6 đạt với ghi chú (bổ sung tài liệu
+sau khi PR đã merge; review chỉ qua bot + owner, không có reviewer người
+riêng), 1/6 **không đạt theo đúng chữ** (CI chưa chạy xong do runner pool
+offline) — merge đã xảy ra dựa trên quyết định của owner, không phải vì
+CP3 tự nhận đã xong toàn bộ.
