@@ -108,3 +108,23 @@ scripts/agent_v2/golden/runs/
 # Bao cao mot lan cua scripts/backfill_dose_closeout.py - du lieu benh nhan
 # that (danh sach dose_event_id), khong thuoc ve repo.
 scripts/backfill_dose_closeout_report.json
+
+# Du lieu crawl tho da NEN vao `data pharmacy/_archive-crawl-raw.zip` (2026-09-01).
+# Xem `data pharmacy/README-archive.md`. Ba thu muc + 8 file roi duoi day la ban
+# trung/trung gian cua qua trinh crawl, KHONG noi nao trong code doc toi. Bay gio
+# chung chi con trong zip - zip cung khong commit vi nang 229 MB.
+data pharmacy/_archive-crawl-raw.zip
+data pharmacy/v2/full_recrawl/*
+# GIU LAI raw_snapshots: scripts/data_v2/drug_image_collection.py:37 doc thu muc nay,
+# va tests/data_v2/test_drug_image_collection.py kiem tra tren no (3545 ban ghi).
+!data pharmacy/v2/full_recrawl/raw_snapshots/
+data pharmacy/v2/rag_eval/
+data pharmacy/v2/raw_snapshots/
+data pharmacy/v2/drug_id_map.jsonl
+data pharmacy/v2/drug_knowledge.jsonl
+data pharmacy/v2/drug_product.jsonl
+data pharmacy/v2/drug_product_ingredient.jsonl
+data pharmacy/v2/import_summary.json
+data pharmacy/v2/ingredient.jsonl
+data pharmacy/v2/ingredient_parse_warnings.jsonl
+data pharmacy/v2/source_snapshot.jsonl

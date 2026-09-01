@@ -19,7 +19,7 @@ Chốt **một** luồng hoạt động xuyên suốt mà cả 4 thành viên hi
 - [ ] Thể hiện đúng ràng buộc: `safety` **chạy song song** với `conversation` (không nối tiếp), `scheduling` chỉ sinh liều từ phác đồ `approved`.
 - [ ] Toàn bộ ô `[CẦN CHỐT]` **chặn Sprint 03** được trả lời và ghi vào [`business-rules.md`](../specs/business-rules.md) — cụ thể tối thiểu: mốc nhắc cấp 2/3, ngưỡng confidence phân loại, SLA escalate MEDIUM, xử lý khi người thân quá SLA 1 giờ.
 - [ ] Có **buổi review cả team**, biên bản ghi lại quyết định + người chốt + ngày.
-- [ ] Cập nhật [`ARCHITECTURE.md`](../ARCHITECTURE.md) / [`docs/architecture_diagram.md`](../docs/architecture_diagram.md) để không còn bản mô tả cũ mâu thuẫn.
+- [ ] Cập nhật [`docs/architecture.md`](../docs/architecture.md) để không còn bản mô tả cũ mâu thuẫn.
 
 ## Context bắt buộc phải đọc trước khi làm (dành cho AI)
 
@@ -28,7 +28,7 @@ Chốt **một** luồng hoạt động xuyên suốt mà cả 4 thành viên hi
 - [ ] [`/specs/business-rules.md`](../specs/business-rules.md) — mọi ô `[CẦN CHỐT]`
 - [ ] [`/specs/features.md`](../specs/features.md) — FEAT-001 → FEAT-011
 - [ ] [`/adrs/0007-scheduler-cron-dose-event.md`](../adrs/0007-scheduler-cron-dose-event.md), [`0009`](../adrs/0009-safety-layer-dual-classifier.md), [`0010`](../adrs/0010-human-in-the-loop.md), [`0011`](../adrs/0011-photo-verification-fallback.md)
-- [ ] [`ARCHITECTURE.md`](../ARCHITECTURE.md) · [`docs/architecture_diagram.md`](../docs/architecture_diagram.md)
+- [ ] [`docs/architecture.md`](../docs/architecture.md)
 
 ## Gợi ý chia subtask (AI tự cập nhật khi bắt đầu)
 

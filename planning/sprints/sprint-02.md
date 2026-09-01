@@ -4,7 +4,7 @@
 **Sprint Goal:** Giải quyết **rủi ro số 1 của dự án** — có dữ liệu thuốc thật, có nguồn, nằm trong repo — đồng thời có số đo thật cho bài toán vision và dựng xong nền móng kỹ thuật để Sprint 03 code feature được ngay.
 **Trạng thái:** 🔄 In progress
 
-> Nguồn công việc: mục "Kế hoạch tuần sau" trong [`../../JOURNAL.md`](../../JOURNAL.md) Week 1.
+> Nguồn công việc: mục "Kế hoạch tuần sau" trong [`../../docs/journal.md`](../../docs/journal.md) Week 1.
 
 ## Task trong Sprint
 

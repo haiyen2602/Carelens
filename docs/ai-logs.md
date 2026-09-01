@@ -6,7 +6,7 @@
 
 ## 🎯 1. Tổng quan & Checklist Nghiệm thu BTC AI20K
 
-Theo hướng dẫn tại `docs/guide/chapter-09.md`, mục AI Logs yêu cầu minh chứng rõ ràng về cách Agent suy luận và tương tác với các công cụ.
+Theo hướng dẫn nộp bài Demo Day của BTC (chương 9), mục AI Logs yêu cầu minh chứng rõ ràng về cách Agent suy luận và tương tác với các công cụ.
 
 | Tiêu chí BTC yêu cầu                           |        Trạng thái        | Chi tiết triển khai trong Repo                                                                                                                    |
 | :------------------------------------------------- | :------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------- |

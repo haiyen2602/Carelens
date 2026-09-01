@@ -72,7 +72,7 @@ YES / NO
 - [ ] [`data pharmacy/v2/final_canonical/manifest.json`](../data%20pharmacy/v2/final_canonical/manifest.json) và bốn identity/reference JSONL artifact
 - [ ] `backend/db/models.py`
 - [ ] Migration additive schema DB-4A hiện hành trong `migrations/versions/`
-- [ ] [`CONVENTIONAL-COMMITS-CHEATSHEET.md`](../CONVENTIONAL-COMMITS-CHEATSHEET.md)
+- [ ] [`GIT_WORKFLOW.md`](../GIT_WORKFLOW.md)
 
 ## Gợi ý chia subtask (AI tự cập nhật khi bắt đầu)
 

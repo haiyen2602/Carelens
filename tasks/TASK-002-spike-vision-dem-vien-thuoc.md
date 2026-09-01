@@ -1,7 +1,7 @@
 # TASK-002: Spike — metric & model đếm viên thuốc từ ảnh
 
 **Domain:** `photo-verification`
-**Owner:** Nguyễn Minh Đạt + AI
+**Owner:** Phạm Thành Đạt + AI
 **Sprint:** sprint-02
 **Status:** To Do
 **Ưu tiên:** P0 · **Feature:** [`FEAT-004`](../specs/features.md#feat-004--xác-nhận-liều-bằng-ảnh)

@@ -201,9 +201,20 @@ P-067/
 │   └── Dockerfile             # Multi-stage Frontend Container Build
 ├── tests/                     # Automated Test Suite (130+ Test Files, 2.400+ Test Cases)
 ├── migrations/                # Alembic Database Migrations
-├── docs/                      # Tài liệu Kỹ thuật, Kiến trúc, PRD, Báo cáo
+├── docs/                      # 10 Deliverables + Tài liệu Kỹ thuật
+│   ├── architecture.md        # #3  Kiến trúc hệ thống
+│   ├── ai-logs.md             # #4  Bằng chứng tracing Agent
+│   ├── video-demo.md          # #6  Link video demo
+│   ├── pitch-deck.pdf         # #7  Slide thuyết trình (bản nộp BTC)
+│   ├── pitch-deck.md          # #7  Kịch bản & dàn ý 10 slide
+│   ├── journal.md             # #8  Nhật ký phát triển theo tuần
+│   ├── worklog.md             # #9  Lịch sử làm việc theo ngày
+│   └── evaluation.md          # #10 Bằng chứng đánh giá chất lượng
 ├── eval/                      # Dữ liệu Đánh giá & Báo cáo Thực nghiệm (Accuracy, Latency)
-├── presentation/              # Slide Thuyết trình Demo Day & Speaker Notes
+├── adrs/                      # Architecture Decision Records
+├── specs/  planning/  tasks/  # Đặc tả, Sprint backlog, Task theo domain
+├── chat-bot-build/            # Báo cáo từng vòng BUILD của Agent V2
+├── data pharmacy/             # Dữ liệu thuốc Canonical V2 (bản thô đã nén, xem README-archive.md)
 ├── .ai-log/                   # Nhật ký Tracing & Lịch sử Reasoning của AI Agent
 ├── .github/workflows/         # CI/CD Workflows (Lint, Test, Golden-Smoke, Railway Deploy)
 ├── Dockerfile                 # Backend Multi-stage Container
@@ -219,14 +230,14 @@ P-067/
 | :---: | :--- | :--- | :---: |
 | **1** | **Source Code** | [`backend/`](backend/), [`frontend/`](frontend/), [`tests/`](tests/) | ✅ Đã hoàn thành |
 | **2** | **README.md** | [`README.md`](README.md) | ✅ Đã hoàn thành |
-| **3** | **Architecture Diagram** | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/architecture_diagram.md`](docs/architecture_diagram.md) | ✅ Đã hoàn thành |
+| **3** | **Architecture Diagram** | [`docs/architecture.md`](docs/architecture.md) | ✅ Đã hoàn thành |
 | **4** | **AI Logs** | [`.ai-log/archive/`](.ai-log/archive/), [`docs/ai-logs.md`](docs/ai-logs.md) | ✅ Đã hoàn thành |
 | **5** | **Live URL** | [Web App (FE)](https://c3-app-067.up.railway.app) · [Health Check (BE)](https://vmec-04be-production.up.railway.app/api/v1/status) | ✅ Đã triển khai |
-| **6** | **Video Demo** | [`presentation/README.md`](presentation/README.md) · [`docs/video-demo.md`](docs/video-demo.md) | 🔄 Sẵn sàng cập nhật link |
-| **7** | **Pitch Deck** | [`presentation/slide-07-technical-highlights.md`](presentation/slide-07-technical-highlights.md) | 🔄 Sẵn sàng xuất PDF |
-| **8** | **Development Journal** | [`JOURNAL.md`](JOURNAL.md) | ✅ Đã hoàn thành |
-| **9** | **Worklog** | [`WORKLOG.md`](WORKLOG.md) | ✅ Đã hoàn thành |
-| **10** | **Evaluation Evidence** | [`eval/results/report.md`](eval/results/report.md), [`eval/eval_report.json`](eval/eval_report.json) | ✅ Đã hoàn thành |
+| **6** | **Video Demo** | [`docs/video-demo.md`](docs/video-demo.md) | ✅ Đã hoàn thành |
+| **7** | **Pitch Deck** | [`docs/pitch-deck.pdf`](docs/pitch-deck.pdf) · [`docs/pitch-deck.md`](docs/pitch-deck.md) | ✅ Đã hoàn thành |
+| **8** | **Development Journal** | [`docs/journal.md`](docs/journal.md) | ✅ Đã hoàn thành |
+| **9** | **Worklog** | [`docs/worklog.md`](docs/worklog.md) | ✅ Đã hoàn thành |
+| **10** | **Evaluation Evidence** | [`docs/evaluation.md`](docs/evaluation.md), [`eval/`](eval/) | ✅ Đã hoàn thành |
 
 ---
 

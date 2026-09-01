@@ -8,6 +8,8 @@
 
 🔗 **Link Slide Thuyết trình Trực tuyến (Canva):** [**C3 - T067 - DictatorCapybara (Canva Link)**](https://canva.link/ilknefaktrieh91)
 
+📄 **Bản PDF nộp BTC:** [`pitch-deck.pdf`](pitch-deck.pdf) — 14 slide, xuất từ Canva.
+
 ---
 
 ## 📑 Dàn ý Chi tiết 10 Slides Thuyết trình

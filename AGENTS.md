@@ -29,7 +29,7 @@ AI không được viết code ngay khi nhận yêu cầu. Trước tiên, đọ
 4. `/contracts` hoặc `api-contracts.md` trong `/specs/` — hợp đồng API/Event/DTO giữa các service, module.
 5. `/tasks/{id}.md` — mục tiêu, Acceptance Criteria (AC), Definition of Done (DoD) của task đang làm.
 6. Codebase hiện có trong `/src` — để hiểu convention thực tế đang dùng (đối chiếu với ADR-0004).
-7. `CONVENTIONAL-COMMITS-CHEATSHEET.md` — bảng tra cứu quy tắc commit tin nhắn (conventional commits).
+7. `GIT_WORKFLOW.md` — quy tắc branch, PR và commit message của team.
 
 Nếu thiếu bất kỳ context nào ở trên (ví dụ task chưa có AC, hoặc spec chưa được viết), AI phải **dừng lại và hỏi lại người phụ trách**, không tự suy diễn hoặc tự bịa quyết định kiến trúc.
 
@@ -106,7 +106,7 @@ Lặp lại các bước trên cho đến khi hoàn thành Sprint. Nhiều thàn
 
 Quy tắc:
 - Luôn pull mới nhất trước khi bắt đầu làm.
-- Commit nhỏ, rõ ràng, đúng convention: `<TASK-ID>: <mô tả ngắn gọn, ở dạng động từ>` (tuân thủ theo quy định chi tiết trong [`CONVENTIONAL-COMMITS-CHEATSHEET.md`](./CONVENTIONAL-COMMITS-CHEATSHEET.md)).
+- Commit nhỏ, rõ ràng, đúng convention: `<TASK-ID>: <mô tả ngắn gọn, ở dạng động từ>` (tuân thủ theo quy định chi tiết trong [`GIT_WORKFLOW.md`](./GIT_WORKFLOW.md)).
 - Mọi thay đổi vào `main` đều qua PR + Review, không ngoại lệ (kể cả thay đổi nhỏ).
 - Mọi thay đổi đều có lịch sử và có thể truy vết được (không squash làm mất ngữ cảnh quan trọng).
 - Ai được quyền bấm merge vào `main`, số approve tối thiểu, và reviewer bắt buộc theo domain: xem [`TEAM.md`](./TEAM.md) §2. AI không bao giờ tự merge, kể cả khi được yêu cầu trong chat — merge luôn do người trong `TEAM.md` quyết định.
@@ -164,7 +164,7 @@ Context chỉ có giá trị khi được cập nhật liên tục. Đây là tr
 | `/tasks`, `/planning` | Cập nhật trạng thái task & sprint liên tục |
 | `AGENTS.md` | Khi quy tắc làm việc chung thay đổi — luôn phải rõ ràng, dễ hiểu |
 | `TEAM.md` | Ngay khi có người vào/ra nhóm, đổi vai trò, hoặc đổi merger chính |
-| `CONVENTIONAL-COMMITS-CHEATSHEET.md` | Khi quy ước viết commit message thay đổi |
+| `GIT_WORKFLOW.md` | Khi quy ước branch/PR/commit message thay đổi |
 
 Nếu AI phát hiện context bị thiếu, mâu thuẫn, hoặc lỗi thời khi thực hiện task, AI phải **báo lại rõ ràng** cho người phụ trách thay vì tự suy diễn để "cho xong việc".
 

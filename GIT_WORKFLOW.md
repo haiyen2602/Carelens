@@ -51,7 +51,7 @@ git checkout -b feature/TASK-XXX-ten-task
 ```
 
 ### 2. Trong lúc code
-- Commit nhỏ, thường xuyên, message tuân thủ [CONVENTIONAL-COMMITS-CHEATSHEET.md](CONVENTIONAL-COMMITS-CHEATSHEET.md):
+- Commit nhỏ, thường xuyên, message tuân thủ [Conventional Commits](https://www.conventionalcommits.org/vi/v1.0.0/):
   `<TASK-ID>: <mô tả ngắn gọn, dạng động từ>` (hoặc `<type>(scope): <description>`).
   Ví dụ: `TASK-010: them endpoint xac thuc otp qua email` hoặc `fix(auth): handle token expiry error`.
 - Nếu task kéo dài nhiều ngày, thỉnh thoảng merge `main` mới nhất vào branch của mình để tránh conflict dồn cục:
@@ -107,4 +107,4 @@ git branch -d feature/ten-task-cua-ban   # xoá branch local
 
 ---
 
-Xem thêm: [TEAM.md](TEAM.md) (phân công & trạng thái task) · [WORKLOG.md](WORKLOG.md) (log theo ngày)
+Xem thêm: [TEAM.md](TEAM.md) (phân công & trạng thái task) · [docs/worklog.md](docs/worklog.md) (log theo ngày)

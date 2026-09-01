@@ -35,8 +35,8 @@ Nguyên tắc (xem [ADR-0001](../adrs/0001-test-strategy.md)): backlog và sprin
 | Thêm/bỏ/đổi ưu tiên feature | `backlog.md` |
 | Đổi mốc thời gian, đổi phạm vi tuần | `roadmap.md` |
 | Kết thúc sprint | Retro trong `sprints/sprint-0X.md` + tạo file sprint mới từ template |
-| Việc đã làm trong ngày | [`../WORKLOG.md`](../WORKLOG.md) |
-| Bài học / khó khăn của tuần | [`../JOURNAL.md`](../JOURNAL.md) |
+| Việc đã làm trong ngày | [`../docs/worklog.md`](../docs/worklog.md) |
+| Bài học / khó khăn của tuần | [`../docs/journal.md`](../docs/journal.md) |
 
 ---
 **Lưu ý cho AI:** Khi hoàn thành một task, phải cập nhật status ở **cả hai chỗ** — file task trong `/tasks` và bảng trong file sprint tương ứng. Đây là một dòng trong Definition of Done ([ADR-0005](../adrs/0005-definition-of-done.md)).

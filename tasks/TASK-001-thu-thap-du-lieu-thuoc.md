@@ -8,7 +8,7 @@
 
 ## Mục tiêu (Goal)
 
-Đưa được một bộ dữ liệu thuốc **thật, có nguồn trích dẫn, đúng schema** vào repo để làm nền cho RAG. Đây là rủi ro số 1 của dự án: không có dữ liệu đủ tốt thì agent sẽ bịa thông tin y tế (xem [`JOURNAL.md`](../JOURNAL.md) Week 1).
+Đưa được một bộ dữ liệu thuốc **thật, có nguồn trích dẫn, đúng schema** vào repo để làm nền cho RAG. Đây là rủi ro số 1 của dự án: không có dữ liệu đủ tốt thì agent sẽ bịa thông tin y tế (xem [`docs/journal.md`](../docs/journal.md) Week 1).
 
 ## Acceptance Criteria (AC)
 

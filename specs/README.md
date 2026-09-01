@@ -26,6 +26,6 @@
 | Tài liệu | Vai trò |
 |---|---|
 | [`../README.md`](../README.md) | Tóm tắt sản phẩm + tech stack + deliverables |
-| [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | Kiến trúc hệ thống chi tiết (component, data flow, security) |
-| [`../JOURNAL.md`](../JOURNAL.md) · [`../WORKLOG.md`](../WORKLOG.md) | Lịch sử quyết định theo tuần/ngày — nguồn gốc của phần lớn nội dung trong `/specs` |
+| [`../docs/architecture.md`](../docs/architecture.md) | Kiến trúc hệ thống chi tiết (component, data flow, security) |
+| [`../docs/journal.md`](../docs/journal.md) · [`../docs/worklog.md`](../docs/worklog.md) | Lịch sử quyết định theo tuần/ngày — nguồn gốc của phần lớn nội dung trong `/specs` |
 | [`../TEAM.md`](../TEAM.md) | Ai giữ vai trò gì, ai review domain nào, ai merge |
