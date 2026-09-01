@@ -2733,15 +2733,19 @@ class AgentOrchestrator:
 
         start_date, end_date = stored_range
         time_range = range_from_dates(start_date, end_date, now=self._now(), label="các ngày còn lại")
-        # .get()+assert rather than a bare dict lookup: TimeRelation has
-        # exactly these three members today and range_from_dates's own
-        # _relation_for_range is exhaustive over them, so this cannot
-        # actually miss -- but a bare `dict[...]` would raise a bare
-        # KeyError with no context if a fourth member were ever added,
-        # instead of a clear, attributable failure at the one call site
-        # that assumes exhaustiveness.
+        # .get()+explicit raise rather than a bare dict lookup or `assert`:
+        # TimeRelation has exactly these three members today and
+        # range_from_dates's own _relation_for_range is exhaustive over
+        # them, so this cannot actually miss -- but a bare `dict[...]`
+        # would raise a context-free KeyError, and `assert` is compiled out
+        # entirely under `python -O`/PYTHONOPTIMIZE (not set anywhere in
+        # this project's Dockerfile today, but nothing guarantees that
+        # stays true), which would let `intent=None` flow into
+        # RouterDecision below instead of failing here. A plain `if`+raise
+        # always executes, regardless of interpreter flags.
         intent = _SCHEDULE_RANGE_RELATION_INTENT.get(time_range.relation)
-        assert intent is not None, f"unhandled TimeRelation {time_range.relation!r} in schedule range follow-up"
+        if intent is None:
+            raise ValueError(f"unhandled TimeRelation {time_range.relation!r} in schedule range follow-up")
         synthetic_decision = RouterDecision(
             intent=intent,
             safety_trigger=None,

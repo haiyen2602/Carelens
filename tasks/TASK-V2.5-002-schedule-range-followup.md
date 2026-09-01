@@ -369,3 +369,29 @@ thì chưa chứng minh hành vi mới".
 
 Commit riêng cho phản hồi review, chưa merge — chờ xác nhận trước khi sang
 CP3/push tiếp.
+
+### Round 2 (phoenix-mentor bot, sau commit 8c244dc)
+
+**Potential Assertion Failure** trên chính dòng vừa sửa ở round 1
+(`assert intent is not None`) — đúng một phần, đã kiểm chứng cụ thể:
+
+- `assert` bị compiled-out hoàn toàn dưới `python -O`/`PYTHONOPTIMIZE=1`
+  (`python -O -c "print(__debug__)"` → `False`). `Dockerfile` project chạy
+  thẳng `uvicorn backend.main:app`, không có `-O` ở đâu — rủi ro không xảy
+  ra thật hôm nay, nhưng phụ thuộc vào một cờ interpreter không ai đảm bảo
+  giữ nguyên mãi mãi.
+- Bot phóng đại một chỗ: `agent_v2_routes.py:1028` đã có
+  `except Exception: ... raise` bọc quanh `orchestrator.run()`, nên dù là
+  `KeyError` (bản gốc), `AssertionError` (round 1), hay bất kỳ exception
+  nào, request đều "crash" giống hệt nhau ở tầng route — không phải riêng
+  `assert` mới gây crash mà cái khác thì không.
+- Rủi ro thật, hẹp hơn bot mô tả: nếu `-O` được bật sau này, `assert` biến
+  mất, `intent=None` sẽ **chảy tiếp** vào `RouterDecision` thay vì dừng lại
+  — sai âm thầm, không phải crash rõ ràng.
+- **Đã sửa:** đổi `assert` thành `if intent is None: raise ValueError(...)`
+  — luôn thực thi bất kể cờ interpreter, hành vi hôm nay không đổi (vì `-O`
+  chưa bật), loại bỏ hẳn phụ thuộc ẩn. Không đụng `assert
+  decision.time_range is not None` có sẵn trong `_schedule_reply` (cùng
+  pattern, nhưng nằm ngoài diff/scope của Task 02).
+- Evidence sau sửa: 114 test PASS, golden `--deterministic-only` 15/15,
+  golden V2.5 (flag ON) 1/1.
