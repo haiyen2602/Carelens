@@ -115,6 +115,35 @@ export function ChatMessage({
                 ))}
               </div>
             )}
+          {/* TASK-023: real, backend-deterministic Vinmec citation data --
+              never generated/guessed here, only rendered when the backend
+              already attached a real url (see orchestrator.py's own
+              Citation(source="vinmec-web") construction). Deduped by url so
+              a run with several Vinmec documents shows one link each. */}
+          {message.citations && message.citations.length > 0 && (
+            <div
+              className="mt-2 flex max-w-[82%] flex-col gap-1"
+              aria-label="Nguồn tham khảo"
+            >
+              {Array.from(
+                new Map(
+                  message.citations
+                    .filter((c) => c.source === "vinmec-web" && c.url)
+                    .map((c) => [c.url as string, c]),
+                ).values(),
+              ).map((citation) => (
+                <a
+                  key={citation.url}
+                  href={citation.url ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] text-[#16386E] underline decoration-[#B7C2D6] underline-offset-2 hover:text-[#112D59]"
+                >
+                  Nguồn: Vinmec — {citation.title}
+                </a>
+              ))}
+            </div>
+          )}
           {message.suggestedActions && message.suggestedActions.length > 0 && (
             <div
               className="mt-2 flex max-w-[82%] flex-wrap gap-2"
