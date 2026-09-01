@@ -36,45 +36,45 @@ Hệ thống được thiết kế theo triết lý **Fail-safe (Fail-closed)** 
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client Layer - Next.js PWA"]
-        UI_Doc["Bac si (Doctor Web)"]
-        UI_Pat["Benh nhan (Patient Mobile)"]
-        UI_Care["Nguoi than (Caregiver)"]
+    subgraph A[Client Layer]
+        A1[Doctor Web]
+        A2[Patient Mobile]
+        A3[Caregiver App]
     end
 
-    subgraph Gateway["API Safety Gateway - FastAPI"]
-        AUTH["RBAC Auth Gate"]
-        SAFETY["Fail-Safe Safety Core"]
+    subgraph B[API Safety Gateway]
+        B1[RBAC Auth]
+        B2[Fail Safe Classifier]
     end
 
-    subgraph AgentRuntime["AI Agent V2 - LangGraph"]
-        ROUTER["Intent Router"]
-        ORCH["Orchestrator Node"]
-        RAG_MOD["Drug RAG Engine - pgvector"]
-        VISION["VLM Photo Verification"]
-        HANDOFF["Doctor Handoff Engine"]
+    subgraph C[AI Agent V2 LangGraph]
+        C1[Intent Router]
+        C2[Orchestrator]
+        C3[Drug RAG pgvector]
+        C4[VLM Photo Check]
+        C5[Doctor Handoff]
     end
 
-    subgraph Database["Persistence - PostgreSQL"]
-        DB_APP[("Application DB")]
-        DB_VEC[("Vector Store")]
-        AUDIT[("Audit Trail")]
+    subgraph D[PostgreSQL Database]
+        D1[(Application DB)]
+        D2[(Vector Store)]
+        D3[(Audit Trail)]
     end
 
-    UI_Doc --> AUTH
-    UI_Pat --> AUTH
-    UI_Care --> AUTH
-    AUTH --> SAFETY
-    SAFETY -->|Safe| ROUTER
-    SAFETY -->|Danger| HANDOFF
-    ROUTER --> ORCH
-    ORCH --> RAG_MOD
-    ORCH --> VISION
-    ORCH --> HANDOFF
-    ORCH --> DB_APP
-    RAG_MOD --> DB_VEC
-    HANDOFF --> AUDIT
-    SAFETY --> AUDIT
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+    B1 --> B2
+    B2 -->|Safe| C1
+    B2 -->|Danger| C5
+    C1 --> C2
+    C2 --> C3
+    C2 --> C4
+    C2 --> C5
+    C2 --> D1
+    C3 --> D2
+    C5 --> D3
+    B2 --> D3
 ```
 
 ---
