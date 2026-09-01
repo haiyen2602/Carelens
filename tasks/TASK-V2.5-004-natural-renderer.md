@@ -686,6 +686,44 @@ telemetry, KHÔNG xuất hiện khi chỉ là model chưa có giá (non-regressi
   `tests/test_agent_v2_model_gateway.py`,
   `tests/test_agent_v2_task004_multi_model_cost.py`.
 
+## Tiến độ CP2 thực (bản 7) — phản hồi PR #193 review lần 3
+
+**1. Window 30 ký tự có thể đẩy "thuốc" ra ngoài phạm vi kiểm tra (finding
+thật, sai chiều ngược lại — false NEGATIVE, nghiêm trọng hơn false
+positive theo đúng triết lý đã ghi trong file này).** Bot chỉ đúng: câu
+tiếng Việt dài, ngữ pháp hoàn toàn bình thường (vd "Theo đơn thuốc mà bác
+sĩ đã kê cho bạn trong lần khám gần đây nhất, bạn nên uống vào lúc 8 giờ
+sáng mỗi ngày.") có "thuốc" cách "giờ" hơn 30 ký tự — sẽ lọt qua kiểm tra
+dù đây là leak thật. Sửa: bỏ window ký tự cố định, chuyển sang phạm vi
+**cả câu** (ranh giới `.`/`!`/`?`, không phải số ký tự) — "thuốc" ở bất kỳ
+đâu trong CÙNG một câu với biểu thức thời gian đều tính, dù câu dài bao
+nhiêu, nhưng câu KHÁC vẫn không bị rò rỉ chéo (test khóa cả 2 chiều: câu
+dài chứa cả 2 vẫn reject đúng; "thuốc" và giờ ở 2 câu riêng biệt thì vẫn
+PASS) — `tests/test_agent_v2_response_policy.py`.
+
+**2. So khớp substring thô cho `medication_identity` có thể false positive
+khi candidate là chuỗi ngắn trùng vào giữa một từ dài không liên quan
+(finding thật, đã sửa).** Bot chỉ đúng: `candidate in normalized_prose`
+sẽ khớp cả khi candidate chỉ là một phần của từ khác hoàn toàn không liên
+quan (vd tên thuốc ngắn giả định "An" sẽ khớp bên trong "ngoan"). Sửa:
+chuyển sang so khớp có ranh giới từ (`\bcandidate\b`, kiểm chứng thực
+nghiệm `\ban\b` không khớp "ngoan" nhưng vẫn khớp "an" đứng riêng) — vẫn
+bắt đúng khi candidate xuất hiện như một từ/cụm từ thật (ngắn hay dài, một
+hay nhiều từ), chỉ không còn khớp nhầm khi nó chỉ là một mảnh của từ khác.
+Phần "phụ thuộc vào fact_slots đúng" trong finding không phải lỗi mới —
+đúng thiết kế: `validate_free_prose` chỉ kiểm tra chuỗi được truyền vào,
+độ chính xác của `fact_slots` là trách nhiệm của `build_renderable_fact_
+slots` và đã có bộ test riêng cho việc đó.
+
+**Bằng chứng thật đã chạy (sau bản 7):**
+
+- `tests/test_agent_v2_response_policy.py`: 52/52 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1238/1238 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 7.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
+  `tests/test_agent_v2_response_policy.py`.
+
 **Chưa làm (còn lại của AC checklist CP2, chưa động tới ranh giới nào
 khác):**
 

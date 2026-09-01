@@ -298,12 +298,28 @@ _TIME_OF_DAY_WORD = re.compile(r"\b(giờ|sáng|trưa|chiều|tối)\b")
 # dose_status's ambiguous-on-their-own phrases (below) -- "thuốc" (medication)
 # or "liều" (dose/dosage) either one confirms real medication context.
 _MEDICATION_CONTEXT_WORD = re.compile(r"\b(thuốc|liều)\b")
-_TEMPORAL_PROXIMITY_WINDOW = 30  # characters either side -- same sentence/clause, not the whole reply
+# PR review correction (round 3): a fixed character window can push "thuốc"
+# outside the checked range in a longer, grammatically ordinary Vietnamese
+# sentence -- a false NEGATIVE (the worse failure mode per this module's own
+# stated philosophy). Proximity is now SENTENCE-scoped instead (bounded by
+# ./!/?, not a character count): "thuốc" anywhere in the same sentence as
+# the temporal expression counts, however long that sentence is, but a
+# mention in a DIFFERENT sentence still does not leak across.
+_SENTENCE_END = re.compile(r"[.!?]")
+
+
+def _sentence_span_containing(text: str, position: int) -> tuple[int, int]:
+    start = 0
+    for boundary in _SENTENCE_END.finditer(text, 0, position):
+        start = boundary.end()
+    end_boundary = _SENTENCE_END.search(text, position)
+    end = end_boundary.end() if end_boundary else len(text)
+    return start, end
 
 
 def _near_medication_context(normalized_text: str, match: re.Match[str]) -> bool:
-    window = normalized_text[max(0, match.start() - _TEMPORAL_PROXIMITY_WINDOW) : match.end() + _TEMPORAL_PROXIMITY_WINDOW]
-    return bool(_MEDICATION_CONTEXT_WORD.search(window))
+    start, end = _sentence_span_containing(normalized_text, match.start())
+    return bool(_MEDICATION_CONTEXT_WORD.search(normalized_text[start:end]))
 
 
 def _dose_time_leak_detected(normalized_text: str) -> bool:
@@ -330,6 +346,20 @@ _CLAIM_CATEGORY_DETECTORS: dict[str, Callable[[str], bool]] = {
     "dose_status": _dose_status_leak_detected,
     "handoff_state": lambda text: bool(_HANDOFF_MARKERS.search(text)),
 }
+
+
+def _mentions_identity_string(normalized_prose: str, candidate: str) -> bool:
+    """Word-boundary-anchored occurrence of `candidate` (already expected to
+    be run through ``_normalize_for_match`` by the caller's normalized
+    prose) inside `normalized_prose` -- not a raw substring check, so a
+    short candidate cannot false-positive on merely being embedded inside a
+    longer, unrelated word."""
+
+    normalized_candidate = _normalize_for_match(candidate)
+    if not normalized_candidate:
+        return False
+    pattern = re.compile(r"\b" + re.escape(normalized_candidate) + r"\b")
+    return bool(pattern.search(normalized_prose))
 
 
 def validate_free_prose(
@@ -365,6 +395,11 @@ def validate_free_prose(
     ``_normalize_for_match``-ed text (Unicode NFC + casefold), applied once,
     up front: one consistent case-handling mechanism for the whole function,
     not a mix of ``re.IGNORECASE`` on some patterns and casefold on others.
+
+    ``build_renderable_fact_slots`` is what's actually responsible for
+    ``fact_slots.drug_name``/``rejected_identity_candidates`` being accurate
+    in the first place (its own test suite covers that); this function only
+    ever checks the strings it was given.
     """
 
     normalized_prose = _normalize_for_match(free_prose)
@@ -379,7 +414,15 @@ def validate_free_prose(
             # "paracetamol" for a confirmed "Paracetamol" is still the model
             # naming the identity from the user's own message, and a bare
             # `in` comparison would let that through.
-            if any(candidate and _normalize_for_match(candidate) in normalized_prose for candidate in identity_strings):
+            #
+            # PR review correction (round 3): a raw substring check also
+            # false-positives whenever a short candidate string happens to
+            # be embedded inside a longer, unrelated word (e.g. a
+            # hypothetical short name "An" matching inside "ngoan"). Now
+            # word-boundary-anchored -- a real standalone occurrence (short
+            # or long, single- or multi-word) is still caught, but no longer
+            # a coincidental substring of a bigger, unrelated word.
+            if any(candidate and _mentions_identity_string(normalized_prose, candidate) for candidate in identity_strings):
                 violations.append(category)
             continue
         detector = _CLAIM_CATEGORY_DETECTORS.get(category)

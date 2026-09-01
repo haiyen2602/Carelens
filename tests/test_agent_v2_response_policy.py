@@ -462,6 +462,30 @@ def test_validate_free_prose_rejects_a_rejected_identity_candidate_mentioned_in_
     assert "medication_identity" in violations
 
 
+def test_validate_free_prose_allows_a_short_candidate_name_embedded_inside_an_unrelated_longer_word():
+    """PR review correction, round 3: a plain substring check (candidate in
+    free_prose) would false-positive whenever a short candidate string
+    happens to be embedded inside a longer, completely unrelated word (e.g.
+    a hypothetical short drug name "An" would match inside "ngoan" -- "ngo"
+    + "an" -- even though they share nothing as words). Matching is now
+    word-boundary-anchored, not raw substring containment."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    slots = RenderableFactSlots(drug_name="An")
+    ok, violations = validate_free_prose(policy, slots, "Con ban rat ngoan va nghe loi.")
+    assert ok is True
+    assert violations == ()
+
+
+def test_validate_free_prose_still_rejects_a_short_candidate_name_as_its_own_word():
+    """Non-regression: word-boundary anchoring must not lose real matches --
+    a short candidate genuinely appearing AS ITS OWN WORD is still caught."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    slots = RenderableFactSlots(drug_name="An")
+    ok, violations = validate_free_prose(policy, slots, "Day la thuoc An ban can dung.")
+    assert ok is False
+    assert "medication_identity" in violations
+
+
 def test_validate_free_prose_allows_prose_naming_neither_confirmed_nor_rejected_identity():
     """Non-regression: prose that never mentions any known identity string
     (confirmed or rejected) must not be flagged."""
@@ -529,6 +553,37 @@ def test_validate_free_prose_rejects_a_clock_time_near_a_medication_mention():
     ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống thuốc vào lúc 8 giờ sáng.")
     assert ok is False
     assert "dose_time" in violations
+
+
+def test_validate_free_prose_rejects_a_long_sentence_where_thuoc_is_far_from_the_clock_time():
+    """PR review correction, round 3: a fixed 30-character window can push
+    "thuốc" outside the checked range in a longer, grammatically ordinary
+    Vietnamese sentence, letting a real leak through as a false NEGATIVE --
+    the worse failure mode by this module's own stated philosophy (over-
+    broad is safer than under-broad). Medication context is now checked
+    across the whole SENTENCE containing the temporal match (bounded by
+    ./!/?  , not a character count), so a long sentence no longer defeats
+    the check."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(
+        policy,
+        RenderableFactSlots(),
+        "Theo đơn thuốc mà bác sĩ đã kê cho bạn trong lần khám gần đây nhất, bạn nên uống vào lúc 8 giờ sáng mỗi ngày.",
+    )
+    assert ok is False
+    assert "dose_time" in violations
+
+
+def test_validate_free_prose_allows_thuoc_and_a_time_word_in_different_sentences():
+    """Non-regression: the sentence-scoped check must not leak ACROSS
+    sentence boundaries either -- an unrelated time mention in a different
+    sentence from a "thuốc" mention must still pass."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(
+        policy, RenderableFactSlots(), "Đây là thông tin về thuốc bạn cần. Hẹn gặp lại bạn lúc 8 giờ nhé."
+    )
+    assert ok is True
+    assert violations == ()
 
 
 def test_validate_free_prose_allows_a_drinking_verb_for_water_near_an_unrelated_time_mention():
