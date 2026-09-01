@@ -32,6 +32,7 @@
 
 ## 🏛️ Sơ đồ Kiến trúc & Luồng Xử lý (Architecture)
 Figma: https://www.figma.com/board/bTb6svawTCWLLutVnJMnFm/Wireframe?node-id=0-1&t=KwRCFFDiVnVS9X5q-1
+
 Hệ thống được thiết kế theo triết lý **Fail-safe (Fail-closed)** — tách biệt hoàn toàn tầng phân loại an toàn khỏi suy luận tự do của mô hình ngôn ngữ lớn (LLM).
 
 ![Sơ đồ Kiến trúc Hệ thống VMEC-04 — Capy Medi](capymedi-diagram.png)
