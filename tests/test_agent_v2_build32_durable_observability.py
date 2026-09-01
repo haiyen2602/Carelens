@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from backend.agents.v2.model_gateway import (
     EmptySynthesisError,
+    ModelRole,
     ModelUsage,
     ToolCall,
 )
@@ -102,7 +103,7 @@ class _RaisingGateway:
     def plan_read_only(self, *, message, actor_role):
         raise self._exc
 
-    def synthesize_read_only(self, *, message, actor_role, evidence):
+    def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
         raise self._exc
 
 
@@ -140,7 +141,7 @@ def test_empty_synthesis_error_is_classified_as_empty_reply_on_exhaustion():
         def plan_read_only(self, *, message, actor_role):
             return _Plan()
 
-        def synthesize_read_only(self, *, message, actor_role, evidence):
+        def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
             raise EmptySynthesisError("MODEL_SYNTHESIS_EMPTY")
 
     class _NoopTools:
@@ -280,6 +281,13 @@ def test_persist_durable_trace_stamps_agent_run_and_writes_spans_and_evaluation(
     trace = TraceContext(trace_id=trace_id, agent_run_id=run_id)
     with telemetry.span(trace, TraceComponent.TOOL, operation="execute", attributes={"tool_name": "search_drug"}):
         pass
+    # TASK-V2.5-004: run.model/cost are now derived from THIS run's own real
+    # agent_model.completed events, not merely copied from settings -- a
+    # realistic fixture needs one, matching _fake_result's own metrics
+    # (model_calls=1, input_tokens=100, output_tokens=50) below.
+    telemetry.record_model(
+        trace, role=ModelRole.MAIN, model="gpt-5.4-mini", usage=ModelUsage(input_tokens=100, output_tokens=50), latency_ms=5.0
+    )
 
     result = _fake_result(agent_run_id=run_id, trace_id=trace_id)
     settings = SimpleNamespace(agent_main_model="gpt-5.4-mini")

@@ -225,7 +225,7 @@ def test_scenario_2_canonical_only_evidence_never_lets_the_vinmec_claim_through(
         tool_calls=(ToolCall(name="search_drug", arguments={"query": "paracetamol", "limit": 5}),),
         response="planning",
     )
-    synthesis = ModelSynthesis(response="Theo Vinmec, thuoc nay la Paracetamol dang vien nen 500mg.")
+    synthesis = ModelSynthesis(free_prose="Theo Vinmec, thuoc nay la Paracetamol dang vien nen 500mg.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis), vinmec_gateway=vinmec_gateway)
 
     result = orchestrator.run(_request("Vinmec co thong tin gi ve thuoc paracetamol khong"), tools=_tools())
@@ -254,7 +254,7 @@ def test_scenario_3_zero_evidence_gets_the_honest_fallback():
     # No tool calls at all this time -- the model just free-associates from
     # the user's own wording (the worst case: nothing grounding it).
     plan = ModelPlan(response="planning")
-    synthesis = ModelSynthesis(response="Xin loi, minh khong the tim thong tin tu Vinmec luc nay.")
+    synthesis = ModelSynthesis(free_prose="Xin loi, minh khong the tim thong tin tu Vinmec luc nay.")
     orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis), vinmec_gateway=vinmec_gateway)
 
     result = orchestrator.run(_request("Vinmec noi gi ve thuoc nay"), tools=_tools())
@@ -279,14 +279,14 @@ def test_scenario_4_normal_drug_information_query_is_unaffected():
         tool_calls=(ToolCall(name="search_drug", arguments={"query": "paracetamol", "limit": 5}),),
         response="planning",
     )
-    synthesis = ModelSynthesis(response="Paracetamol la thuoc giam dau, ha sot dang vien nen 500mg.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol la thuoc giam dau, ha sot dang vien nen 500mg.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Paracetamol la thuoc gi"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response  # untouched -- no "vinmec" mention, guard is a no-op
+    assert result.response == synthesis.free_prose  # untouched -- no "vinmec" mention, guard is a no-op
     assert result.citations == ()
 
 
@@ -360,7 +360,7 @@ def test_scenario_6_bare_drug_name_query_keeps_canonical_answer_not_the_vinmec_f
         tool_calls=(ToolCall(name="search_drug", arguments={"query": "vizicin", "limit": 5}),),
         response="planning",
     )
-    synthesis = ModelSynthesis(response="Theo Vinmec, vizicin la thuoc dang vien nen, ham luong 500mg.")
+    synthesis = ModelSynthesis(free_prose="Theo Vinmec, vizicin la thuoc dang vien nen, ham luong 500mg.")
     orchestrator, _ = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("vizicin la thuoc gi"), tools=_tools())
@@ -389,7 +389,7 @@ def test_scenario_6b_today_schedule_query_keeps_operational_db_answer():
         tool_calls=(ToolCall(name="get_today_doses", arguments={}),),
         response="planning",
     )
-    synthesis = ModelSynthesis(response="Theo Vinmec, hom nay ban da uong lieu 8h sang.")
+    synthesis = ModelSynthesis(free_prose="Theo Vinmec, hom nay ban da uong lieu 8h sang.")
     gateway = _SpyModelGateway(plan, synthesis)
     orchestrator, _ = _orchestrator(model_gateway=gateway)
 

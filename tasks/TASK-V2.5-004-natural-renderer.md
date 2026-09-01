@@ -3,13 +3,17 @@
 **Domain:** Agent V2 model gateway / response rendering — capability renderer
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** CP1 — **correction pending**. Benchmark/contract đã chốt nhưng
-owner yêu cầu sửa chính xác hợp đồng (style_profile, backend assembly
-`free_prose`/protected fact, golden dương, test timeout/EmptySynthesisError,
-`AGENT_MAX_MODEL_CALLS`) trước khi coi CP1 là final. CP1 chỉ thật sự đóng
-sau khi PR sửa lỗi này (`docs/task04-cp1-corrections`) merge — CP2 chưa
-được bắt đầu cho tới lúc đó. Chưa code runtime (đúng chỉ đạo trước và sau
-sửa lỗi này).
+**Status:** CP1 đã đóng (PR #191, corrective, merged commit
+`81f56950999b9697fb8a46ced913c8ea7e4c1e29`). **CP2 core mechanism đã code +
+test thật qua 3 vòng sửa (bản 1 draft → bản 2 sửa theo owner review → bản 3
+sửa theo owner review lần 2), trên branch
+`feature/TASK-V2.5-004-renderer-cp2`, sẵn sàng mở PR với nhãn "core
+mechanism"** — flag `AGENT_V2_5_RENDERER_ENABLED` mặc định `false` VÀ bị
+giữ inert cứng ở route layer (mục "Tiến độ CP2 thực (bản 3)") cho tới khi
+có PR wiring riêng theo response-type. Đây KHÔNG phải patient-facing
+renderer — `RendererContext` còn tối giản, chỉ đủ cho structural safety
+guarantee. Xem "Tiến độ CP2 thực (bản 1/2/3)" bên dưới cho toàn bộ chi
+tiết đã làm/chưa làm.
 
 ## Mục tiêu
 
@@ -302,6 +306,436 @@ không phải bảo đảm ngữ nghĩa đầy đủ).
   theo bảng V2.5-DESIGN.md mục 7 (follow-up/clarification/grounding-decline/
   out-of-scope/drug-info low-risk) — **không** áp dụng cho
   emergency/safety/handoff/timeout theo đúng bảng đó.
+
+## Tiến độ CP2 thực (bản 1) — draft đầu, cập nhật khi code, không phải kế hoạch
+
+**Đã làm, có test thật (TDD: RED xác nhận trước, GREEN sau), branch
+`feature/TASK-V2.5-004-renderer-cp2`:**
+
+- `ModelRole.RENDERER` (`backend/agents/v2/model_gateway.py`) + settings
+  `agent_renderer_model`/`openai_renderer_api_key` (`backend/config.py`,
+  `.env.example`) + `build_model_workloads()` entry — `tests/
+  test_agent_v2_model_gateway.py`.
+- Pricing JSON entry `gpt-5.6-luna` trong `.env.example`'s
+  `AGENT_MODEL_PRICING_JSON` mẫu.
+- Module mới `backend/agents/v2/response_policy.py`: `Answerability`,
+  `ResponsePolicy` (`style_profile="soul-v3"`), `RenderableFactSlots`,
+  `assemble_reply(policy, fact_slots, free_prose) -> str`,
+  `build_renderable_fact_slots(evidence) -> RenderableFactSlots` — `tests/
+  test_agent_v2_response_policy.py`, gồm đủ golden suite "prose tự do" 4
+  nhóm âm + 4 nhóm dương ở mục 6 (viết thật dưới dạng unit test tất định
+  chống lại `assemble_reply`, đúng tinh thần mục 6: đây là test hồi quy cho
+  cơ chế backend assembly, không phải LLM-judge).
+- `ModelSynthesis.response` đổi tên thành `ModelSynthesis.free_prose` (đúng
+  mục 4a) — rà toàn bộ 15 file test + 2 file backend dùng field này, xác
+  nhận hành vi không đổi khi không có protected fact (assemble_reply là
+  passthrough).
+- `OpenAIModelGateway.synthesize_read_only` opt-in `policy`/`fact_slots`
+  (`None` mặc định) chuyển hẳn sang workload `RENDERER`; `plan_read_only`
+  không đổi (`MAIN`) — `tests/test_agent_v2_model_gateway.py`.
+- `runtime.py` (`ReadOnlyAgentRuntime`): tham số mới `renderer_enabled`/
+  `renderer_model_name`; khi bật, build `RenderableFactSlots` từ evidence
+  thật, gọi `assemble_reply` để tạo final text, ghi đúng
+  `role=ModelRole.RENDERER` + model renderer vào span/`record_model` (khi
+  tắt, hành vi giống hệt trước task này — có test non-regression khóa việc
+  này) — `tests/test_agent_v2_runtime.py`.
+- Test timeout/`EmptySynthesisError` ở role RENDERER (4 case mục 5, bao gồm
+  test trực tiếp bằng cách "poison" `assemble_reply` để chứng minh nó không
+  bao giờ được gọi khi lượt renderer FAILED) + test khóa
+  `AGENT_MAX_MODEL_CALLS` vẫn là `2` — `tests/test_agent_v2_runtime.py`.
+- Audit + sửa `AgentRun.model`/`MULTI_MODEL` (mục 3, việc CP1 ghi rõ CHƯA
+  làm): `_persist_durable_trace` giờ suy ra model/cost từ chính các
+  `agent_model.completed` event thật của run đó (không còn áp giá 1 model
+  lên tổng token toàn run) — model khác nhau giữa các lượt gọi → ghi
+  `"MULTI_MODEL"`; buffer mất/evict dù `model_calls>0` → suy thoái trung
+  thực về `NOT_AVAILABLE` (không bịa model/giá) — `tests/
+  test_agent_v2_task004_multi_model_cost.py` (case 2 model thật, 1 model
+  thật, buffer mất, model không có giá, 0 lượt gọi không đổi).
+- Wiring 2 route thật (`/agent/v2/read-only`, `/agent/v2/orchestrate` —
+  route sau là entry point production) đọc `AGENT_V2_5_RENDERER_ENABLED`/
+  `AGENT_RENDERER_MODEL` từ settings thật, không phải giá trị cứng.
+- Xác nhận không hồi quy: toàn bộ file test agent_v2 liên quan
+  (~1194 test qua `pytest -k "agent_v2 or response_policy"`) xanh; 18 lỗi
+  còn lại đã xác nhận từ trước là pre-existing (`chat_messages`/Postgres
+  không chạy local), re-xác nhận qua `git stash` không đổi. Lint (`ruff
+  check`) sạch trên toàn bộ file trong diff.
+
+**Sai lệch "additive full evidence" đã bị owner bác bỏ — sửa lại đúng
+hướng trước PR:**
+
+Bản nháp CP2 đầu tiên cho `synthesize_read_only` nhận thêm `policy`/
+`fact_slots` (optional, mặc định `None`) NHƯNG vẫn giữ nguyên `evidence`
+thô đầy đủ trong prompt gửi Luna "để giữ ngữ cảnh". Owner chỉ ra đúng: đây
+là lỗi thật, không phải điều chỉnh an toàn — nếu Luna vẫn thấy `evidence`
+thô (bao gồm chính giá trị `drug_name`/tên thuốc trong `search_drug`/
+`get_drug_info`), thì bảo đảm "model chưa từng nhìn thấy chuỗi fact nên
+không thể viết lại nó" (mục 4a) chỉ còn là lý thuyết — model vẫn hoàn toàn
+có khả năng paraphrase/restate fact ngay từ evidence thô, chỉ là được
+*yêu cầu* đừng làm vậy qua prompt instruction (đúng loại bảo đảm YẾU mà
+mục 4a đã minh định phải loại bỏ). Quyết định đã sửa:
+
+1. **Loại bỏ `evidence` khỏi input của lượt renderer hoàn toàn.** Thay bằng
+   `RendererContext` — allowlist tối giản, chỉ chứa tín hiệu low-risk
+   không tự nó cấu thành claim nào (vd `has_findings: bool`) — không một
+   giá trị cụ thể nào (tên thuốc, giờ, trạng thái liều) lọt vào prompt, kể
+   cả khi slot tương ứng CÓ giá trị. `build_renderer_context(evidence) ->
+   RendererContext` là adapter allowlist (khai báo field nào an toàn, một
+   field mới mặc định KHÔNG được đưa vào cho tới khi xác nhận rõ ràng là
+   an toàn) — không phải denylist trên `evidence`.
+2. **Thêm `validate_free_prose(policy, fact_slots, free_prose)` làm
+   regex-backstop thật**, chạy trên chính output của Luna trước khi cho
+   phép `assemble_reply` chạy: nếu `free_prose` chứa dấu hiệu thuộc bất kỳ
+   category nào trong `policy.prohibited_claim_categories` (dose_time,
+   dose_status, medication_identity, handoff_state) thì FAIL-CLOSED —
+   không gọi `assemble_reply`, đi qua đúng path fail-closed đã có (raise
+   lỗi mới, phân loại như `EmptySynthesisError`). Đây là backstop tất định
+   thứ hai, độc lập với việc RendererContext không rò rỉ fact ở input —
+   phòng trường hợp model tự "đoán"/hallucinate một claim nhạy cảm dù
+   không được cấp dữ liệu.
+3. **`ResponsePolicy.prohibited_claim_categories` trở thành input được
+   thực thi thật** — `validate_free_prose` tra cứu chính xác các category
+   trong field này (không hardcode trong hàm), nên một `ResponsePolicy`
+   khác trong tương lai có thể hợp lệ hoá bớt/thêm category mà không cần
+   sửa `validate_free_prose`. `_default_response_policy()` (nhánh tool-loop
+   chung, CP2 này) chốt cả 4 category luôn bị cấm — free_prose theo thiết
+   kế không bao giờ cần nói tới bất kỳ category nào trong 4 category đó.
+4. **`search_drug` mơ hồ (nhiều `items`, không có `unique_match_legacy_
+   drug_id` khớp duy nhất) không được tạo `drug_name`.** Bản nháp đầu đọc
+   sai field (`data.get("name")` trên toàn bộ payload `search_drug`, trong
+   khi shape thật là `{items: [...], unique_match_legacy_drug_id}` —
+   `backend/agents/v2/tools.py::SearchDrugOutput`) — sửa lại đọc đúng
+   `unique_match_legacy_drug_id`, chỉ set `drug_name` khi field này khớp
+   đúng một `item`. Các tên ứng viên bị loại được giữ ở
+   `RenderableFactSlots.rejected_identity_candidates` (không đưa vào
+   `RendererContext`, chỉ dùng nội bộ cho `validate_free_prose` đối chiếu
+   hậu kiểm).
+
+## Tiến độ CP2 thực (bản 2) — sau khi owner bác bỏ sai lệch "additive full evidence"
+
+**Code thật + test thật (RED xác nhận trước, GREEN sau), cùng branch
+`feature/TASK-V2.5-004-renderer-cp2`:**
+
+- `RendererContext(has_findings: bool = False)` (module mới trong
+  `response_policy.py`) + `build_renderer_context(evidence) ->
+  RendererContext` — allowlist thật, không phải denylist trên `evidence`;
+  field duy nhất hiện tại (`has_findings`) không tự nó cấu thành claim nào.
+  Có test khóa cấu trúc: không field nào trên `RendererContext` được trùng
+  tên với field protected trên `RenderableFactSlots`.
+- `RenderableFactSlots.rejected_identity_candidates: tuple[str, ...] = ()`
+  field mới — không bao giờ vào `RendererContext`/prompt, chỉ dùng nội bộ
+  cho `validate_free_prose`.
+- `build_renderable_fact_slots` sửa lại đọc đúng shape thật của
+  `search_drug` (`items`/`unique_match_legacy_drug_id` —
+  `backend/agents/v2/tools.py::SearchDrugOutput`), không còn đọc nhầm field
+  `name` phẳng không tồn tại trên payload thật; ambiguous result (nhiều
+  `items`, không có `unique_match_legacy_drug_id` khớp, hoặc match id không
+  ứng với item nào) không bao giờ set `drug_name`.
+- `validate_free_prose(policy, fact_slots, free_prose) -> (bool,
+  violated_categories)` (module mới trong `response_policy.py`) — regex
+  backstop cho `dose_time`/`dose_status`/`handoff_state`, đối chiếu chuỗi
+  cho `medication_identity` (so với `rejected_identity_candidates`); CHỈ
+  kiểm category có trong `policy.prohibited_claim_categories` (input được
+  thực thi thật, không hardcode).
+- `OpenAIModelGateway._synthesize_free_prose` viết lại hoàn toàn: prompt gửi
+  Luna giờ chỉ chứa `RendererContext.has_findings` +
+  `policy.route_category`/`policy.answerability` — không còn evidence thô,
+  không còn "known_facts" rút từ fact_slots. Sau khi nhận `free_prose`, gọi
+  `validate_free_prose` trước khi trả kết quả; vi phạm → raise
+  `ProhibitedClaimLeakError` (class mới, sibling của `EmptySynthesisError`,
+  không kế thừa để giữ phân loại lỗi tách biệt).
+- `runtime.py`: `_default_response_policy()` giờ chốt cả 4
+  `prohibited_claim_categories` luôn bật; thêm `ERROR_CODE_PROHIBITED_CLAIM_
+  LEAK` + nhánh phân loại `isinstance(exc, ProhibitedClaimLeakError)` trong
+  `_synthesize_with_limits`, đi qua đúng path fail-closed có sẵn (không
+  thêm cơ chế mới).
+- Test thật cho toàn bộ 4 invariant owner yêu cầu:
+  1. Prompt Luna không chứa sentinel `drug_name`/`dose_schedule_summary`/
+     `dose_status_summary`/`handoff_state` — kể cả khi slot CÓ giá trị
+     (4 test riêng, mỗi test 1 category, `tests/test_agent_v2_model_
+     gateway.py`).
+  2. Model giả trả claim nhạy cảm khi không được cấp dữ liệu → bị reject ở
+     cả 2 tầng: `validate_free_prose` (unit, `tests/
+     test_agent_v2_response_policy.py`) và toàn bộ runtime end-to-end
+     (`tests/test_agent_v2_model_gateway.py`,
+     `tests/test_agent_v2_runtime.py` — bao gồm test "poison
+     `assemble_reply`" chứng minh nó không được gọi khi leak xảy ra).
+  3. `search_drug.items` mơ hồ không tạo `drug_name` (2 test: nhiều item
+     không match, và match id không tồn tại trong items — `tests/
+     test_agent_v2_response_policy.py`).
+  4. `ResponsePolicy.prohibited_claim_categories` là input được thực thi
+     thật: test khóa `_default_response_policy()` liệt kê đủ 4 category,
+     cộng 1 test chứng minh policy rỗng category thì `validate_free_prose`
+     không reject gì (chứng minh field này thực sự được đọc, không phải
+     hardcode trong hàm).
+- Sửa fixture cũ dùng sai shape `search_drug` (test giả lập `{"name":
+  "Paracetamol"}` phẳng, không đúng payload thật) ở
+  `tests/test_agent_v2_runtime.py` và `tests/test_agent_v2_response_
+  policy.py` — cùng gốc lỗi owner chỉ ra ở mục 4 trên.
+
+**Bằng chứng thật đã chạy (sau bản 2):**
+
+- `tests/test_agent_v2_response_policy.py` + `tests/
+  test_agent_v2_model_gateway.py` + `tests/test_agent_v2_runtime.py`:
+  77/77 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1214/1214 pass (không
+  tính 18 lỗi pre-existing đã re-xác nhận qua `git stash`, và 5 test
+  Postgres-only skip do không có DB local).
+- Golden `--deterministic-only` (15 case, 0 lượt gọi model — schedule/
+  triage/safety/out-of-scope/auth): **15/15 PASS**, regression gate PASS —
+  chạy thật sau toàn bộ sửa đổi trên, xác nhận các nhánh tất định không bị
+  ảnh hưởng.
+- `ruff check` sạch trên toàn bộ file backend + test trong phạm vi sửa đổi
+  của cả 2 vòng (draft đầu + bản sửa theo yêu cầu owner).
+
+## Tiến độ CP2 thực (bản 3) — 3 sửa owner yêu cầu trước PR
+
+**1. Regex `dose_time` quá rộng, đã sửa.** Bản 2 dùng
+`\b(giờ|sáng|trưa|chiều|tối|liều)\b` — một từ chỉ buổi trong ngày đơn thuần
+(vd "Chúc bạn một buổi tối tốt lành") bị reject sai, sẽ khiến renderer fail
+với câu tiếng Việt hoàn toàn bình thường. Sửa: `dose_time` giờ chỉ bắt (a)
+giờ đồng hồ cụ thể (`\d{1,2}\s*(giờ|h)\b`, vd "8 giờ", "20h") HOẶC (b) một
+từ chỉ buổi trong ngày xuất hiện GẦN (trong 30 ký tự) một động từ liều
+thuốc (uống/dùng thuốc) — "liều" đứng một mình vẫn luôn bị bắt (từ đủ đặc
+thù, không phổ biến trong prose thông thường). Test mới: 1 test khẳng định
+câu benign PASS, 3 test khẳng định các dạng leak thật (giờ+uống gần nhau
+không có số, giờ đồng hồ trần không có "uống" gần đó, "liều" đứng một
+mình) vẫn bị reject — `tests/test_agent_v2_response_policy.py`.
+
+**2. `medication_identity` giờ chặn cả `fact_slots.drug_name` đã xác
+nhận, không chỉ candidate mơ hồ.** Rủi ro thật owner chỉ ra: dù
+`RendererContext` không đưa `drug_name` vào input model, prompt vẫn giữ
+nguyên văn tin nhắn gốc của người dùng ("Original request: {message}") —
+nếu người dùng đã gõ tên thuốc, model vẫn có thể đọc thấy và lặp lại trong
+`free_prose`. Sửa `validate_free_prose`: category `medication_identity`
+giờ đối chiếu `free_prose` với CẢ `fact_slots.drug_name` (đã xác nhận) LẪN
+`fact_slots.rejected_identity_candidates` (chưa xác nhận) — model không
+bao giờ được phép tự nói tên thuốc, xác nhận hay chưa. Test adversarial
+mới: model lặp lại đúng `drug_name` đã xác nhận → bị reject; test âm đi
+kèm: prose không nhắc tên nào (xác nhận hay ứng viên) thì không bị flag —
+`tests/test_agent_v2_response_policy.py`.
+
+**3. Flag renderer giờ luôn inert ở cả 2 route production, bất kể giá trị
+`AGENT_V2_5_RENDERER_ENABLED`.** Rủi ro thật owner chỉ ra: cơ chế
+`ReadOnlyAgentRuntime.renderer_enabled` áp dụng cho TOÀN BỘ nhánh tool-loop
+chung (mọi câu trả lời có gọi tool: drug info, đơn thuốc, dose status...),
+rộng hơn nhiều so với phạm vi đã duyệt (chỉ các response-type cụ thể ở
+V2.5-DESIGN.md mục 7). Nếu bật `AGENT_V2_5_RENDERER_ENABLED=true` trên
+Railway lúc này (trước khi có eligibility gate theo response-type), nó sẽ
+đổi hành vi rộng hơn phạm vi đã review. Sửa: thêm hàm
+`_renderer_runtime_kwargs(settings)` (`backend/api/agent_v2_routes.py`) —
+LUÔN trả `renderer_enabled=False` bất kể `settings.agent_v2_5_renderer_
+enabled`, dùng ở cả `/agent/v2/read-only` và `/agent/v2/orchestrate` thay
+cho việc đọc flag trực tiếp. `renderer_model_name` vẫn đọc từ settings
+thật (vô hại khi `renderer_enabled=False` — runtime không bao giờ đọc tới)
+để không phải nối dây lại khi eligibility gate được thêm sau này. Test:
+`_renderer_runtime_kwargs` luôn trả `renderer_enabled=False` dù flag
+settings là `True` hay `False` — `tests/test_agent_v2_route.py`. Từ đây,
+việc bật `AGENT_V2_5_RENDERER_ENABLED` trên Railway (dù vô tình hay cố ý)
+không có bất kỳ tác dụng nào tới hành vi thật cho tới khi một PR wiring
+riêng thêm eligibility gate và bỏ hardcode `False` này.
+
+**4. `medication_identity` chuyển sang so khớp Unicode-normalized +
+casefold, không còn case-sensitive.** Rủi ro thật owner chỉ ra: `drug_name=
+"Paracetamol"` nhưng Luna viết "paracetamol" (chữ thường) sẽ lọt qua phép
+so khớp `in` case-sensitive cũ, dù đây vẫn đúng là model tự nhắc identity
+từ tin nhắn gốc người dùng. Sửa: thêm `_normalize_for_identity_match(text)`
+(`unicodedata.normalize("NFC", text).casefold()`) áp dụng cho cả
+`free_prose` và từng candidate (`drug_name`/`rejected_identity_candidates`)
+trước khi so khớp substring — không đổi kiến trúc, không mở rộng scope,
+chỉ sửa chính phép so khớp. Test adversarial mới: model viết thường hoàn
+toàn ("paracetamol"/"vitamin b1") vẫn bị reject — `tests/
+test_agent_v2_response_policy.py`.
+
+**Ghi chú phạm vi PR (owner đã nêu rõ):** `RendererContext(has_findings)`
+hiện tại chỉ đủ cho cơ chế an toàn cốt lõi (structural no-fact-leak
+guarantee) — CHƯA đủ để renderer diễn giải drug-info một cách hữu ích cho
+người dùng thật (không có thông tin gì ngoài "có tìm thấy hay không"). Vì
+vậy PR cho CP2 này được gắn nhãn **"core mechanism"**, KHÔNG phải
+"patient-facing renderer" — chưa sẵn sàng để bật cho người dùng thật kể cả
+khi flag được set true (vì còn bị giữ inert ở mục 3, và vì `RendererContext`
+còn quá tối giản để tạo prose hữu ích ở mục này). Response-type wiring
+(mở rộng `RendererContext`, thêm eligibility gate, áp dụng đúng bảng mục 7)
+là **increment tiếp theo**, sau khi core mechanism này được review/merge —
+không gộp chung vào PR này.
+
+**Bằng chứng thật đã chạy (sau bản 3):**
+
+- `tests/test_agent_v2_response_policy.py`: 38/38 pass.
+- `tests/test_agent_v2_route.py`: 20/20 pass (3 test mới cho
+  `_renderer_runtime_kwargs`).
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1222/1222 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 3.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py`,
+  `backend/api/agent_v2_routes.py`, `tests/test_agent_v2_response_policy.py`,
+  `tests/test_agent_v2_route.py`.
+
+**Bằng chứng thật đã chạy (sau bản 4 — sửa case-sensitivity, sửa cuối
+trước PR):**
+
+- `tests/test_agent_v2_response_policy.py`: 40/40 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1224/1224 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 4.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
+  `tests/test_agent_v2_response_policy.py`.
+
+## Tiến độ CP2 thực (bản 5) — phản hồi PR #193 review
+
+Sau khi mở PR #193, bot review nêu 2 điểm cho `response_policy.py`:
+
+**1. `_CLOCK_TIME_MARKER` quá rộng (finding thật, đã sửa).** Bot chỉ đúng:
+`\b\d{1,2}\s*(giờ|h)\b` bắt luôn cả câu hoàn toàn bình thường không liên
+quan liều thuốc (vd "Hẹn gặp bạn lúc 8 giờ nhé", "cách đây 2h", "đợi 1
+giờ") — cùng loại lỗi over-broad đã sửa ở bản 3 cho từ chỉ buổi trong
+ngày, chỉ khác là lần này áp dụng cho pattern giờ đồng hồ. Sửa: thống nhất
+`_dose_time_leak_detected` — giờ đồng hồ VÀ từ chỉ buổi trong ngày đều
+cùng một luật: chỉ tính là leak khi nằm GẦN (30 ký tự) một động từ liều
+thuốc (uống/dùng thuốc); "liều" vẫn là marker độc lập không cần ngữ cảnh.
+Đổi 1 test cũ (giờ đồng hồ trần → giờ PASS, không còn reject sai) + thêm 1
+test khẳng định giờ đồng hồ CÓ ngữ cảnh liều thuốc vẫn bị reject đúng —
+`tests/test_agent_v2_response_policy.py`.
+
+**2. `re.IGNORECASE` vs `casefold()` không nhất quán (đã kiểm chứng thật:
+không phải bug đang tồn tại cho tiếng Việt, nhưng đã hardening cho nhất
+quán).** Kiểm chứng thực nghiệm trực tiếp (`python3` REPL) trước khi sửa:
+`re.IGNORECASE` của Python 3 đã xử lý đúng Unicode case-folding cho MỌI tổ
+hợp hoa/thường của các chữ cái tiếng Việt đã test (đ/Đ, ư/Ư, ố/Ố, ệ/Ệ và
+các câu "ĐÃ UỐNG"/"CHƯA UỐNG" viết hoa toàn bộ) — `.lower()` và
+`.casefold()` cho kết quả GIỐNG HỆT nhau trên mọi ký tự tiếng Việt đã thử,
+không có phân kỳ kiểu tiếng Đức (ß→ss) mà `casefold()` mới xử lý đúng còn
+`re.IGNORECASE` thì không. Claim "có thể bypass" của bot **không đúng
+thực nghiệm cho tiếng Việt** — không có bypass sống hiện tại. Vẫn hardening
+theo hướng bot gợi ý vì rẻ và giúp nhất quán: gộp toàn bộ `validate_free_
+prose` về DÙNG CHUNG một cơ chế (`_normalize_for_match` — đổi tên từ
+`_normalize_for_identity_match`, không còn riêng cho medication_identity)
+— chuẩn hoá `free_prose` một lần duy nhất ở đầu hàm, bỏ hết `re.IGNORECASE`
+khỏi mọi pattern (dose_time/dose_status/handoff_state), so khớp thẳng trên
+văn bản đã chuẩn hoá. Thêm 2 test khẳng định dose_status/handoff_state vẫn
+bắt đúng khi model viết hoa toàn bộ hoặc hoa/thường lẫn lộn (đã pass NGAY
+CẢ TRƯỚC khi refactor — test khoá hành vi, không phải fix bug) —
+`tests/test_agent_v2_response_policy.py`.
+
+**Bằng chứng thật đã chạy (sau bản 5):**
+
+- `tests/test_agent_v2_response_policy.py`: 43/43 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1227/1227 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 5.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
+  `tests/test_agent_v2_response_policy.py`.
+
+## Tiến độ CP2 thực (bản 6) — phản hồi PR #193 review lần 2
+
+**1. `_CLOCK_TIME_MARKER` vẫn còn rủi ro false positive dù đã có proximity
+check (finding thật, đã sửa tận gốc).** Bot chỉ đúng: proximity 30 ký tự
+với `_DOSING_VERB` (`uống|dùng thuốc`) vẫn có thể false positive nếu "uống"
+xuất hiện GẦN một mốc thời gian vì lý do KHÔNG liên quan (vd "Cảm ơn bạn đã
+uống đủ nước, hẹn gặp lại sau 1 giờ nhé." — "uống" ở đây là uống NƯỚC, không
+phải uống thuốc). Gốc rễ: "uống" một mình chỉ có nghĩa "uống" chung chung
+(uống nước/trà/cà phê...), không riêng cho thuốc. Sửa tận gốc thay vì vá
+thêm blocklist đối tượng uống lành tính (danh sách này không bao giờ đủ):
+đổi anchor từ "động từ liều thuốc" (uống/dùng thuốc) sang chính danh từ
+**"thuốc"** (hoặc "liều") — cả `dose_time` VÀ `dose_status` (phát hiện
+thêm cùng lỗi khi viết test cho fix này — "đã uống nước" cũng false
+positive dose_status theo cùng cách) giờ neo vào `thuốc|liều` thay vì động
+từ. `_DOSE_STATUS_PHRASES` ("đã uống"/"chưa uống"/"uống rồi") giờ cũng cần
+`thuốc`/`liều` gần đó; "bỏ lỡ" (missed) vẫn là marker độc lập (không phải
+động từ uống chung chung, không có nghĩa khác). Thêm 6 test mới (uống
+nước/trà không bị reject sai cho cả dose_time và dose_status, đồng thời
+khóa lại các case reject thật vẫn đúng khi có `thuốc` hoặc `liều` gần đó,
+bao gồm "bỏ lỡ" độc lập) — `tests/test_agent_v2_response_policy.py`.
+Không đổi kiến trúc (`validate_free_prose`'s chữ ký, `ResponsePolicy`'s
+field), chỉ sửa chính các regex detector.
+
+**2. Telemetry dependency của `_model_and_cost_from_events` (rủi ro vận
+hành thật, không phải bug — đã thêm cảnh báo chẩn đoán).** Bot chỉ đúng một
+rủi ro có thật: cost accounting giờ phụ thuộc hoàn toàn vào việc
+`agent_model.completed` event của CHÍNH run đó còn nằm trong buffer
+(`BufferingSink`, cap `_BUFFERING_SINK_MAX_TRACES=500`, có từ BUILD-32,
+không phải code PR này) tại thời điểm `_persist_durable_trace` chạy — nếu
+bị evict, cost/model suy thoái về `NOT_AVAILABLE` dù `model_calls>0` thật.
+Đánh giá mức độ: cơ chế evict là loại-bỏ-trace-CŨ-NHẤT khi đầy, và
+`_persist_durable_trace` của MỘT run luôn chạy ngay sau khi chính run đó
+hoàn tất (chỉ vài mili giây) — để CHÍNH events của run này bị evict cần
+500 trace KHÁC đang buffer đồng thời mà chưa được persist, tức một tình
+trạng backlog/degraded thật sự, không phải tải cao bình thường (mỗi
+request tự pop trace của chính nó gần như ngay lập tức). Trước PR này,
+`run.model`/cost KHÔNG hề phụ thuộc buffer (chỉ dùng aggregate metrics +
+settings) — đây là dependency MỚI do chính fix MULTI_MODEL tạo ra, đánh
+đổi: từ "luôn có số nhưng có thể sai khi multi-model" sang "trung thực
+nhưng có thể thiếu khi buffer mất dữ liệu". Giữ nguyên hướng trung thực
+(đã chốt từ bản 1), nhưng thêm cải thiện thật trong phạm vi PR này: log
+`WARNING` riêng, phân biệt rõ 2 nguyên nhân `NOT_AVAILABLE` khác nhau — mất
+telemetry (nhánh mới, hiếm, chỉ ra backlog) vs model không có giá cấu hình
+(nhánh bình thường, không phải sự cố) — để có thể alert/quan sát vận hành,
+tương quan với chính warning log có sẵn của `BufferingSink` khi evict. Test
+thật: warning xuất hiện đúng với `agent_run_id`/`trace_id` khi mất
+telemetry, KHÔNG xuất hiện khi chỉ là model chưa có giá (non-regression) —
+`tests/test_agent_v2_task004_multi_model_cost.py`.
+
+**Bằng chứng thật đã chạy (sau bản 6):**
+
+- `tests/test_agent_v2_response_policy.py`: 48/48 pass.
+- `tests/test_agent_v2_task004_multi_model_cost.py`: 10/10 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1234/1234 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 6.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py`,
+  `backend/api/agent_v2_routes.py`, `tests/test_agent_v2_response_policy.py`,
+  `tests/test_agent_v2_model_gateway.py`,
+  `tests/test_agent_v2_task004_multi_model_cost.py`.
+
+## Tiến độ CP2 thực (bản 7) — phản hồi PR #193 review lần 3
+
+**1. Window 30 ký tự có thể đẩy "thuốc" ra ngoài phạm vi kiểm tra (finding
+thật, sai chiều ngược lại — false NEGATIVE, nghiêm trọng hơn false
+positive theo đúng triết lý đã ghi trong file này).** Bot chỉ đúng: câu
+tiếng Việt dài, ngữ pháp hoàn toàn bình thường (vd "Theo đơn thuốc mà bác
+sĩ đã kê cho bạn trong lần khám gần đây nhất, bạn nên uống vào lúc 8 giờ
+sáng mỗi ngày.") có "thuốc" cách "giờ" hơn 30 ký tự — sẽ lọt qua kiểm tra
+dù đây là leak thật. Sửa: bỏ window ký tự cố định, chuyển sang phạm vi
+**cả câu** (ranh giới `.`/`!`/`?`, không phải số ký tự) — "thuốc" ở bất kỳ
+đâu trong CÙNG một câu với biểu thức thời gian đều tính, dù câu dài bao
+nhiêu, nhưng câu KHÁC vẫn không bị rò rỉ chéo (test khóa cả 2 chiều: câu
+dài chứa cả 2 vẫn reject đúng; "thuốc" và giờ ở 2 câu riêng biệt thì vẫn
+PASS) — `tests/test_agent_v2_response_policy.py`.
+
+**2. So khớp substring thô cho `medication_identity` có thể false positive
+khi candidate là chuỗi ngắn trùng vào giữa một từ dài không liên quan
+(finding thật, đã sửa).** Bot chỉ đúng: `candidate in normalized_prose`
+sẽ khớp cả khi candidate chỉ là một phần của từ khác hoàn toàn không liên
+quan (vd tên thuốc ngắn giả định "An" sẽ khớp bên trong "ngoan"). Sửa:
+chuyển sang so khớp có ranh giới từ (`\bcandidate\b`, kiểm chứng thực
+nghiệm `\ban\b` không khớp "ngoan" nhưng vẫn khớp "an" đứng riêng) — vẫn
+bắt đúng khi candidate xuất hiện như một từ/cụm từ thật (ngắn hay dài, một
+hay nhiều từ), chỉ không còn khớp nhầm khi nó chỉ là một mảnh của từ khác.
+Phần "phụ thuộc vào fact_slots đúng" trong finding không phải lỗi mới —
+đúng thiết kế: `validate_free_prose` chỉ kiểm tra chuỗi được truyền vào,
+độ chính xác của `fact_slots` là trách nhiệm của `build_renderable_fact_
+slots` và đã có bộ test riêng cho việc đó.
+
+**Bằng chứng thật đã chạy (sau bản 7):**
+
+- `tests/test_agent_v2_response_policy.py`: 52/52 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1238/1238 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 7.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
+  `tests/test_agent_v2_response_policy.py`.
+
+**Chưa làm (còn lại của AC checklist CP2, chưa động tới ranh giới nào
+khác):**
+
+- **Chưa** áp dụng renderer cho các loại phản hồi "Ưu tiên natural
+  renderer" theo bảng V2.5-DESIGN.md mục 7 (follow-up/clarification/
+  grounding-decline/out-of-scope/drug-info low-risk) — các route này hiện
+  trả lời tất định (0 lượt gọi model, ví dụ schedule/clarification) hoặc đi
+  qua nhánh tool-loop chung mà CP2 này đã wiring. Đưa renderer vào ĐÚNG các
+  nhánh đó là một khối việc riêng, kích thước tương đương một task con —
+  chưa bắt đầu, không tự ý coi là xong.
+- Canary/CP3/CP4/CP5 cho capability này — chưa mở, đúng như mọi flag khác
+  của V2.5 hiện tại.
 
 ## Không thuộc phạm vi (task này = CP1, không phải CP2)
 

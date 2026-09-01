@@ -322,7 +322,7 @@ def test_get_doses_for_range_rejects_an_excessive_span(db: Session):
 class _SpyModelGateway:
     def __init__(self, plan: ModelPlan | None = None, synthesis: ModelSynthesis | None = None) -> None:
         self.plan = plan or ModelPlan(response="ok")
-        self.synthesis = synthesis or ModelSynthesis(response="synthesized: " + (self.plan.response or "ok"))
+        self.synthesis = synthesis or ModelSynthesis(free_prose="synthesized: " + (self.plan.response or "ok"))
         self.plan_calls: list[dict] = []
         self.synthesis_calls: list[dict] = []
 
@@ -330,7 +330,9 @@ class _SpyModelGateway:
         self.plan_calls.append({"message": message, "actor_role": actor_role})
         return self.plan
 
-    def synthesize_read_only(self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]) -> ModelSynthesis:
+    def synthesize_read_only(
+        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...], policy=None, fact_slots=None
+    ) -> ModelSynthesis:
         self.synthesis_calls.append({"message": message, "actor_role": actor_role, "evidence": evidence})
         return self.synthesis
 

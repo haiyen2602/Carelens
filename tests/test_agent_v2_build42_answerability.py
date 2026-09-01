@@ -163,7 +163,7 @@ def test_a_answerable_general_medical_no_handoff():
 def test_b_answerable_drug_lookup_no_handoff():
     """B. Answerable drug lookup -> ANSWERABLE."""
     plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "paracetamol", "limit": 3}),), response="")
-    synthesis = ModelSynthesis(response="Paracetamol dùng để hạ sốt, giảm đau.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol dùng để hạ sốt, giảm đau.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
     result = orchestrator.run(_request("Paracetamol dùng để làm gì?"), tools=_tools())
     assert result.status is RunStatus.COMPLETED
@@ -186,7 +186,7 @@ def test_d_clarification_resolves_to_answerable():
     tool call this time -- the SAME query shape as C but with real evidence
     now present, exactly what a resolved follow-up looks like)."""
     plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "omeprazole", "limit": 3}),), response="")
-    synthesis = ModelSynthesis(response="Omeprazole nên uống trước ăn 30-60 phút.")
+    synthesis = ModelSynthesis(free_prose="Omeprazole nên uống trước ăn 30-60 phút.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
     result = orchestrator.run(
         _request("thuoc omeprazole uong truoc hay sau an", answerability_attempt_count=1), tools=_tools()

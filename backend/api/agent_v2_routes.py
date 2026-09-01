@@ -32,7 +32,7 @@ from backend.agents.v2.conversation_state import (
 from backend.agents.v2.evaluation_v2 import EvaluationResult, MetricStatus, dispatch_evaluation
 from backend.agents.v2.follow_up import FollowUpCategory
 from backend.agents.v2.handoff import DoctorHandoffGateway
-from backend.agents.v2.model_gateway import ModelRole, ModelUsage, OpenAIModelGateway
+from backend.agents.v2.model_gateway import OpenAIModelGateway
 from backend.agents.v2.observability import (
     AgentTelemetry,
     BufferingSink,
@@ -261,6 +261,33 @@ def _require_agent_v2_enabled(settings: object, actor: CurrentUser) -> None:
     if _in_rollout_percentage(settings, actor.id):
         return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=_AGENT_V2_DISABLED_DETAIL)
+
+
+def _renderer_runtime_kwargs(settings: object) -> dict[str, object]:
+    """TASK-V2.5-004: the renderer MECHANISM (``ReadOnlyAgentRuntime``'s
+    ``renderer_enabled``/``renderer_model_name``) is fully built and tested,
+    but this function deliberately keeps it OFF at every route regardless of
+    ``AGENT_V2_5_RENDERER_ENABLED`` until a response-type eligibility gate
+    exists (V2.5-DESIGN.md mục 7's allowlist -- explicit remaining scope, see
+    tasks/TASK-V2.5-004-natural-renderer.md's own AC checklist).
+
+    Today's tool-calling loop synthesis call site is a single, undifferentiated
+    call site far broader than what was reviewed for the renderer (every
+    drug-info/prescription/dose-status reply that makes a tool call, not just
+    the specific "Ưu tiên natural renderer" response types) -- honoring the
+    flag here before that gate exists would let a single env var change on a
+    real deployment silently expand the renderer's blast radius past approved
+    scope. ``renderer_model_name`` is still read from real settings
+    regardless (harmless while ``renderer_enabled`` is ``False`` -- the
+    runtime never reads it in that state), so the wiring is already correct
+    for the moment the gate lands and only needs `renderer_enabled` flipped
+    per-route, not re-plumbed.
+    """
+
+    return {
+        "renderer_enabled": False,
+        "renderer_model_name": str(getattr(settings, "agent_renderer_model", "") or "") or None,
+    }
 
 
 # BUILD-5/BUILD-13 short-term memory and telemetry are deliberately
@@ -601,6 +628,41 @@ def _build_span_rows(events: list) -> list[AgentRunSpan]:
     return rows
 
 
+def _model_and_cost_from_events(
+    events: list, *, metrics, pricing: ModelPricingCatalog
+) -> tuple[str | None, str, str, float | None, float | None, float | None]:
+    """TASK-V2.5-004 CP1 contract mục 3: real per-call model/cost, not a
+    single-model aggregate guess. Caller guarantees ``metrics.model_calls >
+    0`` here (the zero-call case is handled separately in
+    ``_persist_durable_trace`` -- it never reaches this function). Returns
+    ``(model, cost_status, pricing_version, input_cost_usd, output_cost_usd,
+    total_cost_usd)``. ``model`` is the one real model every call used, or
+    the literal string ``"MULTI_MODEL"`` when more than one distinct model
+    appears across this run's own calls (e.g. planner=MAIN + renderer=
+    RENDERER) -- never re-priced from aggregate tokens against a single
+    assumed model, which would silently mix two different price lists into
+    one number. Degrades honestly to ``NOT_AVAILABLE``/``None`` -- never a
+    fabricated model or cost -- when the telemetry buffer lost/evicted this
+    trace's events despite real calls happening, or when any one real call
+    used a model absent from the pricing catalog.
+    """
+
+    model_call_events = [event for event in events if event.name == "agent_model.completed"]
+    if not model_call_events:
+        return None, "NOT_AVAILABLE", pricing.version, None, None, None
+    models_used = {str(event.attributes.get("model") or "") for event in model_call_events}
+    model = next(iter(models_used)) if len(models_used) == 1 else "MULTI_MODEL"
+    input_cost_usd = output_cost_usd = total_cost_usd = 0.0
+    for event in model_call_events:
+        cost = event.attributes.get("estimated_cost_usd")
+        if cost is None:
+            return model, "NOT_AVAILABLE", pricing.version, None, None, None
+        total_cost_usd += float(cost)
+        input_cost_usd += float(event.attributes.get("input_cost_usd") or 0.0)
+        output_cost_usd += float(event.attributes.get("output_cost_usd") or 0.0)
+    return model, "AVAILABLE", pricing.version, input_cost_usd, output_cost_usd, total_cost_usd
+
+
 def _persist_durable_trace(
     db: Session,
     *,
@@ -633,32 +695,49 @@ def _persist_durable_trace(
         )
 
         metrics = result.metrics
-        model_name = str(getattr(settings, "agent_main_model", "") or "") or None
+        settings_model_name = str(getattr(settings, "agent_main_model", "") or "") or None
         error_code = getattr(result, "error_code", None)
         # A schedule/out-of-scope/clarification reply makes zero model calls
         # -- that is a real, definite zero, never "unknown"/N/A (plan §6).
+        # Unlike the real-call branch below, there is no per-call telemetry
+        # to derive a model from here, so this keeps stamping the
+        # deployment's MAIN model as a label of convenience (a zero-call run
+        # never actually used ANY model, so this is informational only, not
+        # a cost-bearing claim -- cost is a real, definite zero either way).
         if metrics.model_calls <= 0:
+            model_name = settings_model_name
             input_cost_usd = output_cost_usd = total_cost_usd = 0.0
             cost_status = "AVAILABLE"
             pricing_version = telemetry.pricing.version
         else:
-            usage = ModelUsage(
-                input_tokens=metrics.input_tokens,
-                cached_input_tokens=metrics.cached_input_tokens,
-                output_tokens=metrics.output_tokens,
+            # TASK-V2.5-004 (CP1 contract mục 3, MULTI_MODEL accounting audit):
+            # derive model/cost from THIS run's own real per-call
+            # agent_model.completed events (AgentTelemetry.record_model
+            # already computes an accurate per-call CostEstimate for every
+            # real call) -- never re-estimated from the run's aggregate token
+            # counts priced against one assumed model, which silently
+            # mispriced any run whose calls used more than one model/price
+            # (e.g. planner=ModelRole.MAIN + renderer=ModelRole.RENDERER).
+            model_name, cost_status, pricing_version, input_cost_usd, output_cost_usd, total_cost_usd = (
+                _model_and_cost_from_events(events, metrics=metrics, pricing=telemetry.pricing)
             )
-            estimate = telemetry.pricing.estimate(model=model_name or "unknown", model_role=ModelRole.MAIN, usage=usage)
-            pricing_version = estimate.pricing_version
-            if estimate.estimated_cost_usd is None:
-                input_cost_usd = output_cost_usd = total_cost_usd = None
-                cost_status = "NOT_AVAILABLE"
-            else:
-                input_cost_usd, output_cost_usd, total_cost_usd = (
-                    estimate.input_cost_usd,
-                    estimate.output_cost_usd,
-                    estimate.estimated_cost_usd,
+            # PR review finding: cost accounting now depends on this run's
+            # own telemetry events surviving in BufferingSink until this
+            # point -- distinguish that (rarer, backlog-indicating) failure
+            # mode from the ordinary "model has no configured price" one, so
+            # it is operationally visible/alertable and correlatable with
+            # BufferingSink's own eviction warning, rather than silently
+            # blending into every other NOT_AVAILABLE cause.
+            if model_name is None and cost_status == "NOT_AVAILABLE":
+                logging.getLogger(__name__).warning(
+                    "Agent V2 cost accounting degraded to NOT_AVAILABLE: telemetry buffer had "
+                    "no agent_model.completed events for agent_run_id=%s trace_id=%s despite "
+                    "%d real model call(s) -- likely BufferingSink eviction under backlog, not "
+                    "an ordinary unpriced-model case.",
+                    result.agent_run_id,
+                    result.trace_id,
+                    metrics.model_calls,
                 )
-                cost_status = "AVAILABLE"
 
         run = db.get(AgentRun, result.agent_run_id)
         if run is not None:
@@ -828,6 +907,12 @@ def run_read_only_agent(
         OpenAIModelGateway.from_settings(settings),
         limits=AgentRunLimits.from_settings(settings),
         model_name=settings.agent_main_model,
+        # TASK-V2.5-004: kept inert (see _renderer_runtime_kwargs's own
+        # docstring) until the response-type eligibility gate exists -- same
+        # wiring as the orchestrate route below, kept in sync so this debug/
+        # smoke endpoint doesn't silently diverge from the real production
+        # entry point.
+        **_renderer_runtime_kwargs(settings),
     )
     tools = ToolGateway(
         AgentReadOnlyDomainTools(db),
@@ -932,6 +1017,12 @@ def run_agent_orchestration(
             limits=AgentRunLimits.from_settings(settings),
             telemetry=telemetry,
             model_name=settings.agent_main_model,
+            # TASK-V2.5-004: kept inert regardless of
+            # AGENT_V2_5_RENDERER_ENABLED until the response-type
+            # eligibility gate exists -- see _renderer_runtime_kwargs's own
+            # docstring for why. Independent of Task 02/03's own flags
+            # either way.
+            **_renderer_runtime_kwargs(settings),
         ),
         context_manager=context_manager,
         safety_gateway=SafetyGateway.from_settings(SafetyDomainAdapter(db), settings),

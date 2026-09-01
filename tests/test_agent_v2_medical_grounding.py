@@ -224,13 +224,13 @@ def test_grounded_drug_information_query_is_unaffected():
         tool_calls=(ToolCall(name="search_drug", arguments={"query": "paracetamol", "limit": 5}),),
         response="planning",
     )
-    synthesis = ModelSynthesis(response="Paracetamol la thuoc giam dau, ha sot dang vien nen 500mg.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol la thuoc giam dau, ha sot dang vien nen 500mg.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Paracetamol la thuoc gi"), tools=_tools())
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response  # untouched -- a real tool call backs this
+    assert result.response == synthesis.free_prose  # untouched -- a real tool call backs this
     assert [t.name for t in result.tool_results] == ["search_drug"]
 
 

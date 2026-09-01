@@ -10,6 +10,7 @@ from backend.agents.v2.model_gateway import ModelRole, ModelUsage
 from backend.agents.v2.observability import TraceContext
 from backend.api.agent_v2_routes import (
     _in_rollout_percentage,
+    _renderer_runtime_kwargs,
     _require_agent_v2_enabled,
     _shared_telemetry,
     run_read_only_agent,
@@ -217,3 +218,35 @@ def test_shared_telemetry_still_returns_none_for_a_genuinely_unknown_model():
         assert estimate.estimated_cost_usd is None
     finally:
         agent_v2_routes._telemetry = None
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-004: renderer must stay INERT at every route until a response-
+# type eligibility gate exists (V2.5-DESIGN.md mục 7's allowlist). The
+# mechanism (ReadOnlyAgentRuntime's renderer_enabled) already works, but the
+# route layer must not honor AGENT_V2_5_RENDERER_ENABLED yet -- setting that
+# env var alone on a real deployment must have zero effect today, since it
+# would otherwise silently expand the renderer to the whole generic tool-
+# loop, far broader than what has been reviewed.
+# ---------------------------------------------------------------------------
+
+
+def test_renderer_runtime_kwargs_stays_off_even_when_settings_flag_is_true():
+    settings = SimpleNamespace(agent_v2_5_renderer_enabled=True, agent_renderer_model="gpt-5.6-luna")
+    kwargs = _renderer_runtime_kwargs(settings)
+    assert kwargs["renderer_enabled"] is False
+
+
+def test_renderer_runtime_kwargs_stays_off_when_settings_flag_is_false_too():
+    settings = SimpleNamespace(agent_v2_5_renderer_enabled=False, agent_renderer_model="gpt-5.6-luna")
+    kwargs = _renderer_runtime_kwargs(settings)
+    assert kwargs["renderer_enabled"] is False
+
+
+def test_renderer_runtime_kwargs_still_carries_the_real_renderer_model_name():
+    """Harmless while renderer_enabled=False (never read), but already wired
+    correctly for when the eligibility gate lands -- no second change needed
+    at that point just to plumb the model name through."""
+    settings = SimpleNamespace(agent_v2_5_renderer_enabled=True, agent_renderer_model="gpt-5.6-luna")
+    kwargs = _renderer_runtime_kwargs(settings)
+    assert kwargs["renderer_model_name"] == "gpt-5.6-luna"

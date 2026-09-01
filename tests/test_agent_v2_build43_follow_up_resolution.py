@@ -293,7 +293,7 @@ def test_topic_switch_disease_to_drug_direction():
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(
             ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "amoxicillin", "limit": 3}),), response=""),
-            ModelSynthesis(response="Uống 3 lần/ngày."),
+            ModelSynthesis(free_prose="Uống 3 lần/ngày."),
         )
     )
     result = orchestrator.run(
