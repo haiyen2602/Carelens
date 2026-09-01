@@ -3,7 +3,7 @@
 **Domain:** Agent V2 read-only schedule/evidence — capability context/follow-up
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** In Progress — CP1 gần xong; còn chờ quyết định branch (xem mục CP1) trước khi sang CP2
+**Status:** In Progress — CP1 xong; branch `feature/TASK-V2.5-002-schedule-range-followup` đã tạo từ `main` (sau khi merge PR #182), sẵn sàng CP2
 
 ## Mục tiêu
 
@@ -125,8 +125,20 @@ Task 02 không đụng renderer/`ResponsePolicy`/`RenderableFactSlots` (đó là
 Task 04), nên một số mục CP1 gốc không áp dụng nguyên văn — ghi rõ N/A kèm lý
 do thay vì bỏ qua im lặng.
 
-- **Branch:** _chưa tạo — xem mục "Quyết định cần bạn xác nhận" bên dưới,
-  có rủi ro stacked-branch cần quyết trước khi tạo._
+- **Branch:** `feature/TASK-V2.5-002-schedule-range-followup`, tạo từ
+  `main` sau khi PR #182 (Task 01 + CP0 governance) merge (`d19cf69e`) —
+  không stacked, đã verify bằng `git merge-base --is-ancestor`.
+- **Kiểm tra concurrent merge (bắt buộc vì `main` đã đi trước 9 commit khi
+  branch này được tạo):** một PR khác (#176, BUILD-47/48/49, "retain
+  conversation context across follow-up turns") đổi đúng
+  `conversation_state.py`/`follow_up.py` trong lúc CP1 này đang diễn ra. Đã
+  đối chiếu: (1) thay đổi ở `conversation_state.py` là
+  `DRUG_CANDIDATE_ACTION_PREFIX`/`is_drug_candidate_action` — không liên
+  quan schedule/time-range, **không đổi version (vẫn 5)**; (2) fix ở
+  `follow_up.py`/`_has_named_subject` đã có sẵn trong code tôi test từ đầu
+  task này, không phải thay đổi mới phát sinh; (3) re-test trực tiếp
+  `classify_intent("các ngày còn lại thì sao", ...)` trên branch mới →
+  vẫn `GENERAL_MEDICAL_INFORMATION`, kết luận không đổi. An toàn để tiếp tục.
 - **Liên kết task/ADR/pain point/source:** đã có — `CP0-ADR-BASELINE-TASK01.md`
   mục 1.3a + Pain point 3, `TASK-V2.5-001` (lý do tách task), và source
   `time_query_engine.py`/`follow_up.py`/`conversation_state.py`/
@@ -164,13 +176,14 @@ do thay vì bỏ qua im lặng.
     `--deterministic-only` (15/15) — baseline "trước" đã chốt ở dưới.
   - Local E2E: replay đúng chuỗi TR01 lượt 5→9 bằng dữ liệu tổng hợp
     (không PHI) qua orchestrator thật.
-- **Baseline local (trước khi code Task 02), commit `a75b0c8`:**
+- **Baseline local (trước khi code Task 02), commit `d19cf69e` — branch point
+  thật sau khi merge PR #182 (số liệu từ `a75b0c8` re-run lại, không đổi):**
   - `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only`
-    → 15/15 PASS, artifact `scripts/agent_v2/golden/runs/20260901T062931Z.json`.
-  - `python -m pytest tests/test_agent_v2_time_aware_schedule.py -q` →
-    36/36 PASS.
-  - `python -m pytest tests/test_agent_v2_conversation_state.py -q` →
-    14/14 PASS (baseline cho phần `ConversationState` version bump).
+    → 15/15 PASS, artifact `scripts/agent_v2/golden/runs/20260901T063720Z.json`.
+  - `python -m pytest tests/test_agent_v2_time_aware_schedule.py tests/test_agent_v2_conversation_state.py -q`
+    → 50/50 PASS (36 time-aware-schedule + 14 conversation-state).
+  - Migration head vẫn `0063`, DB local khớp — không có migration mới nào
+    trong 9 commit vừa merge.
   - Environment: local; model/config: N/A (toàn bộ case deterministic, không
     gọi model thật).
   - **Chưa ghi vào tab V2.5 của golden sheet** (CHECKPOINT.md CP1, mục ghi
@@ -187,31 +200,20 @@ do thay vì bỏ qua im lặng.
 **Dòng dán vào tab V2.5 golden sheet (theo cấu trúc tab 15/08/2026):**
 
 ```
-timestamp: 2026-09-01T06:29:31Z
-commit: a75b0c8dc38cb398f6f4b92d25ce1fd8e1ea4a0f
+timestamp: 2026-09-01T06:37:20Z
+commit: d19cf69e1eb1f8c435edc808a528e3abf8b2af72
 environment: local
 config/model version: N/A (deterministic-only, không gọi model)
 golden-set version: scripts/agent_v2/golden/golden_set_v2.json (deterministic subset, 15/15) + tests/test_agent_v2_time_aware_schedule.py (36/36) + tests/test_agent_v2_conversation_state.py (14/14)
 exact command: python scripts/agent_v2/run_golden_evaluation.py --deterministic-only ; python -m pytest tests/test_agent_v2_time_aware_schedule.py tests/test_agent_v2_conversation_state.py -q
 pass/fail aggregate: 15/15 + 36/36 + 14/14, tất cả PASS
-notes: baseline "trước" cho TASK-V2.5-002 (active_schedule_range), trước khi có runtime change nào
+notes: baseline "trước" cho TASK-V2.5-002 (active_schedule_range), branch point sau khi merge PR #182 (Task 01 + CP0 governance). Concurrent PR #176 (BUILD-47/48/49) cũng merge cùng lúc, đã đối chiếu không ảnh hưởng scope task này (xem mục "Kiểm tra concurrent merge" ở CP1).
 ```
 
-### Quyết định cần bạn xác nhận trước khi tạo branch
-
-Nhánh hiện tại (`feature/TASK-V2.5-001-schedule-tool-contract`) chứa các
-commit đóng Task 01 + ADR delta Task 02, **chưa push/merge vào `main`**. Nếu
-tạo branch Task 02 từ đây, nó sẽ "stacked" trên một branch chưa merge — rủi
-ro thật đã gặp trước đây trong dự án này (branch base merge sau branch con
-không tự retarget). Hai lựa chọn:
-
-1. **Merge/PR nhánh Task 01 trước** (chỉ chứa doc/governance, không đổi
-   runtime code — rủi ro review thấp), rồi tạo branch Task 02 từ `main` mới.
-2. **Tạo branch Task 02 ngay từ nhánh hiện tại**, chấp nhận phải verify bằng
-   `git merge-base --is-ancestor` sau khi Task 01 merge, trước khi tự tin
-   Task 02 đã "chứa main mới nhất".
-
-Tôi chưa push hay mở PR nào — cần bạn quyết trước khi tôi tạo branch mới.
+**Đã xử lý (2026-09-01):** PR #182 (Task 01 + CP0 governance) đã merge vào
+`main` (`d19cf69e`, xác nhận bằng `git merge-base --is-ancestor`), branch
+`feature/TASK-V2.5-002-schedule-range-followup` đã tạo sạch từ `main` mới —
+không stacked.
 
 ## Context bắt buộc phải đọc trước khi làm
 
