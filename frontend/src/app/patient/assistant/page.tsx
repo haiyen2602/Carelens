@@ -136,6 +136,7 @@ export default function AssistantPage() {
       agentRunId?: string;
       userMessage?: string;
       suggestedActions?: SuggestedAction[];
+      citations?: import("@/types/chat").CitationOut[];
       drugImage?: {
         attemptId: string;
         outcome: string | null;
@@ -237,6 +238,7 @@ export default function AssistantPage() {
             agentRunId: data.agent_run_id,
             userMessage: content,
             suggestedActions: data.suggested_actions,
+            citations: data.citations,
           });
           // Doc to cau tra loi neu tuy chon dang bat (Cai dat > Trợ lý giọng
           // nói). Fire-and-forget: text reply o tren da hien thi XONG truoc

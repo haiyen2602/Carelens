@@ -14,6 +14,11 @@ export type StoredChatMessage = {
   agentRunId?: string;
   userMessage?: string;
   suggestedActions?: import("@/types/chat").SuggestedAction[];
+  // TASK-023: real, backend-deterministic citation data (never model-
+  // written) already returned by every Agent V2 response -- see
+  // frontend/src/app/api/chat/route.ts's adaptAgentV2Response. Rendered as
+  // a source link by ChatMessage only when a citation carries a real url.
+  citations?: import("@/types/chat").CitationOut[];
   drugImage?: {
     attemptId: string;
     outcome: string | null;

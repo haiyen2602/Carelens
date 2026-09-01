@@ -46,27 +46,26 @@ import pytest
 
 from backend.agents.v2.model_gateway import ModelPlan, ModelSynthesis, ToolCall
 from backend.agents.v2.orchestrator import (
+    _DRUG_INFO_DISCLAIMER,
+    _NO_VINMEC_EVIDENCE_REPLY,
     Citation,
     OrchestrationIntent,
     _enforce_vinmec_provenance,
     _strip_false_vinmec_claim,
-    _NO_VINMEC_EVIDENCE_REPLY,
 )
 from backend.agents.v2.retrieval import RetrievalConfig, RetrievalGateway
 from backend.agents.v2.runtime import RunMetrics, RunResult, RunStatus
 from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
-
-from tests.test_agent_v2_orchestrator import (
-    _DomainTools,
-    _RetrievalDomain,
-    _SpyModelGateway,
-    _VinmecDomain,
-    _orchestrator,
-    _request,
-    _tools,
-)
 from backend.services.agent_retrieval import DomainRetrievalResult, RetrievedKnowledgeDocument
 from backend.services.vinmec_web_search import VinmecSourceDocument
+from tests.test_agent_v2_orchestrator import (
+    _orchestrator,
+    _request,
+    _RetrievalDomain,
+    _SpyModelGateway,
+    _tools,
+    _VinmecDomain,
+)
 
 _NO_CITATIONS: tuple[Citation, ...] = ()
 _REAL_VINMEC_CITATION = (Citation(title="Benh tieu duong", source="vinmec-web", url="https://vinmec.example/x"),)
@@ -286,7 +285,11 @@ def test_scenario_4_normal_drug_information_query_is_unaffected():
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.free_prose  # untouched -- no "vinmec" mention, guard is a no-op
+    # Vinmec guard itself is a no-op (no "vinmec" mention) -- the trailing
+    # text is TASK-023's _append_drug_info_disclaimer, a separate, later
+    # backstop that always appends the fixed reference-only disclaimer to a
+    # COMPLETED DRUG_INFORMATION reply.
+    assert result.response == f"{synthesis.free_prose}\n\n{_DRUG_INFO_DISCLAIMER}"
     assert result.citations == ()
 
 

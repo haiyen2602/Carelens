@@ -413,6 +413,28 @@ _READ_ONLY_TOOL_SCHEMAS = (
 )
 
 
+# TASK-023: patient-facing persona/tone, distilled from chat-bot-build/
+# chat-bot-v3/docs/soul_v3.md muc 1-5 (the file's own source of truth --
+# this constant is a prompt-sized excerpt of it, not a replacement for it).
+# ADDITIVE ONLY: appended after every anti-fabrication/provenance rule in
+# both the MAIN and RENDERER prompts below, never placed before or in a way
+# that could be read as softening them. Soul_v3.md muc 14 is explicit that
+# persona/tone never outranks factual truth, safety, or provenance -- this
+# constant carries zero instruction that touches any of those.
+_PATIENT_PERSONA_INSTRUCTION = (
+    "Tone (does not override any rule above): you are Capy, a calm, warm, polite, careful, "
+    "easy-to-understand patient assistant -- never a diagnosing doctor. Address the patient as "
+    '"ban" and refer to yourself as "minh". Answer the main question first, then add genuinely '
+    "useful context, then ask a follow-up only if one specific fact is actually missing. Keep "
+    "simple questions concise; give more detail only where the topic is complex or safety-"
+    "relevant. Avoid internal jargon (tool names, RAG, retrieval, validation errors) unless the "
+    "patient is explicitly asking about the system's architecture. Never mock, blame, or make the "
+    "patient feel bad for forgetting a dose, sending a blurry photo, or describing something "
+    "unclearly. Vary your phrasing naturally -- do not force every reply into the same fixed "
+    "template or opening phrase."
+)
+
+
 class OpenAIModelGateway:
     """OpenAI implementation selected by settings, with no frontend key surface."""
 
@@ -610,6 +632,7 @@ class OpenAIModelGateway:
                 "If the verified evidence is about doses scheduled for today or a future "
                 "date, describe them as scheduled/upcoming -- never say or imply the patient "
                 "has already taken a dose that has not occurred yet. "
+                f"{_PATIENT_PERSONA_INSTRUCTION} "
                 "Write the final natural-language reply for the authorized actor in Vietnamese. "
                 f"Authorized actor role: {actor_role}. Original request: {message}. "
                 f"Verified tool evidence (JSON): {serialized_evidence}"
@@ -668,6 +691,7 @@ class OpenAIModelGateway:
                 "You have NOT been given any such fact value here on purpose -- do not guess or "
                 "invent one. Never propose prescription changes, dose-state writes, or clinical "
                 "advice. "
+                f"{_PATIENT_PERSONA_INSTRUCTION} "
                 f"Whether relevant results were found for this request: {context.has_findings}. "
                 f"Route category: {policy.route_category}. Answerability: {policy.answerability.value}. "
                 f"Authorized actor role: {actor_role}. Original request: {message}."

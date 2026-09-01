@@ -30,6 +30,7 @@
 |---|---|---|---|---|---|
 | [`TASK-021`](./TASK-021-doctor-patient-chat-sync.md) | Đồng bộ hội thoại bác sĩ - bệnh nhân | `conversation`, `notification` | Unassigned + AI | **P0** | 🔎 In Review |
 | [`TASK-022`](./TASK-022-dose-adherence-stats.md) | Sửa thống kê tuân thủ và vòng đời liều thuốc | `medication`, `reporting` | Unassigned + AI | **P0** | 🔎 In Review |
+| [`TASK-023`](./TASK-023-patient-chat-response-persona.md) | Chuẩn hoá phản hồi chatbot cho bệnh nhân | `conversation`, `backend`, `frontend` | Unassigned + AI | **P1** | 🔎 In Review |
 
 > Sprint 01 diễn ra **trước khi** repo có `/tasks` nên không có file task — xem [`sprint-01.md`](../planning/sprints/sprint-01.md).
 

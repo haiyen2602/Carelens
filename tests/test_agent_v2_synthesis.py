@@ -35,7 +35,7 @@ from sqlalchemy.orm import Session
 
 from backend.agents.v2.handoff import AgentHandoffResult
 from backend.agents.v2.model_gateway import ModelPlan, ModelSynthesis, ToolCall
-from backend.agents.v2.orchestrator import OrchestrationIntent
+from backend.agents.v2.orchestrator import _DRUG_INFO_DISCLAIMER, OrchestrationIntent
 from backend.agents.v2.runtime import AgentRunLimits, ReadOnlyAgentRuntime, RunStatus
 from backend.agents.v2.safety import SafetyDecision, SafetyOutcome
 from backend.agents.v2.tools import ToolResult
@@ -43,11 +43,11 @@ from backend.db.models import AgentRun, AgentRunCheckpoint
 from backend.services.agent_checkpoint import CheckpointTerminalError
 from tests.test_agent_v2_orchestrator import (
     _DomainTools,
-    _SafetyDomain,
-    _SpyModelGateway,
     _orchestrator,
     _request,
     _safety_decision,
+    _SafetyDomain,
+    _SpyModelGateway,
     _tools,
 )
 
@@ -172,7 +172,9 @@ def test_prescription_query_with_tool_call_produces_non_empty_synthesized_reply(
 
     assert result.intent is OrchestrationIntent.PRESCRIPTION_INFORMATION
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.free_prose
+    # TASK-023: every COMPLETED PRESCRIPTION_INFORMATION reply now gets the
+    # fixed reference-only disclaimer appended.
+    assert result.response == f"{synthesis.free_prose}\n\n{_DRUG_INFO_DISCLAIMER}"
     assert result.response
     assert len(gateway.synthesis_calls) == 1
 

@@ -1441,6 +1441,52 @@ def _enforce_medical_grounding(result: RunResult, *, intent: OrchestrationIntent
     return RunResult(result.status, decline_reply, result.tool_results, result.metrics, "GROUNDING_FAILURE")
 
 
+# TASK-023: intents that are genuinely ABOUT a drug's identity/properties/
+# safety -- deliberately narrower than _GROUNDING_REQUIRED_INTENTS.
+# DOSE_STATUS is excluded on purpose: it answers "did I take my dose" from
+# the patient's OWN schedule data, not drug information, so the reference
+# disclaimer below would be a non-sequitur on it. GENERAL_MEDICAL_INFORMATION
+# is excluded too: it may not be about a specific drug at all (a symptom or
+# general-health question), so tagging every such reply as drug-reference
+# information would misdescribe it.
+_DRUG_INFO_INTENTS = frozenset(
+    {
+        OrchestrationIntent.DRUG_INFORMATION,
+        OrchestrationIntent.PRESCRIPTION_INFORMATION,
+        OrchestrationIntent.MEDICATION_DOSE_SAFETY,
+    }
+)
+
+# Exact wording chosen (task owner, TASK-023 AC): short, not overly legal,
+# per soul_v3.md muc 6 ("Soul chỉ yêu cầu disclaimer ngắn, dễ hiểu và không
+# quá pháp lý"). A single fixed backend string, never model-generated --
+# same reasoning as every other _enforce_* backstop in this module: a prompt
+# instruction alone is a compliance-dependent guarantee, not a structural one
+# (the model could drop or reword it), so this is appended here instead.
+_DRUG_INFO_DISCLAIMER = "Thông tin này chỉ mang tính tham khảo, không thay thế tư vấn của bác sĩ hoặc dược sĩ."
+
+
+def _append_drug_info_disclaimer(result: RunResult, *, intent: OrchestrationIntent) -> RunResult:
+    """Deterministic backstop: append the fixed reference-only disclaimer to
+    every COMPLETED reply for a genuinely drug-info-shaped intent (see
+    ``_DRUG_INFO_INTENTS``). A no-op for every non-COMPLETED status (a
+    SAFETY_BLOCKED/HANDOFF_REQUIRED/HANDOFF_CREATED/GROUNDING_FAILURE reply
+    is a fixed, already-reviewed string -- this never touches those) and for
+    every intent outside the drug-info set, so Safety/Emergency/Handoff/
+    schedule behavior is structurally unaffected. Idempotent: never appends
+    a second time if the disclaimer text is already present (defensive only
+    -- this function is called once per turn today).
+    """
+    if result.status is not RunStatus.COMPLETED:
+        return result
+    if intent not in _DRUG_INFO_INTENTS:
+        return result
+    if _DRUG_INFO_DISCLAIMER in result.response:
+        return result
+    disclaimed_reply = f"{result.response}\n\n{_DRUG_INFO_DISCLAIMER}" if result.response else _DRUG_INFO_DISCLAIMER
+    return replace(result, response=disclaimed_reply)
+
+
 # BUILD-27B: real V2 dose-state values (backend/services/scheduling/
 # dose_state.py) bucketed for reporting purposes -- DELAYED groups with
 # TAKEN (the dose-state module's own ``if target_status in {TAKEN, DELAYED}``
@@ -2092,6 +2138,16 @@ class AgentOrchestrator:
             # downstream backstop) rather than only at the final return, so
             # every one of them sees the true evidence set.
             result = replace(result, tool_results=tuple(bound_tool_results) + result.tool_results)
+        # TASK-023: stamps ONLY the model's own genuine synthesized text --
+        # deliberately BEFORE every backstop below that can fully REPLACE the
+        # reply with a fixed backend string (vendor-leak correction, Vinmec
+        # correction, grounding-failure decline). Those replacements discard
+        # this disclaimer along with the rest of the model's text, which is
+        # exactly right: a system/identity/decline message is not drug-
+        # reference content and must never carry this disclaimer. No-op for
+        # every non-COMPLETED status and every intent outside
+        # ``_DRUG_INFO_INTENTS`` (see the function's own docstring).
+        result = _append_drug_info_disclaimer(result, intent=decision.intent)
         # BUILD-24B/24D: deterministic backstop, applied regardless of intent
         # (RAG evidence could in principle be mislabeled the same way) -- a
         # no-op for every status whose reply text is a fixed string
