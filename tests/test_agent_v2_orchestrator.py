@@ -33,6 +33,7 @@ from backend.agents.v2.context import ContextBudget, ContextManager, MemoryKind
 from backend.agents.v2.handoff import AgentHandoffResult, DoctorHandoffGateway, HandoffCreateCommand
 from backend.agents.v2.model_gateway import EmbeddingResult, ModelPlan, ModelSynthesis, SynthesisEvidence, ToolCall
 from backend.agents.v2.orchestrator import (
+    _DRUG_INFO_DISCLAIMER,
     AgentOrchestrator,
     OrchestrationIntent,
     OrchestrationRequest,
@@ -302,7 +303,10 @@ def test_drug_information_query_calls_tools_and_completes():
 
     assert result.intent is OrchestrationIntent.DRUG_INFORMATION
     assert result.status is RunStatus.COMPLETED
-    assert result.response == "Paracetamol dung de ha sot, giam dau."
+    # TASK-023: every COMPLETED DRUG_INFORMATION reply now gets the fixed
+    # reference-only disclaimer appended (_append_drug_info_disclaimer) --
+    # the model's own text is otherwise untouched.
+    assert result.response == f"Paracetamol dung de ha sot, giam dau.\n\n{_DRUG_INFO_DISCLAIMER}"
     assert [t.name for t in result.tool_results] == ["search_drug"]
     assert result.citations == ()
     assert len(gateway.calls) == 1

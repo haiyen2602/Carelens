@@ -33,6 +33,7 @@ import pytest
 from backend.agents.v2.answerability import AnswerabilityOutcome, AnswerabilityReasonCode
 from backend.agents.v2.model_gateway import ModelPlan, ModelSynthesis, ToolCall
 from backend.agents.v2.orchestrator import (
+    _DRUG_INFO_DISCLAIMER,
     _NEED_DOCTOR_REPLY,
     _NEED_MORE_INFO_REPLIES,
     _UNGROUNDED_ANSWER_DECLINE_REPLY,
@@ -230,7 +231,12 @@ def test_grounded_drug_information_query_is_unaffected():
     result = orchestrator.run(_request("Paracetamol la thuoc gi"), tools=_tools())
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.free_prose  # untouched -- a real tool call backs this
+    # TASK-023: grounding backstop itself leaves the model's text untouched
+    # (a real tool call backs this) -- the trailing text is
+    # _append_drug_info_disclaimer, a separate, later backstop that always
+    # appends the fixed reference-only disclaimer to a COMPLETED
+    # DRUG_INFORMATION reply.
+    assert result.response == f"{synthesis.free_prose}\n\n{_DRUG_INFO_DISCLAIMER}"
     assert [t.name for t in result.tool_results] == ["search_drug"]
 
 
