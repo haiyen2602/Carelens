@@ -112,12 +112,14 @@ Answerability Gate (`answerability.py`) — **không** rơi vào
   cho từng trường hợp.
 - [x] Entity chưa xác minh không được promote thành truth — không áp dụng
   thêm gì mới, `active_schedule_range` chỉ chứa ngày, không phải entity.
-- [~] Golden/regression: **chưa** thêm case vào
-  `scripts/agent_v2/golden/golden_set_v2.json` (JSON dataset của
-  `run_golden_evaluation.py`) — coverage tương đương đã có qua pytest
-  (unit + orchestrator-level, xem bên dưới), nhưng chưa phải golden-JSON
-  hình thức. `tests/test_agent_v2_time_aware_schedule.py` 36→39/39,
-  golden `--deterministic-only` vẫn 15/15, không suy giảm.
+- [x] Golden/regression: thêm case `GOLD-V25-RANGE-FOLLOWUP-001` (TR01 lượt
+  8→9 thật) vào file mới `scripts/agent_v2/golden/golden_set_v2_5.json`,
+  chạy thật với `AGENT_V2_5_FOLLOWUP_ENABLED=true` (PASS) và xác nhận nó
+  thật sự phụ thuộc flag bằng cách chạy lại với flag mặc định false (FAIL —
+  rơi về model thật, đúng hành vi cũ). Golden legacy
+  (`golden_set_v2.json --deterministic-only`) chạy lại với flag mặc định
+  false: vẫn 15/15, không suy giảm. `tests/test_agent_v2_time_aware_schedule.py`
+  36→39/39. Chi tiết lệnh/artifact ở "Bằng chứng CP2" bên dưới.
 - [x] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED`, mặc định **off**, thêm
   thật vào `backend/config.py`/`.env.example`; có test riêng xác nhận flag
   off giữ nguyên hành vi cũ (misroute) không đổi.
@@ -316,14 +318,32 @@ chưa tồn tại), xem lịch sử tool call trong phiên làm việc.
   `git stash` tại branch point `4aa0c95`, cùng test, cùng lỗi
   `sqlite3.OperationalError: no such table: chat_messages` — không liên
   quan tới thay đổi của task này).
-- `ruff check` trên toàn bộ file đã sửa: sạch, trừ 1 lỗi unused-import
-  pre-existing không nằm trong diff của task này (`resolve_time_query` ở
-  `test_agent_v2_time_aware_schedule.py`, xác nhận bằng `git diff`).
+- **Lint (chính xác phạm vi, không gọi "toàn bộ suite sạch"):** `ruff check`
+  trên đúng các file đã thay đổi trong diff của task này — PASS, không có
+  lỗi mới. Hai loại lỗi tồn tại trong repo nhưng **không** thuộc phạm vi
+  task này, không sửa: (1) 1 lỗi unused-import (`resolve_time_query`,
+  `test_agent_v2_time_aware_schedule.py`) — pre-existing, xác nhận bằng
+  `git diff` không chạm dòng đó; (2) 18 lỗi `chat_messages`
+  (`test_agent_v2_transaction_durability.py`,
+  `test_agent_v2_safety_occurrence_binding.py`,
+  `test_agent_v2_long_term_memory.py`) — pre-existing baseline, xác nhận
+  bằng `git stash` chạy lại y hệt tại branch point.
 - `git diff --check`: sạch, không lỗi whitespace.
 
-**Chưa làm (không chặn CP2, theo đúng chỉ đạo):**
+**Golden V2.5 case (commit `5f657f01`, sau khi thêm file golden mới):**
+
+| Chạy | Lệnh | Kết quả | Artifact |
+|---|---|---|---|
+| Case mới, flag ON | `AGENT_V2_5_FOLLOWUP_ENABLED=true python scripts/agent_v2/run_golden_evaluation.py --dataset scripts/agent_v2/golden/golden_set_v2_5.json` | 1/1 PASS (271ms) | `scripts/agent_v2/golden/runs/20260901T072145Z.json/.md` |
+| Case mới, flag OFF (mặc định) | `python scripts/agent_v2/run_golden_evaluation.py --dataset scripts/agent_v2/golden/golden_set_v2_5.json` | 0/1 **FAIL** (21383ms — rơi về model thật, đúng hành vi cũ trước khi có Task 02) | `scripts/agent_v2/golden/runs/20260901T072202Z.json/.md` |
+| Golden legacy, flag OFF (mặc định) | `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only` | 15/15 PASS | `scripts/agent_v2/golden/runs/20260901T072241Z.json/.md` |
+
+Chạy case mới với flag OFF **có chủ đích FAIL** — đây là bằng chứng case
+này thật sự phụ thuộc capability flag (không phải false positive sẽ pass
+bất kể flag), đúng yêu cầu "chỉ thêm JSON nhưng runner vẫn chạy flag false
+thì chưa chứng minh hành vi mới".
+
+**Chưa làm (không chặn CP2/CP3, theo đúng chỉ đạo):**
 - Append kết quả baseline vào tab V2.5 golden sheet — vẫn chưa có quyền ghi
   Google Sheets từ phiên này.
-- Thêm case vào `golden_set_v2.json` dạng JSON chính thức (coverage tương
-  đương đã có qua pytest).
-- Chưa commit/PR — chờ xác nhận trước khi sang CP3.
+- Chưa push/PR — chờ xác nhận trước khi sang CP3.
