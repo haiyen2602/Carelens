@@ -38,28 +38,76 @@ rơi vào nhánh `_display_topic_from_raw`/`_GENERAL_MEDICAL_KEYWORDS` (câu
 "X thì sao" khớp pattern topic-switch chung).
 
 `ConversationState` (`backend/agents/v2/conversation_state.py`) hiện chỉ có
-`active_topic`/`active_entity` — **không có field nào lưu range/thời điểm đã
-hỏi ở lượt trước.** Đây là câu hỏi thiết kế cần chốt trước khi code (xem
-"Câu hỏi cần chốt" bên dưới), không phải chi tiết nhỏ có thể tự quyết khi
-code.
+`active_topic`/`active_entity` — không có field nào lưu range/thời điểm đã
+hỏi ở lượt trước.
+
+## Quyết định thiết kế đã chốt (owner, 2026-09-01)
+
+**Phương án A: `active_schedule_range` durable trên `ConversationState`.**
+Không cần migration DB — state đã nằm trong `AgentRun.metadata_json`
+(`backend/services/agent_conversation_state.py`), thêm field chỉ là thêm key
+JSON. Bump `as_dict()`/`from_dict()` **version 5 → 6**, theo đúng convention
+đã có cho `answerability_attempt_count` (BUILD-42): field mới đọc `None`/thiếu
+trên state cũ mà không lỗi, không suy ra giá trị giả (`conversation_state.py:224-237`).
+
+**Shape lưu (tối giản, do backend tạo — không lưu raw message):**
+
+```python
+active_schedule_range: tuple[date, date] | None  # (start_date, end_date)
+```
+
+**Không lưu `last_served_through_date`.** Xác nhận bằng code:
+`_build_schedule_reply` (`orchestrator.py:1404-1485`) luôn trả **toàn bộ**
+`time_range` trong một lần — khi số dose ≤ `_MAX_DETAIL_ROWS` (30) liệt kê
+từng dose, khi vượt thì gộp theo ngày (dòng 1462-1484), nhưng **không ngày
+nào trong range bị bỏ sót hay để dành cho lượt sau**. Ground-truth sheet
+(STT 111) cũng viết "'các ngày còn lại' = phần còn lại **của khung** tuần
+sau", tức trong phạm vi range đã lập, không phải phần "chưa được trả".
+**Nghĩa của "còn lại":** follow-up chỉ cần re-resolve đúng
+`active_schedule_range` đã lưu và gọi lại `_schedule_reply` với range đó —
+hàm này đã tự tính due/upcoming theo `now` hiện tại (dòng 1433-1451), nên nếu
+có thời gian trôi qua giữa hai lượt, câu trả lời tự nhiên đã phản ánh đúng
+"còn lại" mà không cần thêm state.
+
+**Staleness (an toàn theo mặc định) — `active_schedule_range` chỉ hợp lệ cho
+đúng lượt kế tiếp:**
+- Set khi một lượt schedule đa ngày (TODAY_DOSES/UPCOMING_DOSES/
+  MEDICATION_HISTORY với range > 1 ngày) resolve xong.
+- **Consume** (dùng rồi xoá) ngay khi lượt kế tiếp là follow-up "phần còn
+  lại" hợp lệ.
+- **Overwrite** khi lượt kế tiếp là một câu hỏi schedule mới (range mới thay
+  thế range cũ).
+- **Clear** (không dùng, không giữ) khi lượt kế tiếp là: đổi chủ đề
+  (`TOPIC_SWITCH`/entity mới), có safety trigger hoặc handoff, hoặc bất kỳ
+  intent nào không phải follow-up lịch.
+- Tổng quát: không có state nào sống quá một lượt kế tiếp, dù lượt đó có
+  dùng tới nó hay không.
+
+**Khi không có `active_schedule_range` hợp lệ:** trả `NEED_MORE_INFO` qua
+Answerability Gate (`answerability.py`) — **không** rơi vào
+`GENERAL_MEDICAL_INFORMATION` như hiện tại.
 
 ## Acceptance Criteria (AC)
 
-- [ ] Câu hỏi thiết kế đã chốt: lưu "range/lượt lịch gần nhất" ở đâu — thêm
-  field durable mới vào `ConversationState` (cùng vòng đời với
-  `active_topic`/`active_entity`), hay dùng `ShortTermMemoryStore` (bounded,
-  không durable) là đủ? Ảnh hưởng migration/schema nên phải quyết trước khi
-  build, không quyết ngầm trong lúc code.
 - [ ] Test tái tạo chính xác baseline ở trên như một red test trước khi sửa.
+- [ ] Thêm field `active_schedule_range: tuple[date, date] | None` vào
+  `ConversationState`; bump `as_dict`/`from_dict` lên version 6.
+- [ ] **Test đọc ngược state version 5** (không có field mới) qua
+  `from_dict`: phải trả về `active_schedule_range=None`, không lỗi, không
+  suy ra giá trị giả — theo đúng convention `answerability_attempt_count`
+  đã có, nhưng đây là test mới (chưa có test tương đương cho field này trong
+  `tests/test_agent_v2_conversation_state.py`).
 - [ ] `classify_follow_up`/`classify_intent` nhận diện được câu chỉ tham
   chiếu "phần còn lại" của một range lịch đã hỏi (không tự nêu lại
-  ngày/tuần) khi có range gần nhất còn hợp lệ trong state.
-- [ ] Khi có range trước đó: trả đúng phần còn lại (từ hôm nay hoặc từ ngày
-  cuối đã trả lời tới hết range cũ) qua `get_doses_for_range` — không suy
-  đoán ngày mới, không tự bịa range.
-- [ ] Khi không có range trước đó (session mới/hết hạn): dùng
-  `NEED_MORE_INFO`/clarification tự nhiên đã có (Answerability Gate,
-  `answerability.py`) — không mặc định thành `GENERAL_MEDICAL_INFORMATION`.
+  ngày/tuần) khi `active_schedule_range` còn hợp lệ.
+- [ ] Khi có range hợp lệ: re-resolve đúng `active_schedule_range` đó và gọi
+  lại `_schedule_reply`/`get_doses_for_range` — không suy đoán ngày mới,
+  không tự bịa range, không cần `last_served_through_date`.
+- [ ] Khi không có range hợp lệ: `NEED_MORE_INFO` qua Answerability Gate —
+  không mặc định thành `GENERAL_MEDICAL_INFORMATION`.
+- [ ] Cài đúng 4 quy tắc staleness ở trên (consume/overwrite/clear theo đổi
+  chủ đề-safety-handoff/clear theo intent khác) bằng unit test riêng cho
+  từng trường hợp.
 - [ ] Entity chưa xác minh không được promote thành truth (theo Phase 2 scope
   chung, V2.5-DESIGN.md mục 9) — range cũ chỉ dùng để tính lại range mới,
   không tự ý mở rộng phạm vi ngoài những gì user đã thực sự hỏi.
@@ -86,12 +134,14 @@ code.
 
 ## Gợi ý chia subtask
 
-- [ ] Chốt câu hỏi thiết kế (durable field vs short-term memory) — có thể
-  cần một ADR-mini riêng nếu đụng schema `ConversationState`/migration mới.
 - [ ] Viết red test tái tạo baseline.
-- [ ] Implement nhận diện + resolve "phần còn lại" (không đổi domain
+- [ ] Thêm `active_schedule_range` vào `ConversationState` (v5→v6), cùng
+  test đọc ngược state v5.
+- [ ] Implement nhận diện follow-up "còn lại" + 4 quy tắc staleness
+  (consume/overwrite/clear-topic-safety-handoff/clear-other-intent).
+- [ ] Re-resolve qua `_schedule_reply` với range đã lưu (không đổi domain
   semantics của `get_doses_for_range`).
-- [ ] Thêm case NEED_MORE_INFO khi không có range trước đó.
+- [ ] Thêm case NEED_MORE_INFO khi không có range hợp lệ.
 - [ ] Golden/regression, ruff, cập nhật task + CP0 doc + CHECKPOINT bảng theo
   dõi thực thi trước PR.
 

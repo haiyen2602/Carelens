@@ -75,6 +75,26 @@ production path nào của V2.5.** Giữ nguyên file (không xoá) vì có giá
 lịch sử/tham chiếu, nhưng `soul_v3.md` là **nguồn voice duy nhất** cho
 renderer V2.5 — không dùng song song hai bản soul để tránh trôi dạt.
 
+### 1.3a — ADR delta (2026-09-01): `active_schedule_range` durable trên `ConversationState`
+
+Bổ sung cho Task 02 (context/follow-up, xem
+[TASK-V2.5-002](../../../tasks/TASK-V2.5-002-schedule-range-followup.md)):
+chốt Phương án A thay vì short-term memory (in-process, không sống sót qua
+restart/nhiều worker — xem lý do đầy đủ ở lịch sử trao đổi task đó).
+
+- Field mới `active_schedule_range: tuple[date, date] | None` trên
+  `ConversationState`. Không cần migration DB — state đã nằm trong
+  `AgentRun.metadata_json` sẵn có. Bump `as_dict`/`from_dict` version 5→6,
+  cùng test đọc ngược state v5 (thiếu field mới) không lỗi/không suy ra giá
+  trị giả — theo đúng convention đã dùng cho `answerability_attempt_count`.
+- Không lưu `last_served_through_date` — `_schedule_reply` luôn trả toàn bộ
+  range trong một lần (không có khái niệm "phần chưa trả"), nên "còn lại"
+  chỉ cần re-resolve đúng range đã lưu.
+- Staleness: hợp lệ đúng một lượt kế tiếp — consume khi dùng, overwrite khi
+  có schedule query mới, clear khi đổi chủ đề/safety/handoff/intent khác.
+- Không có range hợp lệ → `NEED_MORE_INFO` (Answerability Gate), không rơi
+  về `GENERAL_MEDICAL_INFORMATION`.
+
 ### 1.4 Model-call budget và availability smoke test `gpt-5.6-luna`
 
 **Availability smoke test đã chạy thật** (2026-09-01, input tổng hợp không
