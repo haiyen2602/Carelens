@@ -23,5 +23,30 @@
     },
     "created_at": "2026-09-01",
     "expected_contract_version": "contract-v1"
+  },
+  {
+    "case_id": "GOLD-V25-NEGFEEDBACK-001",
+    "golden_set_version": "v2.5",
+    "category": "MULTI_TURN_CONTEXT",
+    "tags": ["v2.5", "task-v2.5-003", "clarification", "negative-feedback"],
+    "turns": [
+      {
+        "query": "Paracetamol dùng để làm gì",
+        "expected": {
+          "execution_path": "DRUG_LOOKUP"
+        }
+      },
+      {
+        "query": "Không đúng",
+        "expected": {
+          "execution_path": "GENERAL_MODEL"
+        }
+      }
+    ],
+    "fixture": {
+      "patient": "agent-v2-staging-patient-1"
+    },
+    "created_at": "2026-09-01",
+    "expected_contract_version": "contract-v1"
   }
 ]
