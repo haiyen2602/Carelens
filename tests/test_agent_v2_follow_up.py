@@ -4,7 +4,7 @@ repro categories (SS3 A-F) before any orchestrator wiring."""
 
 from __future__ import annotations
 
-from backend.agents.v2.follow_up import FollowUpCategory, classify_follow_up
+from backend.agents.v2.follow_up import FollowUpCategory, FollowUpReasonCode, classify_follow_up
 
 # ---------------------------------------------------------------------------
 # A. Short standalone question -- must NOT inherit unrelated prior topic/entity.
@@ -174,3 +174,69 @@ def test_explicit_topic_repeats_same_prior_topic_stays_standalone_inherits_topic
     d = classify_follow_up("Viêm phổi là gì?", prior_topic="Viêm phổi", prior_entity_name=None)
     assert d.category is FollowUpCategory.STANDALONE_QUESTION
     assert d.inherited_topic is True
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-003: negative feedback ("Không đúng") -- flag-gated via
+# recognize_negative_feedback, default False (legacy behavior unchanged).
+# ---------------------------------------------------------------------------
+
+
+def test_negative_feedback_is_topic_switch_when_flag_off_legacy_bug_preserved():
+    """Guard 3: flag off -> byte-identical to today's (buggy) behavior."""
+    d = classify_follow_up("Không đúng", prior_topic=None, prior_entity_name="Vitamin C")
+    assert d.category is FollowUpCategory.TOPIC_SWITCH
+
+
+def test_negative_feedback_recognized_with_prior_entity_when_flag_on():
+    d = classify_follow_up(
+        "Không đúng", prior_topic=None, prior_entity_name="Vitamin C", recognize_negative_feedback=True
+    )
+    assert d.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert d.reason_code is FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT
+    assert d.inherited_entity is True
+
+
+def test_negative_feedback_recognized_with_prior_topic_when_flag_on():
+    d = classify_follow_up(
+        "Sai rồi", prior_topic="gan nhiễm mỡ", prior_entity_name=None, recognize_negative_feedback=True
+    )
+    assert d.category is FollowUpCategory.TRUE_FOLLOWUP
+    assert d.reason_code is FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT
+    assert d.inherited_topic is True
+
+
+def test_negative_feedback_with_no_prior_context_falls_back_to_existing_ambiguous_fragment():
+    """Guard 1: no prior context -> existing AMBIGUOUS_FRAGMENT path,
+    no new reason code needed (nothing to preserve)."""
+    d = classify_follow_up(
+        "Không đúng", prior_topic=None, prior_entity_name=None, recognize_negative_feedback=True
+    )
+    assert d.category is FollowUpCategory.AMBIGUOUS_FRAGMENT
+    assert d.reason_code is FollowUpReasonCode.DEICTIC_OR_ATTRIBUTE_ONLY_NO_PRIOR_CONTEXT
+
+
+def test_negative_feedback_does_not_collide_with_unrelated_khong_dung_sentence():
+    """Guard 1: 'không đúng' and 'không dùng' ascii-fold to the same
+    string ('khong dung'). A real medication-stop statement must NOT be
+    misread as negative feedback -- must still resolve as naming its own
+    subject (thuốc), same as before this build."""
+    d = classify_follow_up(
+        "Tôi không dùng thuốc này nữa",
+        prior_topic=None,
+        prior_entity_name="Vitamin C",
+        recognize_negative_feedback=True,
+    )
+    assert d.reason_code is not FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT
+
+
+def test_negative_feedback_does_not_preempt_a_real_new_topic_in_the_same_message():
+    """Guard 2: a message that is BOTH negation AND names a real new
+    subject must resolve off the real subject, never the negation marker."""
+    d = classify_follow_up(
+        "Không đúng, tôi muốn hỏi Paracetamol",
+        prior_topic=None,
+        prior_entity_name="Vitamin C",
+        recognize_negative_feedback=True,
+    )
+    assert d.reason_code is not FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT

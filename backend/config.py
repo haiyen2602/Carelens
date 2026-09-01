@@ -463,6 +463,12 @@ class Settings(BaseSettings):
     # (inert, unused extra state while the flag is off), same as any other
     # dark-launched durable field.
     agent_v2_5_followup_enabled: bool = False
+    # TASK-V2.5-003: negative-feedback recovery ("Không đúng"). Separate
+    # flag from agent_v2_5_followup_enabled -- deliberately independent
+    # rollback (owner decision, CP0 mục 1.7): Task 02 only touches
+    # schedule-range follow-up; Task 03 changes how negation is understood
+    # and answered, needs its own canary/metric/stop-condition.
+    agent_v2_5_clarification_enabled: bool = False
     agent_vinmec_web_max_calls: int = Field(default=1, ge=0, le=5)
     agent_vinmec_web_max_results: int = Field(default=3, ge=1, le=10)
     agent_vinmec_web_timeout_seconds: float = Field(default=5.0, gt=0, le=30.0)

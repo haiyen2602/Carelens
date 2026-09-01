@@ -93,6 +93,7 @@ from backend.agents.v2.context import ContextBuildResult, ContextItem, ContextMa
 from backend.agents.v2.follow_up import (
     FollowUpCategory,
     FollowUpDecision,
+    FollowUpReasonCode,
     _display_topic_from_raw,
     classify_follow_up,
 )
@@ -865,6 +866,15 @@ def _follow_up_aspect_keyword(message: str) -> str | None:
 _CONTEXT_CLARIFICATION_REPLY = (
     "Mình chưa xác định đủ ngữ cảnh cho câu hỏi này. Bạn đang muốn hỏi tiếp về bệnh hoặc chủ đề nào?"
 )
+# TASK-V2.5-003: fixed, deterministic reply for a negative-feedback
+# TRUE_FOLLOWUP (follow_up.py, NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT).
+# Deliberately does NOT guess what was wrong (guard from the owner's own
+# design review: "không suy đoán 'sai chỗ nào'") -- only apologizes and asks
+# the patient to say what was incorrect, in one short, natural sentence.
+_NEGATIVE_FEEDBACK_CLARIFICATION_REPLY = (
+    "Dạ, mình xin lỗi vì chưa trả lời đúng ý bạn. Bạn có thể cho mình biết cụ thể chỗ nào chưa đúng "
+    "được không ạ?"
+)
 _TRIAGE_CLARIFICATION_REPLY = (
     "Tình trạng bạn mô tả có thể có nhiều nguyên nhân và mình không thể chẩn đoán qua chat. "
     "Bạn cho mình biết triệu chứng bắt đầu từ khi nào, mức độ thế nào, và có sốt, nôn, nhìn mờ, "
@@ -1079,6 +1089,12 @@ class OrchestrationRequest:
     # Off by default: the range-remainder follow-up check in `run()` is
     # inert until the API boundary passes True.
     followup_capability_enabled: bool = False
+    # TASK-V2.5-003: capability flag (settings.agent_v2_5_clarification_enabled),
+    # same threading convention as followup_capability_enabled above --
+    # gates classify_follow_up's recognize_negative_feedback and the
+    # negative-feedback reply branch in run(). Independent flag, independent
+    # rollback from Task 02's followup_capability_enabled.
+    clarification_capability_enabled: bool = False
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -1774,7 +1790,20 @@ class AgentOrchestrator:
                     request.message,
                     prior_topic=request.prior_active_topic,
                     prior_entity_name=request.prior_active_entity_name,
+                    recognize_negative_feedback=request.clarification_capability_enabled,
                 )
+                # TASK-V2.5-003: checked BEFORE the AMBIGUOUS_FRAGMENT/
+                # TRUE_FOLLOWUP branches below -- a negative-feedback
+                # TRUE_FOLLOWUP must never fall into the generic
+                # inherited-topic/entity handling further down (that would
+                # re-answer the OLD question, exactly the guess this reply
+                # must not make). Inert when the flag is off: classify_follow_up
+                # never returns this reason code in that case (see its own
+                # docstring).
+                if follow_up_decision.reason_code is FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT:
+                    return self._negative_feedback_clarification_reply(
+                        request, follow_up_decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
+                    )
                 if follow_up_decision.category is FollowUpCategory.AMBIGUOUS_FRAGMENT:
                     return self._context_clarification_reply(
                         request, follow_up_decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
@@ -2572,6 +2601,61 @@ class AgentOrchestrator:
             OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
             answerability_decision,
             _CONTEXT_CLARIFICATION_REPLY,
+            session_key,
+            trace,
+            agent_run_id,
+            checkpoint_db,
+            lease_token,
+            started,
+            follow_up_decision=follow_up_decision,
+        )
+
+    def _negative_feedback_clarification_reply(
+        self, request, follow_up_decision, session_key, trace, agent_run_id, checkpoint_db, lease_token, started
+    ) -> OrchestrationResult:
+        """TASK-V2.5-003: the patient said the prior reply was wrong
+        ("Không đúng"/"Sai rồi") with prior topic/entity to preserve.
+
+        Same bounded-clarification/NEED_DOCTOR-escalation shape as
+        ``_context_clarification_reply`` (repeated unresolved negative
+        feedback must not loop forever either), but its own fixed reply
+        text and provenance -- and, unlike that method, ``follow_up_decision.category``
+        here is ``TRUE_FOLLOWUP``, not ``AMBIGUOUS_FRAGMENT``, so
+        ``agent_v2_routes.py``'s existing invariant #7 (a TOPIC_SWITCH
+        clears active_topic/active_entity) never fires for this reply --
+        context is preserved by construction, not by a special case here.
+        """
+        if self._telemetry is not None:
+            self._telemetry.event(
+                trace,
+                TraceComponent.ROUTER,
+                "agent_context_resolution.completed",
+                follow_up_category=follow_up_decision.category.value,
+                follow_up_reason_code=follow_up_decision.reason_code.value,
+                inherited_topic=follow_up_decision.inherited_topic,
+                inherited_entity=follow_up_decision.inherited_entity,
+                final_router_intent=OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS.value,
+            )
+        answerability_decision = evaluate_clinical_clarification_answerability(
+            attempt_count=request.answerability_attempt_count,
+            provenance="agent-orchestrator:context-clarification:negative-feedback",
+        )
+        if answerability_decision.outcome is AnswerabilityOutcome.NEED_DOCTOR:
+            return self._answerability_handoff_reply(
+                request,
+                OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+                answerability_decision.reason_code,
+                session_key,
+                trace,
+                agent_run_id,
+                checkpoint_db,
+                lease_token,
+                started,
+            )
+        return self._answerability_more_info_reply(
+            OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS,
+            answerability_decision,
+            _NEGATIVE_FEEDBACK_CLARIFICATION_REPLY,
             session_key,
             trace,
             agent_run_id,

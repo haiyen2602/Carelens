@@ -531,3 +531,70 @@ sau khi PR đã merge; review chỉ qua bot + owner, không có reviewer ngườ
 riêng), 1/6 **không đạt theo đúng chữ** (CI chưa chạy xong do runner pool
 offline) — merge đã xảy ra dựa trên quyết định của owner, không phải vì
 CP3 tự nhận đã xong toàn bộ.
+
+## CP4 — Railway release và canary có kiểm soát (2026-09-01)
+
+### Release snapshot (mục CP4 đầu tiên)
+
+- **Merged commit:** `bd484fac50a3c0de9e35cbec37750ece6b2907ec` (main, sau PR
+  #182/#183/#184/#185).
+- **Deploy/config snapshot:** BE service `VMEC-04/BE`, project `VMEC-04`,
+  environment `production`. `AGENT_V2_5_FOLLOWUP_ENABLED` chưa có trong
+  Railway env vars → dùng default `false` từ `backend/config.py`.
+- **Flag:** `AGENT_V2_5_FOLLOWUP_ENABLED=false` (mặc định, chưa set gì
+  trên Railway).
+- **Owner:** Dyo31122005. **Cohort:** chưa có — chưa mở canary.
+
+### Phát hiện chặn deploy, đã xử lý
+
+Auto-deploy (`Deploy` workflow, GitHub Actions, cùng self-hosted runner pool
+`cohort3` với CI đã kẹt ở CP3) **không chạy được cho bất kỳ merge nào hôm
+nay** — verify bằng `gh run list --workflow=deploy.yml`: PR #182/#183/#184
+đều `cancelled`, PR #185 kẹt `queued`; một deploy từ hôm trước còn `queued`
+sau 12+ giờ. Verify bằng `railway status --json`: deployment production
+thật trước khi tôi can thiệp là từ `2026-08-31T15:06:44Z` — **trước toàn bộ
+merge hôm nay**, tức production chưa chạy code nào của Task 01/Task 02.
+
+Owner chọn hướng: deploy thủ công qua `railway up`. Lần đầu fail
+`Access is denied (os error 5)` ở bước Indexing — nguyên nhân: nhiều thư
+mục local phát sinh sau ngày tạo `.railwayignore` (`.venv-drug-image/`,
+`.worktrees/`, `_prod_import_staging*/`, `local_drug_image_storage/`,
+`data/drug_images|photo_verifications|rag-eval/`) không nằm trong
+`.gitignore` lẫn `.railwayignore` (xác nhận bằng `git check-ignore -v`,
+không có output nghĩa là không bị ignore ở đâu cả). Đã sửa `.railwayignore`
+([PR #186](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/186),
+chưa merge) và deploy lại thành công.
+
+### "Deploy với flag off; kiểm tra healthcheck, route V2, authorization, doctor takeover" — đã verify thật trên production
+
+- Deployment mới: `createdAt=2026-09-01T08:41:24Z`, instance `RUNNING`,
+  instance cũ `REMOVED` (cutover sạch).
+- `GET https://vmec-04be-production.up.railway.app/health` →
+  `200 {"status":"ok","env":"production","runtime_profile":"v2_only"}`.
+- Log khởi động sạch: migration `alembic upgrade head` no-op (đã ở `0063`),
+  warmup Drug Knowledge V2 + drug image recognition + OCR index đều
+  complete, scheduler start đủ 9 job (kể cả `_run_doctor_takeover_timeout`)
+  — chạy thành công lần đầu ngay sau deploy.
+- Traffic thật đã quay lại bình thường ngay sau deploy: `GET
+  /api/v1/nudges/unseen` → 200, `GET /api/v1/doses?patient_id=...` → 200 —
+  xác nhận route V2 hiện hữu không bị ảnh hưởng.
+- Không test riêng "authorization" bằng request giả trên production (không
+  tạo request có patient/actor giả trên hệ thống thật) — dựa vào traffic
+  thật đang chạy đúng làm bằng chứng gián tiếp; không có gì trong diff
+  Task 02 đụng tới authorization.
+
+### Còn lại của CP4 — CHƯA làm, cần quyết định riêng
+
+- [ ] Observe-only/shadow — ADR của capability này không yêu cầu, bỏ qua có
+  căn cứ.
+- [ ] **Bật internal allowlist rồi small canary** — đây là bước đổi hành vi
+  thật cho người dùng thật (dù chỉ một allowlist nhỏ), **cần owner xác nhận
+  riêng, không suy ra từ "tiếp tục CP4"**. Chưa làm.
+- [ ] Theo dõi metric query đã định nghĩa ở CP3 — chỉ có ý nghĩa sau khi
+  canary mở.
+- [ ] Ghi quyết định tiếp tục/rollback/ramp — chưa tới bước này.
+- [ ] Ramp — chưa tới bước này.
+
+**Trạng thái CP4: phần "deploy với flag off" đã xong và verify thật trên
+production. Phần "canary" (đổi hành vi patient-facing) chưa bắt đầu, chờ
+quyết định riêng của owner.**
