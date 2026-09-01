@@ -223,6 +223,62 @@ def test_model_calls_claimed_but_no_events_buffered_degrades_honestly_to_not_ava
     assert run.total_cost_usd is None
 
 
+def test_lost_telemetry_buffer_emits_a_diagnostic_warning_distinct_from_unknown_model_price(db, monkeypatch, caplog):
+    """PR review finding: cost accounting now depends on the telemetry
+    buffer having this run's own agent_model.completed events -- if
+    BufferingSink's eviction (pre-existing, BUILD-32, max_traces cap) drops
+    them under backlog, cost silently degrades to NOT_AVAILABLE with no
+    operational signal distinguishing it from the ordinary "this model has
+    no configured price" case. This warning makes that specific, rarer
+    failure mode (real calls happened, zero telemetry recovered) visible/
+    alertable -- correlatable with BufferingSink's own eviction warning."""
+    import logging
+
+    import backend.api.agent_v2_routes as routes
+
+    sink = BufferingSink(StructuredLogSink())
+    monkeypatch.setattr(routes, "_telemetry_sink", sink)
+    telemetry = AgentTelemetry(sink=sink, pricing=ModelPricingCatalog({}, version="v1"))
+
+    run_id, trace_id = "run-lost-warn-1", "trace-lost-warn-1"
+    _seed_run(db, run_id)
+    result = _fake_result(agent_run_id=run_id, trace_id=trace_id, model_calls=1, input_tokens=100, output_tokens=50)
+    settings = SimpleNamespace(agent_main_model="gpt-5.4-mini")
+    with caplog.at_level(logging.WARNING):
+        routes._persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=_actor())
+
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any(run_id in r.getMessage() and trace_id in r.getMessage() for r in warnings)
+
+
+def test_unknown_model_price_does_not_emit_the_lost_telemetry_warning(db, monkeypatch, caplog):
+    """Non-regression: the ordinary "real events present, model just has no
+    configured price" NOT_AVAILABLE case is NOT a telemetry-loss symptom and
+    must not trigger the same diagnostic warning -- it would be noise."""
+    import logging
+
+    import backend.api.agent_v2_routes as routes
+
+    sink = BufferingSink(StructuredLogSink())
+    monkeypatch.setattr(routes, "_telemetry_sink", sink)
+    telemetry = AgentTelemetry(sink=sink, pricing=ModelPricingCatalog({}, version="v1"))  # empty catalog
+
+    run_id, trace_id = "run-unpriced-warn-1", "trace-unpriced-warn-1"
+    _seed_run(db, run_id)
+    trace = TraceContext(trace_id=trace_id, agent_run_id=run_id)
+    telemetry.record_model(
+        trace, role=ModelRole.MAIN, model="some-unpriced-model", usage=ModelUsage(input_tokens=100, output_tokens=50), latency_ms=5.0
+    )
+    result = _fake_result(agent_run_id=run_id, trace_id=trace_id, model_calls=1, input_tokens=100, output_tokens=50)
+    settings = SimpleNamespace(agent_main_model="gpt-5.4-mini")
+    with caplog.at_level(logging.WARNING):
+        routes._persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=_actor())
+
+    run = db.get(AgentRun, run_id)
+    assert run.cost_status == "NOT_AVAILABLE"  # confirms we hit a NOT_AVAILABLE path at all
+    assert not any(run_id in r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
+
+
 def test_zero_model_calls_still_reports_real_zero_cost_unchanged(db, monkeypatch):
     """Non-regression: the existing "schedule/clarification reply, zero
     model calls -> real definite zero, not NOT_AVAILABLE" behavior must

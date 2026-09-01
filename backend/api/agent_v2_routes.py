@@ -721,6 +721,23 @@ def _persist_durable_trace(
             model_name, cost_status, pricing_version, input_cost_usd, output_cost_usd, total_cost_usd = (
                 _model_and_cost_from_events(events, metrics=metrics, pricing=telemetry.pricing)
             )
+            # PR review finding: cost accounting now depends on this run's
+            # own telemetry events surviving in BufferingSink until this
+            # point -- distinguish that (rarer, backlog-indicating) failure
+            # mode from the ordinary "model has no configured price" one, so
+            # it is operationally visible/alertable and correlatable with
+            # BufferingSink's own eviction warning, rather than silently
+            # blending into every other NOT_AVAILABLE cause.
+            if model_name is None and cost_status == "NOT_AVAILABLE":
+                logging.getLogger(__name__).warning(
+                    "Agent V2 cost accounting degraded to NOT_AVAILABLE: telemetry buffer had "
+                    "no agent_model.completed events for agent_run_id=%s trace_id=%s despite "
+                    "%d real model call(s) -- likely BufferingSink eviction under backlog, not "
+                    "an ordinary unpriced-model case.",
+                    result.agent_run_id,
+                    result.trace_id,
+                    metrics.model_calls,
+                )
 
         run = db.get(AgentRun, result.agent_run_id)
         if run is not None:

@@ -257,25 +257,53 @@ def _normalize_for_match(text: str) -> str:
 # detector once a category is actually in play for that policy. Every
 # detector here receives ALREADY-``_normalize_for_match``-ed text.
 # "medication_identity" is handled separately below (it needs fact_slots).
-_DOSE_STATUS_MARKERS = re.compile(r"(đã uống|chưa uống|uống rồi|bỏ lỡ)")
+#
+# dose_status: "đã uống"/"chưa uống"/"uống rồi" (already/not yet drank) are
+# just as generic as bare "uống" -- "Cảm ơn bạn đã uống đủ nước hôm nay"
+# (thanking someone for drinking enough water) would false-positive on an
+# unconditional phrase match, the same class of issue fixed for dose_time
+# above (found while testing THAT fix, fixed here proactively rather than
+# left as a known parallel gap). These three now also require a medication
+# mention nearby; "bỏ lỡ" (missed) stays unconditional -- unlike "uống", it
+# is not a generic verb used for ordinary drinking at all.
+_DOSE_STATUS_PHRASES = re.compile(r"(đã uống|chưa uống|uống rồi)")
+_MISSED_DOSE_MARKER = re.compile(r"\bbỏ lỡ\b")
 _HANDOFF_MARKERS = re.compile(r"(chuyển cho bác sĩ|bác sĩ sẽ liên hệ)")
 
 # dose_time: a bare time-of-day word (sáng/trưa/chiều/tối/giờ) OR a bare
-# clock/duration time (PR review correction: "8 giờ", "2h" alone -- an
-# appointment time, "cách đây 2h", "đợi 1 giờ" duration/elapsed-time framing)
-# is ordinary Vietnamese on its own and must NOT be rejected just for
-# containing it -- the original marker regexes were flagging completely
-# benign prose. A real dose-time leak needs EITHER of those temporal signals
-# actually near a dosing verb (uống/dùng thuốc) -- a real, if fabricated,
-# schedule claim -- so both are checked with the same proximity rule.
+# clock/duration time ("8 giờ", "2h" alone -- an appointment time, "cách đây
+# 2h", "đợi 1 giờ" duration/elapsed-time framing) is ordinary Vietnamese on
+# its own and must NOT be rejected just for containing it -- the original
+# marker regexes were flagging completely benign prose. A real dose-time
+# leak needs EITHER temporal signal actually near a mention of MEDICATION
+# ("thuốc") -- a real, if fabricated, schedule claim.
+#
+# PR review correction (round 2): the anchor was originally a "dosing verb"
+# (uống/dùng thuốc), not the noun "thuốc" itself -- but "uống" alone just
+# means "drink" (uống nước/trà/cà phê...), so a hydration-encouragement
+# sentence that happens to also mention an unrelated time in the same
+# sentence ("Cảm ơn bạn đã uống đủ nước, hẹn gặp lại sau 1 giờ nhé.") false-
+# positived: a real "dosing verb appears elsewhere for unrelated reasons"
+# case flagged in review. Anchoring on "thuốc" instead removes this class of
+# false positive entirely (drinking water/tea/coffee never mentions
+# medication) without an ever-incomplete blocklist of benign drink objects.
+#
 # "liều" (dose/dosage) stays a bare, unconditional marker -- unlike a
 # temporal word/clock time, it is not expected in ordinary connective/
-# empathy prose at all, dosing-context or not.
+# empathy prose at all, medication-context or not.
 _LIEU_MARKER = re.compile(r"\bliều\b")
 _CLOCK_TIME_MARKER = re.compile(r"\b\d{1,2}\s*(giờ|h)\b")
 _TIME_OF_DAY_WORD = re.compile(r"\b(giờ|sáng|trưa|chiều|tối)\b")
-_DOSING_VERB = re.compile(r"\b(uống|dùng thuốc)\b")
-_TIME_WORD_PROXIMITY_WINDOW = 30  # characters either side -- same sentence/clause, not the whole reply
+# Shared "is this actually about medication" anchor for both dose_time and
+# dose_status's ambiguous-on-their-own phrases (below) -- "thuốc" (medication)
+# or "liều" (dose/dosage) either one confirms real medication context.
+_MEDICATION_CONTEXT_WORD = re.compile(r"\b(thuốc|liều)\b")
+_TEMPORAL_PROXIMITY_WINDOW = 30  # characters either side -- same sentence/clause, not the whole reply
+
+
+def _near_medication_context(normalized_text: str, match: re.Match[str]) -> bool:
+    window = normalized_text[max(0, match.start() - _TEMPORAL_PROXIMITY_WINDOW) : match.end() + _TEMPORAL_PROXIMITY_WINDOW]
+    return bool(_MEDICATION_CONTEXT_WORD.search(window))
 
 
 def _dose_time_leak_detected(normalized_text: str) -> bool:
@@ -283,17 +311,23 @@ def _dose_time_leak_detected(normalized_text: str) -> bool:
         return True
     for temporal_pattern in (_CLOCK_TIME_MARKER, _TIME_OF_DAY_WORD):
         for match in temporal_pattern.finditer(normalized_text):
-            window = normalized_text[
-                max(0, match.start() - _TIME_WORD_PROXIMITY_WINDOW) : match.end() + _TIME_WORD_PROXIMITY_WINDOW
-            ]
-            if _DOSING_VERB.search(window):
+            if _near_medication_context(normalized_text, match):
                 return True
+    return False
+
+
+def _dose_status_leak_detected(normalized_text: str) -> bool:
+    if _MISSED_DOSE_MARKER.search(normalized_text):
+        return True
+    for match in _DOSE_STATUS_PHRASES.finditer(normalized_text):
+        if _near_medication_context(normalized_text, match):
+            return True
     return False
 
 
 _CLAIM_CATEGORY_DETECTORS: dict[str, Callable[[str], bool]] = {
     "dose_time": _dose_time_leak_detected,
-    "dose_status": lambda text: bool(_DOSE_STATUS_MARKERS.search(text)),
+    "dose_status": _dose_status_leak_detected,
     "handoff_state": lambda text: bool(_HANDOFF_MARKERS.search(text)),
 }
 

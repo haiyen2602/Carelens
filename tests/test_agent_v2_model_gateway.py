@@ -341,7 +341,7 @@ def test_synthesize_read_only_renderer_path_fails_closed_when_model_hallucinates
     from backend.agents.v2.response_policy import RenderableFactSlots
 
     client = _SynthesisClient(
-        {"output_text": "Bạn nên uống vào lúc 8 giờ sáng.", "usage": {"input_tokens": 1, "output_tokens": 1}}
+        {"output_text": "Bạn nên uống thuốc vào lúc 8 giờ sáng.", "usage": {"input_tokens": 1, "output_tokens": 1}}
     )
     gateway = OpenAIModelGateway(build_model_workloads(_settings()), client_factory=lambda **_kwargs: client)
     policy = _renderer_policy(prohibited_claim_categories=("dose_time", "dose_status", "medication_identity", "handoff_state"))

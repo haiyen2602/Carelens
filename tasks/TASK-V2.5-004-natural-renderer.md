@@ -625,6 +625,67 @@ CẢ TRƯỚC khi refactor — test khoá hành vi, không phải fix bug) —
 - `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
   `tests/test_agent_v2_response_policy.py`.
 
+## Tiến độ CP2 thực (bản 6) — phản hồi PR #193 review lần 2
+
+**1. `_CLOCK_TIME_MARKER` vẫn còn rủi ro false positive dù đã có proximity
+check (finding thật, đã sửa tận gốc).** Bot chỉ đúng: proximity 30 ký tự
+với `_DOSING_VERB` (`uống|dùng thuốc`) vẫn có thể false positive nếu "uống"
+xuất hiện GẦN một mốc thời gian vì lý do KHÔNG liên quan (vd "Cảm ơn bạn đã
+uống đủ nước, hẹn gặp lại sau 1 giờ nhé." — "uống" ở đây là uống NƯỚC, không
+phải uống thuốc). Gốc rễ: "uống" một mình chỉ có nghĩa "uống" chung chung
+(uống nước/trà/cà phê...), không riêng cho thuốc. Sửa tận gốc thay vì vá
+thêm blocklist đối tượng uống lành tính (danh sách này không bao giờ đủ):
+đổi anchor từ "động từ liều thuốc" (uống/dùng thuốc) sang chính danh từ
+**"thuốc"** (hoặc "liều") — cả `dose_time` VÀ `dose_status` (phát hiện
+thêm cùng lỗi khi viết test cho fix này — "đã uống nước" cũng false
+positive dose_status theo cùng cách) giờ neo vào `thuốc|liều` thay vì động
+từ. `_DOSE_STATUS_PHRASES` ("đã uống"/"chưa uống"/"uống rồi") giờ cũng cần
+`thuốc`/`liều` gần đó; "bỏ lỡ" (missed) vẫn là marker độc lập (không phải
+động từ uống chung chung, không có nghĩa khác). Thêm 6 test mới (uống
+nước/trà không bị reject sai cho cả dose_time và dose_status, đồng thời
+khóa lại các case reject thật vẫn đúng khi có `thuốc` hoặc `liều` gần đó,
+bao gồm "bỏ lỡ" độc lập) — `tests/test_agent_v2_response_policy.py`.
+Không đổi kiến trúc (`validate_free_prose`'s chữ ký, `ResponsePolicy`'s
+field), chỉ sửa chính các regex detector.
+
+**2. Telemetry dependency của `_model_and_cost_from_events` (rủi ro vận
+hành thật, không phải bug — đã thêm cảnh báo chẩn đoán).** Bot chỉ đúng một
+rủi ro có thật: cost accounting giờ phụ thuộc hoàn toàn vào việc
+`agent_model.completed` event của CHÍNH run đó còn nằm trong buffer
+(`BufferingSink`, cap `_BUFFERING_SINK_MAX_TRACES=500`, có từ BUILD-32,
+không phải code PR này) tại thời điểm `_persist_durable_trace` chạy — nếu
+bị evict, cost/model suy thoái về `NOT_AVAILABLE` dù `model_calls>0` thật.
+Đánh giá mức độ: cơ chế evict là loại-bỏ-trace-CŨ-NHẤT khi đầy, và
+`_persist_durable_trace` của MỘT run luôn chạy ngay sau khi chính run đó
+hoàn tất (chỉ vài mili giây) — để CHÍNH events của run này bị evict cần
+500 trace KHÁC đang buffer đồng thời mà chưa được persist, tức một tình
+trạng backlog/degraded thật sự, không phải tải cao bình thường (mỗi
+request tự pop trace của chính nó gần như ngay lập tức). Trước PR này,
+`run.model`/cost KHÔNG hề phụ thuộc buffer (chỉ dùng aggregate metrics +
+settings) — đây là dependency MỚI do chính fix MULTI_MODEL tạo ra, đánh
+đổi: từ "luôn có số nhưng có thể sai khi multi-model" sang "trung thực
+nhưng có thể thiếu khi buffer mất dữ liệu". Giữ nguyên hướng trung thực
+(đã chốt từ bản 1), nhưng thêm cải thiện thật trong phạm vi PR này: log
+`WARNING` riêng, phân biệt rõ 2 nguyên nhân `NOT_AVAILABLE` khác nhau — mất
+telemetry (nhánh mới, hiếm, chỉ ra backlog) vs model không có giá cấu hình
+(nhánh bình thường, không phải sự cố) — để có thể alert/quan sát vận hành,
+tương quan với chính warning log có sẵn của `BufferingSink` khi evict. Test
+thật: warning xuất hiện đúng với `agent_run_id`/`trace_id` khi mất
+telemetry, KHÔNG xuất hiện khi chỉ là model chưa có giá (non-regression) —
+`tests/test_agent_v2_task004_multi_model_cost.py`.
+
+**Bằng chứng thật đã chạy (sau bản 6):**
+
+- `tests/test_agent_v2_response_policy.py`: 48/48 pass.
+- `tests/test_agent_v2_task004_multi_model_cost.py`: 10/10 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1234/1234 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 6.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py`,
+  `backend/api/agent_v2_routes.py`, `tests/test_agent_v2_response_policy.py`,
+  `tests/test_agent_v2_model_gateway.py`,
+  `tests/test_agent_v2_task004_multi_model_cost.py`.
+
 **Chưa làm (còn lại của AC checklist CP2, chưa động tới ranh giới nào
 khác):**
 

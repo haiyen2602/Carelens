@@ -350,7 +350,7 @@ def test_validate_free_prose_rejects_dose_time_claim_when_prohibited():
     was never given one (RendererContext carries no such value) -- must be
     rejected, not silently passed through to assemble_reply."""
     policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
-    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống vào lúc 8 giờ sáng.")
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống thuốc vào lúc 8 giờ sáng.")
     assert ok is False
     assert "dose_time" in violations
 
@@ -371,6 +371,33 @@ def test_validate_free_prose_rejects_dose_status_claim_in_upper_and_mixed_case()
     ok, violations = validate_free_prose(policy, RenderableFactSlots(), "BẠN ĐÃ UỐNG liều này rồi.")
     assert ok is False
     assert "dose_status" in violations
+
+
+def test_validate_free_prose_rejects_dose_status_claim_anchored_on_thuoc_not_lieu():
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn chưa uống thuốc hôm nay.")
+    assert ok is False
+    assert "dose_status" in violations
+
+
+def test_validate_free_prose_rejects_missed_dose_marker_unconditionally():
+    """"bỏ lỡ" (missed) stays a bare marker -- unlike "uống", it is not a
+    generic verb used for ordinary, non-medication activities."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Có vẻ bạn đã bỏ lỡ rồi.")
+    assert ok is False
+    assert "dose_status" in violations
+
+
+def test_validate_free_prose_allows_a_generic_already_drank_phrase_with_no_medication_context():
+    """PR review correction, round 2 (found while fixing dose_time -- the
+    identical ambiguity applies here): "đã uống"/"chưa uống"/"uống rồi" mean
+    "already/not yet/already drank" generically -- a plain hydration
+    check-in with no medication context at all must not be rejected."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn đã uống đủ nước hôm nay chưa?")
+    assert ok is True
+    assert violations == ()
 
 
 def test_validate_free_prose_rejects_handoff_claim_when_prohibited():
@@ -469,10 +496,11 @@ def test_validate_free_prose_allows_a_benign_time_of_day_phrase_with_no_dosing_c
     assert violations == ()
 
 
-def test_validate_free_prose_rejects_a_time_of_day_word_near_a_dosing_verb_even_without_a_clock_time():
+def test_validate_free_prose_rejects_a_time_of_day_word_near_a_medication_mention_even_without_a_clock_time():
     """Adversarial: no specific clock time, but a time-of-day word appears
-    close to a dosing verb -- this IS a real (fabricated) schedule claim,
-    must still be rejected even without a bare digit-based time."""
+    close to a mention of medication ("thuốc") -- this IS a real (fabricated)
+    schedule claim, must still be rejected even without a bare digit-based
+    time."""
     policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
     ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn cần uống thuốc mỗi tối trước khi ngủ.")
     assert ok is False
@@ -493,14 +521,41 @@ def test_validate_free_prose_allows_a_benign_clock_time_with_no_dosing_context()
     assert violations == ()
 
 
-def test_validate_free_prose_rejects_a_clock_time_near_a_dosing_verb():
+def test_validate_free_prose_rejects_a_clock_time_near_a_medication_mention():
     """Adversarial: the model hallucinates a specific clock time AND it is
-    actually near a dosing verb -- this is the real leak the category
-    exists to catch, must still be rejected."""
+    actually near a mention of medication ("thuốc") -- this is the real
+    leak the category exists to catch, must still be rejected."""
     policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
-    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống vào lúc 8 giờ sáng.")
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống thuốc vào lúc 8 giờ sáng.")
     assert ok is False
     assert "dose_time" in violations
+
+
+def test_validate_free_prose_allows_a_drinking_verb_for_water_near_an_unrelated_time_mention():
+    """PR review correction, round 2: "uống" alone means "drink" generically
+    (uống nước/trà/cà phê...), not specifically "take medication" -- a
+    hydration-encouragement sentence that happens to also mention an
+    unrelated appointment/duration time in the same sentence must not be
+    rejected just because "uống" and a time word both appear. dose_time now
+    anchors on an actual mention of medication ("thuốc") near the temporal
+    signal, not a generic drinking verb, which was too broad and is exactly
+    the "dosing verb appears elsewhere for unrelated reasons" false-positive
+    class flagged in review."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(
+        policy, RenderableFactSlots(), "Cảm ơn bạn đã uống đủ nước, hẹn gặp lại sau 1 giờ nhé."
+    )
+    assert ok is True
+    assert violations == ()
+
+
+def test_validate_free_prose_allows_drinking_tea_near_a_bare_time_of_day_word():
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(
+        policy, RenderableFactSlots(), "Cảm ơn bạn đã uống một tách trà, chúc buổi tối vui vẻ."
+    )
+    assert ok is True
+    assert violations == ()
 
 
 def test_validate_free_prose_rejects_bare_lieu_word_regardless_of_context():
