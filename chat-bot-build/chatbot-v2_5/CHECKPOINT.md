@@ -6,8 +6,8 @@
 
 | Câu hỏi | Trạng thái | Ý nghĩa |
 |---|---|---|
-| Có thể bắt đầu Phase 0? | **Có** | Boundary, scope release đầu và các safety constraint đã rõ. |
-| Có thể bắt đầu code runtime? | **Chưa** | Phải hoàn thành và được chấp nhận ba artifact Phase 0. |
+| Có thể bắt đầu Phase 0? | **Đã hoàn tất** | ADR, baseline approach và Task 01 đã được chốt trong `CP0-ADR-BASELINE-TASK01.md`. |
+| Có thể bắt đầu code runtime? | **Có, chỉ Task 01** | Task 01 là bugfix/schedule contract ở local; Task 02–04 vẫn theo gate và capability flag riêng. |
 | Có thể deploy Railway? | **Chưa** | Chỉ sau local quality gate, PR review và canary gate. |
 | OCR/VLM nằm trong canary chat đầu? | **Không** | Đây là track riêng, chỉ xem xét lại sau B-08 re-evaluation `PASS`. |
 
