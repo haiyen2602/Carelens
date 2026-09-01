@@ -580,6 +580,51 @@ trước PR):**
 - `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
   `tests/test_agent_v2_response_policy.py`.
 
+## Tiến độ CP2 thực (bản 5) — phản hồi PR #193 review
+
+Sau khi mở PR #193, bot review nêu 2 điểm cho `response_policy.py`:
+
+**1. `_CLOCK_TIME_MARKER` quá rộng (finding thật, đã sửa).** Bot chỉ đúng:
+`\b\d{1,2}\s*(giờ|h)\b` bắt luôn cả câu hoàn toàn bình thường không liên
+quan liều thuốc (vd "Hẹn gặp bạn lúc 8 giờ nhé", "cách đây 2h", "đợi 1
+giờ") — cùng loại lỗi over-broad đã sửa ở bản 3 cho từ chỉ buổi trong
+ngày, chỉ khác là lần này áp dụng cho pattern giờ đồng hồ. Sửa: thống nhất
+`_dose_time_leak_detected` — giờ đồng hồ VÀ từ chỉ buổi trong ngày đều
+cùng một luật: chỉ tính là leak khi nằm GẦN (30 ký tự) một động từ liều
+thuốc (uống/dùng thuốc); "liều" vẫn là marker độc lập không cần ngữ cảnh.
+Đổi 1 test cũ (giờ đồng hồ trần → giờ PASS, không còn reject sai) + thêm 1
+test khẳng định giờ đồng hồ CÓ ngữ cảnh liều thuốc vẫn bị reject đúng —
+`tests/test_agent_v2_response_policy.py`.
+
+**2. `re.IGNORECASE` vs `casefold()` không nhất quán (đã kiểm chứng thật:
+không phải bug đang tồn tại cho tiếng Việt, nhưng đã hardening cho nhất
+quán).** Kiểm chứng thực nghiệm trực tiếp (`python3` REPL) trước khi sửa:
+`re.IGNORECASE` của Python 3 đã xử lý đúng Unicode case-folding cho MỌI tổ
+hợp hoa/thường của các chữ cái tiếng Việt đã test (đ/Đ, ư/Ư, ố/Ố, ệ/Ệ và
+các câu "ĐÃ UỐNG"/"CHƯA UỐNG" viết hoa toàn bộ) — `.lower()` và
+`.casefold()` cho kết quả GIỐNG HỆT nhau trên mọi ký tự tiếng Việt đã thử,
+không có phân kỳ kiểu tiếng Đức (ß→ss) mà `casefold()` mới xử lý đúng còn
+`re.IGNORECASE` thì không. Claim "có thể bypass" của bot **không đúng
+thực nghiệm cho tiếng Việt** — không có bypass sống hiện tại. Vẫn hardening
+theo hướng bot gợi ý vì rẻ và giúp nhất quán: gộp toàn bộ `validate_free_
+prose` về DÙNG CHUNG một cơ chế (`_normalize_for_match` — đổi tên từ
+`_normalize_for_identity_match`, không còn riêng cho medication_identity)
+— chuẩn hoá `free_prose` một lần duy nhất ở đầu hàm, bỏ hết `re.IGNORECASE`
+khỏi mọi pattern (dose_time/dose_status/handoff_state), so khớp thẳng trên
+văn bản đã chuẩn hoá. Thêm 2 test khẳng định dose_status/handoff_state vẫn
+bắt đúng khi model viết hoa toàn bộ hoặc hoa/thường lẫn lộn (đã pass NGAY
+CẢ TRƯỚC khi refactor — test khoá hành vi, không phải fix bug) —
+`tests/test_agent_v2_response_policy.py`.
+
+**Bằng chứng thật đã chạy (sau bản 5):**
+
+- `tests/test_agent_v2_response_policy.py`: 43/43 pass.
+- Toàn bộ `pytest -k "agent_v2 or response_policy"`: 1227/1227 pass (cùng
+  18 lỗi pre-existing, cùng 5 skip Postgres-only — không đổi).
+- Golden `--deterministic-only`: 15/15 PASS lần nữa sau bản 5.
+- `ruff check` sạch trên `backend/agents/v2/response_policy.py` +
+  `tests/test_agent_v2_response_policy.py`.
+
 **Chưa làm (còn lại của AC checklist CP2, chưa động tới ranh giới nào
 khác):**
 

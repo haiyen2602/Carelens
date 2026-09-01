@@ -229,48 +229,66 @@ def build_renderer_context(evidence: tuple[SynthesisEvidence, ...]) -> RendererC
     return RendererContext(has_findings=False)
 
 
+def _normalize_for_match(text: str) -> str:
+    """NFC-normalize then casefold -- ONE consistent case/Unicode-handling
+    mechanism for every check in ``validate_free_prose`` (PR review
+    hardening: an earlier draft mixed this with plain ``re.IGNORECASE`` on
+    some patterns -- empirically verified to already handle every Vietnamese
+    diacritic letter correctly, so this is not a fix for a live bypass, but
+    converging on one mechanism removes any doubt and is free to do).
+    ``casefold()`` is also stricter than ``.lower()`` for scripts where they
+    diverge (e.g. German ß) -- irrelevant for Vietnamese today but no reason
+    to use the weaker one. NFC first so a combining-mark-decomposed string
+    (rare, but possible from a different input source) still compares equal
+    to its precomposed form.
+
+    Every regex/string constant below is written in already-lowercase
+    Vietnamese and is matched ONLY against text this function has already
+    normalized -- none of them carry ``re.IGNORECASE``; the normalization
+    step is what makes case irrelevant, once, up front.
+    """
+
+    return unicodedata.normalize("NFC", text).casefold()
+
+
 # validate_free_prose: fixed category -> detector mapping. WHICH categories
 # apply to a given turn is read from policy.prohibited_claim_categories (the
 # real enforced input, not hardcoded here) -- this dict only supplies the
-# detector once a category is actually in play for that policy.
+# detector once a category is actually in play for that policy. Every
+# detector here receives ALREADY-``_normalize_for_match``-ed text.
 # "medication_identity" is handled separately below (it needs fact_slots).
-_DOSE_STATUS_MARKERS = re.compile(r"(đã uống|chưa uống|uống rồi|bỏ lỡ)", re.IGNORECASE)
-_HANDOFF_MARKERS = re.compile(r"(chuyển cho bác sĩ|bác sĩ sẽ liên hệ)", re.IGNORECASE)
+_DOSE_STATUS_MARKERS = re.compile(r"(đã uống|chưa uống|uống rồi|bỏ lỡ)")
+_HANDOFF_MARKERS = re.compile(r"(chuyển cho bác sĩ|bác sĩ sẽ liên hệ)")
 
-# dose_time (owner correction): a bare time-of-day word (sáng/trưa/chiều/
-# tối/giờ) is ordinary Vietnamese on its own (e.g. "Chúc bạn một buổi tối
-# tốt lành") and must NOT be rejected just for containing it -- the original
-# whole-word marker regex was flagging completely benign prose. A real
-# dose-time leak is either (a) a specific clock time ("8 giờ", "20h"), which
-# is unambiguous on its own, or (b) a time-of-day word actually near a
-# dosing verb (uống/dùng thuốc) -- a real, if fabricated, schedule claim.
-# "liều" (dose/dosage) stays a bare marker -- unlike a time-of-day word, it
-# is not expected in ordinary connective/empathy prose at all.
-_LIEU_MARKER = re.compile(r"\bliều\b", re.IGNORECASE)
-_CLOCK_TIME_MARKER = re.compile(r"\b\d{1,2}\s*(giờ|h)\b", re.IGNORECASE)
-_TIME_OF_DAY_WORD = re.compile(r"\b(giờ|sáng|trưa|chiều|tối)\b", re.IGNORECASE)
-_DOSING_VERB = re.compile(r"\b(uống|dùng thuốc)\b", re.IGNORECASE)
+# dose_time: a bare time-of-day word (sáng/trưa/chiều/tối/giờ) OR a bare
+# clock/duration time (PR review correction: "8 giờ", "2h" alone -- an
+# appointment time, "cách đây 2h", "đợi 1 giờ" duration/elapsed-time framing)
+# is ordinary Vietnamese on its own and must NOT be rejected just for
+# containing it -- the original marker regexes were flagging completely
+# benign prose. A real dose-time leak needs EITHER of those temporal signals
+# actually near a dosing verb (uống/dùng thuốc) -- a real, if fabricated,
+# schedule claim -- so both are checked with the same proximity rule.
+# "liều" (dose/dosage) stays a bare, unconditional marker -- unlike a
+# temporal word/clock time, it is not expected in ordinary connective/
+# empathy prose at all, dosing-context or not.
+_LIEU_MARKER = re.compile(r"\bliều\b")
+_CLOCK_TIME_MARKER = re.compile(r"\b\d{1,2}\s*(giờ|h)\b")
+_TIME_OF_DAY_WORD = re.compile(r"\b(giờ|sáng|trưa|chiều|tối)\b")
+_DOSING_VERB = re.compile(r"\b(uống|dùng thuốc)\b")
 _TIME_WORD_PROXIMITY_WINDOW = 30  # characters either side -- same sentence/clause, not the whole reply
 
 
-def _dose_time_leak_detected(text: str) -> bool:
-    if _LIEU_MARKER.search(text) or _CLOCK_TIME_MARKER.search(text):
+def _dose_time_leak_detected(normalized_text: str) -> bool:
+    if _LIEU_MARKER.search(normalized_text):
         return True
-    for match in _TIME_OF_DAY_WORD.finditer(text):
-        window = text[max(0, match.start() - _TIME_WORD_PROXIMITY_WINDOW) : match.end() + _TIME_WORD_PROXIMITY_WINDOW]
-        if _DOSING_VERB.search(window):
-            return True
+    for temporal_pattern in (_CLOCK_TIME_MARKER, _TIME_OF_DAY_WORD):
+        for match in temporal_pattern.finditer(normalized_text):
+            window = normalized_text[
+                max(0, match.start() - _TIME_WORD_PROXIMITY_WINDOW) : match.end() + _TIME_WORD_PROXIMITY_WINDOW
+            ]
+            if _DOSING_VERB.search(window):
+                return True
     return False
-
-
-def _normalize_for_identity_match(text: str) -> str:
-    """NFC-normalize then casefold -- a stricter, Unicode-correct form of
-    case-insensitive comparison than ``.lower()`` (casefold also handles
-    cases ``.lower()`` misses, e.g. German ß), and NFC first so a
-    combining-mark-decomposed Vietnamese string (rare, but possible from a
-    different input source) still compares equal to its precomposed form."""
-
-    return unicodedata.normalize("NFC", text).casefold()
 
 
 _CLAIM_CATEGORY_DETECTORS: dict[str, Callable[[str], bool]] = {
@@ -307,8 +325,15 @@ def validate_free_prose(
     is deliberately over-broad (reject a possibly-innocent turn) rather than
     under-broad (silently let a real leak through) wherever precision and
     recall trade off against each other.
+
+    Every check here -- ``medication_identity``'s substring comparison and
+    every regex-based category -- runs against the SAME
+    ``_normalize_for_match``-ed text (Unicode NFC + casefold), applied once,
+    up front: one consistent case-handling mechanism for the whole function,
+    not a mix of ``re.IGNORECASE`` on some patterns and casefold on others.
     """
 
+    normalized_prose = _normalize_for_match(free_prose)
     violations: list[str] = []
     for category in policy.prohibited_claim_categories:
         if category == "medication_identity":
@@ -320,11 +345,10 @@ def validate_free_prose(
             # "paracetamol" for a confirmed "Paracetamol" is still the model
             # naming the identity from the user's own message, and a bare
             # `in` comparison would let that through.
-            normalized_prose = _normalize_for_identity_match(free_prose)
-            if any(candidate and _normalize_for_identity_match(candidate) in normalized_prose for candidate in identity_strings):
+            if any(candidate and _normalize_for_match(candidate) in normalized_prose for candidate in identity_strings):
                 violations.append(category)
             continue
         detector = _CLAIM_CATEGORY_DETECTORS.get(category)
-        if detector is not None and detector(free_prose):
+        if detector is not None and detector(normalized_prose):
             violations.append(category)
     return not violations, tuple(violations)

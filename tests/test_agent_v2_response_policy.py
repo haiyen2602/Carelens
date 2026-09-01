@@ -362,9 +362,27 @@ def test_validate_free_prose_rejects_dose_status_claim_when_prohibited():
     assert "dose_status" in violations
 
 
+def test_validate_free_prose_rejects_dose_status_claim_in_upper_and_mixed_case():
+    """PR review hardening: dose_status/handoff detection is normalized the
+    same way as medication_identity (Unicode NFC + casefold), not left to
+    re.IGNORECASE's own Unicode handling -- one consistent case-handling
+    mechanism for the whole module, regardless of casing the model uses."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "BẠN ĐÃ UỐNG liều này rồi.")
+    assert ok is False
+    assert "dose_status" in violations
+
+
 def test_validate_free_prose_rejects_handoff_claim_when_prohibited():
     policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
     ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Mình đã chuyển cho bác sĩ rồi nhé.")
+    assert ok is False
+    assert "handoff_state" in violations
+
+
+def test_validate_free_prose_rejects_handoff_claim_in_upper_and_mixed_case():
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Mình Đã CHUYỂN CHO BÁC SĨ rồi nhé.")
     assert ok is False
     assert "handoff_state" in violations
 
@@ -461,9 +479,26 @@ def test_validate_free_prose_rejects_a_time_of_day_word_near_a_dosing_verb_even_
     assert "dose_time" in violations
 
 
-def test_validate_free_prose_rejects_a_bare_clock_time_even_without_a_nearby_dosing_verb():
+def test_validate_free_prose_allows_a_benign_clock_time_with_no_dosing_context():
+    """PR review correction: a bare clock/duration time (an appointment
+    time, "cách đây 2h" / "đợi 1 giờ") is ordinary Vietnamese with no dosing
+    meaning at all -- treating any digit+giờ/h pattern as an automatic
+    violation regardless of context would fail the whole turn on benign
+    prose, exactly the over-broad mistake already fixed for the bare
+    time-of-day words. A clock time now needs the same dosing-verb
+    proximity as a time-of-day word to count as a real leak."""
     policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
     ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Hẹn gặp bạn lúc 8 giờ nhé.")
+    assert ok is True
+    assert violations == ()
+
+
+def test_validate_free_prose_rejects_a_clock_time_near_a_dosing_verb():
+    """Adversarial: the model hallucinates a specific clock time AND it is
+    actually near a dosing verb -- this is the real leak the category
+    exists to catch, must still be rejected."""
+    policy = _policy(prohibited_claim_categories=_ALL_PROTECTED_CATEGORIES)
+    ok, violations = validate_free_prose(policy, RenderableFactSlots(), "Bạn nên uống vào lúc 8 giờ sáng.")
     assert ok is False
     assert "dose_time" in violations
 
