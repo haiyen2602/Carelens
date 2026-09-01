@@ -2,7 +2,9 @@
 
 > Nguồn thiết kế: [V2.5-DESIGN.md](./V2.5-DESIGN.md). Runbook: [CHECKPOINT.md](./CHECKPOINT.md) (CP0).
 > Owner / Reviewer: **Dyo31122005 (một mình, kiêm PM/Architect/Release owner)**.
-> Trạng thái: **Approved — CP0 exit đạt; Task 01 sẵn sàng mở branch.**
+> Trạng thái: **Approved — CP0 exit đạt; Task 01 đã đóng (discovery closure,
+> không runtime change); Task 02 (context/follow-up, range anaphora) đang ở
+> CP1.**
 
 ---
 
@@ -21,15 +23,24 @@ thứ tư, không có flag/canary/cohort/rollback riêng của chính nó.
 
 **Đề xuất thứ tự build** (dựa trên baseline evidence ở Phần 2 — xem để duyệt):
 
-1. **Task 01 (tài liệu này):** nền tảng Phase 1 — không đổi tone/model, chỉ sửa
-   một tool/evidence bug có reproduction thật + dựng skeleton
-   `RenderableFactSlots` cho nhóm fact lịch/liều.
-2. **Task 02 — context/follow-up:** ưu tiên trước renderer vì 14/14 case có
-   nhãn lỗi trong baseline đều thuộc nhóm này (xem Phần 2).
+1. **Task 01 — ĐÃ ĐÓNG, dạng discovery closure, không có runtime change.**
+   Reproduction thật trên code hiện tại cho thấy bug gốc (row ~108, "hai lượt
+   mâu thuẫn") **đã được BUILD-27B/28 sửa từ trước** — có regression test sẵn
+   (`tests/test_agent_v2_time_aware_schedule.py:89`), 36/36 pass, golden
+   baseline 15/15 pass. Không viết code cho bug không còn tồn tại. Chi tiết:
+   [TASK-V2.5-001](../../../tasks/TASK-V2.5-001-schedule-tool-contract.md).
+2. **Task 02 — context/follow-up, bắt đầu từ phát hiện mới:** "các ngày còn
+   lại thì sao" (anaphora về phần còn lại của một range đã hỏi trước đó) hiện
+   misroute thành `GENERAL_MEDICAL_INFORMATION` thay vì kế thừa range cũ —
+   phát hiện trong lúc reproduce Task 01, không phải giả định từ sheet. Chi
+   tiết: [TASK-V2.5-002](../../../tasks/TASK-V2.5-002-schedule-range-followup.md).
 3. **Task 03 — clarification.**
 4. **Task 04 — renderer** (cần `gpt-5.6-luna` availability smoke PASS — xem
    1.4 — **và** `ModelRole.RENDERER` tách khỏi `ModelRole.MAIN` đã code hoá
-   — xem 1.4a, blocker mới, phải xong trước khi Task 04 bắt đầu).
+   — xem 1.4a — **và** định nghĩa `RenderableFactSlots` thật, vì đây là nơi
+   nó có consumer đầu tiên. `RenderableFactSlots` **không** được dựng như
+   abstraction độc lập ở Task 01/02/03 — tránh tạo contract chưa ai dùng
+   trong timebox hai sprint).
 
 ### 1.2 Renderer ownership
 
@@ -53,7 +64,9 @@ hiện nay, không thay chữ ký/luồng gọi.
   nhưng đã có sẵn bằng tiếng Việt, viết riêng cho use case chatbot thuốc này.
 - ResponseAST/FactSlot (`response_ast_contract_v3.md`) → **chỉ tham chiếu**,
   không import/wire. V2.5 tự định nghĩa `RenderableFactSlots` tối giản
-  (Phần 4, Task 01) và bọc `synthesize_read_only` bằng adapter mỏng.
+  **ở Task 04** (nơi nó có consumer thật đầu tiên — renderer) và bọc
+  `synthesize_read_only` bằng adapter mỏng. Không dựng contract này sớm hơn
+  ở Task 01/02/03 khi chưa có nơi dùng thật.
 
 **Chốt (không còn treo):** `chat-bot-build/soul.md` (bản cũ, 124 dòng) là
 **legacy/historical reference** — viết cho một hệ thống/vòng build trước
@@ -265,31 +278,41 @@ phải Safety Domain redflag; không đổi Safety Domain ở pain point này.
 `TRUE_FOLLOWUP`/clarification tự nhiên thay vì lặp lại câu cũ hoặc bỏ qua
 thông tin sửa.
 
-### Pain point 3 — Tool/evidence mâu thuẫn và mất dấu vết hội thoại ở câu hỏi lịch/liều nhiều lượt (→ Task 01, Phase 1 nền tảng)
+### Pain point 3 — ĐÃ ĐIỀU TRA: không còn là bug tool/evidence, tách thành hai kết luận khác nhau
 
-**Evidence (TR01, có reproduction rõ):**
+**Evidence gốc (TR01, sheet):**
 - Hỏi lịch ngày 30/8 (lượt 6) trả về **kết quả trùng khớp** với lượt 5 (hỏi
-  "hôm nay") — sheet ghi rõ "hai lượt mâu thuẫn là lỗi". Đây là bug tool/dữ
-  liệu thật, không phải vấn đề giọng văn.
+  "hôm nay") — sheet ghi rõ "hai lượt mâu thuẫn là lỗi".
 - "các ngày còn lại thì sao" (tham chiếu phạm vi còn lại của tuần) →
   `V2: FAILED/TOOL_ERROR`.
 - "Tôi đã hỏi những vấn đề gì" (yêu cầu bot tự thuật lại hội thoại) →
   `V2: GROUNDING_FAILURE`.
 
-**Vì sao chọn làm Task 01 thay vì Task 02/03:** đây là lỗi ở tầng
-tool/evidence (đúng scope Phase 1 "Sửa contract mismatch có reproduction"),
-**không đụng tới tone/model/renderer** — rủi ro thấp nhất, có reproduction cụ
-thể nhất, và là nền cho `RenderableFactSlots` của nhóm fact lịch/liều mà cả
-ba capability sau đều cần.
+**Kết quả reproduction thật trên code hiện tại (không phải version sheet mô
+tả) — xem [TASK-V2.5-001](../../../tasks/TASK-V2.5-001-schedule-tool-contract.md)
+để có evidence đầy đủ:**
 
-**Safety impact:** thấp-trung bình — đây là route lịch uống thuốc
-(TODAY_DOSES/UPCOMING_DOSES/MEDICATION_HISTORY), không phải Safety Domain,
-nhưng dữ liệu sai lịch có thể gây hiểu nhầm đã/chưa uống thuốc → cần regression
-đầy đủ nhóm schedule/dose-status theo AC chung (mục 10, V2.5-DESIGN.md).
+1. **Mâu thuẫn lượt 5/6: không tái hiện được.** `resolve_time_query`/
+   `_schedule_reply`/`get_doses_for_range` đã đúng; test
+   `test_time_phrases_route_and_bound_correctly` đã có sẵn case tương đương
+   và pass; 36/36 test trong file pass. Đã được BUILD-27B/28 sửa từ trước.
+   **Không viết lại code cho bug không tồn tại.**
+2. **"các ngày còn lại thì sao": vẫn là gap thật, nhưng khác bản chất label.**
+   Route thực tế hiện tại là `GENERAL_MEDICAL_INFORMATION` (không phải crash
+   `TOOL_ERROR`) — router không có cơ chế kế thừa range đã hỏi trước đó để
+   tính "phần còn lại". Đây là lỗi **follow-up/context**, chuyển thành
+   baseline cho [TASK-V2.5-002](../../../tasks/TASK-V2.5-002-schedule-range-followup.md)
+   (capability context/follow-up), không thuộc Task 01/Phase 1 nữa.
+3. **"Tôi đã hỏi những vấn đề gì": không phải bug.** Route
+   `UNKNOWN_OR_AMBIGUOUS`/honest-decline là đúng boundary — Agent V2 không có
+   tool đọc lại lịch sử hội thoại trong danh sách 6 tool cho phép. Giới hạn
+   năng lực có chủ đích, không tạo thành requirement mới.
 
-**Tiêu chí đo sau thay đổi:** case lượt 5 vs lượt 6 (hai ngày khác nhau) trả
-kết quả khác nhau và đúng; "các ngày còn lại thì sao" không còn
-`FAILED/TOOL_ERROR`.
+**Safety impact:** thấp — mục 1 không còn là vấn đề; mục 2 là route thông
+tin/lịch, không phải Safety Domain; mục 3 là hành vi decline an toàn.
+
+**Tiêu chí đo sau thay đổi:** không áp dụng cho mục 1 (đã đóng). Mục 2 dùng
+tiêu chí baseline riêng ở TASK-V2.5-002.
 
 ### Phát hiện tách riêng khỏi 3 pain point trên — không thuộc lane V2.5
 
@@ -339,44 +362,20 @@ chờ CP0 đóng để bắt đầu — nên chạy song song, càng sớm càng
 
 ---
 
-## Phần 4 — Task 01: sửa tool/evidence mâu thuẫn lịch uống thuốc nhiều lượt
+## Phần 4 — Task 01 discovery closure & bàn giao sang Task 02
 
-**AC/DoD:**
-1. Reproduction: viết test tái tạo chính xác case "hôm nay" (lượt 5) vs
-   "ngày 30/8" (lượt 6, một ngày cụ thể khác) trả cùng kết quả — xác định
-   route nào trong `classify_intent`/`resolve_time_query`
-   (`backend/agents/v2/time_query_engine.py`) gây trùng.
-2. Fix contract mismatch tại gốc (không patch từng ngày cụ thể).
-3. "các ngày còn lại thì sao" (tham chiếu phạm vi còn lại trong tuần đã hỏi)
-   không còn trả `FAILED/TOOL_ERROR` — trả đúng phần còn lại của
-   `TimeRange` đã resolve trước đó, hoặc `NEED_MORE_INFO` rõ ràng nếu không
-   đủ ngữ cảnh (không phải lỗi cứng).
-4. Dựng skeleton `RenderableFactSlots` cho nhóm fact lịch/liều (schedule,
-   dose_status) trong request boundary — chỉ định nghĩa type, chưa cần
-   renderer dùng tới (đó là Task 04).
-5. Không đổi domain semantics, không clamp/retry âm thầm (theo Phase 1 scope).
+**Task 01 đóng dưới dạng discovery closure — không có diff runtime code.**
+Toàn bộ AC/DoD, evidence (golden run 15/15, pytest 36/36, migration drift đã
+xử lý) và lý do đổi AC gốc nằm trong
+[TASK-V2.5-001](../../../tasks/TASK-V2.5-001-schedule-tool-contract.md) —
+không lặp lại ở đây để tránh hai nguồn sự thật lệch nhau theo thời gian.
 
-**Capability flag:** không cần flag riêng — đây là bugfix + contract
-skeleton nội bộ, không thay đổi hành vi patient-facing ngoài việc sửa đúng.
-
-**Owner/cohort:** Dyo31122005; không cần cohort vì chưa bật patient-facing
-change.
-
-**Golden suite:** thêm 3 case trên (lượt 5/6 khác kết quả, "các ngày còn
-lại", "tôi đã hỏi những vấn đề gì" — case cuối có thể vẫn ngoài scope Task 01
-nếu thuộc conversation-history retrieval chứ không phải time-range, cần xác
-nhận khi code) vào `scripts/agent_v2/golden/golden_set_v2.json` hoặc file
-mới `golden_set_v2_5.json`.
-
-**Metric query:** tỷ lệ pass 3 case golden mới; không có metric production
-mới cần (chưa canary).
-
-**Stop condition:** bất kỳ regression nào ở schedule/dose-status hiện có
-(`TODAY_DOSES`/`UPCOMING_DOSES`/`MEDICATION_HISTORY` suite hiện tại) đang
-pass mà sau fix lại fail.
-
-**Rollback:** revert commit/PR của Task 01; không có Railway config nào bị
-đổi (thuần code + test).
+**Bàn giao sang Task 02:** phát hiện "các ngày còn lại thì sao" misroute
+thành `GENERAL_MEDICAL_INFORMATION` trở thành baseline mở đầu cho capability
+context/follow-up. AC/DoD, capability flag, câu hỏi thiết kế còn mở (có cần
+thêm field durable mới vào `ConversationState` để nhớ range đã hỏi hay
+không) nằm trong
+[TASK-V2.5-002](../../../tasks/TASK-V2.5-002-schedule-range-followup.md).
 
 ---
 

@@ -7,7 +7,7 @@
 | Câu hỏi | Trạng thái | Ý nghĩa |
 |---|---|---|
 | Có thể bắt đầu Phase 0? | **Đã hoàn tất** | ADR, baseline approach và Task 01 đã được chốt trong `CP0-ADR-BASELINE-TASK01.md`. |
-| Có thể bắt đầu code runtime? | **Có, chỉ Task 01** | Task 01 là bugfix/schedule contract ở local; Task 02–04 vẫn theo gate và capability flag riêng. |
+| Có thể bắt đầu code runtime? | **Chưa cho Task 02** | Task 01 đóng dưới dạng discovery closure (bug gốc đã fixed upstream, không cần runtime change — xem `TASK-V2.5-001`). Task 02 (context/follow-up, range anaphora) đang ở CP1: baseline/AC đã chốt (`TASK-V2.5-002`), còn một câu hỏi thiết kế mở (durable state field vs short-term memory) cần trả lời trước khi code. Task 03–04 vẫn theo gate và capability flag riêng. |
 | Có thể deploy Railway? | **Chưa** | Chỉ sau local quality gate, PR review và canary gate. |
 | OCR/VLM nằm trong canary chat đầu? | **Không** | Đây là track riêng, chỉ xem xét lại sau B-08 re-evaluation `PASS`. |
 
@@ -147,7 +147,7 @@ riêng — trạng thái của nó (contract version, adapter quanh `synthesize_
 | Capability | Task/PR | Owner | Flag | Cohort | Baseline | Local gate | Canary decision | User evaluation | Rollback owner |
 |---|---|---|---|---|---|---|---|---|---|
 | Natural renderer | _Chưa tạo_ |  |  |  |  |  |  |  |  |
-| Context/follow-up | _Chưa tạo_ |  |  |  |  |  |  |  |  |
+| Context/follow-up | `TASK-V2.5-002` (CP1, chưa code) | Dyo31122005 | `AGENT_V2_5_FOLLOWUP_ENABLED` (off) | — |  |  |  |  |  |
 | Clarification | _Chưa tạo_ |  |  |  |  |  |  |  |  |
 
 OCR/VLM không điền vào bảng này cho release đầu. Chỉ tạo checkpoint riêng sau khi B-08 re-evaluation đạt `PASS` với independent real-phone dataset, Vietnamese OCR ground truth, hard-negative/unknown set, deployment-equivalent test và canary evidence.
