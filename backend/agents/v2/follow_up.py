@@ -51,6 +51,14 @@ class FollowUpReasonCode(StrEnum):
     NAMED_SUBJECT_DIFFERS_FROM_PRIOR = "NAMED_SUBJECT_DIFFERS_FROM_PRIOR"
     DEICTIC_OR_ATTRIBUTE_ONLY_WITH_PRIOR_CONTEXT = "DEICTIC_OR_ATTRIBUTE_ONLY_WITH_PRIOR_CONTEXT"
     DEICTIC_OR_ATTRIBUTE_ONLY_NO_PRIOR_CONTEXT = "DEICTIC_OR_ATTRIBUTE_ONLY_NO_PRIOR_CONTEXT"
+    # TASK-V2.5-003: the message is ENTIRELY a negation of the prior reply
+    # ("Không đúng", "Sai rồi") with prior context to preserve -- only ever
+    # produced when the caller opts in via `recognize_negative_feedback`
+    # (capability flag AGENT_V2_5_CLARIFICATION_ENABLED). No no-prior-context
+    # counterpart: that case is indistinguishable in effect from the existing
+    # DEICTIC_OR_ATTRIBUTE_ONLY_NO_PRIOR_CONTEXT (nothing to preserve either
+    # way), so it is deliberately not special-cased -- see classify_follow_up.
+    NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT = "NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT"
 
 
 @dataclass(frozen=True)
@@ -416,6 +424,34 @@ def _has_named_subject(remainder: str) -> bool:
     return any(token not in _NON_SUBJECT_WORDS for token in tokens)
 
 
+# TASK-V2.5-003: words meaning "that's wrong"/"not correct"/"already" that
+# survive `_strip_evidence_markers` today (none of "dung"/"sai"/"roi" are
+# deictic markers, attribute keywords, or question particles -- "dung" is
+# the ascii-fold of BOTH "đúng" and "dùng", see the module-level note below
+# on why this set is READ-ONLY here, never merged into `_NON_SUBJECT_WORDS`
+# or `_QUESTION_PARTICLES`). Deliberately NOT unconditional: only consulted
+# by `_is_negative_feedback_only`, itself only reached when the caller opts
+# in via `recognize_negative_feedback` -- classify_follow_up's existing,
+# always-on Case 2 (`_has_named_subject`) must keep treating "dung"/"sai" as
+# a real subject token when the caller has not opted in, so the flag-off
+# path stays byte-identical to today.
+_NEGATIVE_FEEDBACK_WORDS = frozenset({"dung", "sai", "roi"})
+
+
+def _is_negative_feedback_only(remainder: str) -> bool:
+    """True only when the residue is ENTIRELY negation-feedback vocabulary
+    (at least one token, no other content). Never a substring match on the
+    raw message: "dung" is the ascii-fold of both "đúng" (correct) and
+    "dùng" (use/take) -- "Tôi không dùng thuốc này nữa" folds to "toi khong
+    dung thuoc nay nua", and after the SAME stripping this function's
+    caller already applies, "thuoc"/other real content survives in the
+    remainder, so this returns False for it. Only a message that reduces to
+    nothing but negation words (e.g. bare "Không đúng" -> remainder "dung")
+    matches."""
+    tokens = remainder.split()
+    return bool(tokens) and all(token in _NEGATIVE_FEEDBACK_WORDS for token in tokens)
+
+
 def _mentions(folded_haystack: str, needle: str | None) -> bool:
     if not needle:
         return False
@@ -436,6 +472,7 @@ def classify_follow_up(
     *,
     prior_topic: str | None,
     prior_entity_name: str | None,
+    recognize_negative_feedback: bool = False,
 ) -> FollowUpDecision:
     """Classify one turn's dependency on prior conversation context.
 
@@ -446,6 +483,15 @@ def classify_follow_up(
     "retrieval_query must NEVER overwrite canonical topic/entity", which
     this function's own input contract enforces by construction: it never
     receives a retrieval query at all).
+
+    TASK-V2.5-003: ``recognize_negative_feedback`` defaults to ``False`` --
+    the capability flag ``AGENT_V2_5_CLARIFICATION_ENABLED`` gates it, and
+    the caller (orchestrator.py) only ever passes ``True`` when that flag is
+    on. ``False`` reproduces every pre-existing decision byte-for-byte,
+    including the "Không đúng" -> TOPIC_SWITCH misclassification this build
+    fixes -- see module CHANGELOG-equivalent comment at
+    ``_is_negative_feedback_only`` for why the fix cannot simply widen an
+    always-on filler list instead.
     """
     folded = _ascii_fold(message)
     prior_context_exists = bool(prior_topic or prior_entity_name)
@@ -482,6 +528,30 @@ def classify_follow_up(
         return FollowUpDecision(
             FollowUpCategory.TOPIC_SWITCH, False, False,
             FollowUpReasonCode.EXPLICIT_TOPIC_DIFFERS_FROM_PRIOR, "display_topic_pattern",
+        )
+
+    # TASK-V2.5-003 (flag-gated, checked after Case 1 so a message that ALSO
+    # names a real new topic/entity is never preempted -- Case 1 already
+    # returned above if `explicit_topic` matched): the message reduces to
+    # nothing but negation-feedback vocabulary once the same filler this
+    # function already strips is removed. With prior context to preserve,
+    # this is a TRUE_FOLLOWUP asking to be told what was wrong -- never
+    # guessed here (see the orchestrator's own fixed reply for that reason
+    # code). Without prior context, it collapses into the SAME outcome
+    # Case 3 below already gives any other content-free fragment -- no new
+    # reason code for that half, per this build's own scope decision.
+    if recognize_negative_feedback and _is_negative_feedback_only(remainder):
+        if prior_context_exists:
+            return FollowUpDecision(
+                FollowUpCategory.TRUE_FOLLOWUP,
+                inherited_topic=bool(prior_topic) and not bool(prior_entity_name),
+                inherited_entity=bool(prior_entity_name),
+                reason_code=FollowUpReasonCode.NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT,
+                evidence_source="negative_feedback_marker",
+            )
+        return FollowUpDecision(
+            FollowUpCategory.AMBIGUOUS_FRAGMENT, False, False,
+            FollowUpReasonCode.DEICTIC_OR_ATTRIBUTE_ONLY_NO_PRIOR_CONTEXT, "negative_feedback_marker",
         )
 
     # Case 2: no explicit topic pattern, but the message still names a

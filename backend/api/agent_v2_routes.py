@@ -1021,6 +1021,7 @@ def run_agent_orchestration(
                 # the orchestrator's consumption of it is gated separately.
                 prior_active_schedule_range=conversation_state.active_schedule_range,
                 followup_capability_enabled=settings.agent_v2_5_followup_enabled,
+                clarification_capability_enabled=settings.agent_v2_5_clarification_enabled,
             ),
             tools=tools,
             checkpoint_db=db,

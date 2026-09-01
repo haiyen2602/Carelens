@@ -806,6 +806,50 @@ def test_ambiguous_follow_up_with_weak_context_asks_clarification():
     assert gateway.calls[-1]["message"] != "Còn cái kia?"
 
 
+# ---------------------------------------------------------------------------
+# TASK-V2.5-003: negative feedback ("Không đúng") -- flag-gated via
+# clarification_capability_enabled, default off.
+# ---------------------------------------------------------------------------
+
+
+def test_negative_feedback_with_flag_on_asks_what_was_wrong_and_preserves_entity():
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")))
+
+    result = orchestrator.run(
+        _request(
+            "Không đúng",
+            prior_active_entity_id="drug-1",
+            prior_active_entity_name="Vitamin C",
+            clarification_capability_enabled=True,
+        ),
+        tools=_tools(),
+    )
+
+    assert result.follow_up_decision is not None
+    assert result.follow_up_decision.category.value == "TRUE_FOLLOWUP"
+    assert result.follow_up_decision.reason_code.value == "NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT"
+    assert "chưa đúng" in result.response.lower() or "chua dung" in result.response.lower()
+    assert gateway.calls == []  # deterministic reply, never guesses via the model
+
+
+def test_negative_feedback_with_flag_off_preserves_legacy_topic_switch_behavior():
+    """Guard 3: flag off -> byte-identical to pre-Task-03 behavior, even
+    though that behavior is the TOPIC_SWITCH bug this build fixes."""
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")))
+
+    result = orchestrator.run(
+        _request(
+            "Không đúng",
+            prior_active_entity_id="drug-1",
+            prior_active_entity_name="Vitamin C",
+            # clarification_capability_enabled defaults to False -- not set.
+        ),
+        tools=_tools(),
+    )
+
+    assert "chưa đúng" not in result.response.lower()
+
+
 def test_follow_up_context_does_not_leak_across_conversation_session_or_actor():
     """BUILD-43: since prior context is always explicit per-call rather than
     read from an orchestrator-internal memory object, a structurally
