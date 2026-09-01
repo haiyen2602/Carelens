@@ -359,6 +359,51 @@ def test_persist_durable_trace_marks_empty_reply(db, monkeypatch):
     assert run.error_code == ERROR_CODE_EMPTY_REPLY
 
 
+def test_persist_durable_trace_merges_real_faithfulness_and_relevance_score(db, monkeypatch):
+    """Regression test for the admin monitoring dashboard's Faithfulness
+    N/A bug: `evaluation.as_dict()` only ever serialized each metric's
+    disposition (status/source/reason), never the real heuristic score --
+    that score existed only in the process-local ring buffer via
+    `telemetry.record_score`, so the durable `AgentRunEvaluation.metrics_json`
+    row could never satisfy the dashboard's `.get("score")` lookup. A RAG-
+    path run (real citations + a response text that overlaps the retrieved
+    context) must now persist a real numeric `score` for both faithfulness
+    and answer_relevance."""
+    import backend.api.agent_v2_routes as routes
+
+    sink = BufferingSink(StructuredLogSink())
+    monkeypatch.setattr(routes, "_telemetry_sink", sink)
+    telemetry = AgentTelemetry(sink=sink, pricing=ModelPricingCatalog({}, version="v1"))
+
+    run_id, trace_id = "run-durable-faith", "trace-durable-faith"
+    db.add(AgentRun(id=run_id, status="RUNNING", started_at=__import__("datetime").datetime.now(__import__("datetime").UTC)))
+    db.commit()
+
+    result = _fake_result(
+        agent_run_id=run_id,
+        trace_id=trace_id,
+        response="Paracetamol giam dau ha sot hieu qua",
+    )
+    result.citations = (SimpleNamespace(source="kb-article-1"),)  # non-empty -> RAG classification
+    result.tool_results = (
+        SimpleNamespace(name="search_kb", data={"text": "Paracetamol giam dau ha sot hieu qua theo khuyen cao"}),
+    )
+    settings = SimpleNamespace(agent_main_model="gpt-5.4-mini")
+    routes._persist_durable_trace(
+        db, result=result, telemetry=telemetry, settings=settings, actor=_actor(),
+        query="Paracetamol co tac dung gi",
+    )
+
+    evaluation = db.execute(select(AgentRunEvaluation).where(AgentRunEvaluation.agent_run_id == run_id)).scalar_one_or_none()
+    assert evaluation.execution_path == "RAG"
+    faithfulness = evaluation.metrics_json["metrics"]["faithfulness"]
+    relevance = evaluation.metrics_json["metrics"]["answer_relevance"]
+    assert faithfulness["status"] == "AVAILABLE"
+    assert isinstance(faithfulness["score"], float)
+    assert relevance["status"] == "AVAILABLE"
+    assert isinstance(relevance["score"], float)
+
+
 def test_persist_durable_trace_is_exception_safe_and_never_raises(db, monkeypatch):
     """A DB failure inside this best-effort function must never break the
     real chat response already returned to the caller."""

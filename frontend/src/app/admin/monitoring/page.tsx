@@ -175,6 +175,22 @@ const TECHNICAL_NOTE_MAP: Record<string, string> = {
     "Chưa ghi nhận trong phiên bản hiện tại",
 };
 
+// Vietnamese labels for the durable `AgentRun.intent` values that can ever
+// carry a GROUNDING_FAILURE error_code -- see backend's own
+// `_GROUNDING_REQUIRED_INTENTS` (orchestrator.py). Deliberately keyed by
+// intent, not execution_path: every GROUNDING_FAILURE run has zero
+// tool_results/citations by construction, so execution_path always
+// collapses to a single GENERAL_MODEL bucket and can't tell an admin where
+// the failures actually come from.
+const GROUNDING_INTENT_LABELS: Record<string, string> = {
+  DRUG_INFORMATION: "Tra cứu thông tin thuốc",
+  PRESCRIPTION_INFORMATION: "Thông tin đơn thuốc",
+  DOSE_STATUS: "Trạng thái liều dùng",
+  GENERAL_MEDICAL_INFORMATION: "Thông tin y khoa chung",
+  UNKNOWN_OR_AMBIGUOUS: "Yêu cầu chưa rõ ràng",
+  UNKNOWN: "Không xác định",
+};
+
 function formatHumanNote(raw?: string | null): string | null {
   if (!raw) return null;
   if (TECHNICAL_NOTE_MAP[raw]) return TECHNICAL_NOTE_MAP[raw];
@@ -1306,14 +1322,19 @@ function RetrievalTab({
   const gfVal = data.grounding_failure_rate?.status === "AVAILABLE" && typeof data.grounding_failure_rate.value === "number"
     ? data.grounding_failure_rate.value : null;
 
-  const totalRag = data.rag_query_volume ?? 0;
-  const gfCount = data.grounding_failure_rate?.numerator ?? 0;
-  const ragSuccess = Math.max(0, totalRag - gfCount);
-
-  const donutData = [
-    { name: "RAG có căn cứ thành công", value: ragSuccess, color: "#10b981" },
-    { name: "Lỗi thiếu căn cứ (Grounding Failure)", value: gfCount, color: "#ef4444" },
-  ];
+  // FIX: the previous version of this tab drew a "RAG success vs Grounding
+  // Failure" donut as `rag_query_volume - grounding_failure_rate.numerator`
+  // -- two counts from disjoint, non-comparable populations (RAG execution_
+  // path vs. GROUNDING_FAILURE across ALL grounding-required intents; see
+  // backend's own `retrieval_metrics` docstring). Subtracting them produced
+  // a negative number clamped to 0, so the donut always rendered 0% success
+  // / 100% failure regardless of real data. Grounding failures are broken
+  // down by their real classified intent instead (the field that actually
+  // varies -- see GROUNDING_INTENT_LABELS).
+  const groundingByIntent = data.grounding_failure_by_intent ?? {};
+  const groundingBarData = Object.entries(groundingByIntent)
+    .map(([intent, count]) => ({ label: GROUNDING_INTENT_LABELS[intent] ?? intent, value: count }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="space-y-6">
@@ -1355,9 +1376,16 @@ function RetrievalTab({
         />
       </div>
 
-      <div className="surface-card p-5">
-        <DonutChart data={donutData} title="Phân bổ kết quả truy xuất RAG (Thành công vs Thiếu căn cứ)" />
-      </div>
+      {groundingBarData.length > 0 ? (
+        <HorizontalBarChart
+          data={groundingBarData}
+          title="Lỗi thiếu căn cứ (Grounding Failure) theo loại yêu cầu"
+        />
+      ) : (
+        <div className="surface-card p-5 text-center text-xs text-muted-foreground">
+          Chưa có lỗi thiếu căn cứ nào trong bộ lọc hiện tại.
+        </div>
+      )}
     </div>
   );
 }

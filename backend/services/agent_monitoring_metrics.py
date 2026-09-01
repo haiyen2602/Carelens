@@ -439,6 +439,29 @@ def retrieval_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]
         # `grounding_failure_rate` below (denominator = ALL filtered runs)
         # is the one honestly-scoped metric for this concept.
 
+        # FIX (donut chart pairing rag_volume with grounding_failures as if
+        # they were success/failure of the same population -- see above):
+        # breaking a GROUNDING_FAILURE down by `execution_path` is a dead
+        # end -- every GROUNDING_FAILURE run has zero tool_results/citations
+        # by construction (orchestrator._enforce_medical_grounding only
+        # fires when both are empty) and status stays COMPLETED, so
+        # dispatch_evaluation's own fallthrough always lands it in
+        # EvaluationPath.GENERAL_MODEL -- a 100%-single-bucket breakdown
+        # that tells an admin nothing. `AgentRun.intent` (the durable,
+        # already-classified original intent) is the field that actually
+        # varies across grounding-required intents (BUILD-24F's own
+        # `_GROUNDING_REQUIRED_INTENTS`: DRUG_INFORMATION,
+        # PRESCRIPTION_INFORMATION, DOSE_STATUS,
+        # GENERAL_MEDICAL_INFORMATION, UNKNOWN_OR_AMBIGUOUS), so that is
+        # what this breakdown groups by.
+        gf_intent_rows = db.execute(
+            base.where(AgentRun.error_code == "GROUNDING_FAILURE").with_only_columns(AgentRun.intent)
+        ).scalars().all()
+        grounding_failure_by_intent: dict[str, int] = {}
+        for intent_value in gf_intent_rows:
+            key = intent_value or "UNKNOWN"
+            grounding_failure_by_intent[key] = grounding_failure_by_intent.get(key, 0) + 1
+
         retrieval_spans = db.execute(
             select(AgentRunSpan.duration_ms)
             .where(AgentRunSpan.span_type == "RETRIEVAL")
@@ -461,6 +484,7 @@ def retrieval_metrics(db: Session, filters: MonitoringFilters) -> dict[str, Any]
                 "reason": "grounding_failure_spans_multiple_intents_not_isolable_to_rag_only_today_see_grounding_failure_rate",
             },
             "grounding_failure_rate": _rate(grounding_failures, total),
+            "grounding_failure_by_intent": grounding_failure_by_intent,
             "citation_count_scope": "in_memory_ring_buffer_current_process_only_never_made_durable",
             "faithfulness_proxy_for_citation_context": heuristic["faithfulness"],
             "golden_hit_rate_at_10": _GOLDEN_IR_NOT_APPLICABLE,
