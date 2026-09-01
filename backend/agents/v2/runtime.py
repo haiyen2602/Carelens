@@ -17,9 +17,11 @@ from backend.agents.v2.model_gateway import (
     ModelPlan,
     ModelRole,
     ModelSynthesis,
+    ProhibitedClaimLeakError,
     SynthesisEvidence,
 )
 from backend.agents.v2.observability import AgentTelemetry, TraceComponent, TraceContext
+from backend.agents.v2.response_policy import Answerability, ResponsePolicy, assemble_reply, build_renderable_fact_slots
 from backend.agents.v2.safety import SafetyDecision, SafetyOutcome
 from backend.agents.v2.tools import ToolGateway, ToolResult
 
@@ -39,6 +41,10 @@ ERROR_CODE_MODEL_TIMEOUT = "MODEL_TIMEOUT"
 ERROR_CODE_REQUEST_TIMEOUT = "REQUEST_TIMEOUT"
 ERROR_CODE_TOOL_ERROR = "TOOL_ERROR"
 ERROR_CODE_EMPTY_REPLY = "EMPTY_REPLY"
+# TASK-V2.5-004: a distinct code from EMPTY_REPLY on purpose -- this is a
+# different failure mode (the model said something, just something
+# unauthorized), not an empty/missing reply. See ProhibitedClaimLeakError.
+ERROR_CODE_PROHIBITED_CLAIM_LEAK = "PROHIBITED_CLAIM_LEAK"
 
 # BUILD-20 (BUILD-19's P2): the Main Model occasionally emits a visually-
 # confusable Cyrillic character where it plainly means the Latin lookalike
@@ -118,7 +124,7 @@ def _strip_disallowed_scripts(text: str) -> str:
 # closing period with no space ("...thay đổi.Tôi không thể..."). BUILD-24C's
 # own analysis: this happens *inside* a single model completion, not from
 # any orchestration-level concatenation (`plan.response` is never
-# concatenated with `synthesis.response`) -- a generation-quality issue this
+# concatenated with `synthesis.free_prose`) -- a generation-quality issue this
 # codebase cannot prevent at the source, only detect and clean up after the
 # fact. Detected by finding the reply's own first sentence again later in
 # the text; when found, the reply is truncated to its first occurrence, since
@@ -239,6 +245,13 @@ class ReadOnlyAgentRuntime:
         sleep: Callable[[float], None] = time.sleep,
         telemetry: AgentTelemetry | None = None,
         model_name: str | None = None,
+        # TASK-V2.5-004: independent of every other param above -- default
+        # False reproduces today's exact tool-loop synthesis behavior byte-
+        # for-byte (ModelRole.MAIN, full evidence, no assemble_reply
+        # post-processing). See _synthesize_with_limits/_run below for the
+        # only two places this flag changes anything.
+        renderer_enabled: bool = False,
+        renderer_model_name: str | None = None,
     ) -> None:
         self._model_gateway = model_gateway
         self._limits = limits
@@ -246,6 +259,8 @@ class ReadOnlyAgentRuntime:
         self._sleep = sleep
         self._telemetry = telemetry
         self._model_name = model_name or "unknown"
+        self._renderer_enabled = renderer_enabled
+        self._renderer_model_name = renderer_model_name or "unknown"
 
     def run(
         self,
@@ -449,12 +464,17 @@ class ReadOnlyAgentRuntime:
         # point already returned before any model call ran, so synthesis only
         # ever sees a run that is not blocked or pending handoff.
         synth_started = self._clock()
+        # TASK-V2.5-004: which role/model this specific synthesis turn used.
+        # plan_read_only above is untouched (always MAIN) -- only this turn
+        # switches, and only while renderer_enabled is set.
+        synth_role = ModelRole.RENDERER if self._renderer_enabled else ModelRole.MAIN
+        synth_model_name = self._renderer_model_name if self._renderer_enabled else self._model_name
         if self._telemetry is not None and trace is not None:
             with self._telemetry.span(
                 trace,
                 TraceComponent.MODEL,
                 operation="synthesize_read_only",
-                attributes={"model_role": ModelRole.MAIN.value, "model": self._model_name},
+                attributes={"model_role": synth_role.value, "model": synth_model_name},
             ):
                 synthesis, synth_result, metrics = self._synthesize_with_limits(
                     message=message,
@@ -483,8 +503,8 @@ class ReadOnlyAgentRuntime:
         if self._telemetry is not None and trace is not None:
             self._telemetry.record_model(
                 trace,
-                role=ModelRole.MAIN,
-                model=self._model_name,
+                role=synth_role,
+                model=synth_model_name,
                 usage=synthesis.usage,
                 latency_ms=max(0.0, (self._clock() - synth_started) * 1000),
                 request_id=synthesis.request_id,
@@ -494,7 +514,54 @@ class ReadOnlyAgentRuntime:
             self._telemetry_event(trace, TraceComponent.GUARDRAIL, "agent_guardrail.budget", error_code="TOKEN_BUDGET_EXCEEDED")
             return self._guardrail_result("token", safety_context, results, metrics, started)
 
-        return self._result(RunStatus.COMPLETED, synthesis.response, results, metrics, started)
+        final_text = synthesis.free_prose
+        if self._renderer_enabled:
+            # TASK-V2.5-004 (CP1 contract mục 4a): backend assembly, not the
+            # model -- deterministic string composition inserting any
+            # protected fact verbatim after Luna's own free_prose. With no
+            # populated fact slot (fact_slots all-empty) this is a pure
+            # passthrough, identical to the flag-off text above.
+            fact_slots = build_renderable_fact_slots(self._evidence_from(results))
+            final_text = assemble_reply(self._default_response_policy(), fact_slots, synthesis.free_prose)
+        return self._result(RunStatus.COMPLETED, final_text, results, metrics, started)
+
+    @staticmethod
+    def _evidence_from(tool_results: tuple[ToolResult, ...] | list[ToolResult]) -> tuple[SynthesisEvidence, ...]:
+        return tuple(
+            SynthesisEvidence(tool_name=result.name, provenance=result.provenance, data=result.data)
+            for result in tool_results
+        )
+
+    @staticmethod
+    def _default_response_policy() -> ResponsePolicy:
+        """TASK-V2.5-004 CP2: the policy for the existing generic tool-
+        calling loop's synthesis turn. This call site is only ever reached
+        after a completed tool-calling loop (Safety/Handoff terminal states
+        already returned earlier in ``_run``), so ANSWERABLE is always
+        correct here -- never a fabricated disposition.
+
+        ``prohibited_claim_categories`` lists all four protected-fact
+        categories (owner requirement: ``ResponsePolicy`` must be a REAL
+        enforced input, not descriptive metadata) -- ``free_prose`` is, by
+        design (mục 4a), never supposed to state a specific dose time/status,
+        medication identity, or handoff claim itself; ``validate_free_prose``
+        reads exactly this field to decide what to reject, so an empty tuple
+        here would silently turn that backstop into a no-op. The real
+        per-route-type ResponsePolicy table from V2.5-DESIGN.md mục 7 (e.g. a
+        capability that legitimately needs a different category set) is
+        explicit remaining scope (see tasks/TASK-V2.5-004-natural-renderer.md's
+        own AC checklist), not silently implemented here.
+        """
+
+        return ResponsePolicy(
+            route_category="tool_loop",
+            answerability=Answerability.ANSWERABLE,
+            allowed_fact_refs=(),
+            prohibited_claim_categories=("dose_time", "dose_status", "medication_identity", "handoff_state"),
+            clarification_target=None,
+            handoff_state=None,
+            suggested_action_refs=(),
+        )
 
     def _plan_with_limits(
         self,
@@ -567,10 +634,12 @@ class ReadOnlyAgentRuntime:
         the returned ``RunResult`` even on failure, for audit transparency.
         """
 
-        evidence = tuple(
-            SynthesisEvidence(tool_name=result.name, provenance=result.provenance, data=result.data)
-            for result in tool_results
-        )
+        evidence = self._evidence_from(tool_results)
+        # TASK-V2.5-004: both None (the default) reproduces the exact
+        # pre-existing gateway call below -- see ModelGateway.synthesize_
+        # read_only's own docstring for why these are safe to always pass.
+        policy = self._default_response_policy() if self._renderer_enabled else None
+        fact_slots = build_renderable_fact_slots(evidence) if self._renderer_enabled else None
         current = metrics
         while True:
             if self._cancelled(is_cancelled):
@@ -583,7 +652,9 @@ class ReadOnlyAgentRuntime:
                 return None, self._guardrail_result("model/step", safety_context, tool_results, current, started), current
             before_call = self._clock()
             try:
-                synthesis = self._model_gateway.synthesize_read_only(message=message, actor_role=actor_role, evidence=evidence)
+                synthesis = self._model_gateway.synthesize_read_only(
+                    message=message, actor_role=actor_role, evidence=evidence, policy=policy, fact_slots=fact_slots
+                )
             except Exception as exc:
                 current = self._with(current, model_calls=current.model_calls + 1, steps=current.steps + 1)
                 if self._timed_out(started) or self._clock() - before_call > self._limits.model_timeout_seconds:
@@ -595,9 +666,14 @@ class ReadOnlyAgentRuntime:
                     # (model returned no usable text) is distinguished from a
                     # real timeout/other model error so Admin can tell "the
                     # model answered nothing" apart from "the model call
-                    # itself failed/timed out".
+                    # itself failed/timed out". TASK-V2.5-004:
+                    # ProhibitedClaimLeakError (model said something
+                    # unauthorized) is its own third bucket, deliberately not
+                    # folded into EMPTY_REPLY -- a different failure mode.
                     if isinstance(exc, EmptySynthesisError):
                         exhausted_code = ERROR_CODE_EMPTY_REPLY
+                    elif isinstance(exc, ProhibitedClaimLeakError):
+                        exhausted_code = ERROR_CODE_PROHIBITED_CLAIM_LEAK
                     elif isinstance(exc, openai.APITimeoutError):
                         exhausted_code = ERROR_CODE_MODEL_TIMEOUT
                     else:

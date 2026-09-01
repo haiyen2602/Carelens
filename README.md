@@ -1,118 +1,246 @@
-# VMEC-04: AI Agent Nhắc Thuốc & Theo Dõi Tuân Thủ Điều Trị
+# 🏥 VMEC-04: AI Agent Nhắc Thuốc & Theo Dõi Tuân Thủ Điều Trị
 
-> Bệnh nhân điều trị dài ngày quên/uống sai thuốc, bác sĩ không có dữ liệu tuân thủ thật giữa hai lần tái khám → AI Agent nhắc thuốc, xác nhận bằng ảnh + hội thoại tự nhiên, tạo bằng chứng khách quan về tuân thủ điều trị cho bệnh nhân mãn tính.
+> **Hệ thống AI Y tế Thông minh:** Giám sát tuân thủ dùng thuốc, xác nhận liều bằng thị giác máy tính & hội thoại tự nhiên, kiến trúc an toàn **Fail-safe** dành cho bệnh nhân mãn tính.
 
-## Vấn đề (Problem)
+![1788254582191](image/README/1788254582191.png)
 
-- **Bệnh nhân** (đặc biệt người cao tuổi nhiều bệnh nền: tim mạch, huyết áp, thận, gan) dùng nhiều loại thuốc ở nhiều khung giờ mỗi ngày, dễ quên liều, uống trễ giờ, uống sai loại, hoặc tự ý ngưng thuốc khi thấy đỡ. Với bệnh nhân sau đột quỵ, thiếu 1–2 liều đã có thể gây khó thở, ho, và căng thẳng cho cả gia đình.
-- **Bác sĩ** không có dữ liệu nào về việc bệnh nhân có thực sự uống thuốc hay không giữa hai lần khám, phải dựa hoàn toàn vào lời kể của bệnh nhân — dẫn tới rủi ro ra quyết định lâm sàng sai (tăng liều/đổi thuốc vì tưởng phác đồ không hiệu quả, trong khi bệnh nhân chưa dùng đủ liều).
-- Các giải pháp hiện có (app nhắc lịch, hộp chia thuốc thủ công, gọi điện nhắc) đều dừng ở mức thông báo, không tạo được **bằng chứng khách quan** rằng liều thuốc đã được uống.
+[![CI Pipeline](https://img.shields.io/badge/CI-Passing-brightgreen?logo=githubactions&logoColor=white)](#-kiem-thu--chat-luong-ma-nguon)
+[![Tests Passed](<https://img.shields.io/badge/Tests-1918%20Passed-success?logo=pytest&logoColor=white>)](#-kiem-thu--chat-luong-ma-nguon)
+[![Safety Core Coverage](<https://img.shields.io/badge/Safety%20Coverage-99%25-blue?logo=codecov&logoColor=white>)](#-kiem-thu--chat-luong-ma-nguon)
+[![Deploy on Railway](<https://img.shields.io/badge/Deploy-Railway%20Production-blueviolet?logo=railway&logoColor=white>)](#-live-demo--tai-khoan-thu-nghiem)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Giải pháp (Solution)
+---
 
-- **Feature 1 — Xác nhận bằng ảnh:** Bệnh nhân chụp ảnh thuốc đã bày trước khi uống; AI vision đếm số viên và đối chiếu với phác đồ bác sĩ đã duyệt (tối đa 2 lần chụp lại nếu không khớp trước khi chuyển sang xác minh bởi người thân).
-- **Feature 2 — Hội thoại tự nhiên:** Bệnh nhân trả lời tự do ("tôi uống rồi", "hôm nay bận nên chưa uống"...); agent phân loại 4 nhãn Taken/Missed/Delayed/SideEffect và phát hiện tín hiệu tác dụng phụ ẩn trong câu nói.
-- **Feature 3 — Đánh giá mức nghiêm trọng theo ngữ cảnh thuốc (RAG):** Không dùng rule cứng — bỏ 1 liều thuốc tim mạch nghiêm trọng hơn bỏ 3 liều vitamin. Agent kết hợp thông tin thuốc có nguồn để quyết định khi nào escalate, với một lớp an toàn song song (từ khoá redflag + LLM) chạy độc lập để không bỏ sót triệu chứng nghiêm trọng.
-- **Human-in-the-loop:** Agent chỉ hoạt động trên đơn đã bác sĩ duyệt; mọi đề xuất thay đổi lịch nhắc phải qua bác sĩ phê duyệt trước khi áp dụng.
+## 🌐 Live Demo
 
-## Target User
+| Thành phần                             | Đường dẫn Trực tiếp (Live URL)                                                                                            |    Trạng thái    |
+| :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :-----------------: |
+| 🖥️**Web Application (Frontend)** | [**https://c3-app-067.up.railway.app**](https://c3-app-067.up.railway.app)                                                 | 🟢`Active 200 OK` |
+| 🔌**Backend API & Health Check**   | [**https://vmec-04be-production.up.railway.app/api/v1/status**](https://vmec-04be-production.up.railway.app/api/v1/status) | 🟢`Active 200 OK` |
 
-- **Primary — Bệnh nhân:** người cao tuổi nhiều bệnh nền dùng thuốc dài ngày, và người trẻ trong liệu trình ngắn hạn (VD: kháng sinh) dễ bỏ ngang.
-- **Primary — Bác sĩ:** bác sĩ nội khoa/chuyên khoa quản lý nhiều bệnh nhân mãn tính, cần dữ liệu tuân thủ thật thay vì lời khai.
-- **Secondary — Người thân (Caregiver):** con cái/người chăm sóc, cần biết sớm khi có bất thường mà không phải gọi giục liên tục.
 
-## Tech Stack
+## 📌 Vấn đề & Giải pháp (Problem & Solution)
 
-| Layer | Technology |
-|-------|-----------|
-| AI Agent | LangGraph + LLM (phân loại hội thoại 4 nhãn, đánh giá mức nghiêm trọng, RAG) |
-| Backend | FastAPI + Python 3.11+ |
-| Scheduler | Cron job (1 phút/lần) quét bảng `dose_event` — thay vì per-dose Celery task, có biến time-offset để tăng tốc escalation khi demo |
-| Frontend — Bác sĩ | Web desktop (React/Next.js), tạo & duyệt phác đồ, dashboard tuân thủ |
-| Frontend — Bệnh nhân | Mobile PWA, xác nhận thuốc + chat AI |
-| Frontend — Người thân | Mobile, duyệt ảnh + xử lý cảnh báo |
-| Database | PostgreSQL (bảng `dose_event`, phác đồ, audit log) |
-| Vector Store / RAG | pgvector (extension trong PostgreSQL, không dùng vector DB riêng) |
-| Safety Layer | Dual-layer classifier: keyword rules + LLM, kết hợp bằng OR logic để tối đa recall triệu chứng nghiêm trọng |
-| DevOps | Docker + GitHub Actions (CI: ruff lint + pytest trên mọi push/PR vào main) |
+### 1. Vấn đề thực tế (Clinical Pain Point)
 
-## Quick Start
+- **Đối với Bệnh nhân:** Người cao tuổi mắc nhiều bệnh nền (tim mạch, huyết áp, tiểu đường) phải dùng nhiều loại thuốc vào nhiều khung giờ mỗi ngày, rất dễ quên liều, uống sai loại hoặc tự ý dừng thuốc.
+- **Đối với Bác sĩ:** Không có dữ liệu khách quan về việc bệnh nhân có thực sự tuân thủ giữa 2 lần tái khám. Bác sĩ buộc phải dựa vào lời kể chủ quan, dẫn tới nguy cơ ra quyết định lâm sàng sai lệch (tăng liều hoặc đổi phác đồ không cần thiết).
+- **Hạn chế của giải pháp truyền thống:** Các ứng dụng báo thức thông thường chỉ gửi thông báo một chiều, không tạo ra **bằng chứng khách quan** rằng thuốc đã được uống đúng cách.
+
+### 2. Giải pháp VMEC-04
+
+- 📸 **Xác nhận bằng Ảnh (Photo Verification):** Thị giác máy tính đối chiếu số lượng viên và dạng đóng gói với phác đồ đã được bác sĩ phê duyệt.
+- 💬 **Hội thoại Tự nhiên (Agentic Dialog):** Trò chuyện tự nhiên bằng tiếng Việt, nhận diện trạng thái uống thuốc (*Taken / Missed / Delayed*) và phát hiện sớm triệu chứng tác dụng phụ.
+- 🛡️ **Đánh giá Nguy cơ & RAG Y khoa:** Truy xuất thông tin thuốc chính xác từ cơ sở dữ liệu có nguồn (`pgvector`), tự động leo thang cảnh báo theo mức độ nguy hiểm lâm sàng.
+- 👨‍⚕️ **Cơ chế Human-in-the-loop (HITL):** AI tuyệt đối không tự ý kê đơn hay đổi liều; mọi điều chỉnh phác đồ hoặc ca bệnh phức tạp đều được tự động chuyển tiếp tới bác sĩ phụ trách.
+
+---
+
+## 🏛️ Sơ đồ Kiến trúc & Luồng Xử lý (Architecture)
+
+Hệ thống được thiết kế theo triết lý **Fail-safe (Fail-closed)** — tách biệt hoàn toàn tầng phân loại an toàn khỏi suy luận tự do của mô hình ngôn ngữ lớn (LLM).
+
+```mermaid
+flowchart TD
+    subgraph Client ["Client Layer (Next.js / PWA)"]
+        UI_Doc["Bác sĩ (Doctor Web)"]
+        UI_Pat["Bệnh nhân (Patient Mobile)"]
+        UI_Care["Người thân (Caregiver)"]
+    end
+
+    subgraph Gateway ["API & Safety Gateway (FastAPI)"]
+        AUTH["RBAC & Security Gate"]
+        SAFETY["Fail-closed Safety Gateway\n(Dual Classifier: Server Trigger + Rule Engine)"]
+    end
+
+    subgraph AgentRuntime ["AI Agent V2 Runtime (LangGraph)"]
+        ROUTER["Intent & Topic Router"]
+        ORCH["Orchestrator Node"]
+        RAG_MOD["RAG Engine (pgvector)\n3.500+ Thuốc chuẩn hóa"]
+        VISION["VLM / Computer Vision\nPhoto Verification"]
+        HANDOFF["Doctor Handoff & Escalation Engine"]
+    end
+
+    subgraph Database ["Persistence & Audit (PostgreSQL)"]
+        DB_APP[(Application DB: Users, Prescriptions, Doses)]
+        DB_VEC[(Vector Store: pgvector Drug Chunks)]
+        AUDIT[(Immutable Audit Trail: AgentRun, SafetyEvent)]
+    end
+
+    Client --> AUTH
+    AUTH --> SAFETY
+    SAFETY -->|An toàn / Passed| ROUTER
+    SAFETY -->|Nguy cơ / Blocked| HANDOFF
+    ROUTER --> ORCH
+    ORCH --> RAG_MOD
+    ORCH --> VISION
+    ORCH --> HANDOFF
+    AgentRuntime --> Database
+```
+
+---
+
+## 🛠️ Công nghệ Sử dụng (Tech Stack)
+
+| Thành phần              | Công nghệ / Thư viện               | Vai trò kỹ thuật                                                                    |
+| :------------------------ | :------------------------------------- | :------------------------------------------------------------------------------------- |
+| **AI Agent Core**   | LangGraph, LangChain, OpenAI / Claude  | Điều phối Agent V2, quản lý hội thoại đa lượt và suy luận an toàn         |
+| **Backend API**     | FastAPI, Python 3.11+, Pydantic v2     | Xây dựng RESTful API hiệu năng cao, xác thực JWT và phân quyền RBAC           |
+| **Vector DB & RAG** | PostgreSQL +`pgvector`               | Lưu trữ và tìm kiếm vector nhúng (Embedding) trên 3.500+ danh mục thuốc y tế |
+| **Database & ORM**  | PostgreSQL 16, SQLAlchemy 2.0, Alembic | Quản lý quan hệ dữ liệu, thực thi Migration tự động                           |
+| **Frontend**        | Next.js 14, React, Tailwind CSS        | Giao diện Responsive Web / PWA hỗ trợ cả Desktop bác sĩ và Mobile bệnh nhân   |
+| **Safety & Vision** | Dual-layer Classifier, OpenCV, Pillow  | Phân loại từ chối rủi ro, đối chiếu thị giác hình ảnh thuốc               |
+| **DevOps & CI/CD**  | Docker, GitHub Actions, Railway        | Tự động Lint (`Ruff`), Chạy Test (`Pytest`), Build Container và Deploy        |
+
+---
+
+## 🚀 Hướng dẫn Cài đặt & Khởi chạy (Quick Start)
+
+### Yêu cầu tiên quyết
+
+- Python 3.11+
+- Node.js 20+ & `pnpm` / `npm`
+- PostgreSQL 16 (hỗ trợ extension `pgvector`) hoặc Docker
+
+---
+
+### Cách 1: Khởi chạy bằng Docker Compose (Khuyến nghị)
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/a20-ai-thuc-chien/A20-App-VMEC04.git   # cập nhật lại URL repo thật của team P-067
-cd A20-App-VMEC04
+# 1. Clone repository
+git clone https://github.com/AI20K-Build-Phase-Cohort-3/P-067
+cd P-067
 
-# 2. Setup environment
+# 2. Thiết lập biến môi trường
 cp .env.example .env
-# Điền API keys (LLM provider, ...) vào .env
 
-# 3. Install dependencies
+# 3. Khởi động toàn bộ hệ thống (Database, Backend, Frontend)
+docker-compose up --build -d
+
+# 4. Kiểm tra trạng thái hoạt động
+curl -s http://localhost:8000/api/v1/status
+```
+
+---
+
+### Cách 2: Khởi chạy Local (Môi trường Phát triển)
+
+#### 1. Cài đặt Backend
+
+```bash
+# Tạo và kích hoạt môi trường ảo Python
+python -m venv .venv
+source .venv/bin/activate    # Linux / macOS
+# .venv\Scripts\Activate.ps1 # Windows PowerShell
+
+# Cài đặt thư viện phụ thuộc
 pip install -r requirements.txt
 
-# 4. Run development server
-uvicorn src.main:app --reload
+# Chạy Database Migrations
+alembic upgrade head
+
+# Khởi chạy Backend Server
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Project Structure
+#### 2. Cài đặt Frontend
 
-```
-├── backend/             # Backend FastAPI (doi ten tu src/ 2026-08-11 de tach
-│   │                    # ro voi frontend/)
-│   ├── agents/          # LangGraph agent definitions
-│   │   ├── graph.py     # Main graph (nodes + edges)
-│   │   ├── state.py     # State schema
-│   │   ├── nodes/       # parse_phac_do, sinh_lich_nhac, phan_loai_hoi_thoai,
-│   │   │                # doi_chieu_anh, danh_gia_muc_nghiem_trong, escalate
-│   │   └── tools/       # RAG (pgvector), vision (đếm viên thuốc), safety-layer
-│   ├── api/             # FastAPI routes (doctor/patient/caregiver)
-│   ├── models/          # Pydantic schemas
-│   ├── services/        # Business logic, cron scheduler dose_event
-│   ├── config.py        # Settings
-│   └── main.py          # App entry point
-├── frontend/            # Next.js app (service Railway rieng)
-├── tests/               # Test suite
-├── docs/                # BRIEF, PRD, workflow, functional decomposition, system flow
-├── eval/                # Evaluation results (accuracy phân loại, recall triệu chứng...)
-├── presentation/        # Demo materials
-├── Dockerfile           # Multi-stage build
-├── docker-compose.yml   # Full stack
-└── .github/workflows/   # CI/CD pipelines (ruff + pytest)
+```bash
+cd frontend
+pnpm install
+pnpm dev
+# Truy cập giao diện tại: http://localhost:3000
 ```
 
-## API Endpoints
+---
 
-| Method | Path | Description |
-|--------|------|--------------|
-| GET | /health | Health check |
-| POST | /api/v1/prescriptions | Bác sĩ tạo phác đồ |
-| POST | /api/v1/prescriptions/{id}/approve | Bác sĩ duyệt phác đồ (HITL) |
-| POST | /api/v1/chat | Hội thoại xác nhận với agent |
-| POST | /api/v1/doses/{id}/photo | Bệnh nhân gửi ảnh xác nhận thuốc |
-| GET | /api/v1/dashboard | Dashboard tuân thủ cho bác sĩ |
+## 🧪 Kiểm thử & Chất lượng Mã nguồn (Testing & Quality Gates)
 
-## Deliverables Checklist
+Hệ thống sở hữu bộ test tự động nghiêm ngặt được tích hợp trực tiếp vào quy trình CI/CD:
 
-- [ ] Source Code (GitHub) — chưa bắt đầu code, đang ở giai đoạn thiết kế/tài liệu
-- [x] README.md — draft Week 1
-- [x] Architecture Diagram (`docs/architecture_diagram.md`) — draft sơ bộ
-- [ ] AI Logs (auto-collected)
-- [ ] Live URL / Deploy
-- [ ] Video Demo
-- [ ] Pitch Deck (`presentation/`)
-- [x] Weekly Journal (`JOURNAL.md`) — Week 1 đã ghi
-- [x] Worklog (`WORKLOG.md`) — Week 1 đã ghi
-- [ ] Evaluation Evidence (`eval/results/`)
+```bash
+# 1. Kiểm tra quy chuẩn mã nguồn (Linting)
+ruff check backend/ tests/
 
-## Team — P-067 (G14 - T067)
+# 2. Chạy toàn bộ Test Suite (1.900+ test cases)
+pytest tests/ -v --tb=short
 
-| Member | Role | Student ID |
-|--------|------|-----------|
-| Nguyễn Minh Đạt | Team Leader / Data Engineer / AI Engineer | 2A202601142 |
-| Nguyễn Hải Yến | Project Manager / UI-UX Designer / Frontend Developer | 2A202601604 |
-| Phạm Thành Đạt | AI Engineer / Fullstack Developer / Tester | 2A202601672 |
-| Trương Quốc Trường | Fullstack Developer / Tech Leader (merge chính vào main) | 2A202601195 |
+# 3. Đo lường tỷ lệ bao phủ mã nguồn (Code Coverage)
+pytest --cov=backend/agents/v2 --cov-report=term-missing tests/
 
-## License
+# 4. Chạy bộ đánh giá xác thực Golden Set trên cơ sở dữ liệu thật
+python scripts/agent_v2/run_golden_evaluation.py --deterministic-only --out-dir /tmp/golden-eval
+```
 
-MIT
+### 📊 Kết quả Đo lường Thực tế
+
+* **Tổng số bài test vượt qua:** **1.918 tests passed** (100% kịch bản an toàn lâm sàng pass).
+* **Độ bao phủ module An toàn (`safety.py`):** **99% Line Coverage** (86/87 statements).
+* **Độ bao phủ các module điều phối cốt lõi:** `tools.py` **91%**, `context.py` **87%**, `handoff.py` **85%**, `runtime.py` **80%**, `orchestrator.py` **77%**.
+* **Độ trễ hệ thống (SLO Latency):** P50 đạt `3,38 giây`, P95 đạt `5,58 giây`, Tra cứu thuốc nhanh chỉ mất `0,27 giây` (Vượt trội mục tiêu cam kết `<1 phút` và `<2 phút`).
+
+---
+
+## 📁 Cấu trúc Thư mục Dự án (Project Structure)
+
+```
+P-067/
+├── backend/                   # Backend FastAPI & Agent Logic
+│   ├── agents/v2/             # LangGraph Agent V2 Core (Orchestrator, Safety, Memory, RAG)
+│   ├── api/                   # RESTful API Endpoints (Chat, Doses, Prescriptions, Admin)
+│   ├── db/                    # SQLAlchemy Database Models & Base Connection
+│   ├── models/                # Pydantic Schemas & DTO Contracts
+│   ├── services/              # Business Logic (Scheduling, Safety Domain, Auth, Images)
+│   ├── vlm_demthuoc/          # Computer Vision Model & Image Verification Tool
+│   ├── config.py              # Centralized Settings & Environment Validation
+│   └── main.py                # FastAPI Application Entrypoint
+├── frontend/                  # Next.js 14 Web Application
+│   ├── src/app/               # App Router Pages (Doctor, Patient, Caregiver, Admin)
+│   ├── src/components/        # Reusable UI Components & Tailwind Styling
+│   └── Dockerfile             # Multi-stage Frontend Container Build
+├── tests/                     # Automated Test Suite (130+ Test Files, 2.400+ Test Cases)
+├── migrations/                # Alembic Database Migrations
+├── docs/                      # Tài liệu Kỹ thuật, Kiến trúc, PRD, Báo cáo
+├── eval/                      # Dữ liệu Đánh giá & Báo cáo Thực nghiệm (Accuracy, Latency)
+├── presentation/              # Slide Thuyết trình Demo Day & Speaker Notes
+├── .ai-log/                   # Nhật ký Tracing & Lịch sử Reasoning của AI Agent
+├── .github/workflows/         # CI/CD Workflows (Lint, Test, Golden-Smoke, Railway Deploy)
+├── Dockerfile                 # Backend Multi-stage Container
+├── docker-compose.yml         # Full-stack Orchestration
+└── requirements.txt           # Python Production Dependencies
+```
+
+---
+
+## 📦 Danh sách 10 Deliverables Nộp BTC AI20K
+
+| # | Deliverable | Vị trí tài liệu trong Repo | Trạng thái |
+| :---: | :--- | :--- | :---: |
+| **1** | **Source Code** | [`backend/`](backend/), [`frontend/`](frontend/), [`tests/`](tests/) | ✅ Đã hoàn thành |
+| **2** | **README.md** | [`README.md`](README.md) | ✅ Đã hoàn thành |
+| **3** | **Architecture Diagram** | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/architecture_diagram.md`](docs/architecture_diagram.md) | ✅ Đã hoàn thành |
+| **4** | **AI Logs** | [`.ai-log/archive/`](.ai-log/archive/), [`docs/ai-logs.md`](docs/ai-logs.md) | ✅ Đã hoàn thành |
+| **5** | **Live URL** | [Web App (FE)](https://c3-app-067.up.railway.app) · [Health Check (BE)](https://vmec-04be-production.up.railway.app/api/v1/status) | ✅ Đã triển khai |
+| **6** | **Video Demo** | [`presentation/README.md`](presentation/README.md) · [`docs/video-demo.md`](docs/video-demo.md) | 🔄 Sẵn sàng cập nhật link |
+| **7** | **Pitch Deck** | [`presentation/slide-07-technical-highlights.md`](presentation/slide-07-technical-highlights.md) | 🔄 Sẵn sàng xuất PDF |
+| **8** | **Development Journal** | [`JOURNAL.md`](JOURNAL.md) | ✅ Đã hoàn thành |
+| **9** | **Worklog** | [`WORKLOG.md`](WORKLOG.md) | ✅ Đã hoàn thành |
+| **10** | **Evaluation Evidence** | [`eval/results/report.md`](eval/results/report.md), [`eval/eval_report.json`](eval/eval_report.json) | ✅ Đã hoàn thành |
+
+---
+
+## 👥 Đội ngũ Phát triển — Team P-067 (G14 - T067)
+
+| Họ và Tên                      | Vai trò chính trong dự án                                   | Mã học viên |
+| :-------------------------------- | :-------------------------------------------------------------- | :-------------: |
+| **Nguyễn Minh Đạt**      | **Team Leader** / Data Engineer / AI Engineer             | `2A202601142` |
+| **Nguyễn Hải Yến**       | **Project Manager** / UI-UX Designer / Frontend Developer | `2A202601604` |
+| **Phạm Thành Đạt**      | **AI Engineer** / Fullstack Developer / QA Tester         | `2A202601672` |
+| **Trương Quốc Trường** | **Tech Leader** / Fullstack Developer *(Lead Merger)*   | `2A202601195` |
+
+---
+
+## 📄 Bản quyền (License)
+
+Dự án được phát hành theo giấy phép mã nguồn mở [MIT License](LICENSE).

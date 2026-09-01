@@ -70,7 +70,7 @@ class _CountingGateway:
 
     def __init__(self, plan: ModelPlan, synthesis: ModelSynthesis | None = None, *, fail_synthesis_times: int = 0) -> None:
         self.plan = plan
-        self.synthesis = synthesis or ModelSynthesis(response="synthesized-reply")
+        self.synthesis = synthesis or ModelSynthesis(free_prose="synthesized-reply")
         self.plan_calls = 0
         self.synthesis_calls = 0
         self._fail_synthesis_times = fail_synthesis_times
@@ -79,7 +79,7 @@ class _CountingGateway:
         self.plan_calls += 1
         return self.plan
 
-    def synthesize_read_only(self, *, message: str, actor_role: str, evidence) -> ModelSynthesis:
+    def synthesize_read_only(self, *, message: str, actor_role: str, evidence, policy=None, fact_slots=None) -> ModelSynthesis:
         self.synthesis_calls += 1
         if self._fail_synthesis_times > 0:
             self._fail_synthesis_times -= 1
@@ -105,13 +105,13 @@ class _RuntimeTools:
 
 def test_drug_information_with_tool_call_produces_non_empty_synthesized_reply():
     plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "paracetamol", "limit": 3}),), response="")
-    synthesis = ModelSynthesis(response="Paracetamol la thuoc ha sot, giam dau thong dung.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol la thuoc ha sot, giam dau thong dung.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Cho toi biet thong tin ve thuoc paracetamol"), tools=_tools())
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert result.response != ""  # the exact BUILD-19 P1 defect: no longer reproducible
     assert len(gateway.calls) == 1
     assert len(gateway.synthesis_calls) == 1
@@ -126,14 +126,14 @@ def test_dose_status_with_tool_call_produces_non_empty_synthesized_reply():
     # the Main Model.
     domain_tools = _DomainTools(dose_status_by_id={"dose-1": ["occ-1"]})
     plan = ModelPlan(tool_calls=(ToolCall("get_dose_status", {"dose_id": "dose-1"}),), response="")
-    synthesis = ModelSynthesis(response="Lieu thuoc luc 8 gio sang van dang cho xac nhan.")
+    synthesis = ModelSynthesis(free_prose="Lieu thuoc luc 8 gio sang van dang cho xac nhan.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Trang thai lieu thuoc dose-1 the nao", dose_id="dose-1"), tools=_tools(domain_tools))
 
     assert result.intent is OrchestrationIntent.DOSE_STATUS
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert result.response
     assert [t.name for t in result.tool_results] == ["get_dose_status"]
     assert len(gateway.synthesis_calls) == 1
@@ -145,7 +145,7 @@ def test_safety_safe_disposition_with_tool_call_produces_non_empty_synthesized_r
     # an empty reply.
     domain_tools = _DomainTools(dose_status_by_id={"dose-1": ["occ-1"]})
     plan = ModelPlan(tool_calls=(ToolCall("get_dose_status", {"dose_id": "dose-1"}),), response="")
-    synthesis = ModelSynthesis(response="Ban da bo lo mot lieu sang nay; muc do an toan thap, khong can lo lang.")
+    synthesis = ModelSynthesis(free_prose="Ban da bo lo mot lieu sang nay; muc do an toan thap, khong can lo lang.")
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(plan, synthesis),
         safety_domain=_SafetyDomain(_safety_decision()),
@@ -157,7 +157,7 @@ def test_safety_safe_disposition_with_tool_call_produces_non_empty_synthesized_r
     assert result.safety_decision is not None
     assert result.safety_decision.outcome is SafetyOutcome.SAFE
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert result.response
     assert len(gateway.calls) == 1
     assert len(gateway.synthesis_calls) == 1
@@ -165,14 +165,14 @@ def test_safety_safe_disposition_with_tool_call_produces_non_empty_synthesized_r
 
 def test_prescription_query_with_tool_call_produces_non_empty_synthesized_reply():
     plan = ModelPlan(tool_calls=(ToolCall("get_active_prescriptions", {}),), response="")
-    synthesis = ModelSynthesis(response="Ban dang co 1 don thuoc dang hoat dong.")
+    synthesis = ModelSynthesis(free_prose="Ban dang co 1 don thuoc dang hoat dong.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Don thuoc hien tai cua toi co gi"), tools=_tools())
 
     assert result.intent is OrchestrationIntent.PRESCRIPTION_INFORMATION
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert result.response
     assert len(gateway.synthesis_calls) == 1
 
@@ -190,7 +190,7 @@ def test_multiple_tool_calls_produce_exactly_one_final_synthesized_reply():
         ),
         response="",
     )
-    synthesis = ModelSynthesis(response="Day la thong tin thuoc va lieu hom nay cua ban.")
+    synthesis = ModelSynthesis(free_prose="Day la thong tin thuoc va lieu hom nay cua ban.")
     gateway = _CountingGateway(plan, synthesis)
     tools = _RuntimeTools()
     runtime = ReadOnlyAgentRuntime(gateway, limits=_runtime_limits(max_tool_calls=3, max_steps=6))
@@ -198,7 +198,7 @@ def test_multiple_tool_calls_produce_exactly_one_final_synthesized_reply():
     result = runtime.run(message="tim thuoc va lieu hom nay", actor_role="patient", tools=tools)
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert tools.calls == ["search_drug", "get_today_doses"]
     assert gateway.plan_calls == 1
     assert gateway.synthesis_calls == 1  # one synthesis call covering both tool results
@@ -226,7 +226,7 @@ def test_three_tool_prescription_flow_completes_within_the_real_production_defau
         ),
         response="",
     )
-    synthesis = ModelSynthesis(response="Ban dang co 1 don thuoc, kem lieu hom nay va sap toi.")
+    synthesis = ModelSynthesis(free_prose="Ban dang co 1 don thuoc, kem lieu hom nay va sap toi.")
     gateway = _CountingGateway(plan, synthesis)
     tools = _RuntimeTools()
     runtime = ReadOnlyAgentRuntime(gateway, limits=limits)
@@ -234,7 +234,7 @@ def test_three_tool_prescription_flow_completes_within_the_real_production_defau
     result = runtime.run(message="don thuoc va lieu cua toi the nao", actor_role="patient", tools=tools)
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert tools.calls == ["get_active_prescriptions", "get_today_doses", "get_upcoming_doses"]
     assert gateway.synthesis_calls == 1
     assert len(result.tool_results) == 3
@@ -386,7 +386,7 @@ def checkpoint_db() -> Session:
 def test_checkpoint_resume_after_completion_does_not_replay_tool_or_synthesis_calls(checkpoint_db):
     agent_run_id = "run-synthesis-resume-1"
     plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "para", "limit": 3}),), response="")
-    synthesis = ModelSynthesis(response="Paracetamol la thuoc ha sot pho bien.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol la thuoc ha sot pho bien.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
     tools = _tools()
     request = _request("Cho toi biet thong tin ve thuoc paracetamol", agent_run_id=agent_run_id)
@@ -394,7 +394,7 @@ def test_checkpoint_resume_after_completion_does_not_replay_tool_or_synthesis_ca
     result = orchestrator.run(request, tools=tools, checkpoint_db=checkpoint_db)
 
     assert result.status is RunStatus.COMPLETED
-    assert result.response == synthesis.response
+    assert result.response == synthesis.free_prose
     assert len(gateway.calls) == 1
     assert len(gateway.synthesis_calls) == 1
 

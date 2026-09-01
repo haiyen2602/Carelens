@@ -44,7 +44,7 @@ def test_runtime_executes_only_allowlisted_read_tool():
     runtime = ReadOnlyAgentRuntime(
         StaticModelGateway(
             ModelPlan((ToolCall("search_drug", {"query": "para"}),), "done"),
-            ModelSynthesis(response="Day la thong tin thuoc ban can."),
+            ModelSynthesis(free_prose="Day la thong tin thuoc ban can."),
         ),
         limits=_limits(max_steps=3),
     )
@@ -236,6 +236,244 @@ def test_loop_is_detected_before_duplicate_tool_execution():
     )
     assert result.status == RunStatus.BUDGET_EXCEEDED
     assert tools.calls == []
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-004: renderer_enabled wiring. Default (renderer_enabled=False,
+# every test above) must stay byte-identical -- only a runtime explicitly
+# constructed with renderer_enabled=True exercises assemble_reply/RENDERER.
+# ---------------------------------------------------------------------------
+
+
+class _DrugNameGateway:
+    """Tool-loop gateway whose search_drug result maps into RenderableFactSlots
+    (drug_name). synthesize_read_only's own policy/fact_slots args are
+    ignored here -- this double asserts the RUNTIME builds and applies them
+    via assemble_reply, not that the gateway itself receives them correctly
+    (that is already covered by tests/test_agent_v2_model_gateway.py)."""
+
+    def __init__(self, free_prose: str) -> None:
+        self._free_prose = free_prose
+        self.received_policy = "unset"
+        self.received_fact_slots = "unset"
+
+    def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan:
+        return ModelPlan((ToolCall("search_drug", {"query": "para"}),), "ignored")
+
+    def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
+        self.received_policy = policy
+        self.received_fact_slots = fact_slots
+        return ModelSynthesis(free_prose=self._free_prose)
+
+
+class _DrugNameTools:
+    """Real search_drug output shape (backend/agents/v2/tools.py::
+    SearchDrugOutput) -- a single, server-confirmed unique match."""
+
+    def execute(self, name, arguments):
+        return ToolResult(
+            name=name,
+            data={
+                "items": [{"legacy_drug_id": "drug-1", "name": "Paracetamol", "dosage_form": "vien nen", "route": "uong"}],
+                "unique_match_legacy_drug_id": "drug-1",
+            },
+            provenance="canonical-drug-v2",
+        )
+
+
+def test_renderer_disabled_by_default_leaves_gateway_policy_args_none():
+    gateway = _DrugNameGateway("Day la thong tin ban can.")
+    result = ReadOnlyAgentRuntime(gateway, limits=_limits(max_steps=3)).run(
+        message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools()
+    )
+    assert result.status == RunStatus.COMPLETED
+    assert result.response == "Day la thong tin ban can."
+    assert gateway.received_policy is None
+    assert gateway.received_fact_slots is None
+
+
+def test_renderer_enabled_passes_policy_and_fact_slots_to_gateway():
+    gateway = _DrugNameGateway("Day la thong tin ban can.")
+    ReadOnlyAgentRuntime(gateway, limits=_limits(max_steps=3), renderer_enabled=True).run(
+        message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools()
+    )
+    assert gateway.received_policy is not None
+    assert gateway.received_fact_slots is not None
+    assert gateway.received_fact_slots.drug_name == "Paracetamol"
+
+
+def test_renderer_enabled_assembles_free_prose_with_protected_fact_verbatim():
+    gateway = _DrugNameGateway("Day la thong tin ban can biet ve thuoc nay.")
+    result = ReadOnlyAgentRuntime(gateway, limits=_limits(max_steps=3), renderer_enabled=True).run(
+        message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools()
+    )
+    assert result.status == RunStatus.COMPLETED
+    assert "Day la thong tin ban can biet ve thuoc nay." in result.response
+    assert "Paracetamol" in result.response
+
+
+def test_renderer_disabled_never_appends_a_fact_line_even_when_evidence_has_one():
+    """Non-regression: with the flag off, today's exact behavior -- the
+    model's own full text, verbatim, nothing appended -- must be preserved,
+    even though the SAME evidence would populate a fact slot if the flag
+    were on."""
+    gateway = _DrugNameGateway("Day la thong tin ban can.")
+    result = ReadOnlyAgentRuntime(gateway, limits=_limits(max_steps=3)).run(
+        message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools()
+    )
+    assert result.response == "Day la thong tin ban can."
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-004 CP1 contract mục 5: fallback/EmptySynthesisError test plan,
+# specifically at ModelRole.RENDERER (renderer_enabled=True). Same fail-
+# closed mechanism as MAIN (unchanged) -- these tests exist to prove that
+# holds for the renderer path too, and that a FAILED/timed-out renderer turn
+# never leaks a protected fact through assemble_reply by some other path.
+# ---------------------------------------------------------------------------
+
+
+class _RendererTimeoutGateway:
+    """search_drug succeeds; the renderer synthesis turn always times out."""
+
+    def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan:
+        return ModelPlan((ToolCall("search_drug", {"query": "para"}),), "ignored")
+
+    def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
+        import openai
+
+        raise openai.APITimeoutError(request=SimpleNamespace())
+
+
+def test_renderer_role_timeout_fails_closed_same_path_as_main_never_leaks_a_fact():
+    """Test-plan item 1 (mục 5): a simulated timeout at ModelRole.RENDERER
+    must exhaust the existing bounded-retry path and end FAILED with the
+    fixed fallback text -- never an empty free_prose slipping through
+    assemble_reply, and never the tool result's drug name leaking through
+    some other path."""
+    result = ReadOnlyAgentRuntime(
+        _RendererTimeoutGateway(), limits=_limits(max_steps=3, max_retries=0), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED
+    assert result.response == "Agent tạm thời không sẵn sàng."
+    assert "Paracetamol" not in result.response
+
+
+class _RendererEmptyFreeProseGateway:
+    """search_drug succeeds; the renderer synthesis turn always raises
+    EmptySynthesisError (mirrors OpenAIModelGateway's own real behavior for
+    an empty/whitespace-only free_prose -- see test_agent_v2_model_gateway.py
+    ::test_synthesize_read_only_renderer_path_fails_closed_on_empty_free_prose)."""
+
+    def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan:
+        return ModelPlan((ToolCall("search_drug", {"query": "para"}),), "ignored")
+
+    def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
+        from backend.agents.v2.model_gateway import EmptySynthesisError
+
+        raise EmptySynthesisError("MODEL_SYNTHESIS_EMPTY")
+
+
+def test_renderer_role_empty_free_prose_fails_closed_same_path_as_main_never_leaks_a_fact():
+    """Test-plan item 2 (mục 5): empty free_prose at ModelRole.RENDERER goes
+    through the exact same EmptySynthesisError -> ERROR_CODE_EMPTY_REPLY ->
+    RunStatus.FAILED path as MAIN's own empty-output_text case."""
+    result = ReadOnlyAgentRuntime(
+        _RendererEmptyFreeProseGateway(), limits=_limits(max_steps=3, max_retries=0), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED
+    assert result.error_code == "EMPTY_REPLY"
+    assert result.response == "Agent tạm thời không sẵn sàng."
+    assert "Paracetamol" not in result.response
+
+
+def test_assemble_reply_is_never_invoked_when_the_renderer_turn_fails(monkeypatch):
+    """Test-plan item 3 (mục 5), proven directly rather than only inferred
+    from the fixed fallback text above: assemble_reply (the one place a
+    protected fact is inserted) must not even be CALLED on a FAILED/timed-out
+    renderer turn -- a protected fact must never reach the composition step
+    at all when the model call itself did not succeed."""
+    import backend.agents.v2.runtime as runtime_module
+
+    def _poisoned_assemble_reply(*_args, **_kwargs):
+        raise AssertionError("assemble_reply must not be called when the renderer turn failed")
+
+    monkeypatch.setattr(runtime_module, "assemble_reply", _poisoned_assemble_reply)
+
+    result = ReadOnlyAgentRuntime(
+        _RendererTimeoutGateway(), limits=_limits(max_steps=3, max_retries=0), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED  # got here without the poisoned assemble_reply raising
+
+
+def test_renderer_role_does_not_increase_model_call_budget_on_retry():
+    """Test-plan item 4 (mục 5): AGENT_MAX_MODEL_CALLS is unchanged (still 2,
+    backend/config.py:435) -- the renderer replaces the existing synthesis
+    call within this budget, it never adds a new call slot to "save" an
+    empty free_prose."""
+    from backend.config import Settings
+
+    assert Settings.model_fields["agent_max_model_calls"].default == 2
+
+    result = ReadOnlyAgentRuntime(
+        _RendererTimeoutGateway(), limits=_limits(max_steps=3, max_model_calls=2, max_retries=5), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED
+    assert result.metrics.model_calls == 2  # plan_read_only (1) + exactly one synthesis attempt (1), budget enforced
+
+
+class _RendererProhibitedClaimLeakGateway:
+    """search_drug succeeds; the renderer synthesis turn always leaks a
+    prohibited claim (mirrors OpenAIModelGateway's own real fail-closed
+    behavior -- see test_agent_v2_model_gateway.py::
+    test_synthesize_read_only_renderer_path_fails_closed_when_model_
+    hallucinates_a_prohibited_claim)."""
+
+    def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan:
+        return ModelPlan((ToolCall("search_drug", {"query": "para"}),), "ignored")
+
+    def synthesize_read_only(self, *, message, actor_role, evidence, policy=None, fact_slots=None):
+        from backend.agents.v2.model_gateway import ProhibitedClaimLeakError
+
+        raise ProhibitedClaimLeakError("PROHIBITED_CLAIM_LEAK:dose_time")
+
+
+def test_default_response_policy_prohibits_all_four_protected_claim_categories():
+    """ResponsePolicy is a real enforced input (owner requirement): the
+    generic tool-loop call site's own default must actually list every
+    category free_prose should never need -- an empty
+    prohibited_claim_categories would make validate_free_prose a no-op."""
+    policy = ReadOnlyAgentRuntime._default_response_policy()
+    assert set(policy.prohibited_claim_categories) == {"dose_time", "dose_status", "medication_identity", "handoff_state"}
+
+
+def test_renderer_role_prohibited_claim_leak_fails_closed_same_path_as_main_never_leaks_a_fact():
+    """Test-plan item 5 (owner-required adversarial invariant): a model that
+    hallucinates a prohibited claim from nothing must fail closed through
+    the same bounded-retry-then-FAILED path, with its own distinct error
+    code (not conflated with EMPTY_REPLY -- this is a different failure
+    mode: the model said something, just something unauthorized)."""
+    result = ReadOnlyAgentRuntime(
+        _RendererProhibitedClaimLeakGateway(), limits=_limits(max_steps=3, max_retries=0), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED
+    assert result.error_code == "PROHIBITED_CLAIM_LEAK"
+    assert result.response == "Agent tạm thời không sẵn sàng."
+    assert "Paracetamol" not in result.response
+
+
+def test_assemble_reply_is_never_invoked_when_the_renderer_turn_leaks_a_prohibited_claim(monkeypatch):
+    import backend.agents.v2.runtime as runtime_module
+
+    def _poisoned_assemble_reply(*_args, **_kwargs):
+        raise AssertionError("assemble_reply must not be called when the renderer turn leaked a prohibited claim")
+
+    monkeypatch.setattr(runtime_module, "assemble_reply", _poisoned_assemble_reply)
+
+    result = ReadOnlyAgentRuntime(
+        _RendererProhibitedClaimLeakGateway(), limits=_limits(max_steps=3, max_retries=0), renderer_enabled=True
+    ).run(message="thuoc nay la gi", actor_role="patient", tools=_DrugNameTools())
+    assert result.status == RunStatus.FAILED  # got here without the poisoned assemble_reply raising
 
 
 def test_cancel_and_handoff_required_are_terminal_without_a_write_action():

@@ -22,9 +22,10 @@ from sqlalchemy.orm import Session
 from backend.api.security import CurrentUser, get_current_user, require_internal_secret
 from backend.config import get_settings
 from backend.db.base import get_db
-from backend.db.models import CaregiverLink, DoseEvent, Patient
+from backend.db.models import CaregiverLink, DoseEvent, Patient, PhotoVerification
 from backend.models.schemas import DoseStatusUpdateRequest, DoseSummary
 from backend.services import reward_catalog, reward_ledger
+from backend.services.dose_lifecycle import chot_nhan_xac_nhan
 from backend.services.drug_images import (
     drug_image_presentation,
     get_active_drug_product_ids_for_legacy_ids,
@@ -58,7 +59,39 @@ def list_doses(
         .all()
     )
     enriched_items = _legacy_expected_items_with_images(db, rows)
-    return [_dose_summary(row, expected_items=enriched_items[row.id]) for row in rows]
+    co_anh = _dose_ids_co_anh(db, [row.id for row in rows])
+    return [
+        _dose_summary(row, expected_items=enriched_items[row.id], has_photo=row.id in co_anh)
+        for row in rows
+    ]
+
+
+def _dose_ids_co_anh(db: Session, dose_ids: list[str]) -> set[str]:
+    """Tap lieu da tung duoc xac nhan bang anh VA anh do van con.
+
+    MOT truy van cho ca danh sach, khong phai mot truy van moi lieu. Dung
+    DISTINCT thay vi JOIN vao chinh cau lay lieu: mot lieu co toi 3 lan gui
+    anh (ADR-0011) nen JOIN 1-nhieu se nhan doi dong lieu tra ve.
+
+    Bam theo `image_path IS NOT NULL` chu khong phai "co dong photo_verification
+    nao khong": photo_cleanup.py xoa file het han va dat cot nay ve None nhung
+    GIU dong lam audit trail, nen dem dong se bao "co anh" cho lieu bam vao
+    khong con gi de xem.
+    """
+    if not dose_ids:
+        return set()
+    return set(
+        db.execute(
+            select(PhotoVerification.dose_event_id)
+            .where(
+                PhotoVerification.dose_event_id.in_(dose_ids),
+                PhotoVerification.image_path.is_not(None),
+            )
+            .distinct()
+        )
+        .scalars()
+        .all()
+    )
 
 
 def _dose_summary(
@@ -66,6 +99,7 @@ def _dose_summary(
     *,
     points_awarded: int = 0,
     expected_items: list[dict] | None = None,
+    has_photo: bool = False,
 ) -> DoseSummary:
     return DoseSummary(
         id=r.id,
@@ -79,6 +113,7 @@ def _dose_summary(
         # ben duoi) - GET /doses (danh sach) khong truyen tham so nay nen
         # luon la 0, dung nhu y muon (khong phai "tong diem cua lieu").
         points_awarded=points_awarded,
+        has_photo=has_photo,
     )
 
 
@@ -122,6 +157,13 @@ def _legacy_expected_items_with_images(db: Session, doses: list[DoseEvent]) -> d
 
 
 def _v2_dose_summary(group: DoseRuntimeGroup) -> DoseSummary:
+    """`has_photo` giu mac dinh False o nhanh v2 - CO Y, khong phai quen.
+    photo_verification.dose_event_id tro toi bang `dose_event` (legacy), con
+    o che do v2 lieu nam ben `dose_occurrence` nen khong co duong noi nao de
+    tra loi cau hoi nay. Khi nhom bat dose_runtime_mode=v2 that: phai noi
+    photo_verification sang dose_occurrence TRUOC, roi moi dien truong nay -
+    cung ly do va cung khuon voi hook diem thuong o _update_v2_dose_status().
+    """
     return DoseSummary(
         id=group.id,
         prescription_id=group.prescription_id,
@@ -184,13 +226,30 @@ def update_dose_status(
     if not authorized:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Không có quyền sửa liều này")
 
+    # BACKEND chot nhan TAKEN/DELAYED, KHONG tin `body.status`. Truoc
+    # 2026-08-31 dong nay la `dose.status = body.status` gan mu, ma frontend
+    # luon gui cung mot chuoi "TAKEN" (patient/page.tsx::xacNhanKhongAnh) -
+    # nen khong duong tu khai nao sinh ra DELAYED va man Lich su luon bao
+    # "0 lan xac nhan muon" du khong ai dung gio. Duong chup anh
+    # (photo_verification/verifier.py) da lam dung tu truoc; gio hai duong
+    # dung chung mot ham.
+    #
+    # Chi dien giai lai nhan "da uong". Cac nhan khac la Y DINH RO RANG cua
+    # nguoi bam (benh nhan chon "bo qua lieu nay" = MISSED, nguoi than huy =
+    # CANCELLED) nen duoc ton trong nguyen ven.
+    trang_thai_moi = (
+        chot_nhan_xac_nhan(dose.window_end, datetime.now(UTC))
+        if body.status == "TAKEN"
+        else body.status
+    )
     # Chup lai TRUOC khi gan trang thai moi - muc diem phu thuoc vao cach lieu
     # nay duoc xac nhan, ma tin hieu duy nhat con lai la trang thai CU.
     ty_le = _xac_dinh_ty_le_thuong(
         previous_status=dose.status,
         is_self_report=current_user.patient_id == dose.patient_id,
+        la_muon=trang_thai_moi == "DELAYED",
     )
-    dose.status = body.status
+    dose.status = trang_thai_moi
     diem = _thuong_diem_neu_uong_du(
         db,
         dose_event_id=dose.id,
@@ -204,10 +263,11 @@ def update_dose_status(
         dose,
         points_awarded=diem,
         expected_items=_legacy_expected_items_with_images(db, [dose])[dose.id],
+        has_photo=dose.id in _dose_ids_co_anh(db, [dose.id]),
     )
 
 
-def _xac_dinh_ty_le_thuong(*, previous_status: str, is_self_report: bool) -> int:
+def _xac_dinh_ty_le_thuong(*, previous_status: str, is_self_report: bool, la_muon: bool = False) -> int:
     """PHAN TRAM diem GIU LAI, theo do tin cay cua cach xac nhan lieu nay
     (yeu cau nhom truong 2026-08-28). Xem reward_catalog cho tung muc.
 
@@ -221,10 +281,19 @@ def _xac_dinh_ty_le_thuong(*, previous_status: str, is_self_report: bool) -> int
         phai loi tu khai cua benh nhan nen khong tru.
     """
     if previous_status == "AWAITING_CAREGIVER":
-        return reward_catalog.PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL
-    if previous_status == "PENDING" and is_self_report:
-        return reward_catalog.PCT_SELF_REPORT_NO_PHOTO
-    return 100
+        pct = reward_catalog.PCT_CAREGIVER_APPROVED_AFTER_PHOTO_FAIL
+    elif previous_status == "PENDING" and is_self_report:
+        pct = reward_catalog.PCT_SELF_REPORT_NO_PHOTO
+    else:
+        pct = 100
+    if la_muon:
+        # Hai chieu DOC LAP nen NHAN voi nhau: muc o tren do do TIN CAY cua
+        # bang chung, muc nay do THOI DIEM. Vd tu khai (50%) + muon (50%) =
+        # 25%. Buoc phai gop thanh MOT ty le vi bang tru diem idempotent theo
+        # dose_event_id - moi lieu chi ghi duoc dung mot dong phat
+        # (reward_ledger::apply_confirmation_method_penalty).
+        pct = round(pct * reward_catalog.PCT_LATE_CONFIRMATION / 100)
+    return pct
 
 
 def _thuong_diem_neu_uong_du(

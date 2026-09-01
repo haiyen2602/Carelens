@@ -46,6 +46,11 @@ class AnswerabilityReasonCode(StrEnum):
     EXPLICIT_DOCTOR_REQUEST = "EXPLICIT_DOCTOR_REQUEST"
     TOOL_DATA_INSUFFICIENT = "TOOL_DATA_INSUFFICIENT"
     MAX_ATTEMPTS_REACHED = "MAX_ATTEMPTS_REACHED"
+    # TASK-V2.5-002: a schedule range-remainder follow-up ("các ngày còn lại
+    # thì sao") with no valid active_schedule_range from the prior turn --
+    # distinct from MISSING_REQUIRED_CONTEXT (that one's fixed reply asks
+    # for a drug name, which would be a non-sequitur here).
+    MISSING_SCHEDULE_CONTEXT = "MISSING_SCHEDULE_CONTEXT"
 
 
 class HandoffType(StrEnum):

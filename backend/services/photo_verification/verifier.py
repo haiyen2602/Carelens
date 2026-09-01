@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from backend.db.base import SessionLocal
 from backend.db.models import CaregiverLink, DoseEvent, PhotoVerification
 from backend.services import reward_catalog as catalog
+from backend.services.dose_lifecycle import chot_nhan_xac_nhan
 from backend.services.escalation import (
     TRIGGER_PHOTO_MISMATCH,
     build_db_escalate_fn,
@@ -314,7 +315,7 @@ def _hoan_tat_xac_minh(db: Session, verification_id: str) -> None:
             # hạn sang MISSED (ADR-0007, ngoài phạm vi domain này), nên ở đây chỉ
             # so window_end với giờ hiện tại — không phân biệt "trễ trong ngày" với
             # "trễ nhiều ngày", đơn giản hoá có chủ đích vì chưa có gì để so lệch.
-            dose_event.status = "TAKEN" if datetime.now(UTC) <= dose_event.window_end else "DELAYED"
+            dose_event.status = chot_nhan_xac_nhan(dose_event.window_end, datetime.now(UTC))
             # Cong diem thuong o CA day nua, khong chi o PATCH /doses/{id}
             # (dose_routes.py): day moi la duong xac nhan CHINH cua benh
             # nhan (ADR-0011 - chup anh vien thuoc). Neu chi hook o

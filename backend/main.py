@@ -203,7 +203,12 @@ app.include_router(notification_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "env": settings.app_env}
+    # runtime_profile duoc them vao day (khong doi "status"/"env" da co) de
+    # verify nhanh bang 1 lenh curl "dang o v2_only hay khong" khi can xac
+    # nhan rollback - xem chat-bot-build/chat-bot-v3/docs/runtime_config_v3.md
+    # SS17 (observability) va chat-bot-build/chat-bot-v3/reports/
+    # phase_0_task_01_contract_and_rollback_readiness.md.
+    return {"status": "ok", "env": settings.app_env, "runtime_profile": settings.capymedi_runtime_profile}
 
 
 # Trigger hot reload for new router additions (reset-password-sync, verify-email-sync)

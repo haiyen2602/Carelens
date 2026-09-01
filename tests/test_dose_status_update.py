@@ -356,3 +356,128 @@ async def test_bac_si_sua_ho_ho_so_khong_bi_tru_diem(client):
         assert _diem_phat(patient_id) == []
     finally:
         _cleanup(patient_id)
+
+
+# --- Xac nhan MUON: nhan DELAYED + tru them diem ---------------------------
+#
+# Truoc thay doi nay dose_routes.py gan thang `body.status`, ma frontend luon
+# gui "TAKEN" - nen lieu xac nhan muon van duoc ghi TAKEN va van an tron diem
+# "uong thuoc dung gio". Backend moi la noi duoc quyen chot nhan nay.
+
+
+def _day_lieu_ve_qua_khu(dose_id: str, gio_truoc: int) -> None:
+    """Doi lieu thanh da qua window nhung VAN trong ngay VN cua no."""
+    db = SessionLocal()
+    try:
+        dose = db.get(DoseEvent, dose_id)
+        moc = datetime.now(UTC) - timedelta(hours=gio_truoc)
+        dose.scheduled_at = moc
+        dose.window_start = moc - timedelta(minutes=30)
+        dose.window_end = moc + timedelta(minutes=30)
+        db.commit()
+    finally:
+        db.close()
+
+
+@pytest.mark.asyncio
+async def test_xac_nhan_muon_duoc_ghi_la_delayed(client):
+    """Benh nhan bam "toi da uong" 3 tieng sau gio hen - client van gui
+    "TAKEN" nhung backend phai tu chot lai thanh DELAYED."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    _day_lieu_ve_qua_khu(dose_id, gio_truoc=3)
+    token = create_access_token(sub="acct-1", role="patient", patient_id=patient_id)
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "DELAYED", "client gui TAKEN nhung da qua window"
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_xac_nhan_trong_window_van_la_taken(client):
+    """Phong ve cho thay doi tren: dung gio thi KHONG duoc bi ha thanh DELAYED."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    token = create_access_token(sub="acct-1", role="patient", patient_id=patient_id)
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "TAKEN"
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_benh_nhan_chu_dong_bo_qua_van_duoc_ton_trong(client):
+    """Chi nhan xac nhan "da uong" moi bi backend chot lai. Benh nhan bam
+    "bo qua lieu nay" (MISSED) la y dinh ro rang, khong duoc dien giai lai."""
+    patient_id = f"test-dose-{uuid.uuid4().hex[:8]}"
+    _, dose_id = _seed_dose(patient_id)
+    _day_lieu_ve_qua_khu(dose_id, gio_truoc=3)
+    token = create_access_token(sub="acct-1", role="patient", patient_id=patient_id)
+
+    try:
+        response = await client.patch(
+            f"/api/v1/doses/{dose_id}",
+            json={"status": "MISSED"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "MISSED"
+    finally:
+        _cleanup(patient_id)
+
+
+@pytest.mark.asyncio
+async def test_lieu_muon_bi_tru_nang_hon_lieu_dung_gio(client):
+    """Quyet dinh san pham 2026-08-31: lieu muon con 50% diem. Cong voi muc
+    tu khai khong anh (50%) thanh 25% - hai chieu doc lap nen NHAN voi nhau,
+    va bang tru diem chi cho ghi MOT dong moi lieu (idempotent theo
+    dose_event_id) nen buoc phai gop thanh mot ty le duy nhat."""
+    dung_gio = f"test-dose-{uuid.uuid4().hex[:8]}"
+    muon = f"test-dose-{uuid.uuid4().hex[:8]}"
+
+    try:
+        _, dose_dung_gio = _seed_dose(dung_gio)
+        token_dung_gio = create_access_token(sub="acct-1", role="patient", patient_id=dung_gio)
+        r1 = await client.patch(
+            f"/api/v1/doses/{dose_dung_gio}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token_dung_gio}"},
+        )
+        assert r1.status_code == 200
+        phat_dung_gio = sum(_diem_phat(dung_gio))
+    finally:
+        _cleanup(dung_gio)
+
+    try:
+        _, dose_muon = _seed_dose(muon)
+        _day_lieu_ve_qua_khu(dose_muon, gio_truoc=3)
+        token_muon = create_access_token(sub="acct-1", role="patient", patient_id=muon)
+        r2 = await client.patch(
+            f"/api/v1/doses/{dose_muon}",
+            json={"status": "TAKEN"},
+            headers={"Authorization": f"Bearer {token_muon}"},
+        )
+        assert r2.status_code == 200
+        assert r2.json()["status"] == "DELAYED"
+        phat_muon = sum(_diem_phat(muon))
+    finally:
+        _cleanup(muon)
+
+    # points_delta cua dong phat la so AM, nen "tru nang hon" = nho hon.
+    assert phat_muon < phat_dung_gio, (
+        f"lieu muon phai bi tru nang hon lieu dung gio (muon={phat_muon}, dung_gio={phat_dung_gio})"
+    )

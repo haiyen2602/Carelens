@@ -5,14 +5,25 @@ only callable functions are the six read-only tools already approved by
 BUILD-1.  ``AGENT_RUNTIME_ENABLED`` remains the route-level exposure gate.
 """
 
+from __future__ import annotations
+
 import json
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import openai
+
+if TYPE_CHECKING:
+    # TASK-V2.5-004: type-only import to avoid a circular dependency --
+    # response_policy.py itself imports SynthesisEvidence from this module.
+    # policy/fact_slots are optional, backward-compatible additions to
+    # synthesize_read_only (see the Protocol/DisabledModelGateway/
+    # StaticModelGateway/OpenAIModelGateway below); every existing caller
+    # that omits them keeps today's exact behavior unchanged.
+    from backend.agents.v2.response_policy import RenderableFactSlots, ResponsePolicy
 
 
 class ModelRole(StrEnum):
@@ -21,6 +32,13 @@ class ModelRole(StrEnum):
     FALLBACK = "fallback"
     EMBEDDING = "embedding"
     JUDGE = "judge"
+    # TASK-V2.5-004 (CP0 ADR delta 1.3a/1.4a): a separate workload for the
+    # natural-language renderer, deliberately distinct from MAIN even though
+    # both call ``synthesize_read_only``-shaped turns. Sharing MAIN would
+    # mean changing the renderer's model (e.g. for cost/latency reasons)
+    # silently also changes the planner's model -- the exact coupling bug
+    # this role exists to avoid.
+    RENDERER = "renderer"
 
 
 @dataclass(frozen=True)
@@ -73,6 +91,20 @@ class EmptySynthesisError(ValueError):
     unchanged."""
 
 
+class ProhibitedClaimLeakError(ValueError):
+    """TASK-V2.5-004: raised when ``response_policy.validate_free_prose``
+    finds the renderer's own ``free_prose`` output contains a claim from a
+    category ``ResponsePolicy.prohibited_claim_categories`` disallows (dose
+    time/status, medication identity, handoff state) -- a model that
+    hallucinated a sensitive claim on its own, from nothing (it was never
+    shown the fact value; see ``RendererContext``). Deliberately a sibling
+    of ``EmptySynthesisError``, not a subclass of it -- this is not an empty
+    reply, it is an unauthorized one, and the runtime classifies it under
+    its own error code so Admin Monitoring can tell the two apart. Fails
+    closed through the exact same bounded-retry-then-FAILED path; the
+    backend's ``assemble_reply`` is never called with this attempt's output."""
+
+
 def _setting(settings: Any, name: str) -> str:
     return str(getattr(settings, name, "") or "").strip()
 
@@ -92,6 +124,7 @@ def build_model_workloads(settings: Any) -> dict[ModelRole, ModelWorkload]:
         (ModelRole.FALLBACK, "agent_fallback_model", "openai_fallback_api_key", "OPENAI_FALLBACK_API_KEY"),
         (ModelRole.EMBEDDING, "agent_embedding_model", "openai_embedding_api_key", "OPENAI_EMBEDDING_API_KEY"),
         (ModelRole.JUDGE, "rag_judge_model", "openai_judge_api_key", "OPENAI_JUDGE_API_KEY"),
+        (ModelRole.RENDERER, "agent_renderer_model", "openai_renderer_api_key", "OPENAI_RENDERER_API_KEY"),
     )
     workloads: dict[ModelRole, ModelWorkload] = {}
     for role, model_setting, key_setting, preferred_env in definitions:
@@ -171,9 +204,23 @@ class SynthesisEvidence:
 
 @dataclass(frozen=True)
 class ModelSynthesis:
-    """Final-reply turn produced strictly from verified tool evidence."""
+    """TASK-V2.5-004: renamed from ``response`` to ``free_prose`` (CP1
+    contract mục 4a, corrective PR #191) -- this field is no longer
+    guaranteed to BE the whole final reply once a caller opts into the
+    renderer contract (``policy``/``fact_slots`` below): it is only ever the
+    model's own connective/empathy prose. ``backend.agents.v2.response_
+    policy.assemble_reply`` is what combines it with any protected fact
+    strings into the true final reply text.
 
-    response: str = ""
+    When a caller does NOT opt in (omits ``policy``/``fact_slots`` from
+    ``synthesize_read_only``, the unchanged default), ``free_prose`` is
+    exactly what ``response`` used to mean: the model's full final reply,
+    produced from the full unrestricted evidence exactly as before this
+    task -- ``assemble_reply`` against empty fact slots is then a pure
+    passthrough, so this rename carries no behavior change for that path.
+    """
+
+    free_prose: str = ""
     usage: ModelUsage = ModelUsage()
     request_id: str | None = None
 
@@ -182,7 +229,20 @@ class ModelGateway(Protocol):
     def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan: ...
 
     def synthesize_read_only(
-        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        # TASK-V2.5-004: optional, additive opt-in (CP1 contract mục 4a).
+        # `None` (the default every existing caller uses) preserves today's
+        # exact MAIN-workload, full-evidence behavior byte-for-byte -- see
+        # OpenAIModelGateway.synthesize_read_only's own docstring for the
+        # precise branch this selects. Only a caller that has already built
+        # a real ResponsePolicy/RenderableFactSlots (i.e. the
+        # AGENT_V2_5_RENDERER_ENABLED-gated path in runtime.py) passes these.
+        policy: ResponsePolicy | None = None,
+        fact_slots: RenderableFactSlots | None = None,
     ) -> ModelSynthesis: ...
 
 
@@ -197,9 +257,15 @@ class DisabledModelGateway:
         return ModelPlan(response="Agent V2 dang chua duoc kich hoat de tra loi.")
 
     def synthesize_read_only(
-        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        policy: ResponsePolicy | None = None,
+        fact_slots: RenderableFactSlots | None = None,
     ) -> ModelSynthesis:
-        return ModelSynthesis(response="Agent V2 dang chua duoc kich hoat de tra loi.")
+        return ModelSynthesis(free_prose="Agent V2 dang chua duoc kich hoat de tra loi.")
 
 
 class StaticModelGateway:
@@ -211,13 +277,19 @@ class StaticModelGateway:
         # tool-calling synthesis reply to the pre-tool planning text is
         # exactly the BUILD-19 defect this double must not reintroduce by
         # accident. Tests that care about the synthesized text pass it.
-        self.synthesis = synthesis if synthesis is not None else ModelSynthesis(response="synthesized-reply")
+        self.synthesis = synthesis if synthesis is not None else ModelSynthesis(free_prose="synthesized-reply")
 
     def plan_read_only(self, *, message: str, actor_role: str) -> ModelPlan:
         return self.plan
 
     def synthesize_read_only(
-        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        policy: ResponsePolicy | None = None,
+        fact_slots: RenderableFactSlots | None = None,
     ) -> ModelSynthesis:
         return self.synthesis
 
@@ -356,7 +428,7 @@ class OpenAIModelGateway:
         self._request_timeout_seconds = request_timeout_seconds
 
     @classmethod
-    def from_settings(cls, settings: Any) -> "OpenAIModelGateway":
+    def from_settings(cls, settings: Any) -> OpenAIModelGateway:
         return cls(
             build_model_workloads(settings),
             request_timeout_seconds=float(getattr(settings, "agent_model_timeout_seconds", 15.0)),
@@ -460,7 +532,13 @@ class OpenAIModelGateway:
         )
 
     def synthesize_read_only(
-        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        policy: ResponsePolicy | None = None,
+        fact_slots: RenderableFactSlots | None = None,
     ) -> ModelSynthesis:
         """Turn already-executed, already-verified tool evidence into final reply text.
 
@@ -473,7 +551,22 @@ class OpenAIModelGateway:
         model never to contradict or override Safety/Doctor/Operational DB
         provenance; the runtime never sends unresolved-safety evidence to
         this turn in the first place (see ``ReadOnlyAgentRuntime``).
+
+        TASK-V2.5-004 (CP1 contract mục 4a): ``policy``/``fact_slots`` are
+        optional and additive. `None` (every caller before this task, and
+        every caller today while ``AGENT_V2_5_RENDERER_ENABLED`` is off) hits
+        the branch below unchanged -- ModelRole.MAIN, the reply is the whole
+        final text. Passing a real ``policy``/``fact_slots`` switches to
+        ModelRole.RENDERER (gpt-5.6-luna) and asks only for ``free_prose``;
+        the runtime -- never this method -- is what calls
+        ``response_policy.assemble_reply`` afterward to insert the protected
+        fact strings verbatim.
         """
+
+        if policy is not None and fact_slots is not None:
+            return self._synthesize_free_prose(
+                message=message, actor_role=actor_role, evidence=evidence, policy=policy, fact_slots=fact_slots
+            )
 
         workload = self._workloads[ModelRole.MAIN]
         serialized_evidence = json.dumps(
@@ -527,7 +620,66 @@ class OpenAIModelGateway:
             # Fail closed through the same bounded-retry path as plan_read_only
             # rather than silently returning empty text again.
             raise EmptySynthesisError("MODEL_SYNTHESIS_EMPTY")
-        return ModelSynthesis(response=text, usage=_usage(response), request_id=_request_id(response))
+        return ModelSynthesis(free_prose=text, usage=_usage(response), request_id=_request_id(response))
+
+    def _synthesize_free_prose(
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        policy: ResponsePolicy,
+        fact_slots: RenderableFactSlots,
+    ) -> ModelSynthesis:
+        """TASK-V2.5-004 renderer turn (ModelRole.RENDERER, gpt-5.6-luna).
+
+        Owner correction (post first-draft CP2): an earlier version of this
+        method showed the model full raw ``evidence`` plus every populated
+        fact-slot value "for context", relying on a prompt instruction not
+        to restate them -- exactly the WEAK, model-compliance-dependent
+        guarantee mục 4a exists to avoid (the model could still see and
+        therefore still paraphrase a fact). Fixed: the model receives ONLY
+        ``RendererContext`` (``response_policy.build_renderer_context``) --
+        an allowlisted, low-risk-only projection of ``evidence`` with no
+        specific claim value in it at all. No ``tools=`` schema either --
+        same structural no-tool-call guarantee as the MAIN synthesis turn.
+
+        Independent second layer: ``response_policy.validate_free_prose``
+        runs on the model's own output before it is ever returned -- a model
+        that hallucinates a prohibited claim from nothing (never having seen
+        a fact value) is rejected here, raising ``ProhibitedClaimLeakError``
+        instead of silently letting the caller pass it to ``assemble_reply``.
+        """
+
+        # Lazy import: response_policy.py imports SynthesisEvidence from
+        # this module at its own top level, so a module-level import here
+        # would be circular. By call time both modules are fully loaded.
+        from backend.agents.v2.response_policy import build_renderer_context, validate_free_prose
+
+        workload = self._workloads[ModelRole.RENDERER]
+        context = build_renderer_context(evidence)
+        response = self._client_for(ModelRole.RENDERER).responses.create(
+            model=workload.model,
+            input=(
+                "You are the Agent V2 natural-language renderer. Your ONLY job is to write "
+                "short connective/empathetic Vietnamese prose (free_prose) -- you never state a "
+                "specific dose time, dose status, medication identity, or handoff/doctor-transfer "
+                "claim; the backend inserts any of those separately, verbatim, after your text. "
+                "You have NOT been given any such fact value here on purpose -- do not guess or "
+                "invent one. Never propose prescription changes, dose-state writes, or clinical "
+                "advice. "
+                f"Whether relevant results were found for this request: {context.has_findings}. "
+                f"Route category: {policy.route_category}. Answerability: {policy.answerability.value}. "
+                f"Authorized actor role: {actor_role}. Original request: {message}."
+            ),
+        )
+        text = str(_value(response, "output_text", "")).strip()
+        if not text:
+            raise EmptySynthesisError("MODEL_SYNTHESIS_EMPTY")
+        is_valid, violated_categories = validate_free_prose(policy, fact_slots, text)
+        if not is_valid:
+            raise ProhibitedClaimLeakError(f"PROHIBITED_CLAIM_LEAK:{','.join(violated_categories)}")
+        return ModelSynthesis(free_prose=text, usage=_usage(response), request_id=_request_id(response))
 
     def embed_query(self, *, text: str) -> EmbeddingResult:
         """Embed one retrieval query through the configured EMBEDDING workload."""

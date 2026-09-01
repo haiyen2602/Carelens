@@ -100,6 +100,19 @@ def _make_range(
     )
 
 
+def range_from_dates(start_date: date, end_date: date, *, now: datetime, label: str = "") -> TimeRange:
+    """TASK-V2.5-002: build a real ``TimeRange`` from an already-resolved
+    ``(start_date, end_date)`` pair (e.g. a durable ``active_schedule_range``
+    read back from ``ConversationState``), for callers that already have
+    concrete dates rather than a phrase to parse. Public counterpart to
+    ``_make_range``/``_relation_for_range`` for exactly this cross-module
+    use case; granularity is always ``EXPLICIT`` since the caller, not this
+    function, decided the span."""
+
+    relation = _relation_for_range(start_date, end_date, today=local_today(now))
+    return _make_range(start_date, end_date, granularity=TimeGranularity.EXPLICIT, relation=relation, label=label)
+
+
 def local_today(now: datetime) -> date:
     """"Today" in the single timezone this app assumes for every patient --
     the router has no per-patient timezone to look up (it runs before any
@@ -431,5 +444,6 @@ __all__ = [
     "local_today",
     "month_range",
     "parse_number",
+    "range_from_dates",
     "resolve_time_query",
 ]

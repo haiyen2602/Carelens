@@ -207,12 +207,21 @@ def test_j_stale_entity_not_inherited_on_explicit_new_topic():
 
 
 def test_k_classify_follow_up_signature_has_no_retrieval_query_input():
+    """The real invariant this locks (BUILD-43 #5) is narrower than the
+    literal set below: no `retrieval_query`-shaped parameter, ever -- not
+    a closed world of exactly three names. TASK-V2.5-003 added
+    `recognize_negative_feedback`, a capability-flag boolean orthogonal to
+    retrieval/topic resolution (default False, gated by
+    AGENT_V2_5_CLARIFICATION_ENABLED), so the allowed set grows to four;
+    the assertion that matters -- `retrieval_query` specifically absent --
+    is unchanged and still explicit below."""
     import inspect
 
     from backend.agents.v2.follow_up import classify_follow_up
 
     params = set(inspect.signature(classify_follow_up).parameters)
-    assert params == {"message", "prior_topic", "prior_entity_name"}
+    assert "retrieval_query" not in params
+    assert params == {"message", "prior_topic", "prior_entity_name", "recognize_negative_feedback"}
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +293,7 @@ def test_topic_switch_disease_to_drug_direction():
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(
             ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "amoxicillin", "limit": 3}),), response=""),
-            ModelSynthesis(response="Uống 3 lần/ngày."),
+            ModelSynthesis(free_prose="Uống 3 lần/ngày."),
         )
     )
     result = orchestrator.run(

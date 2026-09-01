@@ -32,6 +32,10 @@ export type Dose = {
   // /doses (danh sach, listDoses()) luon la 0 - dung "gia tri co san",
   // khong optional, de khoi phai ?? 0 o moi noi doc.
   pointsAwarded: number;
+  // Lieu nay da tung duoc xac nhan bang anh va anh do van con. THEM
+  // 2026-08-31: truoc day man Lich su phai goi listPhotoVerifications() cho
+  // TUNG lieu de biet dieu nay - 147 request moi lan mo trang.
+  hasPhoto: boolean;
 };
 
 // dang_xu_ly khong nam trong 3 gia tri matcher.KetQua (khop/lech/khong_xac_minh_duoc)
@@ -69,6 +73,7 @@ type DoseApiItem = {
   window_start: string;
   window_end: string;
   status: string;
+  has_photo?: boolean;
   expected_items: {
     drug_id: string;
     drug_product_id?: string | null;
@@ -165,6 +170,7 @@ function toDose(d: DoseApiItem): Dose {
       },
     })),
     pointsAwarded: d.points_awarded ?? 0,
+    hasPhoto: d.has_photo ?? false,
   };
 }
 

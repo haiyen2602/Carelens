@@ -99,7 +99,7 @@ class _SpyModelGateway:
         # Deliberately independent of ``self.plan.response`` -- defaulting a
         # tool-calling synthesis reply to the pre-tool planning text would
         # reintroduce the BUILD-19 defect this spy must catch, not hide.
-        self.synthesis = synthesis or ModelSynthesis(response="synthesized: " + (self.plan.response or "ok"))
+        self.synthesis = synthesis or ModelSynthesis(free_prose="synthesized: " + (self.plan.response or "ok"))
         self.calls: list[dict] = []
         self.synthesis_calls: list[dict] = []
 
@@ -108,7 +108,13 @@ class _SpyModelGateway:
         return self.plan
 
     def synthesize_read_only(
-        self, *, message: str, actor_role: str, evidence: tuple[SynthesisEvidence, ...]
+        self,
+        *,
+        message: str,
+        actor_role: str,
+        evidence: tuple[SynthesisEvidence, ...],
+        policy=None,
+        fact_slots=None,
     ) -> ModelSynthesis:
         self.synthesis_calls.append({"message": message, "actor_role": actor_role, "evidence": evidence})
         return self.synthesis
@@ -288,7 +294,7 @@ def test_drug_information_query_calls_tools_and_completes():
     # The pre-tool planning turn's own text is deliberately never the final
     # reply once a tool was called (BUILD-19B): the synthesis turn's text is.
     plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "paracetamol", "limit": 3}),), response="")
-    synthesis = ModelSynthesis(response="Paracetamol dung de ha sot, giam dau.")
+    synthesis = ModelSynthesis(free_prose="Paracetamol dung de ha sot, giam dau.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
     tools = _tools()
 
@@ -439,7 +445,7 @@ def test_prompt_injection_in_tool_data_cannot_override_safety_or_manufacture_a_h
     plan = ModelPlan(tool_calls=(ToolCall("get_active_prescriptions", {}),), response="")
     # The fake model "complies" with the injected instruction -- its own
     # synthesized text claims a handoff/block outcome that never happened.
-    synthesis = ModelSynthesis(response="Da chuyen cho bac si xem xet ngay (HANDOFF_REQUIRED).")
+    synthesis = ModelSynthesis(free_prose="Da chuyen cho bac si xem xet ngay (HANDOFF_REQUIRED).")
     orchestrator, gateway = _orchestrator(
         model_gateway=_SpyModelGateway(plan, synthesis),
         safety_domain=_SafetyDomain(_safety_decision()),  # the REAL disposition is SAFE
@@ -533,7 +539,7 @@ def test_short_term_memory_recalls_prior_turns_without_becoming_a_citation():
     # citation -- still holds and is still asserted below.
     store = ShortTermMemoryStore(_context_manager())
     plan1 = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "paracetamol 500mg", "limit": 3}),), response="")
-    synthesis1 = ModelSynthesis(response="Paracetamol dung de ha sot.")
+    synthesis1 = ModelSynthesis(free_prose="Paracetamol dung de ha sot.")
     gateway = _SpyModelGateway(plan1, synthesis1)
     orchestrator, _ = _orchestrator(model_gateway=gateway, short_term_memory=store)
     tools = _tools()
@@ -542,7 +548,7 @@ def test_short_term_memory_recalls_prior_turns_without_becoming_a_citation():
     assert first.status is RunStatus.COMPLETED
 
     gateway.plan = ModelPlan(tool_calls=(ToolCall("search_drug", {"query": "paracetamol 500mg", "limit": 3}),), response="")
-    gateway.synthesis = ModelSynthesis(response="Thuoc do it gay tac dung phu khi dung dung lieu.")
+    gateway.synthesis = ModelSynthesis(free_prose="Thuoc do it gay tac dung phu khi dung dung lieu.")
     second = orchestrator.run(_request("Thuoc do co an toan khong"), tools=tools)
 
     assert second.status is RunStatus.COMPLETED
@@ -804,6 +810,50 @@ def test_ambiguous_follow_up_with_weak_context_asks_clarification():
     assert result.follow_up_decision.category.value == "AMBIGUOUS_FRAGMENT"
     assert "chủ đề nào" in result.response
     assert gateway.calls[-1]["message"] != "Còn cái kia?"
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-003: negative feedback ("Không đúng") -- flag-gated via
+# clarification_capability_enabled, default off.
+# ---------------------------------------------------------------------------
+
+
+def test_negative_feedback_with_flag_on_asks_what_was_wrong_and_preserves_entity():
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")))
+
+    result = orchestrator.run(
+        _request(
+            "Không đúng",
+            prior_active_entity_id="drug-1",
+            prior_active_entity_name="Vitamin C",
+            clarification_capability_enabled=True,
+        ),
+        tools=_tools(),
+    )
+
+    assert result.follow_up_decision is not None
+    assert result.follow_up_decision.category.value == "TRUE_FOLLOWUP"
+    assert result.follow_up_decision.reason_code.value == "NEGATIVE_FEEDBACK_WITH_PRIOR_CONTEXT"
+    assert "chưa đúng" in result.response.lower() or "chua dung" in result.response.lower()
+    assert gateway.calls == []  # deterministic reply, never guesses via the model
+
+
+def test_negative_feedback_with_flag_off_preserves_legacy_topic_switch_behavior():
+    """Guard 3: flag off -> byte-identical to pre-Task-03 behavior, even
+    though that behavior is the TOPIC_SWITCH bug this build fixes."""
+    orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(ModelPlan(response="should not be used")))
+
+    result = orchestrator.run(
+        _request(
+            "Không đúng",
+            prior_active_entity_id="drug-1",
+            prior_active_entity_name="Vitamin C",
+            # clarification_capability_enabled defaults to False -- not set.
+        ),
+        tools=_tools(),
+    )
+
+    assert "chưa đúng" not in result.response.lower()
 
 
 def test_follow_up_context_does_not_leak_across_conversation_session_or_actor():

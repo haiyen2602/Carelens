@@ -164,12 +164,44 @@ def test_them_lieu_giua_ngay_van_can_lai_dung_ty_le(db: Session) -> None:
     db.commit()
     assert reward_ledger.get_summary(db, BENH_NHAN)["lifetime_points"] == 20
 
-def test_uong_tre_khong_duoc_thuong_dung_gio(db: Session) -> None:
-    """DELAYED tinh la da uong o cac bao cao khac, nhung phan thuong nay ten
-    la "uong thuoc DUNG GIO" nen khong tra cho lieu tre."""
+def test_uong_tre_duoc_mot_nua_diem(db: Session) -> None:
+    """SUA 2026-08-31 (quyet dinh san pham): truoc day DELAYED duoc 0 diem vi
+    phan thuong ten la "uong thuoc DUNG GIO". Nhung hanh vi do chua bao gio
+    thuc su chay: dose_routes.py gan thang chuoi client gui len nen khong
+    duong tu khai nao sinh ra DELAYED - benh nhan uong tre van an tron diem
+    duoi nhan TAKEN. Khi backend bat dau chot nhan dung, "tre = 0 diem" se
+    triet tieu dong luc xac nhan muon (bo luon con hon bi ghi la tre ma van
+    khong duoc gi), nen chot lai: tre duoc MOT NUA.
+
+    1 lieu duy nhat, uong tre -> round(20 * 0.5 / 1) = 10.
+    """
     _them_lieu(db, status="DELAYED", gio_vn=8)
 
-    assert reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY) == 0
+    assert reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY) == 10
+
+
+def test_uong_tre_van_it_hon_uong_dung_gio(db: Session) -> None:
+    """Bat bien quan trong nhat cua muc 50%: tre PHAI thap hon dung gio, neu
+    khong phan thuong het phan biet duoc hai hanh vi."""
+    _them_lieu(db, status="DELAYED", gio_vn=8)
+    diem_tre = reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY)
+
+    assert 0 < diem_tre < catalog.POINTS_DOSE_ON_TIME
+
+
+def test_ngay_co_lieu_tre_khong_phai_ngay_hoan_hao(db: Session) -> None:
+    """Thuong chuoi chi danh cho ngay HOAN HAO. Mot ngay ma moi lieu deu tre
+    van co diem (mot nua), nhung khong duoc tinh vao chuoi."""
+    _them_lieu(db, status="DELAYED", gio_vn=8)
+    reward_ledger.award_dose_on_time(db, BENH_NHAN, NGAY)
+    db.commit()
+
+    chuoi = [
+        e
+        for e in db.query(PatientRewardEvent).filter(PatientRewardEvent.patient_id == BENH_NHAN)
+        if e.event_type in (catalog.EVENT_WEEKLY_STREAK, catalog.EVENT_MONTHLY_STREAK)
+    ]
+    assert chuoi == []
 
 
 def test_lieu_da_huy_khong_lam_mat_thuong(db: Session) -> None:

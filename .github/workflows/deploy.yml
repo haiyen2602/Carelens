@@ -128,4 +128,4 @@ jobs:
       - name: Smoke test
         run: |
           curl --fail --silent --show-error --max-time 30 \
-            https://vmec-04fe-production.up.railway.app/ > /dev/null
+            https://c3-app-067.up.railway.app > /dev/null

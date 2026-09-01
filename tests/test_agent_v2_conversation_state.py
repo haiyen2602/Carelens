@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -427,3 +427,107 @@ def test_drug_attribute_question_never_becomes_a_display_topic():
 
     # A genuine disease/topic question is unaffected by the guard.
     assert normalize_semantic_medical_query("bệnh sỏi thận là gì").display_topic == "sỏi thận"
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-002: active_schedule_range (durable, ConversationState v5 -> v6).
+# ---------------------------------------------------------------------------
+
+_RANGE = (date(2026, 8, 24), date(2026, 8, 30))
+
+
+def test_active_schedule_range_defaults_to_none():
+    assert ConversationState.empty("conv-1").active_schedule_range is None
+
+
+def test_as_dict_bumps_version_to_6_and_carries_the_range():
+    state = ConversationState.empty("conv-1")
+    state = ConversationState(**{**state.__dict__, "active_schedule_range": _RANGE})
+    payload = state.as_dict(actor_id="actor-1", patient_id="patient-1")
+    assert payload["version"] == 6
+    assert payload["active_schedule_range"] == ["2026-08-24", "2026-08-30"]
+
+
+def test_from_dict_round_trips_a_real_range():
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    payload = state.as_dict(actor_id="actor-1", patient_id="patient-1")
+    restored = ConversationState.from_dict(
+        payload, actor_id="actor-1", patient_id="patient-1", conversation_id="conv-1"
+    )
+    assert restored is not None
+    assert restored.active_schedule_range == _RANGE
+
+
+def test_from_dict_reads_back_a_version_5_state_without_the_new_field():
+    """A state persisted before this build has no `active_schedule_range` key
+    at all (and an older `version: 5`). Must read back as None -- never a
+    fabricated range, never an error -- same convention already established
+    for `answerability_attempt_count` on pre-BUILD-42 `version: 3` rows."""
+    legacy_v5_payload = {
+        "version": 5,
+        "actor_id": "actor-1",
+        "patient_id": "patient-1",
+        "conversation_id": "conv-1",
+        "active_topic": None,
+        "active_entity": None,
+        "last_intent": "TODAY_DOSES",
+        "offered_actions": [],
+    }
+    restored = ConversationState.from_dict(
+        legacy_v5_payload, actor_id="actor-1", patient_id="patient-1", conversation_id="conv-1"
+    )
+    assert restored is not None
+    assert restored.active_schedule_range is None
+
+
+# ---------------------------------------------------------------------------
+# transition_state: five staleness scenarios for active_schedule_range.
+# `active_schedule_range` is valid for at most one turn: transition_state
+# only ever carries forward the value explicitly passed in this turn's
+# `schedule_range=`, never `state.active_schedule_range` -- unlike
+# active_topic/active_entity, it never survives implicitly by omission.
+# ---------------------------------------------------------------------------
+
+
+def test_schedule_range_is_set_when_a_new_multi_day_schedule_query_resolves():
+    state = ConversationState.empty("conv-1")
+    next_state = transition_state(state, intent="UPCOMING_DOSES", schedule_range=_RANGE)
+    assert next_state.active_schedule_range == _RANGE
+
+
+def test_schedule_range_is_consumed_after_a_range_remainder_followup_uses_it():
+    """The turn that answers 'các ngày còn lại thì sao' from the stored range
+    does not itself re-establish a new multi-day range, so it must not pass
+    `schedule_range` -- the caller (orchestrator/routes) is responsible for
+    this; transition_state's contract is simply: no schedule_range this turn
+    means the field is gone for the next one."""
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    next_state = transition_state(state, intent="MEDICATION_HISTORY")
+    assert next_state.active_schedule_range is None
+
+
+def test_schedule_range_is_overwritten_by_a_new_schedule_query():
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    new_range = (date(2026, 9, 1), date(2026, 9, 7))
+    next_state = transition_state(state, intent="UPCOMING_DOSES", schedule_range=new_range)
+    assert next_state.active_schedule_range == new_range
+
+
+def test_schedule_range_is_cleared_on_topic_switch():
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    next_state = transition_state(state, intent="GENERAL_MEDICAL_INFORMATION", topic="sỏi thận")
+    assert next_state.active_schedule_range is None
+
+
+def test_schedule_range_is_cleared_on_safety_or_handoff_event():
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    next_state = transition_state(state, intent="ACUTE_DANGER_ESCALATION", safety_event=True)
+    assert next_state.active_schedule_range is None
+
+
+def test_schedule_range_is_cleared_on_an_unrelated_intent():
+    """Not a topic switch, not safety/handoff, just an ordinary different
+    question -- the range must not silently linger for a much later turn."""
+    state = ConversationState(conversation_id="conv-1", active_schedule_range=_RANGE)
+    next_state = transition_state(state, intent="DRUG_INFORMATION")
+    assert next_state.active_schedule_range is None

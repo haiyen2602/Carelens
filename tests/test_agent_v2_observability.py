@@ -96,6 +96,11 @@ def test_cost_telemetry_tracks_tokens_and_exact_role_breakdown_without_inventing
             "fallback": ModelPrice(3.0, 1.5, 6.0),
             "embedding": ModelPrice(4.0, 2.0, 0.0),
             "judge": ModelPrice(5.0, 2.5, 10.0),
+            # TASK-V2.5-004: ModelRole.RENDERER exists now -- included here so
+            # this test's own `{role.value for role in ModelRole}` closure
+            # assertion below stays a real, complete role-coverage check
+            # rather than silently drifting out of sync with the enum.
+            "renderer": ModelPrice(6.0, 3.0, 12.0),
         }
     )
     telemetry = AgentTelemetry(sink=InMemoryTelemetrySink(), pricing=prices)
@@ -106,6 +111,7 @@ def test_cost_telemetry_tracks_tokens_and_exact_role_breakdown_without_inventing
         (ModelRole.FALLBACK, "fallback"),
         (ModelRole.EMBEDDING, "embedding"),
         (ModelRole.JUDGE, "judge"),
+        (ModelRole.RENDERER, "renderer"),
     ):
         telemetry.record_model(
             trace,
@@ -122,10 +128,10 @@ def test_cost_telemetry_tracks_tokens_and_exact_role_breakdown_without_inventing
         latency_ms=1,
     )
     snapshot = telemetry.metrics.snapshot()
-    assert snapshot.model_calls == 6
-    assert snapshot.input_tokens == 5_000_001
-    assert snapshot.cached_input_tokens == 1_000_000
-    assert snapshot.output_tokens == 500_001
+    assert snapshot.model_calls == 7
+    assert snapshot.input_tokens == 6_000_001
+    assert snapshot.cached_input_tokens == 1_200_000
+    assert snapshot.output_tokens == 600_001
     assert set(snapshot.cost_by_role_usd) == {role.value for role in ModelRole}
     assert snapshot.unknown_cost_calls == 1
     assert snapshot.estimated_cost_usd > 0
