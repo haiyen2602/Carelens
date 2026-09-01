@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test:admin-drugs": "node tests/admin-drugs.test.mjs",
     "test:doctor-reviews": "node tests/doctor-reviews-ui.test.mjs",
+    "test:patient-handoff": "node tests/patient-handoff-ui.test.mjs",
     "test:onboarding-profile": "node tests/onboarding-profile.test.mjs",
     "test:auth-login-proxy": "node tests/auth-login-proxy.test.mjs",
     "test:drug-image-ui": "node tests/drug-image-ui.test.mjs",

@@ -8,14 +8,18 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.db.models import DoctorReviewMessage, DoctorReviewRequest
-from backend.services.doctor_handoff import HandoffStatus, stop_active_doctor_review_request
+from backend.services.doctor_handoff import HandoffStatus, stop_inactive_doctor_review_request
 
 INACTIVITY_TIMEOUT = timedelta(minutes=10)
 
 
-def _as_utc(value: datetime) -> datetime:
-    """Normalise SQLite's timezone-less test values without changing UTC data."""
-    return value.replace(tzinfo=UTC) if value.tzinfo is None or value.utcoffset() is None else value.astimezone(UTC)
+def _as_utc(value: datetime, *, dialect_name: str) -> datetime:
+    """Normalise SQLite test values; reject naïve production timestamps."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        if dialect_name != "sqlite":
+            raise ValueError("doctor takeover timestamps must be timezone-aware outside SQLite tests")
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def close_inactive_takeovers(db: Session, *, now: datetime | None = None) -> int:
@@ -29,6 +33,7 @@ def close_inactive_takeovers(db: Session, *, now: datetime | None = None) -> int
     now = now or datetime.now(UTC)
     if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError("now must be timezone-aware")
+    dialect_name = db.get_bind().dialect.name
 
     last_patient_message_at = (
         select(func.max(DoctorReviewMessage.created_at))
@@ -47,10 +52,12 @@ def close_inactive_takeovers(db: Session, *, now: datetime | None = None) -> int
     stopped = 0
     for row, last_patient_message in rows:
         last_activity = last_patient_message or row.activated_at
-        if last_activity is None or now - _as_utc(last_activity) < INACTIVITY_TIMEOUT:
+        if last_activity is None or now - _as_utc(last_activity, dialect_name=dialect_name) < INACTIVITY_TIMEOUT:
             continue
-        stop_active_doctor_review_request(db, request_id=row.id, stopped_at=now)
-        stopped += 1
+        if stop_inactive_doctor_review_request(
+            db, request_id=row.id, stopped_at=now, inactive_for=INACTIVITY_TIMEOUT
+        ) is not None:
+            stopped += 1
     if stopped:
         db.commit()
     return stopped

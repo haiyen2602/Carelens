@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from uuid import NAMESPACE_URL, uuid5
 
@@ -45,6 +45,7 @@ class MessageSenderRole(StrEnum):
 
 
 DOCTOR_CONVERSATION_STOP_MESSAGE = "Bác sĩ xin dừng cuộc trò chuyện tại đây"
+PATIENT_CONVERSATION_STOP_MESSAGE = "Bệnh nhân xin dừng cuộc trò chuyện tại đây"
 
 
 class VerifiedContextSource(StrEnum):
@@ -362,6 +363,56 @@ def stop_active_doctor_review_request(
         return request
     if request.status != HandoffStatus.ACTIVE:
         raise InvalidHandoffTransitionError("only active handoffs can be stopped")
+    return _stop_locked_doctor_review_request(
+        db,
+        request=request,
+        stopped_at=stopped_at,
+        terminal_message=(
+            PATIENT_CONVERSATION_STOP_MESSAGE if patient_id is not None else DOCTOR_CONVERSATION_STOP_MESSAGE
+        ),
+    )
+
+
+def stop_inactive_doctor_review_request(
+    db: Session, *, request_id: str, stopped_at: datetime, inactive_for: timedelta
+) -> DoctorReviewRequest | None:
+    """Stop an ACTIVE handoff only if it is still inactive while locked.
+
+    The timeout scanner's aggregate is deliberately only a candidate filter.
+    This second activity read happens after the row lock, alongside patient
+    message writes that use the same lock, so a fresh patient message cannot
+    be raced by a stale scheduler snapshot.
+    """
+    stopped_at = _utc(stopped_at)
+    request = db.execute(
+        select(DoctorReviewRequest).where(DoctorReviewRequest.id == request_id).with_for_update()
+    ).scalar_one_or_none()
+    if request is None:
+        raise HandoffNotFoundError("doctor handoff was not found")
+    if request.status != HandoffStatus.ACTIVE:
+        return None
+    last_patient_message = db.execute(
+        select(DoctorReviewMessage.created_at)
+        .where(
+            DoctorReviewMessage.handoff_id == request.id,
+            DoctorReviewMessage.sender_role == MessageSenderRole.PATIENT,
+        )
+        .order_by(DoctorReviewMessage.created_at.desc(), DoctorReviewMessage.id.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    last_activity = last_patient_message or request.activated_at
+    if last_activity is None or stopped_at - _utc_from_database(db, last_activity) < inactive_for:
+        return None
+    return _stop_locked_doctor_review_request(db, request=request, stopped_at=stopped_at)
+
+
+def _stop_locked_doctor_review_request(
+    db: Session,
+    *,
+    request: DoctorReviewRequest,
+    stopped_at: datetime,
+    terminal_message: str = DOCTOR_CONVERSATION_STOP_MESSAGE,
+) -> DoctorReviewRequest:
     request.status = HandoffStatus.RESOLVED
     request.resolved_at = stopped_at
     record_doctor_review_message(
@@ -370,11 +421,20 @@ def stop_active_doctor_review_request(
         patient_id=request.patient_id,
         sender_role=MessageSenderRole.SYSTEM,
         actor_id=None,
-        content=DOCTOR_CONVERSATION_STOP_MESSAGE,
+        content=terminal_message,
         created_at=stopped_at,
     )
     db.flush()
     return request
+
+
+def _utc_from_database(db: Session, value: datetime) -> datetime:
+    """SQLite drops timezone data in tests; production must remain aware."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        if db.get_bind().dialect.name != "sqlite":
+            raise ValueError("handoff timestamps must be timezone-aware")
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def answer_doctor_review_request(
@@ -479,6 +539,42 @@ def record_doctor_review_message(
     return message
 
 
+def record_active_patient_message(
+    db: Session,
+    *,
+    handoff_id: str,
+    patient_id: str,
+    actor_id: str,
+    content: str,
+    created_at: datetime,
+) -> DoctorReviewRequest | None:
+    """Persist a patient turn only while the same handoff remains ACTIVE.
+
+    This shares the lifecycle lock with timeout closure.  If the timeout won
+    first, callers receive ``None`` and can resume the normal chatbot path
+    without appending a message to an already-ended doctor thread.
+    """
+    request = db.execute(
+        select(DoctorReviewRequest).where(DoctorReviewRequest.id == handoff_id).with_for_update()
+    ).scalar_one_or_none()
+    if request is None:
+        raise HandoffNotFoundError("doctor handoff was not found")
+    if request.patient_id != patient_id:
+        raise DoctorAuthorizationError("patient does not own this handoff")
+    if request.status != HandoffStatus.ACTIVE:
+        return None
+    record_doctor_review_message(
+        db,
+        handoff_id=request.id,
+        patient_id=request.patient_id,
+        sender_role=MessageSenderRole.PATIENT,
+        actor_id=actor_id,
+        content=content,
+        created_at=created_at,
+    )
+    return request
+
+
 def send_active_doctor_message(
     db: Session, *, request_id: str, doctor_id: str, actor_id: str, content: str, created_at: datetime
 ) -> DoctorReviewMessage:
@@ -541,11 +637,14 @@ __all__ = [
     "claim_doctor_review_request",
     "create_doctor_review_request",
     "DOCTOR_CONVERSATION_STOP_MESSAGE",
+    "PATIENT_CONVERSATION_STOP_MESSAGE",
     "get_active_takeover",
     "list_doctor_review_messages",
     "record_doctor_review_message",
+    "record_active_patient_message",
     "resolve_approved_doctor",
     "resolve_doctor_review_request",
     "send_active_doctor_message",
     "stop_active_doctor_review_request",
+    "stop_inactive_doctor_review_request",
 ]

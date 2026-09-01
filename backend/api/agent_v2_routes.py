@@ -15,10 +15,10 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from threading import Lock
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.agents.tools.chat_history_tool import save_chat_message
+from backend.agents.tools.chat_history_tool import save_chat_messages
 from backend.agents.v2.answerability import handoff_type_for
 from backend.agents.v2.context import ContextBudget, ContextManager
 from backend.agents.v2.conversation_state import (
@@ -57,7 +57,7 @@ from backend.agents.v2.tools import AuthorizedToolContext, ToolGateway
 from backend.agents.v2.vinmec_web import VinmecWebConfig, VinmecWebSearchGateway
 from backend.api.security import CurrentUser, get_current_user
 from backend.config import get_settings
-from backend.db.base import get_db
+from backend.db.base import SessionLocal, get_db
 from backend.db.models import AgentActivitySnapshot, AgentRun, AgentRunEvaluation, AgentRunSpan
 from backend.models.schemas import (
     AgentActivityItemOut,
@@ -85,7 +85,7 @@ from backend.services.agent_read_only_tools import AgentReadOnlyDomainTools
 from backend.services.agent_retrieval import AgentRetrievalDomainService
 from backend.services.agent_safety import SafetyDomainAdapter
 from backend.services.agent_safety_monitoring import persist_safety_event
-from backend.services.doctor_handoff import MessageSenderRole, record_doctor_review_message
+from backend.services.doctor_handoff import record_active_patient_message
 from backend.services.evaluators import LLMJudgeEvaluator
 from backend.services.telemetry import get_telemetry_service
 from backend.services.vinmec_web_search import VinmecWebSearchService
@@ -752,6 +752,22 @@ def get_trace_activity(
 _DOCTOR_TAKEOVER_ACK_REPLY = "Bác sĩ đang theo dõi cuộc trò chuyện này. Tin nhắn của bạn đã được gửi."
 
 
+def _persist_display_chat_history(patient_id: str, patient_message: str, assistant_reply: str) -> None:
+    """Best-effort post-response write using an independent DB session."""
+    history_db = SessionLocal()
+    try:
+        save_chat_messages(
+            history_db,
+            patient_id,
+            [("patient", patient_message), ("assistant", assistant_reply)],
+        )
+    except Exception:  # noqa: BLE001 - history must not turn a delivered reply into an HTTP error
+        history_db.rollback()
+        logging.getLogger(__name__).warning("Agent V2 display history write failed", exc_info=True)
+    finally:
+        history_db.close()
+
+
 def _respond_with_doctor_takeover_active(
     db: Session,
     *,
@@ -761,7 +777,7 @@ def _respond_with_doctor_takeover_active(
     actor: CurrentUser,
     handoff,
     started: float,
-) -> AgentV2OrchestrateResponse:
+) -> AgentV2OrchestrateResponse | None:
     """BUILD-44 SS8/SS10/SS25: 0 router/RAG/Main Model/tool calls -- the
     patient's message is persisted for the doctor to read, never sent to
     Agent V2 synthesis. A real, minimal, durable ``AgentRun`` row is still
@@ -773,15 +789,16 @@ def _respond_with_doctor_takeover_active(
     this pattern (a minimal direct ``AgentRun`` insert) for a different
     reason (the run raised before any durable row existed at all)."""
     now = datetime.now(UTC)
-    record_doctor_review_message(
+    locked_handoff = record_active_patient_message(
         db,
         handoff_id=handoff.id,
         patient_id=patient_id,
-        sender_role=MessageSenderRole.PATIENT,
         actor_id=actor.id,
         content=request.message,
         created_at=now,
     )
+    if locked_handoff is None:
+        return None
     trace_id = str(uuid.uuid4())
     run = AgentRun(
         conversation_id=conversation_id,
@@ -798,7 +815,9 @@ def _respond_with_doctor_takeover_active(
     )
     db.add(run)
     db.commit()
-    handoff_type = handoff_type_for(reason_code=handoff.reason_code, risk_disposition=handoff.risk_disposition).value
+    handoff_type = handoff_type_for(
+        reason_code=locked_handoff.reason_code, risk_disposition=locked_handoff.risk_disposition
+    ).value
     return AgentV2OrchestrateResponse(
         status="DOCTOR_ACTIVE",
         reply=_DOCTOR_TAKEOVER_ACK_REPLY,
@@ -839,11 +858,11 @@ def run_read_only_agent(
     )
 
 
-@agent_v2_router.post("/agent/v2/orchestrate", response_model=AgentV2OrchestrateResponse)
 def run_agent_orchestration(
     request: AgentV2OrchestrateRequest,
-    db: Session = Depends(get_db),
-    actor: CurrentUser = Depends(get_current_user),
+    db: Session,
+    actor: CurrentUser,
+    background_tasks: BackgroundTasks | None = None,
 ) -> AgentV2OrchestrateResponse:
     """BUILD-16 end-to-end flow: Router -> Context/Memory -> Tools/RAG/Web ->
     Safety -> Doctor Handoff -> Main Model -> Response -> Checkpoint/Observability.
@@ -869,7 +888,7 @@ def run_agent_orchestration(
     # conversation_id.
     active_takeover = get_active_takeover(db, patient_id=patient_id)
     if active_takeover is not None:
-        return _respond_with_doctor_takeover_active(
+        takeover_response = _respond_with_doctor_takeover_active(
             db,
             request=request,
             patient_id=patient_id,
@@ -878,6 +897,8 @@ def run_agent_orchestration(
             handoff=active_takeover,
             started=_started,
         )
+        if takeover_response is not None:
+            return takeover_response
     state_store = AgentConversationStateStore()
     conversation_state = state_store.load(db, actor_id=actor.id, patient_id=patient_id, conversation_id=conversation_id)
     selected_action = _validated_selected_action(conversation_state, request.selected_action)
@@ -1271,11 +1292,25 @@ def run_agent_orchestration(
     # behavior (BUILD-34 §12). Fully self-contained, safe to call directly.
     persist_safety_event(db, result=result, conversation_id=conversation_id, patient_id=patient_id, actor_id=actor.id)
 
-    # TASK-021: Agent V2 is the production chat path. Persist its display-safe
-    # patient/assistant pair just like the legacy route so the treating doctor
-    # can review the patient's chatbot context after a handoff. This stores no
-    # prompt, reasoning, or raw tool payload.
-    save_chat_message(db, patient_id, "patient", request.message)
-    save_chat_message(db, patient_id, "assistant", response.reply)
+    # TASK-021: do not put two independent history commits on the patient
+    # response path. The background task owns its own session and is
+    # best-effort; it stores display text only, never prompts/reasoning/tools.
+    if background_tasks is not None:
+        background_tasks.add_task(_persist_display_chat_history, patient_id, request.message, response.reply)
 
     return response
+
+
+@agent_v2_router.post("/agent/v2/orchestrate", response_model=AgentV2OrchestrateResponse)
+def run_agent_orchestration_endpoint(
+    request: AgentV2OrchestrateRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    actor: CurrentUser = Depends(get_current_user),
+) -> AgentV2OrchestrateResponse:
+    return run_agent_orchestration(
+        request,
+        db=db,
+        actor=actor,
+        background_tasks=background_tasks,
+    )
