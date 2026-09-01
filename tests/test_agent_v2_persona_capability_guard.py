@@ -183,7 +183,7 @@ def test_vendor_backstop_reached_via_full_orchestrator_for_a_normal_intent():
     from backend.agents.v2.model_gateway import ModelSynthesis, ToolCall
 
     plan = ModelPlan(tool_calls=(ToolCall(name="search_drug", arguments={"query": "paracetamol", "limit": 5}),), response="planning")
-    synthesis = ModelSynthesis(response="Theo ChatGPT cua OpenAI, paracetamol dung de ha sot.")
+    synthesis = ModelSynthesis(free_prose="Theo ChatGPT cua OpenAI, paracetamol dung de ha sot.")
     orchestrator, gateway = _orchestrator(model_gateway=_SpyModelGateway(plan, synthesis))
 
     result = orchestrator.run(_request("Paracetamol la thuoc gi"), tools=_tools())

@@ -452,6 +452,8 @@ class AgentTelemetry:
             cached_input_tokens=int(usage.cached_input_tokens or 0),
             output_tokens=int(usage.output_tokens or 0),
             estimated_cost_usd=estimate.estimated_cost_usd,
+            input_cost_usd=estimate.input_cost_usd,
+            output_cost_usd=estimate.output_cost_usd,
             provider_request_id=request_id,
         )
         return estimate
@@ -517,6 +519,15 @@ _ALLOWED_ATTRIBUTE_KEYS = frozenset(
         "error_code",
         "estimated_cost_usd",
         "final_router_intent",
+        # TASK-V2.5-004 (CP1 contract mục 3): per-call cost BREAKDOWN, not
+        # just the total -- durable trace §6 already wanted both (see
+        # CostEstimate's own input_cost_usd/output_cost_usd fields), but
+        # record_model never emitted them until this task needed real
+        # per-call cost data to fix the MULTI_MODEL accounting bug (a run
+        # mixing two models/prices cannot be re-priced from aggregate tokens
+        # against a single assumed model).
+        "input_cost_usd",
+        "output_cost_usd",
         # BUILD-47: the follow-up classifier's own decision (BUILD-43,
         # emitted as `agent_context_resolution.completed`). These were
         # emitted from day one but never allowlisted, so every one was
@@ -560,7 +571,7 @@ def _sanitize_attributes(values: dict[str, Any]) -> dict[str, str | int | float 
         elif isinstance(value, int):
             safe[key] = max(0, value) if "token" in key or key in {"agent_steps", "tool_calls", "retries"} else value
         elif isinstance(value, float) and math.isfinite(value):
-            safe[key] = max(0.0, value) if key in {"latency_ms", "estimated_cost_usd"} else value
+            safe[key] = max(0.0, value) if key in {"latency_ms", "estimated_cost_usd", "input_cost_usd", "output_cost_usd"} else value
         elif key in {"model", "provider_request_id"} and isinstance(value, str) and _SAFE_MODEL.fullmatch(value):
             safe[key] = value
         elif key in {"error_code", "terminal_status", "safety_disposition", "handoff_outcome", "component_status"} and isinstance(value, str) and _SAFE_CODE.fullmatch(value):

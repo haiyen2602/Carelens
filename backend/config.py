@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     agent_fallback_model: str = "gpt-5.4"
     agent_embedding_model: str = "text-embedding-3-small"
     rag_judge_model: str = "gpt-4o"
+    # TASK-V2.5-004: separate renderer workload (CP1 contract, mục 2) -- see
+    # ModelRole.RENDERER's own docstring for why this is not ModelRole.MAIN.
+    openai_renderer_api_key: str = ""
+    agent_renderer_model: str = "gpt-5.6-luna"
 
     # Voice I/O -- turn-based STT/TTS adapter WRAPPED AROUND Agent V2, not a
     # replacement for it (backend/api/voice_routes.py,
@@ -469,6 +473,12 @@ class Settings(BaseSettings):
     # schedule-range follow-up; Task 03 changes how negation is understood
     # and answered, needs its own canary/metric/stop-condition.
     agent_v2_5_clarification_enabled: bool = False
+    # TASK-V2.5-004: natural renderer (ModelRole.RENDERER / gpt-5.6-luna).
+    # Separate flag again -- same independent-rollback rationale as Task
+    # 02/03 above; the renderer replaces free_prose generation only (backend
+    # _assemble_reply() always inserts protected facts verbatim regardless
+    # of this flag once wired -- see CP1 contract mục 4a).
+    agent_v2_5_renderer_enabled: bool = False
     agent_vinmec_web_max_calls: int = Field(default=1, ge=0, le=5)
     agent_vinmec_web_max_results: int = Field(default=3, ge=1, le=10)
     agent_vinmec_web_timeout_seconds: float = Field(default=5.0, gt=0, le=30.0)

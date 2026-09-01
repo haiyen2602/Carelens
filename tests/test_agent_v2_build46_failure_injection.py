@@ -51,7 +51,7 @@ def test_invalid_tool_arguments_from_the_model_is_a_safe_terminal_failure_never_
     runtime = ReadOnlyAgentRuntime(
         StaticModelGateway(
             ModelPlan((ToolCall("search_drug", {"query": "para", "limit": 999}),), "ignored"),
-            ModelSynthesis(response="unreachable"),
+            ModelSynthesis(free_prose="unreachable"),
         ),
         limits=_limits(),
     )
@@ -80,7 +80,7 @@ def test_tool_unavailable_from_a_domain_failure_is_a_safe_terminal_failure_never
     runtime = ReadOnlyAgentRuntime(
         StaticModelGateway(
             ModelPlan((ToolCall("get_today_doses", {}),), "ignored"),
-            ModelSynthesis(response="unreachable"),
+            ModelSynthesis(free_prose="unreachable"),
         ),
         limits=_limits(),
     )
@@ -102,7 +102,7 @@ def test_failed_tool_call_does_not_leave_ambiguous_or_partial_metrics():
     runtime = ReadOnlyAgentRuntime(
         StaticModelGateway(
             ModelPlan((ToolCall("search_drug", {"query": "para", "limit": 5}),), "ignored"),
-            ModelSynthesis(response="unreachable"),
+            ModelSynthesis(free_prose="unreachable"),
         ),
         limits=_limits(),
     )
