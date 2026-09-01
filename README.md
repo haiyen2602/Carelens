@@ -4,12 +4,6 @@
 
 ![1788254582191](image/README/1788254582191.png)
 
-[![CI Pipeline](https://img.shields.io/badge/CI-Passing-brightgreen?logo=githubactions&logoColor=white)](#-kiem-thu--chat-luong-ma-nguon)
-[![Tests Passed](<https://img.shields.io/badge/Tests-1918%20Passed-success?logo=pytest&logoColor=white>)](#-kiem-thu--chat-luong-ma-nguon)
-[![Safety Core Coverage](<https://img.shields.io/badge/Safety%20Coverage-99%25-blue?logo=codecov&logoColor=white>)](#-kiem-thu--chat-luong-ma-nguon)
-[![Deploy on Railway](<https://img.shields.io/badge/Deploy-Railway%20Production-blueviolet?logo=railway&logoColor=white>)](#-live-demo--tai-khoan-thu-nghiem)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
 ---
 
 ## 🌐 Live Demo
@@ -18,7 +12,6 @@
 | :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :-----------------: |
 | 🖥️**Web Application (Frontend)** | [**https://c3-app-067.up.railway.app**](https://c3-app-067.up.railway.app)                                                 | 🟢`Active 200 OK` |
 | 🔌**Backend API & Health Check**   | [**https://vmec-04be-production.up.railway.app/api/v1/status**](https://vmec-04be-production.up.railway.app/api/v1/status) | 🟢`Active 200 OK` |
-
 
 ## 📌 Vấn đề & Giải pháp (Problem & Solution)
 
@@ -51,24 +44,26 @@ flowchart TD
 
     subgraph Gateway ["API & Safety Gateway (FastAPI)"]
         AUTH["RBAC & Security Gate"]
-        SAFETY["Fail-closed Safety Gateway\n(Dual Classifier: Server Trigger + Rule Engine)"]
+        SAFETY["Fail-closed Safety Gateway<br/>(Dual Classifier: Server Trigger + Rule Engine)"]
     end
 
     subgraph AgentRuntime ["AI Agent V2 Runtime (LangGraph)"]
         ROUTER["Intent & Topic Router"]
         ORCH["Orchestrator Node"]
-        RAG_MOD["RAG Engine (pgvector)\n3.500+ Thuốc chuẩn hóa"]
-        VISION["VLM / Computer Vision\nPhoto Verification"]
+        RAG_MOD["RAG Engine (pgvector)<br/>3.500+ Thuốc chuẩn hóa"]
+        VISION["VLM / Computer Vision<br/>Photo Verification"]
         HANDOFF["Doctor Handoff & Escalation Engine"]
     end
 
     subgraph Database ["Persistence & Audit (PostgreSQL)"]
-        DB_APP[(Application DB: Users, Prescriptions, Doses)]
-        DB_VEC[(Vector Store: pgvector Drug Chunks)]
-        AUDIT[(Immutable Audit Trail: AgentRun, SafetyEvent)]
+        DB_APP[("Application DB: Users, Prescriptions, Doses")]
+        DB_VEC[("Vector Store: pgvector Drug Chunks")]
+        AUDIT[("Immutable Audit Trail: AgentRun, SafetyEvent")]
     end
 
-    Client --> AUTH
+    UI_Doc --> AUTH
+    UI_Pat --> AUTH
+    UI_Care --> AUTH
     AUTH --> SAFETY
     SAFETY -->|An toàn / Passed| ROUTER
     SAFETY -->|Nguy cơ / Blocked| HANDOFF
@@ -76,7 +71,10 @@ flowchart TD
     ORCH --> RAG_MOD
     ORCH --> VISION
     ORCH --> HANDOFF
-    AgentRuntime --> Database
+    ORCH --> DB_APP
+    RAG_MOD --> DB_VEC
+    HANDOFF --> AUDIT
+    SAFETY --> AUDIT
 ```
 
 ---
@@ -226,18 +224,18 @@ P-067/
 
 ## 📦 Danh sách 10 Deliverables Nộp BTC AI20K
 
-| # | Deliverable | Vị trí tài liệu trong Repo | Trạng thái |
-| :---: | :--- | :--- | :---: |
-| **1** | **Source Code** | [`backend/`](backend/), [`frontend/`](frontend/), [`tests/`](tests/) | ✅ Đã hoàn thành |
-| **2** | **README.md** | [`README.md`](README.md) | ✅ Đã hoàn thành |
-| **3** | **Architecture Diagram** | [`docs/architecture.md`](docs/architecture.md) | ✅ Đã hoàn thành |
-| **4** | **AI Logs** | [`.ai-log/archive/`](.ai-log/archive/), [`docs/ai-logs.md`](docs/ai-logs.md) | ✅ Đã hoàn thành |
-| **5** | **Live URL** | [Web App (FE)](https://c3-app-067.up.railway.app) · [Health Check (BE)](https://vmec-04be-production.up.railway.app/api/v1/status) | ✅ Đã triển khai |
-| **6** | **Video Demo** | [`docs/video-demo.md`](docs/video-demo.md) | ✅ Đã hoàn thành |
-| **7** | **Pitch Deck** | [`docs/pitch-deck.pdf`](docs/pitch-deck.pdf) · [`docs/pitch-deck.md`](docs/pitch-deck.md) | ✅ Đã hoàn thành |
-| **8** | **Development Journal** | [`docs/journal.md`](docs/journal.md) | ✅ Đã hoàn thành |
-| **9** | **Worklog** | [`docs/worklog.md`](docs/worklog.md) | ✅ Đã hoàn thành |
-| **10** | **Evaluation Evidence** | [`docs/evaluation.md`](docs/evaluation.md), [`eval/`](eval/) | ✅ Đã hoàn thành |
+|      #      | Deliverable                    | Vị trí tài liệu trong Repo                                                                                                    |     Trạng thái     |
+| :----------: | :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------: |
+| **1** | **Source Code**          | [`backend/`](backend/), [`frontend/`](frontend/), [`tests/`](tests/)                                                           | ✅ Đã hoàn thành |
+| **2** | **README.md**            | [`README.md`](README.md)                                                                                                         | ✅ Đã hoàn thành |
+| **3** | **Architecture Diagram** | [`docs/architecture.md`](docs/architecture.md)                                                                                   | ✅ Đã hoàn thành |
+| **4** | **AI Logs**              | [`.ai-log/archive/`](.ai-log/archive/), [`docs/ai-logs.md`](docs/ai-logs.md)                                                    | ✅ Đã hoàn thành |
+| **5** | **Live URL**             | [Web App (FE)](https://c3-app-067.up.railway.app) · [Health Check (BE)](https://vmec-04be-production.up.railway.app/api/v1/status) | ✅ Đã triển khai |
+| **6** | **Video Demo**           | [`docs/video-demo.md`](docs/video-demo.md)                                                                                       | ✅ Đã hoàn thành |
+| **7** | **Pitch Deck**           | [`docs/pitch-deck.pdf`](docs/pitch-deck.pdf) · [`docs/pitch-deck.md`](docs/pitch-deck.md)                                      | ✅ Đã hoàn thành |
+| **8** | **Development Journal**  | [`docs/journal.md`](docs/journal.md)                                                                                             | ✅ Đã hoàn thành |
+| **9** | **Worklog**              | [`docs/worklog.md`](docs/worklog.md)                                                                                             | ✅ Đã hoàn thành |
+| **10** | **Evaluation Evidence**  | [`docs/evaluation.md`](docs/evaluation.md), [`eval/`](eval/)                                                                    | ✅ Đã hoàn thành |
 
 ---
 
