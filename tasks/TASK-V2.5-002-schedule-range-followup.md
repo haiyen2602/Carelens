@@ -3,7 +3,7 @@
 **Domain:** Agent V2 read-only schedule/evidence — capability context/follow-up
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** To Do — baseline chốt xong ở CP1, chưa code
+**Status:** In Progress — CP1 gần xong; còn chờ quyết định branch (xem mục CP1) trước khi sang CP2
 
 ## Mục tiêu
 
@@ -118,6 +118,100 @@ Answerability Gate (`answerability.py`) — **không** rơi vào
 - [ ] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED` (đề xuất ở
   `CP0-ADR-BASELINE-TASK01.md` mục 1.7), mặc định **off**, theo đúng CP1 của
   `CHECKPOINT.md`.
+
+## CP1 — Sẵn sàng implementation (theo `CHECKPOINT.md`, áp cho đúng shape Task 02)
+
+Task 02 không đụng renderer/`ResponsePolicy`/`RenderableFactSlots` (đó là
+Task 04), nên một số mục CP1 gốc không áp dụng nguyên văn — ghi rõ N/A kèm lý
+do thay vì bỏ qua im lặng.
+
+- **Branch:** _chưa tạo — xem mục "Quyết định cần bạn xác nhận" bên dưới,
+  có rủi ro stacked-branch cần quyết trước khi tạo._
+- **Liên kết task/ADR/pain point/source:** đã có — `CP0-ADR-BASELINE-TASK01.md`
+  mục 1.3a + Pain point 3, `TASK-V2.5-001` (lý do tách task), và source
+  `time_query_engine.py`/`follow_up.py`/`conversation_state.py`/
+  `orchestrator.py` (đã liệt kê ở mục Context bên dưới).
+- **`ResponsePolicy`/`RenderableFactSlots`/audit metadata tách biệt:** N/A —
+  Task 02 không tạo prose tự do, không gọi renderer. Phần tương đương duy
+  nhất: `active_schedule_range` (chỉ `start_date`/`end_date`) là dữ liệu nội
+  bộ trong `ConversationState`/`AgentRun.metadata_json`, cùng lớp riêng tư
+  với `active_topic`/`active_entity` đã có — không phải audit/telemetry mới,
+  không chứa raw message, không chứa PHI ngoài phạm vi ngày tháng đã chấp
+  nhận từ trước.
+- **Fact nhạy cảm phải backend-render:** vẫn đúng nguyên tắc nhưng không có
+  gì mới — lịch/liều tiếp tục được compose bởi `_build_schedule_reply`
+  (deterministic, đã có từ BUILD-28), Task 02 chỉ đổi ROUTE tới đúng range,
+  không đổi cách render fact.
+- **Deterministic fallback:** không có renderer nên không có
+  "timeout/invalid renderer output". Fallback tương đương của Task 02: nếu
+  `active_schedule_range` không hợp lệ/hết hạn → `NEED_MORE_INFO` (đã định
+  nghĩa ở AC); nếu tool `get_doses_for_range` raise `ToolExecutionError` khi
+  re-resolve → dùng lại đúng path `_fail_closed(..., "DOSE_SCHEDULE_UNAVAILABLE", ...)`
+  đã có ở `_schedule_reply`, không tạo path fail-closed mới.
+- **Test plan** (thay cho yêu cầu "prose tự do" — N/A vì không có renderer):
+  - Unit: `classify_follow_up`/hàm nhận diện mới cho pattern "còn lại của
+    range đã lập" — case dương (có range hợp lệ) và âm (không có/hết hạn).
+  - Unit: 4 nhánh staleness — consume-after-use, overwrite-by-new-query,
+    clear-on-topic-switch, clear-on-safety-or-handoff, clear-on-other-intent
+    (5 test, không phải 4, vì "đổi chủ đề" và "safety/handoff" là hai
+    nguyên nhân riêng dù cùng hành vi clear).
+  - Unit: `ConversationState.from_dict` đọc state version 5 (thiếu
+    `active_schedule_range`) → trả `None`, không lỗi (test mới, xem AC).
+  - Golden/regression: case TR01 lượt 8→9 ("tuần tới..." → "các ngày còn lại
+    thì sao") thêm vào golden set V2.5; chạy lại
+    `tests/test_agent_v2_time_aware_schedule.py` (36/36),
+    `tests/test_agent_v2_conversation_state.py` (14/14), và golden
+    `--deterministic-only` (15/15) — baseline "trước" đã chốt ở dưới.
+  - Local E2E: replay đúng chuỗi TR01 lượt 5→9 bằng dữ liệu tổng hợp
+    (không PHI) qua orchestrator thật.
+- **Baseline local (trước khi code Task 02), commit `a75b0c8`:**
+  - `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only`
+    → 15/15 PASS, artifact `scripts/agent_v2/golden/runs/20260901T062931Z.json`.
+  - `python -m pytest tests/test_agent_v2_time_aware_schedule.py -q` →
+    36/36 PASS.
+  - `python -m pytest tests/test_agent_v2_conversation_state.py -q` →
+    14/14 PASS (baseline cho phần `ConversationState` version bump).
+  - Environment: local; model/config: N/A (toàn bộ case deterministic, không
+    gọi model thật).
+  - **Chưa ghi vào tab V2.5 của golden sheet** (CHECKPOINT.md CP1, mục ghi
+    baseline) — tôi không có quyền ghi Google Sheets từ phiên này; nội dung
+    dòng cần dán nằm ở cuối mục này, bạn tự dán hoặc cho tôi biết cách ghi
+    trực tiếp nếu có.
+- **Capability flag:** `AGENT_V2_5_FOLLOWUP_ENABLED`, mặc định `false`, owner
+  Dyo31122005, cohort rỗng (chưa canary) — khai báo tên/mặc định ở đây; thêm
+  thật vào `backend/config.py`/`.env.example` là việc của CP2 (build), không
+  phải CP1.
+- **Rollback:** revert PR Task 02; tắt `AGENT_V2_5_FOLLOWUP_ENABLED` nếu đã
+  kịp bật ở bất kỳ đâu (chưa, vì chưa build). Không đổi Railway config.
+
+**Dòng dán vào tab V2.5 golden sheet (theo cấu trúc tab 15/08/2026):**
+
+```
+timestamp: 2026-09-01T06:29:31Z
+commit: a75b0c8dc38cb398f6f4b92d25ce1fd8e1ea4a0f
+environment: local
+config/model version: N/A (deterministic-only, không gọi model)
+golden-set version: scripts/agent_v2/golden/golden_set_v2.json (deterministic subset, 15/15) + tests/test_agent_v2_time_aware_schedule.py (36/36) + tests/test_agent_v2_conversation_state.py (14/14)
+exact command: python scripts/agent_v2/run_golden_evaluation.py --deterministic-only ; python -m pytest tests/test_agent_v2_time_aware_schedule.py tests/test_agent_v2_conversation_state.py -q
+pass/fail aggregate: 15/15 + 36/36 + 14/14, tất cả PASS
+notes: baseline "trước" cho TASK-V2.5-002 (active_schedule_range), trước khi có runtime change nào
+```
+
+### Quyết định cần bạn xác nhận trước khi tạo branch
+
+Nhánh hiện tại (`feature/TASK-V2.5-001-schedule-tool-contract`) chứa các
+commit đóng Task 01 + ADR delta Task 02, **chưa push/merge vào `main`**. Nếu
+tạo branch Task 02 từ đây, nó sẽ "stacked" trên một branch chưa merge — rủi
+ro thật đã gặp trước đây trong dự án này (branch base merge sau branch con
+không tự retarget). Hai lựa chọn:
+
+1. **Merge/PR nhánh Task 01 trước** (chỉ chứa doc/governance, không đổi
+   runtime code — rủi ro review thấp), rồi tạo branch Task 02 từ `main` mới.
+2. **Tạo branch Task 02 ngay từ nhánh hiện tại**, chấp nhận phải verify bằng
+   `git merge-base --is-ancestor` sau khi Task 01 merge, trước khi tự tin
+   Task 02 đã "chứa main mới nhất".
+
+Tôi chưa push hay mở PR nào — cần bạn quyết trước khi tôi tạo branch mới.
 
 ## Context bắt buộc phải đọc trước khi làm
 
