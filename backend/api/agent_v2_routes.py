@@ -638,8 +638,22 @@ def _retrieved_contexts_for(result) -> list[str]:
     for tool_result in getattr(result, "tool_results", []) or []:
         try:
             contexts.append(json.dumps(tool_result.data, ensure_ascii=False, default=str))
-        except Exception:  # noqa: BLE001 -- best-effort context text only
-            pass
+        except Exception as exc:  # noqa: BLE001 -- best-effort context text only
+            # `default=str` already handles virtually every non-JSON-native
+            # value (anything left gets str()-ed, which itself almost never
+            # raises) -- this only fires on a pathological case (e.g. a
+            # circular reference). Logged, not silently swallowed, so a real
+            # occurrence is visible; the faithfulness heuristic itself
+            # already degrades honestly to a neutral 0.5 ("No context to
+            # ground claims", DEFAULT level -- see LLMJudgeEvaluator.
+            # evaluate_faithfulness) when contexts end up empty, never a
+            # fabricated low/"unfaithful" score.
+            logging.getLogger(__name__).debug(
+                "Skipped one tool_result while building faithfulness grounding "
+                "context (agent_run_id=%s): %s",
+                getattr(result, "agent_run_id", None),
+                exc,
+            )
     return contexts
 
 
