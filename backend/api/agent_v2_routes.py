@@ -601,6 +601,21 @@ def _build_span_rows(events: list) -> list[AgentRunSpan]:
     return rows
 
 
+def _retrieved_contexts_for(result) -> list[str]:
+    """Best-effort JSON-stringified tool outputs, for the heuristic
+    faithfulness grounding check. No telemetry side effects -- see
+    `_record_agent_v2_telemetry`'s own tool-result loop for the version that
+    also creates retriever observations; this one exists only so
+    `_persist_durable_trace` can recompute the same score independently."""
+    contexts: list[str] = []
+    for tool_result in getattr(result, "tool_results", []) or []:
+        try:
+            contexts.append(json.dumps(tool_result.data, ensure_ascii=False, default=str))
+        except Exception:  # noqa: BLE001 -- best-effort context text only
+            pass
+    return contexts
+
+
 def _persist_durable_trace(
     db: Session,
     *,
@@ -608,6 +623,7 @@ def _persist_durable_trace(
     telemetry: AgentTelemetry,
     settings: object,
     actor: CurrentUser,
+    query: str = "",
 ) -> None:
     try:
         trace = TraceContext(trace_id=result.trace_id, agent_run_id=result.agent_run_id)
@@ -620,6 +636,36 @@ def _persist_durable_trace(
         db.add_all(_build_span_rows(events))
 
         evaluation_payload = evaluation.as_dict()
+
+        # FIX (admin monitoring faithfulness N/A): `evaluation.as_dict()`
+        # only serializes each metric's `MetricDisposition` (status/source/
+        # reason -- see evaluation_v2.MetricDisposition.as_dict), which says
+        # a metric IS computable for this run but never carries the real
+        # numeric score. `_record_agent_v2_telemetry` computes that score
+        # separately (same LLMJudgeEvaluator heuristic) but only ever wrote
+        # it into `trace.scores`, which lives in the process-local, 200-
+        # entry ring buffer (backend.services.telemetry._LOCAL_TRACE_BUFFER)
+        # -- wiped on every deploy/restart and never shared across workers.
+        # That left the durable `AgentRunEvaluation.metrics_json` row
+        # structurally unable to ever satisfy the dashboard's own
+        # `.get("score")` lookup (agent_monitoring_metrics._heuristic_
+        # quality_scores), so faithfulness/answer_relevance showed N/A the
+        # moment the buffer aged out. Recompute the same cheap, synchronous,
+        # zero-LLM-call heuristic here and merge the score straight into the
+        # payload that actually gets persisted, so it survives restarts and
+        # is visible from any worker.
+        response_text = (getattr(result, "response", "") or "").strip()
+        if response_text:
+            metrics_payload = evaluation_payload.get("metrics", {})
+            relevance_disposition = metrics_payload.get("answer_relevance")
+            if isinstance(relevance_disposition, dict) and relevance_disposition.get("status") == MetricStatus.AVAILABLE.value:
+                relevance = LLMJudgeEvaluator.evaluate_answer_relevance(query, response_text)
+                relevance_disposition["score"] = relevance.value
+            faithfulness_disposition = metrics_payload.get("faithfulness")
+            if isinstance(faithfulness_disposition, dict) and faithfulness_disposition.get("status") == MetricStatus.AVAILABLE.value:
+                faithfulness = LLMJudgeEvaluator.evaluate_faithfulness(_retrieved_contexts_for(result), response_text)
+                faithfulness_disposition["score"] = faithfulness.value
+
         evaluation_version = str(evaluation_payload.get("evaluator_version") or "evaluation-v2")
         execution_path = evaluation_payload.get("execution_path")
         db.add(
@@ -1274,7 +1320,7 @@ def run_agent_orchestration(
     # makes this run's real token usage/cost/duration/timeout/error/empty-
     # reply/evaluation/spans durable (see _persist_durable_trace's own
     # docstring).
-    _persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=actor)
+    _persist_durable_trace(db, result=result, telemetry=telemetry, settings=settings, actor=actor, query=request.message)
     # BUILD-33: same best-effort, post-commit shape as the three calls above
     # -- decides Judge eligibility from real completed-run evidence
     # (Evaluation V2 dispatch, recomputed cheaply/deterministically inside

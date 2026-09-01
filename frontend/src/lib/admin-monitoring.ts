@@ -131,6 +131,7 @@ export type RetrievalOut = {
   retrieval_latency_p95_ms?: MetricValue;
   empty_retrieval_rate?: MetricValue;
   grounding_failure_rate?: MetricValue;
+  grounding_failure_by_intent?: Record<string, number>;
   citation_count_scope?: string;
   golden_hit_rate_at_10?: MetricValue;
   golden_mrr_at_10?: MetricValue;

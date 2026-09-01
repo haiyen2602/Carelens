@@ -312,6 +312,27 @@ def test_retrieval_metrics_empty_retrieval_rate_never_mixes_populations(db):
     assert result["grounding_failure_rate"]["denominator"] == 2
 
 
+def test_retrieval_metrics_grounding_failure_by_intent_not_execution_path(db):
+    """Regression test: every GROUNDING_FAILURE run has zero tool_results/
+    citations by construction, so dispatch_evaluation always classifies it
+    execution_path GENERAL_MODEL -- a breakdown by execution_path would be
+    a single 100% bucket and tell an admin nothing. `AgentRun.intent` (the
+    original classified intent) is the field that actually varies, so the
+    breakdown must group by intent, not execution_path."""
+
+    _run(db, "run-drug", error_code="GROUNDING_FAILURE", intent="DRUG_INFORMATION")
+    _run(db, "run-general-1", error_code="GROUNDING_FAILURE", intent="GENERAL_MEDICAL_INFORMATION")
+    _run(db, "run-general-2", error_code="GROUNDING_FAILURE", intent="GENERAL_MEDICAL_INFORMATION")
+    _run(db, "run-ok")  # not a grounding failure -- must not be counted
+    db.commit()
+
+    result = retrieval_metrics(db, MonitoringFilters())
+    assert result["grounding_failure_by_intent"] == {
+        "DRUG_INFORMATION": 1,
+        "GENERAL_MEDICAL_INFORMATION": 2,
+    }
+
+
 def test_retrieval_metrics_golden_ir_always_not_applicable(db):
     result = retrieval_metrics(db, MonitoringFilters())
     for key in ("golden_hit_rate_at_10", "golden_mrr_at_10", "golden_ndcg_at_10", "golden_precision_at_10"):
