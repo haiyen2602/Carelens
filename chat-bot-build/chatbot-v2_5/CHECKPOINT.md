@@ -7,8 +7,8 @@
 | Câu hỏi | Trạng thái | Ý nghĩa |
 |---|---|---|
 | Có thể bắt đầu Phase 0? | **Đã hoàn tất** | ADR, baseline approach và Task 01 đã được chốt trong `CP0-ADR-BASELINE-TASK01.md`. |
-| Có thể bắt đầu code runtime? | **Chưa cho Task 02** | Task 01 đóng dưới dạng discovery closure (bug gốc đã fixed upstream, không cần runtime change — xem `TASK-V2.5-001`). Task 02 (context/follow-up, range anaphora) đang ở CP1: baseline/AC đã chốt (`TASK-V2.5-002`), còn một câu hỏi thiết kế mở (durable state field vs short-term memory) cần trả lời trước khi code. Task 03–04 vẫn theo gate và capability flag riêng. |
-| Có thể deploy Railway? | **Chưa** | Chỉ sau local quality gate, PR review và canary gate. |
+| Có thể bắt đầu code runtime? | **Task 02 đã merge, flag off** | Task 01 đóng dưới dạng discovery closure, không có runtime change (`TASK-V2.5-001`). Task 02 (context/follow-up, range anaphora) đã CP2 xong và merge vào `main` qua [PR #183](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/183) (`fa3cd4bc`) — code chạy trên `main` nhưng `AGENT_V2_5_FOLLOWUP_ENABLED` vẫn `false`, chưa có hành vi patient-facing nào đổi. CP4 (canary bật flag) chưa mở. Task 03–04 vẫn theo gate và capability flag riêng. |
+| Có thể deploy Railway? | **Có thể (code đã ở `main`), nhưng chưa canary** | Task 02 đã merge; deploy Railway tiếp theo sẽ chạy code này với flag off (an toàn, không đổi hành vi). Mở canary thật (bật flag cho một cohort) vẫn cần qua CP4 riêng. |
 | OCR/VLM nằm trong canary chat đầu? | **Không** | Đây là track riêng, chỉ xem xét lại sau B-08 re-evaluation `PASS`. |
 
 Không dùng `CHAT_RUNTIME=legacy` làm feature gate V2.5. Mỗi capability có flag, owner, cohort, metric query, stop condition và rollback độc lập.
@@ -147,7 +147,7 @@ riêng — trạng thái của nó (contract version, adapter quanh `synthesize_
 | Capability | Task/PR | Owner | Flag | Cohort | Baseline | Local gate | Canary decision | User evaluation | Rollback owner |
 |---|---|---|---|---|---|---|---|---|---|
 | Natural renderer | _Chưa tạo_ |  |  |  |  |  |  |  |  |
-| Context/follow-up | `TASK-V2.5-002` (CP1, chưa code) | Dyo31122005 | `AGENT_V2_5_FOLLOWUP_ENABLED` (off) | — |  |  |  |  |  |
+| Context/follow-up | `TASK-V2.5-002` / [PR #183](https://github.com/AI20K-Build-Phase-Cohort-3/P-067/pull/183) (merged `fa3cd4bc`) | Dyo31122005 | `AGENT_V2_5_FOLLOWUP_ENABLED` (off) | — (chưa canary) | Golden `--deterministic-only` 15/15 + golden V2.5 (flag ON) 1/1, xem task file | CP2 PASS — 114 test agent_v2/conversation_state/orchestrator + golden, không regression | Chưa mở (flag vẫn off) | Chưa | Dyo31122005 |
 | Clarification | _Chưa tạo_ |  |  |  |  |  |  |  |  |
 
 OCR/VLM không điền vào bảng này cho release đầu. Chỉ tạo checkpoint riêng sau khi B-08 re-evaluation đạt `PASS` với independent real-phone dataset, Vietnamese OCR ground truth, hard-negative/unknown set, deployment-equivalent test và canary evidence.
