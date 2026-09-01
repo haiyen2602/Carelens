@@ -1,210 +1,197 @@
-# Development Journal — Team P-067 (VMEC-04 / CapyMedi)
+# Weekly Journal — Team P-067 (VMEC-04 / CapyMedi)
 
-> Nhật ký phát triển: quyết định kỹ thuật và lý do, khó khăn gặp phải và cách giải quyết, bài học rút ra.
->
-> **Nguồn dữ liệu:** Tuần 1–2 lấy từ `WORKLOG.md` và `planning/sprints/`. Từ Tuần 3 trở đi lấy từ lịch sử commit thật trên GitHub.
->
-> **Quy mô tính tới 2026-09-01:** 494 commit · 174 pull request đã merge · 4 thành viên · 14 ADR.
->
-> *(`git log` thô hiện 6 danh tính nhưng chỉ có 4 người — hai thành viên dùng hai tài khoản git trùng email. Xem `WORKLOG.md` để biết ánh xạ.)*
+> **Nhật ký Phát triển Sản phẩm:** Ghi lại quá trình 5 tuần xây dựng AI Agent Nhắc thuốc & Theo dõi Tuân thủ điều trị. Tổng hợp mục tiêu, tiến độ (Done/Doing), khó khăn & giải pháp (Blocked), bài học kỹ thuật và báo cáo nộp Mentor Duty qua từng chặng.
 
 ---
 
-## Week 1: 25/07 – 01/08 — Đề tài, BRIEF & PRD
+## 📅 Tuần 1: Khởi động, Khảo sát thị trường & Định hình sản phẩm (25/07 – 31/07/2026)
 
-### Mục tiêu tuần này
-- [x] Chọn đề tài, xác định vấn đề và người dùng chính
-- [x] Research thị trường: app tương tự, app Vinmec, case study chăm sóc người thân
-- [x] Viết BRIEF và PRD hoàn chỉnh
-- [x] Chốt phân chia vai trò và thiết lập Git workflow
+### 🎯 Mục tiêu tuần
 
-### Đã hoàn thành
-- Research các app nhắc thuốc đã có trên thị trường (Calendar thủ công, app Max, Apple Health, MediSafe) và trải nghiệm app Vinmec để đối chiếu.
-- Chia sẻ câu chuyện thực tế chăm sóc người thân lớn tuổi dùng thuốc — làm cơ sở xác định pain point thay vì suy đoán.
-- Hoàn thành BRIEF và PRD: 10 tính năng theo vai trò (bác sĩ / bệnh nhân / người thân / agent), yêu cầu phi chức năng, ràng buộc an toàn, cắt phạm vi v1.
-- Chốt vai trò: M.Đạt (Team Lead/Data/AI) · Yến (PM/UI-UX/FE) · T.Đạt (AI/Fullstack/Tester) · Trường (Fullstack/Tech Lead).
-- Thiết lập Git workflow: nhánh `feature/fix/chore`, PR bắt buộc review, CI `ruff` + `pytest` trên mọi push.
+- [X] Lựa chọn đề tài, xác định vấn đề lâm sàng và đối tượng người dùng trọng tâm (VMEC-04).
+- [X] Phân chia vai trò cụ thể trong team và thiết lập quy chuẩn Git Workflow / CI.
+- [X] Thống nhất tên thương hiệu sản phẩm: **"CapyMedi"**.
+- [X] Nghiên cứu thị trường (App Vinmec, Apple Health, MediSafe, Max) và khảo sát thực tế.
+- [X] Hoàn thành tài liệu Đặc tả sản phẩm (BRIEF & PRD) và khởi tạo bảng khảo sát người dùng.
 
-### Quyết định kỹ thuật & lý do
-| Quyết định | Lý do |
-|---|---|
-| Bắt buộc Human-in-the-loop: bác sĩ duyệt mọi thay đổi phác đồ (ADR-0010) | Không có điều này thì bác sĩ sẽ không tin dùng — đây là điều kiện tiên quyết, không phải tính năng phụ |
-| Agent **không được** kê đơn/đổi thuốc, cắt khỏi phạm vi v1 | Ranh giới an toàn y tế; ghi thẳng vào PRD để không bị trôi phạm vi về sau |
-| Không tích hợp EMR/HIS thật trong 5 tuần | Phạm vi bất khả thi với thời gian có; ghi rõ trong bảng cắt phạm vi |
+### ✅ Đã hoàn thành (Done)
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| Chưa có bộ dữ liệu thuốc thực tế để làm RAG | Tìm nguồn có sẵn, nếu không đủ thì tự crawl | Chuyển thành ưu tiên P0 của Sprint 02 |
-| Rủi ro cao nhất: dữ liệu thiếu → agent "bịa" thông tin thuốc | Xác định RAG trên dữ liệu **có nguồn** là ưu tiên kỹ thuật số 1, ghi thành giả định rủi ro trong BRIEF | Định hình toàn bộ hướng kỹ thuật của Sprint 02 |
-| Dễ lan man tính năng trong 5 tuần | Bảng cắt phạm vi MVP / sprint sau / không làm trong PRD | Dùng làm kim chỉ nam cho các tuần tiếp theo |
+- Tìm hiểu và định nghĩa các metrics đánh giá cho bài toán OCR / Computer Vision nhận diện và đếm số lượng viên thuốc.
+- Tạo biểu mẫu khảo sát thực tế và xây dựng bộ câu hỏi phỏng vấn chuyên sâu cho bác sĩ và bệnh nhân mãn tính.
+- Làm rõ toàn bộ luồng nghiệp vụ (Workflow): *Bác sĩ kê đơn ➔ Lên lịch nhắc ➔ Chụp ảnh xác nhận ➔ Nhận diện bỏ liều/tác dụng phụ ➔ Escalate cho người thân/bác sĩ*.
+- Phân chia vai trò chính xác: **M.Đạt** (Team Lead / Data / AI), **Hải Yến** (PM / UI-UX / Frontend), **Thành Đạt** (AI Engineer / Fullstack / QA), **Quốc Trường** (Tech Lead / Fullstack).
+- Chốt tên thương hiệu: **"Capy medi"** (AI Agent y tế thân thiện, kiên nhẫn và đáng tin cậy).
 
-### Bài học
-- Điểm mấu chốt của đề tài **không phải** "bệnh nhân quên thuốc" mà là **"bác sĩ ra quyết định lâm sàng trên dữ liệu sai"**. Giữ thông điệp này xuyên suốt khi trình bày.
-- Chấp nhận đánh đổi "báo thừa còn hơn bỏ sót" cho recall triệu chứng nghiêm trọng — đây là chỉ số quan trọng nhất của cả hệ thống.
+### 🔄 Đang thực hiện (Doing)
 
----
+- Triển khai khảo sát và phỏng vấn thực tế bác sĩ nội khoa và bệnh nhân cao tuổi.
+- Thu thập và chuẩn hóa bộ dữ liệu thông tin thuốc (tên hoạt chất, biệt dược, hướng dẫn sử dụng, tương tác, cảnh báo tác dụng phụ).
+- Khảo sát các tiện ích và kỳ vọng của người dùng đối với một ứng dụng hỗ trợ y tế thông minh.
 
-## Week 2: 02/08 – 08/08 — Dữ liệu thuốc, Vision & nền móng kỹ thuật
+### 🚧 Khó khăn & Giải pháp (Blocked & Solutions)
 
+| Khó khăn gặp phải                                                                                                                        | Giải pháp xử lý                                                                                                                                                                                                          | Kết quả đạt được                                                                                                                 |
+| :------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| Chưa tìm thấy điểm đột phá để tạo khoảng cách khác biệt vượt trội so với các app nhắc việc/sức khỏe thông thường. | Tập trung vào bài toán cốt lõi: Không chỉ "nhắc lịch" mà tạo**bằng chứng khách quan về tuân thủ điều trị** cho bác sĩ thông qua Vision đếm thuốc + Hội thoại tự nhiên + RAG có nguồn. | BRIEF và PRD thể hiện rõ định vị sản phẩm: Khép kín vòng lặp chăm sóc giữa Bác sĩ – Bệnh nhân – Người thân.    |
+| Chưa rõ thực tế tại bệnh viện/ngành dược đã ứng dụng OCR ở những khâu nào.                                                 | Đặt câu hỏi cho Mentor/Coach và tìm kiếm tài liệu về số hóa đơn thuốc, kiểm đếm tồn kho dược bệnh viện.                                                                                               | Xác định phạm vi MVP tập trung vào kiểm đếm viên thuốc trước khi uống, không ôm đồm OCR hồ sơ bệnh án phức tạp. |
 
-### Mục tiêu tuần này
-- [x] Giải quyết rủi ro số 1: có dữ liệu thuốc thật, **có nguồn**, nằm trong repo (TASK-001)
-- [x] Khởi động tìm hiểu VLM đếm thuốc: chốt metric và cách đo cho bài toán đếm viên từ ảnh (TASK-002)
-- [x] Thiết kế frontend: wireframe & UI flow trên Figma cho 3 vai trò bác sĩ / bệnh nhân / người thân (TASK-007)
-- [x] Dựng skeleton FastAPI + docker-compose (Postgres + pgvector) + CI xanh (TASK-003)
-- [x] Hoàn thiện context base: `/specs`, `/adrs`, `/tasks`, `/planning` (TASK-009)
-- [x] Bộ test set safety layer + danh sách redflag tiếng Việt (TASK-008)
+### 💡 Bài học & Quyết định kỹ thuật
 
-### Quyết định kỹ thuật & lý do
-| Quyết định | Lý do |
-|---|---|
-| **pgvector** thay vì vector store riêng (ADR-0008) | Đã có Postgres cho dữ liệu nghiệp vụ; thêm một hệ thống nữa là thêm một thứ phải vận hành và đồng bộ |
-| **Safety layer 2 tầng: keyword OR LLM** (ADR-0009) | Keyword bắt nhanh và chắc các redflag đã biết; LLM bắt các cách diễn đạt lạ. `OR` để giảm bỏ sót, chấp nhận báo thừa |
-| **API contract-first** (ADR-0003) | Frontend và backend làm song song bởi hai người khác nhau — chốt hợp đồng trước để không phải sửa chéo |
-| Ảnh xác nhận có **đường thoát** khi không đối chiếu được (ADR-0011) | Có thuốc không kiểm chứng được bằng ảnh (thuốc tiêm); ép bệnh nhân chụp lại là vô nghĩa |
+- Điểm mấu chốt của dự án không dừng lại ở việc "bệnh nhân quên thuốc", mà là **ngăn ngừa bác sĩ ra quyết định lâm sàng sai lầm** do thiếu dữ liệu tuân thủ thực tế.
+- Ràng buộc an toàn *Human-in-the-loop (HITL)* là điều kiện tiên quyết: Bác sĩ là người duy nhất duyệt đơn, AI không được tự ý đổi liều hay kê đơn thuốc.
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| Không có sẵn bộ dữ liệu thuốc tiếng Việt đủ dùng | Tự viết crawler (`crawler/`) lấy dữ liệu nhà thuốc, chuẩn hoá theo `schema.json`, giữ nguồn cho từng bản ghi | Có dữ liệu thật trong repo — gỡ được rủi ro số 1 |
-| Chưa biết đo bài toán đếm viên thuốc thế nào cho đúng | Làm spike riêng (TASK-002) để chốt metric trước khi code | Tránh được việc code xong mới phát hiện không đo được |
-| Thiết kế frontend cho 3 vai trò rất khác nhau (bác sĩ dùng web, bệnh nhân cao tuổi dùng điện thoại) | Tách wireframe theo từng vai trò trên Figma thay vì dùng chung một bộ màn hình | Giao diện bệnh nhân được tối ưu riêng cho chữ to, thao tác ít bước |
+### 🔗 Dữ liệu nộp bài (Mentor Duty Log)
 
-### Bài học
-- Tách "spike đo lường" ra khỏi "code tính năng" giúp không mắc kẹt vào một hướng kỹ thuật sai — chốt được metric cho bài toán đếm viên trước khi viết dòng code nhận diện nào.
-- Thiết kế giao diện cho người cao tuổi là ràng buộc kỹ thuật, không phải việc trang trí: nó quyết định số bước thao tác và cách trình bày thông tin ngay từ khâu wireframe.
+- **Thời gian nộp:** 31/07/2026, 22:21
+- **Link khảo sát & Dữ liệu:** [Bảng Khảo sát Người dùng &amp; Y tế (Google Sheets)](https://docs.google.com/spreadsheets/d/1Ywu4qKBupXsPEJrjuQYd16jsMzZUrL23gn_8E6eYlnk/edit?usp=sharing)
+- **Kế hoạch tuần tiếp theo:** Thu thập thêm dữ liệu thuốc, xây dựng bản Prototype UI đầu tiên và tích hợp mô hình thị giác máy tính.
 
 ---
 
-## Week 3: 09/08 – 15/08 — Khởi tạo repo, auth thật & luồng xác nhận ảnh
+## 📅 Tuần 2: Xây dựng Prototype, Tích hợp VLM & Chatbot RAG (01/08 – 07/08/2026)
 
-### Mục tiêu tuần này
-- [x] Khởi tạo repo, đưa toàn bộ nền móng lên GitHub
-- [x] Auth thật bằng JWT cho 3 vai trò (bác sĩ / bệnh nhân / admin)
-- [x] Luồng xác nhận liều bằng ảnh chạy end-to-end với camera thật
-- [x] Luồng bác sĩ duyệt đơn thuốc (HITL) + người thân theo dõi
+### 🎯 Mục tiêu tuần
 
-### Đã hoàn thành
-- `feat(auth)`: xây auth-api thật (JWT), wire login cho cả 3 vai trò; sau đó bổ sung đăng ký / xác thực email / đặt lại & đổi mật khẩu kèm thu hồi token.
-- `feat(photo-verification)`: nhận ảnh → đối chiếu → quyết định bước tiếp theo, và nối camera thật vào app bệnh nhân.
-- `feat(prescription)`: gom thuốc thành đơn HITL, chu kỳ liều, tra cứu bệnh nhân theo ID; nối luồng bác sĩ duyệt phác đồ.
-- `feat(caregiver)`: bệnh nhân mời nhau theo dõi chéo bằng lời mời thật, bỏ toàn bộ mock.
-- Chuyển dữ liệu bác sĩ/bệnh nhân/người thân sang backend thật, gỡ hết prototype mock.
+- [X] Hoàn thiện bản Prototype giao diện người dùng cho cả 2 vai trò: Bác sĩ và Bệnh nhân.
+- [X] Nghiên cứu và thử nghiệm công nghệ thị giác máy tính để nhận diện và đếm số lượng viên thuốc.
+- [X] Xây dựng Chatbot trả lời thông tin thuốc và đơn thuốc dựa trên RAG.
+- [X] Mở rộng cơ sở dữ liệu thuốc chuẩn hóa và tiếp nhận phản hồi từ bác sĩ chuyên khoa.
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| **Trùng số revision migration** khi nhiều người cùng thêm migration (0015/0016, rồi 0020) | Đánh số lại thủ công và merge chuỗi revision | Giải quyết được nhưng **tái diễn 3 lần** — dấu hiệu quy trình chưa ổn |
-| Frontend build vỡ vì `useSearchParams()` không bọc trong `Suspense` | Bọc các trang liên quan trong `Suspense` boundary | Build thông trở lại |
-| Đổi sang JWT thật làm các trang bác sĩ trả 401 | Sửa proxy frontend forward đúng bearer token | Hết lỗi 401 |
-| `PATCH /patients/{id}` làm app chết ngay lúc khởi động (undefined name) | Sửa lỗi và bổ sung test cho endpoint | App khởi động ổn định |
+### ✅ Đã hoàn thành (Done)
 
-### Bài học
-- **Trùng revision migration là lỗi hệ thống, không phải lỗi cá nhân.** Ba lần trong một tuần nghĩa là quy trình đang thiếu một bước kiểm tra tự động, không phải do ai đó bất cẩn.
-- Lỗi làm app **chết lúc khởi động** nguy hiểm hơn hẳn lỗi runtime thông thường: nó không lộ ra khi review code mà chỉ lộ khi deploy.
+- Hoàn thiện tương đối bản Prototype giúp trực quan hóa giao diện sử dụng dành cho Bác sĩ (quản lý đơn thuốc, lịch nhắc) và Bệnh nhân (lịch uống trong ngày, chat tư vấn).
+- **Chuyển đổi kỹ thuật quan trọng:** Chuyển từ giải pháp OCR truyền thống sang **VLM (Vision-Language Model)** — mô hình cho kết quả vượt trội, phân biệt được nhiều loại nhãn, nhận diện bao bì và đếm số lượng viên thuốc chính xác hơn.
+- Xây dựng Chatbot phiên bản 1 có khả năng tra cứu thông tin thuốc từ cơ sở dữ liệu chuẩn hóa và giải đáp đơn thuốc của bệnh nhân.
 
----
+### 🔄 Đang thực hiện (Doing)
 
-## Week 4: 16/08 – 22/08 — Canonical V2, đổi nền auth & rebrand CapyMedi
+- Tiếp tục hoàn thiện sản phẩm MVP, kết nối các thành phần Backend và Frontend.
+- Tiếp nhận ý kiến đóng góp từ các bác sĩ thực tế dựa trên bản demo ý tưởng để liên tục cải tiến nghiệp vụ.
 
-### Mục tiêu tuần này
-- [x] Dựng lại dữ liệu thuốc thành **Canonical V2 có provenance** (TASK-001)
-- [x] Đưa agent chạy trên nền dữ liệu V2
-- [x] Rebrand toàn bộ giao diện bệnh nhân sang CapyMedi
-- [x] Dựng admin dashboard + RAG monitoring
-- [x] Dockerfile multi-stage cho production
+### 🚧 Khó khăn & Giải pháp (Blocked & Solutions)
 
-### Quyết định kỹ thuật & lý do
-| Quyết định | Lý do |
-|---|---|
-| **Canonical V2 kèm provenance cho từng bản ghi** (ADR-0012) | Agent phải trích được nguồn; không có provenance thì không thể chứng minh câu trả lời không phải bịa |
-| **Chuyển auth từ Better Auth sang Supabase** (ADR-0013) | Better Auth phát sinh nhiều ca lỗi ghép tài khoản Google; đổi nền sớm rẻ hơn vá tiếp |
-| **Danh mục thuốc là allowlist động** (ADR-0013, FB-14) | Chỉ cho kê thuốc có trong danh mục để agent không sinh ra thuốc không tồn tại; kèm "đường thoát" cho bác sĩ yêu cầu bổ sung |
-| Chạy `alembic upgrade head` lúc container khởi động | Deploy không cần bước thủ công, giảm sai sót giữa các môi trường |
+| Khó khăn gặp phải                                                                                                                                      | Giải pháp xử lý                                                                                                                                                                                                  | Kết quả đạt được                                                                                                       |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| Chưa chắc chắn về việc AI nhận diện triệu chứng bệnh nhân là do tác dụng phụ của thuốc hay do tương tác chéo giữa các loại thuốc. | Thiết kế cấu trúc RAG chuyên biệt phân tách rõ 2 tầng: Tầng 1 tra cứu tác dụng phụ đơn thuốc; Tầng 2 đối chiếu ma trận tương tác thuốc (Drug-Drug Interaction) từ dữ liệu Dược thư. | Giảm thiểu nguy cơ AI suy đoán sai, luôn kèm khuyến cáo tham vấn bác sĩ khi phát hiện dấu hiệu bất thường. |
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| **Alembic rollback im lặng** — migration báo thành công nhưng không áp dụng gì | Chặn rollback im lặng, bỏ auto-stamp không an toàn, viết `scripts/safe_migrate.py` có kiểm tra tính nhất quán schema và phục hồi revision mồ côi | Đây là bug nguy hiểm nhất tuần: nó *im lặng*, không có triệu chứng cho tới khi dữ liệu sai |
-| Cột `supabase_uid` không được thêm ở một số môi trường | Kiểm tra và tạo cột ngay lúc FastAPI khởi động, ngoài đường alembic | Môi trường lệch schema tự phục hồi |
-| Người dùng thử báo chỉ số cơ thể phi thực tế lọt qua (FB-08, FB-09) | Chặn giá trị phi thực tế ở cả frontend lẫn backend | Sửa theo feedback thật, không phải giả định |
-| Xưng hô của AI với bệnh nhân không phù hợp (cháu/bác) | Đổi sang tôi/bạn | Nhỏ nhưng ảnh hưởng trực tiếp trải nghiệm người cao tuổi |
+### 💡 Bài học & Quyết định kỹ thuật
 
-### Bài học
-- **Lỗi im lặng đắt hơn lỗi ồn ào.** Alembic rollback im lặng không làm gì đổ vỡ ngay — nó chỉ để lại schema sai và bung ra ở nơi khác. Từ đó nhóm ưu tiên fail-closed thay vì fail-silent.
-- Đổi nền tảng auth giữa dự án rất tốn, nhưng **đổi muộn còn tốn hơn**. Quyết định sớm ở tuần 4 rẻ hơn nhiều so với tuần 6.
+- VLM xử lý ảnh chụp thuốc gia đình tốt hơn nhiều so với mô hình Object Detection thuần túy nhờ khả năng hiểu ngữ cảnh (màu sắc, hình dạng, vỉ thuốc kết hợp với thông tin trong đơn thuốc).
+
+### 🔗 Dữ liệu nộp bài (Mentor Duty Log)
+
+- **Thời gian nộp:** 07/08/2026, 21:22
+- **Link Prototype & Tài liệu:** [Tài liệu Prototype &amp; Đặc tả Luồng VLM (Google Docs)](https://docs.google.com/document/d/15L63kT943Gs91QpA6RT30iPfp5iDSgb4RQ2QmU93JRY/edit?usp=sharing)
+- **Kế hoạch tuần tiếp theo:** Tối ưu hóa Chatbot, kết nối trọn vẹn với Frontend và chuẩn bị nộp bài Gate 2 / Build Showcase.
 
 ---
 
-## Week 5: 23/08 – 29/08 — Agent V2, quan sát được & đánh giá tự động
+## 📅 Tuần 3: Build Showcase, Hoàn thiện Kiến trúc & Bộ Đánh giá (08/08 – 15/08/2026)
 
-### Mục tiêu tuần này
-- [x] Agent V2: phân loại triage y tế + định tuyến an toàn liều (BUILD-29F)
-- [x] Observability bền vững + lưu trace (BUILD-32)
-- [x] LLM Judge production + Golden Set + vòng cải thiện chất lượng (BUILD-33/35/38/40)
-- [x] Answerability Gate & chuyển bác sĩ (BUILD-42), Conversation State (BUILD-43)
-- [x] Hệ thống điểm thưởng & rank cho bệnh nhân
-- [x] Nhận diện ảnh thuốc trong chat (B-07/B-08), nhắc thuốc qua Telegram, voice STT/TTS
+### 🎯 Mục tiêu tuần
 
-### Quyết định kỹ thuật & lý do
-| Quyết định | Lý do |
-|---|---|
-| **Answerability Gate**: agent tự nhận "không đủ căn cứ" và chuyển bác sĩ | Thà từ chối còn hơn trả lời sai trong ngữ cảnh y tế |
-| **LLM Judge + Golden Set chạy liên tục** | Không có số đo thì không biết sửa prompt làm tốt lên hay tệ đi |
-| **Warm OCR catalog index lúc khởi động** | Đo được: request đầu tiên timeout, từ request 2 chỉ ~0.3s. Không warm thì người dùng thật đầu tiên sau mỗi lần restart phải "bốc thăm" chịu độ trễ |
-| Nhận diện ảnh thuốc chỉ tự động ở nhóm đủ confidence | Đo trên golden set 25 ảnh: mức `cao` đúng 9/9, mức `thấp` đúng 0/11 — độ tin cậy tự chấm dự báo được độ đúng |
+- [X] Đăng sản phẩm lên **Build Showcase** để nhận phản hồi từ cộng đồng và Mentor.
+- [X] Hoàn thiện Sơ đồ Kiến trúc Hệ thống (Architecture Diagram) và Sơ đồ Luồng Dữ liệu (Data Flow).
+- [X] Xây dựng bộ công cụ đánh giá tự động (Evaluation Framework) cho RAG và phân loại an toàn.
+- [X] Cải thiện sản phẩm theo phản hồi của Gate 2.
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| BUILD-37 phát hiện **sai khoá `content_available`** — dashboard hiển thị N/A hàng loạt | Sửa khoá và bổ sung test | Bug thật, tìm ra nhờ chính vòng đánh giá tự động vừa dựng |
-| Lại **trùng revision migration 0053** giữa hai nhánh làm song song | Đánh số lại, merge chuỗi | Lần thứ 4 — xác nhận cần công cụ tự động chứ không thể trông vào kỷ luật |
-| Nhiều BUILD phải sửa 1–2 vòng sau review (BUILD-33/34/35/36/38/42/43/44) | Chấp nhận vòng review chặt, ghi lại phản hồi trong báo cáo BUILD | Chất lượng tăng, đổi lại tốc độ chậm hơn |
+### ✅ Đã hoàn thành (Done)
 
-### Bài học
-- **Dựng hệ thống đánh giá tự động sớm thì chính nó tìm ra bug cho mình.** BUILD-37 tìm ra lỗi khoá dữ liệu mà không ai để ý bằng mắt thường.
-- Độ tin cậy do model tự chấm **có giá trị thật** nếu chịu đo: nó cho phép biến một mô hình chính xác 48% thành một luồng dùng được, bằng cách chỉ tự động hoá phần model tự tin.
+- Đăng tải sản phẩm lên Build Showcase thành công, thu thập nhiều góp ý giá trị về UI/UX và an toàn y tế.
+- Xây dựng tài liệu kiến trúc chi tiết (`ARCHITECTURE.md`) với sơ đồ phân tầng rõ ràng giữa Frontend, Backend, Fail-safe Safety Gateway và Vector Store.
+- Thiết lập bộ dữ liệu kiểm thử vàng (Deterministic Golden Set) và kịch bản Red-teaming để kiểm tra tính an toàn của Agent.
 
----
+### 🔄 Đang thực hiện (Doing)
 
-## Week 6: 30/08 – 01/09 — Đồng bộ hội thoại, runtime V3 & sửa thống kê tuân thủ
+- Tinh chỉnh sản phẩm theo các góp ý từ Build Showcase để chuẩn bị quay video demo.
+- Bổ sung và chuẩn hóa các yêu cầu của Gate 2 sau buổi trao đổi cùng Mentor.
 
-### Mục tiêu tuần này
-- [x] Đồng bộ hội thoại bác sĩ ↔ bệnh nhân (TASK-021)
-- [x] Runtime profile V3 fail-closed
-- [x] Dashboard giám sát admin theo thời gian thực
-- [x] Sửa lỗi thống kê tuân thủ và vòng đời liều thuốc (TASK-022)
+### 🚧 Khó khăn & Giải pháp (Blocked & Solutions)
 
-### Quyết định kỹ thuật & lý do
-| Quyết định | Lý do |
-|---|---|
-| **Runtime profile V3 fail-closed** | Khi cấu hình thiếu thì dừng hẳn thay vì chạy tiếp ở trạng thái không xác định — rút ra trực tiếp từ bài học "lỗi im lặng" tuần 4 |
-| Chốt liều quá hạn theo mốc **"qua ngày mới giờ VN"**, không phải hết cửa sổ ±30 phút | Liều 20:00 mà 20:45 mới xác nhận là *uống muộn*, không phải *bỏ liều*. Chốt sớm sẽ cướp mất cơ hội xác nhận muộn |
-| Liều xác nhận muộn được **50% điểm** thay vì 0 | Ở mức 0, bệnh nhân không còn lý do xác nhận muộn và sẽ bỏ luôn — mất cả tín hiệu tuân thủ lẫn liều thuốc |
-| `AWAITING_CAREGIVER` không bao giờ tự chuyển thành bỏ liều | Lỗi ở người thân chưa duyệt, không phải bệnh nhân bỏ thuốc — phạt nhầm người |
+- *Tình trạng:* Tiến độ diễn ra thuận lợi, hệ thống hoạt động ổn định và vượt qua các mốc kiểm thử chính của Gate 2.
 
-### Khó khăn & Giải pháp
-| Khó khăn | Giải pháp | Kết quả |
-|---|---|---|
-| **Không có gì chuyển `PENDING` → `MISSED`.** Đo trên DB thật: 122/142 liều đã quá hạn nằm im vĩnh viễn | Thêm job chốt liều quá hạn + script backfill có báo cáo audit, không bắn cảnh báo cho liều cũ | Tỉ lệ tuân thủ hiển thị của một bệnh nhân từ **88% (sai)** về **25% (đúng)** |
-| Trang Lịch sử bắn **147 request HTTP mỗi lần mở** để hỏi từng liều có ảnh hay không | Thêm `has_photo` vào `GET /doses` bằng một `LEFT JOIN` | 147 request → 0 request thừa |
-| Backend gán thẳng `body.status` client gửi lên nên không bao giờ sinh ra nhãn `DELAYED` | Backend tự đối chiếu `window_end` để quyết định nhãn | Chỉ số "xác nhận muộn" hết vô nghĩa (trước đó luôn bằng 0) |
+### 💡 Bài học & Quyết định kỹ thuật
 
-### Bài học
-- **Con số hiển thị sai nguy hiểm hơn không hiển thị gì.** 88% tuân thủ trên một bệnh nhân thực tế chỉ đạt 25% có thể khiến bác sĩ kết luận sai — đúng cái rủi ro mà cả dự án sinh ra để phòng.
-- Khi loại một trạng thái ra khỏi *cả tử số lẫn mẫu số*, hệ thống vô tình **thưởng cho sự im lặng**: bệnh nhân không làm gì thì biến mất khỏi phép tính.
-- Ba lỗi trong tuần này đều đã nằm sẵn trong comment của code từ nhiều tuần trước. **Ghi lại nợ kỹ thuật là tốt, nhưng ghi rồi để đó thì nó vẫn bung.**
+- Cần xây dựng bộ test tự động độc lập với LLM (Deterministic checks) để đảm bảo các quy tắc an toàn y tế luôn được kiểm soát 100% trên CI mà không phụ thuộc vào độ biến thiên ngẫu nhiên của mô hình.
+
+### 🔗 Dữ liệu nộp bài (Mentor Duty Log)
+
+- **Thời gian nộp:** 15/08/2026, 08:45
+- **Link Showcase & Video:** [Thư mục Build Showcase &amp; Demo Materials (Google Drive)](https://drive.google.com/drive/folders/160dUiGzmv_iIfkAyEXbVFz5e6P_UXX4d?usp=sharing)
+- **Kế hoạch tuần tiếp theo:** Chuyển đổi Chatbot sang kiến trúc Agent V2 (LangGraph), phát triển giao diện Mobile PWA và tích hợp công cụ giám sát.
 
 ---
 
-## Tổng kết xuyên suốt dự án
+## 📅 Tuần 4: Chuyển đổi Agent V2, Đa kênh Thông báo & Dashboard Admin (16/08 – 22/08/2026)
 
-### Ba bài học lớn nhất
-1. **Ưu tiên rủi ro trước tính năng.** Rủi ro số 1 (dữ liệu thuốc thiếu → agent bịa) được nhận diện ngay Tuần 1 và giải quyết ở Tuần 2, trước khi viết bất kỳ tính năng nào phụ thuộc vào nó.
-2. **Fail-closed thay vì fail-silent.** Bài học từ vụ alembic rollback im lặng (Tuần 4) 
-3. **Không đo thì không biết mình đang tốt lên hay tệ đi.** Golden set và LLM Judge dựng ở Tuần 5 lập tức tìm ra bug thật, và cho phép quyết định dựa trên số chứ không dựa vào cảm giác.
+### 🎯 Mục tiêu tuần
 
-### Nếu được làm lại
-- **Tự động hoá kiểm tra trùng revision migration ngay từ đầu.** Lỗi này tái diễn 4 lần và lần nào cũng tốn thời gian gỡ; cùng loại với việc `adrs/` hiện có hai file cùng số `0013`.
-- **Dọn dữ liệu lớn khỏi repo sớm hơn.** Thư mục dữ liệu thuốc chiếm 86% số file trong repo, phát hiện quá muộn để xử lý triệt để trước hạn nộp.
+- [X] Nâng cấp Chatbot lên **Agent V2 (LangGraph)** với khả năng xử lý trạng thái và ghi nhận ngữ cảnh đa lượt.
+- [X] Xây dựng Dashboard kiểm tra chỉ số hoạt động và theo dõi an toàn của Chatbot trên trang Admin.
+- [X] Phát triển tính năng thông báo nhắc thuốc đa kênh (Push notification, cuộc gọi nhắc, Today Schedule).
+- [X] Sửa lỗi và hoàn thiện tính năng đăng nhập bảo mật bằng Google OAuth.
+
+### ✅ Đã hoàn thành (Done)
+
+- Deploy thành công Chatbot Version 2 lên hệ thống ứng dụng thực tế.
+- Bổ sung trang **Admin Monitoring Dashboard** cho phép kiểm tra chi tiết các chỉ số: tỷ lệ an toàn, độ trễ, số lượt kích hoạt Handoff và danh sách Audit Trail.
+- Giao diện người dùng được cập nhật tab *Lịch uống hôm nay (Today Schedule)* cùng hệ thống thông báo đẩy trực tiếp khi đến giờ uống thuốc.
+- Hoàn thiện tính năng xác thực tài khoản Google OAuth và phân quyền RBAC.
+
+### 🔄 Đang thực hiện (Doing)
+
+- Tích hợp công nghệ chuyển đổi giọng nói thành văn bản (Speech-to-Text) và văn bản thành giọng nói (Text-to-Speech) hỗ trợ người cao tuổi.
+- Xây dựng hệ thống Semantic Caching / Truy xuất câu hỏi phổ biến để tối ưu hóa thời gian phản hồi của chatbot.
+
+### 🚧 Khó khăn & Giải pháp (Blocked & Solutions)
+
+- *Tình trạng:* Các tính năng mới tích hợp mượt mà, CI/CD tự động kiểm tra mã nguồn trên từng Pull Request.
+
+### 💡 Bài học & Quyết định kỹ thuật
+
+- Tách riêng biệt lớp xử lý an toàn (Fail-closed Safety Layer) khỏi luồng trả lời chính của Agent giúp loại bỏ hoàn toàn nguy cơ AI tự ý kê đơn hoặc đưa ra lời khuyên y tế sai lệch khi gặp lỗi.
+
+### 🔗 Dữ liệu nộp bài (Mentor Duty Log)
+
+- **Thời gian nộp:** 22/08/2026, 09:20
+- **Link Codebase:** [GitHub Repository P-067 (VMEC-04)](https://github.com/AI20K-Build-Phase-Cohort-3/P-067)
+- **Kế hoạch tuần tiếp theo:** Phát triển tra cứu thuốc bằng hình ảnh nâng cao, hoàn thiện voice chat hai chiều và tối ưu hóa toàn diện trước Demo Day.
+
+---
+
+## 📅 Tuần 5: Hoàn thiện Đa phương thức, Kiểm thử Toàn diện & Sẵn sàng Demo Day (23/08 – 01/09/2026)
+
+### 🎯 Mục tiêu tuần
+
+- [X] Hoàn thiện tính năng tra cứu thông tin thuốc bằng hình ảnh (Drug Image Retrieval & Verification).
+- [X] Tích hợp Voice Chat hai chiều (người dùng nói ➔ AI hiểu ➔ AI phản hồi bằng giọng đọc tự nhiên).
+- [X] Hoàn thiện hệ thống cảnh báo qua Telegram Bot và Web Push Notification.
+- [X] Chạy kiểm thử toàn diện (Full Test Suite), đo lường độ bao phủ mã nguồn (Coverage) và độ trễ SLO.
+- [X] Thiết kế Pitch Deck trình bày Demo Day và chuẩn bị kịch bản thuyết trình.
+
+### ✅ Đã hoàn thành (Done)
+
+- **Đa phương thức (Multimodal):** Hoàn thiện trọn vẹn cả 3 hình thức tương tác: Văn bản (Text), Giọng nói (Voice STT/TTS), và Hình ảnh thuốc (Image Vision).
+- **Thông báo đa kênh:** Kết nối thành công bot Telegram gửi thông báo tự động tới người thân khi bệnh nhân có dấu hiệu bỏ liều hoặc gặp tác dụng phụ.
+- **Trang Quản trị & Giám sát:** Hoàn thiện giao diện Admin giám sát RAG Health, phản hồi người dùng (Feedback Tickets) và can thiệp y khoa (Doctor Handoff).
+- **Kiểm thử thực nghiệm xuất sắc:** Chạy toàn bộ **1.918 tests passed**, đạt **99% Line Coverage** cho lõi an toàn `safety.py`, độ trễ trung vị P50 chỉ **3,38 giây**.
+- **Slide thuyết trình:** Hoàn thiện bộ slide Pitch Deck 10 trang chuẩn hóa theo Chapter 09 trên Canva và kịch bản chi tiết 45 giây cho Slide 7 Technical Highlights.
+
+### 🔄 Đang thực hiện (Doing)
+
+- Tổng duyệt toàn bộ 10 Deliverables nộp Ban Tổ Chức AI20K.
+- Luyện tập thuyết trình và demo kịch bản trực tiếp trên môi trường Production Railway ([https://c3-app-067.up.railway.app](https://c3-app-067.up.railway.app)).
+
+### 🚧 Khó khăn & Giải pháp (Blocked & Solutions)
+
+- *Tình trạng:* Hệ thống đã deploy ổn định trên Railway Production, đạt 200 OK trên các Health Check endpoints, sẵn sàng 100% cho ngày hội Demo Day.
+
+### 💡 Bài học & Quyết định kỹ thuật
+
+- Việc giữ kỷ luật kiểm thử liên tục (Continuous Testing với hơn 2.400 test cases) và duy trì nhật ký phát triển đều đặn giúp team tự tin phản biện mọi câu hỏi kỹ thuật từ Ban Giám Khảo.
+
+### 🔗 Dữ liệu nộp bài (Mentor Duty Log)
+
+- **Thời gian hoàn thiện:** 01/09/2026
+- **Link Slide Pitch Deck:** [Slide Pitch Deck Demo Day (Canva)](https://canva.link/ilknefaktrieh91)
+- **Live Production App:** [https://c3-app-067.up.railway.app](https://c3-app-067.up.railway.app)
