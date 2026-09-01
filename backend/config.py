@@ -455,6 +455,14 @@ class Settings(BaseSettings):
     # BUILD-8: public supplementary knowledge only. This does not enable the
     # Agent runtime and must remain constrained to the explicit Vinmec hosts.
     agent_vinmec_web_enabled: bool = False
+    # TASK-V2.5-002 (CP0 mục 1.7): schedule range-remainder follow-up ("các
+    # ngày còn lại thì sao"). Off by default -- gates ONLY the consumption
+    # side (`_is_schedule_range_remainder_followup` in orchestrator.py);
+    # `ConversationState.active_schedule_range` still gets populated
+    # whenever a multi-day schedule query resolves regardless of this flag
+    # (inert, unused extra state while the flag is off), same as any other
+    # dark-launched durable field.
+    agent_v2_5_followup_enabled: bool = False
     agent_vinmec_web_max_calls: int = Field(default=1, ge=0, le=5)
     agent_vinmec_web_max_results: int = Field(default=3, ge=1, le=10)
     agent_vinmec_web_timeout_seconds: float = Field(default=5.0, gt=0, le=30.0)

@@ -107,6 +107,7 @@ from backend.agents.v2.time_query_engine import (
     TimeRange,
     TimeRelation,
     local_today,
+    range_from_dates,
     resolve_time_query,
 )
 from backend.agents.v2.tools import ToolExecutionError, ToolGateway, ToolName
@@ -923,6 +924,19 @@ _NEED_DOCTOR_REPLY = (
 _EXPLICIT_DOCTOR_REQUEST_REPLY = "Mình sẽ chuyển yêu cầu này cho bác sĩ."
 _ANSWERABILITY_HANDOFF_UNAVAILABLE_REPLY = "Không thể chuyển yêu cầu cho bác sĩ lúc này. Vui lòng thử lại sau."
 
+# TASK-V2.5-002: fixed reply for a schedule range-remainder follow-up ("các
+# ngày còn lại thì sao") with no valid `active_schedule_range` from the
+# prior turn. Deliberately its own constant, not added to
+# `_NEED_MORE_INFO_REPLIES` above -- that dict's own docstring documents it
+# as indexed ONLY by `evaluate_grounding_answerability`'s reason codes; this
+# path constructs its `AnswerabilityDecision` directly and never calls that
+# function, so keeping it separate avoids widening that documented
+# invariant.
+_MISSING_SCHEDULE_CONTEXT_REPLY = (
+    "Mình chưa xác định được bạn đang hỏi về khoảng thời gian nào. Bạn có thể cho mình biết cụ thể "
+    "ngày hoặc khoảng ngày bạn muốn hỏi không?"
+)
+
 
 def normalize_semantic_medical_query(message: str) -> SemanticMedicalQuery:
     """Canonicalize bounded medical paraphrases before retrieval.
@@ -1052,6 +1066,19 @@ class OrchestrationRequest:
     prior_active_topic: str | None = None
     prior_active_entity_id: str | None = None
     prior_active_entity_name: str | None = None
+    # TASK-V2.5-002: the durable ConversationState.active_schedule_range as
+    # of BEFORE this turn -- raw prior-state evidence for the schedule
+    # range-remainder follow-up path only (see
+    # `_is_schedule_range_remainder_followup`/`_schedule_range_followup_reply`
+    # below), same provenance discipline as `prior_active_topic` above.
+    prior_active_schedule_range: tuple[date, date] | None = None
+    # TASK-V2.5-002: capability flag (settings.agent_v2_5_followup_enabled),
+    # threaded in as a plain request-scoped boolean rather than orchestrator
+    # code reading global settings directly -- same convention as
+    # `has_dose_id` elsewhere in this module, keeps `run()` pure/testable.
+    # Off by default: the range-remainder follow-up check in `run()` is
+    # inert until the API boundary passes True.
+    followup_capability_enabled: bool = False
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -1110,6 +1137,14 @@ class OrchestrationResult:
     # stale ``ConversationState.active_topic``/``active_entity`` on a
     # TOPIC_SWITCH, matching BUILD-43 invariant #7.
     follow_up_decision: FollowUpDecision | None = None
+    # TASK-V2.5-002: set ONLY when this turn newly resolved a genuine
+    # multi-day schedule range (not on the range-remainder follow-up turn
+    # that consumes a prior one, and not for a single-day range) -- the API
+    # boundary (agent_v2_routes.py) passes this straight through as
+    # `transition_state`'s `schedule_range=`, which is what makes the
+    # durable `ConversationState.active_schedule_range` valid for at most
+    # one following turn (see that function's own docstring).
+    resolved_schedule_range: tuple[date, date] | None = None
 
 
 _EVIDENCE_PREAMBLE = (
@@ -1291,6 +1326,26 @@ _GROUNDING_REQUIRED_INTENTS = frozenset(
 _SCHEDULE_INTENTS = frozenset(
     {OrchestrationIntent.MEDICATION_HISTORY, OrchestrationIntent.TODAY_DOSES, OrchestrationIntent.UPCOMING_DOSES}
 )
+
+# TASK-V2.5-002: a follow-up that references "the remaining part of the
+# range already established" without naming its own date/week -- e.g. "các
+# ngày còn lại thì sao" (golden sheet TR01, lượt 9). Deliberately narrow
+# (evidence-based, same convention as every other keyword/regex check in
+# this router): a bare "còn lại"/"còn ngày nào" is common enough Vietnamese
+# phrasing for "what about the rest" that this is a grammatical
+# generalization of the one real evidence case, not an attempt to solve
+# anaphora generally. Checked ONLY when `resolve_time_query` already found
+# no date/range of its own in the message (see the call site in `run()`) --
+# a message that names its own explicit date/range is never ambiguous about
+# which range it means, regardless of also containing this phrase.
+_SCHEDULE_RANGE_REMAINDER_RE = re.compile(
+    r"\b(cac\s+)?ngay\s+con\s+lai\b|\bnhung\s+ngay\s+con\s+lai\b|\bcon\s+ngay\s+nao\s+(nua\s+)?khong\b",
+    re.IGNORECASE,
+)
+
+
+def _is_schedule_range_remainder_followup(message: str) -> bool:
+    return bool(_SCHEDULE_RANGE_REMAINDER_RE.search(_ascii_fold(message)))
 
 # BUILD-38 grounding-decline-reply-v2 (see BUILD-38 report Cluster B):
 # this backstop previously used ONE fixed string for every intent in
@@ -1653,6 +1708,17 @@ class AgentOrchestrator:
         # retrieval/Vinmec, no model.
         if raw_decision.intent in _SCHEDULE_INTENTS:
             return self._schedule_reply(request, raw_decision, tools, trace, agent_run_id, checkpoint_db, lease_token, started)
+
+        # TASK-V2.5-002: reached only when the message carries no date/range
+        # of its own (`raw_decision.intent` is not already one of
+        # `_SCHEDULE_INTENTS` above) -- otherwise a message that already
+        # names its own explicit date/range is never ambiguous, regardless
+        # of also containing this phrase. Same early-return shape as the
+        # two checks above: no memory recall, no Safety/Handoff, no
+        # retrieval/Vinmec, no model either way (resolved range or
+        # NEED_MORE_INFO).
+        if request.followup_capability_enabled and _is_schedule_range_remainder_followup(request.message):
+            return self._schedule_range_followup_reply(request, tools, trace, agent_run_id, checkpoint_db, lease_token, started)
 
         if request.resolved_query and raw_decision.intent in {
             OrchestrationIntent.GENERAL_CONVERSATION,
@@ -2554,7 +2620,8 @@ class AgentOrchestrator:
         )
 
     def _schedule_reply(
-        self, request, decision, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token, started
+        self, request, decision, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token, started,
+        *, record_range: bool = True,
     ) -> OrchestrationResult:
         """BUILD-27B/28: fixed, deterministic COMPLETED reply for any of the
         three time-scoped schedule intents (``_SCHEDULE_INTENTS``) -- the
@@ -2570,6 +2637,12 @@ class AgentOrchestrator:
         safe to re-run on resume. One tool, one composer, for all three
         intents -- see ``_build_schedule_reply``'s own docstring for how
         past/today/future tense is decided per item.
+
+        TASK-V2.5-002: ``record_range=False`` when called from
+        ``_schedule_range_followup_reply`` -- that call is CONSUMING an
+        already-stored range, not establishing a new one, so
+        ``OrchestrationResult.resolved_schedule_range`` must stay ``None``
+        for it regardless of the range's own span.
         """
         assert decision.time_range is not None
         time_range = decision.time_range
@@ -2601,6 +2674,70 @@ class AgentOrchestrator:
         return OrchestrationResult(
             trace.trace_id, agent_run_id, decision.intent, result.status, result.response,
             (tool_result,), (), None, None, result.metrics, result.error_code,
+            resolved_schedule_range=(
+                (time_range.start_date, time_range.end_date)
+                if record_range and time_range.start_date != time_range.end_date
+                else None
+            ),
+        )
+
+    def _schedule_range_followup_reply(
+        self, request, tools: ToolGateway, trace, agent_run_id, checkpoint_db, lease_token, started
+    ) -> OrchestrationResult:
+        """TASK-V2.5-002: "các ngày còn lại thì sao" -- a follow-up naming no
+        date/range of its own, resolved from ``request.prior_active_schedule_range``
+        (the durable ``ConversationState.active_schedule_range`` from the
+        prior turn) instead. No LLM step either way: a valid stored range
+        reuses ``_schedule_reply`` exactly (same tool, same composer, same
+        fail-closed path) via a synthetic ``RouterDecision``; no stored range
+        asks a focused clarification instead of guessing or falling through
+        to GENERAL_MEDICAL_INFORMATION.
+        """
+        stored_range = request.prior_active_schedule_range
+        if stored_range is None:
+            answerability_decision = AnswerabilityDecision(
+                outcome=AnswerabilityOutcome.NEED_MORE_INFO,
+                reason_code=AnswerabilityReasonCode.MISSING_SCHEDULE_CONTEXT,
+                provenance="schedule_range_followup",
+                attempt_count=0,
+            )
+            result = RunResult(
+                RunStatus.COMPLETED,
+                _MISSING_SCHEDULE_CONTEXT_REPLY,
+                (),
+                RunMetrics(elapsed_ms=max(0.0, (self._clock() - started) * 1000)),
+            )
+            if checkpoint_db is not None:
+                if lease_token is None:
+                    lease_token = claim_resume(checkpoint_db, agent_run_id=agent_run_id, max_age=self._checkpoint_max_age).lease_token
+                CheckpointedTerminalStateRecorder(checkpoint_db, telemetry=self._telemetry).record(
+                    agent_run_id=agent_run_id, lease_token=lease_token, result=result, trace=trace
+                )
+            return OrchestrationResult(
+                trace.trace_id, agent_run_id, OrchestrationIntent.UNKNOWN_OR_AMBIGUOUS, result.status, result.response,
+                (), (), None, None, result.metrics, result.error_code,
+                answerability_decision=answerability_decision,
+            )
+
+        start_date, end_date = stored_range
+        time_range = range_from_dates(start_date, end_date, now=self._now(), label="các ngày còn lại")
+        intent = {
+            TimeRelation.PAST: OrchestrationIntent.MEDICATION_HISTORY,
+            TimeRelation.PRESENT: OrchestrationIntent.TODAY_DOSES,
+            TimeRelation.FUTURE: OrchestrationIntent.UPCOMING_DOSES,
+        }[time_range.relation]
+        synthetic_decision = RouterDecision(
+            intent=intent,
+            safety_trigger=None,
+            requires_occurrence=False,
+            bypass_to_handoff=False,
+            use_retrieval=False,
+            use_vinmec_web=False,
+            time_range=time_range,
+        )
+        return self._schedule_reply(
+            request, synthetic_decision, tools, trace, agent_run_id, checkpoint_db, lease_token, started,
+            record_range=False,
         )
 
     # BUILD-32: a real dependency-unavailable failure (schedule tool, bound

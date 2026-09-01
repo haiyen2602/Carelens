@@ -27,6 +27,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from backend.agents.v2.answerability import AnswerabilityOutcome, AnswerabilityReasonCode
 from backend.agents.v2.context import ContextBudget, ContextManager, MemoryKind
 from backend.agents.v2.handoff import DoctorHandoffGateway
 from backend.agents.v2.model_gateway import EmbeddingResult, ModelPlan, ModelSynthesis, SynthesisEvidence
@@ -491,3 +492,77 @@ def test_schedule_queries_never_call_the_model_worst_case_regimen():
     assert result.status is RunStatus.COMPLETED
     assert gateway.plan_calls == [] and gateway.synthesis_calls == []
     assert result.metrics.token_total == 0
+
+
+# ---------------------------------------------------------------------------
+# TASK-V2.5-002: "các ngày còn lại thì sao" -- range-remainder follow-up.
+# TR01 lượt 8->9 (golden sheet): "tuần tới tôi có lịch uống thuốc không?"
+# rồi "các ngày còn lại thì sao" phải kế thừa đúng range đã lập, không
+# misroute thành GENERAL_MEDICAL_INFORMATION.
+# ---------------------------------------------------------------------------
+
+
+def _request_with_prior_range(message: str, *, prior_active_schedule_range) -> OrchestrationRequest:
+    return OrchestrationRequest(
+        message=message, actor_id="actor-1", actor_role="patient", patient_id="patient-1",
+        conversation_id="conv-1", session_id="session-1",
+        prior_active_schedule_range=prior_active_schedule_range,
+        followup_capability_enabled=True,
+    )
+
+
+def test_range_remainder_followup_is_inert_when_the_capability_flag_is_off():
+    """Default-off flag: even with a valid stored range, the message must
+    fall through to the pre-existing (misrouted) behavior unchanged --
+    proves the flag actually gates this path rather than being decorative."""
+    domain = _RangeDomainTools(range_items=[])
+    orchestrator, gateway = _orchestrator()
+    request = OrchestrationRequest(
+        message="các ngày còn lại thì sao", actor_id="actor-1", actor_role="patient", patient_id="patient-1",
+        conversation_id="conv-1", session_id="session-1",
+        prior_active_schedule_range=(date(2026, 8, 24), date(2026, 8, 30)),
+        # followup_capability_enabled defaults to False -- not set here.
+    )
+    result = orchestrator.run(request, tools=_tools(domain))
+
+    assert domain.calls == []  # get_doses_for_range is never reached
+    assert result.intent is OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+
+
+def test_range_remainder_followup_resolves_from_the_stored_range_never_the_model():
+    """With a valid active_schedule_range from the prior turn, 'các ngày còn
+    lại thì sao' must resolve via get_doses_for_range using that stored
+    range -- never fall through to GENERAL_MEDICAL_INFORMATION/the model."""
+    domain = _RangeDomainTools(range_items=[_RangeDomainTools._dose("dose-in-range")])
+    orchestrator, gateway = _orchestrator()
+    stored_range = (date(2026, 8, 24), date(2026, 8, 30))
+    result = orchestrator.run(
+        _request_with_prior_range("các ngày còn lại thì sao", prior_active_schedule_range=stored_range),
+        tools=_tools(domain),
+    )
+
+    assert result.status is RunStatus.COMPLETED
+    assert result.intent is not OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert gateway.plan_calls == [] and gateway.synthesis_calls == []
+    assert domain.calls == [("get_doses_for_range", "patient-1", stored_range[0], stored_range[1])]
+
+
+def test_range_remainder_followup_without_a_stored_range_asks_need_more_info():
+    """No prior active_schedule_range (new session, expired, already
+    consumed) -- must ask which date/range, never silently answer as a
+    general medical question and never call get_doses_for_range with a
+    guessed range."""
+    domain = _RangeDomainTools(range_items=[])
+    orchestrator, gateway = _orchestrator()
+    result = orchestrator.run(
+        _request_with_prior_range("các ngày còn lại thì sao", prior_active_schedule_range=None),
+        tools=_tools(domain),
+    )
+
+    assert result.status is RunStatus.COMPLETED
+    assert result.intent is not OrchestrationIntent.GENERAL_MEDICAL_INFORMATION
+    assert result.answerability_decision is not None
+    assert result.answerability_decision.outcome is AnswerabilityOutcome.NEED_MORE_INFO
+    assert result.answerability_decision.reason_code is AnswerabilityReasonCode.MISSING_SCHEDULE_CONTEXT
+    assert gateway.plan_calls == [] and gateway.synthesis_calls == []
+    assert domain.calls == []

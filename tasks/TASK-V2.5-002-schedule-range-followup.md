@@ -3,7 +3,7 @@
 **Domain:** Agent V2 read-only schedule/evidence — capability context/follow-up
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** In Progress — CP1 xong; branch `feature/TASK-V2.5-002-schedule-range-followup` đã tạo từ `main` (sau khi merge PR #182), sẵn sàng CP2
+**Status:** CP2 hoàn tất (local) — chưa PR/merge/deploy; xem "Bằng chứng CP2"
 
 ## Mục tiêu
 
@@ -87,37 +87,40 @@ có thời gian trôi qua giữa hai lượt, câu trả lời tự nhiên đã 
 Answerability Gate (`answerability.py`) — **không** rơi vào
 `GENERAL_MEDICAL_INFORMATION` như hiện tại.
 
-## Acceptance Criteria (AC)
+## Acceptance Criteria (AC) — CP2 hoàn tất, evidence ở cuối file
 
-- [ ] Test tái tạo chính xác baseline ở trên như một red test trước khi sửa.
-- [ ] Thêm field `active_schedule_range: tuple[date, date] | None` vào
+- [x] Test tái tạo chính xác baseline ở trên như một red test trước khi sửa
+  (chạy RED trước khi code bất kỳ dòng implementation nào — xem "Bằng chứng
+  CP2" bên dưới).
+- [x] Thêm field `active_schedule_range: tuple[date, date] | None` vào
   `ConversationState`; bump `as_dict`/`from_dict` lên version 6.
-- [ ] **Test đọc ngược state version 5** (không có field mới) qua
-  `from_dict`: phải trả về `active_schedule_range=None`, không lỗi, không
-  suy ra giá trị giả — theo đúng convention `answerability_attempt_count`
-  đã có, nhưng đây là test mới (chưa có test tương đương cho field này trong
-  `tests/test_agent_v2_conversation_state.py`).
-- [ ] `classify_follow_up`/`classify_intent` nhận diện được câu chỉ tham
-  chiếu "phần còn lại" của một range lịch đã hỏi (không tự nêu lại
-  ngày/tuần) khi `active_schedule_range` còn hợp lệ.
-- [ ] Khi có range hợp lệ: re-resolve đúng `active_schedule_range` đó và gọi
-  lại `_schedule_reply`/`get_doses_for_range` — không suy đoán ngày mới,
-  không tự bịa range, không cần `last_served_through_date`.
-- [ ] Khi không có range hợp lệ: `NEED_MORE_INFO` qua Answerability Gate —
-  không mặc định thành `GENERAL_MEDICAL_INFORMATION`.
-- [ ] Cài đúng 4 quy tắc staleness ở trên (consume/overwrite/clear theo đổi
-  chủ đề-safety-handoff/clear theo intent khác) bằng unit test riêng cho
-  từng trường hợp.
-- [ ] Entity chưa xác minh không được promote thành truth (theo Phase 2 scope
-  chung, V2.5-DESIGN.md mục 9) — range cũ chỉ dùng để tính lại range mới,
-  không tự ý mở rộng phạm vi ngoài những gì user đã thực sự hỏi.
-- [ ] Golden/regression: thêm case này vào
-  `scripts/agent_v2/golden/golden_set_v2.json` hoặc file V2.5 riêng; chạy
-  lại toàn bộ `tests/test_agent_v2_time_aware_schedule.py` (36/36 hiện tại)
-  và golden `--deterministic-only` (15/15 hiện tại) không suy giảm.
-- [ ] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED` (đề xuất ở
-  `CP0-ADR-BASELINE-TASK01.md` mục 1.7), mặc định **off**, theo đúng CP1 của
-  `CHECKPOINT.md`.
+- [x] **Test đọc ngược state version 5** (không có field mới) qua
+  `from_dict`: trả về `active_schedule_range=None`, không lỗi.
+- [x] Nhận diện "các ngày còn lại thì sao" (narrow regex
+  `_is_schedule_range_remainder_followup`, orchestrator.py) khi
+  `active_schedule_range` còn hợp lệ — đặt ở `run()`, không đụng
+  `classify_intent`/`classify_follow_up` (tránh phải luồn tham số state qua
+  6 call site của `classify_intent`; xem "Ghi chú thiết kế" bên dưới).
+- [x] Khi có range hợp lệ: re-resolve đúng `active_schedule_range` đó qua
+  `range_from_dates` (hàm mới, time_query_engine.py) rồi tái dùng
+  `_schedule_reply`/`get_doses_for_range` nguyên trạng — không suy đoán ngày
+  mới, không tự bịa range, không cần `last_served_through_date`.
+- [x] Khi không có range hợp lệ: `NEED_MORE_INFO` qua
+  `AnswerabilityReasonCode.MISSING_SCHEDULE_CONTEXT` (mới) — không mặc định
+  thành `GENERAL_MEDICAL_INFORMATION`.
+- [x] Cài đúng 5 nhánh staleness (`transition_state`) bằng unit test riêng
+  cho từng trường hợp.
+- [x] Entity chưa xác minh không được promote thành truth — không áp dụng
+  thêm gì mới, `active_schedule_range` chỉ chứa ngày, không phải entity.
+- [~] Golden/regression: **chưa** thêm case vào
+  `scripts/agent_v2/golden/golden_set_v2.json` (JSON dataset của
+  `run_golden_evaluation.py`) — coverage tương đương đã có qua pytest
+  (unit + orchestrator-level, xem bên dưới), nhưng chưa phải golden-JSON
+  hình thức. `tests/test_agent_v2_time_aware_schedule.py` 36→39/39,
+  golden `--deterministic-only` vẫn 15/15, không suy giảm.
+- [x] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED`, mặc định **off**, thêm
+  thật vào `backend/config.py`/`.env.example`; có test riêng xác nhận flag
+  off giữ nguyên hành vi cũ (misroute) không đổi.
 
 ## CP1 — Sẵn sàng implementation (theo `CHECKPOINT.md`, áp cho đúng shape Task 02)
 
@@ -266,3 +269,61 @@ Task này tách ra từ TASK-V2.5-001 sau khi reproduction cho thấy bug gốc 
 task đó (mâu thuẫn lượt 5/6) không còn tồn tại, nhưng phát hiện một gap thật
 khác trong cùng cụm test (TR01). Không gộp chung một task để giữ mỗi task có
 thể rollback độc lập theo đúng nguyên tắc CP1 (`CHECKPOINT.md`).
+
+## Ghi chú thiết kế (CP2)
+
+**Vì sao không đổi `classify_intent`/`classify_follow_up`:** `classify_intent`
+là hàm thuần (message, has_dose_id, now) và được gọi ở **6 call site** khác
+nhau trong `orchestrator.py`/`run()`. Luồn thêm tham số state qua tất cả 6
+chỗ đó chỉ để một pattern hẹp là rủi ro/diff lớn không cần thiết. Thay vào
+đó, `_is_schedule_range_remainder_followup` là một check độc lập, đặt ngay
+cạnh check `_SCHEDULE_INTENTS` hiện có trong `run()` (cùng vị trí "early
+return trước memory recall/Safety" như `_out_of_scope_reply`/`_schedule_reply`
+đã làm) — không đổi chữ ký `classify_intent`, không đổi 6 call site, không
+đổi test hiện có của nó.
+
+**Vì sao tái dùng `_schedule_reply` thay vì viết composer mới:** case "có
+range hợp lệ" chỉ khác case schedule bình thường ở chỗ range đến từ state
+thay vì từ `resolve_time_query`. Dựng một `RouterDecision` tổng hợp với
+`time_range = range_from_dates(...)` rồi gọi thẳng `_schedule_reply` tái
+dùng nguyên contract cũ (tool, composer, fail-closed path) — không có logic
+DB/reply-building nào bị nhân đôi. Tham số mới `record_range` trên
+`_schedule_reply` chỉ để phân biệt "lượt này lập range mới" (ghi vào
+`OrchestrationResult.resolved_schedule_range`) và "lượt này tiêu thụ range
+cũ" (không ghi lại) — đúng cơ chế consume-by-omission ở `transition_state`.
+
+## Bằng chứng CP2 (2026-09-01)
+
+Thứ tự làm đúng như đã thống nhất: RED cho cả 4 nhóm trước, rồi mới
+implement `active_schedule_range`/v6/router-state-transition/flag.
+
+**RED (trước khi code):** 10 test conversation_state (field, version 6,
+round-trip, đọc ngược v5, 5 nhánh staleness) + 2 test orchestrator
+(recognition, NEED_MORE_INFO) — toàn bộ FAIL đúng lý do (field/param/behavior
+chưa tồn tại), xem lịch sử tool call trong phiên làm việc.
+
+**GREEN (sau khi implement):**
+- `pytest tests/test_agent_v2_conversation_state.py` → 24/24 PASS.
+- `pytest tests/test_agent_v2_time_aware_schedule.py` → 39/39 PASS (36 cũ +
+  3 mới: recognition, NEED_MORE_INFO, flag-off-is-inert).
+- `pytest tests/test_agent_v2_orchestrator.py` → 51/51 PASS (không suy giảm).
+- `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only` →
+  15/15 PASS.
+- Regression rộng: `pytest tests/ -k "agent_v2 or conversation_state or
+  time_aware or time_query" --ignore=tests/vlm_demthuoc
+  --ignore=tests/services/photo_verification` → 1149 passed, 18 failed.
+  **Cả 18 failed đã xác nhận pre-existing** (chạy lại y hệt trên
+  `git stash` tại branch point `4aa0c95`, cùng test, cùng lỗi
+  `sqlite3.OperationalError: no such table: chat_messages` — không liên
+  quan tới thay đổi của task này).
+- `ruff check` trên toàn bộ file đã sửa: sạch, trừ 1 lỗi unused-import
+  pre-existing không nằm trong diff của task này (`resolve_time_query` ở
+  `test_agent_v2_time_aware_schedule.py`, xác nhận bằng `git diff`).
+- `git diff --check`: sạch, không lỗi whitespace.
+
+**Chưa làm (không chặn CP2, theo đúng chỉ đạo):**
+- Append kết quả baseline vào tab V2.5 golden sheet — vẫn chưa có quyền ghi
+  Google Sheets từ phiên này.
+- Thêm case vào `golden_set_v2.json` dạng JSON chính thức (coverage tương
+  đương đã có qua pytest).
+- Chưa commit/PR — chờ xác nhận trước khi sang CP3.

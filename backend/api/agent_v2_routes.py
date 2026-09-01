@@ -1015,6 +1015,12 @@ def run_agent_orchestration(
                 prior_active_entity_name=conversation_state.active_entity.canonical_name
                 if conversation_state.active_entity
                 else None,
+                # TASK-V2.5-002: raw prior-state evidence, always passed
+                # (same discipline as prior_active_topic/prior_active_entity_*
+                # above) -- harmless while the capability flag is off, since
+                # the orchestrator's consumption of it is gated separately.
+                prior_active_schedule_range=conversation_state.active_schedule_range,
+                followup_capability_enabled=settings.agent_v2_5_followup_enabled,
             ),
             tools=tools,
             checkpoint_db=db,
@@ -1153,6 +1159,12 @@ def run_agent_orchestration(
         safety_event=safety_event,
         answerability_attempt_count=next_answerability_attempt_count,
         last_answerability_reason=next_answerability_reason,
+        # TASK-V2.5-002: only non-None when THIS turn newly resolved a
+        # genuine multi-day schedule range (never on the follow-up turn
+        # that consumes a prior one) -- see OrchestrationResult's own field
+        # comment and transition_state's docstring for why this is passed
+        # through as-is rather than falling back to the prior state's value.
+        schedule_range=result.resolved_schedule_range,
     )
     state_store.save(
         db,
