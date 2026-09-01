@@ -1347,6 +1347,18 @@ _SCHEDULE_RANGE_REMAINDER_RE = re.compile(
 def _is_schedule_range_remainder_followup(message: str) -> bool:
     return bool(_SCHEDULE_RANGE_REMAINDER_RE.search(_ascii_fold(message)))
 
+
+# TASK-V2.5-002: intent label for a range-remainder follow-up resolved from
+# `range_from_dates`'s output -- exhaustive over `TimeRelation`'s three
+# members today; see the `.get()`+assert call site in
+# `_schedule_range_followup_reply` for why a bare dict lookup is avoided.
+_SCHEDULE_RANGE_RELATION_INTENT: dict[TimeRelation, OrchestrationIntent] = {
+    TimeRelation.PAST: OrchestrationIntent.MEDICATION_HISTORY,
+    TimeRelation.PRESENT: OrchestrationIntent.TODAY_DOSES,
+    TimeRelation.FUTURE: OrchestrationIntent.UPCOMING_DOSES,
+}
+
+
 # BUILD-38 grounding-decline-reply-v2 (see BUILD-38 report Cluster B):
 # this backstop previously used ONE fixed string for every intent in
 # `_GROUNDING_REQUIRED_INTENTS`, whose clarification ask ("cho mình biết
@@ -2721,11 +2733,15 @@ class AgentOrchestrator:
 
         start_date, end_date = stored_range
         time_range = range_from_dates(start_date, end_date, now=self._now(), label="các ngày còn lại")
-        intent = {
-            TimeRelation.PAST: OrchestrationIntent.MEDICATION_HISTORY,
-            TimeRelation.PRESENT: OrchestrationIntent.TODAY_DOSES,
-            TimeRelation.FUTURE: OrchestrationIntent.UPCOMING_DOSES,
-        }[time_range.relation]
+        # .get()+assert rather than a bare dict lookup: TimeRelation has
+        # exactly these three members today and range_from_dates's own
+        # _relation_for_range is exhaustive over them, so this cannot
+        # actually miss -- but a bare `dict[...]` would raise a bare
+        # KeyError with no context if a fourth member were ever added,
+        # instead of a clear, attributable failure at the one call site
+        # that assumes exhaustiveness.
+        intent = _SCHEDULE_RANGE_RELATION_INTENT.get(time_range.relation)
+        assert intent is not None, f"unhandled TimeRelation {time_range.relation!r} in schedule range follow-up"
         synthetic_decision = RouterDecision(
             intent=intent,
             safety_trigger=None,

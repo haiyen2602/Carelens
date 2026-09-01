@@ -18,7 +18,16 @@ def _parse_schedule_range(value: object) -> tuple[date, date] | None:
     """Parse the two-element ISO-date list `as_dict` writes for
     `active_schedule_range`. Any other shape (absent, None, malformed --
     including a pre-version-6 row that never had this key at all) reads back
-    as None, never a fabricated or partially-parsed range."""
+    as None, never a fabricated or partially-parsed range.
+
+    Deliberately does not distinguish "missing" from "malformed": both mean
+    the same thing to every caller (no valid stored range this turn -- see
+    `_schedule_range_followup_reply`'s NEED_MORE_INFO fallback), so a
+    finer-grained signal would have no consumer. The exactly-two-elements
+    check is not a placeholder for a future open-ended-range shape either --
+    `as_dict` only ever writes a closed `(start_date, end_date)` pair (see
+    its own field comment on `ConversationState.active_schedule_range`), and
+    an open-ended range is not a shape this feature has any use for."""
     if not isinstance(value, list) or len(value) != 2:
         return None
     try:

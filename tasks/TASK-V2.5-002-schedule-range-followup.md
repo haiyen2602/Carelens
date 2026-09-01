@@ -346,4 +346,26 @@ thì chưa chứng minh hành vi mới".
 **Chưa làm (không chặn CP2/CP3, theo đúng chỉ đạo):**
 - Append kết quả baseline vào tab V2.5 golden sheet — vẫn chưa có quyền ghi
   Google Sheets từ phiên này.
-- Chưa push/PR — chờ xác nhận trước khi sang CP3.
+
+## Phản hồi review PR #183
+
+1. **Potential KeyError** (`_schedule_range_followup_reply`, dict-lookup
+   theo `time_range.relation`) — xác nhận: `TimeRelation` hiện đúng 3 thành
+   viên và `range_from_dates`/`_relation_for_range` exhaustive trên cả 3, nên
+   không thể KeyError với code hiện tại. Vẫn sửa vì rẻ và đúng phong cách
+   fail-loud của project: đổi sang `_SCHEDULE_RANGE_RELATION_INTENT.get(...)`
+   + `assert intent is not None` với message rõ ràng, thay vì dict-lookup
+   trần. 114 test liên quan + golden 15/15 + golden V2.5 (flag ON) 1/1 vẫn
+   PASS sau khi sửa.
+2. **Strict Range Parsing** (`_parse_schedule_range`, yêu cầu đúng 2 phần
+   tử) — **không sửa**, đây là lựa chọn thiết kế có chủ đích, không phải sơ
+   sót: (a) "thiếu" và "sai định dạng" có cùng một xử lý ở mọi nơi gọi hàm
+   này (không có range hợp lệ → NEED_MORE_INFO), nên tách biệt hai trường
+   hợp không có ai tiêu thụ; (b) `as_dict` chỉ bao giờ ghi đúng cặp
+   `(start_date, end_date)` đóng, không có nhu cầu range mở-đầu trong scope
+   Task 02 — thêm linh hoạt cho một shape chưa ai cần là suy đoán trước,
+   không phải fix bug. Đã viết rõ lý do này vào docstring của hàm để review
+   sau không hỏi lại.
+
+Commit riêng cho phản hồi review, chưa merge — chờ xác nhận trước khi sang
+CP3/push tiếp.
