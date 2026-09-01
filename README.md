@@ -36,37 +36,37 @@ Hệ thống được thiết kế theo triết lý **Fail-safe (Fail-closed)** 
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Layer (Next.js / PWA)"]
+    subgraph Client["Giao diện Người dùng (Next.js PWA)"]
         UI_Doc["Bác sĩ (Doctor Web)"]
         UI_Pat["Bệnh nhân (Patient Mobile)"]
         UI_Care["Người thân (Caregiver)"]
     end
 
-    subgraph Gateway ["API & Safety Gateway (FastAPI)"]
-        AUTH["RBAC & Security Gate"]
-        SAFETY["Fail-closed Safety Gateway<br/>(Dual Classifier: Server Trigger + Rule Engine)"]
+    subgraph Gateway["Cổng Bảo vệ An toàn (FastAPI)"]
+        AUTH["Xác thực RBAC & Bảo mật"]
+        SAFETY["Lõi Kiểm soát An toàn Fail-Safe"]
     end
 
-    subgraph AgentRuntime ["AI Agent V2 Runtime (LangGraph)"]
-        ROUTER["Intent & Topic Router"]
-        ORCH["Orchestrator Node"]
-        RAG_MOD["RAG Engine (pgvector)<br/>3.500+ Thuốc chuẩn hóa"]
-        VISION["VLM / Computer Vision<br/>Photo Verification"]
-        HANDOFF["Doctor Handoff & Escalation Engine"]
+    subgraph AgentRuntime["Điều phối AI Agent (LangGraph V2)"]
+        ROUTER["Định tuyến Ý định"]
+        ORCH["Nút Điều phối Trung tâm"]
+        RAG_MOD["Tra cứu Dược thư RAG"]
+        VISION["Thị giác Đếm thuốc VLM"]
+        HANDOFF["Chuyển tiếp Bác sĩ Khẩn cấp"]
     end
 
-    subgraph Database ["Persistence & Audit (PostgreSQL)"]
-        DB_APP[("Application DB: Users, Prescriptions, Doses")]
-        DB_VEC[("Vector Store: pgvector Drug Chunks")]
-        AUDIT[("Immutable Audit Trail: AgentRun, SafetyEvent")]
+    subgraph Database["Lưu trữ & Truy vết (PostgreSQL)"]
+        DB_APP[("Cơ sở dữ liệu Ứng dụng")]
+        DB_VEC[("Dược thư Vector pgvector")]
+        AUDIT[("Nhật ký Truy vết Bất biến")]
     end
 
     UI_Doc --> AUTH
     UI_Pat --> AUTH
     UI_Care --> AUTH
     AUTH --> SAFETY
-    SAFETY -->|An toàn / Passed| ROUTER
-    SAFETY -->|Nguy cơ / Blocked| HANDOFF
+    SAFETY -->|An toan| ROUTER
+    SAFETY -->|Nguy co| HANDOFF
     ROUTER --> ORCH
     ORCH --> RAG_MOD
     ORCH --> VISION
