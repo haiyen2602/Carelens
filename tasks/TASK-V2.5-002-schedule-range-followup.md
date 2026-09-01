@@ -3,7 +3,7 @@
 **Domain:** Agent V2 read-only schedule/evidence — capability context/follow-up
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** In Progress — CP1 gần xong; còn chờ quyết định branch (xem mục CP1) trước khi sang CP2
+**Status:** CP2 hoàn tất (local) — chưa PR/merge/deploy; xem "Bằng chứng CP2"
 
 ## Mục tiêu
 
@@ -87,37 +87,42 @@ có thời gian trôi qua giữa hai lượt, câu trả lời tự nhiên đã 
 Answerability Gate (`answerability.py`) — **không** rơi vào
 `GENERAL_MEDICAL_INFORMATION` như hiện tại.
 
-## Acceptance Criteria (AC)
+## Acceptance Criteria (AC) — CP2 hoàn tất, evidence ở cuối file
 
-- [ ] Test tái tạo chính xác baseline ở trên như một red test trước khi sửa.
-- [ ] Thêm field `active_schedule_range: tuple[date, date] | None` vào
+- [x] Test tái tạo chính xác baseline ở trên như một red test trước khi sửa
+  (chạy RED trước khi code bất kỳ dòng implementation nào — xem "Bằng chứng
+  CP2" bên dưới).
+- [x] Thêm field `active_schedule_range: tuple[date, date] | None` vào
   `ConversationState`; bump `as_dict`/`from_dict` lên version 6.
-- [ ] **Test đọc ngược state version 5** (không có field mới) qua
-  `from_dict`: phải trả về `active_schedule_range=None`, không lỗi, không
-  suy ra giá trị giả — theo đúng convention `answerability_attempt_count`
-  đã có, nhưng đây là test mới (chưa có test tương đương cho field này trong
-  `tests/test_agent_v2_conversation_state.py`).
-- [ ] `classify_follow_up`/`classify_intent` nhận diện được câu chỉ tham
-  chiếu "phần còn lại" của một range lịch đã hỏi (không tự nêu lại
-  ngày/tuần) khi `active_schedule_range` còn hợp lệ.
-- [ ] Khi có range hợp lệ: re-resolve đúng `active_schedule_range` đó và gọi
-  lại `_schedule_reply`/`get_doses_for_range` — không suy đoán ngày mới,
-  không tự bịa range, không cần `last_served_through_date`.
-- [ ] Khi không có range hợp lệ: `NEED_MORE_INFO` qua Answerability Gate —
-  không mặc định thành `GENERAL_MEDICAL_INFORMATION`.
-- [ ] Cài đúng 4 quy tắc staleness ở trên (consume/overwrite/clear theo đổi
-  chủ đề-safety-handoff/clear theo intent khác) bằng unit test riêng cho
-  từng trường hợp.
-- [ ] Entity chưa xác minh không được promote thành truth (theo Phase 2 scope
-  chung, V2.5-DESIGN.md mục 9) — range cũ chỉ dùng để tính lại range mới,
-  không tự ý mở rộng phạm vi ngoài những gì user đã thực sự hỏi.
-- [ ] Golden/regression: thêm case này vào
-  `scripts/agent_v2/golden/golden_set_v2.json` hoặc file V2.5 riêng; chạy
-  lại toàn bộ `tests/test_agent_v2_time_aware_schedule.py` (36/36 hiện tại)
-  và golden `--deterministic-only` (15/15 hiện tại) không suy giảm.
-- [ ] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED` (đề xuất ở
-  `CP0-ADR-BASELINE-TASK01.md` mục 1.7), mặc định **off**, theo đúng CP1 của
-  `CHECKPOINT.md`.
+- [x] **Test đọc ngược state version 5** (không có field mới) qua
+  `from_dict`: trả về `active_schedule_range=None`, không lỗi.
+- [x] Nhận diện "các ngày còn lại thì sao" (narrow regex
+  `_is_schedule_range_remainder_followup`, orchestrator.py) khi
+  `active_schedule_range` còn hợp lệ — đặt ở `run()`, không đụng
+  `classify_intent`/`classify_follow_up` (tránh phải luồn tham số state qua
+  6 call site của `classify_intent`; xem "Ghi chú thiết kế" bên dưới).
+- [x] Khi có range hợp lệ: re-resolve đúng `active_schedule_range` đó qua
+  `range_from_dates` (hàm mới, time_query_engine.py) rồi tái dùng
+  `_schedule_reply`/`get_doses_for_range` nguyên trạng — không suy đoán ngày
+  mới, không tự bịa range, không cần `last_served_through_date`.
+- [x] Khi không có range hợp lệ: `NEED_MORE_INFO` qua
+  `AnswerabilityReasonCode.MISSING_SCHEDULE_CONTEXT` (mới) — không mặc định
+  thành `GENERAL_MEDICAL_INFORMATION`.
+- [x] Cài đúng 5 nhánh staleness (`transition_state`) bằng unit test riêng
+  cho từng trường hợp.
+- [x] Entity chưa xác minh không được promote thành truth — không áp dụng
+  thêm gì mới, `active_schedule_range` chỉ chứa ngày, không phải entity.
+- [x] Golden/regression: thêm case `GOLD-V25-RANGE-FOLLOWUP-001` (TR01 lượt
+  8→9 thật) vào file mới `scripts/agent_v2/golden/golden_set_v2_5.json`,
+  chạy thật với `AGENT_V2_5_FOLLOWUP_ENABLED=true` (PASS) và xác nhận nó
+  thật sự phụ thuộc flag bằng cách chạy lại với flag mặc định false (FAIL —
+  rơi về model thật, đúng hành vi cũ). Golden legacy
+  (`golden_set_v2.json --deterministic-only`) chạy lại với flag mặc định
+  false: vẫn 15/15, không suy giảm. `tests/test_agent_v2_time_aware_schedule.py`
+  36→39/39. Chi tiết lệnh/artifact ở "Bằng chứng CP2" bên dưới.
+- [x] Capability flag `AGENT_V2_5_FOLLOWUP_ENABLED`, mặc định **off**, thêm
+  thật vào `backend/config.py`/`.env.example`; có test riêng xác nhận flag
+  off giữ nguyên hành vi cũ (misroute) không đổi.
 
 ## CP1 — Sẵn sàng implementation (theo `CHECKPOINT.md`, áp cho đúng shape Task 02)
 
@@ -125,8 +130,20 @@ Task 02 không đụng renderer/`ResponsePolicy`/`RenderableFactSlots` (đó là
 Task 04), nên một số mục CP1 gốc không áp dụng nguyên văn — ghi rõ N/A kèm lý
 do thay vì bỏ qua im lặng.
 
-- **Branch:** _chưa tạo — xem mục "Quyết định cần bạn xác nhận" bên dưới,
-  có rủi ro stacked-branch cần quyết trước khi tạo._
+- **Branch:** `feature/TASK-V2.5-002-schedule-range-followup`, tạo từ
+  `main` sau khi PR #182 (Task 01 + CP0 governance) merge (`d19cf69e`) —
+  không stacked, đã verify bằng `git merge-base --is-ancestor`.
+- **Kiểm tra concurrent merge (bắt buộc vì `main` đã đi trước 9 commit khi
+  branch này được tạo):** một PR khác (#176, BUILD-47/48/49, "retain
+  conversation context across follow-up turns") đổi đúng
+  `conversation_state.py`/`follow_up.py` trong lúc CP1 này đang diễn ra. Đã
+  đối chiếu: (1) thay đổi ở `conversation_state.py` là
+  `DRUG_CANDIDATE_ACTION_PREFIX`/`is_drug_candidate_action` — không liên
+  quan schedule/time-range, **không đổi version (vẫn 5)**; (2) fix ở
+  `follow_up.py`/`_has_named_subject` đã có sẵn trong code tôi test từ đầu
+  task này, không phải thay đổi mới phát sinh; (3) re-test trực tiếp
+  `classify_intent("các ngày còn lại thì sao", ...)` trên branch mới →
+  vẫn `GENERAL_MEDICAL_INFORMATION`, kết luận không đổi. An toàn để tiếp tục.
 - **Liên kết task/ADR/pain point/source:** đã có — `CP0-ADR-BASELINE-TASK01.md`
   mục 1.3a + Pain point 3, `TASK-V2.5-001` (lý do tách task), và source
   `time_query_engine.py`/`follow_up.py`/`conversation_state.py`/
@@ -164,13 +181,14 @@ do thay vì bỏ qua im lặng.
     `--deterministic-only` (15/15) — baseline "trước" đã chốt ở dưới.
   - Local E2E: replay đúng chuỗi TR01 lượt 5→9 bằng dữ liệu tổng hợp
     (không PHI) qua orchestrator thật.
-- **Baseline local (trước khi code Task 02), commit `a75b0c8`:**
+- **Baseline local (trước khi code Task 02), commit `d19cf69e` — branch point
+  thật sau khi merge PR #182 (số liệu từ `a75b0c8` re-run lại, không đổi):**
   - `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only`
-    → 15/15 PASS, artifact `scripts/agent_v2/golden/runs/20260901T062931Z.json`.
-  - `python -m pytest tests/test_agent_v2_time_aware_schedule.py -q` →
-    36/36 PASS.
-  - `python -m pytest tests/test_agent_v2_conversation_state.py -q` →
-    14/14 PASS (baseline cho phần `ConversationState` version bump).
+    → 15/15 PASS, artifact `scripts/agent_v2/golden/runs/20260901T063720Z.json`.
+  - `python -m pytest tests/test_agent_v2_time_aware_schedule.py tests/test_agent_v2_conversation_state.py -q`
+    → 50/50 PASS (36 time-aware-schedule + 14 conversation-state).
+  - Migration head vẫn `0063`, DB local khớp — không có migration mới nào
+    trong 9 commit vừa merge.
   - Environment: local; model/config: N/A (toàn bộ case deterministic, không
     gọi model thật).
   - **Chưa ghi vào tab V2.5 của golden sheet** (CHECKPOINT.md CP1, mục ghi
@@ -187,31 +205,20 @@ do thay vì bỏ qua im lặng.
 **Dòng dán vào tab V2.5 golden sheet (theo cấu trúc tab 15/08/2026):**
 
 ```
-timestamp: 2026-09-01T06:29:31Z
-commit: a75b0c8dc38cb398f6f4b92d25ce1fd8e1ea4a0f
+timestamp: 2026-09-01T06:37:20Z
+commit: d19cf69e1eb1f8c435edc808a528e3abf8b2af72
 environment: local
 config/model version: N/A (deterministic-only, không gọi model)
 golden-set version: scripts/agent_v2/golden/golden_set_v2.json (deterministic subset, 15/15) + tests/test_agent_v2_time_aware_schedule.py (36/36) + tests/test_agent_v2_conversation_state.py (14/14)
 exact command: python scripts/agent_v2/run_golden_evaluation.py --deterministic-only ; python -m pytest tests/test_agent_v2_time_aware_schedule.py tests/test_agent_v2_conversation_state.py -q
 pass/fail aggregate: 15/15 + 36/36 + 14/14, tất cả PASS
-notes: baseline "trước" cho TASK-V2.5-002 (active_schedule_range), trước khi có runtime change nào
+notes: baseline "trước" cho TASK-V2.5-002 (active_schedule_range), branch point sau khi merge PR #182 (Task 01 + CP0 governance). Concurrent PR #176 (BUILD-47/48/49) cũng merge cùng lúc, đã đối chiếu không ảnh hưởng scope task này (xem mục "Kiểm tra concurrent merge" ở CP1).
 ```
 
-### Quyết định cần bạn xác nhận trước khi tạo branch
-
-Nhánh hiện tại (`feature/TASK-V2.5-001-schedule-tool-contract`) chứa các
-commit đóng Task 01 + ADR delta Task 02, **chưa push/merge vào `main`**. Nếu
-tạo branch Task 02 từ đây, nó sẽ "stacked" trên một branch chưa merge — rủi
-ro thật đã gặp trước đây trong dự án này (branch base merge sau branch con
-không tự retarget). Hai lựa chọn:
-
-1. **Merge/PR nhánh Task 01 trước** (chỉ chứa doc/governance, không đổi
-   runtime code — rủi ro review thấp), rồi tạo branch Task 02 từ `main` mới.
-2. **Tạo branch Task 02 ngay từ nhánh hiện tại**, chấp nhận phải verify bằng
-   `git merge-base --is-ancestor` sau khi Task 01 merge, trước khi tự tin
-   Task 02 đã "chứa main mới nhất".
-
-Tôi chưa push hay mở PR nào — cần bạn quyết trước khi tôi tạo branch mới.
+**Đã xử lý (2026-09-01):** PR #182 (Task 01 + CP0 governance) đã merge vào
+`main` (`d19cf69e`, xác nhận bằng `git merge-base --is-ancestor`), branch
+`feature/TASK-V2.5-002-schedule-range-followup` đã tạo sạch từ `main` mới —
+không stacked.
 
 ## Context bắt buộc phải đọc trước khi làm
 
@@ -264,3 +271,127 @@ Task này tách ra từ TASK-V2.5-001 sau khi reproduction cho thấy bug gốc 
 task đó (mâu thuẫn lượt 5/6) không còn tồn tại, nhưng phát hiện một gap thật
 khác trong cùng cụm test (TR01). Không gộp chung một task để giữ mỗi task có
 thể rollback độc lập theo đúng nguyên tắc CP1 (`CHECKPOINT.md`).
+
+## Ghi chú thiết kế (CP2)
+
+**Vì sao không đổi `classify_intent`/`classify_follow_up`:** `classify_intent`
+là hàm thuần (message, has_dose_id, now) và được gọi ở **6 call site** khác
+nhau trong `orchestrator.py`/`run()`. Luồn thêm tham số state qua tất cả 6
+chỗ đó chỉ để một pattern hẹp là rủi ro/diff lớn không cần thiết. Thay vào
+đó, `_is_schedule_range_remainder_followup` là một check độc lập, đặt ngay
+cạnh check `_SCHEDULE_INTENTS` hiện có trong `run()` (cùng vị trí "early
+return trước memory recall/Safety" như `_out_of_scope_reply`/`_schedule_reply`
+đã làm) — không đổi chữ ký `classify_intent`, không đổi 6 call site, không
+đổi test hiện có của nó.
+
+**Vì sao tái dùng `_schedule_reply` thay vì viết composer mới:** case "có
+range hợp lệ" chỉ khác case schedule bình thường ở chỗ range đến từ state
+thay vì từ `resolve_time_query`. Dựng một `RouterDecision` tổng hợp với
+`time_range = range_from_dates(...)` rồi gọi thẳng `_schedule_reply` tái
+dùng nguyên contract cũ (tool, composer, fail-closed path) — không có logic
+DB/reply-building nào bị nhân đôi. Tham số mới `record_range` trên
+`_schedule_reply` chỉ để phân biệt "lượt này lập range mới" (ghi vào
+`OrchestrationResult.resolved_schedule_range`) và "lượt này tiêu thụ range
+cũ" (không ghi lại) — đúng cơ chế consume-by-omission ở `transition_state`.
+
+## Bằng chứng CP2 (2026-09-01)
+
+Thứ tự làm đúng như đã thống nhất: RED cho cả 4 nhóm trước, rồi mới
+implement `active_schedule_range`/v6/router-state-transition/flag.
+
+**RED (trước khi code):** 10 test conversation_state (field, version 6,
+round-trip, đọc ngược v5, 5 nhánh staleness) + 2 test orchestrator
+(recognition, NEED_MORE_INFO) — toàn bộ FAIL đúng lý do (field/param/behavior
+chưa tồn tại), xem lịch sử tool call trong phiên làm việc.
+
+**GREEN (sau khi implement):**
+- `pytest tests/test_agent_v2_conversation_state.py` → 24/24 PASS.
+- `pytest tests/test_agent_v2_time_aware_schedule.py` → 39/39 PASS (36 cũ +
+  3 mới: recognition, NEED_MORE_INFO, flag-off-is-inert).
+- `pytest tests/test_agent_v2_orchestrator.py` → 51/51 PASS (không suy giảm).
+- `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only` →
+  15/15 PASS.
+- Regression rộng: `pytest tests/ -k "agent_v2 or conversation_state or
+  time_aware or time_query" --ignore=tests/vlm_demthuoc
+  --ignore=tests/services/photo_verification` → 1149 passed, 18 failed.
+  **Cả 18 failed đã xác nhận pre-existing** (chạy lại y hệt trên
+  `git stash` tại branch point `4aa0c95`, cùng test, cùng lỗi
+  `sqlite3.OperationalError: no such table: chat_messages` — không liên
+  quan tới thay đổi của task này).
+- **Lint (chính xác phạm vi, không gọi "toàn bộ suite sạch"):** `ruff check`
+  trên đúng các file đã thay đổi trong diff của task này — PASS, không có
+  lỗi mới. Hai loại lỗi tồn tại trong repo nhưng **không** thuộc phạm vi
+  task này, không sửa: (1) 1 lỗi unused-import (`resolve_time_query`,
+  `test_agent_v2_time_aware_schedule.py`) — pre-existing, xác nhận bằng
+  `git diff` không chạm dòng đó; (2) 18 lỗi `chat_messages`
+  (`test_agent_v2_transaction_durability.py`,
+  `test_agent_v2_safety_occurrence_binding.py`,
+  `test_agent_v2_long_term_memory.py`) — pre-existing baseline, xác nhận
+  bằng `git stash` chạy lại y hệt tại branch point.
+- `git diff --check`: sạch, không lỗi whitespace.
+
+**Golden V2.5 case (commit `5f657f01`, sau khi thêm file golden mới):**
+
+| Chạy | Lệnh | Kết quả | Artifact |
+|---|---|---|---|
+| Case mới, flag ON | `AGENT_V2_5_FOLLOWUP_ENABLED=true python scripts/agent_v2/run_golden_evaluation.py --dataset scripts/agent_v2/golden/golden_set_v2_5.json` | 1/1 PASS (271ms) | `scripts/agent_v2/golden/runs/20260901T072145Z.json/.md` |
+| Case mới, flag OFF (mặc định) | `python scripts/agent_v2/run_golden_evaluation.py --dataset scripts/agent_v2/golden/golden_set_v2_5.json` | 0/1 **FAIL** (21383ms — rơi về model thật, đúng hành vi cũ trước khi có Task 02) | `scripts/agent_v2/golden/runs/20260901T072202Z.json/.md` |
+| Golden legacy, flag OFF (mặc định) | `python scripts/agent_v2/run_golden_evaluation.py --deterministic-only` | 15/15 PASS | `scripts/agent_v2/golden/runs/20260901T072241Z.json/.md` |
+
+Chạy case mới với flag OFF **có chủ đích FAIL** — đây là bằng chứng case
+này thật sự phụ thuộc capability flag (không phải false positive sẽ pass
+bất kể flag), đúng yêu cầu "chỉ thêm JSON nhưng runner vẫn chạy flag false
+thì chưa chứng minh hành vi mới".
+
+**Chưa làm (không chặn CP2/CP3, theo đúng chỉ đạo):**
+- Append kết quả baseline vào tab V2.5 golden sheet — vẫn chưa có quyền ghi
+  Google Sheets từ phiên này.
+
+## Phản hồi review PR #183
+
+1. **Potential KeyError** (`_schedule_range_followup_reply`, dict-lookup
+   theo `time_range.relation`) — xác nhận: `TimeRelation` hiện đúng 3 thành
+   viên và `range_from_dates`/`_relation_for_range` exhaustive trên cả 3, nên
+   không thể KeyError với code hiện tại. Vẫn sửa vì rẻ và đúng phong cách
+   fail-loud của project: đổi sang `_SCHEDULE_RANGE_RELATION_INTENT.get(...)`
+   + `assert intent is not None` với message rõ ràng, thay vì dict-lookup
+   trần. 114 test liên quan + golden 15/15 + golden V2.5 (flag ON) 1/1 vẫn
+   PASS sau khi sửa.
+2. **Strict Range Parsing** (`_parse_schedule_range`, yêu cầu đúng 2 phần
+   tử) — **không sửa**, đây là lựa chọn thiết kế có chủ đích, không phải sơ
+   sót: (a) "thiếu" và "sai định dạng" có cùng một xử lý ở mọi nơi gọi hàm
+   này (không có range hợp lệ → NEED_MORE_INFO), nên tách biệt hai trường
+   hợp không có ai tiêu thụ; (b) `as_dict` chỉ bao giờ ghi đúng cặp
+   `(start_date, end_date)` đóng, không có nhu cầu range mở-đầu trong scope
+   Task 02 — thêm linh hoạt cho một shape chưa ai cần là suy đoán trước,
+   không phải fix bug. Đã viết rõ lý do này vào docstring của hàm để review
+   sau không hỏi lại.
+
+Commit riêng cho phản hồi review, chưa merge — chờ xác nhận trước khi sang
+CP3/push tiếp.
+
+### Round 2 (phoenix-mentor bot, sau commit 8c244dc)
+
+**Potential Assertion Failure** trên chính dòng vừa sửa ở round 1
+(`assert intent is not None`) — đúng một phần, đã kiểm chứng cụ thể:
+
+- `assert` bị compiled-out hoàn toàn dưới `python -O`/`PYTHONOPTIMIZE=1`
+  (`python -O -c "print(__debug__)"` → `False`). `Dockerfile` project chạy
+  thẳng `uvicorn backend.main:app`, không có `-O` ở đâu — rủi ro không xảy
+  ra thật hôm nay, nhưng phụ thuộc vào một cờ interpreter không ai đảm bảo
+  giữ nguyên mãi mãi.
+- Bot phóng đại một chỗ: `agent_v2_routes.py:1028` đã có
+  `except Exception: ... raise` bọc quanh `orchestrator.run()`, nên dù là
+  `KeyError` (bản gốc), `AssertionError` (round 1), hay bất kỳ exception
+  nào, request đều "crash" giống hệt nhau ở tầng route — không phải riêng
+  `assert` mới gây crash mà cái khác thì không.
+- Rủi ro thật, hẹp hơn bot mô tả: nếu `-O` được bật sau này, `assert` biến
+  mất, `intent=None` sẽ **chảy tiếp** vào `RouterDecision` thay vì dừng lại
+  — sai âm thầm, không phải crash rõ ràng.
+- **Đã sửa:** đổi `assert` thành `if intent is None: raise ValueError(...)`
+  — luôn thực thi bất kể cờ interpreter, hành vi hôm nay không đổi (vì `-O`
+  chưa bật), loại bỏ hẳn phụ thuộc ẩn. Không đụng `assert
+  decision.time_range is not None` có sẵn trong `_schedule_reply` (cùng
+  pattern, nhưng nằm ngoài diff/scope của Task 02).
+- Evidence sau sửa: 114 test PASS, golden `--deterministic-only` 15/15,
+  golden V2.5 (flag ON) 1/1.

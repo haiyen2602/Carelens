@@ -8,10 +8,32 @@ decides which suggestions to show. BUILD-29D.2 keeps action generation in
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Literal
 
 ActionType = Literal["topic_followup", "drug_followup", "schedule_followup"]
+
+
+def _parse_schedule_range(value: object) -> tuple[date, date] | None:
+    """Parse the two-element ISO-date list `as_dict` writes for
+    `active_schedule_range`. Any other shape (absent, None, malformed --
+    including a pre-version-6 row that never had this key at all) reads back
+    as None, never a fabricated or partially-parsed range.
+
+    Deliberately does not distinguish "missing" from "malformed": both mean
+    the same thing to every caller (no valid stored range this turn -- see
+    `_schedule_range_followup_reply`'s NEED_MORE_INFO fallback), so a
+    finer-grained signal would have no consumer. The exactly-two-elements
+    check is not a placeholder for a future open-ended-range shape either --
+    `as_dict` only ever writes a closed `(start_date, end_date)` pair (see
+    its own field comment on `ConversationState.active_schedule_range`), and
+    an open-ended range is not a shape this feature has any use for."""
+    if not isinstance(value, list) or len(value) != 2:
+        return None
+    try:
+        return (date.fromisoformat(str(value[0])), date.fromisoformat(str(value[1])))
+    except ValueError:
+        return None
 
 TOPIC_ACTION_VALUES = frozenset(
     {"definition", "causes", "symptoms", "treatment", "prevention", "danger", "urgent_signs", "diagnosis", "monitoring"}
@@ -126,6 +148,13 @@ class ConversationState:
     # instruction not to duplicate existing state).
     answerability_attempt_count: int = 0
     last_answerability_reason: str | None = None
+    # TASK-V2.5-002: the (start_date, end_date) of the most recent multi-day
+    # schedule query, valid for AT MOST one following turn -- see
+    # transition_state's own docstring. Unlike active_topic/active_entity,
+    # this never carries forward implicitly: transition_state persists
+    # exactly what its `schedule_range` argument says this turn, defaulting
+    # to None, never `state.active_schedule_range`.
+    active_schedule_range: tuple[date, date] | None = None
 
     @property
     def requested_aspect(self) -> str | None:
@@ -138,7 +167,11 @@ class ConversationState:
 
     def as_dict(self, *, actor_id: str, patient_id: str) -> dict[str, object]:
         return {
-            "version": 5,
+            # TASK-V2.5-002: version 6 adds active_schedule_range. No
+            # migration needed -- this dict is stored inside the existing
+            # AgentRun.metadata_json JSON column, not a typed table (see
+            # backend/services/agent_conversation_state.py).
+            "version": 6,
             "actor_id": actor_id,
             "patient_id": patient_id,
             "conversation_id": self.conversation_id,
@@ -168,6 +201,9 @@ class ConversationState:
             "updated_at": (self.updated_at or datetime.now(UTC)).isoformat(),
             "answerability_attempt_count": self.answerability_attempt_count,
             "last_answerability_reason": self.last_answerability_reason,
+            "active_schedule_range": None
+            if self.active_schedule_range is None
+            else [self.active_schedule_range[0].isoformat(), self.active_schedule_range[1].isoformat()],
         }
 
     @classmethod
@@ -235,6 +271,11 @@ class ConversationState:
                 last_answerability_reason=str(value["last_answerability_reason"])
                 if value.get("last_answerability_reason")
                 else None,
+                # TASK-V2.5-002: absent on any state persisted before version
+                # 6 (older `version: 5` and earlier rows) -- default None
+                # reads back exactly as no stored range, never a fabricated
+                # one, same convention as answerability_attempt_count above.
+                active_schedule_range=_parse_schedule_range(value.get("active_schedule_range")),
             )
         except (KeyError, TypeError, ValueError):
             return None
@@ -301,6 +342,7 @@ def transition_state(
     safety_event: bool = False,
     answerability_attempt_count: int = 0,
     last_answerability_reason: str | None = None,
+    schedule_range: tuple[date, date] | None = None,
 ) -> ConversationState:
     """Persist a server-authoritative state transition without fallback templates.
 
@@ -310,6 +352,18 @@ def transition_state(
     every other turn (an answered question, a topic switch, a genuinely new
     question) resets the bounded-clarification counter rather than letting
     it silently accumulate across unrelated turns.
+
+    TASK-V2.5-002: ``schedule_range`` follows the OPPOSITE carry-forward rule
+    from ``topic``/``entity`` above. Those two fall back to the PRIOR
+    state's value when omitted (an ordinary turn keeps the existing topic).
+    ``schedule_range`` never does -- it is always exactly what the caller
+    passes for *this* turn, defaulting to ``None``. This is what makes it
+    valid for at most one following turn: the caller only passes a value the
+    one turn a new multi-day schedule query resolves; every other turn
+    (the remainder-follow-up turn that consumes it, a topic switch, a
+    safety/handoff event, or any unrelated intent) passes nothing and the
+    field is gone for the turn after that -- no separate "clear" branch
+    needed for each of those cases.
     """
     if safety_event:
         return replace(
@@ -320,6 +374,7 @@ def transition_state(
             updated_at=datetime.now(UTC),
             answerability_attempt_count=0,
             last_answerability_reason=None,
+            active_schedule_range=None,
         )
 
     # `topic` and `entity` are mutually exclusive by contract (a turn is
@@ -353,6 +408,7 @@ def transition_state(
         updated_at=datetime.now(UTC),
         answerability_attempt_count=answerability_attempt_count,
         last_answerability_reason=last_answerability_reason,
+        active_schedule_range=schedule_range,
     )
 
 
