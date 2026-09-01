@@ -3,7 +3,13 @@
 **Domain:** Agent V2 model gateway / response rendering — capability renderer
 **Owner:** Dyo31122005 + AI
 **Sprint:** V2.5 timebox — chưa gán sprint chung
-**Status:** CP1 — contract/benchmark chốt xong, **chưa code runtime** (đúng chỉ đạo)
+**Status:** CP1 — **correction pending**. Benchmark/contract đã chốt nhưng
+owner yêu cầu sửa chính xác hợp đồng (style_profile, backend assembly
+`free_prose`/protected fact, golden dương, test timeout/EmptySynthesisError,
+`AGENT_MAX_MODEL_CALLS`) trước khi coi CP1 là final. CP1 chỉ thật sự đóng
+sau khi PR sửa lỗi này (`docs/task04-cp1-corrections`) merge — CP2 chưa
+được bắt đầu cho tới lúc đó. Chưa code runtime (đúng chỉ đạo trước và sau
+sửa lỗi này).
 
 ## Mục tiêu
 
@@ -145,15 +151,18 @@ class ResponsePolicy:
     clarification_target: str | None
     handoff_state: str | None
     suggested_action_refs: tuple[str, ...]
-    style_profile: str = "soul-v1"
+    style_profile: str = "soul-v3"  # soul_v3.md, reuse trực tiếp (CP0 mục 1.3)
 
 
 @dataclass(frozen=True)
 class RenderableFactSlots:
-    """Fact value đã xác minh trong request hiện tại, kèm provenance nội bộ.
-    KHÔNG được copy nguyên trạng vào log/trace/audit metadata (V2.5-DESIGN.md
-    mục 5). Field tối giản cho phạm vi CP2 đầu (drug info + schedule) -- mở
-    rộng thêm field khi có capability mới cần, không suy đoán trước."""
+    """Fact value ĐÃ RENDER SẴN, dạng chuỗi verbatim-safe -- không phải dữ
+    liệu thô đưa cho model tự diễn giải. Các field ứng với "protected fact"
+    (mục 4a) PHẢI được backend/template render nguyên văn trước khi tới đây;
+    model không bao giờ tạo lại chính các chuỗi này. KHÔNG được copy nguyên
+    trạng vào log/trace/audit metadata (V2.5-DESIGN.md mục 5). Field tối
+    giản cho phạm vi CP2 đầu (drug info + schedule) -- mở rộng thêm field
+    khi có capability mới cần, không suy đoán trước."""
     drug_name: str | None = None
     drug_allowed_claims: tuple[str, ...] = ()
     dose_schedule_summary: str | None = None   # đã format sẵn, KHÔNG phải raw DB row
@@ -170,13 +179,61 @@ RenderableFactSlots`) chuyển `SynthesisEvidence` hiện có (đã tồn tại,
 dùng cho prompt tự do) thành slots có cấu trúc — **đây là phần CP2 cần code
 thật**, CP1 chỉ chốt shape.
 
-## 5. Fallback — contract chốt (không đổi, tái dùng nguyên trạng)
+### 4a. Backend assembly contract — Luna chỉ tạo `free_prose`, không tự viết lại protected fact
 
-Không có gì mới so với ADR delta 1.5: timeout/invalid renderer output đi qua
-path fail-closed đã có (`EmptySynthesisError` → `RunStatus.FAILED` với safe
-fallback text, `runtime.py`). CP2 chỉ mở rộng input/output shape của lệnh
-gọi (nhận `ResponsePolicy`+`RenderableFactSlots` thay vì prompt string tự
-do), không đổi cơ chế fail-closed này.
+**Sửa chính xác so với bản CP1 gốc:** bản gốc mô tả renderer trả về "câu trả
+lời tự nhiên" như một khối text duy nhất, dựa vào prompt instruction để model
+không đổi fact — đây là bảo đảm YẾU (phụ thuộc model tuân thủ), không phải
+bảo đảm cấu trúc. Chốt lại theo đúng yêu cầu: model không bao giờ output
+chính văn bản của một protected fact.
+
+- **Protected fact** = mọi field trên `RenderableFactSlots` ứng với claim
+  nhạy cảm (`drug_name`, `dose_schedule_summary`, `dose_status_summary`,
+  bất kỳ field tương lai nào cùng lớp) — các chuỗi này do **backend/template
+  render nguyên văn**, không đi qua Luna dưới bất kỳ hình thức nào.
+- **Luna chỉ tạo `free_prose`** — một trường mới, riêng biệt, chỉ chứa câu
+  dẫn/chuyển ý/empathy/cấu trúc trong phạm vi `ResponsePolicy` cho phép.
+  `ModelSynthesis`/hàm renderer CP2 trả về kiểu có trường `free_prose: str`
+  (đổi tên/tách khỏi `response: str` hiện tại của `ModelSynthesis`), không
+  còn là "toàn bộ câu trả lời cuối".
+- **Backend lắp ráp (assembly), không phải model:** một hàm mới
+  `_assemble_reply(policy, fact_slots, free_prose) -> str` ghép `free_prose`
+  với các chuỗi protected fact đã render sẵn theo vị trí cố định (vd
+  `free_prose` mở đầu/dẫn dắt, theo sau là khối fact verbatim) — đây là
+  string composition tất định ở backend, không phải model tự chèn lại fact
+  vào câu nó sinh ra. Vì Luna chưa từng nhìn thấy/tạo lại chuỗi fact, nó
+  **không có khả năng** rewrite/paraphrase/bỏ sót fact — đây là bảo đảm cấu
+  trúc, không phải bảo đảm hành vi model.
+- Đây là phần **CP2 phải code thật** (đổi contract `synthesize_read_only`,
+  thêm `_assemble_reply`); CP1 chỉ chốt hợp đồng ở trên.
+
+## 5. Fallback — contract chốt (không đổi cơ chế, bổ sung test plan cụ thể)
+
+Không đổi cơ chế so với ADR delta 1.5: timeout/invalid renderer output đi
+qua path fail-closed đã có (`EmptySynthesisError` → `RunStatus.FAILED` với
+safe fallback text, `runtime.py`). CP2 chỉ mở rộng input/output shape của
+lệnh gọi (nhận `ResponsePolicy`+`RenderableFactSlots`, trả `free_prose`
+thay vì prompt string tự do/toàn bộ reply), không đổi cơ chế fail-closed
+này.
+
+**Bổ sung: evidence kế hoạch/test cụ thể cho timeout và `EmptySynthesisError`
+ở ROLE RENDERER (CP1 chốt kế hoạch, CP2 viết/chạy thật):**
+
+1. Test: client cho `ModelRole.RENDERER` raise timeout (giả lập, không gọi
+   API thật) → `synthesize_read_only` (hoặc hàm CP2 kế thừa nó) phải để lỗi
+   này đi qua đúng path đã có, kết quả cuối là `RunStatus.FAILED` với fixed
+   fallback text — không phải `free_prose` rỗng lọt qua `_assemble_reply`.
+2. Test: `free_prose` rỗng/whitespace-only → raise `EmptySynthesisError`
+   (đúng hành vi hiện tại của `synthesize_read_only` với `response` rỗng,
+   áp dụng y hệt cho `free_prose` rỗng) → cùng path fail-closed ở trên.
+3. Test: `_assemble_reply` không bao giờ được gọi khi lượt renderer
+   FAILED/timeout — protected fact không được rò rỉ ra ngoài qua một đường
+   khác khi model call chính thất bại.
+4. Không tăng số lượt gọi khi retry: **`AGENT_MAX_MODEL_CALLS` vẫn giữ
+   nguyên giá trị mặc định hiện tại là `2`** (`backend/config.py:435`,
+   xác nhận thật, không đổi bởi task này) — renderer thay thế đúng lượt
+   synthesis đã có trong ngân sách này, không thêm lượt gọi mới, không tăng
+   retry để "cứu" một free_prose rỗng.
 
 ## 6. Golden suite "prose tự do" — thiết kế case (chưa viết test thật)
 
@@ -199,6 +256,16 @@ kể cả trong câu dẫn/chuyển ý):
    cấp → output không được nói "mình đã chuyển cho bác sĩ"/"bác sĩ sẽ liên
    hệ" dưới bất kỳ hình thức nào.
 
+**Bổ sung — nhóm dương (positive), bắt buộc song song với 4 nhóm âm ở
+trên, không thay thế:** khi một slot CÓ giá trị, chuỗi đó phải xuất hiện
+**nguyên văn** trong reply cuối cùng (`_assemble_reply`'s output) — không bị
+model diễn giải lại/rewrite/paraphrase. Vì kiến trúc mục 4a (Luna không bao
+giờ tạo lại chính chuỗi fact) đảm bảo điều này BẰNG CẤU TRÚC, test dương ở
+đây thực chất là test hồi quy cho chính cơ chế `_assemble_reply` (fact
+verbatim có mặt đúng vị trí, không bị cắt/nuốt khi ghép với `free_prose`),
+không phải test hành vi model. Viết tối thiểu 1 case dương cho mỗi trong 4
+nhóm trên (case gương: cùng field đó CÓ giá trị thay vì `None`).
+
 **Cách kiểm (CP2 phải làm thật, không phải mô tả suông):** vì đây là prose
 tự do, không thể check bằng string match đơn giản cho mọi biến thể — CP2
 cần định nghĩa danh sách cụm từ/regex cấm cho từng nhóm (vd nhóm 2: "đã
@@ -217,10 +284,18 @@ không phải bảo đảm ngữ nghĩa đầy đủ).
 - [ ] Thêm entry pricing JSON cho `gpt-5.6-luna`.
 - [ ] Tạo module `response_policy.py` với `ResponsePolicy`/`RenderableFactSlots`
   đúng shape ở mục 4; adapter `_build_renderable_fact_slots`.
-- [ ] `synthesize_read_only` nhận `ResponsePolicy`+`RenderableFactSlots` thay
-  vì prompt string tự do — vẫn không có `tools=` (giữ nguyên bảo đảm "không
-  gọi tool ở turn này").
-- [ ] Golden suite "prose tự do" (4 nhóm ở mục 6) viết thật, chạy thật.
+- [ ] `synthesize_read_only` nhận `ResponsePolicy`+`RenderableFactSlots`,
+  trả `free_prose` (không phải toàn bộ reply) — vẫn không có `tools=` (giữ
+  nguyên bảo đảm "không gọi tool ở turn này").
+- [ ] Thêm `_assemble_reply(policy, fact_slots, free_prose) -> str` (mục 4a)
+  — backend ghép protected fact verbatim với `free_prose`, model không bao
+  giờ output chính chuỗi fact.
+- [ ] Golden suite "prose tự do": 4 nhóm âm + 4 nhóm dương tương ứng ở mục 6
+  viết thật, chạy thật.
+- [ ] Test timeout/`EmptySynthesisError` cho role RENDERER (4 case ở mục 5)
+  viết thật, chạy thật.
+- [ ] Xác nhận `AGENT_MAX_MODEL_CALLS` không đổi (vẫn 2) sau khi wiring
+  xong — regression test nếu có sẵn cơ chế đếm model calls trong test suite.
 - [ ] Capability flag `AGENT_V2_5_RENDERER_ENABLED`, mặc định `false`, độc
   lập với Task 02/03.
 - [ ] Bắt đầu áp dụng cho đúng nhóm response type "Ưu tiên natural renderer"
@@ -250,4 +325,6 @@ không phải bảo đảm ngữ nghĩa đầy đủ).
 ## Definition of Done cho CP1 (task này)
 
 Benchmark thật + pricing thật + contract cụ thể đủ để CP2 code thẳng không
-phải thiết kế lại — đã đạt. Không có diff runtime code trong task này.
+phải thiết kế lại. Không có diff runtime code trong task này hay trong PR
+sửa lỗi này. **CP1 chỉ coi là đạt sau khi PR sửa lỗi (6 điểm ở Status) được
+merge** — không cần ADR mới, đây là sửa chính xác hợp đồng đã có.
