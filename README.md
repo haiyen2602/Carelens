@@ -36,37 +36,37 @@ Hệ thống được thiết kế theo triết lý **Fail-safe (Fail-closed)** 
 
 ```mermaid
 flowchart TD
-    subgraph Client["Giao diện Người dùng (Next.js PWA)"]
-        UI_Doc["Bác sĩ (Doctor Web)"]
-        UI_Pat["Bệnh nhân (Patient Mobile)"]
-        UI_Care["Người thân (Caregiver)"]
+    subgraph Client["Client Layer - Next.js PWA"]
+        UI_Doc["Bac si (Doctor Web)"]
+        UI_Pat["Benh nhan (Patient Mobile)"]
+        UI_Care["Nguoi than (Caregiver)"]
     end
 
-    subgraph Gateway["Cổng Bảo vệ An toàn (FastAPI)"]
-        AUTH["Xác thực RBAC & Bảo mật"]
-        SAFETY["Lõi Kiểm soát An toàn Fail-Safe"]
+    subgraph Gateway["API Safety Gateway - FastAPI"]
+        AUTH["RBAC Auth Gate"]
+        SAFETY["Fail-Safe Safety Core"]
     end
 
-    subgraph AgentRuntime["Điều phối AI Agent (LangGraph V2)"]
-        ROUTER["Định tuyến Ý định"]
-        ORCH["Nút Điều phối Trung tâm"]
-        RAG_MOD["Tra cứu Dược thư RAG"]
-        VISION["Thị giác Đếm thuốc VLM"]
-        HANDOFF["Chuyển tiếp Bác sĩ Khẩn cấp"]
+    subgraph AgentRuntime["AI Agent V2 - LangGraph"]
+        ROUTER["Intent Router"]
+        ORCH["Orchestrator Node"]
+        RAG_MOD["Drug RAG Engine - pgvector"]
+        VISION["VLM Photo Verification"]
+        HANDOFF["Doctor Handoff Engine"]
     end
 
-    subgraph Database["Lưu trữ & Truy vết (PostgreSQL)"]
-        DB_APP[("Cơ sở dữ liệu Ứng dụng")]
-        DB_VEC[("Dược thư Vector pgvector")]
-        AUDIT[("Nhật ký Truy vết Bất biến")]
+    subgraph Database["Persistence - PostgreSQL"]
+        DB_APP[("Application DB")]
+        DB_VEC[("Vector Store")]
+        AUDIT[("Audit Trail")]
     end
 
     UI_Doc --> AUTH
     UI_Pat --> AUTH
     UI_Care --> AUTH
     AUTH --> SAFETY
-    SAFETY -->|An toan| ROUTER
-    SAFETY -->|Nguy co| HANDOFF
+    SAFETY -->|Safe| ROUTER
+    SAFETY -->|Danger| HANDOFF
     ROUTER --> ORCH
     ORCH --> RAG_MOD
     ORCH --> VISION
