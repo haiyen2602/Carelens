@@ -26,6 +26,7 @@ from backend.db.models import Account, DoctorReviewMessage, DoctorReviewRequest,
 from backend.main import app  # noqa: E402
 from backend.services.auth import create_access_token  # noqa: E402
 from backend.services.doctor_handoff import (  # noqa: E402
+    PATIENT_CONVERSATION_STOP_MESSAGE,
     HandoffCreateCommand,
     MessageSenderRole,
     VerifiedContextRef,
@@ -236,6 +237,28 @@ async def test_full_claim_activate_message_resolve_workflow(account_client, real
 
     status_after = await patient_client.get("/api/v1/agent/v2/handoff/status", params={"patient_id": real_patient})
     assert status_after.json()["has_active_handoff"] is False
+
+
+@pytest.mark.asyncio
+async def test_patient_stop_uses_patient_notice_and_is_idempotent(account_client, real_patient):
+    handoff = _pending_uncertainty(real_patient)
+    doctor = await account_client("doctor", doctor_id=f"doc-{uuid.uuid4().hex[:8]}")
+    patient_client = await account_client("patient", patient_id=real_patient)
+
+    assert (await doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/claim")).status_code == 200
+    assert (await doctor.post(f"/api/v1/doctor/reviews/{handoff.id}/activate")).status_code == 200
+
+    stop = await patient_client.post(f"/api/v1/agent/v2/handoffs/{handoff.id}/stop")
+    assert stop.status_code == 200
+    assert stop.json()["status"] == "RESOLVED"
+    assert [
+        (message["sender_role"], message["content"])
+        for message in stop.json()["messages"]
+    ] == [("SYSTEM", PATIENT_CONVERSATION_STOP_MESSAGE)]
+
+    repeat_stop = await patient_client.post(f"/api/v1/agent/v2/handoffs/{handoff.id}/stop")
+    assert repeat_stop.status_code == 200
+    assert repeat_stop.json()["messages"] == stop.json()["messages"]
 
 
 @pytest.mark.asyncio

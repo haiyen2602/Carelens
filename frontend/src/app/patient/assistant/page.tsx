@@ -66,6 +66,7 @@ export default function AssistantPage() {
   const lastQuestion = useRef("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const submitInFlight = useRef(false);
+  const handledHandoffEndIds = useRef(new Set<string>());
   const scrollRef = useRef<HTMLDivElement>(null);
   const objectUrls = useRef(new Set<string>());
   const { user, accessToken } = useAuth();
@@ -119,6 +120,7 @@ export default function AssistantPage() {
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const messages = active?.messages ?? [];
+  const activeHandoff = handoff?.status === "ACTIVE" ? handoff : null;
 
   const appendMessage = (
     convId: string,
@@ -173,7 +175,25 @@ export default function AssistantPage() {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, isPending]);
+  }, [activeHandoff?.messages.length, messages.length, isPending]);
+
+  useEffect(() => {
+    if (!handoff?.handoffId || handoff.status === "ACTIVE" || !activeId) return;
+    if (handledHandoffEndIds.current.has(handoff.handoffId)) return;
+
+    const terminalNotice = handoff.messages.find((message) => message.senderRole === "SYSTEM");
+    if (terminalNotice) {
+      handledHandoffEndIds.current.add(handoff.handoffId);
+      appendMessage(activeId, "assistant", terminalNotice.content);
+    }
+    // A completed direct thread must not remain as a second chat box. Its
+    // terminal notice above remains in the primary Capy conversation, which
+    // is ready for the chatbot's next response.
+    setHandoff(null);
+    // appendMessage is intentionally not a dependency: it is recreated on
+    // every render while this effect must only react to a handoff transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, handoff]);
 
   const submit = (content: string, selectedAction?: SelectedAction) => {
     if (!content.trim() || isPending || submitInFlight.current || !activeId) return;
@@ -183,7 +203,6 @@ export default function AssistantPage() {
     voicePlayback.moKhoa();
     submitInFlight.current = true;
     lastQuestion.current = content;
-    appendMessage(activeId, "user", content);
     setInput("");
     reset();
     mutate(
@@ -200,17 +219,25 @@ export default function AssistantPage() {
       },
       {
         onSuccess: (data) => {
+          // While a doctor owns the conversation, the server stores the
+          // patient turn in the shared handoff thread. Do not duplicate that
+          // turn or add the acknowledgement as a chatbot reply in local
+          // history; polling renders the same server-backed thread below.
+          if (data.status === "DOCTOR_ACTIVE") {
+            void loadHandoff();
+            return;
+          }
           // BUILD-29: stash trace_id/agent_run_id (already returned by every
           // real Agent V2 response, see frontend/src/types/chat.ts) plus the
           // question that produced this reply, so "Báo cáo câu trả lời" never
           // needs the user to type an id by hand.
+          appendMessage(activeId, "user", content);
           appendMessage(activeId, "assistant", data.reply, {
             traceId: data.trace_id,
             agentRunId: data.agent_run_id,
             userMessage: content,
             suggestedActions: data.suggested_actions,
           });
-          if (data.status === "DOCTOR_ACTIVE") void loadHandoff();
           // Doc to cau tra loi neu tuy chon dang bat (Cai dat > Trợ lý giọng
           // nói). Fire-and-forget: text reply o tren da hien thi XONG truoc
           // khi doan nay chay, nen bat ky loi TTS nao cung KHONG duoc phep
@@ -472,24 +499,20 @@ export default function AssistantPage() {
           />
         ))}
 
-        {handoff?.handoffId && (
-          <section className="space-y-2 rounded-2xl border border-[#C9D7EC] bg-white p-3" aria-label="Trao đổi với bác sĩ">
-            <div className="flex items-center justify-between gap-3">
-              <p className="m-0 text-xs font-semibold text-[#16386E]">
-                {handoff.status === "ACTIVE" ? "Đang trao đổi với bác sĩ" : "Cuộc trò chuyện với bác sĩ đã kết thúc"}
-              </p>
-              {handoff.status === "ACTIVE" && (
-                <button
-                  type="button"
-                  onClick={stopConversation}
-                  disabled={stoppingHandoff}
-                  className="rounded-lg border border-[#D66A6A] px-2.5 py-1.5 text-xs font-semibold text-[#A63737] disabled:opacity-50"
-                >
-                  Dừng trò chuyện
-                </button>
-              )}
+        {activeHandoff && (
+          <section className="space-y-2" aria-label="Trao đổi trực tiếp với bác sĩ">
+            <div className="flex items-center justify-between gap-3 border-y border-[#C9D7EC] py-2">
+              <p className="m-0 text-xs font-semibold text-[#16386E]">Đang trao đổi với bác sĩ</p>
+              <button
+                type="button"
+                onClick={stopConversation}
+                disabled={stoppingHandoff}
+                className="rounded-lg border border-[#D66A6A] px-2.5 py-1.5 text-xs font-semibold text-[#A63737] disabled:opacity-50"
+              >
+                Dừng trò chuyện
+              </button>
             </div>
-            {handoff.messages.map((message) => (
+            {activeHandoff.messages.map((message) => (
               <div key={message.id} className={`flex ${message.senderRole === "PATIENT" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[82%] px-3 py-2 text-sm ${
@@ -508,7 +531,7 @@ export default function AssistantPage() {
           </section>
         )}
 
-        {(isPending || imagePending) && (
+        {(isPending || imagePending) && !activeHandoff && (
           <div
             className="font-mono self-start px-[15px] py-[13px] text-[13px]"
             style={{ background: "#E4DDFB", color: "#4B3E86", borderRadius: "20px 20px 20px 6px" }}
@@ -549,7 +572,7 @@ export default function AssistantPage() {
             </button>
           </div>
         )}
-        {messages.length === 0 && (
+        {messages.length === 0 && !activeHandoff && (
           <div className="flex flex-wrap gap-2">
             {SUGGESTED_PROMPTS.map((p) => (
               <button
@@ -579,7 +602,7 @@ export default function AssistantPage() {
               <button
                 type="button"
                 aria-label="Chụp ảnh thuốc"
-                disabled={isPending || imagePending}
+                disabled={isPending || imagePending || Boolean(activeHandoff)}
                 onClick={() => {
                   setPlusOpen(false);
                   setCameraOpen(true);
@@ -591,7 +614,7 @@ export default function AssistantPage() {
               <button
                 type="button"
                 aria-label="Tải ảnh thuốc lên"
-                disabled={isPending || imagePending}
+                disabled={isPending || imagePending || Boolean(activeHandoff)}
                 onClick={() => {
                   setPlusOpen(false);
                   imageInputRef.current?.click();
@@ -657,8 +680,14 @@ export default function AssistantPage() {
               </button>
               <input
                 value={input}
-                placeholder={voicePending ? "Đang nhận diện giọng nói..." : "Hỏi Capy..."}
-                aria-label="Nhập câu hỏi cho trợ lý AI"
+                placeholder={
+                  voicePending
+                    ? "Đang nhận diện giọng nói..."
+                    : activeHandoff
+                      ? "Nhắn cho bác sĩ..."
+                      : "Hỏi Capy..."
+                }
+                aria-label={activeHandoff ? "Nhập tin nhắn cho bác sĩ" : "Nhập câu hỏi cho trợ lý AI"}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={isPending || imagePending || voicePending}

@@ -35,6 +35,12 @@ def save_chat_message(db: Session, patient_id: str, role: str, content: str) -> 
     db.commit()
 
 
+def save_chat_messages(db: Session, patient_id: str, messages: list[tuple[str, str]]) -> None:
+    """Persist one display-history turn in a single transaction."""
+    db.add_all([ChatMessage(patient_id=patient_id, role=role, content=content) for role, content in messages])
+    db.commit()
+
+
 def get_chat_history_for_display(db: Session, patient_id: str, include_hidden: bool = False) -> list[dict]:
     """Muc 7.1 - CHI dung de hien thi, khong dua vao LLM. Mac dinh loai tin
     nhan da bi an (hidden=True, #20) - `include_hidden` chi dung cho tang

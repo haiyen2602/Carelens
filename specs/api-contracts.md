@@ -401,12 +401,16 @@ poll cùng một dữ liệu.
 Doctor review detail trả thêm `chat_history` chỉ gồm lịch sử hiển thị an toàn
 patient/assistant của đúng bệnh nhân. Agent V2 lưu bản hiển thị của các lượt
 terminal mới, không lưu prompt, chain-of-thought, secret hoặc output tool thô.
+Việc lưu lịch sử chạy best-effort sau khi response đã trả, bằng transaction
+riêng, nên lỗi hoặc độ trễ history không được làm chậm hay làm lỗi câu trả lời
+đã hoàn tất của bệnh nhân.
 
 Handoff tự kết thúc sau 10 phút kể từ tin nhắn PATIENT gần nhất (fallback là
 `activated_at`), được quét mỗi 60 giây. Bác sĩ, bệnh nhân hoặc timeout dùng
-cùng một chuyển trạng thái idempotent và công khai đúng một SYSTEM notice:
-`Bác sĩ xin dừng cuộc trò chuyện tại đây`. SYSTEM note khác là nội bộ và không
-được trả cho bệnh nhân.
+cùng một chuyển trạng thái idempotent. SYSTEM notice công khai phản ánh đúng
+người chủ động dừng: bác sĩ hoặc timeout dùng `Bác sĩ xin dừng cuộc trò chuyện
+tại đây`; bệnh nhân dùng `Bệnh nhân xin dừng cuộc trò chuyện tại đây`. SYSTEM
+note khác là nội bộ và không được trả cho bệnh nhân.
 
 ### B-07 package-image candidates (additive)
 

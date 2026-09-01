@@ -42,6 +42,7 @@ from backend.services.agent_authorization import require_agent_patient_access
 from backend.services.agent_doctor_takeover import get_active_takeover, require_active_doctor
 from backend.services.doctor_handoff import (
     DOCTOR_CONVERSATION_STOP_MESSAGE,
+    PATIENT_CONVERSATION_STOP_MESSAGE,
     DoctorAuthorizationError,
     DoctorHandoffError,
     HandoffNotFoundError,
@@ -338,9 +339,12 @@ def _patient_handoff_detail(db: Session, row: DoctorReviewRequest) -> PatientHan
             )
             for m in messages
             # SYSTEM is reserved for internal bookkeeping. The explicitly
-            # contractually-visible terminal notice is the sole exception.
+            # contractually-visible terminal notices are the sole exceptions.
             if m.sender_role in ("PATIENT", "DOCTOR")
-            or (m.sender_role == "SYSTEM" and m.content == DOCTOR_CONVERSATION_STOP_MESSAGE)
+            or (
+                m.sender_role == "SYSTEM"
+                and m.content in {DOCTOR_CONVERSATION_STOP_MESSAGE, PATIENT_CONVERSATION_STOP_MESSAGE}
+            )
         ],
     )
 

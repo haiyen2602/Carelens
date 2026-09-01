@@ -20,8 +20,9 @@ tự dừng phiên sau 10 phút không có tin nhắn mới từ bệnh nhân.
   `conversation_id` của handoff, theo thứ tự thời gian, trước và trong khi trao
   đổi trực tiếp với bệnh nhân.
 - [ ] Bệnh nhân thấy nút **"Dừng trò chuyện"** khi handoff `ACTIVE`; chỉ chính
-  bệnh nhân của handoff được dừng, thao tác lặp lại an toàn và sau khi dừng cả
-  hai giao diện hiện thông báo **"Bác sĩ xin dừng cuộc trò chuyện tại đây"**.
+  bệnh nhân của handoff được dừng, thao tác lặp lại an toàn. Khi bác sĩ dừng,
+  cả hai giao diện hiện **"Bác sĩ xin dừng cuộc trò chuyện tại đây"**; khi bệnh
+  nhân dừng, cả hai giao diện hiện **"Bệnh nhân xin dừng cuộc trò chuyện tại đây"**.
 - [ ] Một handoff `ACTIVE` tự dừng sau 10 phút kể từ tin nhắn bệnh nhân gần
   nhất. Tác vụ quét có thể chạy lặp lại mà không tạo thông báo dừng trùng.
 - [ ] Mọi endpoint mới kiểm tra xác thực, role và quan hệ với bệnh nhân; không
