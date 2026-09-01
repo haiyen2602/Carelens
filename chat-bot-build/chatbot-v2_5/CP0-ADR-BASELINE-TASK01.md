@@ -208,11 +208,22 @@ tảng không có capability flag; Task 02–04 mới có flag/canary/rollback r
 
 ## Phần 2 — Baseline report de-identified
 
-**Nguồn evidence:** golden test dataset thật, 178 case, cột `Ky vong dau ra /
-Tieu chi dung` đã gắn nhãn kết quả chạy ở local cho các version V1/V2
+**Nguồn evidence:** golden test dataset thật, **177 case** (đếm chính xác từ
+CSV export thô ngày 2026-09-01, không qua model tóm tắt trung gian — số 178
+ghi ở bản trước là sai), cột `Ky vong dau ra / Tieu chi dung` đã gắn nhãn kết
+quả chạy ở local cho các version V1/V2
 ([link sheet](https://docs.google.com/spreadsheets/d/1wv-9p4oTuJ_0ErPCij4gh9eENLmd-qzbjMr8mWSOE3Y/edit?gid=0#gid=0)).
 Toàn bộ trích dẫn dưới đây là câu hỏi tổng hợp/kiểm thử, không phải dữ liệu
 bệnh nhân thật — an toàn để đưa vào baseline de-identified.
+
+**Sửa lỗi phương pháp (2026-09-01):** bản trước trích xuất qua `WebFetch`
+(model tóm tắt trung gian), gây hai lỗi cụ thể đã xác nhận bằng cách tải
+CSV thô và đếm trực tiếp: (1) tổng case sai 178→177; (2) danh sách
+`GROUNDING_FAILURE` lẫn 2 dòng không có thật (110, 124, 132) — số đúng là
+**đúng 11 dòng**: 112, 120, 123, 129, 130, 136, 138, 139, 140, 141, 156.
+`FAILED/TOOL_ERROR` đúng 3 dòng: 105, 111, **135** (dòng 135 — "các khả năng
+là gì", chưa có chủ đề nào được lập — chưa từng được nêu riêng trước đây, ghi
+nhận backlog cho Task 02/03).
 
 **Window và vai trò baseline đã chốt:** tab `15/08/2026` là lần owner tự chạy
 trên **production V1**. Nó là evidence lịch sử hữu ích, nhưng không phải
@@ -224,14 +235,20 @@ golden-set version, exact command, timestamp và kết quả. Cùng bộ đánh 
 được chạy lại sau mỗi task ở local để so sánh trước/sau. Không có kết quả V2
 production nào bị suy diễn từ tab V1.
 
-**Tổng quan nhãn lỗi (trích xuất tự động, ±1 dòng do qua model tóm tắt —
-cần đối chiếu thủ công trước khi dùng làm số liệu chính thức trong ADR):**
+**Tổng quan nhãn lỗi (đếm chính xác từ CSV thô, đã verify — thay cho số ước
+lượng ±1 dòng của bản trước):**
 
-- `V2: GROUNDING_FAILURE`: ~11–13 case.
-- `V2: FAILED/TOOL_ERROR`: ~3 case.
-- Toàn bộ nhãn lỗi tập trung trong cụm multi-turn (STT ~103–156, các case
-  "TR01/TR02/TR12/TR15"), tức đúng nhóm hội thoại nhiều lượt/follow-up —
-  không rải rác ngẫu nhiên khắp 178 case.
+- `V2: GROUNDING_FAILURE`: đúng **11 case** — STT 112, 120, 123, 129, 130,
+  136, 138, 139, 140, 141, 156.
+- `V2: FAILED/TOOL_ERROR`: đúng **3 case** — STT 105, 111, 135.
+- Toàn bộ nhãn lỗi tập trung trong cụm multi-turn (TR01/TR02/TR03/TR05/TR07/
+  TR08/TR09/TR14), tức đúng nhóm hội thoại nhiều lượt/follow-up — không rải
+  rác ngẫu nhiên khắp 177 case.
+- **Lưu ý quan trọng:** không phải mọi dòng mô tả một kịch bản "khó" đều có
+  nhãn `V2: ...` — một số dòng (vd STT 108) chỉ ghi **tiêu chí đạt kỳ vọng**
+  của test case, không phải kết quả V2 đã chạy và fail. Chỉ dòng có nhãn
+  `V2: GROUNDING_FAILURE`/`V2: FAILED/TOOL_ERROR` tường minh mới là bằng
+  chứng về một lỗi đã quan sát được.
 
 ### Pain point 1 — Ellipsis/tham chiếu thực thể bị mất hoặc bị gộp sai (→ capability context/follow-up)
 
@@ -260,11 +277,14 @@ tại (GROUNDING_FAILURE trên ít nhất case 120 và toàn bộ case TR15 mơ 
 
 ### Pain point 2 — Không phục hồi tự nhiên khi người dùng phủ định hoặc sửa lại thông tin (→ capability clarification)
 
-**Evidence (row ~120, TR12):** người dùng nói "Không đúng" sau một câu trả
-lời → `V2: GROUNDING_FAILURE` (hệ thống không biết hỏi lại đã sai chỗ nào).
-TR12: bệnh nhân báo đau bụng "sau khi uống thuốc", rồi tự sửa lại "sau khi ăn
-xiên nướng" — kỳ vọng cập nhật giả thuyết nguyên nhân (không giữ "do thuốc"),
-không coi là triệu chứng mới.
+**Evidence — hai cụm riêng biệt (đã sửa: bản trước ghi nhầm dòng 120 thuộc
+TR12; dòng 120 thực ra thuộc TR02):**
+- STT 120 (TR02, lượt 8): người dùng nói "Không đúng" sau câu trả lời Vitamin
+  C ở lượt 7 → `V2: GROUNDING_FAILURE` (hệ thống không biết hỏi lại đã sai
+  chỗ nào).
+- TR12 (STT 149-151, cụm riêng): bệnh nhân báo đau bụng "sau khi uống
+  thuốc", rồi tự sửa lại "sau khi ăn xiên nướng" — kỳ vọng cập nhật giả
+  thuyết nguyên nhân (không giữ "do thuốc"), không coi là triệu chứng mới.
 
 **Golden/regression coverage:** chưa thấy case dạng "phủ định/sửa lại" trong
 golden suite hiện có (`golden_evaluation.py`) ngoài sheet trên — cần thêm khi
@@ -280,13 +300,24 @@ thông tin sửa.
 
 ### Pain point 3 — ĐÃ ĐIỀU TRA: không còn là bug tool/evidence, tách thành hai kết luận khác nhau
 
-**Evidence gốc (TR01, sheet):**
-- Hỏi lịch ngày 30/8 (lượt 6) trả về **kết quả trùng khớp** với lượt 5 (hỏi
-  "hôm nay") — sheet ghi rõ "hai lượt mâu thuẫn là lỗi".
-- "các ngày còn lại thì sao" (tham chiếu phạm vi còn lại của tuần) →
-  `V2: FAILED/TOOL_ERROR`.
-- "Tôi đã hỏi những vấn đề gì" (yêu cầu bot tự thuật lại hội thoại) →
-  `V2: GROUNDING_FAILURE`.
+**Evidence gốc (TR01, sheet, đối chiếu lại nguyên văn từ CSV thô):**
+- STT 108, "Ngày 30 tháng 8 tôi cần uống thuốc gì" (lượt 6, sau lượt 5 hỏi
+  "hôm nay", với ghi chú "30/08 CHÍNH LÀ ngày hôm nay của phiên"): cột kỳ
+  vọng ghi *"Phải cho kết quả TRÙNG KHỚP lượt 5... Hai lượt mâu thuẫn nhau
+  là lỗi nhất quán."* — **đây là tiêu chí đạt của test case, KHÔNG có nhãn
+  `V2: ...` nào** — sheet không ghi nhận V2 đã thực sự fail case này. Bản
+  trước của tài liệu này trình bày nhầm dòng này như một lỗi đã quan sát
+  được; đây là lỗi đọc, đã sửa.
+- STT 111, "các ngày còn lại thì sao" (tham chiếu phần còn lại của khung
+  "tuần sau" đã hỏi ở lượt 8) → `V2: FAILED/TOOL_ERROR` (nhãn thật, xác nhận).
+- STT 112, "Tôi đã hỏi những vấn đề gì" (yêu cầu bot tự thuật lại hội thoại)
+  → `V2: GROUNDING_FAILURE` (nhãn thật, xác nhận).
+- STT 105, "Năm ngoái tôi uống thuốc gì" (ngoài phạm vi dữ liệu) →
+  `V2: FAILED/TOOL_ERROR` — "sập tool là không chấp nhận được"; chưa có
+  reproduction/task riêng, ghi nhận backlog.
+- STT 135, "các khả năng là gì" (tham chiếu mơ hồ, chưa có chủ đề nào được
+  lập trước đó) → `V2: FAILED/TOOL_ERROR` — kỳ vọng hỏi lại, không được sập;
+  phát hiện mới, chưa có reproduction/task riêng, ghi nhận backlog.
 
 **Kết quả reproduction thật trên code hiện tại (không phải version sheet mô
 tả) — xem [TASK-V2.5-001](../../../tasks/TASK-V2.5-001-schedule-tool-contract.md)
