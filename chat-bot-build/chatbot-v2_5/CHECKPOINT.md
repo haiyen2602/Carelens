@@ -58,6 +58,7 @@ không phải số người ký duyệt riêng biệt.
 - [ ] Xác định fact nhạy cảm của capability (liều, giờ, dose status, confirmed medication identity, handoff state) phải backend-render/template-render.
 - [ ] Xác định deterministic fallback cụ thể khi renderer timeout hoặc output invalid; không retry vô hạn, không silent per-request fallback sang legacy.
 - [ ] Viết test plan gồm unit, golden/regression và local E2E; fixture chỉ dùng dữ liệu de-identified. Với capability renderer, test plan **bắt buộc** có nhóm case "prose tự do" kiểm renderer không tự chèn liều/giờ/dose status/medication identity/handoff state vào câu dẫn/chuyển ý ngoài `RenderableFactSlots` — đây là đảm bảo kỹ thuật quan trọng nhất của V2.5, thiếu nhóm case này thì capability chưa đủ AC.
+- [ ] Ghi kết quả baseline local de-identified vào tab V2.5 đã chỉ định của [golden sheet](https://docs.google.com/spreadsheets/d/1wv-9p4oTuJ_0ErPCij4gh9eENLmd-qzbjMr8mWSOE3Y/edit?gid=1151888176#gid=1151888176), theo cấu trúc tab 15/08/2026: timestamp, commit SHA, environment `local`, config/model version, golden-set version, exact command, pass/fail aggregate và notes. Chỉ append; không sửa tab lịch sử và không ghi PHI, raw chat, raw tool payload hoặc secret.
 - [ ] Khai báo flag mặc định **off**, owner, cohort rỗng/allowed internal và thao tác rollback.
 
 **Gate đi tiếp:** reviewer xác nhận task có AC/DoD rõ ràng, contracts không làm lẫn ba lớp dữ liệu và có rollback cụ thể.
