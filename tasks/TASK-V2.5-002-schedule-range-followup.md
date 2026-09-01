@@ -395,3 +395,73 @@ CP3/push tiếp.
   pattern, nhưng nằm ngoài diff/scope của Task 02).
 - Evidence sau sửa: 114 test PASS, golden `--deterministic-only` 15/15,
   golden V2.5 (flag ON) 1/1.
+
+## Hoàn thiện CP2 — 4 mục còn thiếu (2026-09-01, sau khi merge PR #183)
+
+Owner yêu cầu soát lại đúng 8 mục CP2 trong `CHECKPOINT.md` thay vì tự nhận
+đã xong. 4 mục sau chưa đủ bằng chứng, nay bổ sung bằng dữ liệu thật (query
+DB thật, không suy đoán):
+
+### 1. Regression doctor takeover/handoff + missed/delayed dose (đích danh, không chỉ suy ra từ filter rộng)
+
+`pytest tests/test_agent_v2_doctor_handoff.py tests/test_agent_v2_doctor_takeover.py tests/test_doctor_takeover_timeout.py tests/test_agent_v2_safety.py tests/test_agent_v2_acute_danger.py -q`
+→ **73/73 PASS**. `test_doctor_takeover_timeout.py` không khớp filter
+`-k "agent_v2 or..."` trước đó nên chưa từng được xác nhận riêng — giờ đã
+chạy đích danh.
+
+### 2. Model/config/version/budget cho lượt gọi model thật (golden flag-OFF, artifact `20260901T072202Z.json`)
+
+Lượt 2 của case `GOLD-V25-RANGE-FOLLOWUP-001` khi flag OFF thật sự rơi vào
+model (`execution_path=RAG`, `model_calls=1`). Tra thẳng `AgentRun` DB row
+(`agent_run_id=708828f6-a874-4ed0-8300-7166c3c757a9`):
+
+- Model: `gpt-5.4-mini` (đúng `agent_main_model` mặc định).
+- Token: input 887, cached 0, output 119, tổng 1006.
+- `cost_status=NOT_AVAILABLE` (pricing chưa cấu hình ở local) — chi phí ước
+  tính theo bảng giá công khai đã ghi trong `.env.example`
+  (`AGENT_MODEL_PRICING_JSON`): 887/1e6×$0.75 + 119/1e6×$4.50 ≈ **$0.0012**.
+- `provider_request_id`: `req_ed387595ad6a4d9686892640ca4243c6` (chỉ để đối
+  chiếu, không phải dữ liệu nhạy cảm).
+- Phát hiện phụ xác nhận đúng mức độ hỏng của hành vi cũ: state sau lượt
+  này có `active_topic.canonical_name = "các ngày còn lại"` và
+  `citation_titles: ["taptiqom-5mg-ml-santen..."]` — router cũ coi cụm từ
+  này là một "chủ đề y khoa" thật và trích dẫn một sản phẩm hoàn toàn không
+  liên quan.
+
+### 3. So sánh candidate vs baseline (tổng hợp từ dữ liệu đã đo, không đo lại)
+
+| Chiều | Baseline (flag OFF) | Candidate (flag ON) |
+|---|---|---|
+| Safety outcome | Không đổi — Task 02 không đụng Safety Domain | Không đổi (73/73 regression trên) |
+| Grounding/clarification quality | Sai: coi "các ngày còn lại" là chủ đề y khoa, trích dẫn sản phẩm không liên quan (`taptiqom...`), pollute `active_topic` | Đúng: resolve đúng range đã lưu, không có claim/citation ngoài phạm vi |
+| Error rate | Case mới: 0/1 (FAIL có chủ đích); golden legacy 15/15 không đổi | Case mới: 1/1 PASS; golden legacy vẫn 15/15 |
+| Latency (lượt 2) | ~21.4s tổng (`retrieve` span 17754ms + `model_call` span 3231ms, telemetry thật) | 4.69ms (`schedule_reply` span, telemetry thật) — nhanh hơn ~4500 lần |
+| Cost (lượt 2) | ~$0.0012 (887 in + 119 out token, gpt-5.4-mini) | $0 (`model_calls=0`) |
+
+### 4. Xác minh telemetry/durable state không leak PHI/raw data (query DB thật, không chỉ suy luận ADR)
+
+- **Span telemetry** (`AgentRunSpan`, cả path cũ lẫn mới): chỉ chứa
+  `operation`, `model_role`/`model`, `latency_ms`, `input_tokens`/
+  `output_tokens`, `outcome`, `provider_request_id` — không có raw message,
+  không PHI. Path mới (`_schedule_range_followup_reply` qua
+  `_schedule_reply`) tạo đúng span `TIME_QUERY/schedule_reply` với
+  `{"operation": "schedule_reply", "outcome": "OK", "latency_ms": ...}` —
+  giống hệt shape path lịch cũ, không có field mới nào bị lộ.
+- **Durable `AgentRun.metadata_json`** (lớp audit, không phải telemetry —
+  được phép giữ context nhiều hơn theo đúng "ba lớp dữ liệu" của
+  V2.5-DESIGN.md): tra 2 lượt thật của case flag-ON —
+  - Lượt 1 (lập range): `active_schedule_range: ["2026-09-07", "2026-09-13"]`
+    — đúng 2 chuỗi ngày ISO, không có gì khác.
+  - Lượt 2 (tiêu thụ range): `active_schedule_range: null` — **xác nhận
+    thật** cơ chế "hết hạn sau đúng 1 lượt" hoạt động end-to-end trên một
+    run thật, không chỉ đúng ở unit test.
+
+### Build ở local
+
+`uvicorn backend.main:app --host 0.0.0.0 --port 8123` trên đúng code đã
+merge — khởi động sạch (`Application startup complete`, warmup Drug
+Knowledge V2 3556 products/42588 chunks), `GET /health` → `200
+{"status":"ok","env":"development","runtime_profile":"v2_only"}`. Dừng
+process sau khi xác nhận.
+
+**Kết luận: cả 8 mục CP2 trong `CHECKPOINT.md` đã có bằng chứng đầy đủ.**
