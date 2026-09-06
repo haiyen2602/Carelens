@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -256,14 +257,28 @@ def start_escalation_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
         max_instances=1,
     )
-    _scheduler.add_job(
-        _run_telegram_updates,
-        "interval",
-        seconds=60,
-        id="telegram_updates",
-        replace_existing=True,
-        max_instances=1,
-    )
+    # CHI dang ky o che do polling. O webhook, Telegram day thang vao
+    # POST /api/v1/telegram/webhook - dang ky them job nay se lam ca hai cung
+    # goi getUpdates va Telegram tra 409 (hai co che loai tru nhau).
+    #
+    # `remove_job` cho truong hop doi tu polling sang webhook: SQLAlchemyJobStore
+    # luu job vao Postgres nen dong cu VAN CON sau khi doi cau hinh va restart -
+    # khong xoa thi job da tat van tiep tuc chay.
+    if settings.telegram_update_mode == "polling":
+        _scheduler.add_job(
+            _run_telegram_updates,
+            "interval",
+            seconds=settings.telegram_poll_interval_seconds,
+            id="telegram_updates",
+            replace_existing=True,
+            max_instances=1,
+        )
+    else:
+        try:
+            _scheduler.remove_job("telegram_updates")
+            logger.info("Da go job telegram_updates - dang chay che do webhook")
+        except JobLookupError:
+            pass
     _scheduler.add_job(
         _run_judge_worker,
         "interval",

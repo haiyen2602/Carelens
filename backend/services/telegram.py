@@ -282,13 +282,52 @@ def xu_ly_start(db: Session, *, chat_id: int, username: str | None, text: str) -
     return True
 
 
-def quet_update_moi(db: Session) -> int:
-    """Keo cac tin moi gui toi bot roi xu ly. Tra ve so tai khoan vua ghep.
+def xu_ly_mot_update(db: Session, upd: dict) -> bool:
+    """Xu ly MOT update tu Telegram. Tra ve True neu vua ghep xong tai khoan.
 
-    DUNG long-polling (`getUpdates`) chu khong phai webhook: khong can domain
-    public nen chay duoc ngay tren docker compose o may tung nguoi. Khi len
-    production co the doi sang webhook - luc do PHAI bo job nay di, Telegram
-    tu choi getUpdates bang 409 neu da dat webhook (hai co che loai tru nhau).
+    HAM DUNG CHUNG cho ca hai che do nhan tin (polling va webhook) - hai duong
+    vao khac nhau nhung tu day tro di la MOT duong xu ly duy nhat. Copy hai
+    ban se dan toi chuyen sua mot ben quen ben kia, va loi do chi lo ra o dung
+    moi truong khong duoc sua.
+
+    KHONG commit - nguoi goi quyet dinh ranh gioi giao dich.
+    """
+    msg = upd.get("message") or {}
+    chat = msg.get("chat") or {}
+    if chat.get("type") != "private":
+        # Bot bi them vao nhom - khong ghep ho so y te hay tra loi o do.
+        return False
+    noi_dung = msg.get("text")
+    if not noi_dung:
+        return False
+
+    chat_id = chat["id"]
+    if noi_dung.strip().split(maxsplit=1)[:1] == ["/start"]:
+        return xu_ly_start(
+            db,
+            chat_id=chat_id,
+            username=(msg.get("from") or {}).get("username"),
+            text=noi_dung,
+        )
+
+    # Import tai cho: telegram_chat goi nguoc lai _goi_bot_api cua module nay,
+    # import o dau file se tao vong lap.
+    from backend.services.telegram_chat import xu_ly_tin_chat
+
+    xu_ly_tin_chat(db, chat_id=chat_id, text=noi_dung)
+    # Tra ve False: gia tri nay dem SO TAI KHOAN VUA GHEP cho log cua job
+    # poll, khong phai "da xu ly hay chua". Tra loi mot cau hoi khong phai
+    # mot lan ghep.
+    return False
+
+
+def quet_update_moi(db: Session) -> int:
+    """Keo cac tin moi gui toi bot roi xu ly (CHE DO POLLING).
+
+    Chi chay o che do `polling` - dung duoc tren may dev khong co domain
+    public. O production dung webhook (xem backend/api/telegram_routes.py):
+    hai co che LOAI TRU NHAU, Telegram tra 409 cho getUpdates khi bot da dat
+    webhook. Job goi ham nay khong duoc dang ky o che do webhook.
     """
     global _offset
     if not telegram_is_configured():
@@ -309,28 +348,16 @@ def quet_update_moi(db: Session) -> int:
     da_ghep = 0
     for upd in updates:
         # Xac nhan da nhan NGAY CA khi tin loi/khong phai /start - neu khong,
-        # 1 tin la se bi Telegram gui lai mai mai moi 60 giay.
+        # 1 tin la se bi Telegram gui lai mai mai moi nhip poll.
         _offset = upd["update_id"] + 1
-        msg = upd.get("message") or {}
-        chat = msg.get("chat") or {}
-        if chat.get("type") != "private":
-            continue  # bot bi them vao nhom - khong ghep ho so y te o do
-        noi_dung = msg.get("text")
-        if not noi_dung:
-            continue
         try:
-            if xu_ly_start(
-                db,
-                chat_id=chat["id"],
-                username=(msg.get("from") or {}).get("username"),
-                text=noi_dung,
-            ):
+            if xu_ly_mot_update(db, upd):
                 da_ghep += 1
         except Exception:  # noqa: BLE001 - 1 tin loi khong duoc chan cac tin con lai
             logger.exception("Loi khi xu ly update Telegram %s", upd.get("update_id"))
 
-    if da_ghep:
+    if updates:
+        # Commit KE CA khi khong ghep duoc ai: con phai luu `used_at` cua cac
+        # token da tieu thu nhung ghep hong.
         db.commit()
-    elif updates:
-        db.commit()  # con luu used_at cua cac token da tieu thu nhung ghep hong
     return da_ghep
