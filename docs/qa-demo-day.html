@@ -1,0 +1,957 @@
+<title>Phòng thủ CapyMedi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  :root{
+    --paper:#FBFAF7;
+    --surface:#FFFFFF;
+    --sunk:#F4F2EC;
+    --ink:#14191B;
+    --ink-2:#46514F;
+    --ink-3:#7C8785;
+    --line:#E4E1D9;
+    --line-2:#D2CEC3;
+    --accent:#0F6E63;
+    --accent-soft:#E6F0EE;
+    --risk:#A8352A;
+    --risk-soft:#F9EBE8;
+    --warn:#8E620D;
+    --warn-soft:#F8F0DD;
+    --ok:#2C6349;
+    --ok-soft:#E7F0EB;
+
+    --f-display:"Newsreader",Georgia,"Times New Roman",serif;
+    --f-body:"Be Vietnam Pro","Segoe UI",Roboto,system-ui,sans-serif;
+    --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1315;
+      --surface:#161D1F;
+      --sunk:#121A1B;
+      --ink:#E9EEED;
+      --ink-2:#A4B0AE;
+      --ink-3:#76817F;
+      --line:#27302F;
+      --line-2:#36413F;
+      --accent:#4FBBA9;
+      --accent-soft:#12302B;
+      --risk:#E8897C;
+      --risk-soft:#301714;
+      --warn:#D6AC58;
+      --warn-soft:#2B2211;
+      --ok:#6FBF95;
+      --ok-soft:#15281E;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1315;
+    --surface:#161D1F;
+    --sunk:#121A1B;
+    --ink:#E9EEED;
+    --ink-2:#A4B0AE;
+    --ink-3:#76817F;
+    --line:#27302F;
+    --line-2:#36413F;
+    --accent:#4FBBA9;
+    --accent-soft:#12302B;
+    --risk:#E8897C;
+    --risk-soft:#301714;
+    --warn:#D6AC58;
+    --warn-soft:#2B2211;
+    --ok:#6FBF95;
+    --ok-soft:#15281E;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--f-body);
+    font-size:15px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px 96px}
+  .col{max-width:720px}
+
+  /* ---------- masthead ---------- */
+  header.mast{
+    border-bottom:1px solid var(--line-2);
+    padding:44px 0 26px;
+    margin-bottom:38px;
+  }
+  .mast-top{
+    display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;
+    font-family:var(--f-mono);font-size:11px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:20px;
+  }
+  .mast-top .dot{color:var(--line-2)}
+  h1{
+    font-family:var(--f-display);font-weight:400;
+    font-size:clamp(2.15rem,5.2vw,3.1rem);line-height:1.08;
+    letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance;
+  }
+  h1 em{font-style:italic;color:var(--accent)}
+  .standfirst{
+    font-family:var(--f-display);font-size:1.15rem;line-height:1.55;
+    color:var(--ink-2);max-width:640px;margin:0;
+  }
+
+  /* ---------- section shell ---------- */
+  section{margin-top:62px;scroll-margin-top:20px}
+  .eyebrow{
+    font-family:var(--f-mono);font-size:11px;font-weight:500;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--accent);
+    display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  }
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+  h2{
+    font-family:var(--f-display);font-weight:400;font-size:1.85rem;
+    line-height:1.2;letter-spacing:-.01em;margin:0 0 10px;text-wrap:balance;
+  }
+  .lede{color:var(--ink-2);max-width:660px;margin:0 0 26px}
+  h3{
+    font-family:var(--f-body);font-weight:600;font-size:.95rem;
+    letter-spacing:.005em;margin:34px 0 12px;
+  }
+
+  /* ---------- numbers strip ---------- */
+  .figs{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+    gap:1px;background:var(--line);border:1px solid var(--line);
+  }
+  .fig{background:var(--surface);padding:16px 16px 14px}
+  .fig .n{
+    font-family:var(--f-mono);font-weight:700;font-size:1.42rem;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    line-height:1.15;display:block;margin-bottom:3px;
+  }
+  .fig .k{font-size:.79rem;color:var(--ink-2);line-height:1.4;display:block}
+  .fig .src{
+    font-family:var(--f-mono);font-size:9.5px;color:var(--ink-3);
+    margin-top:7px;display:block;word-break:break-all;letter-spacing:.01em;
+  }
+
+  /* ---------- conflict list ---------- */
+  .conf{border-top:1px solid var(--line-2)}
+  .conf-item{
+    border-bottom:1px solid var(--line);
+    padding:20px 0 20px 0;
+    display:grid;grid-template-columns:76px 1fr;gap:0 20px;
+  }
+  .conf-rail{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+  .idx{
+    font-family:var(--f-mono);font-size:11px;font-weight:700;
+    color:var(--ink-3);letter-spacing:.04em;
+  }
+  .chip{
+    font-family:var(--f-mono);font-size:9.5px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 6px;border-radius:2px;white-space:nowrap;
+  }
+  .chip.hi{background:var(--risk-soft);color:var(--risk)}
+  .chip.md{background:var(--warn-soft);color:var(--warn)}
+  .chip.lo{background:var(--ok-soft);color:var(--ok)}
+  .conf-body h4{
+    font-family:var(--f-body);font-weight:600;font-size:.98rem;
+    margin:0 0 8px;line-height:1.45;
+  }
+  .conf-body p{margin:0 0 8px;color:var(--ink-2);font-size:.895rem}
+  .conf-body p:last-child{margin-bottom:0}
+  .vs{
+    display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+    background:var(--sunk);border:1px solid var(--line);
+    padding:11px 13px;margin:10px 0;font-size:.83rem;
+  }
+  .vs .side{min-width:0}
+  .vs .val{font-family:var(--f-mono);font-weight:700;color:var(--ink);display:block;font-variant-numeric:tabular-nums}
+  .vs .where{font-family:var(--f-mono);font-size:10px;color:var(--ink-3);word-break:break-all}
+  .vs .mid{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);font-weight:700}
+  .fix{
+    font-size:.865rem;border-left:2px solid var(--accent);
+    padding-left:12px;color:var(--ink);
+  }
+  .fix b{font-weight:600;color:var(--accent)}
+
+  /* ---------- Q&A ---------- */
+  .qa{border-top:1px solid var(--line-2)}
+  .q{
+    border-bottom:1px solid var(--line);
+    padding:22px 0;
+    display:grid;grid-template-columns:56px 1fr;gap:0 20px;
+  }
+  .q > .idx{padding-top:5px}
+  .q-body{min-width:0}
+  .ask{
+    font-family:var(--f-display);font-size:1.16rem;line-height:1.42;
+    margin:0 0 12px;color:var(--ink);text-wrap:balance;
+  }
+  .ask::before{content:"“";color:var(--ink-3)}
+  .ask::after{content:"”";color:var(--ink-3)}
+  .say{margin:0 0 11px;font-size:.925rem}
+  .say strong{font-weight:600}
+  .meta{display:flex;flex-direction:column;gap:6px;margin-top:11px}
+  .m{
+    display:grid;grid-template-columns:74px 1fr;gap:12px;
+    font-size:.82rem;line-height:1.5;align-items:start;
+  }
+  .m .lab{
+    font-family:var(--f-mono);font-size:9.5px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+    padding-top:4px;
+  }
+  .m.trap .lab{color:var(--risk)}
+  .m .txt{color:var(--ink-2)}
+  .m.trap .txt{color:var(--ink)}
+
+  code,.mono{
+    font-family:var(--f-mono);font-size:.86em;
+    background:var(--sunk);border:1px solid var(--line);
+    padding:.5px 4px;border-radius:2px;word-break:break-word;
+  }
+  .m .txt code{font-size:.94em}
+  b.num{font-family:var(--f-mono);font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* ---------- tables ---------- */
+  .tw{overflow-x:auto;border:1px solid var(--line);margin:16px 0}
+  table{border-collapse:collapse;width:100%;min-width:520px;font-size:.855rem}
+  th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{
+    background:var(--sunk);font-family:var(--f-mono);font-size:10px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-2);white-space:nowrap;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.name{font-weight:500}
+
+  /* ---------- never-say ---------- */
+  .never{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)}
+  .never-row{
+    background:var(--surface);padding:14px 16px;
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  .never-row .bad,.never-row .good{font-size:.875rem;min-width:0}
+  .never-row .tag{
+    font-family:var(--f-mono);font-size:9.5px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:5px;
+  }
+  .bad .tag{color:var(--risk)}
+  .good .tag{color:var(--ok)}
+  .bad p,.good p{margin:0;color:var(--ink-2)}
+  .bad p{text-decoration:line-through;text-decoration-color:var(--line-2)}
+  .good p{color:var(--ink)}
+
+  /* ---------- checklist ---------- */
+  .check{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+  .check li{
+    border-bottom:1px solid var(--line);padding:11px 0 11px 30px;
+    position:relative;font-size:.9rem;
+  }
+  .check li::before{
+    content:"";position:absolute;left:2px;top:14px;
+    width:12px;height:12px;border:1.5px solid var(--line-2);border-radius:2px;
+  }
+  .check li b{font-weight:600}
+  .check li .who{
+    font-family:var(--f-mono);font-size:10px;color:var(--accent);
+    letter-spacing:.05em;margin-left:6px;
+  }
+
+  footer{
+    margin-top:70px;padding-top:22px;border-top:1px solid var(--line-2);
+    font-family:var(--f-mono);font-size:10.5px;letter-spacing:.05em;
+    color:var(--ink-3);line-height:1.9;
+  }
+
+  @media (max-width:640px){
+    .wrap{padding:0 18px 70px}
+    .q,.conf-item{grid-template-columns:1fr;gap:10px}
+    .q > .idx,.conf-rail{padding-top:0;flex-direction:row;align-items:center;gap:9px}
+    .m{grid-template-columns:1fr;gap:2px}
+    .m .lab{padding-top:0}
+    .vs{grid-template-columns:1fr;gap:8px}
+    .vs .mid{display:none}
+    .never-row{grid-template-columns:1fr;gap:11px}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    a{transition:color .12s ease}
+  }
+  a{color:var(--accent);text-underline-offset:2px}
+  a:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="mast-top">
+    <span>CapyMedi · VMEC-04</span><span class="dot">/</span>
+    <span>Team P-067 · G14-T067</span><span class="dot">/</span>
+    <span>Demo Day AI20K Cohort 3</span><span class="dot">/</span>
+    <span>Deck 33 slide · 04.09.2026</span>
+  </div>
+  <h1>Ban giám khảo sẽ hỏi <em>đúng những chỗ này</em></h1>
+  <p class="standfirst">Bộ ôn tập phản biện dựng từ code, eval report và slide thật trong repo — không phải từ trí nhớ. Mỗi câu trả lời đều kèm file để tra lại, và kèm cái bẫy tương ứng.</p>
+</header>
+
+<section>
+  <div class="eyebrow">Đọc trong 60 giây trước khi lên</div>
+  <h2>Ba việc phải làm trước khi bước vào phòng</h2>
+  <p class="lede col">Không phải học thuộc, mà là thống nhất. Ba điều dưới đây nếu bốn người trả lời khác nhau thì BGK sẽ thấy ngay.</p>
+  <ul class="check">
+    <li><b>Chốt một con số test duy nhất cho cả team.</b> Slide 30 ghi 1.918, <code>docs/evaluation.md</code> ghi 2.513 pass + 44 fail. Hai lần chạy khác nhau — chọn một, và biết giải thích số còn lại. <span class="who">→ xem C1</span></li>
+    <li><b>Chạy lại một câu đếm thuốc trong DB đang dùng cho demo.</b> <code>SELECT count(DISTINCT drug_id) FROM drug_chunks;</code> — tài liệu đang có hai con số trái ngược (226 và ~3.562). <span class="who">→ xem B4</span></li>
+    <li><b>Thử lại kịch bản chất cấm trên bản demo.</b> FB-14 là feedback mức Critical, action item trong <code>eval/results/report.md</code> vẫn đang bỏ trống ô tick. <span class="who">→ xem A5</span></li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow">Số liệu phải thuộc</div>
+  <h2>Con số nào cũng phải gọi được tên file</h2>
+  <p class="lede col">BGK kỹ tính sẽ hỏi “số này ở đâu ra”. Đây là toàn bộ số đã đối chiếu ngược về file nguồn trong repo.</p>
+
+  <h3>Chất lượng Agent</h3>
+  <div class="figs">
+    <div class="fig"><span class="n">71/101</span><span class="k">Golden set pass — 70,3%</span><span class="src">deck slide 28</span></div>
+    <div class="fig"><span class="n">11/11</span><span class="k">Ca nguy hiểm cấp tính xử lý an toàn</span><span class="src">deck slide 28</span></div>
+    <div class="fig"><span class="n">18/18</span><span class="k">Ca adversarial bị chặn</span><span class="src">deck slide 28</span></div>
+    <div class="fig"><span class="n">0</span><span class="k">Lỗi nghiêm trọng</span><span class="src">deck slide 28</span></div>
+  </div>
+
+  <h3>RAG &amp; chống bịa</h3>
+  <div class="figs">
+    <div class="fig"><span class="n">100%</span><span class="k">grounded_rate, n=32</span><span class="src">eval/eval_report.json</span></div>
+    <div class="fig"><span class="n">0%</span><span class="k">hallucination_rate</span><span class="src">eval/eval_report.json</span></div>
+    <div class="fig"><span class="n">68,75%</span><span class="k">recall@k (ngưỡng 0,60/0,55)</span><span class="src">eval/eval_report.json</span></div>
+    <div class="fig"><span class="n">40,63%</span><span class="k">precision@1 · MRR 0,507</span><span class="src">eval/eval_report.json</span></div>
+    <div class="fig"><span class="n">5/6</span><span class="k">Ca gán nhầm thuốc bị chặn — 1 lọt</span><span class="src">eval/eval_report.json</span></div>
+    <div class="fig"><span class="n">14/14</span><span class="k">Red team pass, 7 nhóm tấn công</span><span class="src">eval/redteam_report.json</span></div>
+  </div>
+
+  <h3>Thị giác — đếm thuốc</h3>
+  <div class="figs">
+    <div class="fig"><span class="n">48%</span><span class="k">12/25 ảnh golden set</span><span class="src">eval/eval_vlm/eval_report.json</span></div>
+    <div class="fig"><span class="n">9/9</span><span class="k">Đúng khi model tự chấm “cao”</span><span class="src">eval/eval_vlm/eval_report.json</span></div>
+    <div class="fig"><span class="n">0/11</span><span class="k">Đúng khi model tự chấm “thấp”</span><span class="src">eval/eval_vlm/eval_report.json</span></div>
+    <div class="fig"><span class="n">6</span><span class="k">Hình dạng phân biệt được, không phân biệt hoạt chất</span><span class="src">photo_verification/matcher.py</span></div>
+  </div>
+
+  <h3>Quy mô hệ thống</h3>
+  <div class="figs">
+    <div class="fig"><span class="n">53.232</span><span class="k">Dòng Python backend</span><span class="src">backend/**/*.py</span></div>
+    <div class="fig"><span class="n">40.276</span><span class="k">Dòng TS/TSX frontend · 44 trang</span><span class="src">frontend/src</span></div>
+    <div class="fig"><span class="n">62</span><span class="k">Bảng DB · 64 migration</span><span class="src">backend/db/models.py</span></div>
+    <div class="fig"><span class="n">182</span><span class="k">File test</span><span class="src">tests/</span></div>
+    <div class="fig"><span class="n">3.562</span><span class="k">Bản ghi thuốc đã crawl</span><span class="src">data pharmacy/*/thuoc.json</span></div>
+    <div class="fig"><span class="n">99%</span><span class="k">Line coverage safety.py</span><span class="src">eval/results/report.md</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Rủi ro cao nhất</div>
+  <h2>Chín chỗ số liệu trong repo đang đá nhau</h2>
+  <p class="lede col">BGK AI20K đọc được repo. Đây là những chỗ hai tài liệu của chính team nói khác nhau — nếu bị hỏi mà lúng túng thì mất điểm nặng hơn cả việc con số xấu. Xếp theo mức độ dễ bị soi.</p>
+
+  <div class="conf">
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X1</span><span class="chip hi">Rất dễ bị soi</span></div>
+      <div class="conf-body">
+        <h4>Hai con số test suite chênh gần 600 test</h4>
+        <div class="vs">
+          <div class="side"><span class="val">1.918 passed</span><span class="where">deck slide 30 · README · docs/journal.md</span></div>
+          <div class="mid">vs</div>
+          <div class="side"><span class="val">2.513 passed · 44 failed</span><span class="where">docs/evaluation.md, chạy 01.09.2026</span></div>
+        </div>
+        <p>Bản <code>evaluation.md</code> mới hơn và <b>có ghi 44 ca fail</b>. Nếu BGK mở đúng file này trong khi team đang nói “1.918 pass”, câu chuyện gãy.</p>
+        <p class="fix"><b>Cách nói:</b> “Hai lần chạy khác nhau. Bản 01/09 là bản đầy đủ nhất: 2.513 pass, 44 fail — toàn bộ 44 ca là lỗi môi trường (thiếu seed dữ liệu thuốc, thiếu config email), không ca nào thuộc luồng nghiệp vụ chính. Chúng em phân biệt bằng cách diff danh sách FAILED trước và sau khi sửa.”</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X2</span><span class="chip hi">Rất dễ bị soi</span></div>
+      <div class="conf-body">
+        <h4>Nguồn dữ liệu thuốc: slide nói “Dược thư”, code nói “crawl từ trang bán thuốc”</h4>
+        <div class="vs">
+          <div class="side"><span class="val">“3.500+ tài liệu Dược thư chuẩn hóa”</span><span class="where">docs/pitch-deck.md slide 6</span></div>
+          <div class="mid">vs</div>
+          <div class="side"><span class="val">crawl nhathuoclongchau.com.vn</span><span class="where">docs/drug-data-overview.md</span></div>
+        </div>
+        <p>Toàn bộ 3.562 bản ghi đến từ crawl trang thương mại điện tử bằng <code>requests</code> + <code>BeautifulSoup</code>. Dữ liệu <b>không giữ URL nguồn theo từng thuốc</b>, không có field <code>source</code>/<code>crawled_at</code>. Với một sản phẩm y tế, đây là câu hỏi BGK gần như chắc chắn hỏi.</p>
+        <p class="fix"><b>Cách nói:</b> Đừng dùng chữ “Dược thư”. Nói thẳng: “Nguồn hiện tại là dữ liệu thương mại từ nhà thuốc Long Châu — đủ cho MVP tra cứu công dụng và tác dụng phụ, <b>chưa đủ chuẩn lâm sàng</b>. Đó chính là lý do trong phần pilot ask ở slide 13 chúng em xin <b>quyền tiếp cận dược thư</b> của bệnh viện.” Điểm mạnh: team đã tự phát hiện và ghi lại mâu thuẫn này trong repo trước khi BGK hỏi.</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X3</span><span class="chip hi">Rất dễ bị soi</span></div>
+      <div class="conf-body">
+        <h4>Hai chỉ số chất lượng Agent trên cùng một bộ slide</h4>
+        <div class="vs">
+          <div class="side"><span class="val">86,8% hoàn thành mục tiêu</span><span class="where">deck slide 8</span></div>
+          <div class="mid">vs</div>
+          <div class="side"><span class="val">70,3% golden set pass</span><span class="where">deck slide 28</span></div>
+        </div>
+        <p>Thêm một số thứ ba: <code>eval/results/report.md</code> ghi “Response accuracy &gt;85% (Deterministic Golden Set)”. Ba con số cho cùng một câu hỏi “agent đúng bao nhiêu phần trăm”.</p>
+        <p class="fix"><b>Cách nói:</b> Phân tầng rõ — “86,8% là tỷ lệ agent hoàn thành đúng mục tiêu hỗ trợ trên tương tác thực. 70,3% là trên golden set 101 ca, trong đó <b>17,8% là ca adversarial cố tình đánh gãy hệ thống</b>. Hai phép đo khác nhau, và con số thấp hơn là con số nghiêm khắc hơn.” Chủ động nói con số 70,3% trước — nó cho thấy team không chọn số đẹp.</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X4</span><span class="chip hi">Rất dễ bị soi</span></div>
+      <div class="conf-body">
+        <h4>Latency P50 3,38s bị đánh dấu ✅ trong khi target ghi &lt;3s</h4>
+        <p>Trong <code>eval/results/report.md</code>, dòng latency ghi target <b class="num">&lt;3s</b>, actual <b class="num">P50 3,38s</b>, status <b>✅</b>. Tự mâu thuẫn ngay trên một dòng. README thì đổi target thành “&lt;1 phút” để 3,38s trở thành “vượt trội”.</p>
+        <p>Trớ trêu là <b>số thật còn tốt hơn số đang khoe</b>: file kết quả golden chạy trên Railway (<code>49-build-24o-phase4-railway-golden-results.json</code>, n=101) cho P50 <b class="num">2,35s</b> và P95 <b class="num">3,99s</b>.</p>
+        <p class="fix"><b>Cách nói:</b> Dùng số từ file golden thật: “P50 2,35 giây, P95 3,99 giây trên 101 ca chạy thật ở môi trường production Railway.” Nếu BGK chỉ vào dòng ✅ kia thì nhận luôn là lỗi ghi chép của báo cáo, đừng bảo vệ nó.</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X5</span><span class="chip md">Có thể bị hỏi</span></div>
+      <div class="conf-body">
+        <h4>Không ai biết chắc bao nhiêu thuốc đã thực sự được embed</h4>
+        <div class="vs">
+          <div class="side"><span class="val">226 / 3.562</span><span class="where">comment trong backend/db/models.py:87</span></div>
+          <div class="mid">vs</div>
+          <div class="side"><span class="val">~14.447 dòng drug_chunks</span><span class="where">ghi nhớ vận hành DB, 11.08</span></div>
+        </div>
+        <p>Chính <code>docs/drug-data-overview.md</code> mục 3.3 đánh dấu ⚠️ và yêu cầu verify lại trước khi dùng cho demo hay eval. <b>Việc này chưa làm.</b> Nếu BGK hỏi “chatbot tra được bao nhiêu thuốc” mà trả lời 3.562 trong khi thực tế là 226 thì đó là nói sai số liệu.</p>
+        <p class="fix"><b>Việc cần làm ngay:</b> chạy <code>SELECT count(DISTINCT drug_id) FROM drug_chunks;</code> trên đúng DB dùng cho demo, rồi mới chốt câu trả lời.</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X6</span><span class="chip md">Có thể bị hỏi</span></div>
+      <div class="conf-body">
+        <h4>Model VLM trên slide khác model trong file eval</h4>
+        <div class="vs">
+          <div class="side"><span class="val">gpt-5.4-mini</span><span class="where">deck slide 21</span></div>
+          <div class="mid">vs</div>
+          <div class="side"><span class="val">cd/gpt-5.5</span><span class="where">eval/eval_vlm/eval_report.json</span></div>
+        </div>
+        <p>Con số 48% mà slide dẫn ra được đo bằng <code>cd/gpt-5.5</code>, không phải model ghi trên slide.</p>
+        <p class="fix"><b>Cách nói:</b> “Bộ eval 25 ảnh chạy trên <code>cd/gpt-5.5</code> ngày 22/08; cấu hình production hiện tại là <code>gpt-5.4-mini</code>. Con số 48% là của lần đo đó, chưa đo lại sau khi đổi model.” Trung thực về việc chưa đo lại tốt hơn là để BGK tự phát hiện.</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X7</span><span class="chip md">Có thể bị hỏi</span></div>
+      <div class="conf-body">
+        <h4>Coverage 56% cho Agent V2 nằm ngay cạnh 99% của safety</h4>
+        <p>Slide 30 ghi “99% Safety — 56% Agent V2”. BGK có thể bám vào 56%. README lại đưa bộ số chi tiết hơn: <code>tools.py</code> 91%, <code>context.py</code> 87%, <code>handoff.py</code> 85%, <code>runtime.py</code> 80%, <code>orchestrator.py</code> 77%.</p>
+        <p class="fix"><b>Cách nói:</b> “56% là trung bình toàn package 4.336 statement, trong đó có nhiều module quan sát và đánh giá không nằm trên đường đi của bệnh nhân. Các module trên luồng chính đều 77–99%, và module quyết định an toàn là 99%. Chúng em ưu tiên phủ theo mức rủi ro chứ không phủ đều.”</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X8</span><span class="chip md">Có thể bị hỏi</span></div>
+      <div class="conf-body">
+        <h4>Kiến trúc trong docs mô tả hệ thống đã bị thay thế</h4>
+        <p><code>docs/architecture.md</code> mở đầu bằng “LangGraph Agent + Safety Layer song song”, rồi đến giữa file mới thú nhận phần đó <b>đã được thay bằng Agent V2 từ BUILD-16</b> (router + tool-calling + safety xác định trước Main Model). Deck slide 25–26 mô tả kiến trúc mới. Người đọc lướt sẽ thấy hai kiến trúc khác nhau.</p>
+        <p class="fix"><b>Cách nói:</b> Luôn mô tả theo slide 25–26 (bản Agent V2). Nếu bị hỏi về phần cũ: “Đó là kiến trúc thiết kế ban đầu, đã được thay từ BUILD-16 — phần cập nhật nằm ở cuối chính file đó.”</p>
+      </div>
+    </div>
+
+    <div class="conf-item">
+      <div class="conf-rail"><span class="idx">X9</span><span class="chip lo">Chi tiết nhỏ</span></div>
+      <div class="conf-body">
+        <h4>README ghi pitch deck 14 slide, bản mới có 33</h4>
+        <p>README mô tả <code>docs/pitch-deck.pdf</code> là “14 slide, xuất từ Canva”. Bản nộp mới <code>pitch-deck-2026-09-04.pdf</code> có 33 trang (13 slide chính + phụ lục Q&amp;A từ slide 14).</p>
+        <p class="fix"><b>Cách nói:</b> “13 slide trình bày, phần còn lại là phụ lục chuẩn bị sẵn cho hỏi đáp.” Việc có sẵn 20 slide phụ lục là <b>điểm cộng</b> — nó chứng minh team đã lường trước câu hỏi.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Ngân hàng câu hỏi · Nhóm A</div>
+  <h2>An toàn và trách nhiệm y tế</h2>
+  <p class="lede col">Nhóm câu hỏi nặng ký nhất với một sản phẩm y tế. BGK sẽ tìm chỗ AI có thể gây hại.</p>
+
+  <div class="qa">
+
+    <div class="q">
+      <span class="idx">A1</span>
+      <div class="q-body">
+        <p class="ask">Làm sao đảm bảo AI không bịa thông tin thuốc hoặc tự ý cho liều?</p>
+        <p class="say">Ba lớp chặn, không phải một. <strong>Một:</strong> AI không bao giờ tạo phác đồ — chỉ bác sĩ tạo và duyệt, agent chỉ đọc trong phạm vi đã duyệt. <strong>Hai:</strong> grounding guard — trước khi trả lời, hệ thống kiểm tra có đủ bằng chứng truy xuất được không; không đủ thì từ chối trung thực chứ không suy đoán. <strong>Ba:</strong> đo được — 32 câu ground truth cho grounded_rate 100%, hallucination 0%, và đo lại hai lần ở <code>temperature=0</code> để loại may rủi.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt"><code>eval/eval_report.json</code> khoá <code>hallucination_confirmation_run1_and_run2_temp0</code>; deck slide 26 (Grounding Guard)</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Đừng nói “loại bỏ hoàn toàn hallucination” như slide 6 của deck cũ. Nói “0% trên bộ 32 câu đã đo” — có cỡ mẫu đi kèm thì mới là câu nói của kỹ sư.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">A2</span>
+      <div class="q-body">
+        <p class="ask">Nếu bệnh nhân báo đau ngực dữ dội thì hệ thống làm gì? Chứng minh AI không tự xử lý.</p>
+        <p class="say">Safety gate chạy <strong>trước mọi pipeline</strong>, không phải sau. Với <code>ACUTE_DANGER</code> hoặc <code>POSSIBLE_OVERDOSE</code>, hệ thống trả lời bằng reason code cố định và <strong>không gọi model lần nào</strong> — nghĩa là LLM không có cơ hội ứng biến. Đồng thời cắt luồng, hiện overlay cấp cứu, đẩy cảnh báo cho người thân và bác sĩ.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">Golden set: 11/11 ca nguy hiểm cấp tính xử lý đúng. Run thật trên Railway: 17/101 ca sinh <code>HANDOFF_REQUIRED</code>. Code: <code>backend/agents/v2/safety.py</code> — kiểu dữ liệu fail-closed, <code>SafetyDecision</code> chỉ do safety domain sinh ra, model không được phép tạo.</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Câu này rất dễ bị hỏi tiếp: “thế còn false positive?” — deck slide 28 đã tự nhận Context-aware Safety cần giảm false-positive. Nhận trước, đừng chờ bị chỉ ra.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">A3</span>
+      <div class="q-body">
+        <p class="ask">Ảnh chụp chỉ đếm được số viên. Vậy làm sao biết bệnh nhân uống đúng thuốc chứ không phải viên khác?</p>
+        <p class="say">Không biết được — và hệ thống <strong>không giả vờ là biết</strong>. Model chỉ phân biệt 6 hình dạng (viên nang, viên nén, tuýp, lọ, hộp, gói); Amlodipine và Panadol đều là “viên nén”. Một liều gồm hai thuốc viên nén chỉ kiểm chứng được ở mức “trong ảnh có 2 viên nén”. Giới hạn này ghi thẳng trong code, không giấu trong slide.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt"><code>backend/services/photo_verification/matcher.py</code>; <code>docs/evaluation.md</code> mục 6 “Giới hạn cố hữu của bằng chứng bằng ảnh”</span></div>
+          <div class="m"><span class="lab">Nói tiếp</span><span class="txt">Giá trị của ảnh không nằm ở nhận diện hoạt chất mà ở chỗ nó là bằng chứng có dấu thời gian, thay cho lời tự khai. Bác sĩ đọc được “liều này có ảnh, liều kia chỉ tự khai” — dashboard tách riêng hai loại.</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Đây đúng là feedback FB-22 đã nhận từ peer review. Đừng trả lời như mới nghe lần đầu — nói “góp ý này chúng em đã nhận từ vòng review và đây là hướng xử lý”.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">A4</span>
+      <div class="q-body">
+        <p class="ask">VLM chỉ đúng 48%. Sao dám dùng cho y tế?</p>
+        <p class="say">48% là độ chính xác thô, và nó <strong>không phải con số vận hành</strong>. Phát hiện quan trọng nhất của cả bộ đánh giá: độ tin cậy model tự chấm dự báo được độ đúng — khi model nói “cao” thì đúng 9/9, khi nói “thấp” thì sai 11/11. Nên hệ thống dùng chính độ tin cậy đó làm cổng chặn: “cao” mới tự động ghi nhận liều, “thấp” thì không kết luận, mời chụp lại và không trừ lượt của bệnh nhân. Lệch quá 3 lượt thì chuyển người thân duyệt.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt"><code>eval/eval_vlm/eval_report.json</code> — 25 ảnh golden set gồm cả ảnh mờ, viên chồng chéo và kẹo giả thuốc</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Nhóm “cao” chỉ có 9 ca. <b>Không được nói “độ chính xác 100%”.</b> Nói “xu hướng đã rõ nhưng cỡ mẫu còn nhỏ, cần golden set lớn hơn để chốt” — chính <code>evaluation.md</code> cũng viết vậy.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">A5</span>
+      <div class="q-body">
+        <p class="ask">Hệ thống có chặn được chất cấm trong đơn thuốc không?</p>
+        <p class="say">Có chặn, nhưng <strong>bằng blocklist chứ chưa phải allowlist</strong>. <code>backend/services/drug_requests/controlled_substances.py</code> chặn ngay ở bước tạo yêu cầu bổ sung thuốc, so khớp bằng cách bỏ dấu + thường hoá + tìm chuỗi con, nên “Heroin”, “heroine”, “HEROIN 10mg” đều dính. Danh sách phủ opioid, chất kích thích và một số nhóm khác.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Giới hạn thật</span><span class="txt">Chính comment trong file ghi rõ: “đây KHÔNG phải allowlist… danh sách này thu hẹp bề mặt, KHÔNG đóng lại được”, và đánh dấu <code>[CẦN CHỐT]</code> vì danh sách do dev tự đặt, chưa trích xuất đầy đủ từ thông tư Bộ Y tế.</span></div>
+          <div class="m"><span class="lab">Cách nói</span><span class="txt">“FB-14 là feedback mức Critical từ vòng peer review. Chúng em đã chặn được đường tấn công trực tiếp và ghi ADR-0013 về việc danh mục thuốc phải là allowlist động, nhưng bản allowlist đầy đủ cần người có chuyên môn dược/pháp lý soát — đó là một trong những thứ chúng em xin ở pilot.”</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Ô tick action item FB-14 trong <code>eval/results/report.md</code> vẫn đang trống. <b>Thử lại kịch bản này trên bản demo trước khi lên</b> — nếu BGK gõ thử mà lọt thì rất khó gỡ.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">A6</span>
+      <div class="q-body">
+        <p class="ask">Bệnh nhân yêu cầu AI kê thêm thuốc thì sao?</p>
+        <p class="say">Từ chối dứt khoát, giải thích lý do, điều hướng sang bác sĩ. Đây là FB-24 — feedback mức Critical, vì ở bản trước AI trả lời lạc hướng sang thuốc khác thay vì từ chối rõ ràng. Đã bổ sung Intent Guard cho luồng này.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">Red team 14/14 pass gồm 3 ca “lách cảnh báo an toàn” và 2 ca giả danh admin nâng quyền — <code>eval/redteam_report.json</code></span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Nếu BGK hỏi sâu về guardrail: 2 ca <code>c2_bypass_overdose</code> và <code>c3_bypass_with_real_prescription</code> <b>đã lọt qua guardrail regex ở tầng đầu vào</b>, chỉ bị chặn ở tầng sau. Nói thẳng bài học: regex không đủ làm guardrail đầu vào — đó chính là lý do safety layer thiết kế hai tầng theo ADR-0009.</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Ngân hàng câu hỏi · Nhóm B</div>
+  <h2>Kỹ thuật AI và kiến trúc</h2>
+
+  <div class="qa">
+
+    <div class="q">
+      <span class="idx">B1</span>
+      <div class="q-body">
+        <p class="ask">Tại sao dùng LangGraph mà không phải framework khác, hay tự viết?</p>
+        <p class="say">Vì bài toán cần <strong>state có thể tạm dừng và tiếp tục</strong>, cộng với nhánh bắt buộc dừng chờ người duyệt. Một liều thuốc đi qua nhiều lượt hội thoại, có thể ngắt giữa chừng để chờ bác sĩ, rồi tiếp tục — không phải một lượt hỏi đáp. Cần audit từng bước để bác sĩ truy vết được. Vòng lặp ReAct tự do không cho kiểm soát chặt từng transition như vậy.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">Bảng <code>agent_run_checkpoint</code>, <code>agent_run_span</code> trong <code>backend/db/models.py</code>; deck slide 25 mục 02</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B2</span>
+      <div class="q-body">
+        <p class="ask">Chi phí sao? Mỗi câu hỏi gọi LLM mấy lần?</p>
+        <p class="say">Nhiều câu <strong>không gọi LLM lần nào</strong>. Router phân loại intent là router thuần, không gọi model. Câu hỏi lịch uống hôm nay, sắp tới, lịch sử dùng thuốc đọc thẳng từ PostgreSQL — 0 lời gọi model. Safety block cũng trả lời bằng reason code cố định — 0 lời gọi model. Chỉ nhánh cần suy luận mới vào Main Model.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Số cụ thể</span><span class="txt">Prototype 100 người dùng test: 581.711đ/tháng tổng direct tech cost, tức 5.817đ/người/tháng. Quy mô Vinmec 375 bệnh nhân hoạt động/tháng: 12,34 triệu đồng/tháng, tức 32.919đ/bệnh nhân/tháng. AI và VLM chiếm khoảng 17% tổng chi phí. — deck slide 32</span></div>
+          <div class="m"><span class="lab">Model dùng</span><span class="txt">Router <code>gpt-5.4-nano</code> · Main <code>gpt-5.4-mini</code> · Fallback <code>gpt-5.4</code> · Renderer <code>gpt-5.6-luna</code> · Judge <code>gemini-3.7-flash</code> · STT <code>gpt-4o-transcribe</code> · TTS <code>gpt-4o-mini-tts</code> — <code>backend/config.py</code></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B3</span>
+      <div class="q-body">
+        <p class="ask">Ai chấm điểm AI của các em? Tự chấm thì có khách quan không?</p>
+        <p class="say">Judge dùng <strong>chéo nhà cung cấp</strong>: agent chạy trên OpenAI, judge chạy Google Gemini. Judge là một ranh giới bất đồng bộ thật — chạy qua APScheduler riêng, tick 30 giây, tách hoàn toàn khỏi vòng request/response. Một request luôn trả lời xong trước khi judge chạm tới, đảm bảo bằng kiến trúc chứ không phải try/except. Lấy mẫu 5% ngẫu nhiên, cộng ưu tiên tức thì cho ca lỗi, ca bất thường về an toàn và ticket người dùng báo lỗi.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Điểm mạnh nên nhấn</span><span class="txt"><b>Judge không bao giờ được phép override SafetyDecision</b> — có structural test xác nhận zero <code>db.add</code> trong hàm tạo <code>REVIEW_SUSPECTED_MISSED_RISK</code>. Judge chỉ là tín hiệu review phụ.</span></div>
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt"><code>docs/architecture.md</code> mục Agent V2 Observability, đã verify thật trên production ở BUILD-37</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B4</span>
+      <div class="q-body">
+        <p class="ask">RAG của các em recall chỉ 68,75%? Nghĩa là 1/3 câu hỏi tìm sai nguồn?</p>
+        <p class="say">Đúng, và đó là <strong>đánh đổi có chủ đích</strong>. Ngưỡng cũ 0,50/0,30 cho recall 87,5%; ngưỡng hiện tại 0,60/0,55 cho 68,75%. Team siết ngưỡng lại vì recall cao đi kèm nhiễu chéo giữa các thuốc — mà trong y tế, trả về ít mà đúng thuốc an toàn hơn trả về nhiều mà lẫn thuốc khác. Cả hai lần đo đều giữ trong report để đối chiếu.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Điểm yếu tự nhận</span><span class="txt">Nhìn <code>per_question</code>: nhóm câu hỏi <b>tác dụng phụ</b> trượt nhiều nhất, <code>found_rank: null</code> ở 7/8 thuốc. Đây là hướng cải thiện rõ nhất của vòng sau.</span></div>
+          <div class="m"><span class="lab">Nối sang</span><span class="txt">Cái quan trọng hơn recall là cross-drug misattribution: 6/32 ca có rủi ro gán nhầm thuốc, bộ lọc chặn 5/6, <b>1 ca lọt</b> — ghi nhận là nợ kỹ thuật, không giấu.</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Trước khi lên, chạy <code>SELECT count(DISTINCT drug_id) FROM drug_chunks;</code> — xem X5. Chưa có số này thì đừng khẳng định “tra được 3.562 thuốc”.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B5</span>
+      <div class="q-body">
+        <p class="ask">Sao chọn VLM thay vì YOLO? YOLO nhanh hơn nhiều mà.</p>
+        <p class="say">YOLO nhanh hơn thật — 10–20ms so với 2–8 giây. Nhưng bài toán không phải tốc độ. VLM cho ba thứ YOLO không cho: <strong>một</strong>, hiểu ngữ nghĩa nên phân biệt được vật dễ nhầm với thuốc, còn YOLO phụ thuộc dataset đã train; <strong>hai</strong>, một lời gọi trả JSON đủ 9 trường kèm câu giải thích tiếng Việt, YOLO chỉ có toạ độ box; <strong>ba</strong> — quan trọng nhất — VLM <strong>tự chấm độ tin cậy</strong>, và chính độ tin cậy đó là cổng chặn an toàn của cả luồng (xem A4). YOLO chỉ có objectness từng box.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Thêm</span><span class="txt">Sửa quy tắc: VLM sửa prompt rồi deploy trong vài phút; YOLO phải gán nhãn lại và train lại. Với timeline 5 tuần, đó là khác biệt quyết định. — deck slide 22</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B6</span>
+      <div class="q-body">
+        <p class="ask">Mở rộng lên hàng nghìn bệnh nhân thì kiến trúc này chịu được không?</p>
+        <p class="say">Ba điểm. <strong>Scheduler:</strong> một cron quét <code>dose_event</code> mỗi phút theo lô, không tạo task riêng cho từng liều — tải phẳng theo số liều đến hạn chứ không theo số bệnh nhân. <strong>DB:</strong> FastAPI async, pgvector đánh chỉ mục HNSW, dữ liệu nghiệp vụ và vector trong cùng một Postgres nên không có chi phí đồng bộ giữa hai hệ. <strong>Model:</strong> phần lớn truy vấn lịch đi đường deterministic không chạm LLM, nên chi phí không tăng tuyến tính theo lượt tương tác.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Trung thực</span><span class="txt">Chưa có load test ở quy mô đó. Nếu bị hỏi thẳng thì nhận, và nói pilot 350–500 bệnh nhân chính là để đo con số thật.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">B7</span>
+      <div class="q-body">
+        <p class="ask">Sao dùng modular monolith mà không phải microservices?</p>
+        <p class="say">Bốn người, năm tuần. Microservices sẽ tiêu phần lớn thời gian vào hạ tầng liên dịch vụ thay vì vào luồng lâm sàng. Monolith có module rõ ràng cho phép tách sau khi biết ranh giới thật nằm ở đâu — hiện ranh giới đó đã hiện ra qua ADR-0002 về domain split.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">62 bảng DB, 36 module API route, 64 migration — cấu trúc đã tách theo domain sẵn trong một codebase</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Ngân hàng câu hỏi · Nhóm C</div>
+  <h2>Đánh giá, dữ liệu và quy trình</h2>
+
+  <div class="qa">
+
+    <div class="q">
+      <span class="idx">C1</span>
+      <div class="q-body">
+        <p class="ask">Bao nhiêu test? Có test nào fail không?</p>
+        <p class="say">Lần chạy đầy đủ nhất ngày 01/09/2026 trên DB test riêng: <strong>2.513 pass, 44 fail, 23 skip</strong> trong 910 giây, trên 130+ file test. 44 ca fail nằm ở <code>test_retrieval_sql</code> (cần dữ liệu thuốc đã seed), <code>test_agent_v2_*</code> (cần config runtime) và <code>test_auth_routes</code> (cần config email) — <strong>không ca nào thuộc luồng nghiệp vụ chính</strong>.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Nói thêm</span><span class="txt">Cách phân biệt “lỗi có sẵn” với “mình vừa làm vỡ”: chạy suite ở commit gốc, lưu danh sách FAILED đã sort, chạy lại sau khi sửa, rồi diff hai danh sách. Giống hệt nghĩa là không vỡ gì. Cách này hợp lệ kể cả khi cả hai lần đều có lỗi môi trường. — ADR-0001</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Xem X1. Slide 30 ghi 1.918 — nếu người thuyết trình nói 1.918 mà người trả lời Q&amp;A nói 2.513 thì BGK sẽ hỏi cả hai. <b>Chốt một số cho cả bốn người.</b></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">C2</span>
+      <div class="q-body">
+        <p class="ask">Golden set 101 ca này ai làm, có tự chọn ca dễ không?</p>
+        <p class="say">Phân bố độ khó cố ý lệch về phía khó: Easy 26 ca (25,7%), Medium 31 (30,7%), Hard 26 (25,7%), <strong>Adversarial 18 (17,8%)</strong>. Nguồn ca gồm ground truth kịch bản chuẩn, log thực tế từ sản phẩm, red-team prompt và các tình huống biên hiếm gặp. Phân bố mức rủi ro an toàn: 10 ca “Nguy hiểm”, 4 “Trung bình”, 7 “Nhẹ”, 77 “Không đáng ngại”.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">Số liệu này đọc trực tiếp từ file kết quả 101 dòng: <code>data pharmacy/reports/agent-architecture/49-build-24o-phase4-railway-golden-results.json</code></span></div>
+          <div class="m"><span class="lab">Mạnh</span><span class="txt">Gần 1/5 bộ test là ca cố tình đánh gãy hệ thống. Đây là lý do 70,3% pass rate không phải con số xấu.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">C3</span>
+      <div class="q-body">
+        <p class="ask">Đã có ai ngoài team dùng thử chưa? Feedback thế nào?</p>
+        <p class="say">25 góp ý chuẩn hoá từ <strong>6 reviewer độc lập</strong>, thu từ 25/08 đến 01/09. Phân bố: 3 Critical (12%), 12 High (48%), 8 Medium (32%), 2 Low (8%). Ba ca Critical đều là an toàn và phân quyền: FB-14 chất cấm, FB-23 RBAC bác sĩ, FB-24 AI không từ chối rõ ràng yêu cầu kê đơn.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt"><code>eval/results/report.md</code> mục 3 — bảng đầy đủ FB-01 đến FB-25 kèm reviewer, mức ưu tiên và hướng xử lý</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">FB-25 chính là câu “đã khảo sát người dùng thật chưa”. Deck slide 8 có “92/92 người bệnh hoàn thành trải nghiệm không cần hướng dẫn” và “3/5 bác sĩ đánh giá cao” — <b>chuẩn bị sẵn cách giải thích 92 người này là ai và khảo sát thế nào</b>, vì BGK sẽ hỏi.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">C4</span>
+      <div class="q-body">
+        <p class="ask">Dữ liệu bệnh nhân được bảo vệ thế nào?</p>
+        <p class="say">JWT phân quyền theo vai trò, validation bằng Pydantic, CORS khoá theo domain frontend, rate limiting trên endpoint, audit log đầy đủ cho mọi hành động của AI kèm reasoning và nguồn RAG. Một chi tiết đáng nói: nội dung hội thoại thô <strong>cố ý không lưu bền</strong> — chỉ nằm trong ring buffer 200 entry trong bộ nhớ tiến trình, mất khi restart. Đó là quyết định privacy-minimization từ trước BUILD-32, không phải thiếu sót; dashboard render trung thực <code>content_available: false</code> khi đã mất, không tái tạo.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Mạnh</span><span class="txt">Metric bền vững độc lập ring buffer: status, intent, token, cost, span, error code, safety, judge — sống sót qua restart. Chỉ nội dung thô là không.</span></div>
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">FB-23 (RBAC bác sĩ) là feedback Critical: bản trước cho tự do đăng ký tài khoản bác sĩ và xem đơn của bệnh nhân không phụ trách. Biết trước cách trả lời trạng thái hiện tại của việc này.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">C5</span>
+      <div class="q-body">
+        <p class="ask">Dữ liệu thuốc lấy ở đâu, có được phép dùng không?</p>
+        <p class="say">Xem X2 — đây là câu quan trọng nhất nhóm này. Trả lời thẳng: crawl từ nhathuoclongchau.com.vn bằng <code>requests</code> + <code>BeautifulSoup</code>, 3.562 bản ghi, không dùng browser giả lập, có delay ngẫu nhiên 1,5–3 giây và checkpoint pause. Đủ cho MVP, <strong>chưa đủ chuẩn lâm sàng</strong>, và quyền tiếp cận dược thư chính thức là một trong bốn thứ team xin ở pilot.</p>
+        <div class="meta">
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Tuyệt đối không dùng chữ “Dược thư” cho dữ liệu hiện tại. Nếu slide cũ có chữ đó thì người thuyết trình phải biết để không đọc theo.</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Ngân hàng câu hỏi · Nhóm D</div>
+  <h2>Sản phẩm, thị trường và mô hình kinh doanh</h2>
+
+  <div class="qa">
+
+    <div class="q">
+      <span class="idx">D1</span>
+      <div class="q-body">
+        <p class="ask">MyVinmec đã có tính năng nhắc thuốc rồi. Khác gì?</p>
+        <p class="say">Khác ở <strong>dữ liệu sau lời nhắc</strong>, không phải ở lời nhắc. MyVinmec là hệ sinh thái rộng — đặt lịch, khám từ xa, hồ sơ, dược phẩm — và phần nhắc thuốc dừng ở nhắc nhở thông thường. CapyMedi tập trung hẹp vào 30–90 ngày sau đơn thuốc, và mỗi lần nhắc đều có nguồn xác nhận: nút bấm, hội thoại, ảnh, hoặc người thân duyệt. Đầu ra cho bác sĩ là timestamp, missed dose, alert, báo cáo tuân thủ — không phải thông tin sức khoẻ tổng quát.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Số liệu thị trường</span><span class="txt">52 app bệnh viện trên App Store, chỉ 1/52 (MyVinmec, 08/2026) có tính năng nhắc dùng thuốc. — deck slide 15–16</span></div>
+          <div class="m"><span class="lab">Ba nguyên tắc khác biệt</span><span class="txt">Không đánh đồng lời nhắc với việc đã dùng thuốc · Không tự động xác minh khi độ tin cậy thấp · Không cho AI đổi phác đồ. — deck slide 9</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">D2</span>
+      <div class="q-body">
+        <p class="ask">Ai trả tiền? Bệnh nhân hay bệnh viện?</p>
+        <p class="say">B2B2C — bệnh viện triển khai và chi trả, bệnh nhân sử dụng, bác sĩ và người thân cùng nhận giá trị. Phí tích hợp ban đầu, cộng phí dịch vụ <strong>349.000đ/bệnh nhân/90 ngày</strong>, hoặc gói dài hạn ~1.190.000đ/bệnh nhân/năm.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Đơn vị kinh tế</span><span class="txt">Doanh thu 349.000đ − chi phí biến đổi 140.000đ = contribution <b class="num">209.000đ</b>/patient-cycle. Chi phí cố định 495 triệu/quý → hoà vốn ở ~2.369 patient-cycle/quý, tức ~9.500/năm, tương đương ~2.400 bệnh nhân duy trì liên tục. — deck slide 12</span></div>
+          <div class="m"><span class="lab">Câu chốt</span><span class="txt">“Chỉ cần mở rộng từ pilot 350–500 bệnh nhân lên khoảng 2.400 bệnh nhân duy trì là đạt hoà vốn vận hành.”</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">D3</span>
+      <div class="q-body">
+        <p class="ask">Thị trường bao lớn? Con số ở đâu ra?</p>
+        <p class="say">TAM 22 triệu người Việt 18–69 tuổi mắc bệnh mạn tính tính đến 07/2026, dẫn đầu là tăng huyết áp, sau đó đái tháo đường, COPD và ung thư. SAM 150.000 người/năm — ước tính bệnh nhân dùng thuốc dài ngày trong hệ thống Vinmec, dựa trên quy mô 10 bệnh viện và 6 phòng khám. SOM 1.500 người/năm, triển khai 3 bệnh viện, khoảng 1% SAM.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Số nền bổ trợ</span><span class="txt">16,5 triệu người ≥60 tuổi (~16% dân số, 09/2025); Việt Nam dự báo thành xã hội dân số già năm 2036; 94,4 triệu lượt khám chữa bệnh BHYT trong 6 tháng đầu 2026. — deck slide 31</span></div>
+          <div class="m"><span class="lab">Nỗi đau định lượng</span><span class="txt">64,3% bệnh nhân tuân thủ mức trung bình và thấp (Tạp chí Y học Cộng đồng, 2026); thuê người chăm sóc trung bình 15 triệu/tháng. — deck slide 3</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">D4</span>
+      <div class="q-body">
+        <p class="ask">Bệnh nhân cao tuổi có chịu chụp ảnh mỗi lần uống thuốc không?</p>
+        <p class="say">Team đã nhận đúng góp ý này (FB-21) và trả lời hai lớp. <strong>Một:</strong> ảnh không bắt buộc — có fallback nút bấm, và luồng phân tầng theo mức rủi ro của thuốc chứ không bắt chụp đều. <strong>Hai:</strong> nhóm tiếp cận ban đầu <strong>không phải người cao tuổi tự dùng</strong> mà là gia đình có cha mẹ dùng thuốc dài ngày, người con 18–30 tuổi cài đặt và theo dõi hộ. Người con là người đọc dữ liệu, người cao tuổi chỉ cần thao tác tối thiểu.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">deck slide 5 (nhóm tiếp cận ban đầu) và slide 23 (đánh đổi của việc chụp ảnh — nêu cả bất lợi 3 bước)</span></div>
+          <div class="m"><span class="lab">Mạnh</span><span class="txt">Slide 23 tự nêu bất lợi trước khi nêu lợi ích. Nếu BGK hỏi câu này, chỉ vào slide đó — team đã cân nhắc chứ không né.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">D5</span>
+      <div class="q-body">
+        <p class="ask">Xin 300 triệu để làm gì? Sao biết là đủ?</p>
+        <p class="say">Pilot 12 tuần có kiểm soát tại một đơn vị lâm sàng, một chuyên khoa, mời tối đa 500 bệnh nhân, mục tiêu ≥350 kích hoạt. Chia: 251 triệu (84%) cho product &amp; AI hardening, tích hợp, bảo mật, clinical workflow; 49 triệu (16%) cho monitoring, đánh giá, đào tạo và dự phòng. Kết thúc bằng một quyết định Go/No-Go dựa trên bốn chỉ số: mức sử dụng, độ an toàn, chi phí thực tế, khả năng tích hợp quy trình.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Ngoài tiền</span><span class="txt">Xin thêm 4 thứ: 1 đầu mối lâm sàng, 1 đầu mối vận hành, quyền tiếp cận dược thư, quyền tiếp cận nhóm bệnh nhân phù hợp. — deck slide 13</span></div>
+          <div class="m"><span class="lab">Câu chốt</span><span class="txt">“CapyMedi không thay thế bác sĩ. CapyMedi giúp tín hiệu cần chú ý đến đúng người sớm hơn.”</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Ngân hàng câu hỏi · Nhóm E</div>
+  <h2>Câu hỏi khó và câu hỏi bẫy</h2>
+  <p class="lede col">Loại câu BGK dùng để thử xem team có trung thực không. Trả lời thẳng ăn điểm cao hơn trả lời hay.</p>
+
+  <div class="qa">
+
+    <div class="q">
+      <span class="idx">E1</span>
+      <div class="q-body">
+        <p class="ask">Nếu AI của các em gây hại cho bệnh nhân thì ai chịu trách nhiệm?</p>
+        <p class="say">Hệ thống được thiết kế để <strong>AI không ở vị trí ra quyết định lâm sàng</strong>, nên trách nhiệm y khoa vẫn thuộc bác sĩ — bác sĩ tạo và duyệt phác đồ, mọi thay đổi liên quan điều trị đều do bác sĩ quyết. Vai trò của hệ thống là ghi nhận trạng thái dùng thuốc và chuyển tín hiệu đến đúng người. Bốn điểm kiểm soát ở slide 6 nói đúng việc đó. Về mặt truy vết, mọi hành động của agent đều có audit log kèm reasoning, provenance và nguồn RAG để dựng lại được chuyện gì đã xảy ra.</p>
+        <div class="meta">
+          <div class="m trap"><span class="lab">Bẫy</span><span class="txt">Đừng trả lời kiểu pháp lý ("đã có disclaimer"). BGK hỏi câu này để xem team có hiểu ranh giới trách nhiệm không. Trả lời bằng <b>kiến trúc</b>: chỉ ra chỗ nào trong hệ thống khiến AI không thể tự quyết.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">E2</span>
+      <div class="q-body">
+        <p class="ask">Điểm yếu lớn nhất của sản phẩm hiện tại là gì?</p>
+        <p class="say">Chọn sẵn một câu trả lời thật, đừng vòng vo. Ứng viên tốt nhất: <strong>nguồn dữ liệu thuốc chưa đạt chuẩn lâm sàng</strong> — vì nó thật, team đã tự ghi lại trong repo trước khi ai hỏi, và nó dẫn thẳng sang phần pilot ask. Ứng viên thứ hai: <strong>1/6 ca gán nhầm thuốc còn lọt qua bộ lọc</strong> — cụ thể, đo được, đã ghi nhận là nợ kỹ thuật.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Mục 9 evaluation.md</span><span class="txt">Team đã liệt kê sẵn 5 điểm yếu: recall@k 68,75% với nhóm tác dụng phụ trượt nhiều nhất · 1/6 ca cross-drug lọt · guardrail regex bị 2 ca paraphrase vượt qua · golden set VLM mới 25 ảnh · bộ RAG ground truth mới 32 câu trên 8 thuốc, chưa phủ hết 11 nhóm thuốc.</span></div>
+          <div class="m"><span class="lab">Vì sao ăn điểm</span><span class="txt">Có sẵn một mục “Yếu — và đã biết” trong tài liệu nộp là thứ hiếm. Dùng nó: “Chúng em có một mục riêng liệt kê điểm yếu trong <code>docs/evaluation.md</code>, mời BGK xem mục 9.”</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">E3</span>
+      <div class="q-body">
+        <p class="ask">Cái này có phải chỉ là wrapper quanh GPT không?</p>
+        <p class="say">Chỉ ra ba thứ không phải model. <strong>Một:</strong> phần lớn truy vấn lịch uống đi đường deterministic đọc thẳng DB, không chạm LLM — nếu bỏ GPT đi thì các luồng đó vẫn chạy. <strong>Hai:</strong> safety decision <strong>không do model sinh ra</strong>; kiểu dữ liệu trong <code>safety.py</code> chặn cứng việc đó, chỉ safety domain mới tạo được <code>SafetyDecision</code>. <strong>Ba:</strong> 62 bảng DB cho lịch nhắc, dose window, escalation, audit, reward, telegram link — đó là nghiệp vụ, không phải prompt.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Câu một dòng</span><span class="txt">“Model là một trong các công cụ agent gọi, không phải là hệ thống. Bỏ model đi thì lịch nhắc, dose window và escalation vẫn chạy.”</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">E4</span>
+      <div class="q-body">
+        <p class="ask">Trong 5 tuần mà làm được ngần này? Bao nhiêu phần trăm là AI viết?</p>
+        <p class="say">Trả lời thẳng và không xin lỗi. Team dùng AI trong quy trình phát triển, có ghi lại đầy đủ: thư mục <code>.ai-log/</code>, <code>docs/ai-logs.md</code>, <code>docs/team-ai-workflow.md</code>, và 14 ADR ghi lại từng quyết định kiến trúc kèm lý do. Cái chứng minh team hiểu code không phải là tỷ lệ dòng, mà là việc <strong>giải thích được vì sao mỗi đánh đổi được chọn</strong> — ngưỡng RAG vì sao siết lại, vì sao dùng blocklist mà chưa allowlist, vì sao judge phải khác nhà cung cấp.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">AI logs là deliverable #4 của BTC, đã nộp. <code>adrs/</code> có 14 ADR đánh số.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">E5</span>
+      <div class="q-body">
+        <p class="ask">30/101 ca golden set thất bại. Đó là những ca nào?</p>
+        <p class="say">Deck slide 28 đã phân loại sẵn thành ba nhóm, dùng đúng phân loại đó: <strong>một</strong>, Context-aware Safety — false positive ở một số tình huống, tức hệ thống cảnh báo thừa; <strong>hai</strong>, Multi-drug Dose Confirmation — chưa tách được trạng thái từng thuốc khi bệnh nhân nói về nhiều thuốc trong một câu; <strong>ba</strong>, Family Escalation — HITL cho ca mức trung bình chưa hoàn thiện.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Nói kèm</span><span class="txt">Nhóm một là <b>cảnh báo thừa, không phải bỏ sót</b> — đúng hướng đánh đổi đã chọn từ ADR-0009: thà báo thừa còn hơn bỏ sót. 0 ca lỗi nghiêm trọng, 11/11 ca nguy hiểm cấp tính vẫn bắt đúng.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="idx">E6</span>
+      <div class="q-body">
+        <p class="ask">Sau cuộc thi các em có làm tiếp không?</p>
+        <p class="say">Lộ trình đã có mốc cụ thể: Q3–Q4/2026 pilot-ready v0.9; Q1/2027 single-site release v1.0 tại một chuyên khoa mãn tính; Q2/2027 multi-hospital v2.0 mở lên 3–5 bệnh viện kèm bộ API/SDK tích hợp nhanh; Q3–Q4/2027 v3.0 nhân rộng và đóng gói thành dịch vụ “chăm sóc sau khám” tiêu chuẩn.</p>
+        <div class="meta">
+          <div class="m"><span class="lab">Bằng chứng</span><span class="txt">deck slide 17 — có cả phần 16 ngày vừa qua đã làm gì, cho thấy nhịp làm việc thật chứ không chỉ kế hoạch</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Kỷ luật ngôn ngữ</div>
+  <h2>Sáu câu không được nói</h2>
+  <p class="lede col">Mỗi câu bên trái đều xuất hiện đâu đó trong tài liệu của team và đều là chỗ BGK bẻ được. Cột phải là bản thay thế vẫn giữ nguyên sức mạnh.</p>
+  <div class="never">
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“Loại bỏ hoàn toàn hiện tượng ảo giác.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“Hallucination 0% trên bộ 32 câu ground truth, đo lại hai lần ở temperature=0.”</p></div>
+    </div>
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“3.500+ tài liệu Dược thư chuẩn hoá.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“3.562 bản ghi thuốc từ nguồn thương mại, đủ cho MVP; quyền tiếp cận dược thư là thứ chúng em xin ở pilot.”</p></div>
+    </div>
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“Nhận diện đúng thuốc qua ảnh.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“Đếm số lượng theo 6 hình dạng, kèm cổng chặn theo độ tin cậy; không phân biệt được hoạt chất.”</p></div>
+    </div>
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“Độ chính xác 100% ở mức tin cậy cao.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“9/9 ca đúng ở mức tin cậy cao — xu hướng rõ nhưng cỡ mẫu còn nhỏ.”</p></div>
+    </div>
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“Guardrail chặn được mọi tấn công.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“14/14 pass, nhưng 2 ca lọt qua regex tầng đầu và chỉ bị chặn ở tầng sau — bài học là regex không đủ làm guardrail đầu vào.”</p></div>
+    </div>
+    <div class="never-row">
+      <div class="bad"><span class="tag">Không nói</span><p>“Tất cả test đều pass.”</p></div>
+      <div class="good"><span class="tag">Nói thay</span><p>“2.513 pass, 44 fail — toàn bộ 44 ca là lỗi môi trường, không ca nào trên luồng nghiệp vụ chính.”</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Phân công</div>
+  <h2>Ai đỡ câu nào</h2>
+  <p class="lede col">Chia theo vai trò trong repo. Người được phân công trả lời chính, ba người còn lại không chen ngang trừ khi được hỏi thẳng.</p>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr><th>Người</th><th>Vai trò</th><th>Đỡ nhóm</th><th>Phải thuộc</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">Nguyễn Minh Đạt</td>
+          <td>Team Lead · Data · AI</td>
+          <td class="n">B4, C2, C5, X2, X5</td>
+          <td>Nguồn dữ liệu thuốc, pipeline crawl, đánh đổi ngưỡng RAG, số thuốc đã embed</td>
+        </tr>
+        <tr>
+          <td class="name">Trương Quốc Trường</td>
+          <td>Tech Lead · Backend · DevOps</td>
+          <td class="n">B1, B2, B6, B7, C4</td>
+          <td>Kiến trúc Agent V2, chi phí token, scheduler, RBAC, bảo mật dữ liệu</td>
+        </tr>
+        <tr>
+          <td class="name">Phạm Thành Đạt</td>
+          <td>AI Engineer · Fullstack · QA</td>
+          <td class="n">A1, A2, A4, A6, B3, B5, C1, E5</td>
+          <td>Safety layer, VLM và confidence gate, judge, golden set, con số test</td>
+        </tr>
+        <tr>
+          <td class="name">Nguyễn Hải Yến</td>
+          <td>PM · UI-UX · Frontend</td>
+          <td class="n">A3, C3, D1, D2, D3, D4, D5</td>
+          <td>Luồng 3 vai trò, feedback FB-01→25, so sánh MyVinmec, đơn vị kinh tế, pilot ask</td>
+        </tr>
+        <tr>
+          <td class="name">Cả team</td>
+          <td>—</td>
+          <td class="n">E1, E2, E3, E4</td>
+          <td>Bốn câu này phải thống nhất trước — thống nhất một câu trả lời, một người nói</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Trước khi lên</div>
+  <h2>Checklist chạy trong 30 phút cuối</h2>
+  <ul class="check">
+    <li><b>Backend còn sống chưa</b> — <code>curl -s https://vmec-04be-production.up.railway.app/api/v1/status</code> <span class="who">→ Trường</span></li>
+    <li><b>Frontend mở được trên điện thoại</b>, không chỉ trên laptop — <code>c3-app-067.up.railway.app</code> <span class="who">→ Yến</span></li>
+    <li><b>Đếm số thuốc đã embed</b> trên DB đang dùng cho demo — <code>SELECT count(DISTINCT drug_id) FROM drug_chunks;</code> <span class="who">→ Minh Đạt</span></li>
+    <li><b>Thử kịch bản chất cấm</b> trên bản demo, xác nhận bị chặn <span class="who">→ Thành Đạt</span></li>
+    <li><b>Thử kịch bản đau ngực</b>, xác nhận ra overlay cấp cứu và handoff <span class="who">→ Thành Đạt</span></li>
+    <li><b>Tài khoản demo</b> có nhãn “Demo account” rõ ràng, không dùng credential thật (FB-01) <span class="who">→ Yến</span></li>
+    <li><b>Chốt miệng con số test</b> giữa bốn người — 2.513/44 hay 1.918, chọn một <span class="who">→ cả team</span></li>
+    <li><b>QR code slide 8</b> quét thử bằng điện thoại lạ, không phải điện thoại đã đăng nhập sẵn <span class="who">→ Yến</span></li>
+    <li><b>Mở sẵn 3 tab</b>: <code>docs/evaluation.md</code>, <code>eval/eval_report.json</code>, dashboard <code>/admin/monitoring</code> — để mở ra khi BGK hỏi bằng chứng <span class="who">→ Trường</span></li>
+  </ul>
+</section>
+
+<footer>
+  Dựng từ repo P-067 tại commit main <span class="mono">9236c51c</span> · deck <span class="mono">pitch-deck-2026-09-04.pdf</span> (33 trang)<br>
+  Mọi số liệu đối chiếu ngược về file nguồn trong <span class="mono">eval/</span>, <span class="mono">docs/</span>, <span class="mono">backend/</span> và <span class="mono">data pharmacy/reports/</span> — không có con số ước lượng.<br>
+  Chín mâu thuẫn ở mục X1–X9 là trạng thái tài liệu tại ngày 04.09.2026, cần rà lại nếu repo thay đổi.
+</footer>
+
+</div>
